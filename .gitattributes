@@ -1,0 +1,3 @@
+# Keep line endings as LF everywhere, so Windows and the Linux build agree.
+* text=auto eol=lf
+*.png binary

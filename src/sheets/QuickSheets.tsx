@@ -1,0 +1,322 @@
+import { useEffect, useState } from 'react';
+import { addDays, dayKey, weekStart } from '../domain/dates';
+import { fmtDayMonth, fmtInt, fmtLitres, fmtTime, weekdayName } from '../domain/format';
+import { DRINKS, FREE_MEAL_SIZES, mealForTime } from '../domain/foods';
+import type { Meal } from '../domain/types';
+import { addEntry, addWater, bump, deleteEntry, deleteMeasurement, patchDay, saveMeasurement, setSteps, setTick } from '../db/actions';
+import { stepsGoal } from '../domain/rings';
+import { useAllDays, useEntriesBetween, useMeasurements, useSettings, useToday } from '../db/hooks';
+import { closeSheet, go, useRoute } from '../router';
+import { DecField, IntField } from '../ui/controls';
+import { Sheet } from '../ui/Sheet';
+import { useToast } from '../ui/Toasts';
+import { checklistSlots, freeMealSaved, targetsFor } from '../state/derived';
+import { prefOn } from '../domain/types';
+import { MealPicker } from './FoodForms';
+
+export function WaterSheet() {
+  const settings = useSettings();
+  const today = useToday();
+  const days = useAllDays();
+  if (!settings || !days) return <Sheet title="Water">{null}</Sheet>;
+  const ml = days.find((d) => d.date === today)?.waterMl ?? 0;
+  const target = targetsFor(settings, today).waterMl;
+  return (
+    <Sheet title="Water" sub={`Aim: ${fmtLitres(target)} L a day`}>
+      <div className="col gap8" style={{ alignItems: 'center', padding: '8px 0' }}>
+        <div className="num" style={{ fontSize: 56 }}>
+          {fmtLitres(ml)}
+          <span className="t17 q"> L</span>
+        </div>
+        <div className="t14 q">
+          {Math.round(ml / 250)} glasses · {ml >= target ? 'aim reached' : `${fmtLitres(target - ml)} L to go`}
+        </div>
+        <div className="bar" style={{ width: '100%', height: 8 }}>
+          <i style={{ width: `${Math.min(ml / target, 1) * 100}%`, background: 'var(--blue)' }} />
+        </div>
+      </div>
+      <div className="grid3">
+        <button type="button" className="btn ghost" onClick={() => addWater(today, -250)} disabled={ml <= 0}>
+          −250 ml
+        </button>
+        <button type="button" className="btn" onClick={() => addWater(today, 250)}>
+          +250 ml
+        </button>
+        <button type="button" className="btn ghost" onClick={() => addWater(today, 500)}>
+          +500 ml
+        </button>
+      </div>
+      <OtherAmount onAdd={(v) => addWater(today, v)} />
+    </Sheet>
+  );
+}
+
+function OtherAmount({ onAdd }: { onAdd: (ml: number) => void }) {
+  const [ml, setMl] = useState<number | undefined>();
+  return (
+    <div className="row" style={{ gap: 10 }}>
+      <div className="grow">
+        <IntField value={ml} onChange={setMl} placeholder="Other amount, ml" label="Other amount in ml" />
+      </div>
+      <button
+        type="button"
+        className="btn ghost"
+        disabled={!ml}
+        onClick={() => {
+          if (ml) onAdd(ml);
+          setMl(undefined);
+        }}
+      >
+        Add
+      </button>
+    </div>
+  );
+}
+
+export function StepsSheet() {
+  const { params } = useRoute();
+  const settings = useSettings();
+  const today = useToday();
+  const days = useAllDays();
+  const date = params.get('d') ?? today;
+  if (!settings || !days) return <Sheet title="Steps">{null}</Sheet>;
+  const day = days.find((d) => d.date === date);
+  return <StepsForm key={date} date={date} today={today} initial={day?.steps} at={day?.stepsAt} target={stepsGoal(targetsFor(settings, date), day?.eased)} loop={settings.loopSteps} outdoors={!!day?.outdoors} />;
+}
+
+function StepsForm({ date, today, initial, at, target, loop, outdoors: wasOutdoors }: { date: string; today: string; initial?: number; at?: number; target: number; loop?: number; outdoors: boolean }) {
+  const toast = useToast();
+  const [steps, setStepsV] = useState<number | undefined>(initial);
+  const [outdoors, setOutdoors] = useState(wasOutdoors);
+  const save = async () => {
+    if (steps === undefined) return;
+    await setSteps(date, steps, date < today);
+    if (outdoors !== wasOutdoors) await patchDay(date, { outdoors });
+    closeSheet();
+    const left = target - steps;
+    toast(left <= 0 ? { kicker: 'Steps ring closed', text: `${fmtInt(steps)} steps`, tone: 'sage' } : { text: `${fmtInt(steps)} steps · ${fmtInt(left)} to go` });
+  };
+  return (
+    <Sheet title="Steps" sub={date === today ? 'Today, from Samsung Health' : fmtDayMonth(date)}>
+      <label className="flabel">
+        <span className="lbl sage">{date === today ? 'Steps so far' : 'Final steps'}</span>
+        <IntField value={steps} onChange={setStepsV} placeholder="0" autoFocus label="Steps" />
+        <span className="t13 q lh">
+          {initial !== undefined && at ? `Last logged ${fmtInt(initial)} at ${fmtTime(at)}. ` : ''}
+          {steps !== undefined && loop ? `That's about ${fmtInt(Math.round(steps / loop))} laps of your loop. ` : ''}
+          Aim: {fmtInt(target)}.
+        </span>
+      </label>
+      <label className="row" style={{ minHeight: 48 }}>
+        <span className="t15">Some of it outdoors</span>
+        <input type="checkbox" className="sw" checked={outdoors} onChange={(e) => setOutdoors(e.target.checked)} />
+      </label>
+      <button type="button" className="btn lg block" disabled={steps === undefined} onClick={save}>
+        Save
+      </button>
+    </Sheet>
+  );
+}
+
+export function ChecklistSheet() {
+  const settings = useSettings();
+  const today = useToday();
+  const days = useAllDays();
+  if (!settings || !days) return <Sheet title="Checklist">{null}</Sheet>;
+  const day = days.find((d) => d.date === today);
+  const slots = checklistSlots(settings);
+  return (
+    <Sheet title="Checklist" sub="Today">
+      {slots.length === 0 ? (
+        <div className="t14 q lh">Nothing on your checklist yet. Add supplements or medicines in Settings.</div>
+      ) : (
+        <div className="list">
+          {slots.map((s) => {
+            const t = day?.ticks?.[s.key];
+            return (
+              <label key={s.key} className="li" style={{ minHeight: 56 }}>
+                <span className="s">
+                  <span>{s.name}</span>
+                  <small>
+                    {s.slot}
+                    {t ? ` · done ${fmtTime(t)}` : ''}
+                  </small>
+                </span>
+                <input type="checkbox" className="cb" checked={!!t} onChange={(e) => setTick(today, s.key, e.target.checked)} />
+              </label>
+            );
+          })}
+        </div>
+      )}
+      <div className="t12 d lh">No streaks or confetti here. It's a plain record you can show your doctor.</div>
+      <button type="button" className="link" style={{ alignSelf: 'center' }} onClick={() => go('/settings', { at: 'checklist' })}>
+        Edit the checklist
+      </button>
+    </Sheet>
+  );
+}
+
+export function WaistSheet() {
+  const measurements = useMeasurements();
+  const today = useToday();
+  const toast = useToast();
+  const [standing, setStanding] = useState<number | undefined>();
+  const [slouched, setSlouched] = useState<number | undefined>();
+  const [shoulders, setShoulders] = useState<number | undefined>();
+  const [more, setMore] = useState(false);
+  if (!measurements) return <Sheet title="Waist">{null}</Sheet>;
+  const last = [...measurements].reverse().find((m) => m.waistStanding !== undefined);
+  const lastShoulders = [...measurements].reverse().find((m) => m.shoulders !== undefined);
+
+  const save = async () => {
+    const m = await saveMeasurement({ date: today, waistStanding: standing, waistSlouched: slouched, shoulders });
+    closeSheet();
+    const diff = standing !== undefined && last?.waistStanding !== undefined ? standing - last.waistStanding : undefined;
+    toast({
+      kicker: 'Waist',
+      text: standing !== undefined ? `${standing} in standing` : 'Measurement saved',
+      sub: diff !== undefined && diff !== 0 ? `${diff > 0 ? '+' : '−'}${Math.abs(Math.round(diff * 10) / 10)} in since ${fmtDayMonth(last!.date)}` : undefined,
+      action: { label: 'Undo', run: () => deleteMeasurement(m.id) },
+    });
+  };
+
+  return (
+    <Sheet title="Waist" sub="At the navel, same time of day, tape snug not tight">
+      <div className="grid2">
+        <label className="flabel">
+          <span className="lbl pearl">Standing straight</span>
+          <DecField value={standing} onChange={setStanding} placeholder={last?.waistStanding ? String(last.waistStanding) : 'inches'} autoFocus />
+        </label>
+        <label className="flabel">
+          <span className="lbl">Slouched</span>
+          <DecField value={slouched} onChange={setSlouched} placeholder={last?.waistSlouched ? String(last.waistSlouched) : 'inches'} />
+        </label>
+      </div>
+      <div className="t13 q lh">The gap between standing and slouched tracks posture.{last ? ` Last time, ${fmtDayMonth(last.date)}: ${last.waistStanding} in standing${last.waistSlouched ? `, ${last.waistSlouched} slouched` : ''}.` : ''}</div>
+      {more ? (
+        <label className="flabel">
+          <span className="lbl">Shoulders, around the widest point</span>
+          <DecField value={shoulders} onChange={setShoulders} placeholder={lastShoulders?.shoulders ? String(lastShoulders.shoulders) : 'inches'} />
+        </label>
+      ) : (
+        <button type="button" className="link" onClick={() => setMore(true)}>
+          + Shoulders too
+        </button>
+      )}
+      <button type="button" className="btn lg block" disabled={standing === undefined && slouched === undefined && shoulders === undefined} onClick={save}>
+        Save
+      </button>
+    </Sheet>
+  );
+}
+
+export function DrinkSheet() {
+  const today = useToday();
+  const toast = useToast();
+  const [meal, setMeal] = useState<Meal>(mealForTime());
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const total = DRINKS.reduce((s, d) => s + (counts[d.id] ?? 0) * d.kcal, 0);
+  const n = Object.values(counts).reduce((a, b) => a + b, 0);
+
+  const save = async () => {
+    const ids: string[] = [];
+    for (const d of DRINKS) {
+      const c = counts[d.id] ?? 0;
+      if (!c) continue;
+      const e = await addEntry({ date: today, meal, at: Date.now(), kind: 'drink', name: d.name, portion: `${c} × ${d.measure}`, kcal: c * d.kcal, protein: 0, drink: { type: d.id, count: c } });
+      ids.push(e.id);
+    }
+    closeSheet();
+    toast({ text: `${n} drink${n === 1 ? '' : 's'} logged · ${fmtInt(total)} kcal`, sub: 'Logged quietly.', action: { label: 'Undo', run: () => ids.forEach((id) => deleteEntry(id)) } });
+  };
+
+  return (
+    <Sheet title="Drinks" sub="Rough calories, in the measures they come in">
+      <MealPicker meal={meal} onChange={setMeal} />
+      <div className="list">
+        {DRINKS.map((d) => {
+          const c = counts[d.id] ?? 0;
+          return (
+            <div key={d.id} className="li">
+              <span className="s">
+                <span>{d.name}</span>
+                <small>
+                  {d.measure} · about {d.kcal} kcal
+                </small>
+              </span>
+              <span className="row" style={{ gap: 10 }}>
+                <button type="button" className="round sm" aria-label={`One less ${d.name}`} disabled={!c} onClick={() => setCounts((cs) => ({ ...cs, [d.id]: Math.max(0, (cs[d.id] ?? 0) - 1) }))}>
+                  −
+                </button>
+                <span className="t16 tn" style={{ width: 16, textAlign: 'center' }}>
+                  {c}
+                </span>
+                <button type="button" className="round sm" aria-label={`One more ${d.name}`} onClick={() => setCounts((cs) => ({ ...cs, [d.id]: (cs[d.id] ?? 0) + 1 }))}>
+                  +
+                </button>
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <button type="button" className="btn lg block" disabled={!n} onClick={save}>
+        {n ? `Log ${n} · ${fmtInt(total)} kcal` : 'Log drinks'}
+      </button>
+    </Sheet>
+  );
+}
+
+export function FreeMealSheet() {
+  const settings = useSettings();
+  const today = useToday();
+  useEffect(() => {
+    void bump('free-open', { day: dayKey() });
+  }, []);
+  const toast = useToast();
+  const ws = weekStart(today);
+  const week = useEntriesBetween(ws, addDays(ws, 6));
+  const [size, setSize] = useState('big');
+  const [name, setName] = useState('');
+  const [meal, setMeal] = useState<Meal>(mealForTime());
+  if (!week) return <Sheet title="Free meal">{null}</Sheet>;
+  const used = week.find((e) => e.kind === 'free');
+  const pick = FREE_MEAL_SIZES.find((s) => s.id === size)!;
+  const saved = settings && prefOn(settings.prefs, 'freeMealSaveUp') ? freeMealSaved(settings, week, today) : 0;
+
+  const save = async () => {
+    const e = await addEntry({ date: today, meal, at: Date.now(), kind: 'free', name: name.trim() || 'Free meal', portion: `${pick.name}, about ${fmtInt(pick.kcal)} kcal`, kcal: pick.kcal, protein: 0 });
+    if (saved >= 200) void bump('saveup-used');
+    closeSheet();
+    toast({ kicker: 'Free meal', text: 'Enjoy it. Tomorrow is an ordinary day.', tone: 'gold', action: { label: 'Undo', run: () => deleteEntry(e.id) } });
+  };
+
+  return (
+    <Sheet title="Free meal" sub="One a week. The calorie ceiling lifts for today.">
+      {used && <div className="banner">This week's free meal was on {weekdayName(used.date)}. You can still log another; it just won't be free.</div>}
+      {saved > 0 && !used && (
+        <div className="banner" style={{ borderColor: 'var(--gold-border)', background: 'var(--gold-bg)' }}>
+          You've saved {fmtInt(saved)} kcal this week by landing under your ceiling. Spend it here.
+        </div>
+      )}
+      <MealPicker meal={meal} onChange={setMeal} />
+      <div className="grid3">
+        {FREE_MEAL_SIZES.map((s) => (
+          <button key={s.id} type="button" className={`card sm${size === s.id ? ' gold' : ''}`} onClick={() => setSize(s.id)} style={{ minHeight: 104 }}>
+            <div className="t15">{s.name}</div>
+            <div className="num" style={{ fontSize: 22 }}>
+              {fmtInt(s.kcal)}
+            </div>
+            <div className="t11 q">{s.hint}</div>
+          </button>
+        ))}
+      </div>
+      <label className="flabel">
+        <span className="lbl">What was it? Optional</span>
+        <input className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder="Biryani with friends" />
+      </label>
+      <button type="button" className="btn lg block" onClick={save}>
+        Log free meal
+      </button>
+    </Sheet>
+  );
+}

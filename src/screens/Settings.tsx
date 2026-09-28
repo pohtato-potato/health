@@ -1,0 +1,650 @@
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { scheduleDing, unlockAudio } from '../audio';
+import { fmtDayMonth, fmtDuration, fmtInt, fmtLitres } from '../domain/format';
+import { dayKey } from '../domain/dates';
+import { loadOptions, fmtKg } from '../domain/loads';
+import { validatePlan, type PlanDef } from '../domain/plan';
+import { prefOn, type ChecklistItem, type Settings, type Targets } from '../domain/types';
+import { bump, patchSettings, setTargets } from '../db/actions';
+import { saveBackup, summarise } from '../db/backup';
+import { readBackupFile, restoreAll, saveFullBackup, type ParsedBackup } from '../db/fullBackup';
+import { canUseFingerprint, registerFingerprint } from '../checkin/lock';
+import { saveWorkbook } from '../export/saveWorkbook';
+import { db, uid } from '../db/db';
+import { useSettings, useToday } from '../db/hooks';
+import { askPersist, usePwa } from '../pwa';
+import { back, useRoute } from '../router';
+import { DecField, IntField, LinkRow, SwitchRow } from '../ui/controls';
+import { Icon } from '../ui/Icon';
+import { Sheet } from '../ui/Sheet';
+import { useToast } from '../ui/Toasts';
+import { targetsFor } from '../state/derived';
+import { ThemeSheet, useUnlockedIds } from '../ui/Theme';
+import { ReviewSheet } from './Review';
+import { themeById } from '../domain/themes';
+
+type Editor = null | 'targets' | 'item' | 'homes' | 'you' | 'plates' | 'theme' | 'review';
+
+export function SettingsScreen() {
+  const settings = useSettings();
+  const today = useToday();
+  const { params } = useRoute();
+  const pwa = usePwa();
+  const toast = useToast();
+  const [editor, setEditor] = useState<Editor>(null);
+  const [item, setItem] = useState<ChecklistItem | null>(null);
+  const [pending, setPending] = useState<{ kind: 'backup'; parsed: ParsedBackup } | { kind: 'plan'; plan: PlanDef } | null>(null);
+  const backupInput = useRef<HTMLInputElement>(null);
+  const planInput = useRef<HTMLInputElement>(null);
+  const unlocked = useUnlockedIds();
+
+  useEffect(() => {
+    const at = params.get('at');
+    if (at) document.getElementById(`s-${at}`)?.scrollIntoView({ block: 'start' });
+  }, [params, settings === undefined]);
+
+  if (!settings) return <div className="page bare" />;
+  const t = targetsFor(settings, today);
+  const p = settings.prefs;
+  const setPref = (k: keyof Settings['prefs'], v: boolean) => patchSettings((s) => ({ prefs: { ...s.prefs, [k]: v } }));
+
+  const pickBackup = async (f: File | undefined) => {
+    if (!f) return;
+    try {
+      setPending({ kind: 'backup', parsed: await readBackupFile(f) });
+    } catch (e) {
+      toast({ text: (e as Error).message });
+    }
+  };
+  const pickPlan = async (f: File | undefined) => {
+    if (!f) return;
+    try {
+      const data = JSON.parse(await f.text());
+      const plan = (data.format === 'health-plan' ? data : data.plan) as PlanDef;
+      const errs = validatePlan(plan);
+      if (errs.length) throw new Error(`This plan has problems: ${errs.slice(0, 2).join(' ')}`);
+      setPending({ kind: 'plan', plan });
+    } catch (e) {
+      toast({ text: e instanceof SyntaxError ? "That file isn't a plan: it couldn't be read." : (e as Error).message });
+    }
+  };
+
+  const last = settings.backup.lastQuick;
+  const plates = settings.equipment.plates;
+
+  return (
+    <div className="page bare" style={{ gap: 10 }}>
+      <button type="button" className="backlink" onClick={() => back('/you')}>
+        <Icon name="left" size={20} stroke={1.8} />
+        You
+      </button>
+      <h1 className="h1" style={{ fontSize: 32, marginBottom: 6 }}>
+        Settings
+      </h1>
+
+      <Group id="targets" title="Targets">
+        <LinkRow title="Calories" value={`${fmtInt(t.kcalMin)}–${fmtInt(t.kcalMax)} kcal`} onClick={() => setEditor('targets')} />
+        <LinkRow title="Protein" value={`${t.proteinG} g`} onClick={() => setEditor('targets')} />
+        <LinkRow title="Steps" value={fmtInt(t.steps)} onClick={() => setEditor('targets')} />
+        <LinkRow title="Water" value={`${fmtLitres(t.waterMl)} L`} onClick={() => setEditor('targets')} />
+        <LinkRow title="Sleep" value={`${fmtDuration(t.sleepMin)} or more`} onClick={() => setEditor('targets')} />
+        <LinkRow title="Training" value={`${t.sessionsPerWeek} sessions a week`} onClick={() => setEditor('targets')} />
+        <SwitchRow
+          title="Free-meal save-up"
+          sub="Landing under your calorie ceiling banks the difference for the week's free meal. Days under the floor never count."
+          checked={prefOn(p, 'freeMealSaveUp')}
+          onChange={(v) => setPref('freeMealSaveUp', v)}
+        />
+        <SwitchRow title="Suggest target changes" sub="Only ever more food or more steps, and only when you tap to accept" checked={prefOn(p, 'suggestTargets')} onChange={(v) => setPref('suggestTargets', v)} />
+      </Group>
+
+      <Group id="checklist" title="Daily checklist">
+        {settings.checklist.map((i) => (
+          <div key={i.id} className="li">
+            <button type="button" className="s grow" style={{ textAlign: 'left' }} onClick={() => (setItem(i), setEditor('item'))}>
+              <span>{i.name}</span>
+              <small>{i.slots.join(' and ') || 'Daily'}</small>
+            </button>
+            <input
+              type="checkbox"
+              className="sw"
+              aria-label={`${i.name} on the checklist`}
+              checked={i.active}
+              onChange={(e) => patchSettings((s) => ({ checklist: s.checklist.map((x) => (x.id === i.id ? { ...x, active: e.target.checked } : x)) }))}
+            />
+          </div>
+        ))}
+        <button type="button" className="li q" onClick={() => (setItem(null), setEditor('item'))}>
+          + Add an item
+        </button>
+        <div className="li" style={{ minHeight: 44 }}>
+          <small className="t12 d">No streaks or confetti here. It's a plain record you can show your doctor.</small>
+        </div>
+      </Group>
+
+      <Group id="walking" title="Walking and places">
+        <div className="li" style={{ minHeight: 64 }}>
+          <span className="s">
+            <span>Your loop at home</span>
+            <small>Steps for one lap, used for laps stats</small>
+          </span>
+          <div style={{ width: 92 }}>
+            <IntField value={settings.loopSteps} onChange={(v) => patchSettings({ loopSteps: v })} placeholder="steps" className="field sm" />
+          </div>
+        </div>
+        <SwitchRow title="Confirm yesterday's steps each morning" sub="Samsung Health has the final count by then" checked={p.confirmSteps} onChange={(v) => setPref('confirmSteps', v)} />
+        <LinkRow title="Homes" sub="Where you eat changes what's suggested" value={settings.homes.map((h) => h.name).join(', ')} onClick={() => setEditor('homes')} />
+      </Group>
+
+      <Group id="backups" title="Backups" plain>
+        <div className="col gap12" style={{ padding: '18px 18px 6px', background: 'var(--surface)', border: '1px solid var(--hairline)', borderRadius: 20 }}>
+          <div className="row" style={{ justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+            <div style={{ width: 10, height: 10, borderRadius: 5, marginTop: 5, flexShrink: 0, background: last && Date.now() - last < 3 * 86_400_000 ? 'var(--sage)' : 'var(--gold)' }} />
+            <div className="col gap2">
+              <div className="t15">{last ? `Last backup: ${fmtDayMonth(dayKey(new Date(last)))}` : 'No backup yet'}</div>
+              <div className="t12 q">Everything you've logged, in one small file.</div>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="btn"
+            onClick={async () => {
+              const r = await saveBackup();
+              if (r !== 'cancelled') toast({ kicker: 'Backup', text: r === 'shared' ? 'Handed over. Pick Drive to keep it safe.' : 'Saved to Downloads.', tone: 'sage' });
+            }}
+          >
+            Back up now
+          </button>
+          <button
+            type="button"
+            className="btn ghost"
+            onClick={async () => {
+              const r = await saveFullBackup();
+              if (r !== 'cancelled') toast({ kicker: 'Full backup', text: r === 'shared' ? 'Handed over. Pick Drive to keep it safe.' : 'Saved to Downloads.', tone: 'sage' });
+            }}
+          >
+            Full backup, with photos
+          </button>
+          <div className="t12 q lh">
+            A quick backup holds every number you've logged: one small file for Google Drive. A full backup adds your photos and form clips. Photos only change at check-ins, so one full backup after each check-in is enough.
+            {settings.backup.lastFull ? ` Last full backup: ${fmtDayMonth(dayKey(new Date(settings.backup.lastFull)))}${settings.backup.lastFullBytes ? `, ${(settings.backup.lastFullBytes / 1e6).toFixed(1)} MB` : ''}.` : ''}
+          </div>
+          <div className="li" style={{ minHeight: 64 }}>
+            <span className="s">
+              <span>Nudge me after</span>
+              <small>A banner on Today, not a notification</small>
+            </span>
+            <select
+              className="field sm"
+              style={{ width: 110 }}
+              value={settings.backup.nudgeDays}
+              onChange={(e) => patchSettings((s) => ({ backup: { ...s.backup, nudgeDays: Number(e.target.value) } }))}
+            >
+              {[1, 2, 3, 7].map((n) => (
+                <option key={n} value={n}>
+                  {n} day{n === 1 ? '' : 's'}
+                </option>
+              ))}
+            </select>
+          </div>
+          <LinkRow title="Restore from a backup" onClick={() => backupInput.current?.click()} />
+          <input ref={backupInput} type="file" accept="application/json,.json,application/zip,.zip" hidden onChange={(e) => (pickBackup(e.target.files?.[0]), (e.target.value = ''))} />
+        </div>
+      </Group>
+
+      <Group id="export" title="Claude" plain>
+        <div className="col gap12" style={{ padding: 18, background: 'var(--surface)', border: '1px solid var(--hairline)', borderRadius: 20 }}>
+          <div className="col gap2">
+            <div className="t15">Export workbook (.xlsx)</div>
+            <div className="t12 q">12 sheets, every log, no photos. Readable by Claude, Excel and Google Sheets.</div>
+          </div>
+          <div className="row" style={{ flexWrap: 'wrap', gap: 6, justifyContent: 'flex-start' }}>
+            {['README', 'Summary', 'Daily', 'Food log', 'My foods', 'Sets', 'Sessions', 'Weekly', 'Measurements', 'Records', 'Targets history', 'Plan'].map((n, i) => (
+              <span key={n} className="t12" style={{ padding: '6px 10px', borderRadius: 12, background: 'var(--raised)', color: i < 2 ? 'var(--pearl)' : 'var(--quiet)' }}>
+                {n}
+              </span>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="btn ghost"
+            onClick={async () => {
+              try {
+                const r = await saveWorkbook();
+                if (r !== 'cancelled') toast({ kicker: 'Workbook', text: r === 'shared' ? 'Handed over. Save it or send it to Claude.' : 'Saved to Downloads.', tone: 'sage' });
+              } catch (e) {
+                toast({ text: `Export failed: ${(e as Error).message}` });
+              }
+            }}
+          >
+            Export workbook
+          </button>
+        </div>
+        <button type="button" className="card" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }} onClick={() => setEditor('review')}>
+          <span className="col gap2">
+            <span className="t15">Monthly review with Claude</span>
+            <span className="t12 q">A ready-made prompt, plus the workbook, in one tap</span>
+          </span>
+          <Icon name="right" size={18} stroke={1.8} color="var(--dim)" />
+        </button>
+      </Group>
+
+      <Group id="training" title="Training setup">
+        <LinkRow
+          title="Plan"
+          sub={settings.plan ? `${settings.plan.sessions.length} sessions · ${settings.plan.flags.length} joint checks` : 'None yet'}
+          value={settings.plan ? `${settings.plan.name}, from ${fmtDayMonth(settings.plan.from)}` : 'Import'}
+          onClick={() => planInput.current?.click()}
+        />
+        <input ref={planInput} type="file" accept="application/json,.json" hidden onChange={(e) => (pickPlan(e.target.files?.[0]), (e.target.value = ''))} />
+        {plates.map((pl) => (
+          <SwitchRow
+            key={pl.kg}
+            title={`${fmtKg(pl.kg)} kg plates × ${pl.count}`}
+            sub={pl.owned ? undefined : 'Switch on when they arrive. Suggested loads then use them.'}
+            checked={pl.owned}
+            onChange={(v) => {
+              void patchSettings((s) => ({ equipment: { ...s.equipment, plates: s.equipment.plates.map((x) => (x.kg === pl.kg ? { ...x, owned: v } : x)) } }));
+              if (v) void bump('plates-on');
+            }}
+          />
+        ))}
+        <LinkRow
+          title="Plates and dumbbells"
+          sub={
+            plates.length
+              ? `Pairs: ${loadOptions(settings.equipment, 'pair').map(fmtKg).join(', ')} kg · one dumbbell: ${loadOptions(settings.equipment, 'single').map(fmtKg).join(', ')} kg`
+              : 'Tell Health what you have, and it suggests loads you can actually make.'
+          }
+          onClick={() => setEditor('plates')}
+        />
+        <SwitchRow title="Resistance band" checked={settings.equipment.band} onChange={(v) => patchSettings((s) => ({ equipment: { ...s.equipment, band: v } }))} />
+        <SwitchRow title="Soft ding when rest ends" sub="Plays in your headphones over your music" checked={p.ding} onChange={(v) => setPref('ding', v)} />
+        <button
+          type="button"
+          className="li"
+          onClick={() => {
+            unlockAudio();
+            scheduleDing(0.05);
+          }}
+        >
+          <span className="s">
+            <span>Test the ding</span>
+            <small>Play music first, then tap: it should sound over it</small>
+          </span>
+          <Icon name="play" size={18} stroke={1.8} color="var(--quiet)" />
+        </button>
+        <SwitchRow title="Keep the screen on during sessions" sub="So the timer and ding stay on time" checked={p.wakeLock} onChange={(v) => setPref('wakeLock', v)} />
+        <SwitchRow title="Buzz on records" checked={p.buzz} onChange={(v) => setPref('buzz', v)} />
+        <SwitchRow title="Tempo coach" sub="A Coach button on slow-lowering sets: the phone buzzes 3 seconds down, 1 up" checked={prefOn(p, 'tempoCoach')} onChange={(v) => setPref('tempoCoach', v)} />
+      </Group>
+
+      <Group id="feel" title="Voice and feel">
+        <LinkRow title="Voice" value={settings.voice === 'comm' ? 'Commentator' : settings.voice.charAt(0).toUpperCase() + settings.voice.slice(1)} onClick={() => back('/you')} />
+        <SwitchRow title="News ticker on Today" checked={prefOn(p, 'ticker')} onChange={(v) => setPref('ticker', v)} />
+        <SwitchRow title="Shake for a stat" sub="Shake the phone anywhere in the app" checked={prefOn(p, 'shake')} onChange={(v) => setPref('shake', v)} />
+        <SwitchRow title="Shuffle voices daily" checked={prefOn(p, 'shuffleVoices')} onChange={(v) => setPref('shuffleVoices', v)} />
+        <SwitchRow title="Night mode" sub="After 11 pm: dimmer, warmer, quieter" checked={p.nightMode} onChange={(v) => setPref('nightMode', v)} />
+        <LinkRow title="Theme" value={themeById(settings.theme)?.name ?? 'Dusk'} onClick={() => setEditor('theme')} />
+        <SwitchRow title="Seasonal themes" sub="Diwali, Holi and your birthday take over for the day" checked={prefOn(p, 'seasonal')} onChange={(v) => setPref('seasonal', v)} />
+      </Group>
+
+      <Group id="privacy" title="Privacy">
+        <SwitchRow title="Blur photos until tapped" checked={prefOn(p, 'blurPhotos')} onChange={(v) => setPref('blurPhotos', v)} />
+        {canUseFingerprint() && (
+          <SwitchRow
+            title="Fingerprint to open photos"
+            sub="Uses the phone's own screen lock. A gate for casual eyes: the photos never leave this phone either way."
+            checked={prefOn(p, 'lockPhotos') && !!settings.photoKey}
+            onChange={async (v) => {
+              if (!v) return setPref('lockPhotos', false);
+              try {
+                const key = await registerFingerprint();
+                await patchSettings((s) => ({ photoKey: key, prefs: { ...s.prefs, lockPhotos: true } }));
+              } catch {
+                toast({ text: 'The fingerprint wasn’t set up. Try again, or keep the blur on.' });
+              }
+            }}
+          />
+        )}
+      </Group>
+
+      <Group id="home" title="Home screen">
+        <div className="li" style={{ minHeight: 64 }}>
+          <span className="s">
+            <span>Shortcuts</span>
+            <small>Long-press the Health icon for Morning log, Add food, Water +250 ml and Start session.</small>
+          </span>
+        </div>
+        {!pwa.installed && (
+          <div className="li" style={{ minHeight: 64 }}>
+            <span className="s">
+              <span>Install</span>
+              <small>In Chrome, tap ⋮ then Add to Home screen, and open Health from its icon.</small>
+            </span>
+          </div>
+        )}
+      </Group>
+
+      <Group id="you" title="You">
+        <LinkRow title="Name" value={settings.name || 'Not set'} onClick={() => setEditor('you')} />
+        <LinkRow title="Height" value={settings.heightCm ? `${settings.heightCm} cm` : 'Not set'} onClick={() => setEditor('you')} />
+        <LinkRow title="Goal date" value={settings.goalDate ? fmtDayMonth(settings.goalDate) + ` ${settings.goalDate.slice(0, 4)}` : 'Not set'} onClick={() => setEditor('you')} />
+        <LinkRow title="Birthday" sub="For a theme on the day" value={settings.birthday ? fmtDayMonth(`2000-${settings.birthday}`) : 'Not set'} onClick={() => setEditor('you')} />
+        <div className="li">
+          <span>Units</span>
+          <span className="v">kg and inches</span>
+        </div>
+      </Group>
+
+      <Group id="storage" title="Storage">
+        <div className="li" style={{ minHeight: 64 }}>
+          <span className="s">
+            <span>{pwa.persisted ? 'Protected storage is on' : 'Protected storage is off'}</span>
+            <small>{pwa.persisted ? "Chrome won't clear Health's data when space runs low." : 'Ask Chrome not to clear Health’s data when space runs low.'}</small>
+          </span>
+          {!pwa.persisted && (
+            <button type="button" className="btn sm" onClick={async () => toast({ text: (await askPersist()) ? 'Protected storage is on.' : 'Chrome said not yet. Installing the app usually unlocks it.' })}>
+              Turn on
+            </button>
+          )}
+        </div>
+        <button
+          type="button"
+          className="li"
+          style={{ color: '#e38a7c' }}
+          onClick={async () => {
+            if (!window.confirm('Erase everything Health has stored on this phone? Make a backup first: this cannot be undone.')) return;
+            if (!window.confirm('Really erase everything?')) return;
+            await db.delete();
+            window.location.replace(window.location.pathname);
+          }}
+        >
+          Erase everything on this phone
+        </button>
+      </Group>
+
+      <div className="t12 d center" style={{ paddingTop: 18 }}>
+        Health {__APP_VERSION__} · everything stays on this phone
+      </div>
+
+      {editor === 'targets' && <TargetsEditor targets={t} onClose={() => setEditor(null)} />}
+      {editor === 'item' && <ItemEditor item={item} onClose={() => setEditor(null)} />}
+      {editor === 'homes' && <HomesEditor settings={settings} onClose={() => setEditor(null)} />}
+      {editor === 'you' && <YouEditor settings={settings} onClose={() => setEditor(null)} />}
+      {editor === 'plates' && <PlatesEditor settings={settings} onClose={() => setEditor(null)} />}
+      {editor === 'review' && <ReviewSheet onClose={() => setEditor(null)} />}
+      {editor === 'theme' && unlocked && <ThemeSheet settings={settings} unlocked={unlocked} today={today} onClose={() => setEditor(null)} />}
+      {pending?.kind === 'backup' && (
+        <Sheet title="Restore this backup?" onClose={() => setPending(null)}>
+          <div className="t15 lh">
+            From {new Date(pending.parsed.file.exportedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}: {summarise(pending.parsed.file)}
+            {pending.parsed.media ? `, ${pending.parsed.media.photos.length} photos and ${pending.parsed.media.clips.length} clips` : ''}.
+          </div>
+          <div className="t14 apri lh">This replaces everything on this phone with the backup. Anything logged since then is lost, so back up first if unsure.</div>
+          <button
+            type="button"
+            className="btn lg block"
+            onClick={async () => {
+              await restoreAll(pending.parsed);
+              setPending(null);
+              toast({ kicker: 'Restored', text: summarise(pending.parsed.file), tone: 'sage' });
+            }}
+          >
+            Replace and restore
+          </button>
+        </Sheet>
+      )}
+      {pending?.kind === 'plan' && (
+        <Sheet title={`Use “${pending.plan.name}”?`} onClose={() => setPending(null)}>
+          <div className="t15 lh">
+            {pending.plan.sessions.map((s) => `${s.name}: ${s.exercises.length} exercises`).join(' · ')}. {pending.plan.flags.length} joint checks, {pending.plan.triggers?.length ?? 0} triggers.
+          </div>
+          <div className="t14 q lh">Your logged sessions stay. Exercises with the same id keep their history, so loads carry over.</div>
+          <button
+            type="button"
+            className="btn lg block"
+            onClick={async () => {
+              await patchSettings({ plan: pending.plan });
+              await bump('plan-import');
+              setPending(null);
+              toast({ text: `${pending.plan.name} is your plan now` });
+            }}
+          >
+            Use this plan
+          </button>
+        </Sheet>
+      )}
+    </div>
+  );
+}
+
+function Group({ id, title, children, plain }: { id: string; title: string; children: ReactNode; plain?: boolean }) {
+  return (
+    <section id={`s-${id}`} className="col gap8" style={{ scrollMarginTop: 16 }}>
+      <div className="grp">{title}</div>
+      {plain ? children : <div className="list">{children}</div>}
+    </section>
+  );
+}
+
+function TargetsEditor({ targets, onClose }: { targets: Targets; onClose: () => void }) {
+  const [v, setV] = useState({ ...targets, waterL: targets.waterMl / 1000, sleepH: targets.sleepMin / 60 });
+  const num = (k: keyof typeof v) => (x: number | undefined) => setV({ ...v, [k]: x ?? 0 });
+  const ok = v.kcalMin > 0 && v.kcalMax >= v.kcalMin && v.proteinG > 0 && v.steps > 0;
+  return (
+    <Sheet title="Targets" sub="New targets apply from today. Past days keep theirs." onClose={onClose}>
+      <div className="grid2">
+        <label className="flabel">
+          <span className="lbl apri">Calories from</span>
+          <IntField value={v.kcalMin} onChange={num('kcalMin')} />
+        </label>
+        <label className="flabel">
+          <span className="lbl apri">Calories to</span>
+          <IntField value={v.kcalMax} onChange={num('kcalMax')} />
+        </label>
+        <label className="flabel">
+          <span className="lbl lav">Protein, g</span>
+          <IntField value={v.proteinG} onChange={num('proteinG')} />
+        </label>
+        <label className="flabel">
+          <span className="lbl sage">Steps</span>
+          <IntField value={v.steps} onChange={num('steps')} />
+        </label>
+        <label className="flabel">
+          <span className="lbl blue">Water, litres</span>
+          <DecField value={v.waterL} onChange={num('waterL')} />
+        </label>
+        <label className="flabel">
+          <span className="lbl blue">Sleep, hours</span>
+          <DecField value={v.sleepH} onChange={num('sleepH')} />
+        </label>
+        <label className="flabel">
+          <span className="lbl">Sessions a week</span>
+          <IntField value={v.sessionsPerWeek} onChange={num('sessionsPerWeek')} />
+        </label>
+      </div>
+      <div className="t13 q lh">The calorie ring closes inside the range: a floor as well as a ceiling, so eating too little never counts.</div>
+      <button
+        type="button"
+        className="btn lg block"
+        disabled={!ok}
+        onClick={async () => {
+          await setTargets({
+            kcalMin: v.kcalMin,
+            kcalMax: v.kcalMax,
+            proteinG: v.proteinG,
+            steps: v.steps,
+            waterMl: Math.round(v.waterL * 1000),
+            sleepMin: Math.round(v.sleepH * 60),
+            sessionsPerWeek: v.sessionsPerWeek,
+          });
+          onClose();
+        }}
+      >
+        Save targets
+      </button>
+    </Sheet>
+  );
+}
+
+function ItemEditor({ item, onClose }: { item: ChecklistItem | null; onClose: () => void }) {
+  const [name, setName] = useState(item?.name ?? '');
+  const [slots, setSlots] = useState(item?.slots.join(', ') ?? 'Morning');
+  const save = async () => {
+    const next: ChecklistItem = {
+      id: item?.id ?? uid(),
+      name: name.trim(),
+      slots: slots
+        .split(/,| and /)
+        .map((x) => x.trim())
+        .filter(Boolean)
+        .map((x) => x.charAt(0).toUpperCase() + x.slice(1)),
+      active: item?.active ?? true,
+    };
+    await patchSettings((s) => ({ checklist: item ? s.checklist.map((x) => (x.id === item.id ? next : x)) : [...s.checklist, next] }));
+    onClose();
+  };
+  return (
+    <Sheet title={item ? 'Edit item' : 'Add an item'} onClose={onClose}>
+      <label className="flabel">
+        <span className="lbl">What</span>
+        <input className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Vitamin D" autoFocus={!item} />
+      </label>
+      <label className="flabel">
+        <span className="lbl">When, one tick each</span>
+        <input className="field" value={slots} onChange={(e) => setSlots(e.target.value)} placeholder="Morning, 9 pm" />
+        <span className="t12 q">Separate times with commas: “Morning, 9 pm” makes two ticks a day.</span>
+      </label>
+      <button type="button" className="btn lg block" disabled={!name.trim()} onClick={save}>
+        Save
+      </button>
+      {item && (
+        <button
+          type="button"
+          className="btn danger block"
+          onClick={async () => {
+            await patchSettings((s) => ({ checklist: s.checklist.filter((x) => x.id !== item.id) }));
+            onClose();
+          }}
+        >
+          Remove from the checklist
+        </button>
+      )}
+    </Sheet>
+  );
+}
+
+function HomesEditor({ settings, onClose }: { settings: Settings; onClose: () => void }) {
+  const [names, setNames] = useState(settings.homes.map((h) => h.name));
+  return (
+    <Sheet title="Homes" sub="The morning log asks where you are. Foods can belong to a home." onClose={onClose}>
+      {names.map((n, i) => (
+        <label key={i} className="flabel">
+          <span className="lbl">Home {i + 1}</span>
+          <input className="field" value={n} onChange={(e) => setNames(names.map((x, j) => (j === i ? e.target.value : x)))} />
+        </label>
+      ))}
+      <button
+        type="button"
+        className="btn lg block"
+        onClick={async () => {
+          await patchSettings((s) => ({ homes: s.homes.map((h, i) => ({ ...h, name: names[i]?.trim() || h.name })) }));
+          onClose();
+        }}
+      >
+        Save
+      </button>
+    </Sheet>
+  );
+}
+
+function YouEditor({ settings, onClose }: { settings: Settings; onClose: () => void }) {
+  const [name, setName] = useState(settings.name);
+  const [height, setHeight] = useState<number | undefined>(settings.heightCm);
+  const [goal, setGoal] = useState(settings.goalDate ?? '');
+  const [birthday, setBirthday] = useState(settings.birthday ? `2000-${settings.birthday}` : '');
+  return (
+    <Sheet title="You" onClose={onClose}>
+      <label className="flabel">
+        <span className="lbl">Name, for the greeting</span>
+        <input className="field" value={name} onChange={(e) => setName(e.target.value)} />
+      </label>
+      <label className="flabel">
+        <span className="lbl">Height, cm</span>
+        <DecField value={height} onChange={setHeight} />
+      </label>
+      <label className="flabel">
+        <span className="lbl">Goal date</span>
+        <input className="field" type="date" value={goal} onChange={(e) => setGoal(e.target.value)} />
+      </label>
+      <label className="flabel">
+        <span className="lbl">Birthday, optional. Only the day and month are kept</span>
+        <input className="field" type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} />
+      </label>
+      <button
+        type="button"
+        className="btn lg block"
+        onClick={async () => {
+          await patchSettings({ name: name.trim(), heightCm: height, goalDate: goal || undefined, birthday: birthday ? birthday.slice(5) : undefined });
+          onClose();
+        }}
+      >
+        Save
+      </button>
+    </Sheet>
+  );
+}
+
+function PlatesEditor({ settings, onClose }: { settings: Settings; onClose: () => void }) {
+  const [plates, setPlates] = useState(settings.equipment.plates.map((p) => ({ ...p })));
+  const [fixed, setFixed] = useState(settings.equipment.fixed.join(', '));
+  const eq = { ...settings.equipment, plates, fixed: parseList(fixed) };
+  return (
+    <Sheet title="Plates and dumbbells" sub="Loads are per dumbbell. Plates go on in matching pairs." onClose={onClose} tall>
+      {plates.map((p, i) => (
+        <div key={i} className="grid3" style={{ alignItems: 'end' }}>
+          <label className="flabel">
+            <span className="lbl">Plate kg</span>
+            <DecField value={p.kg} onChange={(v) => setPlates(plates.map((x, j) => (j === i ? { ...x, kg: v ?? 0 } : x)))} />
+          </label>
+          <label className="flabel">
+            <span className="lbl">How many</span>
+            <IntField value={p.count} onChange={(v) => setPlates(plates.map((x, j) => (j === i ? { ...x, count: v ?? 0 } : x)))} />
+          </label>
+          <label className="row" style={{ height: 48, gap: 8 }}>
+            <span className="t14">Have them</span>
+            <input type="checkbox" className="sw" checked={p.owned} onChange={(e) => setPlates(plates.map((x, j) => (j === i ? { ...x, owned: e.target.checked } : x)))} />
+          </label>
+        </div>
+      ))}
+      <button type="button" className="link" onClick={() => setPlates([...plates, { kg: 2.5, count: 4, owned: true }])}>
+        + Add a plate size
+      </button>
+      <label className="flabel">
+        <span className="lbl">Fixed dumbbells, kg each</span>
+        <input className="field" value={fixed} onChange={(e) => setFixed(e.target.value)} placeholder="e.g. 1, 2.5, 5" />
+      </label>
+      <div className="t13 q lh">
+        Pairs you can make: {loadOptions(eq, 'pair').map(fmtKg).join(', ') || 'none'} kg. One dumbbell: {loadOptions(eq, 'single').map(fmtKg).join(', ') || 'none'} kg.
+      </div>
+      <button
+        type="button"
+        className="btn lg block"
+        onClick={async () => {
+          await patchSettings((s) => ({ equipment: { ...s.equipment, plates: plates.filter((p) => p.kg > 0 && p.count > 0), fixed: parseList(fixed) } }));
+          onClose();
+        }}
+      >
+        Save
+      </button>
+    </Sheet>
+  );
+}
+
+function parseList(s: string): number[] {
+  return s
+    .split(/[,\s]+/)
+    .map((x) => parseFloat(x))
+    .filter((x) => Number.isFinite(x) && x > 0);
+}

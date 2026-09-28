@@ -1,0 +1,12 @@
+node_modules
+dist
+dev-dist
+*.local
+.DS_Store
+# Personal data never belongs in this repo: backups and exports stay on the phone.
+health-backup-*.json
+health-starter*.json
+*.xlsx
+# The starter file and its generator hold personal numbers and the plan. Never publish them.
+private/
+.claude/
