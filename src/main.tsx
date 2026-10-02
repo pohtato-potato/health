@@ -8,10 +8,15 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { initPwa } from './pwa';
+import { sendPostcards } from './shelf/send';
 import { MomentsProvider } from './ui/Moments';
 import { ToastProvider } from './ui/Toasts';
 
 void initPwa();
+
+// Leave yesterday's postcard for Logbook on the shared shelf, now and whenever Health comes back to the front.
+void sendPostcards();
+document.addEventListener('visibilitychange', () => { if (!document.hidden) void sendPostcards(); });
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
