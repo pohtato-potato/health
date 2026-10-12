@@ -13,13 +13,14 @@ import { Icon } from '../ui/Icon';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
 import { askConfirm } from '../ui/Confirm';
+import { DateChip, useLogDate } from '../ui/DateChip';
 
 type Tab = 'recent' | 'frequent' | 'mine' | 'meals';
 
 export function AddFood() {
   const { params } = useRoute();
   const today = useToday();
-  const date = params.get('d') ?? today;
+  const [date, setDate] = useLogDate();
   const foods = useFoods();
   const history = useEntriesBetween(addDays(today, -90), today);
   const days = useAllDays();
@@ -78,6 +79,7 @@ export function AddFood() {
           <div className="h2" style={{ fontSize: 24 }}>
             Add food
           </div>
+          <DateChip value={date} onChange={setDate} />
           <Seg options={MEALS.map((m) => ({ id: m, label: MEAL_NAMES[m] }))} value={meal} onChange={setMeal} />
         </div>
       }

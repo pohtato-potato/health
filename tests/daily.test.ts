@@ -4,6 +4,7 @@ import { fmtInt } from '../src/domain/format';
 import { eatenAtFor, entryTime, mealTimesFor, portionFor, valuesFor } from '../src/domain/foods';
 import { placeFor } from '../src/domain/places';
 import { isLateTick, slotStatus, slotTime } from '../src/domain/checklist';
+import { dateChipLabel } from '../src/ui/dateLabel';
 import { ringsFor, sleepMinutes, targetsOn } from '../src/domain/rings';
 import { stepStreak, trainingWeeks, weightTrend } from '../src/domain/streaks';
 import { DEFAULT_MEAL_TIMES, type Day, type Food, type FoodEntry, type Place, type Settings, type Targets } from '../src/domain/types';
@@ -219,5 +220,13 @@ describe('v2 checklist times and missed', () => {
     expect(slotStatus(undefined, 'a:0')).toEqual({ kind: 'not-logged' });
     expect(slotStatus({ date: 'x', ticks: { 'a:0': 5 } } as Day, 'a:0')).toEqual({ kind: 'taken', at: 5 });
     expect(slotStatus({ date: 'x', missed: { 'a:0': true } } as Day, 'a:0')).toEqual({ kind: 'missed' });
+  });
+});
+
+describe('v2 date chip', () => {
+  it('names the chosen day plainly', () => {
+    expect(dateChipLabel('2026-10-13', '2026-10-13')).toBe('Today');
+    expect(dateChipLabel('2026-10-12', '2026-10-13')).toBe('Yesterday');
+    expect(dateChipLabel('2026-10-10', '2026-10-13')).toBe('Sat 10 Oct');
   });
 });

@@ -51,3 +51,12 @@ describe('checklist actions', () => {
     expect(d?.ticks?.['a:0']).toBe(888);
   });
 });
+
+describe('log any day', () => {
+  it("logging chai for 3 days ago lands at that day's breakfast", async () => {
+    await db.days.put({ date: '2026-10-10', place: 'p-office' } as never);
+    const e = await addEntry({ date: '2026-10-10', meal: 'breakfast', at: at(13, 22, 15), kind: 'food', name: 'Chai', portion: '1 cup', kcal: 90, protein: 3 });
+    expect(e.date).toBe('2026-10-10');
+    expect(e.eatenAt).toBe(new Date(2026, 9, 10, 8, 0).getTime());
+  });
+});

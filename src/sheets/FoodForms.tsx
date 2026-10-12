@@ -5,12 +5,13 @@ import { impossibleDensity, portionWarning, similarFood } from '../domain/foodCh
 import { MEAL_NAMES, MEALS, type Food, type FoodEntry, type FoodUnit, type Meal } from '../domain/types';
 import { addEntry, archiveFood, deleteEntry, saveFood, updateEntry } from '../db/actions';
 import { db } from '../db/db';
-import { useFoods, useSettings, useToday } from '../db/hooks';
+import { useFoods, useSettings } from '../db/hooks';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { closeSheet, replaceSheet, useRoute } from '../router';
 import { DecField, Seg, Stepper } from '../ui/controls';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
+import { DateChip, useLogDate } from '../ui/DateChip';
 
 /** Create a food, or edit one with ?id=. */
 export function FoodForm() {
@@ -199,9 +200,8 @@ function FoodFormInner({ existing, initialName, homes, meal }: { existing?: Food
 
 export function QuickKcal() {
   const { params } = useRoute();
-  const today = useToday();
   const toast = useToast();
-  const date = params.get('d') ?? today;
+  const [date, setDate] = useLogDate();
   const [meal, setMeal] = useState<Meal>((params.get('meal') as Meal) || mealForTime());
   const [name, setName] = useState('');
   const [kcal, setKcal] = useState<number | undefined>();
@@ -218,6 +218,7 @@ export function QuickKcal() {
 
   return (
     <Sheet title="Quick kcal" sub="For when you just want the number in">
+      <DateChip value={date} onChange={setDate} />
       <MealPicker meal={meal} onChange={setMeal} />
       <label className="flabel">
         <span className="lbl">What was it?</span>

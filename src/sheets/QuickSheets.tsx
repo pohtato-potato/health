@@ -9,13 +9,14 @@ import { isLateTick, slotStatus, slotTime } from '../domain/checklist';
 import { Check } from '../ui/Check';
 import { stepsGoal } from '../domain/rings';
 import { useAllDays, useEntriesBetween, useMeasurements, useSettings, useToday } from '../db/hooks';
-import { closeSheet, useRoute } from '../router';
+import { closeSheet } from '../router';
 import { DecField, IntField, TimeTile } from '../ui/controls';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
 import { freeMealSaved, targetsFor } from '../state/derived';
 import { prefOn } from '../domain/types';
 import { MealPicker } from './FoodForms';
+import { DateChip, useLogDate } from '../ui/DateChip';
 
 export function WaterSheet() {
   const settings = useSettings();
@@ -77,17 +78,16 @@ function OtherAmount({ onAdd }: { onAdd: (ml: number) => void }) {
 }
 
 export function StepsSheet() {
-  const { params } = useRoute();
   const settings = useSettings();
   const today = useToday();
   const days = useAllDays();
-  const date = params.get('d') ?? today;
+  const [date, setDate] = useLogDate();
   if (!settings || !days) return <Sheet title="Steps">{null}</Sheet>;
   const day = days.find((d) => d.date === date);
-  return <StepsForm key={date} date={date} today={today} initial={day?.steps} at={day?.stepsAt} target={stepsGoal(targetsFor(settings, date), day?.eased)} loop={settings.loopSteps} outdoors={!!day?.outdoors} />;
+  return <StepsForm key={date} date={date} today={today} initial={day?.steps} at={day?.stepsAt} target={stepsGoal(targetsFor(settings, date), day?.eased)} loop={settings.loopSteps} outdoors={!!day?.outdoors} onDate={setDate} />;
 }
 
-function StepsForm({ date, today, initial, at, target, loop, outdoors: wasOutdoors }: { date: string; today: string; initial?: number; at?: number; target: number; loop?: number; outdoors: boolean }) {
+function StepsForm({ date, today, initial, at, target, loop, outdoors: wasOutdoors, onDate }: { date: string; today: string; initial?: number; at?: number; target: number; loop?: number; outdoors: boolean; onDate: (d: string) => void }) {
   const toast = useToast();
   const [steps, setStepsV] = useState<number | undefined>(initial);
   const [outdoors, setOutdoors] = useState(wasOutdoors);
@@ -101,6 +101,7 @@ function StepsForm({ date, today, initial, at, target, loop, outdoors: wasOutdoo
   };
   return (
     <Sheet title="Steps" sub={date === today ? 'Today, from Samsung Health' : fmtDayMonth(date)}>
+      <DateChip value={date} onChange={onDate} />
       <label className="flabel">
         <span className="lbl sage">{date === today ? 'Steps so far' : 'Final steps'}</span>
         <IntField value={steps} onChange={setStepsV} placeholder="0" autoFocus label="Steps" />
@@ -125,8 +126,7 @@ export function ChecklistSheet() {
   const settings = useSettings();
   const today = useToday();
   const days = useAllDays();
-  const { params } = useRoute();
-  const date = params.get('d') ?? today;
+  const [date, setDate] = useLogDate();
   const [late, setLate] = useState<string | null>(null);
   const [other, setOther] = useState<number | undefined>();
   if (!settings || !days) return <Sheet title="Checklist">{null}</Sheet>;
@@ -146,6 +146,7 @@ export function ChecklistSheet() {
 
   return (
     <Sheet title="Checklist" sub={date === today ? 'Today' : fmtDayMonth(date)}>
+      <DateChip value={date} onChange={setDate} />
       {items.length === 0 && <div className="t14 q lh">Nothing on your checklist yet. Add a supplement or medicine below.</div>}
       {items.map((item) => (
         <div key={item.id} className="col gap4">
@@ -222,7 +223,7 @@ export function ChecklistSheet() {
 
 export function WaistSheet() {
   const measurements = useMeasurements();
-  const today = useToday();
+  const [date, setDate] = useLogDate();
   const toast = useToast();
   const [standing, setStanding] = useState<number | undefined>();
   const [slouched, setSlouched] = useState<number | undefined>();
@@ -233,7 +234,7 @@ export function WaistSheet() {
   const lastShoulders = [...measurements].reverse().find((m) => m.shoulders !== undefined);
 
   const save = async () => {
-    const m = await saveMeasurement({ date: today, waistStanding: standing, waistSlouched: slouched, shoulders });
+    const m = await saveMeasurement({ date, waistStanding: standing, waistSlouched: slouched, shoulders });
     closeSheet();
     const diff = standing !== undefined && last?.waistStanding !== undefined ? standing - last.waistStanding : undefined;
     toast({
@@ -246,6 +247,7 @@ export function WaistSheet() {
 
   return (
     <Sheet title="Waist" sub="At the navel, same time of day, tape snug not tight">
+      <DateChip value={date} onChange={setDate} />
       <div className="grid2">
         <label className="flabel">
           <span className="lbl pearl">Standing straight</span>
@@ -275,7 +277,7 @@ export function WaistSheet() {
 }
 
 export function DrinkSheet() {
-  const today = useToday();
+  const [date, setDate] = useLogDate();
   const toast = useToast();
   const [meal, setMeal] = useState<Meal>(mealForTime());
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -287,7 +289,7 @@ export function DrinkSheet() {
     for (const d of DRINKS) {
       const c = counts[d.id] ?? 0;
       if (!c) continue;
-      const e = await addEntry({ date: today, meal, at: Date.now(), kind: 'drink', name: d.name, portion: `${c} × ${d.measure}`, kcal: c * d.kcal, protein: 0, drink: { type: d.id, count: c } });
+      const e = await addEntry({ date, meal, at: Date.now(), kind: 'drink', name: d.name, portion: `${c} × ${d.measure}`, kcal: c * d.kcal, protein: 0, drink: { type: d.id, count: c } });
       ids.push(e.id);
     }
     closeSheet();
@@ -296,6 +298,7 @@ export function DrinkSheet() {
 
   return (
     <Sheet title="Drinks" sub="Rough calories, in the measures they come in">
+      <DateChip value={date} onChange={setDate} />
       <MealPicker meal={meal} onChange={setMeal} />
       <div className="list">
         {DRINKS.map((d) => {
@@ -333,6 +336,7 @@ export function DrinkSheet() {
 export function FreeMealSheet() {
   const settings = useSettings();
   const today = useToday();
+  const [date, setDate] = useLogDate();
   useEffect(() => {
     void bump('free-open', { day: dayKey() });
   }, []);
@@ -348,7 +352,7 @@ export function FreeMealSheet() {
   const saved = settings && prefOn(settings.prefs, 'freeMealSaveUp') ? freeMealSaved(settings, week, today) : 0;
 
   const save = async () => {
-    const e = await addEntry({ date: today, meal, at: Date.now(), kind: 'free', name: name.trim() || 'Free meal', portion: `${pick.name}, about ${fmtInt(pick.kcal)} kcal`, kcal: pick.kcal, protein: 0 });
+    const e = await addEntry({ date, meal, at: Date.now(), kind: 'free', name: name.trim() || 'Free meal', portion: `${pick.name}, about ${fmtInt(pick.kcal)} kcal`, kcal: pick.kcal, protein: 0 });
     if (saved >= 200) void bump('saveup-used');
     closeSheet();
     toast({ kicker: 'Free meal', text: 'Enjoy it. Tomorrow is an ordinary day.', tone: 'gold', action: { label: 'Undo', run: () => deleteEntry(e.id) } });
@@ -356,6 +360,7 @@ export function FreeMealSheet() {
 
   return (
     <Sheet title="Free meal" sub="One a week. The calorie ceiling lifts for today.">
+      <DateChip value={date} onChange={setDate} />
       {used && <div className="banner">This week's free meal was on {weekdayName(used.date)}. You can still log another; it just won't be free.</div>}
       {saved > 0 && !used && (
         <div className="banner" style={{ borderColor: 'var(--gold-border)', background: 'var(--gold-bg)' }}>

@@ -101,3 +101,13 @@ export function clearParam(name: string) {
   history.replaceState(history.state, '', href(path, next));
   notify();
 }
+
+/** Sets or clears one query param in place, without a new history entry. */
+export function setParam(name: string, value: string | undefined) {
+  const { path, params } = snapshot;
+  const next = new URLSearchParams(params);
+  if (value === undefined) next.delete(name);
+  else next.set(name, value);
+  history.replaceState(history.state, '', href(path, next));
+  notify();
+}

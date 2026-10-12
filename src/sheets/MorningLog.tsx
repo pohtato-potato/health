@@ -5,7 +5,8 @@ import { homePlace } from '../domain/places';
 import { sleepMinutes } from '../domain/rings';
 import type { Day, MuscleId, Settings } from '../domain/types';
 import { saveMorningLog } from '../db/actions';
-import { useAllDays, useAllSets, useSessions, useSettings, useToday } from '../db/hooks';
+import { useAllDays, useAllSets, useSessions, useSettings } from '../db/hooks';
+import { DateChip, useLogDate } from '../ui/DateChip';
 import { closeSheet } from '../router';
 import { DecField, IntField, TimeTile } from '../ui/controls';
 import { Sheet } from '../ui/Sheet';
@@ -29,15 +30,15 @@ const SORE_WORD = ['', 'mild', 'sore', 'very'] as const;
 
 export function MorningLog() {
   const settings = useSettings();
-  const today = useToday();
+  const [date, setDate] = useLogDate();
   const days = useAllDays();
   const sessions = useSessions();
   const sets = useAllSets();
   if (!settings || !days || !sessions || !sets) return <Sheet title="Morning log">{null}</Sheet>;
-  return <MorningForm settings={settings} today={today} days={days} questions={morningQuestions(settings.plan, sessions, sets, today)} />;
+  return <MorningForm key={date} settings={settings} today={date} onDate={setDate} days={days} questions={morningQuestions(settings.plan, sessions, sets, date)} />;
 }
 
-function MorningForm({ settings, today, days, questions }: { settings: Settings; today: string; days: Day[]; questions: ReturnType<typeof morningQuestions> }) {
+function MorningForm({ settings, today, onDate, days, questions }: { settings: Settings; today: string; onDate: (d: string) => void; days: Day[]; questions: ReturnType<typeof morningQuestions> }) {
   const toast = useToast();
   const day = days.find((d) => d.date === today);
   const yesterdayKey = addDays(today, -1);
@@ -113,6 +114,7 @@ function MorningForm({ settings, today, days, questions }: { settings: Settings;
 
   return (
     <Sheet title="Morning log" sub={fmtDayLong(today)}>
+      <DateChip value={today} onChange={onDate} />
       <div className="col gap8">
         <div className="lbl pearl">Where are you today?</div>
         <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
