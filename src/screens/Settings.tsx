@@ -4,7 +4,8 @@ import { fmtDayMonth, fmtDuration, fmtInt, fmtLitres } from '../domain/format';
 import { dayKey } from '../domain/dates';
 import { loadOptions, fmtKg } from '../domain/loads';
 import { validatePlan, type PlanDef } from '../domain/plan';
-import { prefOn, type ChecklistItem, type Settings, type Targets } from '../domain/types';
+import { DEFAULT_MEAL_TIMES, MEAL_NAMES, MEALS, prefOn, type ChecklistItem, type Place, type PlaceKind, type Settings, type Targets } from '../domain/types';
+import { homePlace } from '../domain/places';
 import { bump, patchSettings, setTargets } from '../db/actions';
 import { saveBackup, summarise } from '../db/backup';
 import { readBackupFile, restoreAll, saveFullBackup, type ParsedBackup } from '../db/fullBackup';
@@ -14,7 +15,7 @@ import { db, uid } from '../db/db';
 import { useSettings, useToday } from '../db/hooks';
 import { askPersist, usePwa } from '../pwa';
 import { back, useRoute } from '../router';
-import { DecField, IntField, LinkRow, SwitchRow } from '../ui/controls';
+import { DecField, IntField, LinkRow, Seg, SwitchRow, TimeTile } from '../ui/controls';
 import { Icon } from '../ui/Icon';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
@@ -164,7 +165,7 @@ export function SettingsScreen() {
           </div>
         </div>
         <SwitchRow title="Confirm yesterday's steps each morning" sub="Samsung Health has the final count by then" checked={p.confirmSteps} onChange={(v) => setPref('confirmSteps', v)} />
-        <LinkRow title="Homes" sub="Where you eat changes what's suggested" value={settings.homes.map((h) => h.name).join(', ')} onClick={() => setEditor('homes')} />
+        <LinkRow title="Places" sub="Each brings its meal times, step goal and the foods shown first" value={(settings.places?.length ? settings.places : settings.homes).map((h) => h.name).join(', ')} onClick={() => setEditor('homes')} />
       </Group>
 
       <Group id="backups" title="Backups" plain>
@@ -566,21 +567,81 @@ function ItemEditor({ item, onClose }: { item: ChecklistItem | null; onClose: ()
   );
 }
 
+const KINDS: { id: PlaceKind; label: string }[] = [
+  { id: 'home', label: 'Home' },
+  { id: 'office', label: 'Office' },
+  { id: 'trip', label: 'Trip' },
+  { id: 'friends', label: 'Friends' },
+];
+
+/** A new place of a kind starts with that kind's usual rules. */
+function newPlace(kind: PlaceKind): Place {
+  const outside = kind !== 'home';
+  return { id: uid(), name: KINDS.find((k) => k.id === kind)!.label, kind, meals: { ...(kind === 'office' ? DEFAULT_MEAL_TIMES.office : DEFAULT_MEAL_TIMES.home) }, eased: kind === 'office' || kind === 'trip', foodsFirst: outside ? 'outside' : 'home' };
+}
+
 function HomesEditor({ settings, onClose }: { settings: Settings; onClose: () => void }) {
-  const [names, setNames] = useState(settings.homes.map((h) => h.name));
+  const [places, setPlaces] = useState<Place[]>(() => (settings.places?.length ? settings.places : [homePlace(settings)]).map((p) => ({ ...p, meals: { ...p.meals } })));
+  const [open, setOpen] = useState<string | null>(null);
+  const edit = (id: string, patch: Partial<Place>) => setPlaces(places.map((p) => (p.id === id ? { ...p, ...patch } : p)));
   return (
-    <Sheet title="Homes" sub="The morning log asks where you are. Foods can belong to a home." onClose={onClose}>
-      {names.map((n, i) => (
-        <label key={i} className="flabel">
-          <span className="lbl">Home {i + 1}</span>
-          <input className="field" value={n} onChange={(e) => setNames(names.map((x, j) => (j === i ? e.target.value : x)))} />
-        </label>
+    <Sheet title="Places" sub="The morning log asks where you are. Each place sets its meal times, step goal and which foods come first." onClose={onClose} tall>
+      {places.map((p) => (
+        <div key={p.id} className="card" style={{ gap: 12 }}>
+          <div className="row" style={{ gap: 8 }}>
+            <input className="field inline-name" value={p.name} aria-label="Place name" onChange={(e) => edit(p.id, { name: e.target.value })} />
+            <button type="button" className="chip sm" aria-expanded={open === p.id} onClick={() => setOpen(open === p.id ? null : p.id)}>
+              {open === p.id ? 'Done' : 'Edit'}
+            </button>
+          </div>
+          <Seg options={KINDS} value={p.kind} onChange={(kind) => edit(p.id, { kind })} />
+          {open === p.id && (
+            <>
+              {p.kind !== 'trip' && p.kind !== 'friends' ? (
+                <div className="grid2">
+                  {MEALS.map((m) => (
+                    <TimeTile key={m} label={MEAL_NAMES[m]} minutes={p.meals[m]} onChange={(v) => edit(p.id, { meals: { ...p.meals, [m]: v } })} />
+                  ))}
+                </div>
+              ) : (
+                <div className="t13 q">Trips and friends' places keep home's meal times.</div>
+              )}
+              <SwitchRow title="Ease the step goal here" sub="2,000 fewer steps, never below 6,000" checked={p.eased} onChange={(eased) => edit(p.id, { eased })} />
+              <div className="flabel">
+                <span className="lbl">Foods shown first</span>
+                <Seg
+                  options={[
+                    { id: 'home', label: 'Home food' },
+                    { id: 'outside', label: 'Outside' },
+                    { id: 'normal', label: 'As usual' },
+                  ]}
+                  value={p.foodsFirst}
+                  onChange={(foodsFirst) => edit(p.id, { foodsFirst })}
+                />
+              </div>
+              {places.length > 1 && (
+                <button type="button" className="link" onClick={() => setPlaces(places.filter((x) => x.id !== p.id))}>
+                  Remove this place
+                </button>
+              )}
+            </>
+          )}
+        </div>
       ))}
+      <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
+        {KINDS.map((k) => (
+          <button key={k.id} type="button" className="chip sm" onClick={() => setPlaces([...places, newPlace(k.id)])}>
+            + {k.label}
+          </button>
+        ))}
+      </div>
       <button
         type="button"
         className="btn lg block"
         onClick={async () => {
-          await patchSettings((s) => ({ homes: s.homes.map((h, i) => ({ ...h, name: names[i]?.trim() || h.name })) }));
+          const clean = places.map((p) => ({ ...p, name: p.name.trim() || KINDS.find((k) => k.id === p.kind)!.label }));
+          // Foods still point at v1 home ids, which are the same ids as places.
+          await patchSettings({ places: clean, homes: clean.map((p) => ({ id: p.id, name: p.name })) });
           onClose();
         }}
       >

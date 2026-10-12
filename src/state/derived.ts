@@ -4,8 +4,9 @@ import { buildSession, findExercise, findSession, nextSessionId, type FlagDef, t
 import { exerciseStatus, triggerMet, type ExerciseStatus } from '../domain/progression';
 import { savedThisWeek } from '../domain/foods';
 import { ringsFor, targetsOn, totalsFor, type Rings, type Totals } from '../domain/rings';
-import { stepStreakOf, trainingWeeksOf, withOccasion } from '../domain/occasions';
+import { maintenanceKcal, stepStreakOf, trainingWeeksOf, withOccasion } from '../domain/occasions';
 import type { Day, FoodEntry, SetEntry, Settings, Targets, TrainingSession } from '../domain/types';
+import { isEased, placeFor } from '../domain/places';
 
 export const FALLBACK_TARGETS: Targets = {
   kcalMin: 2000,
@@ -111,8 +112,10 @@ export function triggersMet(plan: PlanDef | undefined, sets: SetEntry[]) {
 }
 
 export function dayRings(settings: Settings, date: DayKey, day: Day | undefined | null, entries: FoodEntry[]): { totals: Totals; rings: Rings; targets: Targets } {
-  const targets = targetsFor(settings, date);
-  const totals = totalsFor(day ?? undefined, entries);
+  const base = targetsFor(settings, date);
+  // A status lifts calories to maintenance; a place, status or night out eases the step goal.
+  const targets = day?.status ? { ...base, kcalMax: Math.max(base.kcalMax, maintenanceKcal(settings, base)) } : base;
+  const totals = { ...totalsFor(day ?? undefined, entries), eased: isEased(day ?? undefined, placeFor(day ?? undefined, settings)) };
   return { totals, rings: ringsFor(totals, targets), targets };
 }
 
@@ -120,9 +123,9 @@ export function stepStreakFor(settings: Settings, days: Day[], today: DayKey) {
   return stepStreakOf(settings, days, today, FALLBACK_TARGETS.steps);
 }
 
-export function weeksFor(settings: Settings, sessions: TrainingSession[], today: DayKey) {
+export function weeksFor(settings: Settings, sessions: TrainingSession[], today: DayKey, days: Day[] = []) {
   const perWeek = targetsFor(settings, today).sessionsPerWeek;
-  return { ...trainingWeeksOf(settings, doneSessions(sessions).map((s) => s.date), perWeek, today), perWeek };
+  return { ...trainingWeeksOf(settings, doneSessions(sessions).map((s) => s.date), perWeek, today, days), perWeek };
 }
 
 export interface Slot {

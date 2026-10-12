@@ -90,7 +90,7 @@ export function LogSheet() {
           : tile('pill', 'var(--quiet)', 'Checklist', 'Set up in Settings', () => go('/settings', { at: 'checklist' }))}
         {tile('win', 'var(--gold)', 'Win', 'Into the jar', () => replaceSheet('win'))}
         {(settings.customTracks ?? []).some((t) => t.active) && tile('tracks', 'var(--pearl)', 'Your tracks', `${(settings.customTracks ?? []).filter((t) => t.active).length} to fill in`, () => replaceSheet('mytracks'))}
-        {tile('calendar', 'var(--gold)', 'Occasion', occasionOn(settings, today) ? `${occasionOn(settings, today)!.name} is on` : 'Festival, wedding, trip', () => replaceSheet('occasion'))}
+        {tile('calendar', 'var(--gold)', 'Status', occasionOn(settings, today) ? `${occasionOn(settings, today)!.name} is on` : 'Ill, travelling, an occasion', () => replaceSheet('occasion'))}
         {tile('camera', 'var(--pearl)', 'Check-in', checkinDue ? (checkinDue <= today ? 'Due now' : `Due ${fmtDayMonth(checkinDue)}`) : 'Photos and tape', () => go('/checkin'))}
       </div>
 

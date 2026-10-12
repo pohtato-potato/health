@@ -106,7 +106,7 @@ export function CelebrationWatcher() {
     }
 
     // Training-week streaks, dated to the week they were reached.
-    const weeks = weeksFor(settings, sessions, today);
+    const weeks = weeksFor(settings, sessions, today, days);
     if (WEEK_MILESTONES.includes(weeks.streak)) {
       const reachedWeek = weeks.thisWeek >= weeks.perWeek ? ws : addDays(ws, -7);
       const n = weeks.streak;

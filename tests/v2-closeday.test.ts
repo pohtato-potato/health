@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { addEntry, closeDay, moveEntry, patchSettings } from '../src/db/actions';
+import { addEntry, closeDay, moveEntry, patchSettings, setStatusRange } from '../src/db/actions';
 import { db, HealthDB, setDatabase } from '../src/db/db';
 
 let n = 0;
@@ -25,5 +25,21 @@ describe('close the day', () => {
     expect(await db.days.get('2026-10-13')).toBeUndefined();
     await closeDay('2026-10-12', false);
     expect((await db.days.get('2026-10-12'))?.foodDone).toBe(false);
+  });
+});
+
+describe('status ranges', () => {
+  it('setStatusRange writes each day and clears it again', async () => {
+    await db.days.put({ date: '2026-10-13', steps: 500 });
+    await setStatusRange('2026-10-12', '2026-10-14', 'sick');
+    expect((await db.days.toArray()).map((d) => [d.date, d.status])).toEqual([
+      ['2026-10-12', 'sick'],
+      ['2026-10-13', 'sick'],
+      ['2026-10-14', 'sick'],
+    ]);
+    expect((await db.days.get('2026-10-13'))?.steps).toBe(500);
+    await setStatusRange('2026-10-13', '2026-10-14', undefined);
+    expect((await db.days.get('2026-10-12'))?.status).toBe('sick');
+    expect((await db.days.get('2026-10-13'))?.status).toBeUndefined();
   });
 });

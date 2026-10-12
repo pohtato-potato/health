@@ -429,7 +429,7 @@ export interface Clip {
   seconds?: number;
 }
 
-export type OccasionKind = 'festival' | 'wedding' | 'travel' | 'sick' | 'other';
+export type OccasionKind = 'festival' | 'wedding' | 'travel' | 'sick' | 'injured' | 'break' | 'other';
 
 export interface Occasion {
   id: string;

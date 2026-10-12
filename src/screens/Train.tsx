@@ -34,7 +34,7 @@ export function Train() {
   }
 
   const up = nextUp(settings, sessions, sets, days);
-  const weeks = weeksFor(settings, sessions, today);
+  const weeks = weeksFor(settings, sessions, today, days);
   const done = doneSessions(sessions);
   const trainedToday = done.filter((s) => s.date === today);
   const ws = weekStart(today);

@@ -70,7 +70,7 @@ export function Today() {
 
   const { totals, rings, targets } = dayRings(settings, today, day, entries);
   const up = nextUp(settings, sessions, sets, days);
-  const weeks = weeksFor(settings, sessions, today);
+  const weeks = weeksFor(settings, sessions, today, days);
   const streak = stepStreakFor(settings, days, today);
   const trainedToday = doneSessions(sessions).filter((s) => s.date === today);
   const flag = recentFlag(settings.plan, sessions, days, today);
@@ -80,7 +80,7 @@ export function Today() {
   const prevWeigh = [...days].filter((d) => d.date < today && d.weightKg !== undefined).sort((a, b) => b.date.localeCompare(a.date))[0];
   const sleepMin = day?.sleep ? sleepMinutes(day.sleep.asleep, day.sleep.woke) : undefined;
   const sessionName = up && settings.plan ? findSession(settings.plan, up.sessionId)?.name ?? `Session ${up.sessionId}` : 'Your session';
-  const stepsLeft = stepsGoal(targets, day?.eased) - totals.steps;
+  const stepsLeft = stepsGoal(targets, totals.eased) - totals.steps;
   const loop = settings.loopSteps ?? 0;
 
   let moment: Moment = hour >= 17 ? 'evening' : 'day';
@@ -205,7 +205,7 @@ export function Today() {
           >
             <div className="lbl sage">Steps{rings.steps.closed ? ' · closed' : ''}</div>
             <div className="tn t17">
-              {day?.steps !== undefined ? fmtInt(totals.steps) : '—'} <span className="t13 q">of {fmtInt(stepsGoal(targets, day?.eased))}</span>
+              {day?.steps !== undefined ? fmtInt(totals.steps) : '—'} <span className="t13 q">of {fmtInt(stepsGoal(targets, totals.eased))}</span>
             </div>
           </div>
         </div>

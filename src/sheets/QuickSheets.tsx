@@ -13,7 +13,8 @@ import { closeSheet } from '../router';
 import { DecField, IntField, TimeTile } from '../ui/controls';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
-import { freeMealSaved, targetsFor } from '../state/derived';
+import { dayRings, freeMealSaved, targetsFor } from '../state/derived';
+import { isEased, placeFor } from '../domain/places';
 import { prefOn } from '../domain/types';
 import { MealPicker } from './FoodForms';
 import { DateChip, useLogDate } from '../ui/DateChip';
@@ -84,7 +85,7 @@ export function StepsSheet() {
   const [date, setDate] = useLogDate();
   if (!settings || !days) return <Sheet title="Steps">{null}</Sheet>;
   const day = days.find((d) => d.date === date);
-  return <StepsForm key={date} date={date} today={today} initial={day?.steps} at={day?.stepsAt} target={stepsGoal(targetsFor(settings, date), day?.eased)} loop={settings.loopSteps} outdoors={!!day?.outdoors} onDate={setDate} />;
+  return <StepsForm key={date} date={date} today={today} initial={day?.steps} at={day?.stepsAt} target={stepsGoal(dayRings(settings, date, day, []).targets, isEased(day, placeFor(day, settings)))} loop={settings.loopSteps} outdoors={!!day?.outdoors} onDate={setDate} />;
 }
 
 function StepsForm({ date, today, initial, at, target, loop, outdoors: wasOutdoors, onDate }: { date: string; today: string; initial?: number; at?: number; target: number; loop?: number; outdoors: boolean; onDate: (d: string) => void }) {

@@ -1,4 +1,4 @@
-import { atOn, dayKey, type DayKey } from '../domain/dates';
+import { addDays, atOn, dayKey, type DayKey } from '../domain/dates';
 import { eatenAtFor, mealTimesFor } from '../domain/foods';
 import { placeFor } from '../domain/places';
 import type { Swap } from '../domain/plan';
@@ -10,6 +10,7 @@ import type {
   SetEntry,
   Settings,
   Sleep,
+  Status,
   TargetsRecord,
   Targets,
   TrainingSession,
@@ -293,4 +294,17 @@ export async function moveEntry(id: string, meal: FoodEntry['meal']) {
 /** Marks a day's food complete (or not). Works for any date. */
 export async function closeDay(date: DayKey, done: boolean) {
   await patchDay(date, { foodDone: done });
+}
+
+/** Puts a status on every day from..to, or takes it off when status is undefined. */
+export async function setStatusRange(from: DayKey, to: DayKey, status: Status | undefined) {
+  await db.transaction('rw', db.days, async () => {
+    for (let d = from; d <= to; d = addDays(d, 1)) {
+      const cur = (await db.days.get(d)) ?? { date: d };
+      const next = { ...cur, date: d };
+      if (status) next.status = status;
+      else delete next.status;
+      await db.days.put(next);
+    }
+  });
 }

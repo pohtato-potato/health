@@ -299,7 +299,7 @@ function nextMonth(m: DayKey): DayKey {
 
 function Streaks({ settings, today, days, entries, sessions }: { settings: Settings; today: DayKey; days: Day[]; entries: FoodEntry[]; sessions: TrainingSession[] }) {
   const streak = stepStreakFor(settings, days, today);
-  const weeks = weeksFor(settings, sessions, today);
+  const weeks = weeksFor(settings, sessions, today, days);
   const t = targetsFor(settings, today);
   const byEntries = new Map<DayKey, FoodEntry[]>();
   for (const e of entries) byEntries.set(e.date, [...(byEntries.get(e.date) ?? []), e]);

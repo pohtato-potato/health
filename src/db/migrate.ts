@@ -11,6 +11,8 @@ export interface MigrationReport {
 const STATUS_FOR: Record<OccasionKind, Status> = {
   travel: 'travelling',
   sick: 'sick',
+  injured: 'injured',
+  break: 'break',
   festival: 'occasion',
   wedding: 'occasion',
   other: 'occasion',
