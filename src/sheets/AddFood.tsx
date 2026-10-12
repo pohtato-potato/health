@@ -12,6 +12,7 @@ import { Seg, Stepper } from '../ui/controls';
 import { Icon } from '../ui/Icon';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
+import { askConfirm } from '../ui/Confirm';
 
 type Tab = 'recent' | 'frequent' | 'mine' | 'meals';
 
@@ -157,8 +158,8 @@ export function AddFood() {
               foods={live}
               date={date}
               slot={meal}
-              onRemove={() => {
-                if (window.confirm(`Remove the saved meal “${m.name}”? Logged entries stay.`)) void patchSettings((s) => ({ meals: (s.meals ?? []).filter((x) => x.id !== m.id) }));
+              onRemove={async () => {
+                if (await askConfirm({ title: `Remove the saved meal “${m.name}”?`, body: 'Logged entries stay.', yes: 'Remove' })) void patchSettings((s) => ({ meals: (s.meals ?? []).filter((x) => x.id !== m.id) }));
               }}
             />
           ))}

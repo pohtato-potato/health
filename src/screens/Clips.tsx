@@ -8,6 +8,7 @@ import { useSettings } from '../db/hooks';
 import { Icon } from '../ui/Icon';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
+import { askConfirm } from '../ui/Confirm';
 
 /** Reads a video's length without playing it. */
 function videoSeconds(blob: Blob): Promise<number | undefined> {
@@ -106,7 +107,7 @@ export function ClipRow({ clip }: { clip: Clip }) {
           className="link"
           style={{ color: '#e38a7c' }}
           onClick={async () => {
-            if (window.confirm('Delete this clip? It cannot be undone.')) await db.clips.delete(clip.id);
+            if (await askConfirm({ title: 'Delete this clip?', body: 'It cannot be undone.', yes: 'Delete', danger: true })) await db.clips.delete(clip.id);
           }}
         >
           Delete

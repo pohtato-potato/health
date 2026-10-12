@@ -12,6 +12,7 @@ import { BarChart, MiniBars } from '../ui/Charts';
 import { Icon } from '../ui/Icon';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
+import { askConfirm } from '../ui/Confirm';
 
 export async function setTrackValue(trackId: string, date: DayKey, value: number | null) {
   const existing = await db.trackValues.where('[trackId+date]').equals([trackId, date]).first();
@@ -143,7 +144,7 @@ export function TrackEditor({ track, onClose }: { track?: CustomTrack; onClose: 
     onClose();
   };
   const remove = async () => {
-    if (!track || !window.confirm(`Stop tracking ${track.name}? Its history stays in your backups.`)) return;
+    if (!track || !(await askConfirm({ title: `Stop tracking ${track.name}?`, body: 'Its history stays in your backups.', yes: 'Stop tracking' }))) return;
     await patchSettings((s) => ({ customTracks: (s.customTracks ?? []).map((x) => (x.id === track.id ? { ...x, active: false } : x)) }));
     onClose();
     go('/tracks', undefined, { replace: true });

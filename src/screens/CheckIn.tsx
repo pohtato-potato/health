@@ -14,6 +14,7 @@ import { Stepper } from '../ui/controls';
 import { Icon } from '../ui/Icon';
 import { useToast } from '../ui/Toasts';
 import { saveFullBackup } from '../db/fullBackup';
+import { askConfirm } from '../ui/Confirm';
 
 type Shot = { blob: Blob; width: number; height: number };
 type Step = 'photos' | 'tape' | 'tshirt' | 'result';
@@ -88,8 +89,8 @@ export function CheckInScreen() {
         type="button"
         className="icon-btn"
         aria-label="Leave the check-in"
-        onClick={() => {
-          if (step === 'result' || window.confirm('Leave the check-in? Nothing from it is saved yet.')) go('/today', undefined, { replace: true });
+        onClick={async () => {
+          if (step === 'result' || (await askConfirm({ title: 'Leave the check-in?', body: 'Nothing from it is saved yet.', yes: 'Leave', no: 'Stay' }))) go('/today', undefined, { replace: true });
         }}
       >
         <Icon name="close" size={20} stroke={1.8} />

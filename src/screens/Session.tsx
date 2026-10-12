@@ -34,6 +34,7 @@ import { clock } from './NextUpCard';
 import { TempoCoach } from '../ui/TempoCoach';
 import { ClipButtons } from './Clips';
 import { prefOn } from '../domain/types';
+import { askConfirm } from '../ui/Confirm';
 
 export function SessionScreen() {
   const { params } = useRoute();
@@ -290,7 +291,7 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
 
   const finish = async () => {
     if (!mine.length) {
-      if (window.confirm('Nothing is logged yet. Discard this session?')) {
+      if (await askConfirm({ title: 'Discard this session?', body: 'Nothing is logged yet.', yes: 'Discard', danger: true })) {
         await discardSession(session.id);
         go('/train', undefined, { replace: true });
       }

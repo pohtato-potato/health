@@ -15,6 +15,7 @@ import { useToast } from '../ui/Toasts';
 import { doneSessions } from '../state/derived';
 import { sessionStats } from './SessionDone';
 import { SessionClips } from './Clips';
+import { askConfirm } from '../ui/Confirm';
 
 /** A session in detail, Flighty style: the numbers, then exercise by exercise. */
 export function SessionView() {
@@ -73,7 +74,7 @@ export function SessionView() {
   ];
 
   const del = async () => {
-    if (!window.confirm('Delete this session and all its sets? This cannot be undone.')) return;
+    if (!(await askConfirm({ title: 'Delete this session?', body: 'All its sets go too. This cannot be undone.', yes: 'Delete', danger: true }))) return;
     await discardSession(s.id);
     toast({ text: 'Session deleted' });
     back('/train');

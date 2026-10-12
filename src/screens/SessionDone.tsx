@@ -12,6 +12,7 @@ import { useToast } from '../ui/Toasts';
 import { doneSessions, swapSentence } from '../state/derived';
 import { Confetti } from '../ui/Confetti';
 import { useMoments, type RecordPage } from '../ui/Moments';
+import { askConfirm } from '../ui/Confirm';
 
 export function SessionDone() {
   const settings = useSettings();
@@ -140,7 +141,7 @@ function DoneForm({ session, plan, sets, sessions, settings }: { session: Traini
   };
 
   const discard = async () => {
-    if (!window.confirm('Discard this session and every set in it?')) return;
+    if (!(await askConfirm({ title: 'Discard this session?', body: 'Every set in it goes too.', yes: 'Discard', danger: true }))) return;
     await discardSession(session.id);
     go('/train', undefined, { replace: true });
   };

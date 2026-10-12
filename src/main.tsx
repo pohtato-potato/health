@@ -11,6 +11,7 @@ import { initPwa } from './pwa';
 import { sendPostcards } from './shelf/send';
 import { MomentsProvider } from './ui/Moments';
 import { ToastProvider } from './ui/Toasts';
+import { ConfirmHost } from './ui/Confirm';
 import { db } from './db/db';
 import { migrateToV2 } from './db/migrate';
 
@@ -28,6 +29,7 @@ createRoot(document.getElementById('root')!).render(
     <ToastProvider>
       <MomentsProvider>
         <App />
+        <ConfirmHost />
       </MomentsProvider>
     </ToastProvider>
   </StrictMode>,

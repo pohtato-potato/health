@@ -13,6 +13,7 @@ import type {
   TrainingSession,
 } from '../domain/types';
 import { db, uid } from './db';
+import { recordEdit } from './edits';
 import { DEFAULT_EQUIPMENT, DEFAULT_PLAN } from '../domain/defaultPlan';
 
 export function defaultSettings(): Settings {
@@ -147,12 +148,15 @@ export async function addEntry(e: Omit<FoodEntry, 'id'> & { id?: string }): Prom
 }
 
 export async function updateEntry(id: string, patch: Partial<FoodEntry>) {
+  const before = await db.entries.get(id);
   await db.entries.update(id, patch);
+  if (before) await recordEdit('entries', id, before, { ...before, ...patch });
 }
 
 export async function deleteEntry(id: string): Promise<FoodEntry | undefined> {
   const e = await db.entries.get(id);
   await db.entries.delete(id);
+  if (e) await recordEdit('entries', id, e, undefined);
   return e;
 }
 
@@ -214,12 +218,16 @@ export async function patchSession(id: string, patch: Partial<TrainingSession>) 
 
 export async function logSet(set: Omit<SetEntry, 'id'> & { id?: string }): Promise<SetEntry> {
   const rec: SetEntry = { ...set, id: set.id ?? uid() };
+  const before = set.id ? await db.sets.get(set.id) : undefined;
   await db.sets.put(rec);
+  if (before) await recordEdit('sets', rec.id, before, rec);
   return rec;
 }
 
 export async function deleteSet(id: string) {
+  const before = await db.sets.get(id);
   await db.sets.delete(id);
+  if (before) await recordEdit('sets', id, before, undefined);
 }
 
 export async function finishSession(id: string, flags: string[], notes: string) {

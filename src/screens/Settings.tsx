@@ -22,6 +22,7 @@ import { targetsFor } from '../state/derived';
 import { ThemeSheet, useUnlockedIds } from '../ui/Theme';
 import { ReviewSheet } from './Review';
 import { themeById } from '../domain/themes';
+import { askConfirm } from '../ui/Confirm';
 
 type Editor = null | 'targets' | 'item' | 'homes' | 'you' | 'plates' | 'theme' | 'review';
 
@@ -354,8 +355,8 @@ export function SettingsScreen() {
           className="li"
           style={{ color: '#e38a7c' }}
           onClick={async () => {
-            if (!window.confirm('Erase everything Health has stored on this phone? Make a backup first: this cannot be undone.')) return;
-            if (!window.confirm('Really erase everything?')) return;
+            if (!(await askConfirm({ title: 'Erase everything on this phone?', body: 'Make a backup first: this cannot be undone.', yes: 'Erase', danger: true }))) return;
+            if (!(await askConfirm({ title: 'Really erase everything?', yes: 'Erase everything', danger: true }))) return;
             await db.delete();
             window.location.replace(window.location.pathname);
           }}
