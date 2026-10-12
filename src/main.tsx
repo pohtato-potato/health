@@ -4,6 +4,7 @@ import '@fontsource-variable/dm-sans/opsz.css';
 import '@fontsource/dm-mono/latin-400.css';
 import '@fontsource/dm-mono/latin-500.css';
 import './styles/app.css';
+import './styles/tokens.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';

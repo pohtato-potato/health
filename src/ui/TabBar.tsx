@@ -14,6 +14,7 @@ export function TabBar({ active }: { active: string }) {
       key={t.id}
       href={`#${t.path}`}
       className={active === t.id ? 'on' : undefined}
+      data-tab={t.id}
       aria-current={active === t.id ? 'page' : undefined}
       onClick={(e) => {
         e.preventDefault();
