@@ -10,3 +10,7 @@ health-starter*.json
 # The starter file and its generator hold personal numbers and the plan. Never publish them.
 private/
 .claude/
+
+# Local working folders (plan ledger, design-tool sketches)
+.superpowers/
+.impeccable/
