@@ -6,6 +6,7 @@ import { placeFor } from '../src/domain/places';
 import { isLateTick, slotStatus, slotTime } from '../src/domain/checklist';
 import { dateChipLabel } from '../src/ui/dateLabel';
 import { sizeValues, usualsFor } from '../src/domain/usuals';
+import { daySummary, usualDay } from '../src/domain/usualDay';
 import { ringsFor, sleepMinutes, targetsOn } from '../src/domain/rings';
 import { stepStreak, trainingWeeks, weightTrend } from '../src/domain/streaks';
 import { DEFAULT_MEAL_TIMES, type Day, type Food, type FoodEntry, type Place, type Settings, type Targets } from '../src/domain/types';
@@ -267,5 +268,39 @@ describe('v2 usuals and sizes', () => {
     const thali = f('thali', { kcal: 600, protein: 20, sizes: { s: 0.7, m: 1, l: 1.4 } });
     expect(sizeValues(thali, 's')).toEqual({ kcal: 420, protein: 14 });
     expect(sizeValues(thali, 'l')).toEqual({ kcal: 840, protein: 28 });
+  });
+});
+
+describe('v2 usual day and day summary', () => {
+  const e = (date: string, meal: FoodEntry['meal'], foodId: string, kcal: number, amount = 1) => ({ id: `${date}${meal}${foodId}`, date, meal, at: 0, kind: 'food', foodId, name: foodId, amount, portion: `${amount}`, kcal, protein: kcal / 20 }) as FoodEntry;
+  // Office Tuesdays: 2026-09-01 .. 2026-10-06, plus a home Tuesday and an office Monday that must not count.
+  const tuesdays = ['2026-09-01', '2026-09-08', '2026-09-15', '2026-09-22', '2026-09-29', '2026-10-06'];
+  const days = new Map<string, Day>([...tuesdays.map((d) => [d, { date: d, place: 'office' } as Day] as const), ['2026-09-30', { date: '2026-09-30', place: 'office' } as Day], ['2026-10-13', { date: '2026-10-13', place: 'home' } as Day]]);
+  const entries = [
+    ...tuesdays.map((d, i) => e(d, 'breakfast', 'sandwich', 300, i % 2 ? 2 : 1)),
+    ...tuesdays.slice(0, 4).map((d) => e(d, 'lunch', 'thali', 700)),
+    e(tuesdays[0], 'snacks', 'samosa', 250),
+    e('2026-09-30', 'breakfast', 'poha', 250),
+    e('2026-10-13', 'breakfast', 'poha', 250),
+  ];
+
+  it('usual day draft for an office Tuesday', () => {
+    const draft = usualDay('office', 2, days, entries, '2026-10-20');
+    expect(draft.map((x) => `${x.meal}:${x.foodId}`)).toEqual(['breakfast:sandwich', 'lunch:thali']);
+    expect(draft[0].amount).toBe(1.5);
+    expect(draft[1].kcal).toBe(700);
+  });
+
+  it('no matching days gives an empty draft', () => {
+    expect(usualDay('trip', 2, days, entries, '2026-10-20')).toEqual([]);
+  });
+
+  it('daySummary totals the day against targets', () => {
+    const s = daySummary({ date: '2026-10-13', steps: 9000, ticks: { 'a:0': 1 } } as Day, [e('2026-10-13', 'lunch', 'thali', 2100)], [], { kcalMin: 2000, kcalMax: 2300, proteinG: 140, steps: 10000, waterMl: 0, sleepMin: 420, sessionsPerWeek: 4 }, 2);
+    expect(s.kcal).toBe(2100);
+    expect(s.kcalInRange).toBe(true);
+    expect(s.stepsLeft).toBe(1000);
+    expect(s.checklist).toEqual({ done: 1, total: 2 });
+    expect(s.trained).toBe(false);
   });
 });

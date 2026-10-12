@@ -284,3 +284,13 @@ export async function discardSession(id: string) {
     await db.sessions.delete(id);
   });
 }
+
+/** Moves an entry to another meal; its eaten-at time moves to that meal's time. */
+export async function moveEntry(id: string, meal: FoodEntry['meal']) {
+  await updateEntry(id, { meal });
+}
+
+/** Marks a day's food complete (or not). Works for any date. */
+export async function closeDay(date: DayKey, done: boolean) {
+  await patchDay(date, { foodDone: done });
+}

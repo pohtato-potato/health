@@ -100,7 +100,7 @@ export function DiaryPage() {
             const free = es.some((e) => e.kind === 'free');
             const drinks = es.filter((e) => e.kind === 'drink').reduce((n, e) => n + (e.drink?.count ?? 1), 0);
             return (
-              <button key={d} type="button" onClick={() => go('/food', d === today ? {} : { d })} style={{ display: 'grid', gridTemplateColumns: '44px minmax(0,1fr) auto', gap: 12, alignItems: 'start', padding: '12px 0', borderTop: '1px solid var(--divider)', textAlign: 'left', width: '100%' }}>
+              <button key={d} type="button" onClick={() => go('/close', d === today ? {} : { d })} style={{ display: 'grid', gridTemplateColumns: '44px minmax(0,1fr) auto', gap: 12, alignItems: 'start', padding: '12px 0', borderTop: '1px solid var(--divider)', textAlign: 'left', width: '100%' }}>
                 <span className="col" style={{ alignItems: 'center' }}>
                   <span className="sf" style={{ fontSize: 26, lineHeight: 1 }}>
                     {Number(d.slice(8))}

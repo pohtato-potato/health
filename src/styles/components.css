@@ -397,3 +397,43 @@
   background: var(--raised);
   border: 1px solid var(--btn-border);
 }
+
+/* Close the day: meals as drop zones. */
+.mealbox {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 14px 4px;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  transition: border-color 0.2s ease-out, background 0.2s ease-out;
+}
+.mealbox.over {
+  border-color: var(--gold-border);
+  background: var(--gold-bg);
+}
+.mealbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+}
+.grip {
+  width: 34px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  cursor: grab;
+  flex-shrink: 0;
+}
+.h3 {
+  font-family: var(--serif);
+  font-size: 20px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mealbox {
+    transition: none;
+  }
+}

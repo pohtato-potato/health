@@ -76,6 +76,7 @@ export function LogSheet() {
 
       <div className="grid3">
         {tile('food', 'var(--apricot)', 'Food', totals.entries ? `${fmtInt(totals.kcal)} kcal today` : 'Nothing yet', () => replaceSheet('addfood'))}
+        {tile('check', 'var(--gold)', 'Close the day', day?.foodDone ? 'Closed' : 'Meals, checklist, steps', () => go('/close'))}
         {tile('water', 'var(--blue)', 'Water', `${fmtLitres(totals.waterMl)} of ${fmtLitres(targets.waterMl)} L`, () => replaceSheet('water'))}
         {tile('steps', 'var(--sage)', 'Steps', day?.steps !== undefined ? `${fmtInt(day.steps)} so far` : 'Not logged', () => replaceSheet('steps'))}
         {tile('weight', 'var(--pearl)', 'Weight', day?.weightKg !== undefined ? `${fmt1(day.weightKg)} kg today` : 'In the morning log', () => replaceSheet('morning'))}

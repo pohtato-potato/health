@@ -38,6 +38,7 @@ import { WinSheet } from './sheets/Win';
 import { SaveMealSheet } from './sheets/Meals';
 import { OccasionSheet } from './sheets/Occasion';
 import { MyTracksSheet } from './screens/CustomTracks';
+import { CloseDay } from './screens/CloseDay';
 
 /** A page loaded when first opened, from its module's named export. */
 function page<K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K) {
@@ -92,6 +93,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/journey': { el: () => <Journey />, tab: 'journey' },
   '/track': { el: () => <TrackPage /> },
   '/food': { el: () => <FoodToday /> },
+  '/close': { el: () => <CloseDay /> },
   '/you': { el: () => <You /> },
   '/settings': { el: () => <SettingsScreen /> },
   '/session': { el: () => <SessionScreen /> },
