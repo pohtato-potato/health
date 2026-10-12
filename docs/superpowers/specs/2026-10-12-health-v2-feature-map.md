@@ -103,6 +103,8 @@ Every v1 feature, what the owner decided about it on the feature board (12 Oct 2
 | Sleep regularity, tonight's target | Tracks › Sleep; Close the day |
 | Night sky | You |
 | Moments, seasons | Everywhere |
+| Ring styles on theme days (shape or material changes) | Today rings and every ring view, on calendar days |
+| India route map | Walk › Route |
 | Walk tab: journal, camps, trail building, passes, souvenirs, quests, arrival cards | Walk |
 | Last.fm soundtrack, records set to songs | Session finale, records |
 | Audit pack, usage log, edit history, audit notes | Settings |

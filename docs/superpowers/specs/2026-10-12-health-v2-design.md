@@ -435,6 +435,10 @@ Celebrations are the core of the habit. Moments are awe-worthy, not skeuomorphic
   - the owner's own dates (app anniversary, birthday, first record, entering a new state)
   - festivals of wherever you are on the walk
 - **Diversity rule:** no single kind of day may hold more than a third of the year's theme days.
+- **Ring styles on theme days.** On a theme day the rings themselves change, either their shape or what they are made of. The data reading never changes: the same three rings, in the same order and metric colours, each filled to its true amount, with the unfilled part dimmed.
+  - Shape styles: rangoli scallops (Diwali), nested kites (Uttarayan), lanterns (Lunar New Year), thrown colour (Holi), five-petal blossoms (Hanami), ripples (first monsoon rain).
+  - Material styles: star trails (meteor showers), marigold beads (Día de Muertos), candy-cane stripes on the filled arc (Christmas), sparkler sparks (New Year), digits of π (Pi Day), lit candles (birthday).
+  - Every calendar entry names one ring style. A new festival reuses a style from the library or adds one; the theme also tints the scene, the + button and the "why today" card.
 - **The theme calendar** is a data file (dates, the "why today" text and palette hints), covering 2026–2028 at launch.
 
 ## 9. The Walk tab
@@ -580,6 +584,9 @@ All new fields are optional. Old backups restore, and v2 adds tables without cha
    - It sets the look, the illustration style for the walk, and the moment styles' visual treatment.
 3. **Quiet mode for moments:** unrated; out unless the owner asks for it.
 4. **Exercise guides:** the full text is written in the build. The handle weight is assumed to be 0.5 kg until it is measured.
+
+## 14a. Visual reference
+The approved mockups are the design reference for the build: the Health v2 Screens board (rounds 1–7, 12 Oct 2026), 59 screens and theme cards, including Tracks pages, Medicines, the India route map, check-in (torso framing), character, achievements, journey clock, departures, souvenirs and the ring-style theme lab. The v1 → v2 feature map is `2026-10-12-health-v2-feature-map.md`.
 
 ## 15. Testing and release
 - **Unit tests (Vitest)** for every domain rule:
