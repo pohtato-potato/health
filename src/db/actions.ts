@@ -172,6 +172,19 @@ export async function addEntry(e: Omit<FoodEntry, 'id'> & { id?: string }): Prom
   return entry;
 }
 
+/** Adds a plate of entries at once. Entries for the same day and meal share one eaten-at time. */
+export async function addEntries(batch: (Omit<FoodEntry, 'id'> & { id?: string })[]): Promise<FoodEntry[]> {
+  const times = new Map<string, number>();
+  const out: FoodEntry[] = [];
+  for (const e of batch) {
+    const k = `${e.date}|${e.meal}`;
+    if (!times.has(k)) times.set(k, e.eatenAt ?? (await plannedEatenAt(e.date, e.meal, e.at, true)));
+    out.push({ ...e, id: e.id ?? uid(), eatenAt: times.get(k)! });
+  }
+  await db.entries.bulkPut(out);
+  return out;
+}
+
 /** Updates an entry. Moving it to another meal moves its eaten-at time to that meal's time. */
 export async function updateEntry(id: string, patch: Partial<FoodEntry>) {
   const before = await db.entries.get(id);

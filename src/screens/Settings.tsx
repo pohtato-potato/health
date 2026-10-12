@@ -123,6 +123,36 @@ export function SettingsScreen() {
         </div>
       </Group>
 
+      <Group id="food-categories" title="Food categories">
+        {(settings.foodCategories ?? []).map((c) => (
+          <div key={c.id} className="li">
+            <input
+              className="field inline-name"
+              defaultValue={c.name}
+              aria-label="Category name"
+              onBlur={(e) => {
+                const v = e.target.value.trim();
+                if (!v) e.target.value = c.name;
+                else if (v !== c.name) void patchSettings((st) => ({ foodCategories: (st.foodCategories ?? []).map((x) => (x.id === c.id ? { ...x, name: v } : x)) }));
+              }}
+            />
+            <small className="t12 q">{c.foodIds.length} foods</small>
+            <button
+              type="button"
+              className="chip sm"
+              onClick={async () => {
+                if (await askConfirm({ title: `Remove the category “${c.name}”?`, body: 'The foods stay; only the tab goes.', yes: 'Remove' })) void patchSettings((st) => ({ foodCategories: (st.foodCategories ?? []).filter((x) => x.id !== c.id) }));
+              }}
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+        <div className="li" style={{ minHeight: 44 }}>
+          <small className="t12 d">Add a food to a category from the food's own page. Categories show as tabs when adding food.</small>
+        </div>
+      </Group>
+
       <Group id="walking" title="Walking and places">
         <div className="li" style={{ minHeight: 64 }}>
           <span className="s">

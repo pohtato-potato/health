@@ -1,9 +1,11 @@
 import { useMemo, useRef, useState } from 'react';
-import { addDays } from '../domain/dates';
+import { addDays, parseDay } from '../domain/dates';
 import { fmtInt } from '../domain/format';
 import { mealForTime, portionFor, recentFoodIds, stepFor, unitLabel, usageOf, valuesFor } from '../domain/foods';
 import { MEAL_NAMES, MEALS, type Food, type Meal } from '../domain/types';
-import { addEntry, deleteEntry } from '../db/actions';
+import { addEntries, addEntry, deleteEntry } from '../db/actions';
+import { placeFor } from '../domain/places';
+import { SIZE_NAMES, sizeAmount, sizeValues, usualsFor } from '../domain/usuals';
 import { useAllDays, useEntriesBetween, useFoods, useSettings, useToday } from '../db/hooks';
 import { MealRow } from './Meals';
 import { patchSettings } from '../db/actions';
@@ -15,7 +17,7 @@ import { useToast } from '../ui/Toasts';
 import { askConfirm } from '../ui/Confirm';
 import { DateChip, useLogDate } from '../ui/DateChip';
 
-type Tab = 'recent' | 'frequent' | 'mine' | 'meals';
+type Tab = 'recent' | 'frequent' | 'mine' | 'meals' | `cat:${string}`;
 
 export function AddFood() {
   const { params } = useRoute();
@@ -32,6 +34,8 @@ export function AddFood() {
   const [tab, setTab] = useState<Tab | null>(null);
   const [pickedId, setPickedId] = useState<string | null>(params.get('food'));
   const [amount, setAmount] = useState<number | null>(null);
+  // Plate mode: several foods, each with its own amount, added in one go.
+  const [plate, setPlate] = useState<Map<string, number> | null>(null);
 
   const usage = useMemo(() => usageOf(history ?? []), [history]);
   const recent = useMemo(() => recentFoodIds(history ?? [], 15), [history]);
@@ -54,12 +58,18 @@ export function AddFood() {
     list = recent.map((id) => byId.get(id)).filter((f): f is Food => !!f);
   } else if (activeTab === 'frequent') {
     list = [...live].filter((f) => usage.get(f.id)).sort((a, b) => (usage.get(b.id) ?? 0) - (usage.get(a.id) ?? 0)).slice(0, 20);
+  } else if (activeTab.startsWith('cat:')) {
+    const cat = (settings.foodCategories ?? []).find((c) => `cat:${c.id}` === activeTab);
+    list = (cat?.foodIds ?? []).map((id) => byId.get(id)).filter((f): f is Food => !!f);
   } else if (activeTab === 'mine') {
     list = [...live].sort((a, b) => homeRank(a) - homeRank(b) || a.name.localeCompare(b.name));
   } else {
     list = [];
   }
 
+  const dayMap = new Map(days.map((d) => [d.date, d]));
+  const place = placeFor(dayMap.get(date), settings);
+  const usuals = usualsFor(meal, place.id, parseDay(date).getDay(), history, live, dayMap, date);
   const picked = pickedId ? byId.get(pickedId) : undefined;
   const amt = picked ? amount ?? picked.defaultAmount : 0;
 
@@ -69,6 +79,34 @@ export function AddFood() {
     toast({ text: `${food.name} · ${fmtInt(v.kcal)} kcal · ${Math.round(v.protein)} g`, sub: `Added to ${MEAL_NAMES[meal].toLowerCase()}`, action: { label: 'Undo', run: () => deleteEntry(e.id) } });
     setPickedId(null);
     setAmount(null);
+  };
+
+  /** In plate mode a tap puts the food on the plate; otherwise it is logged at its usual amount. */
+  const tapAdd = (food: Food) => {
+    if (!plate) return void log(food, food.defaultAmount);
+    const next = new Map(plate);
+    next.set(food.id, (next.get(food.id) ?? 0) + food.defaultAmount);
+    setPlate(next);
+  };
+  const plateItems = plate ? [...plate].map(([id, a]) => ({ food: byId.get(id)!, amount: a })).filter((x) => x.food) : [];
+  const plateTotal = plateItems.reduce(
+    (t, x) => {
+      const v = valuesFor(x.food, x.amount);
+      return { kcal: t.kcal + v.kcal, protein: t.protein + v.protein };
+    },
+    { kcal: 0, protein: 0 },
+  );
+  const setPlateAmount = (id: string, v: number) => {
+    const n = new Map(plate);
+    if (v <= 0) n.delete(id);
+    else n.set(id, v);
+    setPlate(n);
+  };
+  const logPlate = async () => {
+    const at = Date.now();
+    const added = await addEntries(plateItems.map(({ food, amount: a }) => ({ date, meal, at, kind: 'food' as const, foodId: food.id, name: food.name, amount: a, portion: portionFor(food, a), ...valuesFor(food, a) })));
+    toast({ text: `${added.length} food${added.length === 1 ? '' : 's'} · ${fmtInt(plateTotal.kcal)} kcal · ${Math.round(plateTotal.protein)} g`, sub: `Added to ${MEAL_NAMES[meal].toLowerCase()}`, action: { label: 'Undo', run: () => added.forEach((e) => void deleteEntry(e.id)) } });
+    setPlate(null);
   };
 
   return (
@@ -84,6 +122,50 @@ export function AddFood() {
         </div>
       }
     >
+      {!query && usuals.length > 0 && (
+        <div className="col gap8">
+          <div className="lbl">
+            Usual for {MEAL_NAMES[meal].toLowerCase()} at {place.name}
+          </div>
+          <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
+            {usuals.map((f) => (
+              <button key={f.id} type="button" className="chip sm" aria-label={`${plate ? 'Put on the plate' : 'Add'}: ${f.name}, ${portionFor(f, f.defaultAmount)}`} onClick={() => tapAdd(f)}>
+                + {f.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {plate && (
+        <div className="plate">
+          <div className="row base">
+            <div className="lbl">On the plate</div>
+            <div className="t14 tn">
+              <span className="apri">{fmtInt(plateTotal.kcal)}</span> · <span className="lav">{Math.round(plateTotal.protein)} g</span>
+            </div>
+          </div>
+          {plateItems.length === 0 && <div className="t13 q">Tap foods below to put them on the plate.</div>}
+          {plateItems.map(({ food, amount: a }) => (
+            <div key={food.id} className="col gap4">
+              <div className="row base">
+                <span className="t15">{food.name}</span>
+                <span className="t12 q">{portionFor(food, a)}</span>
+              </div>
+              <Stepper value={a} onChange={(v) => setPlateAmount(food.id, v)} step={stepFor(food)} min={0} max={5000} decimals={food.unit === 'serving' ? 1 : 0} unit={unitLabel(food, a)} size={22} label={`Amount of ${food.name}`} />
+            </div>
+          ))}
+          <div className="row" style={{ gap: 10 }}>
+            <button type="button" className="btn ghost sm" onClick={() => setPlate(null)}>
+              Cancel
+            </button>
+            <button type="button" className="btn grow" disabled={!plateItems.length} onClick={logPlate}>
+              Add plate to {MEAL_NAMES[meal].toLowerCase()}
+            </button>
+          </div>
+        </div>
+      )}
+
       <label className="search">
         <span className="sr">Search your foods</span>
         <Icon name="search" size={18} stroke={1.8} color="var(--dim)" />
@@ -101,6 +183,20 @@ export function AddFood() {
           value={activeTab}
           onChange={setTab}
         />
+      )}
+      {!query && (
+        <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
+          {(settings.foodCategories ?? []).map((c) => (
+            <button key={c.id} type="button" className={`chip sm${activeTab === `cat:${c.id}` ? ' on' : ''}`} aria-pressed={activeTab === `cat:${c.id}`} onClick={() => setTab(`cat:${c.id}`)}>
+              {c.name}
+            </button>
+          ))}
+          {!plate && (
+            <button type="button" className="chip sm" onClick={() => setPlate(new Map())}>
+              Plate: add several
+            </button>
+          )}
+        </div>
       )}
 
       {picked && (
@@ -126,7 +222,19 @@ export function AddFood() {
             size={30}
             label={`Amount of ${picked.name}`}
           />
-          {picked.presets && picked.presets.length > 0 && (
+          {picked.sizes && (
+            <div className="grid3" style={{ gap: 8 }} role="radiogroup" aria-label="Size">
+              {(['s', 'm', 'l'] as const).map((z) => {
+                const a = sizeAmount(picked, z);
+                return (
+                  <button key={z} type="button" role="radio" aria-checked={amt === a} className={`chip sm${amt === a ? ' on' : ''}`} onClick={() => setAmount(a)}>
+                    {SIZE_NAMES[z]} · {fmtInt(sizeValues(picked, z).kcal)}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {!picked.sizes && picked.presets && picked.presets.length > 0 && (
             <div className="grid3" style={{ gap: 8 }}>
               {picked.presets.slice(0, 3).map((p) => (
                 <button key={p} type="button" className={`chip sm${amt === p ? ' on' : ''}`} style={amt === p ? { background: 'transparent', color: 'var(--text)', borderColor: 'var(--text)', fontWeight: 400 } : { color: 'var(--quiet)' }} onClick={() => setAmount(p)}>
@@ -186,7 +294,7 @@ export function AddFood() {
                   {fmtInt(v.kcal)}
                   <div className="t12 lav">{Math.round(v.protein)} g</div>
                 </div>
-                <button type="button" className="round sm" aria-label={`Add ${f.name}`} onClick={() => log(f, f.defaultAmount)}>
+                <button type="button" className="round sm" aria-label={`${plate ? 'Put on the plate' : 'Add'}: ${f.name}`} onClick={() => tapAdd(f)}>
                   +
                 </button>
               </div>

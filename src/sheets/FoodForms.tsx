@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { fmtInt } from '../domain/format';
 import { mealForTime, portionFor, stepFor, unitLabel, valuesFor } from '../domain/foods';
 import { impossibleDensity, portionWarning, similarFood } from '../domain/foodChecks';
-import { MEAL_NAMES, MEALS, type Food, type FoodEntry, type FoodUnit, type Meal } from '../domain/types';
-import { addEntry, archiveFood, deleteEntry, saveFood, updateEntry } from '../db/actions';
+import { MEAL_NAMES, MEALS, type Food, type FoodEntry, type FoodUnit, type Meal, type Settings } from '../domain/types';
+import { addEntry, archiveFood, deleteEntry, patchSettings, saveFood, updateEntry } from '../db/actions';
+import { uid } from '../db/db';
 import { db } from '../db/db';
 import { useFoods, useSettings } from '../db/hooks';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { closeSheet, replaceSheet, useRoute } from '../router';
-import { DecField, Seg, Stepper } from '../ui/controls';
+import { DecField, Seg, Stepper, SwitchRow } from '../ui/controls';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
 import { DateChip, useLogDate } from '../ui/DateChip';
@@ -21,10 +22,13 @@ export function FoodForm() {
   const id = params.get('id');
   if (!foods || !settings) return <Sheet title="Create a food">{null}</Sheet>;
   const existing = id ? foods.find((f) => f.id === id) : undefined;
-  return <FoodFormInner key={id ?? 'new'} existing={existing} initialName={params.get('name') ?? ''} homes={settings.homes} meal={params.get('meal')} />;
+  return <FoodFormInner key={id ?? 'new'} existing={existing} initialName={params.get('name') ?? ''} homes={settings.homes} meal={params.get('meal')} categories={settings.foodCategories ?? []} />;
 }
 
-function FoodFormInner({ existing, initialName, homes, meal }: { existing?: Food; initialName: string; homes: { id: string; name: string }[]; meal: string | null }) {
+type Category = NonNullable<Settings['foodCategories']>[number];
+const DEFAULT_SIZES = { s: 0.7, m: 1, l: 1.4 };
+
+function FoodFormInner({ existing, initialName, homes, meal, categories }: { existing?: Food; initialName: string; homes: { id: string; name: string }[]; meal: string | null; categories: Category[] }) {
   const toast = useToast();
   const [name, setName] = useState(existing?.name ?? initialName);
   const [unit, setUnit] = useState<FoodUnit>(existing?.unit ?? 'g');
@@ -35,6 +39,9 @@ function FoodFormInner({ existing, initialName, homes, meal }: { existing?: Food
   const [serving, setServing] = useState(existing?.servingDesc ?? '');
   const [note, setNote] = useState(existing?.note ?? '');
   const [home, setHome] = useState<string | undefined>(existing?.home);
+  const [sized, setSized] = useState(!!existing?.sizes);
+  const [cats, setCats] = useState<Set<string>>(() => new Set(categories.filter((c) => existing && c.foodIds.includes(existing.id)).map((c) => c.id)));
+  const [newCat, setNewCat] = useState('');
 
   const per = unit === 'g' || unit === 'ml' ? 100 : 1;
   const perLabel = unit === 'g' ? 'per 100 g' : unit === 'ml' ? 'per 100 ml' : unit === 'piece' ? `per ${unitName || 'piece'}` : 'per serving';
@@ -71,6 +78,15 @@ function FoodFormInner({ existing, initialName, homes, meal }: { existing?: Food
       note: note.trim() || undefined,
       home,
       presets: unit === 'g' || unit === 'ml' ? Array.from(new Set([100, usual!, usual! * 2])).sort((a, b) => a - b).slice(0, 3) : existing?.presets,
+      sizes: sized ? existing?.sizes ?? DEFAULT_SIZES : undefined,
+    });
+    const fresh = newCat.trim();
+    await patchSettings((st) => {
+      const all = [...(st.foodCategories ?? [])];
+      if (fresh) all.push({ id: uid(), name: fresh, foodIds: [] });
+      const wanted = new Set(cats);
+      if (fresh) wanted.add(all[all.length - 1].id);
+      return { foodCategories: all.map((c) => ({ ...c, foodIds: wanted.has(c.id) ? [...new Set([...c.foodIds, food.id])] : c.foodIds.filter((x) => x !== food.id) })) };
     });
     toast({ text: existing ? `${food.name} updated` : `${food.name} saved to your foods` });
     if (existing) closeSheet();
@@ -178,6 +194,31 @@ function FoodFormInner({ existing, initialName, homes, meal }: { existing?: Food
           </button>
         </div>
       )}
+
+      <SwitchRow title="Comes in sizes" sub="Small, regular and large, for outside dishes" checked={sized} onChange={setSized} />
+
+      <div className="flabel">
+        <span className="lbl">Categories</span>
+        <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
+          {categories.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              className={`chip sm${cats.has(c.id) ? ' on' : ''}`}
+              aria-pressed={cats.has(c.id)}
+              onClick={() => {
+                const n = new Set(cats);
+                if (n.has(c.id)) n.delete(c.id);
+                else n.add(c.id);
+                setCats(n);
+              }}
+            >
+              {c.name}
+            </button>
+          ))}
+          <input className="field sm" style={{ flex: '1 1 140px' }} value={newCat} onChange={(e) => setNewCat(e.target.value)} placeholder="New category" aria-label="New category" spellCheck autoCapitalize="sentences" />
+        </div>
+      </div>
 
       {ok && (
         <div className="t13 q">

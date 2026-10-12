@@ -5,6 +5,7 @@ import { eatenAtFor, entryTime, mealTimesFor, portionFor, valuesFor } from '../s
 import { placeFor } from '../src/domain/places';
 import { isLateTick, slotStatus, slotTime } from '../src/domain/checklist';
 import { dateChipLabel } from '../src/ui/dateLabel';
+import { sizeValues, usualsFor } from '../src/domain/usuals';
 import { ringsFor, sleepMinutes, targetsOn } from '../src/domain/rings';
 import { stepStreak, trainingWeeks, weightTrend } from '../src/domain/streaks';
 import { DEFAULT_MEAL_TIMES, type Day, type Food, type FoodEntry, type Place, type Settings, type Targets } from '../src/domain/types';
@@ -228,5 +229,43 @@ describe('v2 date chip', () => {
     expect(dateChipLabel('2026-10-13', '2026-10-13')).toBe('Today');
     expect(dateChipLabel('2026-10-12', '2026-10-13')).toBe('Yesterday');
     expect(dateChipLabel('2026-10-10', '2026-10-13')).toBe('Sat 10 Oct');
+  });
+});
+
+describe('v2 usuals and sizes', () => {
+  const f = (id: string, extra: Partial<Food> = {}) => ({ id, name: id, unit: 'serving', per: 1, kcal: 300, protein: 12, defaultAmount: 1, createdAt: 0, ...extra }) as Food;
+  const foods = [f('poha'), f('upma'), f('omelette'), f('sandwich'), f('old', { archived: true })];
+  const e = (foodId: string, date: string, meal: FoodEntry['meal'] = 'breakfast') => ({ id: foodId + date + meal, date, meal, at: 0, kind: 'food', foodId, name: foodId, portion: '1', kcal: 300, protein: 12 }) as FoodEntry;
+  const days = new Map<string, Day>([
+    ['2026-10-05', { date: '2026-10-05', place: 'office' } as Day],
+    ['2026-10-06', { date: '2026-10-06', place: 'office' } as Day],
+    ['2026-10-07', { date: '2026-10-07', place: 'home' } as Day],
+    ['2026-10-08', { date: '2026-10-08', place: 'home' } as Day],
+    ['2026-10-09', { date: '2026-10-09', place: 'home' } as Day],
+  ]);
+
+  it('usuals prefer same place and meal', () => {
+    const entries = [
+      e('sandwich', '2026-10-05'), e('sandwich', '2026-10-06'),
+      e('poha', '2026-10-07'), e('poha', '2026-10-08'), e('upma', '2026-10-09'),
+      e('omelette', '2026-10-07', 'dinner'), e('omelette', '2026-10-08', 'dinner'), e('omelette', '2026-10-09', 'dinner'),
+      e('old', '2026-10-09'),
+    ];
+    const ids = (place: string) => usualsFor('breakfast', place, 4, entries, foods, days, '2026-10-13').map((x) => x.id);
+    expect(ids('home')[0]).toBe('poha');
+    expect(ids('home')).toContain('upma');
+    expect(ids('home')).not.toContain('old');
+    expect(ids('office')[0]).toBe('sandwich');
+    expect(ids('home').indexOf('sandwich')).toBeGreaterThan(ids('home').indexOf('upma'));
+  });
+
+  it('usuals ignore entries older than 8 weeks', () => {
+    expect(usualsFor('breakfast', 'home', 4, [e('poha', '2026-08-01')], foods, days, '2026-10-13')).toEqual([]);
+  });
+
+  it('sizes scale kcal and protein', () => {
+    const thali = f('thali', { kcal: 600, protein: 20, sizes: { s: 0.7, m: 1, l: 1.4 } });
+    expect(sizeValues(thali, 's')).toEqual({ kcal: 420, protein: 14 });
+    expect(sizeValues(thali, 'l')).toEqual({ kcal: 840, protein: 28 });
   });
 });

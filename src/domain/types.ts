@@ -274,6 +274,8 @@ export interface Food {
   step?: number;
   /** A home id, when the food is mostly eaten there. */
   home?: string;
+  /** Outside dishes: small, regular and large as multiples of the usual amount. */
+  sizes?: { s: number; m: number; l: number };
   archived?: boolean;
   createdAt: number;
 }

@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { addEntry, patchSettings, setMissed, setTick, updateEntry } from '../src/db/actions';
+import { addEntries, addEntry, patchSettings, setMissed, setTick, updateEntry } from '../src/db/actions';
 import { db, HealthDB, setDatabase } from '../src/db/db';
 import type { Place } from '../src/domain/types';
 
@@ -58,5 +58,17 @@ describe('log any day', () => {
     const e = await addEntry({ date: '2026-10-10', meal: 'breakfast', at: at(13, 22, 15), kind: 'food', name: 'Chai', portion: '1 cup', kcal: 90, protein: 3 });
     expect(e.date).toBe('2026-10-10');
     expect(e.eatenAt).toBe(new Date(2026, 9, 10, 8, 0).getTime());
+  });
+});
+
+describe('plate mode', () => {
+  it('plate adds all entries with one eatenAt per meal', async () => {
+    const mk = (name: string, meal: 'lunch' | 'dinner') => ({ date: '2026-10-13', meal, at: at(13, 23, 30), kind: 'food' as const, name, portion: '1', kcal: 100, protein: 5 });
+    const added = await addEntries([mk('Roti', 'lunch'), mk('Dal', 'lunch'), mk('Rice', 'dinner')]);
+    expect(added).toHaveLength(3);
+    expect(added[0].eatenAt).toBe(added[1].eatenAt);
+    expect(added[0].eatenAt).toBe(at(13, 15, 0));
+    expect(added[2].eatenAt).toBe(at(13, 21, 30));
+    expect(await db.entries.count()).toBe(3);
   });
 });
