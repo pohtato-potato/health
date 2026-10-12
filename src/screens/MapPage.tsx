@@ -4,7 +4,7 @@ import { CHAPTERS, CITIES, INDIA_OUTLINE, PLACE_COUNT, QUAD, arrivals, kmFromSte
 import { hasReward } from '../domain/rewards';
 import { useAllDays, useSettings, useToday } from '../db/hooks';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { ACHIEVEMENTS, achievementById } from '../domain/achievements';
+import { ACTIVE_ACHIEVEMENTS as ACHIEVEMENTS, achievementById } from '../domain/achievements';
 import { db } from '../db/db';
 import { back, go } from '../router';
 import { TIER_COLOR } from '../ui/Moments';

@@ -887,3 +887,12 @@ export function fmtProgress(p: [number, number]): string {
   if (goal >= 1000) return `${fmtInt(Math.min(v, goal))} of ${fmtInt(goal)}`;
   return `${Math.round(Math.min(v, goal) * 10) / 10} of ${goal}`;
 }
+
+/**
+ * Retired in v2: the morning log is no longer timed, and identical step counts
+ * are usually a copied number, not a coincidence. Kept so old unlocks still resolve.
+ */
+export const RETIRED_ACHIEVEMENTS: string[] = ['World record', 'Glitch in the Matrix', 'Speedrunner'].map(slug);
+
+/** The achievements that count and show. */
+export const ACTIVE_ACHIEVEMENTS: AchDef[] = ACHIEVEMENTS.filter((a) => !RETIRED_ACHIEVEMENTS.includes(a.id));

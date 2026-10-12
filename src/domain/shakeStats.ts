@@ -87,7 +87,6 @@ export function statDeck(d: {
     const mins = nights.reduce((n, x) => n + sleepMinutes(x.sleep!.asleep, x.sleep!.woke), 0);
     out.push({ text: `${fmtInt(Math.round(mins / 60))} hours of sleep on record.`, sub: `${fmt1(mins / 1440)} whole days spent asleep, officially.` });
   }
-  if (d.settings.morningBest) out.push({ text: `Fastest morning log: ${d.settings.morningBest.toFixed(1)} s.`, sub: 'Faster than most people find their other slipper.' });
   const trend = weightTrend(d.days.filter((x) => x.weightKg !== undefined).map((x) => ({ date: x.date, kg: x.weightKg! })));
   if (trend.length >= 10) {
     const diff = trend[trend.length - 1].trend - trend[0].trend;

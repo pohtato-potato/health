@@ -32,16 +32,12 @@ describe('database', () => {
     expect((await db.days.get('2026-09-27'))?.waterMl).toBe(0);
   });
 
-  it('confirms yesterday’s steps and times the morning log', async () => {
+  it('confirms yesterday’s steps from the morning log', async () => {
     await setSteps('2026-09-27', 11000);
-    const r1 = await saveMorningLog('2026-09-28', { weightKg: 80.2, yesterdaySteps: 12500, seconds: 14.2 }, '2026-09-27');
-    expect(r1.newBest).toBe(false);
+    await saveMorningLog('2026-09-28', { weightKg: 80.2, yesterdaySteps: 12500 }, '2026-09-27');
     const y = await db.days.get('2026-09-27');
     expect(y?.steps).toBe(12500);
     expect(y?.stepsFinal).toBe(true);
-    expect((await getSettings()).morningBest).toBe(14.2);
-    const r2 = await saveMorningLog('2026-09-29', { seconds: 11.8 }, '2026-09-28');
-    expect(r2.newBest).toBe(true);
   });
 
   it('round-trips a backup', async () => {

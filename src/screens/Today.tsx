@@ -286,11 +286,6 @@ export function Today() {
             {day?.morning ? 'Done' : 'Not yet'}
           </div>
           <div className="t12 q">{day?.morning ? fmtTime(day.morning.at) : 'Weight, sleep, steps'}</div>
-          {day?.morning?.seconds !== undefined && (
-            <div className={`t12 ${settings.morningBest === day.morning.seconds ? 'gold' : 'q'}`}>
-              {day.morning.seconds.toFixed(1)} s{settings.morningBest === day.morning.seconds ? ' · best' : ''}
-            </div>
-          )}
         </button>
       </div>
 

@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef } from 'react';
 import { buildStats, type AchInput, type AchStats } from '../domain/achStats';
-import { ACHIEVEMENTS, CATEGORIES, text, type AchDef } from '../domain/achievements';
+import { ACTIVE_ACHIEVEMENTS as ACHIEVEMENTS, CATEGORIES, text, type AchDef } from '../domain/achievements';
 import { db } from '../db/db';
 import { useToday } from '../db/hooks';
 import { go } from '../router';

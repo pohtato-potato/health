@@ -98,40 +98,37 @@ export interface MorningInput {
   weightKg?: number;
   sleep?: Sleep;
   yesterdaySteps?: number;
-  home?: string;
+  /** Where the day starts. Also written to the v1 `home` so older readers follow. */
+  place?: string;
   answers?: Record<string, boolean>;
-  seconds?: number;
+  /** Readiness: energy 1–5, stomach settled, soreness by muscle. */
+  energy?: number;
+  stomach?: boolean;
+  soreness?: Day['soreness'];
 }
 
-export async function saveMorningLog(date: DayKey, input: MorningInput, yesterday: DayKey): Promise<{ newBest: boolean }> {
-  let newBest = false;
-  await db.transaction('rw', db.days, db.settings, async () => {
+/** Saves the morning log. Only what was given is written; nothing is carried over silently. */
+export async function saveMorningLog(date: DayKey, input: MorningInput, yesterday: DayKey): Promise<void> {
+  await db.transaction('rw', db.days, async () => {
     const now = Date.now();
     const cur = (await db.days.get(date)) ?? { date };
-    const morning = { at: cur.morning?.at ?? now, seconds: cur.morning?.seconds ?? input.seconds };
     await db.days.put({
       ...cur,
       date,
       ...(input.weightKg !== undefined ? { weightKg: input.weightKg, weighedAt: now } : {}),
       ...(input.sleep ? { sleep: input.sleep } : {}),
-      ...(input.home ? { home: input.home } : {}),
+      ...(input.place ? { place: input.place, home: input.place } : {}),
+      ...(input.energy !== undefined ? { energy: input.energy } : {}),
+      ...(input.stomach !== undefined ? { stomach: input.stomach } : {}),
+      ...(input.soreness ? { soreness: input.soreness } : {}),
       answers: { ...cur.answers, ...input.answers },
-      morning,
+      morning: { at: cur.morning?.at ?? now },
     });
     if (input.yesterdaySteps !== undefined) {
       const y = (await db.days.get(yesterday)) ?? { date: yesterday };
       await db.days.put({ ...y, date: yesterday, steps: input.yesterdaySteps, stepsFinal: true, stepsAt: now });
     }
-    // Only a first save of the day can set a speed record.
-    if (!cur.morning && input.seconds !== undefined) {
-      const s = await getSettings();
-      if (s.morningBest === undefined || input.seconds < s.morningBest) {
-        newBest = s.morningBest !== undefined;
-        await db.settings.put({ ...s, morningBest: input.seconds });
-      }
-    }
   });
-  return { newBest };
 }
 
 export async function setTick(date: DayKey, key: string, on: boolean) {

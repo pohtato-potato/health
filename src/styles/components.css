@@ -329,3 +329,8 @@
   width: 100%;
   text-align: left;
 }
+
+/* Rows of chips that wrap onto a second line. */
+.row.wrap {
+  flex-wrap: wrap;
+}

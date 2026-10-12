@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { buildStats } from '../domain/achStats';
-import { ACHIEVEMENTS, CATEGORIES, fmtProgress, text, type AchDef } from '../domain/achievements';
+import { ACTIVE_ACHIEVEMENTS as ACHIEVEMENTS, CATEGORIES, fmtProgress, text, type AchDef } from '../domain/achievements';
 import { fmtDayMonth } from '../domain/format';
 import { useToday } from '../db/hooks';
 import { back } from '../router';
