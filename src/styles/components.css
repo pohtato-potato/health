@@ -350,3 +350,20 @@
   background: #2a1719;
   border-color: #6b3a3d;
 }
+
+/* A name edited in place: reads as text until focused. */
+.field.inline-name {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border-color: transparent;
+  font-size: 17px;
+  padding-left: 0;
+}
+.field.inline-name:focus {
+  border-color: var(--btn-border);
+  padding-left: 12px;
+}
+.gap4 {
+  gap: 4px;
+}

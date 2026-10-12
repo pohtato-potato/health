@@ -3,6 +3,7 @@ import { addDays, dayRange, weekStart } from '../src/domain/dates';
 import { fmtInt } from '../src/domain/format';
 import { eatenAtFor, entryTime, mealTimesFor, portionFor, valuesFor } from '../src/domain/foods';
 import { placeFor } from '../src/domain/places';
+import { isLateTick, slotStatus, slotTime } from '../src/domain/checklist';
 import { ringsFor, sleepMinutes, targetsOn } from '../src/domain/rings';
 import { stepStreak, trainingWeeks, weightTrend } from '../src/domain/streaks';
 import { DEFAULT_MEAL_TIMES, type Day, type Food, type FoodEntry, type Place, type Settings, type Targets } from '../src/domain/types';
@@ -183,5 +184,40 @@ describe('v2 meal times and eaten-at', () => {
   it('entryTime prefers eatenAt', () => {
     expect(entryTime({ at: 5, eatenAt: 3 } as FoodEntry)).toBe(3);
     expect(entryTime({ at: 5 } as FoodEntry)).toBe(5);
+  });
+});
+
+describe('v2 checklist times and missed', () => {
+  const places: Place[] = [
+    { id: 'p-home', name: 'Home', kind: 'home', meals: { breakfast: 600, lunch: 900, snacks: 1140, dinner: 1290 }, eased: false, foodsFirst: 'home' },
+    { id: 'p-office', name: 'Office', kind: 'office', meals: { breakfast: 480, lunch: 780, snacks: 1020, dinner: 1230 }, eased: true, foodsFirst: 'outside' },
+  ];
+  const settings = { places } as unknown as Settings;
+  const at = (d: number, h: number, m: number) => new Date(2026, 9, d, h, m).getTime();
+
+  it("slotTime parses '9 pm', '21:00' and '9:30 am'", () => {
+    expect(slotTime('9 pm', settings, undefined)).toBe(1260);
+    expect(slotTime('21:00', settings, undefined)).toBe(1260);
+    expect(slotTime('9:30 am', settings, undefined)).toBe(570);
+    expect(slotTime('12 am', settings, undefined)).toBe(0);
+    expect(slotTime('Night', settings, undefined)).toBe(1380);
+    expect(slotTime('Daily', settings, undefined)).toBe(720);
+  });
+
+  it('slotTime maps Morning to the office breakfast on office days', () => {
+    expect(slotTime('Morning', settings, { date: '2026-10-13', place: 'p-office' } as Day)).toBe(480);
+    expect(slotTime('Morning', settings, { date: '2026-10-13' } as Day)).toBe(600);
+  });
+
+  it('isLateTick: more than 2 h after the slot, or any time on a later date', () => {
+    expect(isLateTick('2026-10-13', 1260, at(13, 23, 41))).toBe(true);
+    expect(isLateTick('2026-10-13', 1260, at(13, 22, 30))).toBe(false);
+    expect(isLateTick('2026-10-13', 1260, at(14, 0, 10))).toBe(true);
+  });
+
+  it('slotStatus', () => {
+    expect(slotStatus(undefined, 'a:0')).toEqual({ kind: 'not-logged' });
+    expect(slotStatus({ date: 'x', ticks: { 'a:0': 5 } } as Day, 'a:0')).toEqual({ kind: 'taken', at: 5 });
+    expect(slotStatus({ date: 'x', missed: { 'a:0': true } } as Day, 'a:0')).toEqual({ kind: 'missed' });
   });
 });

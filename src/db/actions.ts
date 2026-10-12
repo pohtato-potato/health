@@ -131,12 +131,29 @@ export async function saveMorningLog(date: DayKey, input: MorningInput, yesterda
   });
 }
 
-export async function setTick(date: DayKey, key: string, on: boolean) {
+/** Ticks or unticks a checklist slot. A tick clears "missed"; `at` records when it was really taken. */
+export async function setTick(date: DayKey, key: string, on: boolean, at = Date.now()) {
   await patchDay(date, (d) => {
     const ticks = { ...d.ticks };
-    if (on) ticks[key] = Date.now();
-    else delete ticks[key];
-    return { ticks };
+    const missed = { ...d.missed };
+    if (on) {
+      ticks[key] = at;
+      delete missed[key];
+    } else delete ticks[key];
+    return { ticks, missed };
+  });
+}
+
+/** Marks a slot as missed, which also clears its tick. */
+export async function setMissed(date: DayKey, key: string, on: boolean) {
+  await patchDay(date, (d) => {
+    const ticks = { ...d.ticks };
+    const missed: Record<string, true> = { ...d.missed };
+    if (on) {
+      missed[key] = true;
+      delete ticks[key];
+    } else delete missed[key];
+    return { ticks, missed };
   });
 }
 

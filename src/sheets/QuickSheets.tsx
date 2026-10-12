@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
-import { addDays, dayKey, weekStart } from '../domain/dates';
+import { addDays, atOn, dayKey, weekStart } from '../domain/dates';
 import { fmtDayMonth, fmtInt, fmtLitres, fmtTime, weekdayName } from '../domain/format';
 import { DRINKS, FREE_MEAL_SIZES, mealForTime } from '../domain/foods';
-import type { Meal } from '../domain/types';
-import { addEntry, addWater, bump, deleteEntry, deleteMeasurement, patchDay, saveMeasurement, setSteps, setTick } from '../db/actions';
+import type { ChecklistItem, Meal } from '../domain/types';
+import { addEntry, addWater, bump, deleteEntry, deleteMeasurement, patchDay, patchSettings, saveMeasurement, setMissed, setSteps, setTick } from '../db/actions';
+import { uid } from '../db/db';
+import { isLateTick, slotStatus, slotTime } from '../domain/checklist';
+import { Check } from '../ui/Check';
 import { stepsGoal } from '../domain/rings';
 import { useAllDays, useEntriesBetween, useMeasurements, useSettings, useToday } from '../db/hooks';
-import { closeSheet, go, useRoute } from '../router';
-import { DecField, IntField } from '../ui/controls';
+import { closeSheet, useRoute } from '../router';
+import { DecField, IntField, TimeTile } from '../ui/controls';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
-import { checklistSlots, freeMealSaved, targetsFor } from '../state/derived';
+import { freeMealSaved, targetsFor } from '../state/derived';
 import { prefOn } from '../domain/types';
 import { MealPicker } from './FoodForms';
 
@@ -122,36 +125,97 @@ export function ChecklistSheet() {
   const settings = useSettings();
   const today = useToday();
   const days = useAllDays();
+  const { params } = useRoute();
+  const date = params.get('d') ?? today;
+  const [late, setLate] = useState<string | null>(null);
+  const [other, setOther] = useState<number | undefined>();
   if (!settings || !days) return <Sheet title="Checklist">{null}</Sheet>;
-  const day = days.find((d) => d.date === today);
-  const slots = checklistSlots(settings);
+  const day = days.find((d) => d.date === date);
+  const items = settings.checklist.filter((i) => i.active);
+
+  const saveItems = (next: ChecklistItem[]) => patchSettings((s) => ({ checklist: s.checklist.map((i) => next.find((n) => n.id === i.id) ?? i).concat(next.filter((n) => !s.checklist.some((i) => i.id === n.id))) }));
+  const tick = (key: string, slot: string, on: boolean) => {
+    if (on && isLateTick(date, slotTime(slot, settings, day), Date.now())) {
+      setLate(key);
+      setOther(undefined);
+      return;
+    }
+    setLate(null);
+    void setTick(date, key, on);
+  };
+
   return (
-    <Sheet title="Checklist" sub="Today">
-      {slots.length === 0 ? (
-        <div className="t14 q lh">Nothing on your checklist yet. Add supplements or medicines in Settings.</div>
-      ) : (
-        <div className="list">
-          {slots.map((s) => {
-            const t = day?.ticks?.[s.key];
+    <Sheet title="Checklist" sub={date === today ? 'Today' : fmtDayMonth(date)}>
+      {items.length === 0 && <div className="t14 q lh">Nothing on your checklist yet. Add a supplement or medicine below.</div>}
+      {items.map((item) => (
+        <div key={item.id} className="col gap4">
+          <div className="row" style={{ gap: 8 }}>
+            <input
+              className="field inline-name"
+              defaultValue={item.name}
+              aria-label="Item name"
+              spellCheck
+              autoCapitalize="sentences"
+              onBlur={(e) => {
+                const v = e.target.value.trim();
+                if (!v) e.target.value = item.name;
+                else if (v !== item.name) void saveItems([{ ...item, name: v }]);
+              }}
+            />
+            <button type="button" className="chip sm" aria-label={`Add a time for ${item.name}`} onClick={() => saveItems([{ ...item, slots: [...item.slots, '9 pm'] }])}>
+              + time
+            </button>
+            {item.slots.length > 1 && (
+              <button type="button" className="chip sm" aria-label={`Remove the last time for ${item.name}`} onClick={() => saveItems([{ ...item, slots: item.slots.slice(0, -1) }])}>
+                − time
+              </button>
+            )}
+          </div>
+          {(item.slots.length ? item.slots : ['Daily']).map((slot, n) => {
+            const key = `${item.id}:${n}`;
+            const st = slotStatus(day, key);
+            const planned = slotTime(slot, settings, day);
             return (
-              <label key={s.key} className="li" style={{ minHeight: 56 }}>
-                <span className="s">
-                  <span>{s.name}</span>
-                  <small>
-                    {s.slot}
-                    {t ? ` · done ${fmtTime(t)}` : ''}
-                  </small>
-                </span>
-                <input type="checkbox" className="cb" checked={!!t} onChange={(e) => setTick(today, s.key, e.target.checked)} />
-              </label>
+              <div key={key} className="col">
+                <div className="row" style={{ gap: 8 }}>
+                  <Check
+                    checked={st.kind === 'taken'}
+                    onChange={(on) => tick(key, slot, on)}
+                    label={slot}
+                    detail={st.kind === 'taken' ? `Taken ${fmtTime(st.at)}` : st.kind === 'missed' ? 'Missed' : 'Not logged'}
+                  />
+                  <button type="button" className={`chip sm${st.kind === 'missed' ? ' on' : ''}`} aria-pressed={st.kind === 'missed'} onClick={() => void setMissed(date, key, st.kind !== 'missed')}>
+                    Missed
+                  </button>
+                </div>
+                {late === key && (
+                  <div className="notice" role="group" aria-label="When did you take it?">
+                    <div className="t14">When did you take it?</div>
+                    <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start', marginTop: 8 }}>
+                      <button type="button" className="chip sm" onClick={() => { setLate(null); void setTick(date, key, true, atOn(date, planned)); }}>
+                        At {fmtTime(atOn(date, planned))}
+                      </button>
+                      <button type="button" className="chip sm" onClick={() => { setLate(null); void setTick(date, key, true); }}>
+                        Just now
+                      </button>
+                    </div>
+                    <div className="row" style={{ gap: 8, marginTop: 8, width: '100%' }}>
+                      <TimeTile label="Other time" minutes={other} onChange={setOther} />
+                      <button type="button" className="btn" disabled={other === undefined} onClick={() => { setLate(null); void setTick(date, key, true, atOn(date, other!)); }}>
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
-      )}
-      <div className="t12 d lh">No streaks or confetti here. It's a plain record you can show your doctor.</div>
-      <button type="button" className="link" style={{ alignSelf: 'center' }} onClick={() => go('/settings', { at: 'checklist' })}>
-        Edit the checklist
+      ))}
+      <button type="button" className="link" style={{ alignSelf: 'flex-start' }} onClick={() => saveItems([{ id: uid(), name: 'New item', slots: ['Morning'], active: true }])}>
+        + Add an item
       </button>
+      <div className="t12 d lh">No streaks or confetti here. It's a plain record you can show your doctor.</div>
     </Sheet>
   );
 }

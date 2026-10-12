@@ -7,6 +7,8 @@ import { stepStreakOf, targetsAt, trainingWeeksOf } from '../domain/occasions';
 import type { Day, Food, FoodEntry, Measurement, SetEntry, Settings, TrackValue, TrainingSession } from '../domain/types';
 import { kmFromSteps, positionAt } from '../domain/walk';
 import type { Cell, Sheet } from './xlsx';
+import { slotStatus } from '../domain/checklist';
+import { checklistSlots } from '../state/derived';
 
 export interface ExportData {
   settings: Settings;
@@ -285,6 +287,26 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
     { name: 'Records', rows: records },
     { name: 'Targets history', rows: targets },
     { name: 'Plan', rows: planRows },
+    ...(slots.length
+      ? [
+          {
+            name: 'Checklist',
+            rows: [
+              ['date', ...checklistSlots(s).map((x) => `${x.name} (${x.slot})`)],
+              ...dates.map((date) => [
+                date,
+                ...slots.map((k) => {
+                  const st = slotStatus(byDay.get(date), k);
+                  if (st.kind === 'missed') return 'missed';
+                  if (st.kind === 'not-logged') return 'not logged';
+                  const t = new Date(st.at);
+                  return `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`;
+                }),
+              ]),
+            ] as Cell[][],
+          },
+        ]
+      : []),
     ...(s.customTracks?.length && d.trackValues?.length
       ? [
           {

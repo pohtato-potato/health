@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { addEntry, patchSettings, updateEntry } from '../src/db/actions';
+import { addEntry, patchSettings, setMissed, setTick, updateEntry } from '../src/db/actions';
 import { db, HealthDB, setDatabase } from '../src/db/db';
 import type { Place } from '../src/domain/types';
 
@@ -34,5 +34,20 @@ describe('eaten-at on save', () => {
     const e = await addEntry({ ...base, meal: 'breakfast', at: at(13, 23, 0) });
     await updateEntry(e.id, { meal: 'dinner' });
     expect((await db.entries.get(e.id))?.eatenAt).toBe(at(13, 21, 30));
+  });
+});
+
+describe('checklist actions', () => {
+  it('setMissed clears the tick and setTick clears missed', async () => {
+    await setTick('2026-10-13', 'a:0', true, 777);
+    expect((await db.days.get('2026-10-13'))?.ticks?.['a:0']).toBe(777);
+    await setMissed('2026-10-13', 'a:0', true);
+    let d = await db.days.get('2026-10-13');
+    expect(d?.ticks?.['a:0']).toBeUndefined();
+    expect(d?.missed?.['a:0']).toBe(true);
+    await setTick('2026-10-13', 'a:0', true, 888);
+    d = await db.days.get('2026-10-13');
+    expect(d?.missed?.['a:0']).toBeUndefined();
+    expect(d?.ticks?.['a:0']).toBe(888);
   });
 });

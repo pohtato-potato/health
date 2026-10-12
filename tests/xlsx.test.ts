@@ -44,6 +44,15 @@ describe('xlsx export', () => {
     const m = sheets.find((s) => s.name === 'Measurements')!;
     expect(m.rows[1][4]).toBe(1.25);
   });
+  it('adds a Checklist sheet with one column per slot: time, missed or not logged', () => {
+    const d = sample();
+    d.settings = { ...d.settings, checklist: [{ id: 'vit', name: 'Vitamin', slots: ['Morning', '9 pm'], active: true }] };
+    d.days = [{ ...d.days[0], ticks: { 'vit:0': new Date(2026, 8, 27, 8, 5).getTime() }, missed: { 'vit:1': true } }, d.days[1]];
+    const sheet = workbookSheets(d, new Date('2026-09-28T12:00:00')).find((s) => s.name === 'Checklist')!;
+    expect(sheet.rows[0]).toEqual(['date', 'Vitamin (Morning)', 'Vitamin (9 pm)']);
+    expect(sheet.rows[1]).toEqual(['2026-09-27', '08:05', 'missed']);
+    expect(sheet.rows[2]).toEqual(['2026-09-28', 'not logged', 'not logged']);
+  });
   it('writes a valid zip container', () => {
     const bytes = buildXlsx(workbookSheets(sample(), new Date('2026-09-28T12:00:00')));
     expect([bytes[0], bytes[1], bytes[2], bytes[3]]).toEqual([0x50, 0x4b, 0x03, 0x04]);
