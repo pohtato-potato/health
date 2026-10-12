@@ -3,6 +3,33 @@ import type { PlanDef } from './plan';
 
 export type Meal = 'breakfast' | 'lunch' | 'snacks' | 'dinner';
 export const MEALS: Meal[] = ['breakfast', 'lunch', 'snacks', 'dinner'];
+/** Minutes after midnight for each meal. */
+export type MealTimes = Record<Meal, number>;
+
+export type PlaceKind = 'home' | 'office' | 'trip' | 'friends';
+
+/** Where a day happens. Each place brings its own meal times, step easing and the foods shown first. */
+export interface Place {
+  id: string;
+  name: string;
+  kind: PlaceKind;
+  meals: MealTimes;
+  /** The step goal is eased on days spent here (office, trip). */
+  eased: boolean;
+  foodsFirst: 'home' | 'outside' | 'normal';
+}
+
+/** A status relaxes targets to maintenance and pauses streaks while it lasts. */
+export type Status = 'sick' | 'injured' | 'travelling' | 'break' | 'occasion';
+
+export const MUSCLES = ['chest', 'upper-back', 'lats', 'front-delts', 'side-delts', 'rear-delts', 'biceps', 'triceps', 'forearms', 'abs', 'glutes', 'quads', 'hamstrings', 'calves'] as const;
+export type MuscleId = (typeof MUSCLES)[number];
+
+export const DEFAULT_MEAL_TIMES: { home: MealTimes; office: MealTimes } = {
+  home: { breakfast: 540, lunch: 810, snacks: 1050, dinner: 1260 },
+  office: { breakfast: 480, lunch: 780, snacks: 1020, dinner: 1230 },
+};
+
 export const MEAL_NAMES: Record<Meal, string> = {
   breakfast: 'Breakfast',
   lunch: 'Lunch',
@@ -76,6 +103,10 @@ export interface Prefs {
   freeMealSaveUp?: boolean;
   /** A reward: closed rings turn gold. */
   goldRings?: boolean;
+  /** Water tracking; the owner's starter turns it off. */
+  water?: boolean;
+  /** Battery saver for sessions: true black, no animation, the dimmed rest screen. */
+  batterySaver?: boolean;
 }
 
 const PREF_DEFAULTS: Required<Prefs> = {
@@ -94,6 +125,8 @@ const PREF_DEFAULTS: Required<Prefs> = {
   suggestTargets: true,
   freeMealSaveUp: false,
   goldRings: false,
+  water: true,
+  batterySaver: false,
 };
 
 export function prefOn(prefs: Prefs, key: keyof Prefs): boolean {
@@ -153,6 +186,17 @@ export interface Settings {
   lastReview?: number;
   /** Festivals, weddings, travel: calories at maintenance, streaks paused. */
   occasions?: Occasion[];
+  /** v2: where days happen. Replaces homes; old home ids become place ids. */
+  places?: Place[];
+  /** The owner's own food categories, shown as tabs in Add food. */
+  foodCategories?: { id: string; name: string; foodIds: string[] }[];
+  lastfm?: { key: string; users: string[] };
+  /** 0 = Sunday … 6 = Saturday. */
+  reviewDay?: number;
+  /** Records count clean reps only (default on). */
+  formRecordsClean?: boolean;
+  /** Steps per room turn, for farmer carries. */
+  turnSteps?: number;
   /** The learned maintenance estimate, refreshed as data comes in. */
   maintenance?: { kcal: number; at: number; weeks: number };
   createdAt: number;
@@ -163,6 +207,8 @@ export interface Sleep {
   asleep: number;
   woke: number;
   rested?: number;
+  /** Copied with "Same as yesterday", not typed. */
+  carried?: boolean;
 }
 
 export interface Day {
@@ -191,6 +237,19 @@ export interface Day {
   eased?: boolean;
   /** Custom track values live in trackValues; notes for the day live here. */
   note?: string;
+  /** v2: the place the day starts at (replaces home). */
+  place?: string;
+  /** Mid-day moves: from this time on the day follows the new place. */
+  placeChanges?: { at: number; place: string }[];
+  status?: Status;
+  /** Checklist slots marked missed, keyed like ticks. */
+  missed?: Record<string, true>;
+  /** Food marked complete for the day. */
+  foodDone?: boolean;
+  /** Readiness answers. */
+  energy?: number;
+  stomach?: boolean;
+  soreness?: Partial<Record<MuscleId, 1 | 2 | 3>>;
 }
 
 export type FoodUnit = 'g' | 'ml' | 'piece' | 'serving';
@@ -234,6 +293,9 @@ export interface FoodEntry {
   kcal: number;
   protein: number;
   drink?: { type: string; count: number };
+  /** When it was eaten (at = when it was logged). */
+  eatenAt?: number;
+  proteinUnknown?: boolean;
 }
 
 export type Side = 'L' | 'R' | 'both';
@@ -254,6 +316,11 @@ export interface TrainingSession {
   tempo?: Record<string, boolean>;
   /** Readiness when the session started, to learn what the score predicts. */
   readiness?: number;
+  context?: string[];
+  quality?: number;
+  /** Lifting and rest spans, in ms since epoch. */
+  restLog?: { from: number; to: number; kind: 'lift' | 'rest' }[];
+  battery?: boolean;
 }
 
 export interface SetEntry {
@@ -275,6 +342,19 @@ export interface SetEntry {
   drop?: boolean;
   at: number;
   mark?: Mark;
+  /** Skipped: counts as done for the flow, left out of every stat. */
+  skipped?: boolean;
+  /** 1 sloppy … 5 textbook. */
+  form?: 1 | 2 | 3 | 4 | 5;
+  cleanReps?: number;
+  /** Reps in reserve: 0, 1, 2, 3 (3 = 3+). */
+  rir?: number;
+  faults?: string[];
+  challenges?: string[];
+  discomfort?: 'knee' | 'wrist' | 'shoulder' | 'back';
+  /** Carries measured in steps. */
+  steps?: number;
+  firstSide?: 'L' | 'R';
 }
 
 export type Mark = '!!' | '!' | '=';
@@ -383,4 +463,61 @@ export interface Counter {
   /** Distinct values seen, like the voices you've tried. */
   values?: string[];
   at?: number;
+}
+
+/** v2 tables. */
+export interface UsageEvent {
+  id?: number;
+  at: number;
+  kind: string;
+  detail?: string;
+}
+
+export interface EditRecord {
+  id?: number;
+  at: number;
+  table: string;
+  rowId: string;
+  before: unknown;
+  after: unknown;
+}
+
+export interface AuditNote {
+  id?: number;
+  at: number;
+  screen: string;
+  text: string;
+}
+
+export interface ForecastRecord {
+  id: string;
+  kind: string;
+  madeAt: number;
+  targetDate: string;
+  low: number;
+  high: number;
+  outcome?: number;
+}
+
+export interface ChartMarker {
+  id: string;
+  date: string;
+  text: string;
+  auto?: boolean;
+}
+
+export interface WalkRecord {
+  id: string;
+  kind: 'journal' | 'camp' | 'structure' | 'souvenir' | 'quest';
+  date: string;
+  km?: number;
+  text?: string;
+  data?: Record<string, unknown>;
+}
+
+export interface SongRecord {
+  id: string;
+  at: number;
+  artist: string;
+  track: string;
 }

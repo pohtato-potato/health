@@ -11,8 +11,13 @@ import { initPwa } from './pwa';
 import { sendPostcards } from './shelf/send';
 import { MomentsProvider } from './ui/Moments';
 import { ToastProvider } from './ui/Toasts';
+import { db } from './db/db';
+import { migrateToV2 } from './db/migrate';
 
 void initPwa();
+
+// Bring 1.x data up to v2 once; safe to run on every start.
+void migrateToV2(db);
 
 // Leave yesterday's postcard for Logbook on the shared shelf, now and whenever Health comes back to the front.
 void sendPostcards();
