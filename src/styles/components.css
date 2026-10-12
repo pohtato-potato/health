@@ -1,0 +1,331 @@
+/* Dusk Strata core components: Wheel, Dial, Check, RestPill, Story, Band. */
+
+/* Wheel */
+.wheel {
+  position: relative;
+  height: 200px;
+  border-radius: 16px;
+  outline: none;
+}
+.wheel:focus-visible {
+  box-shadow: 0 0 0 2px var(--gold);
+}
+.wheel-scroll {
+  height: 100%;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  mask-image: linear-gradient(transparent, #000 32%, #000 68%, transparent);
+}
+.wheel-scroll::-webkit-scrollbar {
+  display: none;
+}
+.wheel-row {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  scroll-snap-align: start;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 18px;
+  color: var(--dim);
+  transition: color 0.2s ease-out;
+  cursor: pointer;
+}
+.wheel-row.on {
+  color: var(--text);
+  font-size: 22px;
+}
+.wheel-lens {
+  position: absolute;
+  inset: 80px 4px auto;
+  height: 40px;
+  border-top: 1px solid var(--btn-border);
+  border-bottom: 1px solid var(--btn-border);
+  pointer-events: none;
+}
+.wheels {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px;
+  background: var(--raised);
+  border: 1px solid var(--hairline);
+  border-radius: 18px;
+}
+
+/* Dial */
+.dial {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.dial-value {
+  font-size: 40px;
+  line-height: 1;
+}
+.dial-unit {
+  font-size: 15px;
+  color: var(--quiet);
+  margin-left: 6px;
+  font-family: var(--sans);
+}
+.dial-track {
+  position: relative;
+  width: 100%;
+  height: 56px;
+  border-radius: 14px;
+  outline: none;
+}
+.dial-track:focus-visible {
+  box-shadow: 0 0 0 2px var(--gold);
+}
+.dial-scroll {
+  height: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  mask-image: linear-gradient(90deg, transparent, #000 25%, #000 75%, transparent);
+}
+.dial-scroll::-webkit-scrollbar {
+  display: none;
+}
+.dial-ticks {
+  position: relative;
+  height: 100%;
+  margin: 0 50%;
+  box-sizing: content-box;
+}
+.tick-mark {
+  position: absolute;
+  bottom: 10px;
+  width: 1.5px;
+  height: 14px;
+  background: var(--dim);
+  border-radius: 1px;
+}
+.tick-mark.major {
+  height: 26px;
+  background: var(--quiet);
+}
+.dial-needle {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  width: 3px;
+  height: 40px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: var(--gold);
+  box-shadow: 0 2px 8px -2px rgba(242, 196, 109, 0.6);
+  pointer-events: none;
+}
+
+/* Check */
+.check {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 52px;
+  width: 100%;
+  text-align: left;
+  padding: 6px 2px;
+}
+.check-box {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  border: 1.5px solid var(--btn-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.25s ease-out, border-color 0.25s ease-out;
+}
+.check-tick {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 22;
+  stroke-dashoffset: 22;
+  transition: stroke-dashoffset 0.3s cubic-bezier(0.16, 1, 0.3, 1) 0.05s;
+}
+.check.on .check-tick {
+  stroke-dashoffset: 0;
+}
+.check-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.check.on .check-label {
+  color: var(--quiet);
+}
+.check:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+
+/* RestPill */
+.restpill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 56px;
+  padding: 0 6px 0 20px;
+  border-radius: 28px;
+  background: var(--raised);
+  border: 1px solid var(--btn-border);
+  overflow: hidden;
+  box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.8);
+}
+.restpill-fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(143, 182, 201, 0.22), rgba(143, 182, 201, 0.1));
+  transform-origin: left;
+  transition: transform 0.25s linear;
+}
+.restpill-label {
+  position: relative;
+  color: var(--sleep);
+}
+.restpill-time {
+  position: relative;
+  font-size: 24px;
+  flex: 1;
+}
+.restpill-end {
+  position: relative;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 22px;
+  border: 1px solid var(--btn-border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+}
+
+/* Story */
+.story {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  padding: calc(env(safe-area-inset-top) + 18px) 22px calc(env(safe-area-inset-bottom) + 24px);
+  transition: background 0.5s ease-out;
+}
+.story-bars {
+  display: flex;
+  gap: 4px;
+  margin-right: 52px;
+}
+.story-bars span {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(237, 230, 218, 0.22);
+}
+.story-bars span.done,
+.story-bars span.now {
+  background: var(--text);
+}
+.story-close {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 4px);
+  right: 14px;
+  z-index: 2;
+}
+.story-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+  animation: story-in 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes story-in {
+  from {
+    opacity: 0.4;
+    transform: translateY(10px);
+  }
+}
+.story-tap {
+  position: absolute;
+  top: 70px;
+  bottom: 0;
+  width: 35%;
+  z-index: 1;
+}
+.story-tap.back {
+  left: 0;
+}
+.story-tap.next {
+  right: 0;
+  width: 65%;
+}
+
+/* Band */
+.band {
+  position: relative;
+  height: 250px;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 0 0 26px 26px;
+}
+.band svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.band-caption {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-shadow: 0 1px 10px rgba(8, 10, 23, 0.7);
+}
+.band-place {
+  font-family: var(--serif);
+  font-size: 28px;
+  color: var(--text);
+}
+.band-next {
+  color: var(--text);
+  opacity: 0.88;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wheel-row,
+  .check-box,
+  .check-tick,
+  .restpill-fill,
+  .story {
+    transition: none;
+  }
+  .story-body {
+    animation: none;
+  }
+}
+
+/* TimeTile: the tile and its wheels stack; the tile fills its column. */
+.timetile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.timetile .timebtn {
+  width: 100%;
+  text-align: left;
+}
