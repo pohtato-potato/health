@@ -44,7 +44,7 @@ Tabs: **Today · Train · [+ Log] · Walk · You**
 | Train | Plan, sessions, records wall, muscle map, form trends, plan editor and exercise guides. |
 | + Log | Six common tiles plus More. Each sheet has a date chip so you can log any day. |
 | Walk | The walk across India, as its own world (§9). |
-| You | Body charts, the recomposition view, maintenance, forecasts, Journey clock, heatmap, weekly reviews, monthly film and Wrapped, achievements, night sky, reveal day and Settings. |
+| You | The athletic benchmark, **Tracks** (one list of every measure page: Food, Shape, Steps, Sleep, Training, Joints, Readiness, Drinks), **Medicines**, Journey clock, heatmap, weekly reviews, monthly film and Wrapped, achievements, character, night sky, reveal day, Diary and Settings. |
 
 Banners are in-app only. There is one banner slot on Today, and it shows banners around the owner's usual logging hour (learned from the usage log).
 
@@ -163,6 +163,20 @@ A single screen for the whole day: the owner's "quick capture". It works for any
 ### 3.9 Edit anything, any day
 - Diary becomes the place to fix any past entry, set, tick, sleep or step count.
 - Every change is kept in the edit history (§11.2) and can be undone.
+
+## 3.10 Medicines (You › Medicines)
+- **What it holds:**
+  - Each medicine or supplement with its dose, form (drops, tablet, powder) and times.
+  - Courses that end or change ("4× a day until 26 Oct, then 2×").
+  - Pills or bottles left, with a refill alert drawn from the schedule.
+  - Doctor appointments, with notes to take along.
+- **Daily ticks** stay in the Checklist (name unchanged).
+- **Reminders are in-app only.** No phone notifications. The next dose due within 2 hours shows as Today's banner; a missed dose shows on Today and in Close the day.
+- **On time** means ticked within 60 minutes of the planned time. An on-time dose can earn any of these, each switchable in Medicines settings:
+  - a lantern lit at that night's camp on the Walk;
+  - a "kept week" moment when every dose of the week was on time;
+  - counting toward a perfect day, and so toward the night sky;
+  - a per-medicine "kept" count that pauses rather than resets on a miss.
 
 ## 4. Body
 
@@ -327,6 +341,26 @@ The owner asked for a scientifically backed method. v2 uses the energy-balance a
 - **Trip workout.** On Trip days Train offers a bodyweight version of the session, built from the plan's movement patterns.
 - **Strength forecasts** per lift, with a range: "Row 15 kg × 12 around 2 Dec."
 - **Tonight's shot at a record.** Before a session: "2 reps from a floor press record." The record set gets a gold row.
+
+## 5.9 Tracks pages (You › Tracks)
+- **Pages:** Food (calories and protein together), Shape (weight, waist and waist ÷ height, recomposition, t-shirt test, photo compare), Steps, Sleep (minimal), Training, Joints, Readiness, Drinks.
+- **One template for every page:**
+  1. Today's value and the change against last week.
+  2. A range switch: 7, 30 or 90 days.
+  3. One hero chart: trend over daily dots, the usual range shaded, chart markers.
+  4. Two or three plain insights from the data, including office against home.
+  5. The page's extras.
+  6. A history list.
+- **Kept v1 extras:** race your past self, weekday patterns, sleep window, what good sleep does (as one tip line), t-shirt test, where food came from, drinks calendar, the morning after, strength scores, the physio summary.
+- **Cut:** walking energy, posture gap.
+- **Added extras:**
+  - Food: office against home, protein by meal, the maintenance estimate with its method.
+  - Steps: loaded steps, evening top-up success.
+  - Sleep: regularity, bedtime drift on office days.
+  - Training: rep ladder status, form trend, records with songs.
+  - Joints: discomfort tags by exercise.
+  - Readiness: how well the score predicted session quality.
+  - Drinks: effect on next-day steps, sleep and readiness.
 
 ## 6. You tab
 
