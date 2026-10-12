@@ -31,6 +31,9 @@ Ground rules from the brief still hold:
 - Any joint flag switches the voice to plain speech.
 - Four sessions a week, with no extra credit for more.
 
+## 1a. The day boundary
+A day runs from 4 am to 4 am, not midnight to midnight. Anything logged before 4 am (food, ticks, steps, sleep, Close the day) belongs to the previous day by default; the date chip can still choose any day. Every rule that says "today" uses this boundary.
+
 ## 2. Navigation
 
 Tabs: **Today · Train · [+ Log] · Walk · You**
@@ -73,13 +76,14 @@ A single screen for the whole day: the owner's "quick capture". It works for any
 - **Meals:** Breakfast, Lunch, Snacks and Dinner side by side.
   - Each section has a "usual for this meal" row: learned from the same place, the same meal and recent weeks, two taps per food.
   - It also has the owner's own food categories as tabs.
-  - **Plate mode:** tap several foods, see the running total, confirm once.
+  - **Plate mode:** tap several foods, adjust each one's quantity in its own unit (pieces, katoris, grams) with a stepper on the plate, see the running total, confirm once.
   - Entries can be dragged between meals, and their eaten-at time follows.
 - **Start from a usual day:** prefill a draft from a typical day for that place and weekday, then edit it.
 - **Checklist with times,** steps, and a sleep check if the morning log was missed.
 - **Day complete:** a toggle that marks food as complete for averages (§3.7).
 - **Tonight's target:** "Asleep by 12:45 keeps 7 h before tomorrow's wake time." It uses tomorrow's place and your wake time (§6.3).
 - **Banner at your hour:** "Close the day" appears as the Today banner around your usual logging hour.
+- **Day closed summary:** closing the day shows a conclusion screen: the day's totals against targets, training and walk highlights, checklist completeness, a Gremlin line, tomorrow's place and session, and, on a perfect day, its new star in the night sky.
 
 ### 3.4 Food entries
 - **Two times per entry:** `eatenAt`, kept separate from `at` (when it was logged).
@@ -137,7 +141,7 @@ A single screen for the whole day: the owner's "quick capture". It works for any
   - The training line reads "This week 2 of 4 · best run N weeks".
 
 ### 3.8 Places and status
-- **Places** replace the old home picker. The owner's places are stored in settings, and each carries:
+- **Places** replace the old home picker. Home and Office are the two large choices; the others are smaller chips. The place can change during the day ("With friends from 7 pm"): the change applies from that time on, so meal times, the step goal and the foods shown follow the new place for the rest of the day. The owner's places are stored in settings, and each carries:
   - meal times
   - whether the step goal is eased
   - which foods come first (home foods or outside food)
