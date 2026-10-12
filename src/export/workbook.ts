@@ -1,4 +1,4 @@
-import { addDays, dayKey, dayRange, weekStart, type DayKey } from '../domain/dates';
+import { addDays, dayRange, weekStart, type DayKey, dayOfLogging } from '../domain/dates';
 import { fmtTime } from '../domain/format';
 import { findExercise, targetText } from '../domain/plan';
 import { ringsFor, sleepMinutes, targetsOn, totalsFor } from '../domain/rings';
@@ -24,7 +24,7 @@ const r2 = (n: number | undefined | null) => (n === undefined || n === null ? nu
 
 /** Every log as its own sheet, one row per day, entry or set, for Claude or a spreadsheet. */
 export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
-  const today = dayKey(now);
+  const today = dayOfLogging(now.getTime());
   const s = d.settings;
   const done = d.sessions.filter((x) => x.status === 'done').sort((a, b) => a.startedAt - b.startedAt);
   const byDay = new Map(d.days.map((x) => [x.date, x]));

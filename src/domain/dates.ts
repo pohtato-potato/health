@@ -3,8 +3,43 @@ export type DayKey = string;
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-export function dayKey(d: Date = new Date()): DayKey {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+/** A day runs from 4 am to 4 am: logging at 1 am still belongs to the evening before. */
+export const DAY_STARTS_AT_MIN = 240;
+
+/**
+ * The calendar day of a date. With no date it means "today", where today
+ * runs from 4 am to 4 am. An explicit date is never shifted.
+ */
+export function dayKey(d?: Date): DayKey {
+  const at = d ?? new Date(Date.now() - DAY_STARTS_AT_MIN * 60_000);
+  return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`;
+}
+
+/** The day a log made at `now` belongs to: the chosen day if one is picked, else today by the 4 am rule. */
+export function dayOfLogging(now: number, chosen?: DayKey): DayKey {
+  return chosen ?? dayKey(new Date(now - DAY_STARTS_AT_MIN * 60_000));
+}
+
+/** Minutes after midnight moved by `by`, wrapping within the day. */
+export function nudgeMinutes(m: number, by: number): number {
+  return (((m + by) % 1440) + 1440) % 1440;
+}
+
+/** That day at `minutes` after midnight, local time, in ms. */
+export function atOn(date: DayKey, minutes: number): number {
+  const [y, mo, d] = date.split('-').map(Number);
+  return new Date(y, mo - 1, d, Math.floor(minutes / 60), minutes % 60).getTime();
+}
+
+export type PartOfDay = 'dawn' | 'day' | 'dusk' | 'night';
+
+/** Lighting for scenes: dawn 5:00–7:30, day to 17:30, dusk to 19:30, then night. */
+export function partOfDay(d: Date): PartOfDay {
+  const m = d.getHours() * 60 + d.getMinutes();
+  if (m >= 300 && m < 450) return 'dawn';
+  if (m >= 450 && m < 1050) return 'day';
+  if (m >= 1050 && m < 1170) return 'dusk';
+  return 'night';
 }
 
 /** Noon on that day, which keeps date maths clear of midnight edge cases. */
