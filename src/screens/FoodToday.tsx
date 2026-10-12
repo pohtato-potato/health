@@ -4,6 +4,8 @@ import { MEAL_NAMES, MEALS } from '../domain/types';
 import { useAllDays, useEntries, useEntriesBetween, useSettings, useToday } from '../db/hooks';
 import { back, go, openSheet, useRoute } from '../router';
 import { Icon } from '../ui/Icon';
+import { SwitchRow } from '../ui/controls';
+import { patchDay } from '../db/actions';
 import { dayRings, freeMealsThisWeek } from '../state/derived';
 
 export function FoodToday() {
@@ -128,6 +130,15 @@ export function FoodToday() {
               </div>
             );
           })}
+        </div>
+
+        <div className="list">
+          <SwitchRow
+            title="Day complete"
+            sub={day?.foodDone ? 'Everything eaten is logged. Averages use complete days.' : 'Mark it once everything eaten is in.'}
+            checked={!!day?.foodDone}
+            onChange={(v) => void patchDay(date, { foodDone: v })}
+          />
         </div>
       </div>
 

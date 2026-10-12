@@ -13,6 +13,7 @@ import { Icon } from '../ui/Icon';
 import { useToast } from '../ui/Toasts';
 import { targetsFor, weeksFor } from '../state/derived';
 import { usualWake } from './TodayNight';
+import { basisLabel } from '../domain/logged';
 
 function useWeekData() {
   const { params } = useRoute();
@@ -58,8 +59,8 @@ export function WeekRecap() {
   const cells: [string, string, string, string][] = [
     ['Steps', fmtInt(w.stepsAvg), `a day · ${changeLine(w.stepsAvg, prev?.stepsAvg, '%')}`, 'var(--sage)'],
     ['Sleep', w.sleepAvg !== undefined ? fmtDuration(w.sleepAvg) : '—', changeLine(w.sleepAvg, prev?.sleepAvg, ' min', (n) => String(Math.round(n))), 'var(--blue)'],
-    ['Calories', w.kcalAvg !== undefined ? fmtInt(w.kcalAvg) : '—', `${w.inRange} of 7 days in range`, 'var(--apricot)'],
-    ['Protein', w.proteinAvg !== undefined ? `${w.proteinAvg} g` : '—', changeLine(w.proteinAvg, prev?.proteinAvg, ' g'), 'var(--lavender)'],
+    ['Calories', w.kcalAvg !== undefined ? fmtInt(w.kcalAvg) : 'Not logged', w.foodBasis === 'none' ? 'No food logged this week' : `${basisLabel(w.foodDays, w.foodBasis)} · ${w.inRange} in range`, 'var(--apricot)'],
+    ['Protein', w.proteinAvg !== undefined ? `${w.proteinAvg} g` : 'Not logged', changeLine(w.proteinAvg, prev?.proteinAvg, ' g'), 'var(--lavender)'],
     ['Training', `${w.sessions} of ${perWeek}`, w.sessions >= perWeek && weeks.streak > 1 ? `${weeks.streak} full weeks in a row` : w.sessions >= perWeek ? 'a full week' : `${perWeek - w.sessions} short`, 'var(--text)'],
     ['Weight', trendDiff !== undefined ? `${trendDiff <= 0 ? '−' : '+'}${fmt1(Math.abs(trendDiff))} kg` : '—', w.weightAvg !== undefined ? `trend · ${fmt1(w.weightAvg)} average` : 'no weigh-ins', 'var(--pearl)'],
   ];

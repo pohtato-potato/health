@@ -10,6 +10,7 @@ import { Icon } from '../ui/Icon';
 import { doneSessions, nextUp, triggersMet, weeksFor } from '../state/derived';
 import { NextUpCard } from './NextUpCard';
 import { sessionStats } from './SessionDone';
+import { trainingStreakLine } from '../domain/streaks';
 
 export function Train() {
   const settings = useSettings();
@@ -66,10 +67,9 @@ export function Train() {
         </div>
         <div className="row t13 q">
           <span>
-            {Math.min(weeks.thisWeek, weeks.perWeek)} of {weeks.perWeek} this week
+            {trainingStreakLine({ ...weeks, thisWeek: Math.min(weeks.thisWeek, weeks.perWeek) }, weeks.perWeek)}
             {!trainedToday.length && up && weeks.thisWeek < weeks.perWeek ? ` · ${up.sessionId} today makes ${weeks.thisWeek + 1}` : ''}
           </span>
-          <span>Streak: {weeks.streak} week{weeks.streak === 1 ? '' : 's'}</span>
         </div>
       </div>
 

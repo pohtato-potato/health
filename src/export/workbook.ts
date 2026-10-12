@@ -8,6 +8,8 @@ import type { Day, Food, FoodEntry, Measurement, SetEntry, Settings, TrackValue,
 import { kmFromSteps, positionAt } from '../domain/walk';
 import type { Cell, Sheet } from './xlsx';
 import { slotStatus } from '../domain/checklist';
+import { entryTime } from '../domain/foods';
+import { dayFoodLabel } from '../domain/logged';
 import { checklistSlots } from '../state/derived';
 
 export interface ExportData {
@@ -68,6 +70,7 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
       'checklist_total',
       'home',
       'morning_log_seconds',
+      'food_status',
     ],
   ];
   for (const date of dates) {
@@ -104,13 +107,14 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
       slots.length || null,
       s.homes.find((h) => h.id === day?.home)?.name ?? null,
       day?.morning?.seconds ?? null,
+      dayFoodLabel(day, es.length).replace('-', ' '),
     ]);
   }
 
   // Food log
   const food: Cell[][] = [['date', 'time', 'meal', 'kind', 'food', 'portion', 'kcal', 'protein_g']];
-  for (const e of [...d.entries].sort((a, b) => a.date.localeCompare(b.date) || a.at - b.at)) {
-    food.push([e.date, fmtTime(e.at), e.meal, e.kind, e.name, e.portion, Math.round(e.kcal), r1(e.protein)]);
+  for (const e of [...d.entries].sort((a, b) => a.date.localeCompare(b.date) || entryTime(a) - entryTime(b))) {
+    food.push([e.date, fmtTime(entryTime(e)), e.meal, e.kind, e.name, e.portion, Math.round(e.kcal), r1(e.protein)]);
   }
 
   // My foods

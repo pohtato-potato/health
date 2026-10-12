@@ -1,3 +1,7 @@
+import { avgOver, dayFoodLabel, foodDaysFor } from '../src/domain/logged';
+import { weekStats } from '../src/domain/weekly';
+import { trainingStreakLine } from '../src/domain/streaks';
+import type { Settings } from '../src/domain/types';
 import { describe, expect, it } from 'vitest';
 import { addDays, dayRange } from '../src/domain/dates';
 import { bedtimeFor, drinkNights, e1rm, morningAfter, raceLastWeek, sleepPayoff, sleepWindows, sources, strengthScores, walkingKcal, waistToHeight, weekdayPattern } from '../src/domain/insights';
@@ -159,5 +163,50 @@ describe('session quirks', () => {
     expect(q.fastestSuperset).toEqual({ ms: 30_000, names: ['Push-up', 'Row'] });
     expect(q.tempo).toEqual({ sets: 2, reps: 20 });
     expect(q.mostReps?.reps).toBe(15);
+  });
+});
+
+describe('not logged is not zero', () => {
+  const week = ['2026-10-05', '2026-10-06', '2026-10-07', '2026-10-08', '2026-10-09', '2026-10-10', '2026-10-11'];
+  const entry = (date: string, kcal: number) => ({ id: date + kcal, date, meal: 'lunch', at: 1, kind: 'food', name: 'x', portion: '1', kcal, protein: 10 }) as FoodEntry;
+
+  it('averages skip unlogged days', () => {
+    const entries = week.slice(0, 5).map((d) => entry(d, 2000));
+    const r = foodDaysFor(week, new Map(), entries);
+    expect(r).toEqual({ counted: week.slice(0, 5), basis: 'logged' });
+    expect(avgOver(r.counted.map(() => 2000))).toBe(2000);
+  });
+
+  it('complete days win when any exist', () => {
+    const entries = week.slice(0, 5).map((d) => entry(d, 2000));
+    const days = new Map([[week[1], { date: week[1], foodDone: true } as Day], [week[3], { date: week[3], foodDone: true } as Day]]);
+    expect(foodDaysFor(week, days, entries)).toEqual({ counted: [week[1], week[3]], basis: 'complete' });
+  });
+
+  it('a week with nothing logged has basis none and avg undefined', () => {
+    expect(foodDaysFor(week, new Map(), [])).toEqual({ counted: [], basis: 'none' });
+    expect(avgOver([])).toBeUndefined();
+  });
+
+  it('dayFoodLabel', () => {
+    expect(dayFoodLabel(undefined, 0)).toBe('not-logged');
+    expect(dayFoodLabel({ date: 'x' } as Day, 3)).toBe('partial');
+    expect(dayFoodLabel({ date: 'x', foodDone: true } as Day, 3)).toBe('complete');
+  });
+
+  it('weekStats kcalAvg uses foodDaysFor', () => {
+    const settings = { targets: [], checklist: [], prefs: {} } as unknown as Settings;
+    const entries = [entry(week[0], 1000), entry(week[1], 3000), entry(week[2], 2600)];
+    const days = [{ date: week[1], foodDone: true }, { date: week[2], foodDone: true }] as Day[];
+    const w = weekStats(settings, week[0], days, entries, [], []);
+    expect(w.kcalAvg).toBe(2800);
+    expect(w.foodBasis).toBe('complete');
+    expect(w.foodDays).toBe(2);
+  });
+
+  it('trainingStreakLine', () => {
+    expect(trainingStreakLine({ thisWeek: 0, streak: 0, best: 1 }, 4)).toBe('This week 0 of 4 · best run 1 week');
+    expect(trainingStreakLine({ thisWeek: 2, streak: 3, best: 5 }, 4)).toBe('This week 2 of 4 · 3 weeks running · best run 5 weeks');
+    expect(trainingStreakLine({ thisWeek: 1, streak: 0, best: 0 }, 4)).toBe('This week 1 of 4');
   });
 });

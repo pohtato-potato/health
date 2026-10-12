@@ -53,6 +53,12 @@ describe('xlsx export', () => {
     expect(sheet.rows[1]).toEqual(['2026-09-27', '08:05', 'missed']);
     expect(sheet.rows[2]).toEqual(['2026-09-28', 'not logged', 'not logged']);
   });
+  it('marks each day’s food as complete, partial or not logged', () => {
+    const daily = workbookSheets(sample(), new Date('2026-09-28T12:00:00')).find((s) => s.name === 'Daily')!;
+    const col = daily.rows[0].indexOf('food_status');
+    expect(col).toBeGreaterThan(0);
+    expect(daily.rows.find((r) => r[0] === '2026-09-27')![col]).toBe('partial');
+  });
   it('writes a valid zip container', () => {
     const bytes = buildXlsx(workbookSheets(sample(), new Date('2026-09-28T12:00:00')));
     expect([bytes[0], bytes[1], bytes[2], bytes[3]]).toEqual([0x50, 0x4b, 0x03, 0x04]);
