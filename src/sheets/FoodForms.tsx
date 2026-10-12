@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { fmtInt } from '../domain/format';
 import { mealForTime, portionFor, stepFor, unitLabel, valuesFor } from '../domain/foods';
+import { impossibleDensity, portionWarning, similarFood } from '../domain/foodChecks';
 import { MEAL_NAMES, MEALS, type Food, type FoodEntry, type FoodUnit, type Meal } from '../domain/types';
 import { addEntry, archiveFood, deleteEntry, saveFood, updateEntry } from '../db/actions';
 import { db } from '../db/db';
@@ -36,7 +37,23 @@ function FoodFormInner({ existing, initialName, homes, meal }: { existing?: Food
 
   const per = unit === 'g' || unit === 'ml' ? 100 : 1;
   const perLabel = unit === 'g' ? 'per 100 g' : unit === 'ml' ? 'per 100 ml' : unit === 'piece' ? `per ${unitName || 'piece'}` : 'per serving';
-  const ok = name.trim() && kcal !== undefined && kcal >= 0 && (protein ?? 0) >= 0 && (usual ?? 0) > 0;
+  const allFoods = useFoods();
+  const draft = { name: name.trim(), unit, per, kcal: kcal ?? 0, protein: protein ?? 0, defaultAmount: usual ?? 0 };
+  const impossible = kcal !== undefined && impossibleDensity(draft);
+  const large = kcal !== undefined && (usual ?? 0) > 0 ? portionWarning(draft) : null;
+  const twin = !existing && name.trim() ? similarFood(name, allFoods ?? []) : null;
+  const ok = name.trim() && kcal !== undefined && kcal >= 0 && (protein ?? 0) >= 0 && (usual ?? 0) > 0 && !impossible;
+
+  /** Turns a large gram or piece portion into one serving of the same calories. */
+  const makeOneServing = () => {
+    if (!large) return;
+    const p = (protein ?? 0) * ((usual ?? 0) / per);
+    setServing(portionFor({ id: '', createdAt: 0, ...draft, unitName: unitName || 'piece' } as Food, usual!));
+    setUnit('serving');
+    setKcal(large.kcal);
+    setProtein(Math.round(p * 10) / 10);
+    setUsual(1);
+  };
 
   const save = async () => {
     if (!ok) return;
@@ -70,7 +87,7 @@ function FoodFormInner({ existing, initialName, homes, meal }: { existing?: Food
     <Sheet title={existing ? 'Edit food' : 'Create a food'} tall>
       <label className="flabel">
         <span className="lbl">Name</span>
-        <input className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Paneer bhurji" autoFocus={!existing} />
+        <input className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Paneer bhurji" autoFocus={!existing} spellCheck autoCapitalize="sentences" />
       </label>
 
       <div className="flabel">
@@ -137,6 +154,30 @@ function FoodFormInner({ existing, initialName, homes, meal }: { existing?: Food
         </div>
       )}
 
+      {impossible && (
+        <div className="notice warn t14 lh" role="alert">
+          That's more than pure fat (900 kcal per 100 {unit}). Check the number.
+        </div>
+      )}
+      {large && !impossible && (
+        <div className="notice t14 lh" role="status">
+          {name.trim() || 'This'} at {portionFor({ id: '', createdAt: 0, ...draft, unitName: unitName || 'piece' } as Food, usual!)} is {fmtInt(large.kcal)} kcal. Is that right?
+          {unit !== 'serving' && (
+            <button type="button" className="chip sm" style={{ marginTop: 8 }} onClick={makeOneServing}>
+              Make it 1 serving
+            </button>
+          )}
+        </div>
+      )}
+      {twin && (
+        <div className="notice t14 lh" role="status">
+          You already have {twin.name} ({fmtInt(twin.kcal)} kcal {twin.unit === 'g' || twin.unit === 'ml' ? `per 100 ${twin.unit}` : `per ${twin.unitName ?? twin.unit}`}).
+          <button type="button" className="chip sm" style={{ marginTop: 8 }} onClick={() => replaceSheet('addfood', { food: twin.id, ...(meal ? { meal } : {}) })}>
+            Use that one
+          </button>
+        </div>
+      )}
+
       {ok && (
         <div className="t13 q">
           Usual portion: {portionFor({ id: '', createdAt: 0, name, unit, per, kcal: kcal!, protein: protein ?? 0, unitName: unitName || 'piece', servingDesc: serving || undefined, note: note || undefined, defaultAmount: usual! }, usual!)} ·{' '}
@@ -164,11 +205,13 @@ export function QuickKcal() {
   const [meal, setMeal] = useState<Meal>((params.get('meal') as Meal) || mealForTime());
   const [name, setName] = useState('');
   const [kcal, setKcal] = useState<number | undefined>();
-  const [protein, setProtein] = useState<number | undefined>();
+  const [protein, setProtein] = useState<number | 'unknown' | undefined>();
+  const ready = kcal !== undefined && name.trim() !== '' && protein !== undefined;
 
   const add = async () => {
-    if (kcal === undefined) return;
-    const e = await addEntry({ date, meal, at: Date.now(), kind: 'quick', name: name.trim() || 'Quick add', portion: 'Estimate', kcal: Math.round(kcal), protein: protein ?? 0 });
+    if (!ready) return;
+    const unknown = protein === 'unknown';
+    const e = await addEntry({ date, meal, at: Date.now(), kind: 'quick', name: name.trim(), portion: 'Estimate', kcal: Math.round(kcal!), protein: unknown ? 0 : protein, ...(unknown ? { proteinUnknown: true } : {}) });
     toast({ text: `${e.name} · ${fmtInt(e.kcal)} kcal`, action: { label: 'Undo', run: () => deleteEntry(e.id) } });
     closeSheet();
   };
@@ -177,20 +220,24 @@ export function QuickKcal() {
     <Sheet title="Quick kcal" sub="For when you just want the number in">
       <MealPicker meal={meal} onChange={setMeal} />
       <label className="flabel">
-        <span className="lbl">What was it? Optional</span>
-        <input className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder="Office samosa" />
+        <span className="lbl">What was it?</span>
+        <input className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder="Office samosa" spellCheck autoCapitalize="sentences" />
       </label>
-      <div className="grid2">
-        <label className="flabel">
-          <span className="lbl apri">Kcal</span>
-          <DecField value={kcal} onChange={setKcal} placeholder="0" autoFocus />
-        </label>
-        <label className="flabel">
-          <span className="lbl lav">Protein g</span>
-          <DecField value={protein} onChange={setProtein} placeholder="0" />
-        </label>
+      <label className="flabel">
+        <span className="lbl apri">Kcal</span>
+        <DecField value={kcal} onChange={setKcal} placeholder="0" autoFocus />
+      </label>
+      <div className="flabel">
+        <span className="lbl lav">Protein</span>
+        <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }} role="radiogroup" aria-label="Protein">
+          {([0, 5, 10, 20, 30, 'unknown'] as const).map((g) => (
+            <button key={g} type="button" role="radio" aria-checked={protein === g} className={`chip sm${protein === g ? ' on' : ''}`} onClick={() => setProtein(g)}>
+              {g === 'unknown' ? 'Not sure' : `${g} g`}
+            </button>
+          ))}
+        </div>
       </div>
-      <button type="button" className="btn lg block" disabled={kcal === undefined} onClick={add}>
+      <button type="button" className="btn lg block" disabled={!ready} onClick={add}>
         Add to {MEAL_NAMES[meal].toLowerCase()}
       </button>
     </Sheet>

@@ -334,3 +334,19 @@
 .row.wrap {
   flex-wrap: wrap;
 }
+
+/* An inline note inside a form: a check that wants a second look, not a pop-up. */
+.notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--gold-bg);
+  border: 1px solid var(--gold-border);
+  color: var(--text);
+}
+.notice.warn {
+  background: #2a1719;
+  border-color: #6b3a3d;
+}
