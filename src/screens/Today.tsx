@@ -15,7 +15,7 @@ import { db } from '../db/db';
 import { Ticker, tickerContext } from '../ui/Ticker';
 import { prefOn } from '../domain/types';
 import { voiceFor } from '../domain/voice';
-import { usageOf } from '../domain/foods';
+import { entryTime, usageOf } from '../domain/foods';
 import { go, openSheet } from '../router';
 import { Icon } from '../ui/Icon';
 import { Rings } from '../ui/Rings';
@@ -333,7 +333,7 @@ function Timeline({ day, entries, sessions, settings }: { day: Day | undefined; 
     const kcal = es.reduce((s, e) => s + e.kcal, 0);
     const protein = es.reduce((s, e) => s + e.protein, 0);
     rows.push({
-      at: Math.min(...es.map((e) => e.at)),
+      at: Math.min(...es.map(entryTime)),
       title: MEAL_NAMES[meal],
       sub: es.map((e) => (e.kind === 'drink' ? `${e.name} ×${e.drink?.count ?? 1}` : e.name)).join(', '),
       right: { a: fmtInt(kcal), b: `${Math.round(protein)} g` },

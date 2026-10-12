@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { addDays, dayRange, weekStart } from '../src/domain/dates';
 import { fmtInt } from '../src/domain/format';
-import { portionFor, valuesFor } from '../src/domain/foods';
+import { eatenAtFor, entryTime, mealTimesFor, portionFor, valuesFor } from '../src/domain/foods';
+import { placeFor } from '../src/domain/places';
 import { ringsFor, sleepMinutes, targetsOn } from '../src/domain/rings';
 import { stepStreak, trainingWeeks, weightTrend } from '../src/domain/streaks';
-import type { Food, Targets } from '../src/domain/types';
+import { DEFAULT_MEAL_TIMES, type Day, type Food, type FoodEntry, type Place, type Settings, type Targets } from '../src/domain/types';
 import { arrivals, kmFromSteps, positionAt } from '../src/domain/walk';
 import { bestFits, roomLeft } from '../src/domain/whatsleft';
 
@@ -135,5 +136,52 @@ describe('walk across India', () => {
     dayRange('2026-09-01', '2026-09-30').forEach((d) => steps.set(d, 15000));
     const a = arrivals(steps);
     expect(a.map((x) => x.name)).toEqual(['Delhi', 'Agra']);
+  });
+});
+
+describe('v2 meal times and eaten-at', () => {
+  const at = (y: number, mo: number, d: number, h: number, mi: number) => new Date(y, mo - 1, d, h, mi).getTime();
+  const places: Place[] = [
+    { id: 'p-home', name: 'Home', kind: 'home', meals: { breakfast: 600, lunch: 900, snacks: 1140, dinner: 1290 }, eased: false, foodsFirst: 'home' },
+    { id: 'p-office', name: 'Office', kind: 'office', meals: { breakfast: 480, lunch: 780, snacks: 1020, dinner: 1230 }, eased: true, foodsFirst: 'outside' },
+    { id: 'p-trip', name: 'Trip', kind: 'trip', meals: { ...DEFAULT_MEAL_TIMES.office }, eased: true, foodsFirst: 'outside' },
+  ];
+  const settings = { places } as unknown as Settings;
+
+  it('placeFor follows the day, then any mid-day change, and falls back to the first home', () => {
+    expect(placeFor({ date: '2026-10-13', place: 'p-office' } as Day, settings).id).toBe('p-office');
+    expect(placeFor({ date: '2026-10-13' } as Day, settings).id).toBe('p-home');
+    expect(placeFor(undefined, settings).id).toBe('p-home');
+    const day = { date: '2026-10-13', place: 'p-office', placeChanges: [{ at: at(2026, 10, 13, 18, 0), place: 'p-home' }] } as Day;
+    expect(placeFor(day, settings, at(2026, 10, 13, 12, 0)).id).toBe('p-office');
+    expect(placeFor(day, settings, at(2026, 10, 13, 20, 0)).id).toBe('p-home');
+    expect(placeFor(undefined, { places: [] } as unknown as Settings).kind).toBe('home');
+  });
+
+  it('eatenAtFor uses the office times on office days', () => {
+    expect(eatenAtFor('2026-10-13', 'breakfast', places[1], settings, at(2026, 10, 13, 23, 0))).toBe(at(2026, 10, 13, 8, 0));
+  });
+
+  it('eatenAtFor keeps now when logging live', () => {
+    const now = at(2026, 10, 13, 14, 40);
+    expect(eatenAtFor('2026-10-13', 'lunch', places[0], settings, now)).toBe(now);
+  });
+
+  it('eatenAtFor at 23:00 for lunch gives that date at the lunch time', () => {
+    expect(eatenAtFor('2026-10-13', 'lunch', places[0], settings, at(2026, 10, 13, 23, 0))).toBe(at(2026, 10, 13, 15, 0));
+  });
+
+  it('eatenAtFor for yesterday after midnight stays on yesterday', () => {
+    expect(eatenAtFor('2026-10-11', 'dinner', places[0], settings, at(2026, 10, 12, 0, 30))).toBe(at(2026, 10, 11, 21, 30));
+  });
+
+  it('trip place uses home meal times', () => {
+    expect(mealTimesFor(settings, places[2])).toEqual(places[0].meals);
+    expect(mealTimesFor({ places: [] } as unknown as Settings, places[2])).toEqual(DEFAULT_MEAL_TIMES.home);
+  });
+
+  it('entryTime prefers eatenAt', () => {
+    expect(entryTime({ at: 5, eatenAt: 3 } as FoodEntry)).toBe(3);
+    expect(entryTime({ at: 5 } as FoodEntry)).toBe(5);
   });
 });

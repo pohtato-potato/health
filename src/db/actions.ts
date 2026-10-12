@@ -1,4 +1,6 @@
-import { dayKey, type DayKey } from '../domain/dates';
+import { atOn, dayKey, type DayKey } from '../domain/dates';
+import { eatenAtFor, mealTimesFor } from '../domain/foods';
+import { placeFor } from '../domain/places';
 import type { Swap } from '../domain/plan';
 import type {
   Day,
@@ -141,16 +143,30 @@ export async function setTick(date: DayKey, key: string, on: boolean) {
   });
 }
 
+/** When an entry was eaten, from the day's place at the time it was logged. */
+async function plannedEatenAt(date: DayKey, meal: FoodEntry['meal'], at: number, live: boolean): Promise<number> {
+  const [day, settings] = await Promise.all([db.days.get(date), getSettings()]);
+  const place = placeFor(day, settings, at);
+  return live ? eatenAtFor(date, meal, place, settings, at) : atOn(date, mealTimesFor(settings, place)[meal]);
+}
+
+/** Adds an entry. Without an eatenAt, it is worked out from the day's place and the meal. */
 export async function addEntry(e: Omit<FoodEntry, 'id'> & { id?: string }): Promise<FoodEntry> {
-  const entry: FoodEntry = { ...e, id: e.id ?? uid() };
+  const eatenAt = e.eatenAt ?? (await plannedEatenAt(e.date, e.meal, e.at, true));
+  const entry: FoodEntry = { ...e, id: e.id ?? uid(), eatenAt };
   await db.entries.put(entry);
   return entry;
 }
 
+/** Updates an entry. Moving it to another meal moves its eaten-at time to that meal's time. */
 export async function updateEntry(id: string, patch: Partial<FoodEntry>) {
   const before = await db.entries.get(id);
-  await db.entries.update(id, patch);
-  if (before) await recordEdit('entries', id, before, { ...before, ...patch });
+  const full = { ...patch };
+  if (before && patch.meal && patch.meal !== before.meal && patch.eatenAt === undefined) {
+    full.eatenAt = await plannedEatenAt(patch.date ?? before.date, patch.meal, before.at, false);
+  }
+  await db.entries.update(id, full);
+  if (before) await recordEdit('entries', id, before, { ...before, ...full });
 }
 
 export async function deleteEntry(id: string): Promise<FoodEntry | undefined> {

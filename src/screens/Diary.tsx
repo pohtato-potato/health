@@ -5,6 +5,7 @@ import type { FoodEntry } from '../domain/types';
 import { useAllEntries, useToday } from '../db/hooks';
 import { back, go } from '../router';
 import { Icon } from '../ui/Icon';
+import { entryTime } from '../domain/foods';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -25,12 +26,12 @@ export function DiaryPage() {
   if (!entries) return <div className="page bare" />;
 
   const firstSeen = new Map<string, DayKey>();
-  for (const e of [...entries].sort((a, b) => a.date.localeCompare(b.date) || a.at - b.at)) {
+  for (const e of [...entries].sort((a, b) => a.date.localeCompare(b.date) || entryTime(a) - entryTime(b))) {
     if (e.kind === 'food' && !firstSeen.has(e.name)) firstSeen.set(e.name, e.date);
   }
   const mine = entries.filter((e) => e.date.startsWith(month));
   const byDay = new Map<DayKey, FoodEntry[]>();
-  for (const e of [...mine].sort((a, b) => a.at - b.at)) byDay.set(e.date, [...(byDay.get(e.date) ?? []), e]);
+  for (const e of [...mine].sort((a, b) => entryTime(a) - entryTime(b))) byDay.set(e.date, [...(byDay.get(e.date) ?? []), e]);
   const dates = [...byDay.keys()].sort().reverse();
   const foods = mine.filter((e) => e.kind === 'food');
   const counts = new Map<string, number>();

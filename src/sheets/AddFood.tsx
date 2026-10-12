@@ -70,20 +70,15 @@ export function AddFood() {
     setAmount(null);
   };
 
-  const cycleMeal = () => setMeal(MEALS[(MEALS.indexOf(meal) + 1) % MEALS.length]);
-
   return (
     <Sheet
       tall
       head={
-        <div className="row" style={{ gap: 8, justifyContent: 'flex-start' }}>
+        <div className="col" style={{ gap: 10 }}>
           <div className="h2" style={{ fontSize: 24 }}>
-            Add to
+            Add food
           </div>
-          <button type="button" className="chip" style={{ height: 40, gap: 6, fontSize: 15 }} onClick={cycleMeal} aria-label={`Meal: ${MEAL_NAMES[meal]}. Tap to change`}>
-            {MEAL_NAMES[meal]}
-            <Icon name="down" size={14} stroke={2} />
-          </button>
+          <Seg options={MEALS.map((m) => ({ id: m, label: MEAL_NAMES[m] }))} value={meal} onChange={setMeal} />
         </div>
       }
     >
