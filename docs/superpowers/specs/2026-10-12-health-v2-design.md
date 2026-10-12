@@ -426,7 +426,7 @@ The owner's favourite feature becomes a world of its own. The walk stays a walk:
 - **Distance in your terms:** "You've walked Delhi to Mumbai, twice."
 - **Walk with last month:** a faint walker marks where you were this time last month.
 - **Walk forecast** (§6.3).
-- **Open:** "your pack" (training shown as the walker's gear) was questioned for its usefulness and goes back to the whiteboard (§14).
+- **Trail building:** each finished session adds a piece of trail infrastructure at that day's position: a footbridge, a rest house, a well, a lamp post, a shelter. When a later chapter's route passes the same place (the Golden Quadrilateral and Chapter 3 cross Chapter 1), you meet what you built, named after the session ("Rest house · Session B · 10 Oct"). Bigger sessions and records build bigger things. "Your pack" (gear) was dropped in favour of this.
 
 ## 10. Connections
 
@@ -536,7 +536,7 @@ All new fields are optional. Old backups restore, and v2 adds tables without cha
 - **The owner's one-off data repair** (from the 1.1 spec) runs before the migration, from `private/repair-1.1.md`.
 
 ## 14. Open items for the next rounds
-1. **Your pack:** whiteboard other ways training could show on the walk, beyond gear (owner's question).
+1. **Trail building:** decided (§9), replacing "your pack".
 2. **Visual reference board:**
    - Features from real apps, aspect by aspect.
    - It sets the look, the illustration style for the walk, and the moment styles' visual treatment.
