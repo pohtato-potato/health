@@ -437,3 +437,32 @@
     transition: none;
   }
 }
+
+/* Protein spread: one bar split by meal. */
+.spread {
+  display: flex;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  gap: 2px;
+}
+.spread span {
+  flex-basis: 0;
+  background: var(--protein);
+}
+.spread span:nth-child(2) {
+  opacity: 0.8;
+}
+.spread span:nth-child(3) {
+  opacity: 0.6;
+}
+.spread span:nth-child(4) {
+  opacity: 0.45;
+}
+.scan-video {
+  width: 100%;
+  border-radius: 16px;
+  background: var(--deep);
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}

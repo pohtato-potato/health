@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { barcodeSupported, lookupBarcode, scanBarcode, type ScannedFood } from '../sources/barcode';
 import { fmtInt } from '../domain/format';
 import { mealForTime, portionFor, stepFor, unitLabel, valuesFor } from '../domain/foods';
 import { impossibleDensity, portionWarning, similarFood } from '../domain/foodChecks';
@@ -102,6 +103,17 @@ function FoodFormInner({ existing, initialName, homes, meal, categories }: { exi
 
   return (
     <Sheet title={existing ? 'Edit food' : 'Create a food'} tall>
+      {!existing && barcodeSupported() && (
+        <BarcodeScan
+          onFound={(f) => {
+            setName(f.name);
+            setUnit(f.unit);
+            setKcal(f.kcal);
+            setProtein(f.protein);
+            setUsual(f.defaultAmount);
+          }}
+        />
+      )}
       <label className="flabel">
         <span className="lbl">Name</span>
         <input className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Paneer bhurji" autoFocus={!existing} spellCheck autoCapitalize="sentences" />
@@ -359,5 +371,45 @@ function EntryInner({ entry, food }: { entry: FoodEntry; food?: Food }) {
         </button>
       )}
     </Sheet>
+  );
+}
+
+/** Scan a packet's barcode and fill the form from Open Food Facts. Offered only online. */
+function BarcodeScan({ onFound }: { onFound: (f: ScannedFood) => void }) {
+  const video = useRef<HTMLVideoElement>(null);
+  const stop = useRef<AbortController | null>(null);
+  const [state, setState] = useState<'idle' | 'scanning' | 'looking' | 'missing' | 'found'>('idle');
+  useEffect(() => () => stop.current?.abort(), []);
+  const start = async () => {
+    stop.current = new AbortController();
+    setState('scanning');
+    try {
+      const code = await scanBarcode(video.current!, stop.current.signal);
+      if (!code) return setState('idle');
+      setState('looking');
+      const f = await lookupBarcode(code);
+      if (f) {
+        onFound(f);
+        setState('found');
+      } else setState('missing');
+    } catch {
+      setState('missing');
+    }
+  };
+  return (
+    <div className="col gap8">
+      <video ref={video} className="scan-video" muted playsInline hidden={state !== 'scanning'} />
+      {state === 'scanning' ? (
+        <button type="button" className="btn ghost block" onClick={() => stop.current?.abort()}>
+          Stop scanning
+        </button>
+      ) : (
+        <button type="button" className="btn ghost block" onClick={start} disabled={state === 'looking'}>
+          {state === 'looking' ? 'Looking it up…' : 'Scan a barcode'}
+        </button>
+      )}
+      {state === 'missing' && <div className="t13 q">Not found. Type the numbers from the label instead.</div>}
+      {state === 'found' && <div className="t13 q">Filled from Open Food Facts. Check the numbers against the label.</div>}
+    </div>
   );
 }

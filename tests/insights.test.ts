@@ -1,3 +1,5 @@
+import { lateHeavy, proteinSpread, weekBudget } from '../src/domain/budgets';
+import { parseOffProduct } from '../src/sources/barcode';
 import { avgOver, dayFoodLabel, foodDaysFor } from '../src/domain/logged';
 import { weekStats } from '../src/domain/weekly';
 import { trainingStreakLine } from '../src/domain/streaks';
@@ -208,5 +210,42 @@ describe('not logged is not zero', () => {
     expect(trainingStreakLine({ thisWeek: 0, streak: 0, best: 1 }, 4)).toBe('This week 0 of 4 · best run 1 week');
     expect(trainingStreakLine({ thisWeek: 2, streak: 3, best: 5 }, 4)).toBe('This week 2 of 4 · 3 weeks running · best run 5 weeks');
     expect(trainingStreakLine({ thisWeek: 1, streak: 0, best: 0 }, 4)).toBe('This week 1 of 4');
+  });
+});
+
+describe('weekly budgets, protein spread, barcode', () => {
+  const T = { kcalMin: 2000, kcalMax: 2300, proteinG: 140, steps: 10000, waterMl: 0, sleepMin: 420, sessionsPerWeek: 4 };
+  const e = (date: string, kcal: number, protein: number, meal: FoodEntry['meal'] = 'lunch', eatenAt?: number) => ({ id: `${date}${kcal}${meal}`, date, meal, at: 0, eatenAt, kind: 'food', name: 'x', portion: '1', kcal, protein }) as FoodEntry;
+
+  it('budget left carries across days', () => {
+    const b = weekBudget(T, new Map(), [e('2026-10-12', 2800, 120)], '2026-10-12', '2026-10-13');
+    expect(b.kcal).toEqual({ used: 2800, budget: 16100, left: 13300, perDayLeft: 2217 });
+    expect(b.protein.left).toBe(980 - 120);
+  });
+
+  it('days with nothing logged use no budget', () => {
+    const b = weekBudget(T, new Map(), [], '2026-10-12', '2026-10-14');
+    expect(b.kcal.used).toBe(0);
+    expect(b.kcal.left).toBe(16100);
+  });
+
+  it('protein spread by meal', () => {
+    expect(proteinSpread([e('d', 100, 30, 'breakfast'), e('d', 100, 20, 'dinner'), e('d', 50, 5, 'dinner')])).toEqual({ breakfast: 30, lunch: 0, snacks: 0, dinner: 25 });
+  });
+
+  it('lateHeavy true when >50 % after 21:00', () => {
+    const at = (h: number) => new Date(2026, 9, 12, h, 0).getTime();
+    expect(lateHeavy([e('d', 100, 30, 'lunch', at(13)), e('d', 100, 40, 'dinner', at(22))])).toBe(true);
+    expect(lateHeavy([e('d', 100, 40, 'lunch', at(13)), e('d', 100, 30, 'dinner', at(22))])).toBe(false);
+    expect(lateHeavy([])).toBe(false);
+  });
+
+  it('barcode parser maps OFF nutriments per 100 g', () => {
+    const food = parseOffProduct({ status: 1, code: '8901', product: { product_name: 'Peanut butter', brands: 'Acme', nutriments: { 'energy-kcal_100g': 588, proteins_100g: 25.1 } } });
+    expect(food).toMatchObject({ name: 'Peanut butter (Acme)', unit: 'g', per: 100, kcal: 588, protein: 25.1 });
+    const drink = parseOffProduct({ status: 1, code: '8902', product: { product_name: 'Milk', nutrition_data_per: '100ml', nutriments: { 'energy-kcal_100ml': 62, proteins_100ml: 3.2 } } });
+    expect(drink).toMatchObject({ unit: 'ml', kcal: 62, protein: 3.2 });
+    expect(parseOffProduct({ status: 0 })).toBeNull();
+    expect(parseOffProduct({ status: 1, product: { product_name: 'No numbers' } })).toBeNull();
   });
 });

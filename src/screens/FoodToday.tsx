@@ -5,6 +5,7 @@ import { useAllDays, useEntries, useEntriesBetween, useSettings, useToday } from
 import { back, go, openSheet, useRoute } from '../router';
 import { Icon } from '../ui/Icon';
 import { SwitchRow } from '../ui/controls';
+import { lateHeavy, proteinSpread, weekBudget } from '../domain/budgets';
 import { patchDay } from '../db/actions';
 import { dayRings, freeMealsThisWeek } from '../state/derived';
 
@@ -26,6 +27,8 @@ export function FoodToday() {
   const kcalPct = Math.min(totals.kcal / targets.kcalMax, 1.08) * 100;
   const lo = (targets.kcalMin / targets.kcalMax) * 100;
   const setDate = (d: string) => go('/food', d === today ? {} : { d }, { replace: true });
+  const budget = weekBudget(targets, new Map(days.map((x) => [x.date, x])), week, ws, date);
+  const spread = proteinSpread(entries);
 
   return (
     <>
@@ -92,6 +95,46 @@ export function FoodToday() {
             <span>{home ? `${home.name}${date === today ? ' today' : ''}` : ''}</span>
             <span>Free meal: {freeUsed ? 'used this week' : 'unused this week'}</span>
           </div>
+        </div>
+
+        <div className="card" style={{ gap: 12 }}>
+          <div className="row base">
+            <div className="lbl">This week</div>
+            <div className="t13 q">Monday to Sunday</div>
+          </div>
+          <div className="grid2">
+            <div className="col gap2">
+              <span className="t13 apri">Calories left</span>
+              <span className="num tn" style={{ fontSize: 22 }}>
+                {fmtInt(budget.kcal.left)}
+              </span>
+              <span className="t12 q">about {fmtInt(Math.max(0, budget.kcal.perDayLeft))} a day for the rest of the week</span>
+            </div>
+            <div className="col gap2">
+              <span className="t13 lav">Protein to go</span>
+              <span className="num tn" style={{ fontSize: 22 }}>
+                {fmtInt(Math.max(0, budget.protein.left))} g
+              </span>
+              <span className="t12 q">{budget.protein.left <= 0 ? 'the week is covered' : `about ${fmtInt(budget.protein.perDayLeft)} g a day`}</span>
+            </div>
+          </div>
+          {totals.protein > 0 && (
+            <div className="col gap8">
+              <div className="spread" role="img" aria-label={`Protein by meal: ${MEALS.map((m) => `${MEAL_NAMES[m]} ${Math.round(spread[m])} g`).join(', ')}`}>
+                {MEALS.map((m) => (
+                  <span key={m} style={{ flexGrow: spread[m] || 0.0001 }} title={`${MEAL_NAMES[m]} ${Math.round(spread[m])} g`} />
+                ))}
+              </div>
+              <div className="row t12 q">
+                {MEALS.map((m) => (
+                  <span key={m}>
+                    {MEAL_NAMES[m].slice(0, 5)} {Math.round(spread[m])} g
+                  </span>
+                ))}
+              </div>
+              {lateHeavy(entries) && <div className="t13 q lh">Most of today's protein landed after 9 pm. Some of it earlier in the day helps it count for more.</div>}
+            </div>
+          )}
         </div>
 
         <div className="col">
