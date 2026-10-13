@@ -41,3 +41,31 @@ Audit of 13 Oct 2026, after v2 shipped. Each screen of the Health v2 Screens boa
 | Reveal day | The forecast draws a straight line 230 days out (0.40); it should not go past the goal's realistic range. |
 
 Screens that already match their mockups closely: s9 going heavier, s10 finale, s12/s29 arrival cards, s14 weekly review, s16 plan editor, s17 readiness, s20–s27 Tracks, s32 character, s33–s35 check-in and compare, s37 journey clock, s40 souvenirs, s45 guide, s47 map.
+
+## Status after the fix pass (13 Oct 2026)
+
+Every gap and bug above is fixed on branch `health-v2-polish`:
+
+| Item | Status |
+|---|---|
+| G1–G3 labels and mono | Fixed: sentence-case labels, plain figures. |
+| s1 Today | Fixed. |
+| s2 + sheet, s44 More and status | Fixed. |
+| s3 Close the day, s19 Day closed | Fixed. |
+| s5 Morning log | Fixed (dial and wheels stay greyed until touched, so nothing is pre-filled). |
+| s6 Checklist, s28 Medicines editor | Fixed. |
+| s7 Train | Fixed. |
+| s8 Session form colours | Fixed (form words, clean reps, 0 reps left). |
+| s11 Walk | Fixed. |
+| s13 You | Fixed (four doors, the rest in a list; reveal-day range on the benchmark). |
+| s18 Night sky | Fixed; star places also spread out now (the hash clustered neighbouring days). |
+| s36 Achievements | Voice of reason retired. |
+| s38 Diary | Fixed. |
+| s39 Departures | Fixed. |
+| s41 Monthly film | Fixed. |
+| s42 Reveal day | Fixed; reached from You. |
+| s43 Settings | Fixed. |
+| s46 Short session | Fixed. |
+| Bugs: map ETA, water challenge, reveal forecast | Fixed: far dates show the year; challenges no longer ask for water; the forecast slows as it goes. |
+
+Checked and already matching: s4 plate steppers, s9, s10, s12/s29, s14, s16, s17, s20–s27, s32–s35, s37, s40, s45, s47. Not re-checked by eye in this pass: s15 (a first, as a moment) and the theme cards t1–t12, which were built against their mockups in I2/I3.
