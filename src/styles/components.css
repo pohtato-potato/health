@@ -1376,3 +1376,32 @@
 .set-row[aria-expanded='true'] {
   border-color: var(--btn-border);
 }
+
+/* Close the day (s3): the meals as one grouped panel, and the warm gold button. */
+.meal-panel {
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  padding: 0 14px;
+}
+.meal-panel .mealbox {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 4px 0;
+  border-top: 1px solid var(--divider);
+}
+.meal-panel .mealbox:first-child {
+  border-top: 0;
+}
+.meal-panel .mealbox.over {
+  background: var(--gold-bg);
+}
+.close-btn {
+  background: var(--gold);
+  color: var(--ink);
+  border-color: var(--gold);
+  gap: 8px;
+}
