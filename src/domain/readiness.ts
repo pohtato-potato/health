@@ -155,3 +155,13 @@ export function refitWeights(history: { x: Partial<Record<ReadinessKey, number>>
   }
   return out;
 }
+
+/** What a session keeps of the readiness at its start: nothing when the score was mostly guessed (no sleep logged). */
+export function readinessToStore(r: { score: number; known: boolean; x: Partial<Record<ReadinessKey, number>> }): { readiness?: number; readinessX?: Partial<Record<ReadinessKey, number>> } {
+  return r.known ? { readiness: r.score, readinessX: r.x } : {};
+}
+
+/** The score as shown: a dash until there is enough to go on. */
+export function readinessText(r: { score: number; known: boolean }): string {
+  return r.known ? String(r.score) : '—';
+}

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { addDays, dayKey } from '../domain/dates';
-import { DEFAULT_WEIGHTS, READINESS_KEYS, REFIT_MIN, refitWeights, type ReadinessKey } from '../domain/readiness';
+import { DEFAULT_WEIGHTS, READINESS_KEYS, readinessText, REFIT_MIN, refitWeights, type ReadinessKey } from '../domain/readiness';
 import { patchSettings } from '../db/actions';
 import { fmtDayMonth, fmtInt } from '../domain/format';
 import type { Day, FoodEntry, SetEntry, Settings, TrainingSession } from '../domain/types';
@@ -29,8 +29,8 @@ export function ForecastCard({ settings, today, days, entries, sessions, sets }:
   return (
     <button type="button" className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }} onClick={() => go('/readiness')}>
       {pick.id === 'records' ? (
-        <MiniRing progress={fd.readiness.score / 100} size={72} width={5} label={`Readiness ${fd.readiness.score}`}>
-          {String(fd.readiness.score)}
+        <MiniRing progress={fd.readiness.known ? fd.readiness.score / 100 : 0} size={72} width={5} label={fd.readiness.known ? `Readiness ${fd.readiness.score}` : 'Readiness: not enough data yet'}>
+          {readinessText(fd.readiness)}
         </MiniRing>
       ) : (
         <div
@@ -82,15 +82,18 @@ export function ReadinessPage() {
       </button>
       <div className="col gap12" style={{ alignItems: 'center', textAlign: 'center' }}>
         <div className="lbl blue">Readiness</div>
-        <MiniRing progress={r.score / 100} size={150} width={4} label={`Readiness ${r.score}`}>
-          {String(r.score)}
+        <MiniRing progress={r.known ? r.score / 100 : 0} size={150} width={4} label={r.known ? `Readiness ${r.score}` : 'Readiness: not enough data yet'}>
+          {readinessText(r)}
         </MiniRing>
         <div className="sf" style={{ fontSize: 26 }}>
-          {r.label}
+          {r.known ? r.label : 'Not enough data yet'}
         </div>
-        <div className="voice" style={{ fontSize: 16 }}>
-          {BAND_LINE[r.band]}
-        </div>
+        {!r.known && <div className="t14 q lh">Log last night's sleep in the morning log and this becomes a real score.</div>}
+        {r.known && (
+          <div className="voice" style={{ fontSize: 16 }}>
+            {BAND_LINE[r.band]}
+          </div>
+        )}
         <div className="grid2" style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', width: '100%', gap: 6 }}>
           {bands.map((b) => (
             <div key={b} className="col gap4" style={{ alignItems: 'center' }}>
@@ -103,7 +106,7 @@ export function ReadinessPage() {
 
       <div className="card" style={{ gap: 0 }}>
         <div className="lbl" style={{ paddingBottom: 6 }}>
-          Why {r.score}
+          {r.known ? `Why ${r.score}` : 'What it has so far'}
         </div>
         {r.parts.length === 0 && <div className="t14 q lh">Nothing logged yet today. The morning log's sleep, energy and soreness make this real.</div>}
         {r.parts.map((p) => (

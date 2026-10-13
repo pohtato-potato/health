@@ -51,6 +51,7 @@ import { fmtDayMonth } from '../domain/format';
 import { db } from '../db/db';
 import { useMoments } from '../ui/Moments';
 import { detectFirsts } from '../domain/firsts';
+import { readinessToStore } from '../domain/readiness';
 
 export function SessionScreen() {
   const { params } = useRoute();
@@ -91,8 +92,7 @@ export function SessionScreen() {
       short,
       swaps: swaps.map(({ from, to, reason }) => ({ from, to, reason })),
       tempo,
-      readiness: ready.score,
-      readinessX: ready.x,
+      ...readinessToStore(ready),
       lighter,
     }).then(() => {
       starting.current = false;

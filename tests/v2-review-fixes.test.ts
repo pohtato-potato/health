@@ -26,3 +26,13 @@ describe('nothing active needs water, which v2 no longer logs', () => {
     for (const a of ACTIVE_ACHIEVEMENTS) expect(String(a.test)).not.toMatch(/waterOk|\.water\b/);
   });
 });
+
+describe('readiness without a morning log', () => {
+  it('a session keeps no score that was mostly guessed', async () => {
+    const { readinessToStore, readinessText } = await import('../src/domain/readiness');
+    expect(readinessToStore({ score: 81, known: false, x: { restDays: 1 } })).toEqual({});
+    expect(readinessToStore({ score: 72, known: true, x: { sleep: 0.2 } })).toEqual({ readiness: 72, readinessX: { sleep: 0.2 } });
+    expect(readinessText({ score: 81, known: false })).toBe('—');
+    expect(readinessText({ score: 72, known: true })).toBe('72');
+  });
+});

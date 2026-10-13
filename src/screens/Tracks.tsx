@@ -24,6 +24,7 @@ import { StepsTrack } from './tracks/Steps';
 import { HeroChart, TrackShell } from './tracks/Template';
 import { TrainingTrack } from './tracks/Training';
 import { WaterExtras } from './TrackExtras';
+import { readinessText } from '../domain/readiness';
 
 type Kind = 'food' | 'shape' | 'steps' | 'sleep' | 'training' | 'joints' | 'drinks' | 'water';
 
@@ -122,7 +123,7 @@ export function Tracks() {
         {tile('steps', 'Steps', 'var(--sage)', avgSteps !== undefined ? fmtInt(avgSteps) : '—', `avg ${word}`, <MiniBars values={steps.slice(-14)} color="var(--sage)" target={t.steps} width={52} />)}
         {tile('sleep', 'Sleep', 'var(--blue)', avgSleep !== undefined ? fmtDuration(Math.round(avgSleep)) : '—', reg !== undefined ? `regularity ${reg}` : `avg ${word}`, <Spark values={sleep.slice(-14)} color="var(--blue)" width={48} />)}
         {tile('training', 'Training', 'var(--lavender)', `${strength >= 0 ? '+' : '−'}${Math.abs(strength)}%`, `strength${records ? ` · ${records} record${records === 1 ? '' : 's'}` : ''}`)}
-        {tile('readiness', 'Readiness', 'var(--blue)', fd.readiness.score, scored.length ? `${Math.round(avg(scored.map((s) => s.readiness))!)} average` : fd.readiness.label.toLowerCase(), undefined, '/readiness')}
+        {tile('readiness', 'Readiness', 'var(--blue)', readinessText(fd.readiness), !fd.readiness.known ? 'not enough data yet' : scored.length ? `${Math.round(avg(scored.map((s) => s.readiness))!)} average` : fd.readiness.label.toLowerCase(), undefined, '/readiness')}
         {settings.plan?.flags.length
           ? tile('joints', jointsTitle(settings), 'var(--apricot)', lastFlag ? `${daysBetween(lastFlag.date, today)} d` : 'Clear', lastFlag ? `since the last flag, ${fmtDayShort(lastFlag.date)}` : 'nothing flagged')
           : null}
