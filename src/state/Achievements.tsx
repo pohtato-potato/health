@@ -8,6 +8,7 @@ import { go } from '../router';
 import { TIER_COLOR, TIER_NAME, useMoments } from '../ui/Moments';
 import { setFastUndoHandler, useToast } from '../ui/Toasts';
 import { bump } from '../db/actions';
+import { realSets } from '../domain/plan';
 
 /** Everything the achievement conditions read, in one live snapshot. */
 export function useAchInput(today: string): AchInput | undefined {
@@ -22,7 +23,7 @@ export function useAchInput(today: string): AchInput | undefined {
       entries: await db.entries.toArray(),
       foods: await db.foods.toArray(),
       sessions: await db.sessions.toArray(),
-      sets: await db.sets.toArray(),
+      sets: realSets(await db.sets.toArray()),
       measurements: await db.measurements.toArray(),
       wins: await db.wins.toArray(),
       checkins: await db.checkins.toArray(),

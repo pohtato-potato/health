@@ -198,7 +198,8 @@ export function bandLevel(ex: ExerciseDef, state?: PlanState): string | undefine
 /** "3 × 10–15", "2 × 45–60 s", "3 × clean reps". */
 export function targetText(ex: ExerciseDef): string {
   let t: string;
-  if (ex.seconds) t = `${ex.sets} × ${range(ex.seconds)} s`;
+  if (measureOf(ex) === 'steps' && ex.steps) t = `${ex.sets} × ${range(ex.steps)} steps`;
+  else if (ex.seconds) t = `${ex.sets} × ${range(ex.seconds)} s`;
   else if (ex.open || !ex.reps) t = `${ex.sets} × clean reps`;
   else t = `${ex.sets} × ${range(ex.reps)}`;
   return ex.perSide ? `${t} each side` : t;
@@ -208,13 +209,52 @@ function range([lo, hi]: [number, number]): string {
   return lo === hi ? String(lo) : `${lo}–${hi}`;
 }
 
+/** The range the exercise's measure is counted in. */
+function rangeOf(ex: ExerciseDef): [number, number] | undefined {
+  const m = measureOf(ex);
+  return m === 'steps' ? ex.steps : m === 'seconds' ? ex.seconds : ex.reps;
+}
+
 export function topOfRange(ex: ExerciseDef): number | undefined {
   if (ex.open) return undefined;
-  return (ex.seconds ?? ex.reps)?.[1];
+  return rangeOf(ex)?.[1];
 }
 
 export function bottomOfRange(ex: ExerciseDef): number | undefined {
-  return (ex.seconds ?? ex.reps)?.[0];
+  return rangeOf(ex)?.[0];
+}
+
+export function measureOf(ex: ExerciseDef): Measure {
+  return ex.measure ?? (ex.seconds ? 'seconds' : 'reps');
+}
+
+/** A set's value in the exercise's own measure, ready to save. */
+export function measured(ex: ExerciseDef, value: number): { reps?: number; seconds?: number; steps?: number } {
+  const v = Math.round(value);
+  const m = measureOf(ex);
+  return m === 'steps' ? { steps: v } : m === 'seconds' ? { seconds: v } : { reps: v };
+}
+
+/** Reps, seconds or steps: whichever the set counted. */
+export function valueOfSet(s: { reps?: number; seconds?: number; steps?: number }): number | undefined {
+  return s.reps ?? s.seconds ?? s.steps;
+}
+
+/** Sets that were done. Skipped sets keep the session's flow but count for nothing. */
+export function realSets<T extends { skipped?: boolean }>(sets: T[]): T[] {
+  return sets.filter((s) => !s.skipped);
+}
+
+/** A "1 rep, no weight" save is almost always a set that wasn't done. */
+export function isPlaceholder(s: { reps?: number; seconds?: number; steps?: number; loadKg: number | null }): boolean {
+  return (s.reps ?? 0) <= 1 && !s.seconds && !s.steps && s.loadKg === null;
+}
+
+/** The order of sides for a per-side set: a plan's lead side is fixed; otherwise the side picked first. */
+export function sidesFor(ex: ExerciseDef, first: 'L' | 'R' | undefined): ('L' | 'R' | 'both')[] {
+  if (!ex.perSide) return ['both'];
+  const lead = ex.lead ?? first ?? 'L';
+  return lead === 'R' ? ['R', 'L'] : ['L', 'R'];
 }
 
 export interface Swap {

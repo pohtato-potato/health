@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { buzz, scheduleDing, unlockAudio, wakeLockManager } from '../audio';
 import { lowerFirst } from '../domain/format';
-import { fmtKg } from '../domain/loads';
+import { chipLoads, fmtKg } from '../domain/loads';
+import { describe, findLogged, SetTable, type Row } from './session/SetTable';
+import { HeavierMoment } from './session/HeavierMoment';
 import { markFor } from '../domain/marks';
 import {
   allExercises,
@@ -10,18 +12,24 @@ import {
   findExercise,
   findSession,
   groupExercises,
+  isPlaceholder,
   isSuperset,
+  measured,
+  measureOf,
+  realSets,
+  sidesFor,
+  valueOfSet,
   targetText,
   topOfRange,
   type ExerciseDef,
   type PlanDef,
 } from '../domain/plan';
-import { exerciseStatus, historyFor, type ExerciseStatus } from '../domain/progression';
+import { exerciseStatus, heavierOffer, historyFor, loadSoFar, loadTonight } from '../domain/progression';
 import type { SetEntry, Settings, Side, TrainingSession } from '../domain/types';
 import { bump, deleteSet, discardSession, logSet, patchSession, patchSettings, startSession } from '../db/actions';
 import { APP_START } from '../appStart';
 import { setRestRunning } from '../state/restState';
-import { useActiveSession, useAllDays, useAllSets, useEntriesBetween, useNow, useSessions, useSettings } from '../db/hooks';
+import { useActiveSession, useAllDays, useAllSets, useAllSetsWithSkips, useEntriesBetween, useNow, useSessions, useSettings } from '../db/hooks';
 import { addDays, dayKey } from '../domain/dates';
 import { readiness } from '../domain/readiness';
 import { go, useRoute } from '../router';
@@ -42,6 +50,7 @@ export function SessionScreen() {
   const active = useActiveSession();
   const sessions = useSessions();
   const sets = useAllSets();
+  const withSkips = useAllSetsWithSkips();
   const days = useAllDays();
   const yesterdayEntries = useEntriesBetween(addDays(dayKey(), -1), addDays(dayKey(), -1));
   const starting = useRef(false);
@@ -88,26 +97,18 @@ export function SessionScreen() {
     });
   }, [settings, active, sessions, sets, days, yesterdayEntries, start, short]);
 
-  if (!settings?.plan || !active || !sets) return <div className="page bare" />;
-  return <Runner session={active} settings={settings} plan={settings.plan} allSets={sets} />;
+  if (!settings?.plan || !active || !sets || !withSkips) return <div className="page bare" />;
+  return <Runner session={active} settings={settings} plan={settings.plan} allSets={withSkips} />;
 }
 
-interface Row {
-  ex: ExerciseDef;
-  setNo: number;
-  side: Side;
-  drop: boolean;
-  key: string;
-}
-
-function rowsFor(group: ExerciseDef[], extra: Record<string, number>): Row[] {
+function rowsFor(group: ExerciseDef[], extra: Record<string, number>, first: Record<string, 'L' | 'R'> = {}): Row[] {
   const count = (ex: ExerciseDef) => ex.sets + (extra[ex.id] ?? 0);
   const max = Math.max(...group.map(count));
   const rows: Row[] = [];
   for (let n = 1; n <= max; n++) {
     for (const ex of group) {
       if (n > count(ex)) continue;
-      const sides: Side[] = ex.perSide ? (ex.lead === 'R' ? ['R', 'L'] : ['L', 'R']) : ['both'];
+      const sides: Side[] = sidesFor(ex, first[ex.id]);
       for (const side of sides) rows.push({ ex, setNo: n, side, drop: false, key: `${ex.id}:${n}:${side}` });
       if (n === ex.sets && ex.drop) for (const side of sides) rows.push({ ex, setNo: n, side, drop: true, key: `${ex.id}:${n}:${side}:drop` });
     }
@@ -115,8 +116,7 @@ function rowsFor(group: ExerciseDef[], extra: Record<string, number>): Row[] {
   return rows;
 }
 
-const findLogged = (mine: SetEntry[], r: Row) => mine.find((s) => s.exerciseId === r.ex.id && s.setNo === r.setNo && s.side === r.side && !!s.drop === r.drop);
-const valueOf = (s: Pick<SetEntry, 'reps' | 'seconds'>) => s.reps ?? s.seconds;
+const valueOf = valueOfSet;
 
 function Runner({ session, settings, plan, allSets }: { session: TrainingSession; settings: Settings; plan: PlanDef; allSets: SetEntry[] }) {
   const toast = useToast();
@@ -124,7 +124,7 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
   const exs = useMemo(() => session.exercises.map((id) => findExercise(plan, id)).filter((e): e is ExerciseDef => !!e), [session.exercises, plan]);
   const groups = useMemo(() => groupExercises(exs), [exs]);
   const mine = useMemo(() => allSets.filter((s) => s.sessionId === session.id), [allSets, session.id]);
-  const history = useMemo(() => allSets.filter((s) => s.sessionId !== session.id), [allSets, session.id]);
+  const history = useMemo(() => realSets(allSets.filter((s) => s.sessionId !== session.id)), [allSets, session.id]);
   const statuses = useMemo(
     () => new Map(exs.map((ex) => [ex.id, exerciseStatus(ex, settings.planState, settings.equipment, history, plan.bigJump ?? 0.25)])),
     [exs, settings.planState, settings.equipment, history, plan.bigJump],
@@ -138,7 +138,7 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
     }
     return e;
   });
-  const groupRows = useMemo(() => groups.map((g) => rowsFor(g, extra)), [groups, extra]);
+  const groupRows = useMemo(() => groups.map((g) => rowsFor(g, extra, session.firstSide)), [groups, extra, session.firstSide]);
   const complete = (gi: number) => groupRows[gi].every((r) => findLogged(mine, r));
   const [gi, setGi] = useState(() => {
     const i = groupRows.findIndex((rows) => rows.some((r) => !findLogged(mine, r)));
@@ -207,12 +207,11 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
 
   const defaults = (r: Row) => {
     const st = statuses.get(r.ex.id)!;
-    const earlier = mine.filter((s) => s.exerciseId === r.ex.id && !s.drop).sort((a, b) => b.at - a.at)[0];
-    const kg = r.drop ? r.ex.drop?.kg ?? null : earlier ? earlier.loadKg : st.loadKg;
+    const kg = r.drop ? r.ex.drop?.kg ?? null : loadSoFar(mine, r.ex.id, loadTonight(st, session.heavier?.[r.ex.id]));
     const last = st.last?.sets.find((s) => s.setNo === r.setNo && s.side === r.side && !!s.drop === r.drop);
     let val = last ? valueOf(last) : undefined;
     // The second side of a set follows the first. With a lead side, it never goes above it.
-    const firstSide = r.ex.lead ?? 'L';
+    const firstSide = sidesFor(r.ex, session.firstSide?.[r.ex.id])[0];
     if (r.ex.perSide && r.side !== firstSide) {
       const first = mine.find((s) => s.exerciseId === r.ex.id && s.setNo === r.setNo && s.side === firstSide && !!s.drop === r.drop);
       const firstVal = first ? valueOf(first) : undefined;
@@ -221,14 +220,14 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
     if (val === undefined) {
       // No history yet: repeat the previous set on this side, or aim for the top of the range.
       const prev = mine
-        .filter((s) => s.exerciseId === r.ex.id && s.side === r.side && !!s.drop === r.drop && s.setNo < r.setNo)
+        .filter((s) => s.exerciseId === r.ex.id && s.side === r.side && !!s.drop === r.drop && s.setNo < r.setNo && !s.skipped)
         .sort((a, b) => b.setNo - a.setNo)[0];
       val = prev ? valueOf(prev) : r.drop ? undefined : topOfRange(r.ex);
     }
     return { kg, val, last };
   };
 
-  const kgEditable = (r: Row) => r.ex.load === 'pair' || r.ex.load === 'single' || (r.ex.load === 'body' && (statuses.get(r.ex.id)?.loadKg ?? null) !== null) || r.drop;
+  const kgEditable = (r: Row) => r.ex.load === 'pair' || r.ex.load === 'single' || (r.ex.load === 'body' && loadTonight(statuses.get(r.ex.id)!, session.heavier?.[r.ex.id]) !== null) || r.drop;
 
   const save = async (r: Row) => {
     unlockAudio();
@@ -239,14 +238,21 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
     const watched = watch?.key === r.key ? Math.floor((Date.now() - watch.startedAt) / 1000) : undefined;
     const val = watched ?? (valText ? parseFloat(valText) : d.val);
     if (val === undefined || !Number.isFinite(val) || val <= 0) {
-      toast({ text: r.ex.seconds ? 'Add the seconds first.' : 'Add the reps first.' });
+      toast({ text: `Add the ${measureOf(r.ex)} first.` });
       return;
     }
     const loadKg = kgEditable(r) ? (kgText ? parseFloat(kgText) : null) : null;
+    const asSaved = { ...measured(r.ex, val), loadKg: Number.isFinite(loadKg as number) ? loadKg : null };
+    if (!existing && isPlaceholder(asSaved)) {
+      const skipIt = await askConfirm({ title: 'Skip this set instead?', body: '1 rep with no weight is usually a set that wasn\'t done. Skipped sets stay out of your stats.', yes: 'Skip it', no: 'Save 1 rep' });
+      if (skipIt) return skip(r);
+    }
     const st = statuses.get(r.ex.id)!;
     const tempo = !!session.tempo?.[r.ex.id];
-    const base = { setNo: r.setNo, side: r.side, loadKg: Number.isFinite(loadKg as number) ? loadKg : null, tempo, drop: r.drop || undefined };
-    const measure = r.ex.seconds ? { seconds: Math.round(val) } : { reps: Math.round(val) };
+    const lead = sidesFor(r.ex, session.firstSide?.[r.ex.id])[0];
+    const firstSide = lead === 'both' ? undefined : lead;
+    const base = { setNo: r.setNo, side: r.side, loadKg: asSaved.loadKg, tempo, drop: r.drop || undefined, ...(firstSide ? { firstSide } : {}) };
+    const measure = measured(r.ex, val);
     // A record has to beat everything before it, earlier sets tonight included.
     const before = [...history, ...mine.filter((s) => s.id !== existing?.id && (!existing || s.at < existing.at))];
     const mark = markFor({ ...base, ...measure }, historyFor(r.ex, settings.planState, before), st.last?.sets ?? [], bottomOfRange(r.ex) ?? 1);
@@ -271,12 +277,32 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
       toast({ kicker: 'New record', text: `${st.name}: ${describe(base.loadKg, measure)}`, tone: 'gold' });
       if (settings.prefs.buzz) buzz(40);
     }
-    // Rest after the last row of a round.
+    afterRow(r);
+  };
+
+  /** Rest after the last row of a round; in a superset, glide to the partner first. */
+  const afterRow = (r: Row, rested = true) => {
     const idx = rows.findIndex((x) => x.key === r.key);
     const next = rows[idx + 1];
     if (!next || next.setNo !== r.setNo || rows.slice(idx + 1).every((x) => findLogged(mine, x))) {
-      startRest(Math.max(...group.map((e) => e.restSec ?? (e.seconds ? 60 : 90))));
+      if (!rested) return;
+      startRest(Math.max(...group.map((e) => e.restSec ?? (measureOf(e) === 'seconds' ? 60 : 90))));
+    } else if (next.ex.id !== r.ex.id) {
+      window.setTimeout(() => document.getElementById(`row-${next.key}`)?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' }), 120);
     }
+  };
+
+  /** Skipped sets count as done for the flow and for nothing else. */
+  const skip = async (r: Row) => {
+    const st = statuses.get(r.ex.id)!;
+    await logSet({ sessionId: session.id, date: session.date, session: session.session, exerciseId: r.ex.id, exercise: st.name, at: Date.now(), setNo: r.setNo, side: r.side, loadKg: null, drop: r.drop || undefined, skipped: true });
+    setEditing(null);
+    setDraft({});
+    afterRow(r, false);
+  };
+  const undoSkip = async (r: Row) => {
+    const existing = findLogged(mine, r);
+    if (existing?.skipped) await deleteSet(existing.id);
   };
 
   const remove = async (r: Row) => {
@@ -307,6 +333,11 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
   setRestRunning(restLeft > 0);
   const nextGroup = groups[gi + 1];
   const groupDone = complete(gi);
+  const tired = session.tiredHands ?? groups.slice(0, gi).some((g) => g.some((e) => e.tiredHands));
+  const offerFor = group
+    .map((ex) => ({ ex, offer: heavierOffer(statuses.get(ex.id)!) }))
+    .find(({ ex, offer }) => offer && !session.heavier?.[ex.id] && !mine.some((m) => m.exerciseId === ex.id));
+  const answer = (exId: string, v: 'yes' | 'no') => patchSession(session.id, { heavier: { ...session.heavier, [exId]: v } });
 
   return (
     <div className="page bare" style={{ gap: 16, paddingTop: 'calc(14px + var(--safe-top))' }}>
@@ -345,6 +376,10 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
         ))}
       </div>
 
+      {offerFor?.offer && (
+        <HeavierMoment exercise={statuses.get(offerFor.ex.id)!.name} offer={offerFor.offer} onYes={() => answer(offerFor.ex.id, 'yes')} onNo={() => answer(offerFor.ex.id, 'no')} />
+      )}
+
       {gi === 0 && session.swapped?.length ? (
         <div className="t13 apri lh">
           {session.swapped.map((s) => `${findExercise(plan, s.from)?.name ?? s.from} is out tonight (${s.reason.toLowerCase()}).`).join(' ')}
@@ -356,7 +391,7 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
         const exRows = rows.filter((r) => r.ex.id === ex.id);
         const flag = ex.stopFlag ? plan.flags.find((f) => f.id === ex.stopFlag) : undefined;
         return (
-          <div key={ex.id} className="col gap12">
+          <div key={ex.id} id={`ex-${ex.id}`} className="col gap12">
             <div className="col gap6">
               <div className="t13 q">
                 Exercise {firstIdx + k + 1} of {exs.length}
@@ -368,7 +403,7 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
               <div className="t14 q">
                 {targetText(ex)}
                 {ex.load === 'single' ? ' · one dumbbell' : ''}
-                {st.loadKg !== null && ex.load !== 'band' ? ` · ${fmtKg(st.loadKg)} kg` : ''}
+                {loadTonight(st, session.heavier?.[ex.id]) !== null && ex.load !== 'band' ? ` · ${fmtKg(loadTonight(st, session.heavier?.[ex.id])!)} kg` : ''}
                 {st.band ? ` · ${st.band.toLowerCase()}` : ''}
               </div>
               {ex.note && <div className="t13 d lh">{ex.note}</div>}
@@ -408,12 +443,16 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
                   Tempo 3 s · {session.tempo?.[ex.id] ? 'on' : 'off'}
                 </button>
               )}
-              {session.tempo?.[ex.id] && prefOn(settings.prefs, 'tempoCoach') && !ex.seconds && (
+              {session.tempo?.[ex.id] && prefOn(settings.prefs, 'tempoCoach') && measureOf(ex) === 'reps' && (
                 <button type="button" className={`tool${coach === ex.id ? ' on' : ''}`} onClick={() => setCoach(coach === ex.id ? null : ex.id)} aria-pressed={coach === ex.id}>
                   <Icon name="stopwatch" size={16} stroke={1.8} />
                   Coach
                 </button>
               )}
+              <button type="button" className={`tool${tired ? ' on' : ''}`} aria-pressed={tired} onClick={() => patchSession(session.id, { tiredHands: !tired })}>
+                <Icon name="steps" size={16} stroke={1.8} />
+                Tired hands · {tired ? 'on' : 'off'}
+              </button>
               <button type="button" className="tool" onClick={() => setSwapFor(ex.id)}>
                 <Icon name="swap" size={16} stroke={1.8} />
                 Swap
@@ -433,6 +472,20 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
                 </button>
               )}
             </div>
+
+            {ex.perSide && !ex.lead && !mine.some((m) => m.exerciseId === ex.id) && (
+              <div className="row" style={{ gap: 8, justifyContent: 'flex-start' }} role="radiogroup" aria-label="First side">
+                <span className="t13 q">Start with</span>
+                {(['L', 'R'] as const).map((side) => {
+                  const on = sidesFor(ex, session.firstSide?.[ex.id])[0] === side;
+                  return (
+                    <button key={side} type="button" role="radio" aria-checked={on} className={`chip sm${on ? ' on' : ''}`} onClick={() => patchSession(session.id, { firstSide: { ...session.firstSide, [ex.id]: side } })}>
+                      {side === 'L' ? 'Left' : 'Right'}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             {coach === ex.id && <TempoCoach key={current?.key ?? ex.id} reps={topOfRange(ex) ?? bottomOfRange(ex) ?? 10} vibrate={settings.prefs.buzz} onStop={() => setCoach(null)} />}
 
@@ -455,9 +508,14 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
               kgEditable={kgEditable}
               onSave={save}
               onRemove={remove}
+              onSkip={skip}
+              onUndoSkip={undoSkip}
               watch={watch}
               setWatch={setWatch}
               now={now}
+              chips={ex.load === 'pair' || ex.load === 'single' ? chipLoads(settings.equipment, ex.load) : ex.load === 'body' ? chipLoads(settings.equipment, ex.thenLoad?.load ?? 'pair') : []}
+              tired={tired}
+              turnSteps={settings.turnSteps}
             />
             <button type="button" className="link" style={{ alignSelf: 'flex-start', minHeight: 32, marginTop: -6 }} onClick={() => setExtra({ ...extra, [ex.id]: (extra[ex.id] ?? 0) + 1 })}>
               + Add a set
@@ -543,163 +601,6 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
           }}
         />
       )}
-    </div>
-  );
-}
-
-function describe(kg: number | null, m: { reps?: number; seconds?: number }) {
-  const v = m.reps !== undefined ? `${m.reps}` : `${m.seconds} s`;
-  return kg !== null ? `${fmtKg(kg)} kg × ${v}` : m.reps !== undefined ? `${v} reps` : v;
-}
-
-function SetTable({
-  ex,
-  st,
-  rows,
-  mine,
-  activeKey,
-  draft,
-  setDraft,
-  editing,
-  setEditing,
-  defaults,
-  kgEditable,
-  onSave,
-  onRemove,
-  watch,
-  setWatch,
-  now,
-}: {
-  ex: ExerciseDef;
-  st: ExerciseStatus;
-  rows: Row[];
-  mine: SetEntry[];
-  activeKey: string | null;
-  draft: { kg?: string; val?: string };
-  setDraft: (d: { kg?: string; val?: string }) => void;
-  editing: string | null;
-  setEditing: (k: string | null) => void;
-  defaults: (r: Row) => { kg: number | null; val?: number; last?: SetEntry };
-  kgEditable: (r: Row) => boolean;
-  onSave: (r: Row) => void;
-  onRemove: (r: Row) => void;
-  watch: { key: string; startedAt: number } | null;
-  setWatch: (w: { key: string; startedAt: number } | null) => void;
-  now: number;
-}) {
-  const timed = !!ex.seconds;
-  return (
-    <div className="sets">
-      <div className="setrow head">
-        <div>Set</div>
-        <div>Last time</div>
-        <div className="center">{ex.load === 'band' ? 'Band' : 'kg'}</div>
-        <div className="center">{timed ? 'Secs' : 'Reps'}</div>
-        <div />
-        <div />
-      </div>
-      {rows.map((r) => {
-        const logged = findLogged(mine, r);
-        const isActive = r.key === activeKey;
-        const d = defaults(r);
-        const lastText = d.last ? describe(d.last.loadKg, d.last).replace(' kg', '') : '—';
-        const label = `${r.drop ? '↓' : r.setNo}${r.side !== 'both' ? ` ${r.side}` : ''}`;
-        const leadSet = ex.lead && r.side !== ex.lead ? mine.find((s) => s.exerciseId === ex.id && s.setNo === r.setNo && s.side === ex.lead && !!s.drop === r.drop) : undefined;
-        const typedVal = isActive ? parseFloat(draft.val ?? '') : NaN;
-        const followerVal = logged ? valueOf(logged) : Number.isFinite(typedVal) ? typedVal : undefined;
-        const overLead = leadSet && followerVal !== undefined && (valueOf(leadSet) ?? 0) < followerVal;
-        const watching = watch?.key === r.key;
-        return (
-          <div key={r.key}>
-            <div className={`setrow${isActive ? ' cur' : ''}`}>
-              <div className={isActive ? 't15' : 't15 q'}>{label}</div>
-              <div className="t14 q" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {lastText}
-              </div>
-              {isActive ? (
-                <>
-                  {kgEditable(r) ? (
-                    <input
-                      className="field sm"
-                      inputMode="decimal"
-                      aria-label="Load in kg"
-                      value={draft.kg ?? d.kg?.toString() ?? ''}
-                      onFocus={(e) => e.currentTarget.select()}
-                      onChange={(e) => setDraft({ ...draft, kg: e.target.value.replace(',', '.').replace(/[^\d.]/g, '') })}
-                    />
-                  ) : (
-                    <div className="t14 q center">{ex.load === 'band' ? st.band?.split(' ')[0] ?? 'Band' : 'Body'}</div>
-                  )}
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      className="field sm focus"
-                      inputMode="numeric"
-                      aria-label={timed ? 'Seconds' : 'Reps'}
-                      placeholder={d.val?.toString() ?? ''}
-                      value={watching ? String(Math.floor((now - watch!.startedAt) / 1000)) : draft.val ?? ''}
-                      onFocus={(e) => e.currentTarget.select()}
-                      onChange={(e) => setDraft({ ...draft, val: e.target.value.replace(/[^\d]/g, '') })}
-                    />
-                  </div>
-                  {timed ? (
-                    <button
-                      type="button"
-                      aria-label={watching ? 'Stop the stopwatch' : 'Start the stopwatch'}
-                      className="center"
-                      style={{ color: watching ? 'var(--sage)' : 'var(--quiet)' }}
-                      onClick={() => {
-                        if (watching) {
-                          setDraft({ ...draft, val: String(Math.floor((now - watch!.startedAt) / 1000)) });
-                          setWatch(null);
-                        } else {
-                          unlockAudio();
-                          setWatch({ key: r.key, startedAt: Date.now() });
-                        }
-                      }}
-                    >
-                      <Icon name={watching ? 'pause' : 'stopwatch'} size={18} stroke={1.8} />
-                    </button>
-                  ) : (
-                    <div />
-                  )}
-                  <button type="button" className="okdot" aria-label={`Complete set ${label}`} onClick={() => onSave(r)} />
-                </>
-              ) : (
-                <>
-                  <div className={`t16 center ${logged ? '' : 'f'}`}>
-                    {logged ? (logged.loadKg !== null ? fmtKg(logged.loadKg) : ex.load === 'band' ? 'B' : '—') : d.kg !== null && kgEditable(r) ? fmtKg(d.kg) : ''}
-                  </div>
-                  <div className={`t16 center ${logged ? '' : 'f'}`}>{logged ? valueOf(logged) : d.val ?? ''}</div>
-                  <div className="mark" style={{ color: logged?.mark === '!!' ? 'var(--gold)' : logged?.mark === '!' ? 'var(--sage)' : 'var(--quiet)' }}>
-                    {logged?.mark ?? ''}
-                  </div>
-                  {logged ? (
-                    <button type="button" className="okdot done" aria-label={`Edit set ${label}`} onClick={() => setEditing(r.key)}>
-                      <Icon name="check" size={16} stroke={2.4} color="var(--ink)" />
-                    </button>
-                  ) : (
-                    <div />
-                  )}
-                </>
-              )}
-            </div>
-            {overLead && <div className="flagline">{r.side === 'R' ? 'Right' : 'Left'} did more than {ex.lead === 'L' ? 'left' : 'right'}. Keep it at or below.</div>}
-            {isActive && editing === r.key && (
-              <div className="row" style={{ padding: '0 14px 10px 66px', justifyContent: 'flex-start', gap: 16 }}>
-                <button type="button" className="t13 q" onClick={() => setEditing(null)}>
-                  Cancel
-                </button>
-                <button type="button" className="t13" style={{ color: '#e38a7c' }} onClick={() => onRemove(r)}>
-                  Delete set
-                </button>
-              </div>
-            )}
-          </div>
-        );
-      })}
-      <div className="t12 q" style={{ padding: '8px 14px 10px', borderTop: '1px solid var(--divider)' }}>
-        ! beats last time: more reps, more weight, or the same reps with a slower lowering. !! is a record.
-      </div>
     </div>
   );
 }

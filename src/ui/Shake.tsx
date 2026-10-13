@@ -10,6 +10,7 @@ import { useSettings, useToday } from '../db/hooks';
 import { go } from '../router';
 import { isRestRunning } from '../state/restState';
 import { Icon } from './Icon';
+import { realSets } from '../domain/plan';
 
 /** Opens a stat from anywhere: a button, or the phone being shaken. */
 export function openShakeStat() {
@@ -35,7 +36,7 @@ export function ShakeStat() {
       days: await db.days.toArray(),
       entries: await db.entries.toArray(),
       sessions: await db.sessions.toArray(),
-      sets: await db.sets.toArray(),
+      sets: realSets(await db.sets.toArray()),
       measurements: await db.measurements.toArray(),
     });
   }, [today, open]);

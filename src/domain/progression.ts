@@ -1,7 +1,7 @@
 import type { DayKey } from './dates';
 import { lowerFirst } from './format';
 import { fmtKg, isBigJump, nextLoad } from './loads';
-import { bandLevel, bottomOfRange, exerciseName, topOfRange, type ExerciseDef, type PlanState, type TriggerDef } from './plan';
+import { bandLevel, bottomOfRange, exerciseName, realSets, topOfRange, valueOfSet, type ExerciseDef, type PlanState, type TriggerDef } from './plan';
 import type { Equipment, SetEntry } from './types';
 
 export type AdviceKind = 'heavier' | 'tempo-first' | 'needs-plates' | 'maxed' | 'variant' | 'add-load' | 'band';
@@ -39,7 +39,7 @@ export interface ExerciseStatus {
 /** Working sets (not drop sets) of this exercise and its current variant. */
 export function historyFor(ex: ExerciseDef, state: PlanState | undefined, sets: SetEntry[]): SetEntry[] {
   const name = exerciseName(ex, state);
-  return sets
+  return realSets(sets)
     .filter((s) => s.exerciseId === ex.id && !s.drop && (!ex.variants?.length || s.exercise === name))
     .sort((a, b) => a.at - b.at);
 }
@@ -52,7 +52,7 @@ export function lastTime(history: SetEntry[], excludeSessionId?: string): LastTi
   return { sessionId: latest.sessionId, date: latest.date, sets };
 }
 
-const valueOf = (s: Pick<SetEntry, 'reps' | 'seconds'>) => s.reps ?? s.seconds ?? 0;
+const valueOf = (s: Pick<SetEntry, 'reps' | 'seconds' | 'steps'>) => valueOfSet(s) ?? 0;
 
 export function workingLoad(sets: SetEntry[]): number | null {
   const loads = sets.map((s) => s.loadKg).filter((kg): kg is number => kg !== null && kg !== undefined);
@@ -80,7 +80,7 @@ export function exerciseStatus(
   const last = lastTime(historyFor(ex, state, allSets));
   const band = bandLevel(ex, state);
   // A new variant starts from the load used on the old one.
-  const anyLast = last ?? lastTime(allSets.filter((s) => s.exerciseId === ex.id && !s.drop).sort((a, b) => a.at - b.at));
+  const anyLast = last ?? lastTime(realSets(allSets).filter((s) => s.exerciseId === ex.id && !s.drop).sort((a, b) => a.at - b.at));
   const lastLoad = anyLast ? workingLoad(anyLast.sets) : null;
   const base: ExerciseStatus = {
     name,
@@ -125,7 +125,7 @@ export function exerciseStatus(
     const kg = ex.thenLoad.kg;
     const lo = bottomOfRange(ex);
     const text = `${every}. Next time, hold ${fmtKg(kg)} kg dumbbells${lo ? ` and start again at ${lo}` : ''}.`;
-    return { ...base, loadKg: kg, advice: { kind: 'add-load', title: 'Ready for dumbbells', text, tonight: `Tonight: hold ${fmtKg(kg)} kg.`, toKg: kg } };
+    return { ...base, advice: { kind: 'add-load', title: 'Ready for dumbbells', text, tonight: `Tonight: hold ${fmtKg(kg)} kg.`, toKg: kg } };
   }
 
   // 4. Loaded work goes heavier, from the loading table.
@@ -178,7 +178,6 @@ export function exerciseStatus(
   const plates = nl.smaller ? ` The ${fmtKg(nl.smaller.plateKg)} kg plates would make a smaller step.` : '';
   return {
     ...base,
-    loadKg: next,
     tempo: !!ex.tempo,
     advice: {
       kind: 'heavier',
@@ -204,4 +203,46 @@ export function triggerMet(t: TriggerDef, sets: SetEntry[]): boolean {
     if (good.length < t.sets) return false;
   }
   return true;
+}
+
+/**
+ * The form gate: going heavier is offered only when last session's working sets were
+ * solid (form 4 or more) with a rep in reserve. Sets rated before v2 carry no form and pass.
+ */
+export function formGate(sets: SetEntry[]): boolean {
+  const working = realSets(sets).filter((s) => !s.drop);
+  return working.length > 0 && working.every((s) => (s.form === undefined || s.form >= 4) && (s.rir === undefined || s.rir >= 1));
+}
+
+export interface HeavierOffer {
+  from: number;
+  to: number;
+  /** The case for it, line by line. */
+  case: string[];
+}
+
+/** "Ready for 7.5 kg?" — shown full screen before the set; nothing changes until it is answered. */
+export function heavierOffer(st: ExerciseStatus): HeavierOffer | undefined {
+  const toKg = st.advice?.toKg;
+  if (toKg === undefined || (st.advice?.kind !== 'heavier' && st.advice?.kind !== 'add-load') || !st.last) return undefined;
+  if (!formGate(st.last.sets)) return undefined;
+  const working = realSets(st.last.sets).filter((s) => !s.drop);
+  const reps = working.map((s) => valueOfSet(s) ?? 0);
+  const forms = working.map((s) => s.form).filter((f) => f !== undefined);
+  const rirs = working.map((s) => s.rir).filter((r) => r !== undefined);
+  const lines = [`Last time: ${reps.join(', ')}${st.loadKg !== null ? ` at ${fmtKg(st.loadKg)} kg` : ''}, every set at the top.`];
+  if (forms.length) lines.push(`Form ${Math.min(...forms)} or better on every set.`);
+  if (rirs.length) lines.push(`${Math.min(...rirs)}${Math.min(...rirs) >= 3 ? '+' : ''} rep${Math.min(...rirs) === 1 ? '' : 's'} left in the tank.`);
+  return { from: st.loadKg ?? 0, to: toKg, case: lines };
+}
+
+/** Tonight's load: the heavier one only once it has been accepted. */
+export function loadTonight(st: ExerciseStatus, decision: 'yes' | 'no' | undefined): number | null {
+  return decision === 'yes' && st.advice?.toKg !== undefined ? st.advice.toKg : st.loadKg;
+}
+
+/** Tonight's load so far for an exercise: the last set done (skips and drop sets ignored), else the fallback. */
+export function loadSoFar(mine: SetEntry[], exerciseId: string, fallback: number | null): number | null {
+  const done = realSets(mine).filter((s) => s.exerciseId === exerciseId && !s.drop);
+  return done.length ? done.reduce((a, b) => (b.at > a.at ? b : a)).loadKg : fallback;
 }

@@ -323,6 +323,12 @@ export interface TrainingSession {
   /** Lifting and rest spans, in ms since epoch. */
   restLog?: { from: number; to: number; kind: 'lift' | 'rest' }[];
   battery?: boolean;
+  /** v2: the answer to each "Ready for heavier?" offer this session. */
+  heavier?: Record<string, 'yes' | 'no'>;
+  /** v2: the side picked first on per-side exercises without a lead side. */
+  firstSide?: Record<string, 'L' | 'R'>;
+  /** v2: big dials and chips instead of the keyboard. */
+  tiredHands?: boolean;
 }
 
 export interface SetEntry {

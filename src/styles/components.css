@@ -515,3 +515,84 @@
   background: linear-gradient(transparent, var(--ink) 30%);
   z-index: 10;
 }
+
+/* Session: the heavier moment, set panel, chips, skipped rows. */
+.heavier {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: calc(env(safe-area-inset-top) + 64px) 24px calc(env(safe-area-inset-bottom) + 28px);
+  background: var(--deep);
+  overflow: hidden;
+}
+.heavier-glow {
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  width: 520px;
+  height: 520px;
+  margin-left: -260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(242, 196, 109, 0.22), rgba(242, 196, 109, 0) 65%);
+  animation: heavier-in 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes heavier-in {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+}
+.heavier-title {
+  font-family: var(--serif);
+  font-size: 44px;
+  line-height: 1.05;
+  font-weight: 400;
+  margin: 0;
+  text-wrap: balance;
+}
+.heavier-case {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--quiet);
+}
+.setpanel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 14px 12px;
+}
+.chiprow {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.chiprow::-webkit-scrollbar {
+  display: none;
+}
+.chiprow .chip {
+  flex-shrink: 0;
+}
+.setrow.skipped {
+  opacity: 0.6;
+}
+.editbtn {
+  min-height: 44px;
+  font-size: 13px;
+  color: var(--quiet);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .heavier-glow {
+    animation: none;
+  }
+}
