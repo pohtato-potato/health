@@ -2,6 +2,8 @@ import type { CSSProperties, ReactNode } from 'react';
 
 /** Stroke line icons only, drawn on a 24 px grid. No food pictures, ever. */
 const PATHS: Record<string, ReactNode> = {
+  home: <path d="M4 11.5 12 5l8 6.5M6.5 10v9h11v-9M10 19v-5h4v5" />,
+  office: <path d="M5 20V5.5h9V20M14 9h5v11M3.5 20h17M8 9h3M8 12.5h3M8 16h3M16.5 12.5h0M16.5 16h0" />,
   today: (
     <>
       <circle cx="12" cy="12" r="8" />

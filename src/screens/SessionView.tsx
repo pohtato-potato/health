@@ -169,7 +169,7 @@ export function SessionView() {
             <span>
               Rank among {same.length} {def?.name ?? s.session}s
             </span>
-            <span className="mono">#{rank}</span>
+            <span className="tn">#{rank}</span>
           </div>
           <div className="row t15">
             <span>Exercises beaten or matched</span>
@@ -183,7 +183,7 @@ export function SessionView() {
       <div className="card" style={{ gap: 0 }}>
         <div className="row base" style={{ paddingBottom: 8 }}>
           <div className="lbl">Exercise by exercise</div>
-          <div className="t12 q mono">!! record · ! beat · = matched</div>
+          <div className="t12 q tn">!! record · ! beat · = matched</div>
         </div>
         {exRows.map((r) => (
           <ExerciseLine key={r.id} name={r.name} sets={r.sets} mark={r.mark} unitHint={plan ? findExercise(plan, r.id)?.load : undefined} />
@@ -231,14 +231,14 @@ function ExerciseLine({ name, sets, mark, unitHint }: { name: string; sets: SetE
     .join(' · ');
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '30px minmax(0,1fr) auto', gap: 10, alignItems: 'baseline', padding: '11px 0', borderTop: '1px solid var(--divider)' }}>
-      <span className="mono t14" style={{ fontWeight: 500, color: mark === '!!' ? 'var(--gold)' : mark === '!' ? 'var(--sage)' : 'var(--quiet)' }}>
+      <span className="tn t14" style={{ fontWeight: 500, color: mark === '!!' ? 'var(--gold)' : mark === '!' ? 'var(--sage)' : 'var(--quiet)' }}>
         {mark ?? ''}
       </span>
       <div className="col gap2">
         <b style={{ fontWeight: 400, fontSize: 15 }}>{name}</b>
         <span className="t12 q">{sub}</span>
       </div>
-      <span className="mono t13 right" style={{ color: 'var(--voice)' }}>
+      <span className="tn t13 right" style={{ color: 'var(--voice)' }}>
         {vals.join(' · ')}
       </span>
     </div>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode, createContext, useContext } from 'react';
 import { scheduleDing, unlockAudio } from '../audio';
 import { fmtDayMonth, fmtDuration, fmtInt, fmtLitres } from '../domain/format';
 import { dayKey } from '../domain/dates';
@@ -44,9 +44,13 @@ export function SettingsScreen() {
   const planInput = useRef<HTMLInputElement>(null);
   const unlocked = useUnlockedIds();
 
+  const [open, setOpen] = useState<string | null>(params.get('at'));
   useEffect(() => {
     const at = params.get('at');
-    if (at) document.getElementById(`s-${at}`)?.scrollIntoView({ block: 'start' });
+    if (at) {
+      setOpen(at === 'data' ? 'export' : at === 'backup' ? 'backups' : at);
+      requestAnimationFrame(() => document.getElementById(`s-${at === 'data' ? 'export' : at === 'backup' ? 'backups' : at}`)?.scrollIntoView({ block: 'start' }));
+    }
   }, [params, settings === undefined]);
 
   if (!settings) return <div className="page bare" />;
@@ -77,6 +81,22 @@ export function SettingsScreen() {
 
   const last = settings.backup.lastQuick;
   const plates = settings.equipment.plates;
+  const meds = settings.checklist.filter((i) => i.active && i.med).length;
+  const summary: Record<string, string> = {
+    you: [settings.name, settings.heightCm ? `${settings.heightCm} cm` : '', settings.goalDate ? `reveal ${fmtDayMonth(settings.goalDate)}` : ''].filter(Boolean).join(' · '),
+    targets: `${fmtInt(t.kcalMin)}–${fmtInt(t.kcalMax)} · ${t.proteinG} g · ${fmtInt(t.steps)}`,
+    walking: `${settings.places?.length ?? 0} places · meal times`,
+    checklist: `${settings.checklist.filter((i) => i.active).length} items${meds ? ` · ${meds} medicine${meds === 1 ? '' : 's'}` : ''}`,
+    training: settings.plan ? `${settings.plan.name} · editor` : 'No plan yet',
+    'food-categories': `${settings.foodCategories?.length ?? 0} categories`,
+    backups: `${last ? `last ${fmtDayMonth(dayKey(new Date(last)))}` : 'never'} · nudge after ${settings.backup.nudgeDays} days`,
+    export: `Audit pack · review day ${settings.reviewDay !== undefined ? ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][settings.reviewDay] : 'not set'}`,
+    lastfm: settings.lastfm?.key ? `connected · ${settings.lastfm.users.length} user${settings.lastfm.users.length === 1 ? '' : 's'}` : 'not connected',
+    storage: pwa.persisted ? 'protected' : 'not protected yet',
+    feel: `battery saver ${p.batterySaver ? 'on' : 'automatic below 30%'}`,
+    home: `ticker ${prefOn(p, 'ticker') ? 'on' : 'off'}`,
+    privacy: `photos ${prefOn(p, 'blurPhotos') ? 'blurred' : 'shown'}${prefOn(p, 'lockPhotos') && settings.photoKey ? ' · locked' : ''}`,
+  };
 
   return (
     <div className="page bare" style={{ gap: 10 }}>
@@ -84,11 +104,12 @@ export function SettingsScreen() {
         <Icon name="left" size={20} stroke={1.8} />
         You
       </button>
-      <SetupCard settings={settings} />
       <h1 className="h1" style={{ fontSize: 32, marginBottom: 6 }}>
         Settings
       </h1>
+      <SetupCard settings={settings} />
 
+      <OpenGroup.Provider value={{ open, toggle: (id) => setOpen(open === id ? null : id), summary }}>
       <h2 className="settings-part">Your plan</h2>
 
       <Group id="you" title="You">
@@ -118,7 +139,7 @@ export function SettingsScreen() {
         <SwitchRow title="Suggest target changes" sub="Only ever more food or more steps, and only when you tap to accept" checked={prefOn(p, 'suggestTargets')} onChange={(v) => setPref('suggestTargets', v)} />
       </Group>
 
-      <Group id="walking" title="Walking and places">
+      <Group id="walking" title="Places">
         <div className="li" style={{ minHeight: 64 }}>
           <span className="s">
             <span>Your loop at home</span>
@@ -132,7 +153,7 @@ export function SettingsScreen() {
         <LinkRow title="Places" sub="Each brings its meal times, step goal and the foods shown first" value={(settings.places?.length ? settings.places : settings.homes).map((h) => h.name).join(', ')} onClick={() => setEditor('homes')} />
       </Group>
 
-      <Group id="checklist" title="Daily checklist">
+      <Group id="checklist" title="Checklist and medicines">
         <LinkRow title="Medicines" sub="Courses, stock, appointments and rewards" onClick={() => go('/medicines')} />
         {settings.checklist.map((i) => (
           <div key={i.id} className="li">
@@ -157,7 +178,7 @@ export function SettingsScreen() {
         </div>
       </Group>
 
-      <Group id="training" title="Training setup">
+      <Group id="training" title="Training plan">
         <SwitchRow
           title="Battery saver for sessions"
           sub={battery !== undefined ? `On by itself below 30%. The phone reports ${Math.round(battery * 100)}% now.` : "This browser doesn't report the battery, so switch it on by hand."}
@@ -250,7 +271,7 @@ export function SettingsScreen() {
 
       <h2 className="settings-part">Your data</h2>
 
-      <Group id="backups" title="Backups" plain>
+      <Group id="backups" title="Backup" plain>
         <div className="col gap12" style={{ padding: '18px 18px 6px', background: 'var(--surface)', border: '1px solid var(--hairline)', borderRadius: 20 }}>
           <div className="row" style={{ justifyContent: 'flex-start', alignItems: 'flex-start' }}>
             <div style={{ width: 10, height: 10, borderRadius: 5, marginTop: 5, flexShrink: 0, background: last && Date.now() - last < 3 * 86_400_000 ? 'var(--sage)' : 'var(--gold)' }} />
@@ -306,7 +327,7 @@ export function SettingsScreen() {
         </div>
       </Group>
 
-      <Group id="export" title="Claude" plain>
+      <Group id="export" title="Audit pack and Claude review" plain>
         <div className="col gap12" style={{ padding: 18, background: 'var(--surface)', border: '1px solid var(--hairline)', borderRadius: 20 }}>
           <div className="col gap2">
             <div className="t15">Export workbook (.xlsx)</div>
@@ -405,7 +426,7 @@ export function SettingsScreen() {
 
       <h2 className="settings-part">The feel</h2>
 
-      <Group id="feel" title="Voice and feel">
+      <Group id="feel" title="Battery saver and feel">
         <LinkRow title="Voice" value={settings.voice === 'comm' ? 'Commentator' : settings.voice.charAt(0).toUpperCase() + settings.voice.slice(1)} onClick={() => back('/you')} />
         <SwitchRow title="News ticker on Today" checked={prefOn(p, 'ticker')} onChange={(v) => setPref('ticker', v)} />
         <SwitchRow title="Shake for a stat" sub="Shake the phone anywhere in the app" checked={prefOn(p, 'shake')} onChange={(v) => setPref('shake', v)} />
@@ -413,7 +434,7 @@ export function SettingsScreen() {
         <SwitchRow title="Seasonal themes" sub="Diwali, Holi and your birthday take over for the day" checked={prefOn(p, 'seasonal')} onChange={(v) => setPref('seasonal', v)} />
       </Group>
 
-      <Group id="home" title="Home screen">
+      <Group id="home" title="Home screen and ticker">
         <div className="li" style={{ minHeight: 64 }}>
           <span className="s">
             <span>Shortcuts</span>
@@ -449,6 +470,8 @@ export function SettingsScreen() {
           />
         )}
       </Group>
+
+      </OpenGroup.Provider>
 
       <div className="t12 d center" style={{ paddingTop: 18 }}>
         Health {__APP_VERSION__} · everything stays on this phone
@@ -505,11 +528,22 @@ export function SettingsScreen() {
   );
 }
 
+const OpenGroup = createContext<{ open: string | null; toggle: (id: string) => void; summary: Record<string, string> }>({ open: null, toggle: () => {}, summary: {} });
+
+/** A Settings group as one summary row (s43); tapping it opens the group's detail beneath. */
 function Group({ id, title, children, plain }: { id: string; title: string; children: ReactNode; plain?: boolean }) {
+  const { open, toggle, summary } = useContext(OpenGroup);
+  const isOpen = open === id;
   return (
     <section id={`s-${id}`} className="col gap8" style={{ scrollMarginTop: 16 }}>
-      <div className="grp">{title}</div>
-      {plain ? children : <div className="list">{children}</div>}
+      <button type="button" className="set-row" aria-expanded={isOpen} onClick={() => toggle(id)}>
+        <span className="col gap2" style={{ minWidth: 0, textAlign: 'left' }}>
+          <span className="t15">{title}</span>
+          {summary[id] && <span className="t12 q">{summary[id]}</span>}
+        </span>
+        <Icon name={isOpen ? 'up' : 'down'} size={16} stroke={1.8} color="var(--dim)" />
+      </button>
+      {isOpen && (plain ? children : <div className="list">{children}</div>)}
     </section>
   );
 }

@@ -77,8 +77,13 @@ describe('monthly film', () => {
     ];
     const f = monthlyFilm('2026-09', { days, sessions: [s1], sets: [{ date: '2026-09-03', mark: '!!' as const }], songs });
     expect(f.title).toBe('cold/mess');
-    expect(f.slides.map((s) => s.big)).toEqual(['25,000', '1', '1', '15,000']);
+    expect(f.heading).toBe('September, scored by cold/mess');
+    // Kilometres first, as in the mockup, then sessions, records and the best day.
+    expect(f.slides.map((s) => s.big)).toEqual(['19', '1', '1', '15,000']);
+    expect(f.slides[0].small).toMatch(/^kilometres walked/);
+    expect(f.next).toMatch(/^Next: /);
     expect(monthlyFilm('2026-08', { days, sessions: [], sets: [], songs: [] }).title).toBe('August');
+    expect(monthlyFilm('2026-08', { days, sessions: [], sets: [], songs: [] }).heading).toBe('August');
   });
 });
 
@@ -121,9 +126,13 @@ describe('experiment metrics', () => {
 });
 
 describe('reveal-day forecast', () => {
-  it('waist ÷ height on reveal day from the current trend, with a range', () => {
+  it('waist ÷ height on reveal day from the current trend, slowing as it goes, with a range', () => {
     const f = benchmarkOn({ current: 0.55, slope: -0.0005 }, '2026-10-13', '2027-01-21');
-    expect(f?.value).toBeCloseTo(0.5, 3);
+    // 100 days at a rate that halves about every six weeks: about 49 days' worth of the current rate.
+    expect(f?.value).toBeCloseTo(0.5256, 3);
+    // Far out, the line flattens instead of running on.
+    const far = benchmarkOn({ current: 0.532, slope: -0.00082 }, '2026-10-13', '2027-05-31')!;
+    expect(far.value).toBeGreaterThan(0.47);
     expect(f!.range[0]).toBeLessThan(f!.value);
     expect(f!.range[1]).toBeGreaterThan(f!.value);
     expect(benchmarkOn({ current: 0.55 }, '2026-10-13', '2027-01-21')).toBeUndefined();

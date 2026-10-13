@@ -1,15 +1,16 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
-import { addDays, parseDay } from '../domain/dates';
-import { fmtDayLong, fmtInt } from '../domain/format';
+import { addDays, atOn, parseDay } from '../domain/dates';
+import { fmtDayLong, fmtInt, fmtTime } from '../domain/format';
+import { mealTimesFor } from '../domain/foods';
+import { slotStatus, slotTime } from '../domain/checklist';
 import { placeFor } from '../domain/places';
 import { MEAL_NAMES, MEALS, type FoodEntry, type Meal } from '../domain/types';
 import { daySummary, usualDay, type DraftEntry } from '../domain/usualDay';
-import { addEntries, closeDay, moveEntry } from '../db/actions';
-import { useAllDays, useEntries, useEntriesBetween, useSessions, useSettings } from '../db/hooks';
+import { addEntries, closeDay, moveEntry, setMissed, setTick } from '../db/actions';
+import { useAllDays, useEntries, useEntriesBetween, useSessions, useSettings, useToday } from '../db/hooks';
 import { back, openSheet } from '../router';
 import { checklistSlots, dayRings } from '../state/derived';
 import { Check } from '../ui/Check';
-import { SwitchRow } from '../ui/controls';
 import { DateChip, useLogDate } from '../ui/DateChip';
 import { Icon } from '../ui/Icon';
 import { useToast } from '../ui/Toasts';
@@ -27,6 +28,8 @@ export function CloseDay() {
   const history = useEntriesBetween(addDays(date, -70), addDays(date, -1));
   const sessions = useSessions();
   const [closed, setClosed] = useState(false);
+  const [showDraft, setShowDraft] = useState(false);
+  const today = useToday();
   if (!settings || !days || !entries || !history || !sessions) return <div className="page" />;
 
   const dayMap = new Map(days.map((d) => [d.date, d]));
@@ -34,7 +37,6 @@ export function CloseDay() {
   const place = placeFor(day, settings);
   const { targets } = dayRings(settings, date, day, entries);
   const slots = checklistSlots(settings, date);
-  const ticked = slots.filter((s) => day?.ticks?.[s.key]).length;
   const draft = entries.length ? [] : usualDay(place.id, parseDay(date).getDay(), dayMap, history, date);
   const todays = sessions.filter((s) => s.date === date);
   const tomorrowPlace = dayMap.get(addDays(date, 1))?.place ?? place.id;
@@ -44,38 +46,77 @@ export function CloseDay() {
     return <DayClosed date={date} summary={daySummary(day, entries, todays, targets, slots.length)} onDone={() => setClosed(false)} />;
   }
 
+  const now = Date.now();
+  const weekdayName = WEEKDAYS[parseDay(date).getDay()];
+  const isToday = date === today;
   return (
     <div className="page" style={{ paddingBottom: 'calc(40px + var(--safe-bottom))' }}>
       <button type="button" className="backlink" onClick={() => back('/today')}>
         <Icon name="left" size={20} stroke={1.8} />
         Back
       </button>
-      <div className="col gap8">
-        <h1 className="h1">Close the day</h1>
-        <div className="t14 q">
-          {fmtDayLong(date)} · {place.name}
+      <div className="row top">
+        <div className="col gap4">
+          <h1 className="h1">Close {weekdayName}</h1>
+          <div className="t13 q">
+            {place.name}
+            {place.kind === 'office' ? ' day' : ''}
+            {isToday ? ' · runs until 4 am' : ` · ${fmtDayLong(date)}`}
+          </div>
         </div>
-        <DateChip value={date} onChange={setDate} />
+        {draft.length > 0 && (
+          <button type="button" className={`chip sm${showDraft ? ' on' : ''}`} aria-expanded={showDraft} onClick={() => setShowDraft(!showDraft)}>
+            Usual {weekdayName}
+          </button>
+        )}
       </div>
+      <DateChip value={date} onChange={setDate} />
 
-      {draft.length > 0 && <UsualDraft key={date} draft={draft} date={date} label={`a usual ${WEEKDAYS[parseDay(date).getDay()]} at ${place.name}`} />}
+      {showDraft && draft.length > 0 && <UsualDraft key={date} draft={draft} date={date} label={`a usual ${weekdayName} at ${place.name}`} />}
 
-      <MealBoard date={date} entries={entries} />
+      <MealBoard date={date} entries={entries} times={mealTimesFor(settings, place)} />
 
-      <div className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <Icon name="sleep" size={22} color="var(--sleep)" />
-        <span className="t15 lh">{tonight.text}</span>
+      {slots.length > 0 && (
+        <div className="panel col" style={{ gap: 0 }}>
+          {slots.map((sl) => {
+            const st = slotStatus(day, sl.key);
+            const due = atOn(date, slotTime(sl.slot, settings, day));
+            return (
+              <div key={sl.key} className="col" style={{ borderTop: '1px solid var(--divider)' }}>
+                <div className="row" style={{ gap: 8, minHeight: 50 }}>
+                  <Check
+                    checked={st.kind === 'taken'}
+                    onChange={(on) => void setTick(date, sl.key, on, on && now - due > 2 * 3_600_000 ? due : undefined)}
+                    label={`${sl.name} · ${sl.slot.toLowerCase()}`}
+                    detail={st.kind === 'taken' ? fmtTime(st.at) : st.kind === 'missed' ? 'missed' : `due ${fmtTime(due)}`}
+                  />
+                </div>
+                {st.kind === 'not-logged' && due < now && (
+                  <div className="row" style={{ gap: 6, justifyContent: 'flex-start', paddingBottom: 10 }}>
+                    <button type="button" className="chip sm" onClick={() => void setTick(date, sl.key, true, due)}>
+                      At {fmtTime(due)}
+                    </button>
+                    <button type="button" className="chip sm" onClick={() => void setTick(date, sl.key, true)}>
+                      Now
+                    </button>
+                    <button type="button" className="chip sm" style={{ color: 'var(--rose)' }} onClick={() => void setMissed(date, sl.key, true)}>
+                      Missed
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="panel row" style={{ gap: 12 }}>
+        <Icon name="sleep" size={20} color="var(--sleep)" />
+        <span className="t14 lh grow">{tonight.text}</span>
       </div>
 
       <div className="list">
-        <button type="button" className="li" onClick={() => openSheet('checklist')}>
-          <span className="s">
-            <span>Checklist</span>
-            <small>{slots.length ? `${ticked} of ${slots.length} logged, with times` : 'Nothing on the checklist'}</small>
-          </span>
-          <Icon name="right" size={18} color="var(--dim)" />
-        </button>
-        <button type="button" className="li" onClick={() => openSheet('steps')}>
+        <button type="button" className="li" onClick={() => openSheet('steps', isToday ? {} : { d: date })}>
           <span className="s">
             <span>Steps</span>
             <small>{day?.steps !== undefined ? `${fmtInt(day.steps)}${day.stepsFinal ? ', final' : ' so far'}` : 'Not logged'}</small>
@@ -83,7 +124,7 @@ export function CloseDay() {
           <Icon name="right" size={18} color="var(--dim)" />
         </button>
         {!day?.sleep && (
-          <button type="button" className="li" onClick={() => openSheet('morning')}>
+          <button type="button" className="li" onClick={() => openSheet('morning', isToday ? {} : { d: date })}>
             <span className="s">
               <span>Sleep</span>
               <small>The morning log was missed. Add last night's sleep</small>
@@ -91,16 +132,25 @@ export function CloseDay() {
             <Icon name="right" size={18} color="var(--dim)" />
           </button>
         )}
-        <SwitchRow
-          title="Day complete"
-          sub="Everything eaten is in. Averages count complete days."
-          checked={!!day?.foodDone}
-          onChange={async (v) => {
-            await closeDay(date, v);
-            if (v) setClosed(true);
-          }}
-        />
       </div>
+
+      {day?.foodDone ? (
+        <button type="button" className="btn ghost lg block" onClick={() => void closeDay(date, false)}>
+          Day closed · open it again
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="btn lg block close-btn"
+          onClick={async () => {
+            await closeDay(date, true);
+            setClosed(true);
+          }}
+        >
+          <Icon name="check" size={18} /> Close the day
+        </button>
+      )}
+      <div className="t12 q center lh">Closing says everything eaten is in, so averages count it as a full day.</div>
     </div>
   );
 }
@@ -148,7 +198,7 @@ function UsualDraft({ draft, date, label }: { draft: DraftEntry[]; date: string;
 }
 
 /** The four meals; drag an entry by its handle onto another meal, or tap the handle to choose. */
-function MealBoard({ date, entries }: { date: string; entries: FoodEntry[] }) {
+function MealBoard({ date, entries, times }: { date: string; entries: FoodEntry[]; times: Record<Meal, number> }) {
   const [moving, setMoving] = useState<string | null>(null);
   const [over, setOver] = useState<Meal | null>(null);
   const drag = useRef<{ id: string; from: Meal; moved: boolean } | null>(null);
@@ -177,7 +227,7 @@ function MealBoard({ date, entries }: { date: string; entries: FoodEntry[] }) {
   };
 
   return (
-    <div className="col gap12">
+    <div className="meal-panel">
       {MEALS.map((meal) => {
         const es = entries.filter((e) => e.meal === meal);
         const kcal = es.reduce((n, e) => n + e.kcal, 0);
@@ -185,8 +235,13 @@ function MealBoard({ date, entries }: { date: string; entries: FoodEntry[] }) {
         return (
           <section key={meal} data-meal={meal} className={`mealbox${over === meal ? ' over' : ''}`} aria-label={MEAL_NAMES[meal]}>
             <div className="meal-h">
-              <span className="lbl">{MEAL_NAMES[meal]}</span>
-              <span className="t13 tn q">{es.length ? `${fmtInt(kcal)} · ${Math.round(protein)} g` : 'Not logged'}</span>
+              <span className="t15" style={{ fontWeight: 600 }}>
+                {MEAL_NAMES[meal]}
+              </span>
+              <span className="t13 tn q">
+                {fmtTime(atOn(date, times[meal]))}
+                {es.length ? ` · ${fmtInt(kcal)} kcal · ${Math.round(protein)} g` : ' · not logged'}
+              </span>
             </div>
             {es.map((e) => (
               <div key={e.id} className="col">

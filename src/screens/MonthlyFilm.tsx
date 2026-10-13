@@ -26,7 +26,7 @@ export function MonthlyFilmPage() {
   if (!days || !sessions || !sets || !songs) return <div className="page bare" />;
   const month = params.get('m') ?? lastMonth(today);
   const film = monthlyFilm(month, { days, sessions, sets, songs });
-  const frames = [{ big: film.title, small: film.title === film.month ? 'Your month' : `${film.month}, titled by the song you trained to most`, tone: 'lavender' as const }, ...film.slides];
+  const frames = film.slides;
   const f = frames[Math.min(i, frames.length - 1)];
   const last = i >= frames.length - 1;
   return (
@@ -47,14 +47,22 @@ export function MonthlyFilmPage() {
       >
         <Icon name="close" size={22} />
       </button>
+      <div className="t15" style={{ marginTop: 18, fontWeight: 600 }}>
+        {film.heading}
+      </div>
       <div className="film-body" aria-live="polite">
-        <div className="film-big" style={{ color: i === 0 ? 'var(--text)' : INK[f.tone], fontSize: f.big.length > 14 ? 44 : 72 }}>
+        <div className="film-big tn" style={{ color: INK[f.tone], fontSize: f.big.length > 6 ? 64 : 96 }}>
           {f.big}
         </div>
-        <div className="t16 lh" style={{ color: 'var(--text)', opacity: 0.85 }}>
+        <div className="t17 lh" style={{ color: 'var(--text)', opacity: 0.9 }}>
           {f.small}
         </div>
       </div>
+      {!last && (
+        <div className="t13 lh" style={{ opacity: 0.7, marginBottom: 10 }}>
+          Next: {frames.slice(i + 1).map((x) => x.small.split('.')[0]).join(' · ')}
+        </div>
+      )}
       {last ? (
         <div className="row film-foot" style={{ gap: 8 }}>
           <button type="button" className="btn ghost grow" onClick={() => setI(0)}>

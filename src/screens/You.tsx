@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { benchmarkProgress } from '../domain/benchmark';
 import { addDays, daysBetween, dayKey } from '../domain/dates';
-import { fmtDayMonth, fmtInt } from '../domain/format';
+import { fmtDayMonth, fmtDayMonthFrom, fmtInt } from '../domain/format';
 import { lastFullWeek } from '../domain/weekly';
 import { chapterAt, kmFromSteps, positionAt, STRIDE_M } from '../domain/walk';
 import { whatIf } from '../domain/whatIf';
@@ -16,15 +16,19 @@ import { Heatmap } from './Heatmap';
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
+/** The four big doors from s13; everything else sits in the list below them. */
 const DOORS: { label: string; sub: string; path: string; icon: IconName }[] = [
   { label: 'Tracks', sub: 'Every measure', path: '/tracks', icon: 'tracks' },
   { label: 'Medicines', sub: 'Courses, stock, visits', path: '/medicines', icon: 'pill' },
-  { label: 'Diary', sub: 'Every day', path: '/diary', icon: 'calendar' },
-  { label: 'Achievements', sub: 'Sets and progress', path: '/achievements', icon: 'win' },
-  { label: 'Character', sub: 'Stats and titles', path: '/character', icon: 'shield' },
-  { label: 'Journey clock', sub: 'The whole journey as one day', path: '/journey', icon: 'clock' },
-  { label: 'Experiments', sub: 'Change one thing, see what moves', path: '/experiments', icon: 'trend' },
   { label: 'Night sky', sub: 'A star per perfect day', path: '/sky', icon: 'night' },
+  { label: 'Diary', sub: 'Every day', path: '/diary', icon: 'calendar' },
+];
+const MORE: { label: string; sub: string; path: string }[] = [
+  { label: 'Achievements', sub: 'Sets and progress', path: '/achievements' },
+  { label: 'Character', sub: 'Stats, titles and the wardrobe', path: '/character' },
+  { label: 'Journey clock', sub: 'The whole journey as one day', path: '/journey' },
+  { label: 'Reveal day', sub: 'Sealed until the day', path: '/reveal' },
+  { label: 'Experiments', sub: 'Change one thing, see what moves', path: '/experiments' },
 ];
 
 /** The You tab: the body benchmark first, then doors, every day, the week's review and what-ifs. */
@@ -61,7 +65,7 @@ export function You() {
         </button>
       </div>
 
-      {settings.heightCm ? <BenchmarkCard measurements={measurements} heightCm={settings.heightCm} today={today} /> : null}
+      {settings.heightCm ? <BenchmarkCard measurements={measurements} heightCm={settings.heightCm} today={today} reveal={settings.goalDate} /> : null}
 
       <div className="doors">
         {DOORS.map((d) => (
@@ -69,6 +73,18 @@ export function You() {
             <Icon name={d.icon} size={20} color="var(--quiet)" />
             <span className="t15">{d.label}</span>
             <span className="t12 q">{d.sub}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="list">
+        {MORE.map((m) => (
+          <button key={m.path} type="button" className="li" onClick={() => go(m.path)}>
+            <span className="s">
+              <span>{m.label}</span>
+              <small>{m.sub}</small>
+            </span>
+            <Icon name="right" size={16} stroke={1.8} color="var(--dim)" />
           </button>
         ))}
       </div>
@@ -129,16 +145,16 @@ function WhatIfCard({ days, measurements, heightCm, today }: { days: ReturnType<
       <div className="row t15">
         <span>{end}</span>
         <span className="tn">
-          {fmtDayMonth(addDays(today, then.walkDays))}
-          {then.walkDays !== now.walkDays ? <span className="t12 q"> (was {fmtDayMonth(addDays(today, now.walkDays))})</span> : null}
+          {fmtDayMonthFrom(addDays(today, then.walkDays), today)}
+          {then.walkDays !== now.walkDays ? <span className="t12 q"> (was {fmtDayMonthFrom(addDays(today, now.walkDays), today)})</span> : null}
         </span>
       </div>
       {then.revealDays !== undefined && now.revealDays !== undefined && (
         <div className="row t15">
           <span>Waist ÷ height under {base.goal}</span>
           <span className="tn">
-            {fmtDayMonth(addDays(today, then.revealDays))}
-            {then.revealDays !== now.revealDays ? <span className="t12 q"> (was {fmtDayMonth(addDays(today, now.revealDays))})</span> : null}
+            {fmtDayMonthFrom(addDays(today, then.revealDays), today)}
+            {then.revealDays !== now.revealDays ? <span className="t12 q"> (was {fmtDayMonthFrom(addDays(today, now.revealDays), today)})</span> : null}
           </span>
         </div>
       )}

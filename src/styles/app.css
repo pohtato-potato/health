@@ -155,9 +155,11 @@ button:disabled {
   color: var(--voice);
 }
 .lbl {
+  font-family: var(--sans);
   font-size: 12px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: none;
   color: var(--quiet);
 }
 .lbl.sm {
@@ -690,9 +692,11 @@ textarea.field {
   line-height: 1.4;
 }
 .grp {
+  font-family: var(--sans);
   font-size: 12px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: none;
   color: var(--quiet);
   padding: 14px 4px 0;
 }
@@ -915,8 +919,8 @@ textarea.field {
 }
 .toast .k {
   font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  text-transform: none;
 }
 .toast .v {
   font-size: 15px;
@@ -1217,7 +1221,8 @@ textarea.field {
   width: 100%;
 }
 .tl .time {
-  font-family: var(--mono);
+  font-family: var(--sans);
+  font-variant-numeric: tabular-nums;
   font-size: 12px;
   color: var(--dim);
   padding-top: 2px;
@@ -1455,15 +1460,16 @@ textarea.field {
   padding-bottom: 8px;
   font-size: 10.5px;
   white-space: nowrap;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  text-transform: none;
   color: var(--quiet);
 }
 .setrow.cur {
   background: var(--raised);
 }
 .setrow .mark {
-  font-family: var(--mono);
+  font-family: var(--sans);
+  font-variant-numeric: tabular-nums;
   font-size: 14px;
   text-align: center;
 }
@@ -1510,8 +1516,8 @@ textarea.field {
 }
 .ttile .nm {
   font-size: 12px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  text-transform: none;
 }
 .ttile .sub {
   font-size: 11px;
@@ -1804,7 +1810,7 @@ textarea.field {
 }
 .board-row {
   display: grid;
-  grid-template-columns: 52px minmax(0, 1fr) 50px 64px;
+  grid-template-columns: 54px minmax(0, 1fr) 72px;
   gap: 8px;
   align-items: center;
   width: 100%;
@@ -2045,8 +2051,8 @@ textarea.field {
 .w-k {
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  text-transform: none;
   opacity: 0.8;
 }
 .w-big {

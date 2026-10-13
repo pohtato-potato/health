@@ -126,7 +126,7 @@ export function statusOf(m: Milestone, scheduled: DayKey | undefined, today: Day
 export function flightNo(id: string): string {
   let h = 0;
   for (const c of id) h = (h * 31 + c.charCodeAt(0)) % 900;
-  return `HL ${100 + h}`;
+  return `HW ${String(h).padStart(3, '0')}`;
 }
 
 export type DepartureGroup = 'walk' | 'steps' | 'training' | 'shape';
@@ -138,4 +138,12 @@ export function milestoneGroup(kind: Milestone['kind']): DepartureGroup | undefi
   if (kind === 'training') return 'training';
   if (kind === 'waist' || kind === 'weight') return 'shape';
   return undefined;
+}
+
+const TAG: Record<DepartureGroup, string> = { walk: 'WALK', steps: 'STEPS', training: 'TRAIN', shape: 'SHAPE' };
+
+/** "HW 006 · WALK": the flight number and the board's category, under each destination. */
+export function boardTag(m: Pick<Milestone, 'id' | 'kind'>): string {
+  const g = milestoneGroup(m.kind);
+  return g ? `${flightNo(m.id)} · ${TAG[g]}` : flightNo(m.id);
 }

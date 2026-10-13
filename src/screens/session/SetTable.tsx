@@ -182,7 +182,7 @@ export function SetTable({
                   </div>
                   <div className={`t16 center ${logged ? '' : 'f'}`}>
                     {logged ? valueOfSet(logged) : d.val ?? ''}
-                    {logged?.cleanReps !== undefined && logged.cleanReps < (logged.reps ?? 0) && <span className="t11 q"> · {logged.cleanReps} clean</span>}
+                    {logged?.cleanReps !== undefined && logged.cleanReps < (logged.reps ?? 0) && <span className="t11" style={{ color: logged.form ? `var(--f${logged.form})` : 'var(--quiet)' }}> · {logged.cleanReps} clean</span>}
                     {logged?.form && <i className="formdot" style={{ background: `var(--f${logged.form})` }} aria-label={`form ${FORM_LABELS[logged.form - 1]}`} />}
                   </div>
                   <div className="mark" style={{ color: logged?.mark === '!!' ? 'var(--gold)' : logged?.mark === '!' ? 'var(--sage)' : 'var(--quiet)' }}>
@@ -232,7 +232,7 @@ export function SetTable({
                         const f = (i + 1) as 1 | 2 | 3 | 4 | 5;
                         const on = draft.form === f;
                         return (
-                          <button key={word} type="button" role="radio" aria-checked={on} className={`chip sm formchip${on ? ' on' : ''}`} style={on ? { background: `var(--f${f})`, borderColor: `var(--f${f})` } : undefined} onClick={() => setDraft({ ...draft, form: on ? undefined : f })}>
+                          <button key={word} type="button" role="radio" aria-checked={on} className={`chip sm formchip${on ? ' on' : ''}`} style={on ? { background: `var(--f${f})`, borderColor: `var(--f${f})` } : { color: `var(--f${f})` }} onClick={() => setDraft({ ...draft, form: on ? undefined : f })}>
                             {f} {word}
                           </button>
                         );
@@ -259,7 +259,7 @@ export function SetTable({
                       {[0, 1, 2, 3].map((n) => {
                         const on = draft.rir === n;
                         return (
-                          <button key={n} type="button" role="radio" aria-checked={on} className={`chip sm${on ? ' on' : ''}`} onClick={() => setDraft({ ...draft, rir: on ? undefined : n })}>
+                          <button key={n} type="button" role="radio" aria-checked={on} className={`chip sm${on ? ' on' : ''}`} style={n === 0 ? (on ? { background: 'var(--rose)', borderColor: 'var(--rose)' } : { color: 'var(--rose)' }) : undefined} onClick={() => setDraft({ ...draft, rir: on ? undefined : n })}>
                             {n === 3 ? '3+' : n}
                           </button>
                         );

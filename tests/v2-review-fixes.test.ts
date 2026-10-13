@@ -59,3 +59,41 @@ describe('a crossed pass stays crossed', () => {
     expect(effectiveKm(PASSES[0].km + 50, best)).toBe(PASSES[0].km + 50);
   });
 });
+
+describe('far-off dates say their year', () => {
+  it('adds the year only when it is not this year', async () => {
+    const { fmtDayMonthFrom } = await import('../src/domain/format');
+    expect(fmtDayMonthFrom('2026-11-02', '2026-10-13')).toBe('2 Nov');
+    expect(fmtDayMonthFrom('2027-10-18', '2026-10-13')).toBe('18 Oct 2027');
+  });
+});
+
+describe('nothing asks for features v2 removed', () => {
+  it('no monthly challenge is about water', async () => {
+    const { challengeFor } = await import('../src/domain/challenges');
+    for (let m = 1; m <= 12; m++) expect(challengeFor(`2027-${String(m).padStart(2, '0')}`).text).not.toMatch(/water/i);
+  });
+  it('no active achievement asks to try the voices', async () => {
+    const { ACTIVE_ACHIEVEMENTS } = await import('../src/domain/achievements');
+    expect(ACTIVE_ACHIEVEMENTS.map((a) => a.name)).not.toContain('Voice of reason');
+  });
+});
+
+describe('departures board labels (s39)', () => {
+  it('flight numbers read HW and carry the board category', async () => {
+    const { flightNo, boardTag } = await import('../src/domain/milestones');
+    expect(flightNo('city:Agra')).toMatch(/^HW \d{3}$/);
+    expect(boardTag({ id: 'city:Agra', kind: 'walk' })).toMatch(/^HW \d{3} · WALK$/);
+    expect(boardTag({ id: 'reveal', kind: 'date' })).toMatch(/^HW \d{3}$/);
+    expect(boardTag({ id: 'weeks:4', kind: 'training' })).toMatch(/· TRAIN$/);
+  });
+});
+
+describe('night sky stars spread out', () => {
+  it('days next to each other in a month do not land on the same spot', async () => {
+    const { skyStars } = await import('../src/domain/nightSky');
+    const s = skyStars(['2026-10-05', '2026-10-06', '2026-10-07']);
+    const d = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
+    expect(Math.min(d(s[0], s[1]), d(s[1], s[2]), d(s[0], s[2]))).toBeGreaterThan(6);
+  });
+});

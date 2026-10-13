@@ -26,7 +26,7 @@ import { FoodToday } from './screens/FoodToday';
 import { SessionScreen } from './screens/Session';
 import { SessionDone } from './screens/SessionDone';
 import { clock } from './screens/NextUpCard';
-import { LogSheet } from './sheets/LogSheet';
+import { LogSheet, MoreSheet } from './sheets/LogSheet';
 import { MorningLog } from './sheets/MorningLog';
 import { AddFood } from './sheets/AddFood';
 import { EntrySheet, FoodForm, QuickKcal } from './sheets/FoodForms';
@@ -75,6 +75,7 @@ const WrappedPage = page(() => import('./screens/Reports'), 'WrappedPage');
 
 const SHEETS: Record<string, () => ReactNode> = {
   log: () => <LogSheet />,
+  more: () => <MoreSheet />,
   morning: () => <MorningLog />,
   addfood: () => <AddFood />,
   'food-new': () => <FoodForm />,

@@ -1,5 +1,7 @@
 import type { Day, SetEntry, SongRecord, TrainingSession } from './types';
 import { fmtInt } from './format';
+import { kmFromSteps } from './walk';
+import { distanceInTerms } from '../walk/journal';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -21,7 +23,7 @@ export function monthlyFilm(
     sets: Pick<SetEntry, 'date' | 'mark'>[];
     songs: Pick<SongRecord, 'at' | 'artist' | 'track'>[];
   },
-): { title: string; month: string; slides: FilmSlide[] } {
+): { title: string; heading: string; month: string; slides: FilmSlide[]; next: string } {
   const inMonth = (date: string) => date.startsWith(month);
   const sessions = d.sessions.filter((s) => s.status === 'done' && inMonth(s.date));
   const plays = new Map<string, number>();
@@ -35,15 +37,19 @@ export function monthlyFilm(
   const best = Math.max(0, ...days.map((x) => x.steps!));
   const records = d.sets.filter((s) => inMonth(s.date) && s.mark === '!!').length;
   const name = MONTHS[Number(month.slice(5, 7)) - 1];
+  const km = kmFromSteps(steps);
+  const terms = distanceInTerms(km);
   return {
     title: top ?? name,
+    heading: top ? `${name}, scored by ${top}` : name,
     month: name,
     slides: [
-      { big: fmtInt(steps), small: `steps in ${name}`, tone: 'sage' },
+      { big: fmtInt(km), small: `kilometres walked.${terms ? ` ${terms.replace('You’ve walked', 'That’s')}` : ''}`, tone: 'sage' },
       { big: fmtInt(sessions.length), small: `session${sessions.length === 1 ? '' : 's'} finished`, tone: 'lavender' },
       { big: fmtInt(records), small: `record${records === 1 ? '' : 's'} set`, tone: 'gold' },
       { big: fmtInt(best), small: 'steps on your best day', tone: 'apricot' },
     ],
+    next: `Next: your sessions · the records · your best day`,
   };
 }
 
