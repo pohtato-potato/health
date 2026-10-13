@@ -80,3 +80,24 @@ describe('day edits can be undone', () => {
     expect((await db.days.get('2026-10-14'))?.steps).toBe(9000);
   });
 });
+
+describe('lift status lines (s25)', () => {
+  it('says past range when the top is hit with nowhere heavier to go', async () => {
+    const { liftLine } = await import('../src/domain/trackStats');
+    expect(liftLine({ advice: { kind: 'maxed' } }, { done: 15, of: 15 })).toBe('past range · try a challenge');
+    expect(liftLine({ advice: { kind: 'needs-plates' } }, { done: 15, of: 15 })).toBe('past range · try a challenge');
+    expect(liftLine({ advice: { kind: 'heavier' } }, { done: 15, of: 15 })).toBe('ready to go heavier');
+    expect(liftLine({}, { done: 12, of: 15 })).toBe('ladder 12 / 15');
+    expect(liftLine({}, { done: 0, of: 0 })).toBe('building');
+  });
+});
+
+describe('t-shirt test against last month (s22)', () => {
+  it('compares the latest rated check-in with the one before', async () => {
+    const { tshirtVsLast } = await import('../src/domain/insights');
+    const c = (date: string, shoulders: number, arms: number, stomach: number) => ({ id: date, date, photos: {}, tshirt: { shoulders, arms, stomach } });
+    const r = tshirtVsLast([c('2026-08-01', 2, 3, 1), c('2026-09-01', 2, 3, 2), c('2026-10-01', 3, 3, 2)] as never);
+    expect(r).toEqual({ latest: { shoulders: 3, arms: 3, stomach: 2 }, change: { shoulders: 1, arms: 0, stomach: 0 }, since: '2026-09-01' });
+    expect(tshirtVsLast([c('2026-10-01', 3, 3, 2)] as never)?.change).toBeUndefined();
+  });
+});

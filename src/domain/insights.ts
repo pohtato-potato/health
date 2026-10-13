@@ -217,3 +217,17 @@ export function morningAfter(nights: DrinkNight[], days: Day[], today: DayKey, m
   };
   return { sleep: pair('sleep'), rested: pair('rested'), steps: pair('steps') };
 }
+
+/** The t-shirt test against last month's check-in (s22): the latest ratings and how each moved. */
+export function tshirtVsLast(checkins: CheckIn[]) {
+  const rated = checkins.filter((c) => c.tshirt).sort((a, b) => a.date.localeCompare(b.date));
+  const latest = rated.at(-1);
+  if (!latest) return undefined;
+  const prev = rated.at(-2);
+  const keys = ['shoulders', 'arms', 'stomach'] as const;
+  return {
+    latest: latest.tshirt!,
+    change: prev ? (Object.fromEntries(keys.map((k) => [k, latest.tshirt![k] - prev.tshirt![k]])) as Record<(typeof keys)[number], number>) : undefined,
+    since: prev?.date,
+  };
+}

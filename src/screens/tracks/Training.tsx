@@ -4,9 +4,9 @@ import { db } from '../../db/db';
 import { addDays } from '../../domain/dates';
 import { fmt1, fmtDayMonth, fmtDayShort } from '../../domain/format';
 import { allExercises, realSets } from '../../domain/plan';
-import { hitTop, ladder } from '../../domain/progression';
+import { exerciseStatus, hitTop, ladder } from '../../domain/progression';
 import { FAULTS } from '../../domain/quality';
-import { formTrend } from '../../domain/trackStats';
+import { formTrend, liftLine } from '../../domain/trackStats';
 import { go } from '../../router';
 import { songAt } from '../../sources/lastfm';
 import { doneSessions } from '../../state/derived';
@@ -48,7 +48,8 @@ export function TrainingTrack({ data }: { data: TrackData }) {
           const recent = [...new Set(mine.map((s) => s.sessionId))].slice(-3);
           const forms = mine.filter((s) => recent.includes(s.sessionId) && s.form).map((s) => s.form!);
           const formAvg = forms.length ? forms.reduce((a, b) => a + b, 0) / forms.length : undefined;
-          return { ex, lad, ready: hitTop(ex, data.sets), formAvg };
+          const st = exerciseStatus(ex, settings.planState, settings.equipment, data.sets, settings.plan!.bigJump);
+          return { ex, lad, ready: hitTop(ex, data.sets), formAvg, st };
         })
         .filter((x) => !!x)
     : [];
@@ -89,7 +90,7 @@ export function TrainingTrack({ data }: { data: TrackData }) {
           <div className="lbl" style={{ paddingBottom: 6 }}>
             Each lift
           </div>
-          {lifts.map(({ ex, lad, ready, formAvg }) => (
+          {lifts.map(({ ex, lad, formAvg, st }) => (
             <div key={ex.id} className="sess" style={{ minHeight: 48 }}>
               <span className="col gap2">
                 <span className="t14">
@@ -97,7 +98,7 @@ export function TrainingTrack({ data }: { data: TrackData }) {
                   {lad.load !== null ? ` · ${fmt1(lad.load)} kg` : ''}
                 </span>
                 <span className="t12 q">
-                  {ready ? 'ready to go heavier' : lad.rungs.length ? `ladder ${lad.rungs.filter((r) => r.done).length} / ${lad.rungs.length}` : 'building'}
+                  {liftLine(st, { done: lad.rungs.filter((r) => r.done).length, of: lad.rungs.length })}
                 </span>
               </span>
               {formAvg !== undefined && (

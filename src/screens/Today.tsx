@@ -32,7 +32,7 @@ import {
 } from '../state/derived';
 import { Banners } from './Banners';
 import { forecastData } from '../state/forecastData';
-import { readinessText } from '../domain/readiness';
+import { readinessInk, readinessText } from '../domain/readiness';
 import { OccasionCard } from '../sheets/Occasion';
 import { SeasonStrip, useUnlockedIds } from '../ui/Theme';
 import { hasReward } from '../domain/rewards';
@@ -249,10 +249,6 @@ export function Today() {
   );
 }
 
-/** Readiness colours: rose under 60, gold 60–74, sage 75 and up. */
-export function readinessInk(score: number): string {
-  return score < 60 ? 'var(--rose)' : score < 75 ? 'var(--gold)' : 'var(--sage)';
-}
 
 function lineForTheDay(today: string, line: string): string {
   const key = 'health.line';

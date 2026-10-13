@@ -24,6 +24,8 @@ export interface HeroPoint {
   value: number | null;
   trend?: number | null;
   second?: number | null;
+  /** A third series on its own scale (Shape's strength). */
+  third?: number | null;
   place?: PlaceMark;
   nightOut?: boolean;
   marker?: string;
@@ -45,6 +47,7 @@ export function HeroChart({
   target,
   mode = 'bars',
   secondColor,
+  thirdColor,
   height = 190,
   label,
 }: {
@@ -55,6 +58,7 @@ export function HeroChart({
   target?: number;
   mode?: 'bars' | 'dots';
   secondColor?: string;
+  thirdColor?: string;
   height?: number;
   label: string;
 }) {
@@ -134,6 +138,23 @@ export function HeroChart({
         })}
         {secondColor &&
           points.map((p, i) => (p.second !== null && p.second !== undefined ? <circle key={`s${i}`} cx={cx(i)} cy={ys(p.second)} r="3.2" fill={secondColor} stroke="var(--ink)" strokeWidth="1" /> : null))}
+        {thirdColor &&
+          (() => {
+            const vs = points.map((p, i) => ({ i, v: p.third })).filter((p): p is { i: number; v: number } => p.v !== null && p.v !== undefined);
+            if (!vs.length) return null;
+            const lo3 = Math.min(...vs.map((p) => p.v));
+            const hi3 = Math.max(...vs.map((p) => p.v));
+            const pad3 = (hi3 - lo3) * 0.2 || 1;
+            const y3 = (v: number) => top + (1 - (v - (lo3 - pad3)) / (hi3 + pad3 - (lo3 - pad3))) * (H - top - bottom);
+            return (
+              <g>
+                {vs.length > 1 && <path d={vs.map((p, k) => `${k ? 'L' : 'M'}${cx(p.i).toFixed(1)} ${y3(p.v).toFixed(1)}`).join(' ')} fill="none" stroke={thirdColor} strokeWidth="1.4" strokeDasharray="3 3" />}
+                {vs.map((p) => (
+                  <circle key={`t${p.i}`} cx={cx(p.i)} cy={y3(p.v)} r="2.6" fill={thirdColor} />
+                ))}
+              </g>
+            );
+          })()}
         {trend.length > 1 && <path d={trend.map((p, k) => `${k ? 'L' : 'M'}${cx(p.i).toFixed(1)} ${y(p.v).toFixed(1)}`).join(' ')} fill="none" stroke={mode === 'bars' ? 'var(--text)' : color} strokeOpacity={mode === 'bars' ? 0.7 : 1} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
         {points.map((p, i) =>
           p.marker ? (

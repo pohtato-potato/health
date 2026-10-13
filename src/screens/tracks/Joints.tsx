@@ -1,7 +1,8 @@
 import { daysBetween } from '../../domain/dates';
 import { discomfortByExercise } from '../../domain/trackStats';
 import { realSets } from '../../domain/plan';
-import { flagEvents } from '../../state/derived';
+import { flagEvents, nextUp } from '../../state/derived';
+import { findExercise } from '../../domain/plan';
 import { JointsBody } from '../TrackExtras';
 import type { TrackData } from './data';
 import { TrackShell } from './Template';
@@ -23,6 +24,25 @@ export function JointsTrack({ data, title }: { data: TrackData; title: string })
       insights={[tags.length > 0 && `Discomfort tags came from ${tags.length} exercise${tags.length === 1 ? '' : 's'}; the list is below.`]}
     >
       <JointsBody settings={settings} sessions={data.sessions} days={[...data.days.values()]} today={today} />
+      {plan && (() => {
+        const up = nextUp(settings, data.sessions, data.sets, [...data.days.values()]);
+        const swaps = up?.swaps ?? [];
+        return (
+          <div className="card" style={{ gap: 6 }}>
+            <div className="row base">
+              <span className="lbl">Swaps in place</span>
+              {!swaps.length && <span className="t13 q">none right now</span>}
+            </div>
+            {swaps.map((w) => (
+              <div key={w.from} className="t14 lh">
+                {findExercise(plan, w.from)?.name ?? w.from}
+                <span className="q"> out for {w.flag.group.toLowerCase()}</span>
+                {findExercise(plan, w.to) ? <span className="q">, {findExercise(plan, w.to)!.name.toLowerCase()} covers it</span> : null}
+              </div>
+            ))}
+          </div>
+        );
+      })()}
       {tags.length > 0 && (
         <div className="card" style={{ gap: 0 }}>
           <div className="lbl apri" style={{ paddingBottom: 6 }}>
