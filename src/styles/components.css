@@ -953,3 +953,9 @@
     opacity: 0.8;
   }
 }
+
+.sky {
+  width: 100%;
+  border-radius: 20px;
+  background: radial-gradient(ellipse at 50% 120%, #1d2353, #05081f 70%);
+}

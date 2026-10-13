@@ -99,7 +99,8 @@ describe('v2 schema and migration', () => {
     expect((await db.markers.get('m1'))?.text).toBe('Started a supplement');
   });
 
-  it('water is on by default in code; the owner turns it off in the starter', () => {
-    expect(prefOn(defaultSettings().prefs, 'water')).toBe(true);
+  it('water is off by default in v2 (removed); it can still be switched on', () => {
+    expect(prefOn(defaultSettings().prefs, 'water')).toBe(false);
+    expect(prefOn({ ...defaultSettings().prefs, water: true }, 'water')).toBe(true);
   });
 });

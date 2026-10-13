@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { TodayNight } from './TodayNight';
 import { addDays, dayRange, weekStart, type DayKey } from '../domain/dates';
 import { fmt1, fmtDayLong, fmtDuration, fmtInt, fmtLitres, fmtTime, weekdayName } from '../domain/format';
 import { findSession } from '../domain/plan';
@@ -27,7 +26,6 @@ import {
   checklistSlots,
   dayRings,
   doneSessions,
-  isNightTime,
   nextUp,
   recentFlag,
   stepStreakFor,
@@ -61,7 +59,6 @@ export function Today() {
   const toast = useToast();
   const measurements = useMeasurements();
   const unlockedCount = useLiveQuery(() => db.achievements.count(), []);
-  const [showAll, setShowAll] = useState(false);
   const konami = useKonami(() => {
     void bump('konami');
     toast({ kicker: '↑ ↑ ↓ ↓ ← → ← →', text: 'Konami code accepted.', sub: 'Thirty lives not included. The Retro theme is yours.', tone: 'lavender' });
@@ -136,9 +133,6 @@ export function Today() {
     toast({ text: `Water: ${fmtLitres(water + 250)} of ${fmtLitres(targets.waterMl)} L`, action: { label: 'Undo', run: () => addWater(today, -250) } });
   };
 
-  if (settings.prefs.nightMode && isNightTime(now) && !showAll) {
-    return <TodayNight settings={settings} today={today} days={days} totals={totals} rings={rings} up={up} trainedToday={trainedToday} onShowAll={() => setShowAll(true)} />;
-  }
 
   const ticker = prefOn(settings.prefs, 'ticker');
   return (
@@ -395,7 +389,7 @@ function Timeline({ day, entries, sessions, settings }: { day: Day | undefined; 
       open: () => openSheet('steps'),
     });
   }
-  if (day?.waterMl) {
+  if (day?.waterMl && prefOn(settings.prefs, 'water')) {
     const glasses = Math.round(day.waterMl / 250);
     rows.push({
       at: null,

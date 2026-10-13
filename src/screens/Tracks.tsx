@@ -14,7 +14,6 @@ import { DrinksExtras, JointsBody, SleepExtras, SourcesCard, StepsExtras, Streng
 import { forecastData } from '../state/forecastData';
 import { MiniRing } from '../ui/Rings';
 import { WeekGapCard, WeightInsights } from './MaintenanceCards';
-import { CustomTrackPage, CustomTrackTiles } from './CustomTracks';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { nextCheckInDate } from './Photos';
@@ -240,7 +239,6 @@ export function Tracks() {
           </>,
         )}
       </div>
-      <CustomTrackTiles />
       <div className="t12 d center lh">Tap a track for its chart, its history and what it's telling you.</div>
     </div>
   );
@@ -276,7 +274,6 @@ export function TrackPage() {
   }, [kind]);
   const data = useData();
   const [span, setSpan] = useState<'7' | '30' | '90'>('30');
-  if (kind === 'custom') return <CustomTrackPage id={params.get('id') ?? ''} />;
   if (!data) return <div className="page bare" />;
   const { settings, today } = data;
   const food = foodByDay(data.entries);

@@ -90,7 +90,7 @@ export function SettingsScreen() {
         <LinkRow title="Calories" value={`${fmtInt(t.kcalMin)}–${fmtInt(t.kcalMax)} kcal`} onClick={() => setEditor('targets')} />
         <LinkRow title="Protein" value={`${t.proteinG} g`} onClick={() => setEditor('targets')} />
         <LinkRow title="Steps" value={fmtInt(t.steps)} onClick={() => setEditor('targets')} />
-        <LinkRow title="Water" value={`${fmtLitres(t.waterMl)} L`} onClick={() => setEditor('targets')} />
+        {prefOn(settings.prefs, 'water') && <LinkRow title="Water" value={`${fmtLitres(t.waterMl)} L`} onClick={() => setEditor('targets')} />}
         <LinkRow title="Sleep" value={`${fmtDuration(t.sleepMin)} or more`} onClick={() => setEditor('targets')} />
         <LinkRow title="Training" value={`${t.sessionsPerWeek} sessions a week`} onClick={() => setEditor('targets')} />
         <SwitchRow
@@ -332,8 +332,6 @@ export function SettingsScreen() {
         <LinkRow title="Voice" value={settings.voice === 'comm' ? 'Commentator' : settings.voice.charAt(0).toUpperCase() + settings.voice.slice(1)} onClick={() => back('/you')} />
         <SwitchRow title="News ticker on Today" checked={prefOn(p, 'ticker')} onChange={(v) => setPref('ticker', v)} />
         <SwitchRow title="Shake for a stat" sub="Shake the phone anywhere in the app" checked={prefOn(p, 'shake')} onChange={(v) => setPref('shake', v)} />
-        <SwitchRow title="Shuffle voices daily" checked={prefOn(p, 'shuffleVoices')} onChange={(v) => setPref('shuffleVoices', v)} />
-        <SwitchRow title="Night mode" sub="After 11 pm: dimmer, warmer, quieter" checked={p.nightMode} onChange={(v) => setPref('nightMode', v)} />
         <LinkRow title="Theme" value={themeById(settings.theme)?.name ?? 'Dusk'} onClick={() => setEditor('theme')} />
         <SwitchRow title="Seasonal themes" sub="Diwali, Holi and your birthday take over for the day" checked={prefOn(p, 'seasonal')} onChange={(v) => setPref('seasonal', v)} />
       </Group>
@@ -362,7 +360,7 @@ export function SettingsScreen() {
         <div className="li" style={{ minHeight: 64 }}>
           <span className="s">
             <span>Shortcuts</span>
-            <small>Long-press the Health icon for Morning log, Add food, Water +250 ml and Start session.</small>
+            <small>Long-press the Health icon for Morning log, Add food and Start session.</small>
           </span>
         </div>
         {!pwa.installed && (

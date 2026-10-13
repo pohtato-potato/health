@@ -11,6 +11,7 @@ import { Icon, type IconName } from '../ui/Icon';
 import { Sheet } from '../ui/Sheet';
 import { checklistSlots, dayRings, freeMealsThisWeek, nextUp } from '../state/derived';
 import { occasionOn } from '../domain/occasions';
+import { prefOn } from '../domain/types';
 
 export function LogSheet() {
   const settings = useSettings();
@@ -77,7 +78,7 @@ export function LogSheet() {
       <div className="grid3">
         {tile('food', 'var(--apricot)', 'Food', totals.entries ? `${fmtInt(totals.kcal)} kcal today` : 'Nothing yet', () => replaceSheet('addfood'))}
         {tile('check', 'var(--gold)', 'Close the day', day?.foodDone ? 'Closed' : 'Meals, checklist, steps', () => go('/close'))}
-        {tile('water', 'var(--blue)', 'Water', `${fmtLitres(totals.waterMl)} of ${fmtLitres(targets.waterMl)} L`, () => replaceSheet('water'))}
+        {prefOn(settings.prefs, 'water') && tile('water', 'var(--blue)', 'Water', `${fmtLitres(totals.waterMl)} of ${fmtLitres(targets.waterMl)} L`, () => replaceSheet('water'))}
         {tile('steps', 'var(--sage)', 'Steps', day?.steps !== undefined ? `${fmtInt(day.steps)} so far` : 'Not logged', () => replaceSheet('steps'))}
         {tile('weight', 'var(--pearl)', 'Weight', day?.weightKg !== undefined ? `${fmt1(day.weightKg)} kg today` : 'In the morning log', () => replaceSheet('morning'))}
         {tile('sleep', 'var(--blue)', 'Sleep', lastSleep ? fmtDuration(sleepMinutes(lastSleep.asleep, lastSleep.woke)) : 'In the morning log', () => replaceSheet('morning'))}
@@ -88,8 +89,6 @@ export function LogSheet() {
         {slots.length > 0
           ? tile('pill', 'var(--quiet)', 'Checklist', `${ticked} of ${slots.length} done`, () => replaceSheet('checklist'))
           : tile('pill', 'var(--quiet)', 'Checklist', 'Set up in Settings', () => go('/settings', { at: 'checklist' }))}
-        {tile('win', 'var(--gold)', 'Win', 'Into the jar', () => replaceSheet('win'))}
-        {(settings.customTracks ?? []).some((t) => t.active) && tile('tracks', 'var(--pearl)', 'Your tracks', `${(settings.customTracks ?? []).filter((t) => t.active).length} to fill in`, () => replaceSheet('mytracks'))}
         {tile('calendar', 'var(--gold)', 'Status', occasionOn(settings, today) ? `${occasionOn(settings, today)!.name} is on` : 'Ill, travelling, an occasion', () => replaceSheet('occasion'))}
         {tile('camera', 'var(--pearl)', 'Check-in', checkinDue ? (checkinDue <= today ? 'Due now' : `Due ${fmtDayMonth(checkinDue)}`) : 'Photos and tape', () => go('/checkin'))}
       </div>

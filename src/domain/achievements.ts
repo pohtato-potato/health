@@ -6,7 +6,7 @@ import { exerciseMark } from './marks';
 import { findExercise, groupExercises, isSuperset, topOfRange } from './plan';
 import { triggerMet } from './progression';
 import { targetsOn } from './rings';
-import type { SetEntry } from './types';
+import type { SetEntry, Settings } from './types';
 import { QUAD_DONE_KM, STRIDE_M, statesReached } from './walk';
 
 export type Category = 'start' | 'steps' | 'india' | 'training' | 'strength' | 'food' | 'water' | 'sleep' | 'body' | 'streaks' | 'nights' | 'joints' | 'data' | 'secret';
@@ -889,10 +889,45 @@ export function fmtProgress(p: [number, number]): string {
 }
 
 /**
- * Retired in v2: the morning log is no longer timed, and identical step counts
- * are usually a copied number, not a coincidence. Kept so old unlocks still resolve.
+ * Retired in v2: the morning log is no longer timed, identical step counts are usually a
+ * copied number, water is no longer tracked, and the Passport is gone. Kept so old unlocks
+ * still resolve.
  */
-export const RETIRED_ACHIEVEMENTS: string[] = ['World record', 'Glitch in the Matrix', 'Speedrunner'].map(slug);
+export const RETIRED_ACHIEVEMENTS: string[] = [
+  ...['World record', 'Glitch in the Matrix', 'Speedrunner'].map(slug),
+  ...ACHIEVEMENTS.filter((a) => a.cat === 'water' || (typeof a.desc === 'string' && /passport/i.test(a.desc))).map((a) => a.id),
+];
 
 /** The achievements that count and show. */
 export const ACTIVE_ACHIEVEMENTS: AchDef[] = ACHIEVEMENTS.filter((a) => !RETIRED_ACHIEVEMENTS.includes(a.id));
+
+/** What the owner sees and counts toward. */
+export function visibleAchievements(_settings?: Pick<Settings, 'prefs'>): AchDef[] {
+  return ACTIVE_ACHIEVEMENTS;
+}
+
+export interface AchSet {
+  id: string;
+  name: string;
+  /** What finishing the set unlocks. */
+  unlocks: string;
+  ids: string[];
+}
+
+const setOf = (id: string, name: string, cat: Category, unlocks: string, max = 10): AchSet => ({
+  id,
+  name,
+  unlocks,
+  ids: ACTIVE_ACHIEVEMENTS.filter((a) => a.cat === cat && !a.soon).slice(0, max).map((a) => a.id),
+});
+
+/** Themed sets: finishing one unlocks a theme, a moment style or a map finish. */
+export const ACH_SETS: AchSet[] = [
+  setOf('iron', 'Iron at home', 'training', 'a confetti style'),
+  setOf('strength', 'Under the bar', 'strength', 'the level-up chime'),
+  setOf('road', 'The long road', 'india', 'the gold route on the map'),
+  setOf('steps', 'Ten lakh club', 'steps', 'the gold-coin moment'),
+  setOf('fuel', 'Fuelled', 'food', 'the harvest theme'),
+  setOf('sleep', 'Night owl reformed', 'sleep', 'the moonlight theme'),
+  setOf('steady', 'Steady hands', 'streaks', 'shooting stars'),
+].filter((s) => s.ids.length >= 4);

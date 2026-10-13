@@ -140,7 +140,6 @@ export function WalkTab({ extraTabs }: { extraTabs?: { id: string; label: string
             {[
               { label: 'The map', sub: 'Your trail across India', path: '/map' },
               { label: 'Departures', sub: 'Every milestone ahead', path: '/departures' },
-              { label: 'Passport', sub: 'States and territories stamped', path: '/passport' },
               { label: 'Overview', sub: 'The walk in numbers', path: '/journey' },
             ].map((x) => (
               <button key={x.path} type="button" className="li" onClick={() => go(x.path)}>

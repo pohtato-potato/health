@@ -168,9 +168,9 @@ export interface VoiceVars {
 }
 
 /** With shuffle on, a different voice each morning, the same all day. */
-export function voiceFor(voice: VoiceId, shuffle: boolean, seed: string): VoiceId {
-  if (!shuffle) return voice;
-  return VOICES[hash(`shuffle${seed}`) % VOICES.length].id;
+/** v2 keeps one voice: the Gremlin. The stored choice and shuffle are kept for old backups only. */
+export function voiceFor(_voice: VoiceId, _shuffle: boolean, _seed: string): VoiceId {
+  return 'gremlin';
 }
 
 /** A line for the moment, the same all day, different tomorrow. */

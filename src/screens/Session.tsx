@@ -30,7 +30,7 @@ import { adviceTonight, exerciseStatus, heavierOffer, historyFor, ladder, loadSo
 import type { SetEntry, Settings, Side, TrainingSession } from '../domain/types';
 import { bump, deleteSet, discardSession, logSet, patchSession, patchSettings, startSession } from '../db/actions';
 import { APP_START } from '../appStart';
-import { setRestRunning } from '../state/restState';
+import { setLastSetAt, setRestRunning } from '../state/restState';
 import { useActiveSession, useAllDays, useAllSets, useAllSetsWithSkips, useNow, useSessions, useSettings } from '../db/hooks';
 import { dayKey } from '../domain/dates';
 import { readinessFor } from '../state/readinessFor';
@@ -44,7 +44,6 @@ import { TempoCoach } from '../ui/TempoCoach';
 import { RestPill } from '../ui/RestPill';
 import { RestScreen, useBatteryLevel } from '../ui/RestScreen';
 import { batteryMode } from '../domain/rest';
-import { ClipButtons } from './Clips';
 import { prefOn } from '../domain/types';
 import { askConfirm } from '../ui/Confirm';
 import { withTrip } from '../domain/trip';
@@ -315,6 +314,7 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
       toast({ kicker: 'New record', text: `${st.name}: ${describe(base.loadKg, measure)}`, tone: 'gold' });
       if (settings.prefs.buzz) buzz(40);
     }
+    setLastSetAt(Date.now());
     afterRow(r);
   };
 
@@ -508,7 +508,6 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
                 <Icon name="swap" size={16} stroke={1.8} />
                 Swap
               </button>
-              <ClipButtons sessionId={session.id} exerciseId={ex.id} exercise={st.name} date={session.date} />
               {flag && (
                 <button
                   type="button"

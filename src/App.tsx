@@ -7,7 +7,6 @@ import { useActiveSession, useNow, useSettings, useToday } from './db/hooks';
 import { clearParam, go, useRoute } from './router';
 import { TabBar } from './ui/TabBar';
 import { useToast } from './ui/Toasts';
-import { isNightTime } from './state/derived';
 import { CelebrationWatcher } from './state/Celebrations';
 import { AchievementWatcher } from './state/Achievements';
 import { NotFound } from './screens/NotFound';
@@ -34,10 +33,8 @@ import { EntrySheet, FoodForm, QuickKcal } from './sheets/FoodForms';
 import { ChecklistSheet, DrinkSheet, FreeMealSheet, StepsSheet, WaistSheet, WaterSheet } from './sheets/QuickSheets';
 import { WhatsLeft } from './sheets/WhatsLeft';
 import { NightOutSheet } from './sheets/NightOut';
-import { WinSheet } from './sheets/Win';
 import { SaveMealSheet } from './sheets/Meals';
 import { OccasionSheet } from './sheets/Occasion';
-import { MyTracksSheet } from './screens/CustomTracks';
 import { CloseDay } from './screens/CloseDay';
 import { PlanEditor } from './screens/PlanEditor';
 import { RecordsWall } from './screens/RecordsWall';
@@ -46,6 +43,7 @@ import { ShortSessionSheet } from './sheets/ShortSession';
 import { WeeklyReviewPage } from './screens/WeeklyReview';
 import { WalkTab } from './screens/WalkTab';
 import { ArrivalCardPage } from './screens/ArrivalCard';
+import { NightSkyPage } from './screens/NightSky';
 
 /** A page loaded when first opened, from its module's named export. */
 function page<K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K) {
@@ -61,7 +59,6 @@ const MapPage = page(() => import('./screens/MapPage'), 'MapPage');
 const PostcardPage = page(() => import('./screens/Postcard'), 'PostcardPage');
 const DiaryPage = page(() => import('./screens/Diary'), 'DiaryPage');
 const DeparturesPage = page(() => import('./screens/Departures'), 'DeparturesPage');
-const PassportPage = page(() => import('./screens/Passport'), 'PassportPage');
 const CharacterPage = page(() => import('./screens/Character'), 'CharacterPage');
 const PhysioPage = page(() => import('./screens/Physio'), 'PhysioPage');
 const RevealPage = page(() => import('./screens/Reveal'), 'RevealPage');
@@ -87,11 +84,9 @@ const SHEETS: Record<string, () => ReactNode> = {
   drink: () => <DrinkSheet />,
   free: () => <FreeMealSheet />,
   nightout: () => <NightOutSheet />,
-  win: () => <WinSheet />,
   short: () => <ShortSessionSheet />,
   savemeal: () => <SaveMealSheet />,
   occasion: () => <OccasionSheet />,
-  mytracks: () => <MyTracksSheet />,
 };
 
 const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
@@ -101,6 +96,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/journey': { el: () => <Journey /> },
   '/walk': { el: () => <WalkTab />, tab: 'walk' },
   '/arrival': { el: () => <ArrivalCardPage /> },
+  '/sky': { el: () => <NightSkyPage /> },
   '/track': { el: () => <TrackPage /> },
   '/food': { el: () => <FoodToday /> },
   '/close': { el: () => <CloseDay /> },
@@ -123,7 +119,6 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/postcard': { el: () => <PostcardPage /> },
   '/diary': { el: () => <DiaryPage /> },
   '/departures': { el: () => <DeparturesPage /> },
-  '/passport': { el: () => <PassportPage /> },
   '/climate': { el: () => <ClimatePage /> },
   '/wrapped': { el: () => <WrappedPage /> },
   '/character': { el: () => <CharacterPage /> },
@@ -134,9 +129,8 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
 export function App() {
   const settings = useSettings();
   const route = useRoute();
-  const now = useNow(60_000);
   const today = useToday();
-  const night = !!settings?.prefs.nightMode && isNightTime(new Date(now));
+  const night = false;
 
   useEffect(() => {
     document.documentElement.classList.toggle('night', night);

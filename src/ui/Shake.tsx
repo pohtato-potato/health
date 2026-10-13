@@ -8,7 +8,7 @@ import { bump } from '../db/actions';
 import { db } from '../db/db';
 import { useSettings, useToday } from '../db/hooks';
 import { go } from '../router';
-import { isRestRunning } from '../state/restState';
+import { isRestRunning, lastSetAt, shakeIgnored } from '../state/restState';
 import { Icon } from './Icon';
 import { realSets } from '../domain/plan';
 
@@ -44,6 +44,7 @@ export function ShakeStat() {
 
   const trigger = useCallback(() => {
     if (document.querySelector('.moment, .sheet')) return;
+    if (shakeIgnored(Date.now(), lastSetAt(), isRestRunning())) return;
     void bump('shake');
     if (isRestRunning()) void bump('shake-rest');
     setIndex((i) => i + 1 + Math.floor(Math.random() * 3));

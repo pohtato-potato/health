@@ -8,7 +8,6 @@ import { dayRings, stepStreakFor, targetsFor, weeksFor } from '../state/derived'
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { Icon } from '../ui/Icon';
-import { WinsCard } from '../sheets/Win';
 import { AchievementsCard } from './MapPage';
 import { DeparturesCard } from './Departures';
 import { ChallengeCard } from '../state/Challenge';
@@ -80,8 +79,6 @@ export function Journey() {
       <Heatmap settings={settings} start={start} end={goal ?? addDays(today, 60)} today={today} days={days} entries={entries} />
 
       <Streaks settings={settings} today={today} days={days} entries={entries} sessions={sessions} />
-
-      <WinsCard />
 
       {goal && <RevealCard goal={goal} today={today} />}
     </div>

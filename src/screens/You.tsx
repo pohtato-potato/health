@@ -2,12 +2,9 @@ import { useState } from 'react';
 import { benchmarkProgress } from '../domain/benchmark';
 import { addDays, daysBetween, dayKey } from '../domain/dates';
 import { fmtDayMonth, fmtInt } from '../domain/format';
-import { VOICES, voiceLine } from '../domain/voice';
 import { lastFullWeek } from '../domain/weekly';
 import { chapterAt, kmFromSteps, positionAt, STRIDE_M } from '../domain/walk';
 import { whatIf } from '../domain/whatIf';
-import { bump, patchSettings } from '../db/actions';
-import { prefOn } from '../domain/types';
 import { useAllDays, useAllSets, useEntriesBetween, useMeasurements, useSessions, useSettings, useToday } from '../db/hooks';
 import { go } from '../router';
 import { Dial } from '../ui/Dial';
@@ -21,6 +18,7 @@ const DOORS: { label: string; sub: string; path: string; icon: IconName }[] = [
   { label: 'Diary', sub: 'Every day', path: '/diary', icon: 'calendar' },
   { label: 'Achievements', sub: 'Sets and progress', path: '/achievements', icon: 'win' },
   { label: 'Character', sub: 'Stats and titles', path: '/character', icon: 'shield' },
+  { label: 'Night sky', sub: 'A star per perfect day', path: '/sky', icon: 'night' },
 ];
 
 /** The You tab: the body benchmark first, then doors, every day, the week's review and what-ifs. */
@@ -83,43 +81,6 @@ export function You() {
 
       <WhatIfCard days={days} measurements={measurements} heightCm={settings.heightCm} today={today} />
 
-      <div className="card">
-        <div className="lbl">Voice</div>
-        <div className="grid2">
-          {VOICES.map((v) => {
-            const on = settings.voice === v.id;
-            return (
-              <button
-                key={v.id}
-                type="button"
-                onClick={() => {
-                  void patchSettings({ voice: v.id });
-                  void bump('voices', { value: v.id });
-                }}
-                className="col gap4"
-                style={{ textAlign: 'left', padding: '12px 14px', borderRadius: 16, border: `1px solid ${on ? v.color : 'var(--hairline)'}`, background: 'var(--raised)' }}
-                aria-pressed={on}
-              >
-                <b style={{ fontWeight: 500, fontSize: 15, color: v.color }}>
-                  {v.name}
-                  {on ? ' · on' : ''}
-                </b>
-                <span className="voice" style={{ fontSize: 13, lineHeight: 1.35, color: 'var(--quiet)' }}>
-                  {voiceLine(v.id, 'rest', today)}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-        <label className="row" style={{ minHeight: 52, borderTop: '1px solid var(--divider)', paddingTop: 6 }}>
-          <span className="col gap2">
-            <span className="t15">Shuffle voices daily</span>
-            <span className="t12 q">A different one each morning</span>
-          </span>
-          <input type="checkbox" className="sw" checked={prefOn(settings.prefs, 'shuffleVoices')} onChange={(e) => patchSettings((s) => ({ prefs: { ...s.prefs, shuffleVoices: e.target.checked } }))} />
-        </label>
-        <div className="t12 d lh">Voices never joke about your body or your food. If you flag a joint, every voice switches to plain speech.</div>
-      </div>
     </div>
   );
 }

@@ -14,7 +14,6 @@ import { Icon } from '../ui/Icon';
 import { useToast } from '../ui/Toasts';
 import { doneSessions } from '../state/derived';
 import { sessionStats } from './SessionDone';
-import { SessionClips } from './Clips';
 import { askConfirm } from '../ui/Confirm';
 
 /** A session in detail, Flighty style: the numbers, then exercise by exercise. */
@@ -191,7 +190,6 @@ export function SessionView() {
         ))}
       </div>
 
-      <SessionClips sessionId={s.id} />
 
       {(flags.length > 0 || s.notes) && (
         <div className="card" style={{ gap: 8 }}>

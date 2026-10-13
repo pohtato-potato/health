@@ -115,7 +115,7 @@ const PREF_DEFAULTS: Required<Prefs> = {
   nightMode: true,
   buzz: true,
   confirmSteps: true,
-  ticker: true,
+  ticker: false,
   shake: true,
   shuffleVoices: false,
   seasonal: true,
@@ -125,7 +125,7 @@ const PREF_DEFAULTS: Required<Prefs> = {
   suggestTargets: true,
   freeMealSaveUp: false,
   goldRings: false,
-  water: true,
+  water: false,
   batterySaver: false,
 };
 
