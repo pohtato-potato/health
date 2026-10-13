@@ -11,6 +11,8 @@ import { Confetti } from './Confetti';
 import { Icon, type IconName } from './Icon';
 import { useUnlockedIds } from './Theme';
 import { confettiPalette } from '../domain/rewards';
+import { Backdrop } from './moments/Backdrop';
+import type { MomentStyle } from '../domain/firsts';
 
 export type Tier = 'b' | 's' | 'g' | 'p';
 
@@ -43,7 +45,8 @@ export type MomentData =
       voice?: Moment;
     }
   | { kind: 'achievement'; key: string; id: string; tier: Tier; name: string; desc: string; reward?: string; title?: boolean; icon: IconName }
-  | { kind: 'golden'; key: string; kicker: string; title: string; place?: string; text: string; foot?: string };
+  | { kind: 'golden'; key: string; kicker: string; title: string; place?: string; text: string; foot?: string }
+  | { kind: 'first'; key: string; title: string; detail: string; count: number };
 
 interface MomentsApi {
   show: (m: MomentData) => void;
@@ -127,8 +130,31 @@ function MomentView({ m, onClose, voice, shuffle, special }: { m: MomentData; on
   let foot: ReactNode;
   let confetti: string[] | null = null;
 
+  let backdrop: MomentStyle | null = null;
+
   switch (m.kind) {
+    case 'first':
+      backdrop = 'polaroid';
+      body = (
+        <>
+          <div className="first-ember" aria-hidden />
+          <div className="col gap8" style={{ alignItems: 'center', textAlign: 'center' }}>
+            <div className="sf" style={{ fontSize: 40, lineHeight: 1.05 }}>
+              {m.title}
+            </div>
+            <div className="t15 q">{m.detail}</div>
+            <div className="t13 gold">Firsts so far: {m.count}</div>
+          </div>
+        </>
+      );
+      foot = (
+        <button type="button" className="btn lg block" onClick={onClose}>
+          Back to training
+        </button>
+      );
+      break;
     case 'perfect':
+      backdrop = 'stars';
       confetti = ALL;
       body = (
         <>
@@ -273,6 +299,7 @@ function MomentView({ m, onClose, voice, shuffle, special }: { m: MomentData; on
       );
       break;
     case 'golden':
+      backdrop = 'stars';
       body = (
         <>
           <svg width="100%" height="200" viewBox="0 0 390 200" aria-hidden="true" style={{ position: 'absolute', top: 60, left: 0, pointerEvents: 'none' }}>
@@ -316,6 +343,7 @@ function MomentView({ m, onClose, voice, shuffle, special }: { m: MomentData; on
 
   return (
     <div className="moment" role="dialog" aria-modal="true">
+      {backdrop && <Backdrop style={backdrop} seed={m.key.length} />}
       {confetti && <Confetti palette={special ?? confetti} count={30} height={Math.round(window.innerHeight * 0.6)} width={390} seed={m.key.length * 7 + 3} />}
       {closeBtn}
       <div className="col gap20 moment-body">{body}</div>

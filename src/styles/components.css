@@ -819,3 +819,137 @@
   width: 100%;
   height: 100%;
 }
+
+/* Moment backdrops */
+.backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.backdrop .shoot {
+  opacity: 0;
+  animation: shoot 2.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+.backdrop .shoot-1 {
+  animation-delay: 0.9s;
+}
+.backdrop .shoot-2 {
+  animation-delay: 1.7s;
+}
+@keyframes shoot {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  15% {
+    opacity: 1;
+  }
+  60%,
+  100% {
+    opacity: 0;
+    transform: translate(-60px, 40px);
+  }
+}
+.backdrop .bloom {
+  transform-origin: 195px 230px;
+  animation: bloom 1.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.backdrop .rays {
+  transform-origin: 195px 230px;
+  animation: rays 40s linear infinite;
+}
+@keyframes bloom {
+  from {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+}
+@keyframes rays {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.backdrop .burst {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: burst 1.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+.backdrop .burst-1 {
+  animation-delay: 0.5s;
+}
+.backdrop .burst-2 {
+  animation-delay: 1s;
+}
+@keyframes burst {
+  from {
+    transform: scale(0.2);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+}
+.backdrop .rangoli {
+  animation: rangoli 2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes rangoli {
+  from {
+    transform: translate(195px, 240px) scale(0.3) rotate(-30deg);
+    opacity: 0;
+  }
+}
+.backdrop .coin {
+  animation: coin 1.4s cubic-bezier(0.33, 1, 0.68, 1) both;
+}
+@keyframes coin {
+  from {
+    opacity: 0;
+    translate: 0 -160px;
+  }
+}
+.backdrop .ring-up {
+  transform-origin: 195px 230px;
+  animation: ringup 1.8s ease-out infinite;
+}
+.backdrop .ring-up-1 {
+  animation-delay: 0.3s;
+}
+.backdrop .ring-up-2 {
+  animation-delay: 0.6s;
+}
+@keyframes ringup {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+.backdrop .train {
+  animation: train 2.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes train {
+  from {
+    transform: translateX(-420px);
+  }
+}
+.first-ember {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff4d6 0%, #f2c46d 30%, rgba(242, 196, 109, 0) 70%);
+  align-self: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .backdrop *,
+  .backdrop {
+    animation: none !important;
+  }
+  .backdrop .shoot {
+    opacity: 0.8;
+  }
+}

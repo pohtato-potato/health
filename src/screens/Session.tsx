@@ -48,6 +48,10 @@ import { ClipButtons } from './Clips';
 import { prefOn } from '../domain/types';
 import { askConfirm } from '../ui/Confirm';
 import { withTrip } from '../domain/trip';
+import { fmtDayMonth } from '../domain/format';
+import { db } from '../db/db';
+import { useMoments } from '../ui/Moments';
+import { detectFirsts } from '../domain/firsts';
 
 export function SessionScreen() {
   const { params } = useRoute();
@@ -121,6 +125,7 @@ const valueOf = valueOfSet;
 
 function Runner({ session, settings, plan, allSets }: { session: TrainingSession; settings: Settings; plan: PlanDef; allSets: SetEntry[] }) {
   const toast = useToast();
+  const moments = useMoments();
   const now = useNow(250);
   const exs = useMemo(
     () =>
@@ -301,6 +306,11 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
     setDraft({});
     setWatch(null);
     if (existing) return;
+    const firsts = detectFirsts(before, [{ ...base, ...measure, id: 'new', sessionId: session.id, date: session.date, session: session.session, exerciseId: r.ex.id, exercise: st.name, at: Date.now() } as SetEntry]);
+    if (firsts.length) {
+      const firstsSoFar = await db.seen.filter((x) => x.id.startsWith('first:')).count();
+      firsts.forEach((f, i) => moments.show({ kind: 'first', key: `first:${f.key}`, title: f.title, detail: `${f.detail} · ${fmtDayMonth(session.date)}`, count: firstsSoFar + i + 1 }));
+    }
     if (mark === '!!') {
       toast({ kicker: 'New record', text: `${st.name}: ${describe(base.loadKg, measure)}`, tone: 'gold' });
       if (settings.prefs.buzz) buzz(40);
