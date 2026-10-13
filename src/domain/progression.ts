@@ -5,7 +5,7 @@ import { bandLevel, bottomOfRange, exerciseName, realSets, topOfRange, valueOfSe
 import { FORM_LABELS } from './quality';
 import type { Equipment, SetEntry } from './types';
 
-export type AdviceKind = 'heavier' | 'tempo-first' | 'needs-plates' | 'maxed' | 'variant' | 'add-load' | 'band';
+export type AdviceKind = 'form-first' | 'heavier' | 'tempo-first' | 'needs-plates' | 'maxed' | 'variant' | 'add-load' | 'band';
 
 export interface Advice {
   kind: AdviceKind;
@@ -162,6 +162,18 @@ export function exerciseStatus(
     };
   }
   const next = nl.next;
+  // The form gate: heavier waits until every working set was solid with a rep in reserve.
+  if (!formGate(last.sets)) {
+    return {
+      ...base,
+      advice: {
+        kind: 'form-first',
+        title: 'Clean it up first',
+        text: `${every}, but form slipped. Same weight until every set is solid (form 4+) with a rep in reserve; then ${fmtKg(next)} kg${one}.`,
+        tonight: `${fmtKg(next)} kg is next, once every set is solid (form 4+) with a rep in reserve. Tonight, ${fmtKg(cur)} kg.`,
+      },
+    };
+  }
   const big = isBigJump(cur, next, bigJump);
   if (big && !tempoDone) {
     return {
@@ -261,4 +273,19 @@ export function adviceTonight(st: ExerciseStatus, decision: 'yes' | 'no' | undef
   if (decision === 'no') return `Staying at ${now} tonight. Heavier is offered again next time.`;
   if (!heavierOffer(st)) return `${fmtKg(a.toKg)} kg is next, once every set is solid (form 4+) with a rep in reserve. Tonight, ${now}.`;
   return a.tonight;
+}
+
+/** The rep ladder at the current load: each rung from the bottom of the range to the top, done once every working set of a session reached it. */
+export function ladder(ex: ExerciseDef, sets: SetEntry[]): { load: number | null; rungs: { reps: number; done: boolean }[] } {
+  const lo = bottomOfRange(ex);
+  const hi = topOfRange(ex);
+  const hist = realSets(sets).filter((s) => s.exerciseId === ex.id && !s.drop);
+  const last = lastTime(hist.sort((a, b) => a.at - b.at));
+  const load = last ? workingLoad(last.sets) : ex.startKg ?? null;
+  if (lo === undefined || hi === undefined) return { load, rungs: [] };
+  const atLoad = hist.filter((s) => (s.loadKg ?? null) === load);
+  const bySession = new Map<string, SetEntry[]>();
+  for (const s of atLoad) bySession.set(s.sessionId, [...(bySession.get(s.sessionId) ?? []), s]);
+  const best = Math.max(0, ...[...bySession.values()].map((xs) => Math.min(...xs.map((x) => valueOf(x)))));
+  return { load, rungs: Array.from({ length: hi - lo + 1 }, (_, i) => ({ reps: lo + i, done: lo + i <= best })) };
 }

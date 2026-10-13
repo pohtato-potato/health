@@ -3,7 +3,7 @@ import { chipLoads, isBigJump, loadOptions, nextLoad } from '../src/domain/loads
 import type { SetEntry } from '../src/domain/types';
 import { exerciseMark, markFor } from '../src/domain/marks';
 import { buildSession, findExercise, groupExercises, isPlaceholder, measured, measureOf, nextSessionId, realSets, sidesFor, targetText, topOfRange, validatePlan, valueOfSet } from '../src/domain/plan';
-import { adviceTonight, exerciseStatus, heavierOffer, hitTop, loadSoFar, loadTonight, triggerMet } from '../src/domain/progression';
+import { adviceTonight, exerciseStatus, ladder, heavierOffer, hitTop, loadSoFar, loadTonight, triggerMet } from '../src/domain/progression';
 import { EQ, PLAN, sets } from './fixtures';
 
 const ex = (id: string) => findExercise(PLAN, id)!;
@@ -235,5 +235,24 @@ describe('v2 session rules', () => {
     expect(adviceTonight(solid, 'no')).toBe('Staying at 10 kg tonight. Heavier is offered again next time.');
     const shaky = exerciseStatus(ex('squat'), state, eqNoSmall2, sets('squat', 'Squat', 's1', '2026-01-02', 10, [15, 15, 15], { tempo: true }).map((x) => ({ ...x, form: 3 as const })));
     expect(adviceTonight(shaky, undefined)).toBe('15 kg is next, once every set is solid (form 4+) with a rep in reserve. Tonight, 10 kg.');
+  });
+
+  it('gate blocks heavier on form 3', () => {
+    const eqNoSmall3 = { ...EQ, plates: [EQ.plates[0]] };
+    const st = exerciseStatus(ex('squat'), state, eqNoSmall3, sets('squat', 'Squat', 's1', '2026-01-02', 10, [15, 15, 15], { tempo: true }).map((x) => ({ ...x, form: 3 as const })));
+    expect(st.advice?.kind).toBe('form-first');
+    expect(st.advice?.toKg).toBeUndefined();
+    expect(st.loadKg).toBe(10);
+  });
+
+  it('ladder resets reps at new load', () => {
+    const at10 = sets('squat', 'Squat', 's1', '2026-01-02', 10, [15, 15, 15]);
+    const at15 = sets('squat', 'Squat', 's2', '2026-01-05', 15, [13, 13, 12]);
+    const l10 = ladder(ex('squat'), at10);
+    expect(l10.rungs.every((r) => r.done)).toBe(true);
+    const l15 = ladder(ex('squat'), [...at10, ...at15]);
+    expect(l15.load).toBe(15);
+    expect(l15.rungs.filter((r) => r.done).map((r) => r.reps)).toEqual([12]);
+    expect(l15.rungs.map((r) => r.reps)).toEqual([12, 13, 14, 15]);
   });
 });

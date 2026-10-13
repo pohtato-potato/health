@@ -26,7 +26,7 @@ import {
   type ExerciseDef,
   type PlanDef,
 } from '../domain/plan';
-import { adviceTonight, exerciseStatus, heavierOffer, historyFor, loadSoFar, loadTonight } from '../domain/progression';
+import { adviceTonight, exerciseStatus, heavierOffer, historyFor, ladder, loadSoFar, loadTonight } from '../domain/progression';
 import type { SetEntry, Settings, Side, TrainingSession } from '../domain/types';
 import { bump, deleteSet, discardSession, logSet, patchSession, patchSettings, startSession } from '../db/actions';
 import { APP_START } from '../appStart';
@@ -424,6 +424,18 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
                 {loadTonight(st, session.heavier?.[ex.id]) !== null && ex.load !== 'band' ? ` · ${fmtKg(loadTonight(st, session.heavier?.[ex.id])!)} kg` : ''}
                 {st.band ? ` · ${st.band.toLowerCase()}` : ''}
               </div>
+              {(() => {
+                const l = ladder(ex, history);
+                return l.rungs.length > 1 && l.rungs.some((x) => x.done) ? (
+                  <div className="ladder" aria-label={`Rep ladder at ${l.load ?? 'bodyweight'}: ${l.rungs.filter((x) => x.done).length} of ${l.rungs.length} rungs`}>
+                    {l.rungs.map((x) => (
+                      <span key={x.reps} className={x.done ? 'done' : ''}>
+                        {x.reps}
+                      </span>
+                    ))}
+                  </div>
+                ) : null;
+              })()}
               {ex.note && <div className="t13 d lh">{ex.note}</div>}
             </div>
 
