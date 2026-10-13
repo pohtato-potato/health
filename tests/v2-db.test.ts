@@ -5,6 +5,7 @@ import { exportData, restoreData, type BackupFile } from '../src/db/backup';
 import { HealthDB, setDatabase, db } from '../src/db/db';
 import { migrateToV2 } from '../src/db/migrate';
 import { prefOn } from '../src/domain/types';
+import { DEFAULT_PLAN } from '../src/domain/defaultPlan';
 
 let n = 0;
 beforeEach(async () => {
@@ -56,6 +57,16 @@ describe('v2 schema and migration', () => {
     expect(await db.days.count()).toBe(3);
     expect(await db.entries.count()).toBe(1);
     expect(await db.sets.count()).toBe(1);
+  });
+
+  it('migration upgrades a v1 plan to v2, keeping its exercises', async () => {
+    const plan = { ...DEFAULT_PLAN, version: 1 as const, sessions: DEFAULT_PLAN.sessions.map((x) => ({ ...x, exercises: x.exercises.map(({ measure: _m, ...e }) => e) })) };
+    await db.settings.put({ ...defaultSettings(), plan });
+    await migrateToV2(db);
+    const after = (await db.settings.get('app'))!.plan!;
+    expect(after.version).toBe(2);
+    expect(after.sessions[0].exercises.map((e) => e.id)).toEqual(plan.sessions[0].exercises.map((e) => e.id));
+    expect(after.sessions[0].exercises.every((e) => e.measure)).toBe(true);
   });
 
   it('migration is idempotent', async () => {

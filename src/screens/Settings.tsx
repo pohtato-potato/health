@@ -3,7 +3,7 @@ import { scheduleDing, unlockAudio } from '../audio';
 import { fmtDayMonth, fmtDuration, fmtInt, fmtLitres } from '../domain/format';
 import { dayKey } from '../domain/dates';
 import { loadOptions, fmtKg } from '../domain/loads';
-import { validatePlan, type PlanDef } from '../domain/plan';
+import { upgradePlan, validatePlan, type PlanDef } from '../domain/plan';
 import { DEFAULT_MEAL_TIMES, MEAL_NAMES, MEALS, prefOn, type ChecklistItem, type Place, type PlaceKind, type Settings, type Targets } from '../domain/types';
 import { homePlace } from '../domain/places';
 import { bump, patchSettings, setTargets } from '../db/actions';
@@ -14,7 +14,7 @@ import { saveWorkbook } from '../export/saveWorkbook';
 import { db, uid } from '../db/db';
 import { useSettings, useToday } from '../db/hooks';
 import { askPersist, usePwa } from '../pwa';
-import { back, useRoute } from '../router';
+import { back, go, useRoute } from '../router';
 import { DecField, IntField, LinkRow, Seg, SwitchRow, TimeTile } from '../ui/controls';
 import { Icon } from '../ui/Icon';
 import { Sheet } from '../ui/Sheet';
@@ -65,7 +65,7 @@ export function SettingsScreen() {
       const plan = (data.format === 'health-plan' ? data : data.plan) as PlanDef;
       const errs = validatePlan(plan);
       if (errs.length) throw new Error(`This plan has problems: ${errs.slice(0, 2).join(' ')}`);
-      setPending({ kind: 'plan', plan });
+      setPending({ kind: 'plan', plan: upgradePlan(plan) });
     } catch (e) {
       toast({ text: e instanceof SyntaxError ? "That file isn't a plan: it couldn't be read." : (e as Error).message });
     }
@@ -266,8 +266,13 @@ export function SettingsScreen() {
           title="Plan"
           sub={settings.plan ? `${settings.plan.sessions.length} sessions · ${settings.plan.flags.length} joint checks` : 'None yet'}
           value={settings.plan ? `${settings.plan.name}, from ${fmtDayMonth(settings.plan.from)}` : 'Import'}
-          onClick={() => planInput.current?.click()}
+          onClick={() => (settings.plan ? go('/plan') : planInput.current?.click())}
         />
+        {settings.plan && (
+          <button type="button" className="li q" onClick={() => planInput.current?.click()}>
+            Import a plan from a file
+          </button>
+        )}
         <input ref={planInput} type="file" accept="application/json,.json" hidden onChange={(e) => (pickPlan(e.target.files?.[0]), (e.target.value = ''))} />
         {plates.map((pl) => (
           <SwitchRow

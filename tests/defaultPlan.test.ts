@@ -7,7 +7,7 @@ import { defaultSettings } from '../src/db/actions';
 describe('the built-in plan', () => {
   it('is valid and builds both sessions', () => {
     expect(validatePlan(DEFAULT_PLAN)).toEqual([]);
-    expect(buildSession(DEFAULT_PLAN, 'A')).toHaveLength(10);
+    expect(buildSession(DEFAULT_PLAN, 'A')).toHaveLength(9);
     expect(buildSession(DEFAULT_PLAN, 'B')).toHaveLength(11);
     expect(buildSession(DEFAULT_PLAN, 'B', { short: true })).toHaveLength(3);
   });

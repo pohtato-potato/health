@@ -1,6 +1,7 @@
 import { addDays, type DayKey } from '../domain/dates';
 import { DEFAULT_MEAL_TIMES, type Day, type OccasionKind, type Place, type Settings, type Status } from '../domain/types';
 import type { HealthDB } from './db';
+import { upgradePlan } from '../domain/plan';
 
 export interface MigrationReport {
   changed: boolean;
@@ -30,7 +31,12 @@ export function placesFromHomes(homes: Settings['homes']): Place[] {
 export async function migrateToV2(db: HealthDB): Promise<MigrationReport> {
   const report: MigrationReport = { changed: false, places: 0, days: 0 };
   await db.transaction('rw', db.settings, db.days, db.occasions, async () => {
-    const s = await db.settings.get('app');
+    const s0 = await db.settings.get('app');
+    const s = s0?.plan && s0.plan.version !== 2 ? { ...s0, plan: upgradePlan(s0.plan) } : s0;
+    if (s && s !== s0) {
+      await db.settings.put(s);
+      report.changed = true;
+    }
     if (s && !s.places) {
       const places = placesFromHomes(s.homes ?? []);
       await db.settings.put({ ...s, places });

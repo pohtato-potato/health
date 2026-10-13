@@ -6,6 +6,39 @@
 
 export type LoadKind = 'pair' | 'single' | 'body' | 'band';
 
+/** What a set counts: repetitions, a hold in seconds, or steps walked (carries). */
+export type Measure = 'reps' | 'seconds' | 'steps';
+
+/** The ways to make the same load harder (spec §5.5). */
+export const CHALLENGE_IDS = ['shorter-rest', 'deeper-incline', 'pause-bottom', 'pause-top', 'slow-lowering', 'one-and-half', 'harder-version', 'one-arm', 'longer-range', 'added-hold', 'shorter-pair-rest', 'slower-last-set'] as const;
+export type ChallengeId = (typeof CHALLENGE_IDS)[number];
+
+export const CHALLENGE_NAMES: Record<ChallengeId, string> = {
+  'shorter-rest': 'Shorter rest',
+  'deeper-incline': 'Deeper incline',
+  'pause-bottom': 'Pause at the bottom',
+  'pause-top': 'Pause at the top',
+  'slow-lowering': 'Slower lowering (3 s)',
+  'one-and-half': '1½ reps',
+  'harder-version': 'Harder version',
+  'one-arm': 'One-arm version',
+  'longer-range': 'Longer range',
+  'added-hold': 'Added hold',
+  'shorter-pair-rest': 'Shorter rest between the pair',
+  'slower-last-set': 'Slower last set',
+};
+
+/** A full guide for one exercise, written for the setup at home. */
+export interface Guide {
+  setup: string;
+  movement: string;
+  breathing: string;
+  faults: string[];
+  feel: string;
+  stop: string;
+  progress: string;
+}
+
 export interface ExerciseDef {
   id: string;
   /** "1", "3a". Exercises sharing a number are a superset. */
@@ -36,6 +69,18 @@ export interface ExerciseDef {
   note?: string;
   /** A flag that stops this exercise on the spot, e.g. wrist pain. */
   stopFlag?: string;
+  /** v2: what a set counts. Defaults to seconds when `seconds` is set, else reps. */
+  measure?: Measure;
+  /** Steps per set for carries measured in steps. */
+  steps?: [number, number];
+  challenges?: ChallengeId[];
+  /** The one cue shown before a set when no fault pattern has formed yet. */
+  cue?: string;
+  guide?: Guide;
+  /** Used instead when there is no band. */
+  noBand?: Partial<Omit<ExerciseDef, 'id' | 'order' | 'noBand'>> & { name: string; load: LoadKind };
+  /** Grip-heavy: afterwards, inputs switch to big dials and chips. */
+  tiredHands?: boolean;
 }
 
 export interface SessionDef {
@@ -76,7 +121,7 @@ export interface TriggerDef {
 
 export interface PlanDef {
   format: 'health-plan';
-  version: 1;
+  version: 1 | 2;
   name: string;
   from: string;
   rotation: string[];
@@ -222,4 +267,20 @@ export function validatePlan(p: unknown): string[] {
   }
   if (!Array.isArray(plan.rotation)) errs.push('The plan is missing its rotation, e.g. ["A", "B"].');
   return errs;
+}
+
+/** Brings a v1 plan to v2: every exercise says what it measures. Ids and everything else stay. */
+export function upgradePlan(plan: PlanDef): PlanDef {
+  return {
+    ...plan,
+    version: 2,
+    sessions: plan.sessions.map((s) => ({ ...s, exercises: s.exercises.map((e) => ({ ...e, measure: e.measure ?? (e.seconds ? 'seconds' : 'reps') })) })),
+  };
+}
+
+/** The exercise as it will be done with this kit: a band move swaps to its no-band version. */
+export function effectiveExercise(ex: ExerciseDef, eq: { band: boolean }): ExerciseDef {
+  if (ex.load !== 'band' || eq.band || !ex.noBand) return ex;
+  const { noBand, bandLevels: _levels, ...rest } = ex;
+  return { ...rest, ...noBand, id: ex.id, order: ex.order };
 }
