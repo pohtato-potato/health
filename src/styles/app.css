@@ -1665,8 +1665,6 @@ textarea.field {
   --gold-bg: #2a1d0f;
   --gold-border: #7a5626;
   --gold-rule: #4a3518;
-  --apricot: #f28c4b;
-  --sage: #a6d38f;
 }
 :root.theme-holi {
   --ink: #0f0d14;
@@ -1674,19 +1672,12 @@ textarea.field {
   --raised: #1e1a28;
   --hairline: #2e2838;
   --gold: #ffd35c;
-  --apricot: #ff7aa8;
-  --sage: #5fd6a0;
-  --blue: #6fb3ff;
-  --lavender: #c08cff;
-  --pearl: #9fe7ff;
 }
 :root.theme-birthday {
   --ink: #100e16;
   --surface: #18151f;
   --raised: #1f1b28;
   --gold: #f7c96b;
-  --lavender: #d6a8ff;
-  --apricot: #ff9c8a;
 }
 :root.theme-sunrise {
   --ink: #120f14;
@@ -1699,9 +1690,6 @@ textarea.field {
   --gold: #ffb86b;
   --gold-bg: #2a1b14;
   --gold-border: #7a4f33;
-  --apricot: #ff8a6b;
-  --pearl: #ffd9c2;
-  --blue: #9fb0ff;
 }
 :root.theme-sunrise body {
   background: linear-gradient(180deg, #2a1720 0, #1d1219 160px, var(--ink) 420px) no-repeat, var(--ink);
@@ -1718,8 +1706,6 @@ textarea.field {
   --gold-border: #4c5d75;
   --gold-rule: #28334a;
   --gold-text: #c6d1de;
-  --sage: #a8d0e6;
-  --pearl: #e8f0fa;
 }
 :root.theme-retro {
   --ink: #070a07;
@@ -1735,8 +1721,6 @@ textarea.field {
   --dim: #6a9467;
   --voice: #b5eab1;
   --gold: #f6d743;
-  --sage: #6ff07a;
-  --blue: #7fd7ff;
   --serif: 'DM Mono', ui-monospace, monospace;
 }
 :root.theme-antimatter {
@@ -1750,10 +1734,6 @@ textarea.field {
   --gold-bg: #0e1d20;
   --gold-border: #2a6f6a;
   --gold-rule: #173a38;
-  --sage: #ff5fd2;
-  --apricot: #8a7bff;
-  --lavender: #ff9cf2;
-  --blue: #ffb86b;
 }
 :root.theme-platinum {
   --ink: #0e1013;

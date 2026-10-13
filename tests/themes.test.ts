@@ -33,3 +33,13 @@ describe('themes', () => {
     expect(themeFor({ prefs, theme: 'moonlight' }, '2026-10-01', new Set([moon]))).toBe('moonlight');
   });
 });
+
+describe('data colours on themed days', () => {
+  it('no theme repaints the data colours, so charts read the same on every theme', async () => {
+    const { readFileSync } = await import('node:fs');
+    const css = ['src/styles/app.css', 'src/styles/components.css'].map((p) => readFileSync(p, 'utf8')).join('\n');
+    const blocks = [...css.matchAll(/:root\.theme-[\w-]+[^{]*\{([^}]*)\}/g)].map((m) => m[1]);
+    expect(blocks.length).toBeGreaterThan(0);
+    for (const b of blocks) expect(b).not.toMatch(/--(apricot|sage|lavender|blue|pearl)\s*:/);
+  });
+});
