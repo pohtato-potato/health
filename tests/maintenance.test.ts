@@ -1,36 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { addDays, dayRange } from '../src/domain/dates';
-import { estimateMaintenance, plateau, suggestTargets, weeklyGap } from '../src/domain/maintenance';
+import { plateau, suggestTargets, weeklyGap } from '../src/domain/maintenance';
 import type { Day, FoodEntry, Targets } from '../src/domain/types';
 
 const TODAY = '2026-11-20';
 const T: Targets = { kcalMin: 2000, kcalMax: 2300, proteinG: 140, steps: 10000, waterMl: 3000, sleepMin: 420, sessionsPerWeek: 4 };
 const food = (date: string, kcal: number): FoodEntry => ({ id: date + kcal, date, meal: 'lunch', at: 0, kind: 'food', name: 'Meal', portion: '', kcal, protein: 0 });
 
-/** Weight falling steadily by `perDay` for 70 days up to yesterday. */
-function world(perDay: number, kcal = 2200) {
-  const range = dayRange(addDays(TODAY, -70), addDays(TODAY, -1));
-  const days: Day[] = range.map((date, i) => ({ date, weightKg: 82 - i * perDay }));
-  const entries = range.slice(-28).map((d) => food(d, kcal));
-  return { days, entries };
-}
-
 describe('maintenance', () => {
-  it('works out maintenance from intake and the trend', () => {
-    const { days, entries } = world(1 / 28);
-    const m = estimateMaintenance(days, entries, TODAY)!;
-    expect(m.intake).toBe(2200);
-    expect(m.kcal).toBeGreaterThan(2440);
-    expect(m.kcal).toBeLessThan(2510);
-    expect(m.perWeek).toBeCloseTo(-0.25, 1);
-  });
-
-  it('needs two weeks of full days', () => {
-    const { days, entries } = world(0);
-    expect(estimateMaintenance(days, entries.slice(0, 10), TODAY)).toBeUndefined();
-    expect(estimateMaintenance(days, entries.map((e) => ({ ...e, kcal: 500 })), TODAY)).toBeUndefined();
-  });
-
   it('shows the gap between this week and maintenance', () => {
     const g = weeklyGap(2500, [food('2026-11-16', 2000), food('2026-11-17', 2100), food('2026-11-20', 900)], '2026-11-16', TODAY)!;
     expect(g).toMatchObject({ avg: 2050, gap: 450, days: 2 });

@@ -178,6 +178,8 @@ export interface Settings {
   confetti?: string;
   /** 'MM-DD', for the birthday theme. */
   birthday?: string;
+  /** v2: for the fat-mass estimate behind maintenance. Kept private (starter file). */
+  birthYear?: number;
   customTracks?: CustomTrack[];
   /** WebAuthn credential that unlocks photos with the fingerprint. */
   photoKey?: string;
