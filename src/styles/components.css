@@ -1332,3 +1332,30 @@
 .diary-row:first-child {
   border-top: 0;
 }
+
+/* Departures (s39): the board clock and two-line destinations. */
+.board-top {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0 4px;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: #f5c451;
+}
+.board-row .dest-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.board-row .dest {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: #f7e3b0;
+}
+.board-row .tag {
+  font-size: 10px;
+  color: #8a8a90;
+}

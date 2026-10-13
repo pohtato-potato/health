@@ -2,11 +2,11 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
 import { dayKey, parseDay, type DayKey } from '../domain/dates';
 import { fmtDayMonth } from '../domain/format';
-import { flightNo, statusOf, upcomingMilestones, type BoardStatus, type Milestone } from '../domain/milestones';
+import { boardTag, flightNo, statusOf, upcomingMilestones, type BoardStatus, type Milestone } from '../domain/milestones';
 import type { Settings } from '../domain/types';
 import { bump } from '../db/actions';
 import { db } from '../db/db';
-import { useAllDays, useMeasurements, useSessions, useSettings, useToday } from '../db/hooks';
+import { useAllDays, useMeasurements, useSessions, useSettings, useToday, useNow } from '../db/hooks';
 import { back, go } from '../router';
 import { Icon } from '../ui/Icon';
 import { Sheet } from '../ui/Sheet';
@@ -70,22 +70,31 @@ const STATUS_COLOR: Record<BoardStatus, string> = {
 
 function Board({ rows, onRow, limit }: { rows: BoardRow[]; onRow: (r: BoardRow) => void; limit?: number }) {
   const shown = limit ? rows.slice(0, limit) : rows;
+  const now = useNow(30_000);
+  const t = new Date(now);
   return (
     <div className="board" role="table" aria-label="Departures">
+      <div className="board-top">
+        <span>DEPARTURES</span>
+        <span className="tn">
+          {String(t.getHours()).padStart(2, '0')}:{String(t.getMinutes()).padStart(2, '0')}
+        </span>
+      </div>
       <div className="board-row head" role="row">
-        <span role="columnheader">Time</span>
-        <span role="columnheader">Destination</span>
-        <span role="columnheader">Flight</span>
-        <span role="columnheader">Status</span>
+        <span role="columnheader">DUE</span>
+        <span role="columnheader">DESTINATION</span>
+        <span role="columnheader">STATUS</span>
       </div>
       {shown.map((r) => (
         <button key={r.m.id} type="button" className="board-row" role="row" onClick={() => onRow(r)}>
-          <span>
-            {fmtDayMonth(r.m.eta).toUpperCase()}
-            {r.status === 'Delayed' && r.scheduled && r.scheduled !== r.m.eta ? <span className="was">{fmtDayMonth(r.scheduled).toUpperCase()}</span> : null}
+          <span>{fmtDayMonth(r.m.eta).toUpperCase()}</span>
+          <span className="dest-col">
+            <span className="dest">{r.m.dest}</span>
+            <span className="tag">
+              {boardTag(r.m)}
+              {r.status === 'Delayed' && r.scheduled && r.scheduled !== r.m.eta ? ` · was ${fmtDayMonth(r.scheduled)}` : ''}
+            </span>
           </span>
-          <span className="dest">{r.m.dest.toUpperCase()}</span>
-          <span>{flightNo(r.m.id)}</span>
           <span className={r.status === 'Boarding' ? 'blink' : undefined} style={{ color: STATUS_COLOR[r.status] }}>
             {r.status.toUpperCase()}
           </span>

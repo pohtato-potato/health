@@ -78,3 +78,13 @@ describe('nothing asks for features v2 removed', () => {
     expect(ACTIVE_ACHIEVEMENTS.map((a) => a.name)).not.toContain('Voice of reason');
   });
 });
+
+describe('departures board labels (s39)', () => {
+  it('flight numbers read HW and carry the board category', async () => {
+    const { flightNo, boardTag } = await import('../src/domain/milestones');
+    expect(flightNo('city:Agra')).toMatch(/^HW \d{3}$/);
+    expect(boardTag({ id: 'city:Agra', kind: 'walk' })).toMatch(/^HW \d{3} · WALK$/);
+    expect(boardTag({ id: 'reveal', kind: 'date' })).toMatch(/^HW \d{3}$/);
+    expect(boardTag({ id: 'weeks:4', kind: 'training' })).toMatch(/· TRAIN$/);
+  });
+});
