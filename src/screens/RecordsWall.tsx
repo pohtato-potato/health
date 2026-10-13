@@ -1,7 +1,8 @@
 import { fmtDayMonth } from '../domain/format';
-import { fmtKg } from '../domain/loads';
-import { allExercises } from '../domain/plan';
+import { fmtKg, nextLoad } from '../domain/loads';
+import { allExercises, topOfRange, type ExerciseDef } from '../domain/plan';
 import { medalsFor, type Medal } from '../domain/records';
+import { strengthForecast } from '../domain/strengthForecast';
 import { useAllSets, useSettings } from '../db/hooks';
 import { back } from '../router';
 import { Icon } from '../ui/Icon';
@@ -13,6 +14,14 @@ export function RecordsWall() {
   const settings = useSettings();
   const sets = useAllSets();
   if (!settings?.plan || !sets) return <div className="page bare" />;
+  const eq = settings.equipment;
+  /** The next weight step at the top of the range: what the forecast aims for. */
+  const forecastTarget = (ex: ExerciseDef, kg: number | null) => {
+    if (kg === null || (ex.load !== 'pair' && ex.load !== 'single')) return undefined;
+    const next = nextLoad(eq, ex.load, kg).next;
+    const reps = topOfRange(ex);
+    return next !== undefined && reps !== undefined ? { kg: next, reps } : undefined;
+  };
   const rows = allExercises(settings.plan)
     .map((ex) => ({ ex, medals: medalsFor(ex, sets) }))
     .filter((r) => r.medals.length)
@@ -30,6 +39,15 @@ export function RecordsWall() {
       {rows.map(({ ex, medals }) => (
         <div key={ex.id} className="card" style={{ gap: 8 }}>
           <div className="t17">{ex.name}</div>
+          {(() => {
+            const target = forecastTarget(ex, medals[0].loadKg);
+            const f = target ? strengthForecast(ex, sets, target) : undefined;
+            return f?.date && target ? (
+              <div className="t13 q">
+                {fmtKg(target.kg)} kg × {target.reps} around {fmtDayMonth(f.date)}
+              </div>
+            ) : null;
+          })()}
           {medals.map((m) => (
             <div key={m.medal} className="row base" style={{ minHeight: 32 }}>
               <span className="row" style={{ gap: 10, justifyContent: 'flex-start' }}>

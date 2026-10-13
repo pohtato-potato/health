@@ -2,7 +2,8 @@ import { fmtInt, lowerFirst, weekdayName } from '../domain/format';
 import { findExercise, findSession } from '../domain/plan';
 import type { Settings, TrainingSession } from '../domain/types';
 import { useAllSets, useNow } from '../db/hooks';
-import { go } from '../router';
+import { go, openSheet } from '../router';
+import { recordShot } from '../domain/strengthForecast';
 import type { NextUp } from '../state/derived';
 
 export function NextUpCard({
@@ -83,6 +84,7 @@ export function NextUpCard({
   }
 
   const ready = up.exercises.filter((e) => e.status.advice && e.status.advice.kind !== 'maxed');
+  const shots = up.exercises.map((e) => recordShot({ id: e.id, name: e.status.name }, sets ?? [])).filter((x): x is string => !!x);
   const met = weeks.thisWeek >= weeks.perWeek;
   const last = up.lastDone;
 
@@ -114,12 +116,13 @@ export function NextUpCard({
           {ready.length === 1 ? `${ready[0].status.name} is` : `${ready.length} exercises are`} ready to go heavier.
         </div>
       )}
+      {shots.length > 0 && <div className="t13 gold">{shots[0].charAt(0).toUpperCase() + shots[0].slice(1)}{shots.length > 1 ? `, and ${shots.length - 1} more within reach` : ''}.</div>}
       {met && <div className="t13 q lh">{weeks.thisWeek} of {weeks.perWeek} done this week. Rest counts as training; a fifth is fine if you feel fresh.</div>}
       <div className="row" style={{ gap: 10 }}>
         <button type="button" className={`btn grow${met ? ' ghost' : ''}`} onClick={() => go('/session', { start: up.sessionId })}>
           Start session
         </button>
-        <button type="button" className="btn ghost" onClick={() => go('/session', { start: up.sessionId, short: '1' })}>
+        <button type="button" className="btn ghost" onClick={() => openSheet('short', { session: up.sessionId })}>
           Short
         </button>
       </div>
