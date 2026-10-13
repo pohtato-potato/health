@@ -1281,3 +1281,54 @@
 .sheet-body > * {
   flex-shrink: 0;
 }
+
+/* Diary (s38): a strip of days, then one row per field. */
+.day-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin: 0 -22px;
+  padding-left: 22px;
+  padding-right: 22px;
+  scrollbar-width: none;
+}
+.day-pill {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 60px;
+  border-radius: 16px;
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+}
+.day-pill b {
+  font-family: var(--serif);
+  font-size: 19px;
+  font-weight: 600;
+}
+.day-pill.on {
+  background: var(--text);
+  color: var(--ink);
+  border-color: var(--text);
+}
+.day-pill.empty:not(.on) {
+  border-style: dashed;
+  color: var(--quiet);
+}
+.diary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  width: 100%;
+  text-align: right;
+  border-top: 1px solid var(--divider);
+}
+.diary-row:first-child {
+  border-top: 0;
+}
