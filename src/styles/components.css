@@ -1359,3 +1359,20 @@
   font-size: 10px;
   color: #8a8a90;
 }
+
+/* Settings (s43): each group is one summary row that opens in place. */
+.set-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 16px;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  width: 100%;
+}
+.set-row[aria-expanded='true'] {
+  border-color: var(--btn-border);
+}
