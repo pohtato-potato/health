@@ -24,7 +24,8 @@ export function MaintenanceWatcher() {
     if (!stale) return;
     const m = modelFor(settings, days, entries, today);
     if (m.status !== 'updating' || m.kcal === undefined) return;
-    void patchSettings({ maintenance: { kcal: m.kcal, at: Date.now(), weeks: Math.round(m.logged / 7) } });
+    // The first estimate becomes the check-in's baseline, silently.
+    void patchSettings({ maintenance: { kcal: m.kcal, at: Date.now(), weeks: Math.round(m.logged / 7) }, ...(settings.maintenanceSeen === undefined ? { maintenanceSeen: m.kcal } : {}) });
   }, [settings?.setupDone, settings?.maintenance, days, entries, today]);
   return null;
 }

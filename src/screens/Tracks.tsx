@@ -20,6 +20,8 @@ import { db } from '../db/db';
 import { nextCheckInDate } from './Photos';
 import { openShakeStat } from '../ui/Shake';
 import { doneSessions, flagEvents, stepStreakFor, targetsFor, weeksFor } from '../state/derived';
+import { autoMarkers } from '../domain/markers';
+import { BenchmarkCard } from './BenchmarkCard';
 
 type Kind = 'steps' | 'sleep' | 'weight' | 'waist' | 'calories' | 'protein' | 'water' | 'training' | 'drinks' | 'joints' | 'custom';
 
@@ -288,7 +290,9 @@ export function TrackPage() {
     const weighIns = [...data.days.values()].filter((d) => d.weightKg !== undefined).map((d) => ({ date: d.date, kg: d.weightKg! }));
     const trend = weightTrend(weighIns);
     const byDate = new Map(trend.map((p) => [p.date, p]));
-    const points: Point[] = range.map((d) => ({ label: label(d), value: byDate.get(d)?.kg ?? null, trend: byDate.get(d)?.trend ?? null }));
+    const markers = new Map(autoMarkers([...data.days.values()], settings).map((m) => [m.date, m.text]));
+    const points: Point[] = range.map((d) => ({ label: label(d), value: byDate.get(d)?.kg ?? null, trend: byDate.get(d)?.trend ?? null, marker: markers.get(d) }));
+    const shown = range.filter((d) => markers.has(d));
     const latest = trend[trend.length - 1];
     const monthAgo = [...trend].reverse().find((p) => p.date <= addDays(today, -28));
     const weeklies = weeklyAverages(weighIns, today, 8);
@@ -297,7 +301,13 @@ export function TrackPage() {
         <Headline value={latest ? `${fmt1(latest.trend)} kg` : '—'} sub={latest ? `Trend today · last weigh-in ${fmt1(latest.kg)} kg on ${fmtDayMonth(latest.date)}` : 'Log your weight in the morning log.'} />
         <div className="card">
           <TrendChart points={points} color={meta.color} fmt={(v) => fmt1(v)} />
+          {shown.length > 0 && (
+            <div className="t12 q lh">
+              {shown.map((d) => `${fmtDayMonth(d)}: ${markers.get(d)}`).join(' · ')}
+            </div>
+          )}
         </div>
+        {settings.heightCm ? <BenchmarkCard measurements={data.measurements} heightCm={settings.heightCm} today={today} /> : null}
         {monthAgo && latest && (
           <div className="t14 q lh">
             A month ago your trend was {fmt1(monthAgo.trend)} kg: {latest.trend <= monthAgo.trend ? `${fmt1(monthAgo.trend - latest.trend)} kg down` : `${fmt1(latest.trend - monthAgo.trend)} kg up`} since then. The trend

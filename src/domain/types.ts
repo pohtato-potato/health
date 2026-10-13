@@ -178,6 +178,8 @@ export interface Settings {
   confetti?: string;
   /** 'MM-DD', for the birthday theme. */
   birthday?: string;
+  /** v2: the maintenance figure the owner last answered the weekly check-in for. */
+  maintenanceSeen?: number;
   /** v2: for the fat-mass estimate behind maintenance. Kept private (starter file). */
   birthYear?: number;
   customTracks?: CustomTrack[];

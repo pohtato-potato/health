@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { pickBanner, type BannerCandidate } from '../domain/banners';
 import { saveBackup } from '../db/backup';
-import { useAllDays, useSettings } from '../db/hooks';
+import { useAllDays, useAllEntries, useSettings } from '../db/hooks';
 import { applyUpdate, promptInstall, usePwa } from '../pwa';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
@@ -12,12 +12,17 @@ import { go } from '../router';
 import { nextCheckInDate } from './Photos';
 import { Icon } from '../ui/Icon';
 import { useToast } from '../ui/Toasts';
+import { modelFor } from './MaintenanceCards';
+import { weeklyCheckIn } from '../domain/benchmark';
+import { targetsFor } from '../state/derived';
+import { patchSettings, setTargets } from '../db/actions';
 
 /** One quiet banner on Today: a new version, a backup nudge, the week, a check-in, installing. Never notifications. */
 export function Banners() {
   const pwa = usePwa();
   const settings = useSettings();
   const days = useAllDays();
+  const entries = useAllEntries();
   const checkins = useLiveQuery(() => db.checkins.toArray(), []);
   const lastWeek = lastFullWeek(dayKey());
   const recapNote = useLiveQuery(async () => (await db.weeks.get(lastWeek)) ?? null, [lastWeek]);
@@ -118,6 +123,38 @@ export function Banners() {
           <button type="button" className="btn sm" onClick={() => promptInstall()}>
             Install
           </button>
+        </>
+      ),
+    });
+
+  const model = entries ? modelFor(settings, days, entries, today) : undefined;
+  const checkIn = model ? weeklyCheckIn(model, targetsFor(settings, today), settings.maintenanceSeen) : undefined;
+  if (checkIn && model?.kcal !== undefined)
+    candidates.push({
+      id: 'maintenance',
+      priority: 7,
+      el: (
+        <>
+          <Icon name="trend" size={20} color="var(--kcal)" />
+          <span className="grow">{checkIn.text}</span>
+          <span className="col gap4">
+            <button type="button" className="btn sm" onClick={() => patchSettings({ maintenanceSeen: model.kcal })}>
+              Keep
+            </button>
+            {checkIn.proposal && (
+              <button
+                type="button"
+                className="btn ghost sm"
+                onClick={async () => {
+                  await setTargets({ ...targetsFor(settings, today), ...checkIn.proposal });
+                  await patchSettings({ maintenanceSeen: model.kcal });
+                  toast({ text: 'Calorie range moved with maintenance', sub: `${checkIn.proposal!.kcalMin}–${checkIn.proposal!.kcalMax} kcal` });
+                }}
+              >
+                Adjust
+              </button>
+            )}
+          </span>
         </>
       ),
     });
