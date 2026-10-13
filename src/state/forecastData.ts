@@ -1,7 +1,8 @@
 import { addDays, weekday, type DayKey } from '../domain/dates';
 import { forecasts, pickForecast, type Forecast } from '../domain/forecast';
 import { findSession } from '../domain/plan';
-import { beatChance, readiness, type Readiness } from '../domain/readiness';
+import { beatChance, type Readiness } from '../domain/readiness';
+import { readinessFor } from './readinessFor';
 import { sleepMinutes } from '../domain/rings';
 import { weightTrend } from '../domain/streaks';
 import type { Day, FoodEntry, SetEntry, Settings, TrainingSession } from '../domain/types';
@@ -17,18 +18,10 @@ export interface ForecastData {
   records: string[];
 }
 
-export function forecastData(settings: Settings, today: DayKey, days: Day[], entries: FoodEntry[], sessions: TrainingSession[], sets: SetEntry[], saved?: number): ForecastData {
+export function forecastData(settings: Settings, today: DayKey, days: Day[], _entries: FoodEntry[], sessions: TrainingSession[], sets: SetEntry[], saved?: number): ForecastData {
   const day = days.find((d) => d.date === today);
-  const yesterday = addDays(today, -1);
   const events = flagEvents(settings.plan, sessions, days);
-  const r = readiness({
-    today,
-    day,
-    sleepTarget: targetsFor(settings, today).sleepMin,
-    sessions,
-    entriesYesterday: entries.filter((e) => e.date === yesterday),
-    flagDates: events.map((e) => e.date),
-  });
+  const r = readinessFor(settings, today, days, sessions, sets, events.map((e) => e.date));
   const beat = beatChance(r.score, sessions, sets);
   const done = doneSessions(sessions);
   const weeks = weeksFor(settings, sessions, today);

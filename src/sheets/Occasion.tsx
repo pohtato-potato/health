@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { addDays, daysBetween, type DayKey } from '../domain/dates';
 import { festivalOn, nextFestival } from '../domain/festivals';
 import { fmt1, fmtDayMonth, fmtInt } from '../domain/format';
-import { OCCASION_KINDS, heldSteady, maintenanceKcal, occasionOn } from '../domain/occasions';
+import { OCCASION_KINDS, STATUS_OF, heldSteady, maintenanceKcal, occasionOn } from '../domain/occasions';
 import { weightTrend } from '../domain/streaks';
 import { targetsOn } from '../domain/rings';
 import type { Occasion, OccasionKind, Settings } from '../domain/types';
@@ -14,12 +14,15 @@ import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
 import { Icon } from '../ui/Icon';
 import { FALLBACK_TARGETS } from '../state/derived';
+import { setStatusRange } from '../db/actions';
 
 const PLACEHOLDER: Record<OccasionKind, string> = {
   festival: 'Diwali',
   wedding: 'A cousin’s wedding',
   travel: 'Trip home',
   sick: 'Down with a cold',
+  injured: 'Sore shoulder',
+  break: 'A week off',
   other: 'Exams week',
 };
 
@@ -45,7 +48,7 @@ export function OccasionSheet() {
   const [name, setName] = useState(params.get('name') ?? fest?.name ?? '');
   const [from, setFrom] = useState<DayKey>(params.get('from') ?? (fest && fest.from > today ? fest.from : today));
   const [to, setTo] = useState<DayKey>(params.get('to') ?? fest?.to ?? addDays(today, 2));
-  if (!settings || !days) return <Sheet title="Occasion mode">{null}</Sheet>;
+  if (!settings || !days) return <Sheet title="Status">{null}</Sheet>;
 
   const current = occasionOn(settings, today);
   const all = [...(settings.occasions ?? [])].sort((a, b) => b.from.localeCompare(a.from));
@@ -56,14 +59,21 @@ export function OccasionSheet() {
   const save = async () => {
     const o: Occasion = { id: uid(), kind, name: name.trim(), from, to };
     await patchSettings((s) => ({ occasions: [...(s.occasions ?? []), o] }));
+    await setStatusRange(from, to, STATUS_OF[kind]);
     void bump('occasion', { value: kind });
     closeSheet();
     toast({
-      kicker: 'Occasion mode',
-      text: from <= today ? `${o.name} mode is on.` : `${o.name} mode starts ${fmtDayMonth(from)}.`,
+      kicker: 'Status',
+      text: from <= today ? `${o.name}: status on.` : `${o.name} starts ${fmtDayMonth(from)}.`,
       sub: `Calories up to ${fmtInt(maintenanceFor(settings, from))}. Streaks paused until ${fmtDayMonth(to)}.`,
       tone: 'gold',
-      action: { label: 'Undo', run: () => void patchSettings((s) => ({ occasions: (s.occasions ?? []).filter((x) => x.id !== o.id) })) },
+      action: {
+        label: 'Undo',
+        run: () => {
+          void patchSettings((s) => ({ occasions: (s.occasions ?? []).filter((x) => x.id !== o.id) }));
+          void setStatusRange(from, to, undefined);
+        },
+      },
     });
   };
 
@@ -71,16 +81,18 @@ export function OccasionSheet() {
     const yesterday = addDays(today, -1);
     // Ending on its first day removes it; otherwise it ends yesterday, so today is back to normal.
     await patchSettings((s) => ({ occasions: (s.occasions ?? []).flatMap((x) => (x.id !== o.id ? [x] : o.from >= today ? [] : [{ ...x, to: yesterday }])) }));
+    await setStatusRange(o.from >= today ? o.from : today, o.to, undefined);
     closeSheet();
-    toast({ kicker: 'Occasion mode', text: `${o.name} mode is off.`, sub: 'Targets and streaks are back to normal from today.' });
+    toast({ kicker: 'Status', text: `${o.name}: status off.`, sub: 'Targets and streaks are back to normal from today.' });
   };
 
   const remove = async (o: Occasion) => {
     await patchSettings((s) => ({ occasions: (s.occasions ?? []).filter((x) => x.id !== o.id) }));
+    await setStatusRange(o.from, o.to, undefined);
   };
 
   return (
-    <Sheet title="Occasion mode" sub="Festivals, weddings, travel" tall>
+    <Sheet title="Status" sub="Ill, injured, travelling, a break, or an occasion" tall>
       {current ? (
         <div className="card" style={{ borderColor: 'var(--gold-border)', background: 'var(--gold-bg)' }}>
           <div className="lbl gold">On now</div>
@@ -100,7 +112,7 @@ export function OccasionSheet() {
             For the days when life takes over. Calories go up to maintenance, about {fmtInt(maint)}, so the goal is holding steady rather than losing. Step and training streaks pause, and pick up where they left off afterwards.
           </div>
           <div className="col gap8">
-            <div className="lbl">What’s the occasion?</div>
+            <div className="lbl">What's going on?</div>
             <div className="row" style={{ flexWrap: 'wrap', gap: 8, justifyContent: 'flex-start' }}>
               {OCCASION_KINDS.map((k) => (
                 <button key={k.id} type="button" className={`chip sm${kind === k.id ? ' on' : ''}`} onClick={() => setKind(k.id)}>

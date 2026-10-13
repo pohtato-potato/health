@@ -1,16 +1,17 @@
+import { useState } from 'react';
 import { addDays, weekStart } from '../domain/dates';
-import { fmt1, fmtDayMonth, fmtDuration, fmtInt, fmtLitres, fmtTime } from '../domain/format';
+import { fmtDayMonth, fmtInt, fmtLitres, fmtTime } from '../domain/format';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { nextCheckInDate } from '../screens/Photos';
 import { findSession } from '../domain/plan';
-import { sleepMinutes } from '../domain/rings';
 import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useMeasurements, useSessions, useSettings, useToday } from '../db/hooks';
 import { go, replaceSheet } from '../router';
 import { Icon, type IconName } from '../ui/Icon';
 import { Sheet } from '../ui/Sheet';
 import { checklistSlots, dayRings, freeMealsThisWeek, nextUp } from '../state/derived';
 import { occasionOn } from '../domain/occasions';
+import { prefOn } from '../domain/types';
 
 export function LogSheet() {
   const settings = useSettings();
@@ -24,6 +25,7 @@ export function LogSheet() {
   const ws = weekStart(today);
   const weekEntries = useEntriesBetween(ws, addDays(ws, 6));
   const checkins = useLiveQuery(() => db.checkins.toArray(), []);
+  const [more, setMore] = useState(false);
 
   if (!settings || !days || !entries || !sessions || !sets || active === undefined || !measurements || !weekEntries) return <Sheet title="Log">{null}</Sheet>;
 
@@ -36,7 +38,6 @@ export function LogSheet() {
   const lastWaist = [...measurements].reverse().find((m) => m.waistStanding !== undefined);
   const drinks = entries.filter((e) => e.kind === 'drink').reduce((n, e) => n + (e.drink?.count ?? 1), 0);
   const freeUsed = freeMealsThisWeek(weekEntries, today);
-  const lastSleep = day?.sleep;
   const checkinDue = checkins ? nextCheckInDate(checkins) : undefined;
 
   const tile = (icon: IconName, color: string, title: string, sub: string, onClick: () => void) => (
@@ -76,22 +77,33 @@ export function LogSheet() {
 
       <div className="grid3">
         {tile('food', 'var(--apricot)', 'Food', totals.entries ? `${fmtInt(totals.kcal)} kcal today` : 'Nothing yet', () => replaceSheet('addfood'))}
-        {tile('water', 'var(--blue)', 'Water', `${fmtLitres(totals.waterMl)} of ${fmtLitres(targets.waterMl)} L`, () => replaceSheet('water'))}
-        {tile('steps', 'var(--sage)', 'Steps', day?.steps !== undefined ? `${fmtInt(day.steps)} so far` : 'Not logged', () => replaceSheet('steps'))}
-        {tile('weight', 'var(--pearl)', 'Weight', day?.weightKg !== undefined ? `${fmt1(day.weightKg)} kg today` : 'In the morning log', () => replaceSheet('morning'))}
-        {tile('sleep', 'var(--blue)', 'Sleep', lastSleep ? fmtDuration(sleepMinutes(lastSleep.asleep, lastSleep.woke)) : 'In the morning log', () => replaceSheet('morning'))}
-        {tile('tape', 'var(--pearl)', 'Waist', lastWaist?.waistStanding !== undefined ? `${lastWaist.waistStanding} in last time` : 'Standing, slouched', () => replaceSheet('waist'))}
-        {tile('drink', 'var(--gold)', 'Drink', drinks ? `${drinks} today` : 'None today', () => replaceSheet('drink'))}
-        {tile('night', 'var(--gold)', 'Night out', 'Meal and drinks', () => replaceSheet('nightout'))}
-        {tile('free', 'var(--apricot)', 'Free meal', freeUsed ? 'Used this week' : '1 left this week', () => replaceSheet('free'))}
         {slots.length > 0
           ? tile('pill', 'var(--quiet)', 'Checklist', `${ticked} of ${slots.length} done`, () => replaceSheet('checklist'))
           : tile('pill', 'var(--quiet)', 'Checklist', 'Set up in Settings', () => go('/settings', { at: 'checklist' }))}
-        {tile('win', 'var(--gold)', 'Win', 'Into the jar', () => replaceSheet('win'))}
-        {(settings.customTracks ?? []).some((t) => t.active) && tile('tracks', 'var(--pearl)', 'Your tracks', `${(settings.customTracks ?? []).filter((t) => t.active).length} to fill in`, () => replaceSheet('mytracks'))}
-        {tile('calendar', 'var(--gold)', 'Occasion', occasionOn(settings, today) ? `${occasionOn(settings, today)!.name} is on` : 'Festival, wedding, trip', () => replaceSheet('occasion'))}
-        {tile('camera', 'var(--pearl)', 'Check-in', checkinDue ? (checkinDue <= today ? 'Due now' : `Due ${fmtDayMonth(checkinDue)}`) : 'Photos and tape', () => go('/checkin'))}
+        {tile('steps', 'var(--sage)', 'Steps', day?.steps !== undefined ? `${fmtInt(day.steps)} so far` : 'Not logged', () => replaceSheet('steps'))}
+        {tile('check', 'var(--gold)', 'Close the day', day?.foodDone ? 'Closed' : 'Meals, checklist, steps', () => go('/close'))}
+        {prefOn(settings.prefs, 'water') && tile('water', 'var(--blue)', 'Water', `${fmtLitres(totals.waterMl)} of ${fmtLitres(targets.waterMl)} L`, () => replaceSheet('water'))}
       </div>
+
+      <button type="button" className="wide" aria-expanded={more} onClick={() => setMore(!more)}>
+        <span className="col gap2">
+          <span className="t15">More</span>
+          <span className="t12 q">
+            Drinks, night out, free meal, waist, status{checkinDue && checkinDue <= today ? ', check-in due' : ', check-in'}
+          </span>
+        </span>
+        <Icon name={more ? 'up' : 'down'} size={18} stroke={1.8} color="var(--quiet)" />
+      </button>
+      {more && (
+        <div className="grid3">
+          {tile('drink', 'var(--gold)', 'Drinks', drinks ? `${drinks} today` : 'None today', () => replaceSheet('drink'))}
+          {tile('night', 'var(--gold)', 'Night out', 'Meal and drinks', () => replaceSheet('nightout'))}
+          {tile('free', 'var(--apricot)', 'Free meal', freeUsed ? 'Used this week' : '1 left this week', () => replaceSheet('free'))}
+          {tile('tape', 'var(--pearl)', 'Waist', lastWaist?.waistStanding !== undefined ? `${lastWaist.waistStanding} in last time` : 'Standing, slouched', () => replaceSheet('waist'))}
+          {tile('calendar', 'var(--gold)', 'Status', occasionOn(settings, today) ? `${occasionOn(settings, today)!.name} is on` : 'Ill, travelling, an occasion', () => replaceSheet('occasion'))}
+          {tile('camera', 'var(--pearl)', 'Check-in', checkinDue ? (checkinDue <= today ? 'Due now' : `Due ${fmtDayMonth(checkinDue)}`) : 'Photos and tape', () => go('/checkin'))}
+        </div>
+      )}
 
       <div className="t13 q center" style={{ paddingTop: 4 }}>
         Tip: long-press the Health icon on your home screen to jump straight to these.

@@ -35,6 +35,8 @@ export interface Point {
   label: string;
   value: number | null;
   trend?: number | null;
+  /** A note on this day: "Started creatine", "Status: ill". */
+  marker?: string;
 }
 
 /** Bars for daily counts, with the target as a dashed line. */
@@ -113,6 +115,16 @@ export function TrendChart({ points, color, height = 170, fmt }: { points: Point
       ))}
       {points.map((p, i) =>
         p.value !== null ? <circle key={i} cx={x(i)} cy={y(p.value)} r="2.6" fill="none" stroke={color} strokeOpacity="0.55" strokeWidth="1.2" /> : null,
+      )}
+      {points.map((p, i) =>
+        p.marker ? (
+          <g key={`m${i}`}>
+            <line x1={x(i)} x2={x(i)} y1={top} y2={H - bottom} stroke="var(--gold)" strokeOpacity="0.5" strokeDasharray="2 3" />
+            <circle cx={x(i)} cy={top} r="3" fill="var(--gold)">
+              <title>{p.marker}</title>
+            </circle>
+          </g>
+        ) : null,
       )}
       {trend.length > 1 && <path d={d} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
       {points.map((p, i) =>

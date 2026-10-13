@@ -5,6 +5,7 @@ import { ringsFor, sleepMinutes, totalsFor } from './rings';
 import { weightTrend } from './streaks';
 import { stepStreakOf, targetsAt } from './occasions';
 import type { Day, Food, FoodEntry, SetEntry, Settings, TrainingSession } from './types';
+import { avgOver, basisLabel, foodDaysFor, type FoodBasis } from './logged';
 
 export interface WeekStats {
   from: DayKey;
@@ -14,6 +15,9 @@ export interface WeekStats {
   stepsAvg: number;
   sleepAvg?: number;
   kcalAvg?: number;
+  /** Which days the food averages are over, and how many. */
+  foodBasis: FoodBasis;
+  foodDays: number;
   inRange: number;
   proteinAvg?: number;
   waterL: number;
@@ -40,9 +44,6 @@ export function weekStats(settings: Settings, from: DayKey, days: Day[], entries
   const mine = sets.filter((x) => ids.has(x.sessionId));
   let steps = 0;
   let stepDays = 0;
-  let kcal = 0;
-  let protein = 0;
-  let foodDays = 0;
   let inRange = 0;
   let perfect = 0;
   let water = 0;
@@ -58,11 +59,6 @@ export function weekStats(settings: Settings, from: DayKey, days: Day[], entries
       steps += day.steps;
       stepDays++;
     }
-    if (es.length) {
-      foodDays++;
-      kcal += es.reduce((n, e) => n + e.kcal, 0);
-      protein += es.reduce((n, e) => n + e.protein, 0);
-    }
     if (t) {
       const r = ringsFor(totalsFor(day, es), t);
       if (r.kcal.closed && es.length) inRange++;
@@ -74,6 +70,11 @@ export function weekStats(settings: Settings, from: DayKey, days: Day[], entries
     if (day?.sleep) sleeps.push(sleepMinutes(day.sleep.asleep, day.sleep.woke));
     if (day?.weightKg !== undefined) weights.push(day.weightKg);
   }
+  const weekEntries = entries.filter((e) => e.date >= from && e.date <= to);
+  const food = foodDaysFor(range, byDate, weekEntries);
+  const sum = (d: DayKey, k: 'kcal' | 'protein') => weekEntries.filter((e) => e.date === d).reduce((n, e) => n + e[k], 0);
+  const kcalAvg = avgOver(food.counted.map((d) => sum(d, 'kcal')));
+  const proteinAvg = avgOver(food.counted.map((d) => sum(d, 'protein')));
   const trend = weightTrend(days.filter((d) => d.weightKg !== undefined && d.date <= to).map((d) => ({ date: d.date, kg: d.weightKg! })));
   const before = [...trend].reverse().find((t) => t.date < from);
   const end = [...trend].reverse().find((t) => t.date <= to);
@@ -85,9 +86,11 @@ export function weekStats(settings: Settings, from: DayKey, days: Day[], entries
     steps,
     stepsAvg: stepDays ? Math.round(steps / stepDays) : 0,
     sleepAvg: sleeps.length ? sleeps.reduce((a, b) => a + b, 0) / sleeps.length : undefined,
-    kcalAvg: foodDays ? Math.round(kcal / foodDays) : undefined,
+    kcalAvg: kcalAvg === undefined ? undefined : Math.round(kcalAvg),
+    foodBasis: food.basis,
+    foodDays: food.counted.length,
     inRange,
-    proteinAvg: foodDays ? Math.round(protein / foodDays) : undefined,
+    proteinAvg: proteinAvg === undefined ? undefined : Math.round(proteinAvg),
     waterL: water / 1000,
     sessions: done.length,
     sets: mine.filter((x) => !x.drop).length,
@@ -184,8 +187,9 @@ export function receiptLines(w: WeekStats, homeName: string | undefined, weekNo:
     { left: 'SESSIONS', right: String(w.sessions) },
     { left: 'sets · reps', right: `${w.sets} · ${fmtInt(w.reps)}`, kind: 'sub' },
     { left: 'RECORDS', right: String(w.records.length) },
-    { left: 'PROTEIN / DAY', right: w.proteinAvg !== undefined ? `${w.proteinAvg} g` : '—' },
-    { left: 'KCAL / DAY', right: w.kcalAvg !== undefined ? fmtInt(w.kcalAvg) : '—' },
+    { left: 'PROTEIN / DAY', right: w.proteinAvg !== undefined ? `${w.proteinAvg} g` : 'NOT LOGGED' },
+    { left: 'KCAL / DAY', right: w.kcalAvg !== undefined ? fmtInt(w.kcalAvg) : 'NOT LOGGED' },
+    ...(w.foodBasis !== 'none' ? [{ left: basisLabel(w.foodDays, w.foodBasis), kind: 'sub' as const }] : []),
     { left: 'WATER', right: `${w.waterL.toFixed(1)} L` },
     { left: 'SLEEP / NIGHT', right: w.sleepAvg !== undefined ? fmtDuration(w.sleepAvg) : '—' },
     { left: 'FREE MEAL', right: w.freeMeal ? 'USED' : 'UNUSED' },

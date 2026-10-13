@@ -8,8 +8,9 @@ import { bump } from '../db/actions';
 import { db } from '../db/db';
 import { useSettings, useToday } from '../db/hooks';
 import { go } from '../router';
-import { isRestRunning } from '../state/restState';
+import { isRestRunning, lastSetAt, shakeIgnored } from '../state/restState';
 import { Icon } from './Icon';
+import { realSets } from '../domain/plan';
 
 /** Opens a stat from anywhere: a button, or the phone being shaken. */
 export function openShakeStat() {
@@ -35,7 +36,7 @@ export function ShakeStat() {
       days: await db.days.toArray(),
       entries: await db.entries.toArray(),
       sessions: await db.sessions.toArray(),
-      sets: await db.sets.toArray(),
+      sets: realSets(await db.sets.toArray()),
       measurements: await db.measurements.toArray(),
     });
   }, [today, open]);
@@ -43,6 +44,7 @@ export function ShakeStat() {
 
   const trigger = useCallback(() => {
     if (document.querySelector('.moment, .sheet')) return;
+    if (shakeIgnored(Date.now(), lastSetAt(), isRestRunning())) return;
     void bump('shake');
     if (isRestRunning()) void bump('shake-rest');
     setIndex((i) => i + 1 + Math.floor(Math.random() * 3));

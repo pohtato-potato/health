@@ -17,6 +17,14 @@ import type {
   Unlock,
   WeekNote,
   Win,
+  UsageEvent,
+  EditRecord,
+  AuditNote,
+  ForecastRecord,
+  ChartMarker,
+  WalkRecord,
+  SongRecord,
+  Seen as ThemeSeen,
 } from '../domain/types';
 
 export class HealthDB extends Dexie {
@@ -37,6 +45,15 @@ export class HealthDB extends Dexie {
   weeks!: EntityTable<WeekNote, 'id'>;
   trackValues!: EntityTable<TrackValue, 'id'>;
   counters!: EntityTable<Counter, 'id'>;
+  usage!: EntityTable<UsageEvent, 'id'>;
+  edits!: EntityTable<EditRecord, 'id'>;
+  auditNotes!: EntityTable<AuditNote, 'id'>;
+  forecasts!: EntityTable<ForecastRecord, 'id'>;
+  markers!: EntityTable<ChartMarker, 'id'>;
+  walk!: EntityTable<WalkRecord, 'id'>;
+  themesSeen!: EntityTable<ThemeSeen, 'id'>;
+  songs!: EntityTable<SongRecord, 'id'>;
+  useful!: EntityTable<Seen, 'id'>;
 
   constructor(name = 'health') {
     super(name);
@@ -61,6 +78,17 @@ export class HealthDB extends Dexie {
       trackValues: 'id, trackId, date, [trackId+date]',
       counters: 'id',
     });
+    this.version(3).stores({
+      usage: '++id, at, kind',
+      edits: '++id, at, table, rowId',
+      auditNotes: '++id, at',
+      forecasts: 'id, kind, madeAt, targetDate',
+      markers: 'id, date',
+      walk: 'id, kind, date',
+      themesSeen: 'id',
+      songs: 'id, at',
+      useful: 'id',
+    });
   }
 }
 
@@ -81,6 +109,15 @@ export const TABLES = [
   'weeks',
   'trackValues',
   'counters',
+  'usage',
+  'edits',
+  'auditNotes',
+  'forecasts',
+  'markers',
+  'walk',
+  'themesSeen',
+  'songs',
+  'useful',
 ] as const;
 export type TableName = (typeof TABLES)[number];
 

@@ -1,4 +1,4 @@
-import { addDays, dayKey } from '../domain/dates';
+import { addDays, dayOfLogging } from '../domain/dates';
 import type { CheckIn, Day, TargetsRecord, TrainingSession } from '../domain/types';
 import { targetsOn } from '../domain/rings';
 import { positionAt } from '../domain/walk';
@@ -28,7 +28,7 @@ export function buildDayCard(date: string, day: Pick<Day, 'date' | 'steps' | 'sl
 }
 /* The finished days to send: the last week, and yesterday only from noon on (so late entries are in). */
 export function daysToSend(now: Date): string[] {
-  const today = dayKey(now), out: string[] = [];
+  const today = dayOfLogging(now.getTime()), out: string[] = [];
   for (let k = 1; k <= 7; k++) out.push(addDays(today, -k));
   return now.getHours() >= 12 ? out : out.slice(1);
 }

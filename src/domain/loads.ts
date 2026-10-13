@@ -54,3 +54,8 @@ export function isBigJump(from: number, to: number, threshold = 0.25): boolean {
 export function fmtKg(kg: number): string {
   return Number.isInteger(kg) ? String(kg) : String(round(kg));
 }
+
+/** The loads to offer as chips: every load the kit can make for this kind, smallest first. */
+export function chipLoads(eq: Equipment, kind: 'pair' | 'single'): number[] {
+  return [...new Set(loadOptions(eq, kind))].sort((a, b) => a - b);
+}

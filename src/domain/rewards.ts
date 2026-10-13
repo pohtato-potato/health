@@ -99,3 +99,34 @@ export function charStats(i: { strengthGain: number; stepsRatio: number; sleepNi
     jnt: clamp(i.daysSinceFlag === undefined ? 20 : 6 + i.daysSinceFlag / 3),
   };
 }
+
+export interface CharStatsV2 {
+  /** 0 to 20 each. */
+  str: number;
+  sta: number;
+  fuel: number;
+  rest: number;
+  form: number;
+  wand: number;
+}
+
+export const STAT_NAMES_V2: Record<keyof CharStatsV2, { name: string; what: string }> = {
+  str: { name: 'Strength', what: 'records and ladder climbs' },
+  sta: { name: 'Stamina', what: 'steps and carries' },
+  fuel: { name: 'Fuel', what: 'protein days' },
+  rest: { name: 'Rest', what: 'sleep regularity' },
+  form: { name: 'Form', what: 'clean reps' },
+  wand: { name: 'Wanderlust', what: 'km on the walk' },
+};
+
+/** v2: six stats from real data, Form new from clean reps. */
+export function charStatsV2(i: { strengthGain: number; ladderClimbs: number; stepsRatio: number; carrySteps14: number; proteinDays14: number; sri?: number; cleanRatio?: number; km: number }): CharStatsV2 {
+  return {
+    str: clamp(8 + i.strengthGain * 40 + i.ladderClimbs * 0.5),
+    sta: clamp(i.stepsRatio * 16 + Math.min(4, i.carrySteps14 / 2000)),
+    fuel: clamp((i.proteinDays14 / 14) * 20),
+    rest: i.sri === undefined ? 0 : clamp(i.sri / 5),
+    form: i.cleanRatio === undefined ? 0 : clamp((i.cleanRatio - 0.5) * 40),
+    wand: clamp(Math.sqrt(Math.max(0, i.km)) / 2),
+  };
+}

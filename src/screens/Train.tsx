@@ -1,15 +1,21 @@
 import { useState } from 'react';
-import { addDays, dayRange, weekStart } from '../domain/dates';
-import { fmtInt, weekdayName } from '../domain/format';
+import { addDays, dayRange, daysBetween, weekStart } from '../domain/dates';
+import { fmtDayMonth, fmtInt, weekdayName } from '../domain/format';
 import { fmtKg } from '../domain/loads';
 import { exerciseName, findExercise, findSession, isSuperset, targetText } from '../domain/plan';
 import { exerciseStatus } from '../domain/progression';
 import { useActiveSession, useAllDays, useAllSets, useSessions, useSettings, useToday } from '../db/hooks';
-import { go } from '../router';
+import { go, openSheet } from '../router';
 import { Icon } from '../ui/Icon';
 import { doneSessions, nextUp, triggersMet, weeksFor } from '../state/derived';
 import { NextUpCard } from './NextUpCard';
 import { sessionStats } from './SessionDone';
+import { trainingStreakLine } from '../domain/streaks';
+import { MuscleCard } from './MuscleMap';
+import { deloadCase } from '../domain/deload';
+import { placeFor } from '../domain/places';
+import { TRIP_SESSION_ID } from '../domain/trip';
+import { patchSettings } from '../db/actions';
 
 export function Train() {
   const settings = useSettings();
@@ -33,7 +39,7 @@ export function Train() {
   }
 
   const up = nextUp(settings, sessions, sets, days);
-  const weeks = weeksFor(settings, sessions, today);
+  const weeks = weeksFor(settings, sessions, today, days);
   const done = doneSessions(sessions);
   const trainedToday = done.filter((s) => s.date === today);
   const ws = weekStart(today);
@@ -43,12 +49,18 @@ export function Train() {
   const ready = up?.exercises.filter((e) => e.status.advice) ?? [];
   const triggers = triggersMet(plan, sets);
   const short = def ? def.short.map((id) => findExercise(plan, id)?.name).filter(Boolean) : [];
+  const lighter = deloadCase(sessions, today, settings.lighterWeek?.to);
+  const lighterOn = !!settings.lighterWeek && today >= settings.lighterWeek.from && today <= settings.lighterWeek.to;
+  const todayDay = days.find((d) => d.date === today);
+  const isTripDay = placeFor(todayDay, settings).kind === 'trip' || todayDay?.status === 'travelling';
 
   return (
     <div className="page">
       <div className="row">
         <h1 className="h1">Train</h1>
-        <div className="t13 q">{plan.name}</div>
+        <button type="button" className="chip sm" onClick={() => go('/records')}>
+          Records
+        </button>
       </div>
 
       <div className="card" style={{ gap: 14 }}>
@@ -66,10 +78,9 @@ export function Train() {
         </div>
         <div className="row t13 q">
           <span>
-            {Math.min(weeks.thisWeek, weeks.perWeek)} of {weeks.perWeek} this week
+            {trainingStreakLine({ ...weeks, thisWeek: Math.min(weeks.thisWeek, weeks.perWeek) }, weeks.perWeek)}
             {!trainedToday.length && up && weeks.thisWeek < weeks.perWeek ? ` · ${up.sessionId} today makes ${weeks.thisWeek + 1}` : ''}
           </span>
-          <span>Streak: {weeks.streak} week{weeks.streak === 1 ? '' : 's'}</span>
         </div>
       </div>
 
@@ -81,6 +92,49 @@ export function Train() {
       ))}
 
       <NextUpCard settings={settings} up={up} active={active} trainedToday={trainedToday} weeks={weeks} />
+
+      {!active && !trainedToday.length && (
+        <div className="row" style={{ gap: 8, justifyContent: 'flex-start' }}>
+          <button type="button" className="chip" onClick={() => openSheet('short', up ? { session: up.sessionId } : {})}>
+            I have 30 min
+          </button>
+          {isTripDay && (
+            <button type="button" className="chip" onClick={() => go('/session', { start: TRIP_SESSION_ID })}>
+              Trip workout
+            </button>
+          )}
+        </div>
+      )}
+
+      {lighterOn ? (
+        <div className="card">
+          <div className="lbl blue">Lighter week</div>
+          <div className="t15 lh">One set fewer per exercise, same weights, until {fmtDayMonth(settings.lighterWeek!.to)}.</div>
+        </div>
+      ) : (
+        lighter.due &&
+        (!settings.lighterDismissed || daysBetween(settings.lighterDismissed, today) >= 7) && (
+          <div className="card">
+            <div className="lbl blue">A lighter week?</div>
+            {lighter.evidence.map((e) => (
+              <div key={e} className="t14 lh">
+                {e}
+              </div>
+            ))}
+            <div className="t13 q lh">Fewer sets at the same weights for a week. Your call.</div>
+            <div className="row" style={{ gap: 10 }}>
+              <button type="button" className="btn ghost grow" onClick={() => patchSettings({ lighterDismissed: today })}>
+                Not now
+              </button>
+              <button type="button" className="btn grow" onClick={() => patchSettings({ lighterWeek: { from: today, to: addDays(today, 6) } })}>
+                Take it
+              </button>
+            </div>
+          </div>
+        )
+      )}
+
+      <MuscleCard sets={sets} plan={plan} today={today} />
       {!active && !trainedToday.length && short.length > 0 && (
         <div className="t13 q lh" style={{ marginTop: -6, padding: '0 4px' }}>
           Short on time: {short.join(' · ')}.{' '}
@@ -193,7 +247,7 @@ export function Train() {
                   <span className="col gap2 t15">
                     {weekdayName(s.date)} · {findSession(plan, s.session)?.name ?? s.session}
                     <span className="t12 q">
-                      {mins} min · {st.sets} sets{st.kg ? ` · ${fmtInt(st.kg)} kg moved` : ''}
+                      {mins} min · {st.sets} set{st.sets === 1 ? '' : 's'}{st.kg ? ` · ${fmtInt(st.kg)} kg moved` : ''}
                       {s.short ? ' · short' : ''}
                     </span>
                   </span>

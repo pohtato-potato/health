@@ -3,12 +3,17 @@ import { addDays } from '../domain/dates';
 import { fmtInt } from '../domain/format';
 import { mealForTime, usageOf } from '../domain/foods';
 import { bestFits, roomLeft } from '../domain/whatsleft';
-import { addEntry, bump, deleteEntry } from '../db/actions';
+import { addEntry, bump, deleteEntry, patchDay } from '../db/actions';
+import { SwitchRow } from '../ui/controls';
 import { useAllDays, useEntries, useEntriesBetween, useFoods, useSettings, useToday } from '../db/hooks';
 import { closeSheet, replaceSheet } from '../router';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
 import { dayRings, freeMealsThisWeek } from '../state/derived';
+import { logMinutes } from '../domain/dates';
+
+/** From this hour the sheet asks to close the day instead of suggesting food. */
+const LATE_HOUR = 22;
 
 export function WhatsLeft() {
   useEffect(() => {
@@ -39,6 +44,18 @@ export function WhatsLeft() {
     closeSheet();
     toast({ text: `Logged ${fits[i].items.length} food${fits[i].items.length === 1 ? '' : 's'} · ${fmtInt(fits[i].kcal)} kcal`, action: { label: 'Undo', run: () => ids.forEach((id) => deleteEntry(id)) } });
   };
+
+  // From 22:00 the question is whether the day is done, not what else to eat.
+  if (logMinutes(Date.now()) >= LATE_HOUR * 60) {
+    return (
+      <Sheet title="It's late">
+        <div className="t15 lh">Mark the day complete? Averages then count it as a full day of eating.</div>
+        <div className="list">
+          <SwitchRow title="Day complete" sub={`${fmtInt(totals.kcal)} kcal · ${Math.round(totals.protein)} g protein logged`} checked={!!day?.foodDone} onChange={(v) => void patchDay(today, { foodDone: v })} />
+        </div>
+      </Sheet>
+    );
+  }
 
   return (
     <Sheet title="What can I still eat?">

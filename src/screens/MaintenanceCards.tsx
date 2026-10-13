@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect } from 'react';
 import { addDays, weekStart, type DayKey } from '../domain/dates';
 import { fmt1, fmtInt } from '../domain/format';
-import { estimateMaintenance, flatWeeks, plateau, suggestTargets, weeklyGap, type Maintenance } from '../domain/maintenance';
+import { flatWeeks, maintenanceModel, plateau, suggestTargets, weeklyGap, type MaintenanceModel } from '../domain/maintenance';
 import { weightTrend } from '../domain/streaks';
 import { prefOn, type Day, type FoodEntry, type Measurement, type Settings } from '../domain/types';
 import { patchSettings, setTargets } from '../db/actions';
@@ -22,43 +22,73 @@ export function MaintenanceWatcher() {
     if (!settings?.setupDone || !days || !entries) return;
     const stale = !settings.maintenance || Date.now() - settings.maintenance.at > 86_400_000;
     if (!stale) return;
-    const m = estimateMaintenance(days, entries, today);
-    if (!m) return;
-    void patchSettings({ maintenance: { kcal: m.kcal, at: Date.now(), weeks: Math.round(m.days / 7) } });
+    const m = modelFor(settings, days, entries, today);
+    if (m.status !== 'updating' || m.kcal === undefined) return;
+    // The first estimate becomes the check-in's baseline, silently.
+    void patchSettings({ maintenance: { kcal: m.kcal, at: Date.now(), weeks: Math.round(m.logged / 7) }, ...(settings.maintenanceSeen === undefined ? { maintenanceSeen: m.kcal } : {}) });
   }, [settings?.setupDone, settings?.maintenance, days, entries, today]);
   return null;
 }
 
-export function MaintenanceCard({ m }: { m: Maintenance }) {
+/** The energy-balance model with the owner's height, age and latest waist. */
+export function modelFor(settings: Settings, days: Day[], entries: FoodEntry[], today: DayKey, measurements: Measurement[] = []): MaintenanceModel {
+  const waist = [...measurements].reverse().find((x) => x.waistStanding !== undefined)?.waistStanding;
+  return maintenanceModel({
+    days,
+    entries,
+    today,
+    heightCm: settings.heightCm,
+    age: settings.birthYear ? Number(today.slice(0, 4)) - settings.birthYear : undefined,
+    waistIn: waist,
+    previous: settings.maintenance?.kcal,
+  });
+}
+
+export function MaintenanceCard({ m }: { m: MaintenanceModel }) {
   return (
     <div className="card">
-      <div className="lbl">Your maintenance</div>
-      <div className="num" style={{ fontSize: 30 }}>
-        {fmtInt(m.kcal)} <span className="t14 q">kcal a day</span>
+      <div className="row base">
+        <div className="lbl">Your maintenance</div>
+        <div className="t12 q">{m.status === 'updating' ? 'updating' : 'holding'}</div>
       </div>
+      {m.kcal !== undefined ? (
+        <div className="num tn" style={{ fontSize: 30 }}>
+          {fmtInt(m.kcal)} <span className="t14 q">{m.band ? `±${m.band} ` : ''}kcal a day</span>
+        </div>
+      ) : (
+        <div className="t15 q">Not enough yet</div>
+      )}
       <div className="t13 q lh">
-        What holds your weight steady, worked out from {m.days} full days of food and what your trend did meanwhile ({m.perWeek <= 0 ? '−' : '+'}
-        {fmt1(Math.abs(m.perWeek))} kg a week). It updates as you log, and occasion mode uses it.
+        {m.status === 'updating' && m.perWeek !== undefined
+          ? `What holds your weight steady, from ${m.logged} logged days and ${m.weighIns} weigh-ins (trend ${m.perWeek <= 0 ? '−' : '+'}${fmt1(Math.abs(m.perWeek))} kg a week).`
+          : m.method}
       </div>
+      {m.status === 'updating' && (
+        <details>
+          <summary className="t13" style={{ minHeight: 40, display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+            How this is worked out
+          </summary>
+          <div className="t13 q lh">{m.method}</div>
+          <div className="t12 d lh" style={{ paddingTop: 6 }}>
+            Maintenance = average intake − change in stored energy per day. Source: Hall KD et al., Lancet 2011, and the NIH Body Weight Planner.
+          </div>
+        </details>
+      )}
     </div>
   );
 }
 
 /** Weight page: maintenance, plateaus, and a suggestion when one is due. */
 export function WeightInsights({ settings, days, entries, measurements, today }: { settings: Settings; days: Day[]; entries: FoodEntry[]; measurements: Measurement[]; today: DayKey }) {
-  const m = estimateMaintenance(days, entries, today);
+  const m = modelFor(settings, days, entries, today, measurements);
   const p = plateau(days, entries, measurements, today, (d) => targetsFor(settings, d).kcalMax);
   const trend = weightTrend(days.filter((d) => d.weightKg !== undefined).map((d) => ({ date: d.date, kg: d.weightKg! })));
   const kg = trend[trend.length - 1]?.trend;
   const t = targetsFor(settings, today);
-  const s = m && kg && prefOn(settings.prefs, 'suggestTargets') ? suggestTargets(t, m, kg, flatWeeks(p)) : undefined;
+  const s = m.status === 'updating' && m.perWeek !== undefined && kg && prefOn(settings.prefs, 'suggestTargets') ? suggestTargets(t, { perWeek: m.perWeek }, kg, flatWeeks(p)) : undefined;
   return (
     <>
-      {m ? (
-        <MaintenanceCard m={m} />
-      ) : (
-        <div className="t13 q lh">Two weeks of full food logs and morning weigh-ins, and your maintenance calories show up here.</div>
-      )}
+      <MaintenanceCard m={m} />
       {p && <PlateauCard p={p} />}
       {s && <SuggestionCard settings={settings} today={today} id={s.id} title={s.title} text={s.text} change={s.change} />}
     </>
@@ -124,8 +154,8 @@ export function WeekGapCard({ entries, today }: { entries: FoodEntry[]; today: D
   const settings = useSettings();
   const days = useAllDays();
   if (!settings || !days) return null;
-  const m = estimateMaintenance(days, entries, today);
-  const kcal = m?.kcal ?? settings.maintenance?.kcal;
+  const m = modelFor(settings, days, entries, today);
+  const kcal = m.kcal ?? settings.maintenance?.kcal;
   if (!kcal) return null;
   const ws = weekStart(today);
   // Early in the week there may be no finished day yet: show last week instead.

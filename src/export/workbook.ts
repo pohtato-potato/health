@@ -1,4 +1,4 @@
-import { addDays, dayKey, dayRange, weekStart, type DayKey } from '../domain/dates';
+import { addDays, dayRange, weekStart, type DayKey, dayOfLogging } from '../domain/dates';
 import { fmtTime } from '../domain/format';
 import { findExercise, targetText } from '../domain/plan';
 import { ringsFor, sleepMinutes, targetsOn, totalsFor } from '../domain/rings';
@@ -7,6 +7,11 @@ import { stepStreakOf, targetsAt, trainingWeeksOf } from '../domain/occasions';
 import type { Day, Food, FoodEntry, Measurement, SetEntry, Settings, TrackValue, TrainingSession } from '../domain/types';
 import { kmFromSteps, positionAt } from '../domain/walk';
 import type { Cell, Sheet } from './xlsx';
+import { slotStatus } from '../domain/checklist';
+import { entryTime } from '../domain/foods';
+import { dayFoodLabel } from '../domain/logged';
+import { placeFor } from '../domain/places';
+import { checklistSlots } from '../state/derived';
 
 export interface ExportData {
   settings: Settings;
@@ -24,7 +29,7 @@ const r2 = (n: number | undefined | null) => (n === undefined || n === null ? nu
 
 /** Every log as its own sheet, one row per day, entry or set, for Claude or a spreadsheet. */
 export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
-  const today = dayKey(now);
+  const today = dayOfLogging(now.getTime());
   const s = d.settings;
   const done = d.sessions.filter((x) => x.status === 'done').sort((a, b) => a.startedAt - b.startedAt);
   const byDay = new Map(d.days.map((x) => [x.date, x]));
@@ -66,6 +71,12 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
       'checklist_total',
       'home',
       'morning_log_seconds',
+      'food_status',
+      'place',
+      'status',
+      'energy_1_5',
+      'stomach_ok',
+      'sore_areas',
     ],
   ];
   for (const date of dates) {
@@ -102,13 +113,19 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
       slots.length || null,
       s.homes.find((h) => h.id === day?.home)?.name ?? null,
       day?.morning?.seconds ?? null,
+      dayFoodLabel(day, es.length).replace('-', ' '),
+      day ? placeFor(day, s).name : null,
+      day?.status ?? null,
+      day?.energy ?? null,
+      day?.stomach ?? null,
+      day?.soreness ? Object.keys(day.soreness).join('; ') || null : null,
     ]);
   }
 
   // Food log
   const food: Cell[][] = [['date', 'time', 'meal', 'kind', 'food', 'portion', 'kcal', 'protein_g']];
-  for (const e of [...d.entries].sort((a, b) => a.date.localeCompare(b.date) || a.at - b.at)) {
-    food.push([e.date, fmtTime(e.at), e.meal, e.kind, e.name, e.portion, Math.round(e.kcal), r1(e.protein)]);
+  for (const e of [...d.entries].sort((a, b) => a.date.localeCompare(b.date) || entryTime(a) - entryTime(b))) {
+    food.push([e.date, fmtTime(entryTime(e)), e.meal, e.kind, e.name, e.portion, Math.round(e.kcal), r1(e.protein)]);
   }
 
   // My foods
@@ -129,14 +146,14 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
   }
 
   // Sets: the plan's own schema, plus a few extras at the end.
-  const setsSheet: Cell[][] = [['date', 'session', 'exercise', 'set', 'side', 'load_kg', 'reps', 'seconds', 'notes', 'tempo_3s', 'drop_set', 'mark', 'exercise_id']];
+  const setsSheet: Cell[][] = [['date', 'session', 'exercise', 'set', 'side', 'load_kg', 'reps', 'seconds', 'notes', 'tempo_3s', 'drop_set', 'mark', 'exercise_id', 'steps', 'form_1_5', 'clean_reps', 'rir', 'challenges', 'faults', 'discomfort', 'skipped']];
   const doneIds = new Set(done.map((x) => x.id));
   for (const x of [...d.sets].filter((x) => doneIds.has(x.sessionId)).sort((a, b) => a.at - b.at)) {
-    setsSheet.push([x.date, x.session, x.exercise, x.setNo, x.side, x.loadKg, x.reps ?? null, x.seconds ?? null, x.band ?? null, !!x.tempo, !!x.drop, x.mark ?? null, x.exerciseId]);
+    setsSheet.push([x.date, x.session, x.exercise, x.setNo, x.side, x.loadKg, x.reps ?? null, x.seconds ?? null, x.band ?? null, !!x.tempo, !!x.drop, x.mark ?? null, x.exerciseId, x.steps ?? null, x.form ?? null, x.cleanReps ?? null, x.rir ?? null, x.challenges?.join('; ') || null, x.faults?.join('; ') || null, x.discomfort ?? null, !!x.skipped]);
   }
 
   // Sessions
-  const sessions: Cell[][] = [['date', 'session', 'start', 'end', 'minutes', 'short', 'sets', 'reps', 'kg_moved', 'records', 'joint_flags', 'swaps', 'notes']];
+  const sessions: Cell[][] = [['date', 'session', 'start', 'end', 'minutes', 'short', 'sets', 'reps', 'kg_moved', 'records', 'joint_flags', 'swaps', 'notes', 'quality', 'readiness', 'context', 'lighter_week']];
   for (const x of done) {
     const mine = d.sets.filter((y) => y.sessionId === x.id);
     const kg = mine.reduce((n, y) => n + (y.loadKg ?? 0) * (y.reps ?? 0) * (plan && findExercise(plan, y.exerciseId)?.load === 'pair' ? 2 : 1), 0);
@@ -154,6 +171,10 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
       (x.flags ?? []).map((id) => plan?.flags.find((f) => f.id === id)?.label ?? id).join('; ') || null,
       (x.swapped ?? []).map((w) => `${w.from} → ${w.to ?? 'skipped'} (${w.reason})`).join('; ') || null,
       x.notes ?? null,
+      x.quality ?? null,
+      x.readiness ?? null,
+      x.context?.join('; ') || null,
+      !!x.lighter,
     ]);
   }
 
@@ -285,6 +306,26 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
     { name: 'Records', rows: records },
     { name: 'Targets history', rows: targets },
     { name: 'Plan', rows: planRows },
+    ...(slots.length
+      ? [
+          {
+            name: 'Checklist',
+            rows: [
+              ['date', ...checklistSlots(s).map((x) => `${x.name} (${x.slot})`)],
+              ...dates.map((date) => [
+                date,
+                ...slots.map((k) => {
+                  const st = slotStatus(byDay.get(date), k);
+                  if (st.kind === 'missed') return 'missed';
+                  if (st.kind === 'not-logged') return 'not logged';
+                  const t = new Date(st.at);
+                  return `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`;
+                }),
+              ]),
+            ] as Cell[][],
+          },
+        ]
+      : []),
     ...(s.customTracks?.length && d.trackValues?.length
       ? [
           {

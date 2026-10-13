@@ -1,8 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { addDays, dayRange, daysBetween, weekday, weekStart, type DayKey } from '../domain/dates';
 import { fmt1, fmtClock, fmtDayMonth, fmtDuration, fmtInt, fmtLitres } from '../domain/format';
-import { WEEKDAYS, WEEKDAY_NAMES, bedtimeFor, drinkNights, morningAfter, raceLastWeek, sleepPayoff, sleepWindows, sources, strengthScores, tshirtTrend, waistToHeight, walkingKcal, weekdayPattern, type Strength } from '../domain/insights';
-import { weightTrend } from '../domain/streaks';
+import { WEEKDAYS, WEEKDAY_NAMES, bedtimeFor, drinkNights, morningAfter, raceLastWeek, sleepPayoff, sleepWindows, sources, strengthScores, tshirtTrend, weekdayPattern, type Strength } from '../domain/insights';
 import type { CheckIn, Day, FoodEntry, Measurement, SetEntry, Settings, TrainingSession } from '../domain/types';
 import { flagEvents, targetsFor } from '../state/derived';
 import { usualWake } from './TodayNight';
@@ -28,15 +27,10 @@ function Card({ title, color, children, right }: { title: string; color?: string
 
 /* ── Steps ─────────────────────────────────────────────────────────── */
 
-export function StepsExtras({ days, today, range, settings }: { days: Day[]; today: DayKey; range: DayKey[]; settings: Settings }) {
+export function StepsExtras({ days, today, settings }: { days: Day[]; today: DayKey; range?: DayKey[]; settings: Settings }) {
   const steps = new Map(days.filter((d) => d.steps !== undefined).map((d) => [d.date, d.steps!]));
   const race = raceLastWeek(steps, today);
   const pattern = weekdayPattern(steps, today);
-  const trend = weightTrend(days.filter((d) => d.weightKg !== undefined).map((d) => ({ date: d.date, kg: d.weightKg! })));
-  const kg = trend[trend.length - 1]?.trend;
-  const inRange = range.reduce((n, d) => n + (steps.get(d) ?? 0), 0);
-  const logged = range.filter((d) => steps.has(d)).length;
-  const todayKcal = walkingKcal(steps.get(today) ?? 0, kg);
   const max = Math.max(...pattern.avg.map((v) => v ?? 0), targetsFor(settings, today).steps);
 
   return (
@@ -89,21 +83,6 @@ export function StepsExtras({ days, today, range, settings }: { days: Day[]; tod
         </Card>
       )}
 
-      {inRange > 0 && (
-        <Card title="Walking energy">
-          <div className="num" style={{ fontSize: 30 }}>
-            {fmtInt(walkingKcal(inRange, kg))} <span className="t14 q">kcal over {range.length} days</span>
-          </div>
-          <div className="t13 q lh">
-            About {fmtInt(walkingKcal(inRange / Math.max(logged, 1), kg))} kcal a day from walking{todayKcal ? `, ${fmtInt(todayKcal)} of it today` : ''}. A rough estimate: about half a kilocalorie per kilo of body weight for every kilometre{kg ? '' : ', using 75 kg until you log your weight'}.
-          </div>
-          {settings.loopSteps ? (
-            <div className="t13 q lh">
-              That was {fmtInt(Math.round(inRange / settings.loopSteps))} laps of your home loop.
-            </div>
-          ) : null}
-        </Card>
-      )}
     </>
   );
 }
@@ -169,36 +148,11 @@ export function SleepExtras({ days, today, settings }: { days: Day[]; today: Day
         </Card>
       )}
 
-      <Card title="What good sleep does for you">
-        {payoff ? (
-          <>
-            <div className="row t15">
-              <span>Steps after {fmtDuration(t.sleepMin)}+</span>
-              <span className="tn">{fmtInt(payoff.steps.good)}</span>
-            </div>
-            <div className="row t15">
-              <span>Steps after a short night</span>
-              <span className="tn q">{fmtInt(payoff.steps.short)}</span>
-            </div>
-            {payoff.rested && (
-              <div className="row t15">
-                <span>How rested, good vs short</span>
-                <span className="tn">
-                  {fmt1(payoff.rested.good)} vs {fmt1(payoff.rested.short)}
-                </span>
-              </div>
-            )}
-            <div className="t13 q lh">
-              From your own {payoff.nights.good + payoff.nights.short} nights.{' '}
-              {payoff.steps.good > payoff.steps.short
-                ? `You walk about ${fmtInt(payoff.steps.good - payoff.steps.short)} more steps after a full night.`
-                : 'So far, short nights haven’t cost you steps.'}
-            </div>
-          </>
-        ) : (
-          <div className="t14 q lh">A few more weeks of sleep and steps, and this shows what a full night is worth to you: steps the next day, and how rested you feel.</div>
-        )}
-      </Card>
+      {payoff && payoff.steps.good > payoff.steps.short && (
+        <div className="t14 q lh">
+          From your own {payoff.nights.good + payoff.nights.short} nights: about {fmtInt(payoff.steps.good - payoff.steps.short)} more steps the day after a full {fmtDuration(t.sleepMin)}.
+        </div>
+      )}
     </>
   );
 }
@@ -245,36 +199,10 @@ function SleepWindowChart({ nights, bed }: { nights: ReturnType<typeof sleepWind
 
 /* ── Waist and shape ───────────────────────────────────────────────── */
 
-export function WaistExtras({ measurements, settings, checkins }: { measurements: Measurement[]; settings: Settings; checkins: CheckIn[] }) {
-  const lastStanding = [...measurements].reverse().find((m) => m.waistStanding !== undefined);
-  const lastPair = [...measurements].reverse().find((m) => m.waistStanding !== undefined && m.waistSlouched !== undefined);
-  const firstPair = measurements.find((m) => m.waistStanding !== undefined && m.waistSlouched !== undefined);
-  const gap = lastPair ? lastPair.waistSlouched! - lastPair.waistStanding! : undefined;
-  const firstGap = firstPair && firstPair !== lastPair ? firstPair.waistSlouched! - firstPair.waistStanding! : undefined;
-  const whtr = lastStanding && settings.heightCm ? waistToHeight(lastStanding.waistStanding!, settings.heightCm) : undefined;
+export function WaistExtras({ checkins }: { measurements?: Measurement[]; settings?: Settings; checkins: CheckIn[] }) {
   const tee = tshirtTrend(checkins);
   return (
     <>
-      {gap !== undefined && (
-        <Card title="Posture gap" color="var(--pearl)">
-          <div className="num" style={{ fontSize: 30 }}>
-            {fmt1(gap)} <span className="t14 q">in</span>
-          </div>
-          <div className="t13 q lh">
-            The difference between slouched and standing tall. It shrinks as your core and posture get stronger
-            {firstGap !== undefined ? `: it was ${fmt1(firstGap)} in on ${fmtDayMonth(firstPair!.date)}.` : '.'}
-          </div>
-        </Card>
-      )}
-      {whtr !== undefined && (
-        <Card title="Waist to height" color="var(--pearl)">
-          <div className="num" style={{ fontSize: 30 }}>{whtr.toFixed(2)}</div>
-          <div className="bar">
-            <i style={{ width: `${Math.min(100, (whtr / 0.7) * 100)}%`, background: 'var(--pearl)' }} />
-          </div>
-          <div className="t13 q lh">Your standing waist divided by your height. Health guidance suggests keeping it under 0.5; it moves slowly, so check it monthly.</div>
-        </Card>
-      )}
       {tee && (
         <Card title="The t-shirt test" color="var(--pearl)" right={<span className="t12 q">{tee.count} check-ins</span>}>
           {(['shoulders', 'arms', 'stomach'] as const).map((k) => (

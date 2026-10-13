@@ -1,0 +1,1099 @@
+/* Dusk Strata core components: Wheel, Dial, Check, RestPill, Story, Band. */
+
+/* Wheel */
+.wheel {
+  position: relative;
+  height: 200px;
+  border-radius: 16px;
+  outline: none;
+}
+.wheel:focus-visible {
+  box-shadow: 0 0 0 2px var(--gold);
+}
+.wheel-scroll {
+  height: 100%;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  mask-image: linear-gradient(transparent, #000 32%, #000 68%, transparent);
+}
+.wheel-scroll::-webkit-scrollbar {
+  display: none;
+}
+.wheel-row {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  scroll-snap-align: start;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 18px;
+  color: var(--dim);
+  transition: color 0.2s ease-out;
+  cursor: pointer;
+}
+.wheel-row.on {
+  color: var(--text);
+  font-size: 22px;
+}
+.wheel-lens {
+  position: absolute;
+  inset: 80px 4px auto;
+  height: 40px;
+  border-top: 1px solid var(--btn-border);
+  border-bottom: 1px solid var(--btn-border);
+  pointer-events: none;
+}
+.wheels {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px;
+  background: var(--raised);
+  border: 1px solid var(--hairline);
+  border-radius: 18px;
+}
+
+/* Dial */
+.dial {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.dial-value {
+  font-size: 40px;
+  line-height: 1;
+}
+.dial-unit {
+  font-size: 15px;
+  color: var(--quiet);
+  margin-left: 6px;
+  font-family: var(--sans);
+}
+.dial-track {
+  position: relative;
+  width: 100%;
+  height: 56px;
+  border-radius: 14px;
+  outline: none;
+}
+.dial-track:focus-visible {
+  box-shadow: 0 0 0 2px var(--gold);
+}
+.dial-scroll {
+  height: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  mask-image: linear-gradient(90deg, transparent, #000 25%, #000 75%, transparent);
+}
+.dial-scroll::-webkit-scrollbar {
+  display: none;
+}
+.dial-ticks {
+  position: relative;
+  height: 100%;
+  margin: 0 50%;
+  box-sizing: content-box;
+}
+.tick-mark {
+  position: absolute;
+  bottom: 10px;
+  width: 1.5px;
+  height: 14px;
+  background: var(--dim);
+  border-radius: 1px;
+}
+.tick-mark.major {
+  height: 26px;
+  background: var(--quiet);
+}
+.dial-needle {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  width: 3px;
+  height: 40px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: var(--gold);
+  box-shadow: 0 2px 8px -2px rgba(242, 196, 109, 0.6);
+  pointer-events: none;
+}
+
+/* Check */
+.check {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 52px;
+  width: 100%;
+  text-align: left;
+  padding: 6px 2px;
+}
+.check-box {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  border: 1.5px solid var(--btn-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.25s ease-out, border-color 0.25s ease-out;
+}
+.check-tick {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 22;
+  stroke-dashoffset: 22;
+  transition: stroke-dashoffset 0.3s cubic-bezier(0.16, 1, 0.3, 1) 0.05s;
+}
+.check.on .check-tick {
+  stroke-dashoffset: 0;
+}
+.check-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.check.on .check-label {
+  color: var(--quiet);
+}
+.check:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+
+/* RestPill */
+.restpill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 56px;
+  padding: 0 6px 0 20px;
+  border-radius: 28px;
+  background: var(--raised);
+  border: 1px solid var(--btn-border);
+  overflow: hidden;
+  box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.8);
+}
+.restpill-fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(143, 182, 201, 0.22), rgba(143, 182, 201, 0.1));
+  transform-origin: left;
+  transition: transform 0.25s linear;
+}
+.restpill-label {
+  position: relative;
+  color: var(--sleep);
+}
+.restpill-time {
+  position: relative;
+  font-size: 24px;
+  flex: 1;
+}
+.restpill-end {
+  position: relative;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 22px;
+  border: 1px solid var(--btn-border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+}
+
+/* Story */
+.story {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  padding: calc(env(safe-area-inset-top) + 18px) 22px calc(env(safe-area-inset-bottom) + 24px);
+  transition: background 0.5s ease-out;
+}
+.story-bars {
+  display: flex;
+  gap: 4px;
+  margin-right: 52px;
+}
+.story-bars span {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(237, 230, 218, 0.22);
+}
+.story-bars span.done,
+.story-bars span.now {
+  background: var(--text);
+}
+.story-close {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 4px);
+  right: 14px;
+  z-index: 2;
+}
+.story-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+  animation: story-in 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes story-in {
+  from {
+    opacity: 0.4;
+    transform: translateY(10px);
+  }
+}
+.story-tap {
+  position: absolute;
+  top: 70px;
+  bottom: 0;
+  width: 35%;
+  z-index: 1;
+}
+.story-tap.back {
+  left: 0;
+}
+.story-tap.next {
+  right: 0;
+  width: 65%;
+}
+
+/* Band */
+.band {
+  position: relative;
+  height: 250px;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 0 0 26px 26px;
+}
+.band svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.band-caption {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-shadow: 0 1px 10px rgba(8, 10, 23, 0.7);
+}
+.band-place {
+  font-family: var(--serif);
+  font-size: 28px;
+  color: var(--text);
+}
+.band-next {
+  color: var(--text);
+  opacity: 0.88;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wheel-row,
+  .check-box,
+  .check-tick,
+  .restpill-fill,
+  .story {
+    transition: none;
+  }
+  .story-body {
+    animation: none;
+  }
+}
+
+/* TimeTile: the tile and its wheels stack; the tile fills its column. */
+.timetile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.timetile .timebtn {
+  width: 100%;
+  text-align: left;
+}
+
+/* Rows of chips that wrap onto a second line. */
+.row.wrap {
+  flex-wrap: wrap;
+}
+
+/* An inline note inside a form: a check that wants a second look, not a pop-up. */
+.notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--gold-bg);
+  border: 1px solid var(--gold-border);
+  color: var(--text);
+}
+.notice.warn {
+  background: #2a1719;
+  border-color: #6b3a3d;
+}
+
+/* A name edited in place: reads as text until focused. */
+.field.inline-name {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border-color: transparent;
+  font-size: 17px;
+  padding-left: 0;
+}
+.field.inline-name:focus {
+  border-color: var(--btn-border);
+  padding-left: 12px;
+}
+.gap4 {
+  gap: 4px;
+}
+
+/* Date chip: Today, Yesterday, or a picked day. */
+.datechip {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.datechip-pick {
+  position: relative;
+  gap: 6px;
+  overflow: hidden;
+}
+.datechip-pick input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Plate mode: several foods with their own amounts, added once. */
+.plate {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--raised);
+  border: 1px solid var(--btn-border);
+}
+
+/* Close the day: meals as drop zones. */
+.mealbox {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 14px 4px;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  transition: border-color 0.2s ease-out, background 0.2s ease-out;
+}
+.mealbox.over {
+  border-color: var(--gold-border);
+  background: var(--gold-bg);
+}
+.mealbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+}
+.grip {
+  width: 34px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  cursor: grab;
+  flex-shrink: 0;
+}
+.h3 {
+  font-family: var(--serif);
+  font-size: 20px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mealbox {
+    transition: none;
+  }
+}
+
+/* Protein spread: one bar split by meal. */
+.spread {
+  display: flex;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  gap: 2px;
+}
+.spread span {
+  flex-basis: 0;
+  background: var(--protein);
+}
+.spread span:nth-child(2) {
+  opacity: 0.8;
+}
+.spread span:nth-child(3) {
+  opacity: 0.6;
+}
+.spread span:nth-child(4) {
+  opacity: 0.45;
+}
+.scan-video {
+  width: 100%;
+  border-radius: 16px;
+  background: var(--deep);
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+/* On Today the band sits inside the page with rounded corners all round. */
+.page > .band {
+  border-radius: 24px;
+}
+
+/* Plan editor */
+.plan-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.plan-group.pair {
+  padding-left: 10px;
+  border-left: 1px solid var(--btn-border);
+}
+.plan-ex {
+  padding: 8px 12px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+}
+.plan-order {
+  width: 30px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--quiet);
+  flex-shrink: 0;
+}
+.guide-edit summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.savebar {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  bottom: 0;
+  padding: 12px 22px calc(20px + var(--safe-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: linear-gradient(transparent, var(--ink) 30%);
+  z-index: 10;
+}
+
+/* Session: the heavier moment, set panel, chips, skipped rows. */
+.heavier {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: calc(env(safe-area-inset-top) + 64px) 24px calc(env(safe-area-inset-bottom) + 28px);
+  background: var(--deep);
+  overflow: hidden;
+}
+.heavier-glow {
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  width: 520px;
+  height: 520px;
+  margin-left: -260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(242, 196, 109, 0.22), rgba(242, 196, 109, 0) 65%);
+  animation: heavier-in 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes heavier-in {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+}
+.heavier-title {
+  font-family: var(--serif);
+  font-size: 44px;
+  line-height: 1.05;
+  font-weight: 400;
+  margin: 0;
+  text-wrap: balance;
+}
+.heavier-case {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--quiet);
+}
+.setpanel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 14px 12px;
+}
+.chiprow {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.chiprow::-webkit-scrollbar {
+  display: none;
+}
+.chiprow .chip {
+  flex-shrink: 0;
+}
+.setrow.skipped {
+  opacity: 0.6;
+}
+.editbtn {
+  min-height: 44px;
+  font-size: 13px;
+  color: var(--quiet);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .heavier-glow {
+    animation: none;
+  }
+}
+
+/* Set quality */
+.formchip.on {
+  color: var(--ink);
+}
+.formdot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+.setmore summary {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.cue {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: var(--gold-bg);
+  border: 1px solid var(--gold-border);
+}
+
+/* Rest: the dock and the battery saver's black screen. */
+.restdock {
+  position: sticky;
+  bottom: calc(12px + var(--safe-bottom));
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.restdock .restpill {
+  flex: 1;
+}
+.restscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 86;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+.restscreen-time {
+  font-size: 96px;
+  color: #6b6890;
+  letter-spacing: -0.02em;
+}
+/* Battery saver: true black, nothing moving. */
+.page.saver {
+  background: #000;
+}
+.page.saver *,
+.page.saver *::before,
+.page.saver *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Body map */
+.bodymap {
+  width: 100%;
+  max-width: 340px;
+  align-self: center;
+}
+.bodymap-region {
+  cursor: pointer;
+  outline: none;
+}
+.bodymap-region:focus-visible ellipse,
+.bodymap-region:focus-visible rect {
+  stroke: var(--gold);
+  stroke-width: 2;
+}
+
+/* Rep ladder: rungs climbed at the current load. */
+.ladder {
+  display: flex;
+  gap: 4px;
+}
+.ladder span {
+  flex: 1;
+  max-width: 40px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 3px 0;
+  border-radius: 6px;
+  color: var(--dim);
+  border: 1px solid var(--hairline);
+}
+.ladder span.done {
+  color: var(--ink);
+  background: var(--steps);
+  border-color: var(--steps);
+}
+
+.medal {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
+}
+
+/* Session finale */
+.finale-big {
+  font-family: var(--serif);
+  font-size: 72px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.finale-unit {
+  font-family: var(--sans);
+  font-size: 18px;
+  color: var(--quiet);
+  margin-left: 8px;
+  letter-spacing: 0;
+}
+.hourbar {
+  height: 10px;
+  border-radius: 5px;
+  background: rgba(143, 182, 201, 0.25);
+  overflow: hidden;
+}
+.hourbar span {
+  display: block;
+  height: 100%;
+  background: var(--gold);
+}
+
+/* You: doors and the heatmap */
+.doors {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.door {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 14px 16px;
+  min-height: 88px;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  text-align: left;
+}
+.heatmap {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 1fr);
+  gap: 4px;
+}
+.heat {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 4px;
+  background: var(--track);
+}
+.heat.empty {
+  background: transparent;
+  border: 1px solid var(--btn-border);
+}
+.heat.future {
+  background: transparent;
+}
+.heat i {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text);
+}
+
+/* Walk: the souvenir shelf */
+.shelf {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.niche {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  min-height: 64px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, var(--raised), var(--surface));
+  border: 1px solid var(--gold-border);
+}
+.niche.waiting {
+  background: transparent;
+  border: 1px dashed var(--btn-border);
+  color: var(--dim);
+}
+
+/* Arrival flyover */
+.flyover {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: var(--deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.flyover svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Moment backdrops */
+.backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.backdrop .shoot {
+  opacity: 0;
+  animation: shoot 2.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+.backdrop .shoot-1 {
+  animation-delay: 0.9s;
+}
+.backdrop .shoot-2 {
+  animation-delay: 1.7s;
+}
+@keyframes shoot {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  15% {
+    opacity: 1;
+  }
+  60%,
+  100% {
+    opacity: 0;
+    transform: translate(-60px, 40px);
+  }
+}
+.backdrop .bloom {
+  transform-origin: 195px 230px;
+  animation: bloom 1.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.backdrop .rays {
+  transform-origin: 195px 230px;
+  animation: rays 40s linear infinite;
+}
+@keyframes bloom {
+  from {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+}
+@keyframes rays {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.backdrop .burst {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: burst 1.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+.backdrop .burst-1 {
+  animation-delay: 0.5s;
+}
+.backdrop .burst-2 {
+  animation-delay: 1s;
+}
+@keyframes burst {
+  from {
+    transform: scale(0.2);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+}
+.backdrop .rangoli {
+  animation: rangoli 2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes rangoli {
+  from {
+    transform: translate(195px, 240px) scale(0.3) rotate(-30deg);
+    opacity: 0;
+  }
+}
+.backdrop .coin {
+  animation: coin 1.4s cubic-bezier(0.33, 1, 0.68, 1) both;
+}
+@keyframes coin {
+  from {
+    opacity: 0;
+    translate: 0 -160px;
+  }
+}
+.backdrop .ring-up {
+  transform-origin: 195px 230px;
+  animation: ringup 1.8s ease-out infinite;
+}
+.backdrop .ring-up-1 {
+  animation-delay: 0.3s;
+}
+.backdrop .ring-up-2 {
+  animation-delay: 0.6s;
+}
+@keyframes ringup {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+.backdrop .train {
+  animation: train 2.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes train {
+  from {
+    transform: translateX(-420px);
+  }
+}
+.first-ember {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff4d6 0%, #f2c46d 30%, rgba(242, 196, 109, 0) 70%);
+  align-self: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .backdrop *,
+  .backdrop {
+    animation: none !important;
+  }
+  .backdrop .shoot {
+    opacity: 0.8;
+  }
+}
+
+.sky {
+  width: 100%;
+  border-radius: 20px;
+  background: radial-gradient(ellipse at 50% 120%, #1d2353, #05081f 70%);
+}
+
+/* Medicines: the last-week strip and the kept count. */
+.med-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.med-day {
+  display: grid;
+  place-items: center;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  color: var(--quiet);
+}
+.med-day.on-time { background: var(--sage-bg); border-color: var(--sage-border); color: var(--sage); }
+.med-day.late { background: var(--gold-bg); border-color: var(--gold-border); color: var(--gold); }
+.med-day.missed { border-color: var(--rose); color: var(--rose); }
+.kept-pill {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  background: var(--sage-bg);
+  border: 1px solid var(--sage-border);
+  color: var(--sage);
+}
+.kept-pill.paused { background: transparent; border-color: var(--hairline); color: var(--quiet); }
+
+/* Tracks: small multiples, the place key under hero charts, and the insight lines. */
+.tracks-grid .ttile {
+  height: auto;
+  min-height: 112px;
+  gap: 6px;
+}
+.tracks-grid .ttile .v {
+  font-size: 28px;
+}
+.tracks-grid .ttile .sub {
+  white-space: normal;
+  line-height: 1.3;
+}
+.place-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+.place-key > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.key-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.4px solid;
+  display: inline-block;
+}
+.key-dot.solid {
+  border: 0;
+}
+.insights {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 2px 4px 2px 14px;
+  border-left: 2px solid var(--hairline);
+}
+
+/* Walk › Route: the whole-walk map. */
+.route-map {
+  margin: 0 -8px;
+}
+.route-map svg {
+  display: block;
+  max-height: 70vh;
+}
+
+/* Monthly film: full-screen colour fields and huge type, tap to advance. */
+.film {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  padding: calc(env(safe-area-inset-top) + 14px) 22px calc(env(safe-area-inset-bottom) + 22px);
+  transition: background-color 0.5s ease;
+  cursor: pointer;
+}
+.film-bars {
+  display: flex;
+  gap: 4px;
+}
+.film-bars i {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(237, 230, 218, 0.22);
+}
+.film-bars i.on {
+  background: var(--text);
+}
+.film-close {
+  align-self: flex-end;
+  margin-top: 8px;
+}
+.film-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+}
+.film-big {
+  font-family: var(--serif);
+  font-weight: 300;
+  line-height: 0.95;
+  overflow-wrap: anywhere;
+}
+.film-foot {
+  cursor: default;
+}
+@media (prefers-reduced-motion: reduce) {
+  .film {
+    transition: none;
+  }
+}
+
+/* Settings: three short parts (your plan, your data, the feel). */
+.settings-part {
+  margin: 18px 0 2px;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 22px;
+  color: var(--text);
+}

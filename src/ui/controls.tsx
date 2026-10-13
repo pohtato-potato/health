@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { fmtInt } from '../domain/format';
 import { Icon } from './Icon';
+import { Wheel } from './Wheel';
 
 /** − value + with a typed value in between. Hold a button to repeat. */
 export function Stepper({
@@ -233,25 +234,31 @@ export function Seg<T extends string>({ options, value, onChange }: { options: {
   );
 }
 
-/** Minutes after midnight in a native time picker, styled as the mock's tile. */
+const HOURS = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] as const;
+const MINUTES = Array.from({ length: 60 }, (_, i) => i);
+const HALVES = ['am', 'pm'] as const;
+
+/** Minutes after midnight, shown as a tile; tapping it opens hour, minute and am/pm wheels. */
 export function TimeTile({ label, minutes, onChange }: { label: string; minutes: number | undefined; onChange: (m: number) => void }) {
-  const hh = minutes === undefined ? '' : String(Math.floor(minutes / 60)).padStart(2, '0');
-  const mm = minutes === undefined ? '' : String(minutes % 60).padStart(2, '0');
-  const shown = minutes === undefined ? 'Set' : fmt12(minutes);
+  const [open, setOpen] = useState(false);
+  const m = minutes ?? 22 * 60;
+  const h24 = Math.floor(m / 60);
+  const half: 'am' | 'pm' = h24 < 12 ? 'am' : 'pm';
+  const set = (h12: number, min: number, ap: 'am' | 'pm') => onChange(((h12 % 12) + (ap === 'pm' ? 12 : 0)) * 60 + min);
   return (
-    <label className="timebtn">
-      <span className="t12 q">{label}</span>
-      <span className="t17 tn">{shown}</span>
-      <input
-        type="time"
-        value={minutes === undefined ? '' : `${hh}:${mm}`}
-        aria-label={label}
-        onChange={(e) => {
-          const [h, m] = e.target.value.split(':').map(Number);
-          if (Number.isFinite(h) && Number.isFinite(m)) onChange(h * 60 + m);
-        }}
-      />
-    </label>
+    <div className="timetile">
+      <button type="button" className="timebtn" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <span className="t12 q">{label}</span>
+        <span className="t17 tn">{minutes === undefined ? 'Set' : fmt12(minutes)}</span>
+      </button>
+      {open && (
+        <div className="wheels" role="group" aria-label={label}>
+          <Wheel width={48} label={`${label} hour`} items={HOURS} value={h24 % 12 || 12} onChange={(h) => set(h, m % 60, half)} />
+          <Wheel width={48} label={`${label} minute`} items={MINUTES} value={m % 60} format={(v) => String(v).padStart(2, '0')} onChange={(x) => set(h24 % 12 || 12, x, half)} />
+          <Wheel width={48} label={`${label} am or pm`} items={HALVES} value={half} onChange={(ap) => set(h24 % 12 || 12, m % 60, ap)} />
+        </div>
+      )}
+    </div>
   );
 }
 

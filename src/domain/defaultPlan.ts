@@ -1,13 +1,13 @@
-import type { PlanDef } from './plan';
+import { upgradePlan, type PlanDef } from './plan';
 import type { Equipment } from './types';
 
 /**
  * The built-in plan: two home dumbbell sessions, A and B, four times a week.
  * A new install starts with it; a starter file or "Import a plan" replaces it.
  */
-export const DEFAULT_PLAN: PlanDef = {
+export const DEFAULT_PLAN: PlanDef = upgradePlan({
   format: 'health-plan',
-  version: 1,
+  version: 2,
   name: 'Home A/B',
   from: '2026-09-27',
   rotation: ['A', 'B'],
@@ -34,13 +34,12 @@ export const DEFAULT_PLAN: PlanDef = {
         { id: 'row', order: '1', name: 'One-arm dumbbell row', sets: 3, reps: [10, 15], perSide: true, load: 'single', startKg: 10, restSec: 90, note: 'Knee and hand on the bed, palm facing in. 15 kg, then 20 kg on one handle.' },
         { id: 'rdl', order: '2', name: 'Romanian deadlift', sets: 3, reps: [10, 15], load: 'pair', startKg: 10, restSec: 120, variants: [{ name: 'Kickstand RDL', note: 'back toes down for balance, weight on the front leg' }] },
         { id: 'lateral-raise', order: '3a', name: 'Lateral raise', sets: 3, reps: [12, 20], load: 'pair', startKg: 5, drop: { kg: 2.5 }, note: 'Last set: drop to 2.5 kg and keep going.' },
-        { id: 'face-pull', order: '3b', name: 'Band face pull', sets: 3, reps: [15, 20], load: 'band', bandLevels: ['Band', 'Doubled band'], restSec: 90, note: 'Anchor at face height, pull toward your forehead, elbows high.' },
+        { id: 'y-raise', order: '3b', name: 'Bent-over Y-raise', sets: 3, reps: [12, 15], load: 'pair', startKg: 2.5, restSec: 90, note: 'Hinge forward, thumbs up, raise the arms into a Y. Light is right.' },
         { id: 'hammer-curl', order: '4a', name: 'Hammer curl', sets: 3, reps: [10, 15], load: 'pair', startKg: 5 },
         { id: 'rear-delt', order: '4b', name: 'Rear delt fly', sets: 3, reps: [12, 15], load: 'pair', startKg: 5, restSec: 75 },
         { id: 'curl', order: '5a', name: 'Curl', sets: 3, reps: [10, 15], load: 'pair', startKg: 5, tempo: true, note: 'Strict, 3-second lowering.' },
-        { id: 'wrist-curl', order: '5b', name: 'Wrist curl', sets: 2, reps: [20, 30], load: 'pair', startKg: 5, restSec: 75 },
-        { id: 'farmer-carry', order: '6', name: 'Farmer carry', sets: 2, seconds: [45, 60], load: 'pair', startKg: 10, restSec: 90 },
-        { id: 'dead-bug', order: '7', name: 'Dead bug', sets: 3, reps: [8, 8], perSide: true, load: 'body', restSec: 45, note: 'Lower back stays on the floor.' },
+        { id: 'wrist-curl', order: '5b', name: 'Wrist curl', sets: 2, reps: [20, 30], load: 'pair', startKg: 5, restSec: 75, tiredHands: true },
+        { id: 'farmer-carry', order: '6', name: 'Farmer carry', sets: 2, measure: 'steps', steps: [60, 90], load: 'pair', startKg: 10, restSec: 90, tiredHands: true, note: 'Walk tall, shoulders down. Count steps, or turns of the room.' },
       ],
     },
     {
@@ -58,7 +57,7 @@ export const DEFAULT_PLAN: PlanDef = {
         { id: 'pullover', order: '5a', name: 'Pullover', sets: 3, reps: [12, 15], load: 'single', startKg: 10, note: 'One dumbbell, both hands.' },
         { id: 'incline-pushup', order: '5b', name: 'Incline push-up', sets: 3, open: true, load: 'body', stopFlag: 'wrist-pain', restSec: 90, note: 'Grip a sturdy table edge; go lower as it gets easier. Stop at any wrist pain.' },
         { id: 'skull-crusher', order: '6a', name: 'Skull crusher', sets: 3, reps: [10, 15], load: 'pair', startKg: 5, note: 'Palms facing in.' },
-        { id: 'reverse-curl', order: '6b', name: 'Reverse-grip curl', sets: 3, reps: [12, 15], load: 'pair', startKg: 5, restSec: 75 },
+        { id: 'reverse-curl', order: '6b', name: 'Reverse-grip curl', sets: 3, reps: [12, 15], load: 'pair', startKg: 5, restSec: 75, tiredHands: true },
         { id: 'calf-raise', order: '7', name: 'Single-leg calf raise', sets: 3, reps: [12, 20], perSide: true, load: 'single', startKg: 5, restSec: 60, note: 'Off a step, full stretch at the bottom.' },
         { id: 'side-plank', order: '8', name: 'Forearm side plank', sets: 2, seconds: [30, 45], perSide: true, load: 'body', restSec: 45 },
       ],
@@ -89,7 +88,7 @@ export const DEFAULT_PLAN: PlanDef = {
     { from: '2026-12-01', to: '2027-02-28', title: 'The slow stretch', text: 'Scale flat, waist creeping down. Muscle is building but not yet visible. Keep going: this is the stretch the plan predicted.' },
     { from: '2027-03-01', to: '2027-05-31', title: "The winter's work shows", text: 'The last of the fat comes off and everything built since October starts to show. Judge by photos and the ratio.' },
   ],
-};
+});
 
 /** The home kit the plan's loads are built from: 2.5 kg plates in pairs, a few fixed dumbbells, a band. */
 export const DEFAULT_EQUIPMENT: Equipment = {

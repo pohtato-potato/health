@@ -42,7 +42,6 @@ export default defineConfig({
         shortcuts: [
           shortcut('Morning log', './#/today?sheet=morning', 'morning'),
           shortcut('Add food', './#/today?sheet=addfood', 'food'),
-          shortcut('Water +250 ml', './#/today?do=water', 'water'),
           shortcut('Start session', './#/session?start=next', 'session'),
         ],
       },

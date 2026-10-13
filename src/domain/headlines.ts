@@ -82,7 +82,6 @@ export function headlines(c: HeadlineCtx): string[] {
   if (c.streak >= 3) data.push(`Step streak enters day ${c.streak}. Calendar considering a restraining order.`);
   if (c.shields > 0) data.push(`Shields up: ${c.shields} in the bank. Analysts calm.`);
   if (c.recordsThisWeek > 0) data.push(`Chess federation investigates ${c.recordsThisWeek} suspicious ‘!!’ marks this week.`);
-  if (c.morningBest) data.push(`Morning log record stands at ${c.morningBest.toFixed(1)} seconds. Rivals ‘not close’.`);
   if (c.unlocked >= 10) data.push(`Achievement hunters report ${c.unlocked} of 223 unlocked. Completionists sweating.`);
   if (c.benchSessions && c.benchSessions >= 20) data.push(`Improvised bench celebrates session ${c.benchSessions}, requests union representation.`);
   if (c.waistChange !== undefined && c.waistChange < 0) data.push("Local tape measure reports ‘a lot less work lately’.");

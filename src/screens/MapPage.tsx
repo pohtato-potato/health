@@ -1,10 +1,15 @@
 import { addDays, dayKey, parseDay } from '../domain/dates';
 import { fmtDayMonth, fmtInt } from '../domain/format';
-import { CHAPTERS, CITIES, INDIA_OUTLINE, PLACE_COUNT, QUAD, arrivals, kmFromSteps, positionAt, statesReached, ALL_STATES, type Stop } from '../domain/walk';
+import { CHAPTERS, CITIES, INDIA_OUTLINE, PLACE_COUNT, arrivals, kmFromSteps, positionAt, statesReached, ALL_STATES, type Stop } from '../domain/walk';
 import { hasReward } from '../domain/rewards';
-import { useAllDays, useSettings, useToday } from '../db/hooks';
+import { useAllDays, useAllSets, useSessions, useSettings, useToday } from '../db/hooks';
+import { structuresFrom } from '../walk/camps';
+import { bestStrengthIndex, effectiveKm } from '../walk/passes';
+import { detourKm } from '../walk/quests';
+import { routeLayers } from '../walk/routeMap';
+import { useQuestState } from '../walk/WalkExtras';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { ACHIEVEMENTS, achievementById } from '../domain/achievements';
+import { ACTIVE_ACHIEVEMENTS as ACHIEVEMENTS, achievementById } from '../domain/achievements';
 import { db } from '../db/db';
 import { back, go } from '../router';
 import { TIER_COLOR } from '../ui/Moments';
@@ -18,11 +23,16 @@ export function MapPage() {
   const days = useAllDays();
   const today = useToday();
   const unlocked = useUnlockedIds();
-  if (!settings || !days || !unlocked) return <div className="page" />;
+  const sets = useAllSets();
+  const sessions = useSessions();
+  const quests = useQuestState();
+  if (!settings || !days || !unlocked || !sets || !sessions || !quests) return <div className="page" />;
 
   const steps = new Map(days.filter((d) => d.steps !== undefined).map((d) => [d.date, d.steps!]));
   const totalSteps = [...steps.values()].reduce((a, b) => a + b, 0);
-  const km = kmFromSteps(totalSteps);
+  const km = effectiveKm(Math.max(0, kmFromSteps(totalSteps) - detourKm(quests)), bestStrengthIndex(sets, today));
+  const records = new Set(sets.filter((x) => x.mark === '!!').map((x) => x.sessionId));
+  const layers = routeLayers(km, structuresFrom(days, sessions, records), quests);
   const pos = positionAt(km);
   const ch = pos.chapter;
   const seenNames = new Set<string>();
@@ -39,11 +49,6 @@ export function MapPage() {
   const gold = hasReward(unlocked, 'A gold route on your map');
   const walkedColor = gold ? 'var(--gold)' : 'var(--sage)';
 
-  // The walked part of this chapter, up to where you are now, and what's ahead.
-  const here = { x: pos.x, y: pos.y };
-  const walked = [...ch.route.filter((s) => s.km <= km), ...(pos.done ? [] : [here])];
-  const ahead = pos.done ? [] : [here, ...ch.route.filter((s) => s.km > km)];
-  const earlier = CHAPTERS.filter((c) => c.n < ch.n);
   const next = CHAPTERS.find((c) => c.n === ch.n + 1);
   const label = (s: Stop, i: number, list: Stop[]) => (
     <text key={`${s.name}-${i}`} x={s.side === 'l' ? s.x - 5 : s.x + 4.5} y={s.y + 3} textAnchor={s.side === 'l' ? 'end' : 'start'} fill={i === list.length - 1 ? 'var(--gold)' : s.km <= km ? 'var(--text)' : 'var(--quiet)'}>
@@ -53,22 +58,48 @@ export function MapPage() {
 
   return (
     <div className="page">
-      <button type="button" className="backlink" onClick={() => back('/journey')}>
+      <button type="button" className="backlink" onClick={() => back('/walk')}>
         <Icon name="left" size={20} stroke={1.8} />
-        Journey
+        Walk
       </button>
-      <div className="col gap6">
-        <h1 className="h1">Walk across India</h1>
-        <div className="t15 q">
-          Chapter {ch.n} · {ch.name}
-        </div>
+      <div className="row base">
+        <h1 className="h1">India</h1>
+        <span className="t13 q">
+          {fmtInt(Math.round(km))} of {fmtInt(Math.round(ch.end))} km · chapter {ch.n}
+        </span>
       </div>
 
-      <div className="card" style={{ padding: 12, alignItems: 'center' }}>
-        <svg width="100%" viewBox="0 0 300 322" role="img" aria-label={`Map of India. ${fmtInt(km)} km walked, in chapter ${ch.n}.`} style={{ maxWidth: 340 }}>
-          <path d={INDIA_OUTLINE} fill="#171B24" stroke="var(--pearl)" strokeOpacity="0.55" strokeWidth="1.1" strokeLinejoin="round" />
-          <ellipse cx="245" cy="264" rx="1.8" ry="14" fill="#171B24" stroke="var(--pearl)" strokeOpacity="0.55" strokeWidth="1" />
-          <g fill="var(--pearl)" fillOpacity="0.55">
+      <div className="route-map">
+        <svg width="100%" viewBox="0 0 300 322" role="img" aria-label={`India with the three chapters of the walk; ${fmtInt(Math.round(km))} km walked, now near ${pos.from.name}.`}>
+          <defs>
+            <linearGradient id="landg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#1f2452" />
+              <stop offset="1" stopColor="#151938" />
+            </linearGradient>
+            <radialGradient id="youg">
+              <stop offset="0" stopColor="#EDE6DA" stopOpacity=".55" />
+              <stop offset="1" stopColor="#EDE6DA" stopOpacity="0" />
+            </radialGradient>
+          </defs>
+          <g stroke="#1b1f45" strokeWidth=".5">
+            <path d="M0 60h300M0 120h300M0 180h300M0 240h300M0 300h300M60 0v322M120 0v322M180 0v322M240 0v322" />
+          </g>
+          <path d={INDIA_OUTLINE} fill="url(#landg)" stroke="#8b93d6" strokeOpacity="0.45" strokeWidth="0.9" strokeLinejoin="round" />
+          {/* Hills in the north, and the desert's sand in the west. */}
+          <g stroke="#cfd6ff" strokeOpacity=".18" strokeWidth=".8" fill="none">
+            <path d="M60 40l6-5 6 5 6-6 6 6M90 34l5-4 5 4 5-5 5 5M120 40l5-4 5 4" />
+            <path d="M200 112l5-4 5 4 5-4 5 4" />
+          </g>
+          <g fill="#c9a26a" opacity=".22">
+            <circle cx="40" cy="120" r=".8" />
+            <circle cx="48" cy="114" r=".8" />
+            <circle cx="36" cy="132" r=".8" />
+            <circle cx="54" cy="126" r=".8" />
+            <circle cx="44" cy="140" r=".8" />
+          </g>
+          {/* The islands: the Andamans and Nicobars, and Lakshadweep. */}
+          <g fill="#1f2452" stroke="#8b93d6" strokeOpacity=".45" strokeWidth=".7">
+            <ellipse cx="245" cy="264" rx="1.8" ry="12" />
             <circle cx="249" cy="296" r="1.4" />
             <circle cx="252" cy="305" r="1.4" />
             <circle cx="254" cy="313" r="1.6" />
@@ -76,60 +107,113 @@ export function MapPage() {
             <circle cx="55" cy="278" r="1.2" />
             <circle cx="59" cy="300" r="1.2" />
           </g>
-          {earlier.map((c) => (
-            <path key={c.n} d={path(c.route)} fill="none" stroke={walkedColor} strokeOpacity="0.35" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          {layers.later.map((c) => (
+            <path
+              key={c.n}
+              d={path(c.route)}
+              fill="none"
+              stroke={c.n === 2 ? '#F2C46D' : '#B7A6F0'}
+              strokeOpacity={c.n === 2 ? 0.35 : 0.3}
+              strokeWidth={c.n === 2 ? 1.2 : 1}
+              strokeDasharray={c.n === 2 ? '3 3' : '1.5 3'}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           ))}
-          {ch.n === 1 && <path d={`M98.6 98.9 L${QUAD[2].x} ${QUAD[2].y} L${QUAD[1].x} ${QUAD[1].y} L${QUAD[0].x} ${QUAD[0].y} Z`} fill="none" stroke="var(--gold)" strokeOpacity="0.22" strokeWidth="1" strokeDasharray="2 3" />}
-          {ahead.length > 1 && <path d={path(ahead)} fill="none" stroke="var(--text)" strokeOpacity="0.5" strokeWidth="1.4" strokeDasharray="3 3" strokeLinecap="round" />}
-          {walked.length > 1 && <path d={path(walked)} fill="none" stroke={walkedColor} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />}
-          {ch.route.map((s, i) =>
-            s.km <= km ? (
-              <circle key={`${s.name}-${i}`} cx={s.x} cy={s.y} r="2.6" fill="var(--gold)" />
-            ) : i === ch.route.length - 1 ? (
-              <circle key={`${s.name}-${i}`} cx={s.x} cy={s.y} r="3.6" fill="none" stroke="var(--gold)" strokeWidth="1.5" />
-            ) : (
-              <circle key={`${s.name}-${i}`} cx={s.x} cy={s.y} r="2.2" fill="#171B24" stroke="var(--text)" strokeOpacity="0.8" strokeWidth="1.1" />
-            ),
-          )}
-          {!pos.done && (
+          {layers.earlier.map((c) => (
+            <path key={c.n} d={path(c.route)} fill="none" stroke={walkedColor} strokeOpacity="0.4" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          ))}
+          {layers.ahead.length > 1 && <path d={path(layers.ahead)} fill="none" stroke="#EDE6DA" strokeOpacity=".5" strokeWidth="1.4" strokeDasharray="3 3" strokeLinecap="round" />}
+          {layers.walked.length > 1 && (
             <>
-              <circle className="ping" cx={pos.x} cy={pos.y} r="5" fill="none" stroke={walkedColor} strokeWidth="1.5" />
-              <circle cx={pos.x} cy={pos.y} r="3.4" fill={walkedColor} />
+              <path d={path(layers.walked)} fill="none" stroke={walkedColor} strokeOpacity=".18" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d={path(layers.walked)} fill="none" stroke={walkedColor} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
             </>
           )}
-          <g fontFamily="var(--sans)" fontSize={ch.route.length > 12 ? 6.8 : 8.5}>
+          {layers.quests.map((q) => (
+            <g key={q.id} opacity={q.taken ? 0.95 : 0.6}>
+              <path d={`M${q.from.x} ${q.from.y}L${q.x} ${q.y}`} stroke="#8FC9B0" strokeWidth="1" strokeDasharray="1.5 2" />
+              <circle cx={q.x} cy={q.y} r="1.8" fill={q.taken ? '#8FC9B0' : 'none'} stroke="#8FC9B0">
+                <title>{`${q.name}${q.taken ? ', taken' : ', a side quest'}`}</title>
+              </circle>
+            </g>
+          ))}
+          {ch.route.map((s, i) =>
+            s.km > km ? <circle key={`${s.name}-${i}`} cx={s.x} cy={s.y} r="2.1" fill="#3a3f6a" stroke="#0e1020" strokeWidth=".8" /> : null,
+          )}
+          {layers.reached.map((s) => (
+            <circle key={s.name} cx={s.x} cy={s.y} r="2.6" fill="#F2C46D" stroke="#0e1020" strokeWidth=".8">
+              <title>{s.name}</title>
+            </circle>
+          ))}
+          {layers.built.map((b, i) => (
+            <path key={`${b.name}-${i}`} d={`M${b.x - 2} ${b.y - 4}l2-2 2 2v2h-4Z`} fill="#F2C46D" opacity=".85">
+              <title>{`You built ${b.name}`}</title>
+            </path>
+          ))}
+          {!layers.done && (
+            <>
+              <circle cx={layers.you.x} cy={layers.you.y} r="9" fill="url(#youg)" />
+              <circle className="ping" cx={layers.you.x} cy={layers.you.y} r="5" fill="none" stroke={walkedColor} strokeWidth="1.2" />
+              <circle cx={layers.you.x} cy={layers.you.y} r="3.2" fill="#EDE6DA" stroke="#0e1020" strokeWidth="1" />
+              <text x={layers.you.x + 9} y={layers.you.y + 4} fontFamily="var(--sans)" fontSize="6.5" fontWeight="700" fill="#EDE6DA">
+                You
+              </text>
+            </>
+          )}
+          <g fontFamily="var(--sans)" fontSize={ch.route.length > 12 ? 5.6 : 6.2}>
             {ch.route.map((s, i, list) => (i > 0 && list.slice(0, i).some((p) => p.name === s.name) ? null : label(s, i, list)))}
           </g>
-          {ch.n === 1 && (
-            <g fontFamily="var(--sans)" fontSize="7.5" fill="var(--gold)" fillOpacity="0.5">
-              <text x="53" y="196" textAnchor="end">
-                Mumbai
-              </text>
-              <text x="132" y="251">
-                Chennai
-              </text>
-              <text x="207" y="157">
-                Kolkata
-              </text>
-            </g>
-          )}
         </svg>
-        <div className="row t12 q" style={{ gap: 14, flexWrap: 'wrap', justifyContent: 'flex-start', alignSelf: 'stretch', padding: '0 6px 4px' }}>
-          <span className="row" style={{ gap: 6 }}>
-            <i style={{ width: 14, height: 3, borderRadius: 2, background: walkedColor }} />
-            Walked
+      </div>
+      <div className="place-key t12 q">
+        <span>
+          <i className="key-dot solid" style={{ background: walkedColor }} /> walked
+        </span>
+        {ch.n === 1 && (
+          <span>
+            <i className="key-dot solid" style={{ background: '#EDE6DA' }} /> chapter 1 ahead
           </span>
-          <span className="row" style={{ gap: 6 }}>
-            <i style={{ width: 14, borderTop: '1.5px dashed var(--text)' }} />
-            Ahead
+        )}
+        {layers.later.some((c) => c.n === 2) && (
+          <span>
+            <i className="key-dot solid" style={{ background: '#F2C46D' }} /> chapter 2
           </span>
-          {ch.n === 1 && (
-            <span className="row" style={{ gap: 6 }}>
-              <i style={{ width: 14, borderTop: '1.5px dashed var(--gold)', opacity: 0.6 }} />
-              Chapter 2
-            </span>
-          )}
+        )}
+        {layers.later.some((c) => c.n === 3) && (
+          <span>
+            <i className="key-dot solid" style={{ background: '#B7A6F0' }} /> chapter 3
+          </span>
+        )}
+        <span>
+          <i className="key-dot" style={{ borderColor: '#8FC9B0' }} /> side quests
+        </span>
+        {layers.built.length > 0 && (
+          <span>
+            <i className="key-dot solid" style={{ background: '#F2C46D', borderRadius: 2 }} /> built by you
+          </span>
+        )}
+      </div>
+      <div className="list">
+        <div className="li">
+          <span className="s">
+            <span>States crossed</span>
+            <small>
+              {states.map((x) => x.name).join(', ') || 'None yet'} · {states.length} of {PLACE_COUNT}
+            </small>
+          </span>
         </div>
+        {pos.to && (
+          <div className="li">
+            <span className="s">
+              <span>Next stop</span>
+              <small>
+                {pos.to.name} · {fmtInt(Math.ceil(toNext))} km{pos.to.sea ? ' by sea' : ''}
+                {eta(pos.to.km) ? ` · around ${fmtDayMonth(eta(pos.to.km)!)}` : ''}
+              </small>
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="card">

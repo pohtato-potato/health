@@ -4,6 +4,7 @@ import { dayKey, type DayKey } from '../domain/dates';
 import type { Day, Food, FoodEntry, Measurement, SetEntry, Settings, TrainingSession } from '../domain/types';
 import { defaultSettings } from './actions';
 import { db } from './db';
+import { realSets } from '../domain/plan';
 
 /** Undefined while loading, then the settings (defaults if none saved yet). */
 export function useSettings(): Settings | undefined {
@@ -46,7 +47,13 @@ export function useActiveSession(): TrainingSession | undefined | null {
   return useLiveQuery(async () => (await db.sessions.where('status').equals('active').first()) ?? null, []);
 }
 
+/** Every set that was done. Skipped sets are left out of every stat. */
 export function useAllSets(): SetEntry[] | undefined {
+  return useLiveQuery(async () => realSets(await db.sets.toArray()).sort((a, b) => a.at - b.at), []);
+}
+
+/** Every set including skipped ones, for the session screen's own flow. */
+export function useAllSetsWithSkips(): SetEntry[] | undefined {
   return useLiveQuery(async () => (await db.sets.toArray()).sort((a, b) => a.at - b.at), []);
 }
 

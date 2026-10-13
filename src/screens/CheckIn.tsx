@@ -6,7 +6,8 @@ import { usePhotoUrl } from '../checkin/lock';
 import { addDays, dayKey } from '../domain/dates';
 import { fmt1, fmtDayMonth } from '../domain/format';
 import { weightTrend } from '../domain/streaks';
-import type { CheckIn, Measurement, Pose } from '../domain/types';
+import { prefOn, type CheckIn, type Measurement, type Pose } from '../domain/types';
+import { patchSettings } from '../db/actions';
 import { db, uid } from '../db/db';
 import { useAllDays, useSettings } from '../db/hooks';
 import { go } from '../router';
@@ -14,6 +15,8 @@ import { Stepper } from '../ui/controls';
 import { Icon } from '../ui/Icon';
 import { useToast } from '../ui/Toasts';
 import { saveFullBackup } from '../db/fullBackup';
+import { askConfirm } from '../ui/Confirm';
+import { flipFor, TORSO_GUIDES } from '../checkin/framing';
 
 type Shot = { blob: Blob; width: number; height: number };
 type Step = 'photos' | 'tape' | 'tshirt' | 'result';
@@ -88,8 +91,8 @@ export function CheckInScreen() {
         type="button"
         className="icon-btn"
         aria-label="Leave the check-in"
-        onClick={() => {
-          if (step === 'result' || window.confirm('Leave the check-in? Nothing from it is saved yet.')) go('/today', undefined, { replace: true });
+        onClick={async () => {
+          if (step === 'result' || (await askConfirm({ title: 'Leave the check-in?', body: 'Nothing from it is saved yet.', yes: 'Leave', no: 'Stay' }))) go('/today', undefined, { replace: true });
         }}
       >
         <Icon name="close" size={20} stroke={1.8} />
@@ -321,7 +324,7 @@ export function Thumb({ id, label }: { id: string; label?: string }) {
   );
 }
 
-/** The camera, with last month's photo as a faint outline to line up with. */
+/** The camera, framed head to hips: last month's photo as a faint outline, a shoulder line and a hip edge to line up with. */
 function Capture({
   pose,
   ghostId,
@@ -346,6 +349,9 @@ function Capture({
   const [error, setError] = useState<string | null>(null);
   const [count, setCount] = useState<number | null>(null);
   const [timer, setTimer] = useState(true);
+  const settings = useSettings();
+  const mirror = !!settings && prefOn(settings.prefs, 'mirrorCheckIn');
+  const flip = flipFor(facing, mirror);
   const ghost = usePhotoUrl(ghostId);
   const [shotUrl, setShotUrl] = useState<string>();
 
@@ -384,19 +390,19 @@ function Capture({
     if (count === null) return;
     if (count === 0) {
       setCount(null);
-      if (video.current) void grabFrame(video.current, facing === 'user').then(onShot);
+      if (video.current) void grabFrame(video.current, flip).then(onShot);
       return;
     }
     const t = window.setTimeout(() => setCount(count - 1), 1000);
     return () => window.clearTimeout(t);
-  }, [count, facing, onShot]);
+  }, [count, flip, onShot]);
 
   const take = () => {
     unlockAudio();
     if (timer) {
       scheduleDing(10);
       setCount(10);
-    } else if (video.current) void grabFrame(video.current, facing === 'user').then(onShot);
+    } else if (video.current) void grabFrame(video.current, flip).then(onShot);
   };
 
   const height = compact ? 'min(56vh, 420px)' : 'min(62vh, 520px)';
@@ -407,8 +413,9 @@ function Capture({
           <img src={shotUrl} alt={`${POSE_NAME[pose]} photo`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
           <>
-            <video ref={video} playsInline muted autoPlay style={{ width: '100%', height: '100%', objectFit: 'cover', transform: facing === 'user' ? 'scaleX(-1)' : undefined }} />
+            <video ref={video} playsInline muted autoPlay style={{ width: '100%', height: '100%', objectFit: 'cover', transform: flip ? 'scaleX(-1)' : undefined }} />
             {ghost && <img src={ghost} alt="" aria-hidden="true" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.32, mixBlendMode: 'screen', pointerEvents: 'none' }} />}
+            <TorsoGuides />
             {count !== null && (
               <div className="num" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 120, color: 'rgba(255,255,255,.85)' }}>
                 {count}
@@ -423,7 +430,7 @@ function Capture({
         )}
         {!shotUrl && (
           <div className="t12" style={{ position: 'absolute', left: 12, bottom: 12, right: 12, color: 'rgba(255,255,255,.75)', textShadow: '0 1px 4px #000' }}>
-            {ghost ? `Line up with ${ghostDate ? fmtDayMonth(ghostDate) : "last month"}'s outline. ` : ''}Same spot, same light, same time of day.
+            {ghost ? `Line up with ${ghostDate ? fmtDayMonth(ghostDate) : "last month"}'s outline. ` : ''}Head to hips: shoulders on the line, hips on the edge.{mirror ? ' Mirror mode is on.' : ''}
           </div>
         )}
       </div>
@@ -438,6 +445,16 @@ function Capture({
           <button type="button" className="tool" onClick={() => setFacing(facing === 'user' ? 'environment' : 'user')}>
             <Icon name="swap" size={16} stroke={1.8} />
             {facing === 'user' ? 'Front camera' : 'Back camera'}
+          </button>
+          <button
+            type="button"
+            className={`tool${mirror ? ' on' : ''}`}
+            aria-pressed={mirror}
+            title="For photos shot in a mirror: flips them back so left stays left"
+            onClick={() => void patchSettings((s) => ({ prefs: { ...s.prefs, mirrorCheckIn: !mirror } }))}
+          >
+            <Icon name="swap" size={16} stroke={1.8} />
+            Mirror
           </button>
           <button type="button" className={`tool${timer ? ' on' : ''}`} onClick={() => setTimer(!timer)} aria-pressed={timer}>
             <Icon name="clock" size={16} stroke={1.8} />
@@ -468,5 +485,26 @@ function Capture({
         </>
       )}
     </div>
+  );
+}
+
+/** The head-to-hips frame: a torso outline, the shoulder line and the hip edge. */
+function TorsoGuides() {
+  const { head, shoulder, hip } = TORSO_GUIDES;
+  const y = (f: number) => f * 100;
+  return (
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+      <g fill="none" stroke="rgba(237,230,218,.5)" strokeWidth="0.5" vectorEffect="non-scaling-stroke">
+        <ellipse cx="50" cy={y((head + shoulder) / 2) - 1} rx="9" ry={y((shoulder - head) / 2) - 1} strokeDasharray="2 2" />
+        <path
+          d={`M28 ${y(shoulder)} C 22 ${y(shoulder) + 4}, 22 ${y(shoulder) + 22}, 30 ${y(shoulder) + 30} C 32 ${y(hip) - 22}, 30 ${y(hip) - 8}, 32 ${y(hip)} M72 ${y(shoulder)} C 78 ${y(shoulder) + 4}, 78 ${y(shoulder) + 22}, 70 ${y(shoulder) + 30} C 68 ${y(hip) - 22}, 70 ${y(hip) - 8}, 68 ${y(hip)}`}
+          strokeDasharray="2 2"
+        />
+      </g>
+      <g stroke="#F2C46D" strokeOpacity=".75" strokeWidth="1" vectorEffect="non-scaling-stroke">
+        <line x1="14" x2="86" y1={y(shoulder)} y2={y(shoulder)} />
+        <line x1="14" x2="86" y1={y(hip)} y2={y(hip)} strokeDasharray="4 3" />
+      </g>
+    </svg>
   );
 }

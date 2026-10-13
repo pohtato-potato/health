@@ -1,24 +1,34 @@
 import { useState } from 'react';
-import { daysBetween } from '../domain/dates';
+import { addDays, daysBetween } from '../domain/dates';
 import { fmtDayLong, fmtDayMonth, fmtInt, lowerFirst, weekdayName } from '../domain/format';
 import { fmtKg } from '../domain/loads';
 import { findExercise, findSession, type PlanDef } from '../domain/plan';
 import { exerciseStatus } from '../domain/progression';
-import type { SetEntry, Settings, TrainingSession } from '../domain/types';
+import type { Day, SetEntry, Settings, SongRecord, TrainingSession } from '../domain/types';
+import { fetchSessionTracks } from '../sources/lastfm';
 import { discardSession, finishSession } from '../db/actions';
-import { useActiveSession, useAllSets, useSessions, useSettings } from '../db/hooks';
+import { useActiveSession, useAllDays, useAllSets, useAllSetsWithSkips, useSessions, useSettings } from '../db/hooks';
 import { go } from '../router';
 import { useToast } from '../ui/Toasts';
 import { doneSessions, swapSentence } from '../state/derived';
 import { Confetti } from '../ui/Confetti';
-import { useMoments, type RecordPage } from '../ui/Moments';
+import { type RecordPage } from '../ui/Moments';
+import { Finale } from './session/Finale';
+import { sessionQuality } from '../domain/sessionQuality';
+import { askConfirm } from '../ui/Confirm';
+import { withTrip } from '../domain/trip';
+import { comparable, contextOf } from '../domain/context';
 
 export function SessionDone() {
   const settings = useSettings();
   const active = useActiveSession();
   const sets = useAllSets();
+  const withSkips = useAllSetsWithSkips();
+  const days = useAllDays();
   const sessions = useSessions();
-  if (!settings || active === undefined || !sets || !sessions) return <div className="page bare" />;
+  const [finale, setFinale] = useState<{ session: TrainingSession; mine: SetEntry[]; pages: RecordPage[]; quality: number; songs: SongRecord[] } | null>(null);
+  if (finale) return <Finale {...finale} onClose={() => go('/train', undefined, { replace: true })} />;
+  if (!settings || active === undefined || !sets || !sessions || !withSkips) return <div className="page bare" />;
   if (!active || !settings.plan) {
     return (
       <div className="page bare">
@@ -29,7 +39,7 @@ export function SessionDone() {
       </div>
     );
   }
-  return <DoneForm session={active} plan={settings.plan} sets={sets} sessions={sessions} settings={settings} />;
+  return <DoneForm session={active} plan={withTrip(settings.plan)} days={days ?? []} sets={sets} withSkips={withSkips} sessions={sessions} settings={settings} onFinale={setFinale} />;
 }
 
 export interface RecordLine {
@@ -97,9 +107,8 @@ export function sessionStats(mine: SetEntry[], plan?: PlanDef) {
   return { sets: working.length, reps, kg: Math.round(kg), records: new Set(mine.filter((s) => s.mark === '!!').map((s) => s.exerciseId)).size };
 }
 
-function DoneForm({ session, plan, sets, sessions, settings }: { session: TrainingSession; plan: PlanDef; sets: SetEntry[]; sessions: TrainingSession[]; settings: Settings }) {
+function DoneForm({ session, plan, days, sets, withSkips, sessions, settings, onFinale }: { session: TrainingSession; plan: PlanDef; days: Day[]; sets: SetEntry[]; withSkips: SetEntry[]; sessions: TrainingSession[]; settings: Settings; onFinale: (f: { session: TrainingSession; mine: SetEntry[]; pages: RecordPage[]; quality: number; songs: SongRecord[] }) => void }) {
   const toast = useToast();
-  const moments = useMoments();
   const [flags, setFlags] = useState<string[]>(session.flags ?? []);
   const [notes, setNotes] = useState(session.notes ?? '');
   const [saving, setSaving] = useState(false);
@@ -107,7 +116,11 @@ function DoneForm({ session, plan, sets, sessions, settings }: { session: Traini
   const def = findSession(plan, session.session);
   const stats = sessionStats(mine, plan);
   const records = recordLines(mine);
-  const prev = doneSessions(sessions).filter((s) => s.session === session.session).pop();
+  const ctx = contextOf(session, days.find((d) => d.date === session.date), days.find((d) => d.date === addDays(session.date, -1)), settings);
+  const same = doneSessions(sessions).filter((s) => s.session === session.session && s.id !== session.id);
+  const fair = [...same].reverse().find((s) => comparable(s.context ?? [], ctx));
+  const prev = fair ?? same.pop();
+  const likeForLike = !!fair;
   const prevReps = prev ? sessionStats(sets.filter((s) => s.sessionId === prev.id), plan).reps : undefined;
   const mins = Math.max(1, Math.round((Date.now() - session.startedAt) / 60000));
   const sessionFlags = plan.flags.filter((f) => f.when === 'session');
@@ -127,20 +140,20 @@ function DoneForm({ session, plan, sets, sessions, settings }: { session: Traini
 
   const save = async () => {
     setSaving(true);
-    await finishSession(session.id, flags, notes);
-    if (records.length) {
-      const pages = recordPages(mine, sets, plan, settings, session.date);
-      if (pages.length) moments.show({ kind: 'record', key: `record:${session.id}`, pages });
-    } else {
-      toast({ text: `${def?.name ?? 'Session'} saved · ${stats.sets} sets` });
-    }
+    const withSkipped = withSkips.filter((s) => s.sessionId === session.id);
+    const quality = sessionQuality(withSkipped);
+    await finishSession(session.id, flags, notes, quality, ctx);
     const raised = plan.flags.filter((f) => flags.includes(f.id));
     if (raised.length) toast({ kicker: `${raised[0].group} flagged`, text: swapSentence(plan, raised[0].swap) ?? 'Noted in your joint log.', sub: raised[0].advice, ms: 7000 });
-    go('/train', undefined, { replace: true });
+    else if (!records.length) toast({ text: `${def?.name ?? 'Session'} saved · ${stats.sets} set${stats.sets === 1 ? '' : 's'}` });
+    const ended = { ...session, endedAt: Date.now() };
+    // The soundtrack, if Last.fm is set up and online; never holds the finale up for long.
+    const songs = await Promise.race([fetchSessionTracks(ended, settings), new Promise<SongRecord[]>((r) => setTimeout(() => r([]), 4000))]);
+    onFinale({ session: ended, mine: withSkipped, pages: records.length ? recordPages(mine, sets, plan, settings, session.date) : [], quality, songs });
   };
 
   const discard = async () => {
-    if (!window.confirm('Discard this session and every set in it?')) return;
+    if (!(await askConfirm({ title: 'Discard this session?', body: 'Every set in it goes too.', yes: 'Discard', danger: true }))) return;
     await discardSession(session.id);
     go('/train', undefined, { replace: true });
   };
@@ -157,8 +170,8 @@ function DoneForm({ session, plan, sets, sessions, settings }: { session: Traini
           Session complete
         </h1>
         <div className="t14 q tn">
-          {mins} min · {stats.sets} sets
-          {diff !== undefined && diff !== 0 ? ` · ${Math.abs(diff)} ${diff > 0 ? 'more' : 'fewer'} reps than last ${def?.name ?? 'time'}` : ''}
+          {mins} min · {stats.sets} set{stats.sets === 1 ? '' : 's'}
+          {diff !== undefined && diff !== 0 ? ` · ${Math.abs(diff)} ${diff > 0 ? 'more' : 'fewer'} reps than last ${def?.name ?? 'time'}${likeForLike ? '' : ' (different conditions)'}` : ''}
           {diff === 0 ? ` · same reps as last ${def?.name ?? 'time'}` : ''}
         </div>
       </div>

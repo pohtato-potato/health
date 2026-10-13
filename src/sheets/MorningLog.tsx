@@ -1,65 +1,82 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { addDays } from '../domain/dates';
 import { fmtDayLong, fmtDuration, fmtInt, fmtTime } from '../domain/format';
+import { homePlace } from '../domain/places';
 import { sleepMinutes } from '../domain/rings';
-import type { Day, Settings } from '../domain/types';
+import type { Day, MuscleId, Settings } from '../domain/types';
 import { saveMorningLog } from '../db/actions';
-import { useAllDays, useAllSets, useSessions, useSettings, useToday } from '../db/hooks';
+import { useAllDays, useAllSets, useSessions, useSettings } from '../db/hooks';
+import { DateChip, useLogDate } from '../ui/DateChip';
 import { closeSheet } from '../router';
-import { DecField, IntField, Stepper, TimeTile } from '../ui/controls';
+import { DecField, IntField, TimeTile } from '../ui/controls';
+import { BodyMap } from '../ui/BodyMap';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
 import { morningQuestions, swapSentence } from '../state/derived';
 
 export function MorningLog() {
   const settings = useSettings();
-  const today = useToday();
+  const [date, setDate] = useLogDate();
   const days = useAllDays();
   const sessions = useSessions();
   const sets = useAllSets();
   if (!settings || !days || !sessions || !sets) return <Sheet title="Morning log">{null}</Sheet>;
-  return <MorningForm settings={settings} today={today} days={days} questions={morningQuestions(settings.plan, sessions, sets, today)} />;
+  return <MorningForm key={date} settings={settings} today={date} onDate={setDate} days={days} questions={morningQuestions(settings.plan, sessions, sets, date)} />;
 }
 
-function MorningForm({ settings, today, days, questions }: { settings: Settings; today: string; days: Day[]; questions: ReturnType<typeof morningQuestions> }) {
+function MorningForm({ settings, today, onDate, days, questions }: { settings: Settings; today: string; onDate: (d: string) => void; days: Day[]; questions: ReturnType<typeof morningQuestions> }) {
   const toast = useToast();
-  const started = useRef(performance.now());
   const day = days.find((d) => d.date === today);
   const yesterdayKey = addDays(today, -1);
   const yesterday = days.find((d) => d.date === yesterdayKey);
   const before = [...days].filter((d) => d.date < today).sort((a, b) => b.date.localeCompare(a.date));
   const lastWeight = before.find((d) => d.weightKg !== undefined)?.weightKg;
   const lastSleep = before.find((d) => d.sleep)?.sleep;
+  const places = settings.places?.length ? settings.places : [homePlace(settings)];
 
-  const [weight, setWeight] = useState<number | undefined>(day?.weightKg ?? lastWeight);
-  // Typing a first weight keeps the plain field; the stepper is for nudging a known one.
-  const [typing, setTyping] = useState(weight === undefined);
-  const [asleep, setAsleep] = useState<number | undefined>(day?.sleep?.asleep ?? lastSleep?.asleep);
-  const [woke, setWoke] = useState<number | undefined>(day?.sleep?.woke ?? lastSleep?.woke);
+  // Nothing is pre-filled from earlier days: an untouched field stays empty and is not saved.
+  const [weight, setWeight] = useState<number | undefined>(day?.weightKg);
+  const [asleep, setAsleep] = useState<number | undefined>(day?.sleep?.asleep);
+  const [woke, setWoke] = useState<number | undefined>(day?.sleep?.woke);
+  const [carried, setCarried] = useState(day?.sleep?.carried ?? false);
   const [rested, setRested] = useState<number | undefined>(day?.sleep?.rested);
   const [steps, setSteps] = useState<number | undefined>(yesterday?.steps);
-  const [home, setHome] = useState<string | undefined>(day?.home ?? before.find((d) => d.home)?.home ?? settings.homes[0]?.id);
+  const [place, setPlace] = useState<string>(day?.place ?? before.find((d) => d.place)?.place ?? places[0].id);
+  const [energy, setEnergy] = useState<number | undefined>(day?.energy);
+  const [stomach, setStomach] = useState<boolean | undefined>(day?.stomach);
+  const [sore, setSore] = useState<Partial<Record<MuscleId, 1 | 2 | 3>>>(day?.soreness ?? {});
   const [answers, setAnswers] = useState<Record<string, boolean>>(() => Object.fromEntries(questions.map((q) => [q.id, day?.answers?.[q.id] ?? false])));
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    started.current = performance.now();
-  }, []);
-
   const sleepLen = asleep !== undefined && woke !== undefined ? sleepMinutes(asleep, woke) : undefined;
 
+  const sameAsYesterday = () => {
+    if (!lastSleep) return;
+    setAsleep(lastSleep.asleep);
+    setWoke(lastSleep.woke);
+    setCarried(true);
+  };
+  const editAsleep = (m: number) => {
+    setAsleep(m);
+    setCarried(false);
+  };
+  const editWoke = (m: number) => {
+    setWoke(m);
+    setCarried(false);
+  };
   const save = async () => {
     setSaving(true);
-    const seconds = Math.round((performance.now() - started.current) / 100) / 10;
-    const { newBest } = await saveMorningLog(
+    await saveMorningLog(
       today,
       {
         weightKg: weight,
-        sleep: asleep !== undefined && woke !== undefined ? { asleep, woke, rested } : undefined,
+        sleep: asleep !== undefined && woke !== undefined ? { asleep, woke, rested, ...(carried ? { carried: true } : {}) } : undefined,
         yesterdaySteps: settings.prefs.confirmSteps && steps !== undefined && steps !== yesterday?.steps ? steps : undefined,
-        home,
+        place,
+        energy,
+        stomach,
+        soreness: Object.keys(sore).length ? sore : undefined,
         answers,
-        seconds: day?.morning ? undefined : seconds,
       },
       yesterdayKey,
     );
@@ -68,38 +85,31 @@ function MorningForm({ settings, today, days, questions }: { settings: Settings;
     if (flagged.length) {
       const f = flagged[0];
       toast({ kicker: `${f.group} flagged`, text: swapSentence(settings.plan, f.swap) ?? 'Noted.', sub: f.advice, ms: 7000 });
-    } else if (!day?.morning) {
-      toast(newBest ? { kicker: 'New best', text: `Morning log in ${seconds.toFixed(1)} s`, tone: 'gold' } : { text: `Morning log saved in ${seconds.toFixed(1)} s` });
     } else {
-      toast({ text: 'Morning log updated' });
+      toast({ text: day?.morning ? 'Morning log updated' : 'Morning log saved' });
     }
   };
 
   return (
     <Sheet title="Morning log" sub={fmtDayLong(today)}>
+      <DateChip value={today} onChange={onDate} />
+      <div className="col gap8">
+        <div className="lbl pearl">Where are you today?</div>
+        <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
+          {places.map((p) => (
+            <button key={p.id} type="button" className={`chip${p.kind === 'home' || p.kind === 'office' ? '' : ' sm'}${place === p.id ? ' on' : ''}`} aria-pressed={place === p.id} onClick={() => setPlace(p.id)}>
+              {p.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="rule" />
+
       <div className="col gap8">
         <div className="lbl pearl">Weight</div>
-        {!typing && weight !== undefined ? (
-          <>
-            <Stepper value={weight} onChange={setWeight} step={0.1} min={30} max={250} decimals={1} unit="kg" label="Weight in kg" />
-            <div className="row t13 q" style={{ justifyContent: 'center', gap: 14 }}>
-              <span>After the toilet, before food or water</span>
-              <button
-                type="button"
-                className="d"
-                style={{ textDecoration: 'underline' }}
-                onClick={() => {
-                  setWeight(undefined);
-                  setTyping(true);
-                }}
-              >
-                Skip
-              </button>
-            </div>
-          </>
-        ) : (
-          <DecField value={weight} onChange={setWeight} placeholder={lastWeight ? 'Not weighed today: leave empty' : 'Your weight in kg'} label="Weight in kg" />
-        )}
+        <DecField value={weight} onChange={setWeight} placeholder={lastWeight ? `Last: ${lastWeight.toFixed(1)} kg. Leave empty if not weighed` : 'Your weight in kg'} label="Weight in kg" />
+        <div className="t12 q">After the toilet, before food or water.</div>
       </div>
 
       <div className="rule" />
@@ -110,24 +120,19 @@ function MorningForm({ settings, today, days, questions }: { settings: Settings;
           <div className="t15 blue tn">{sleepLen !== undefined ? fmtDuration(sleepLen) : ''}</div>
         </div>
         <div className="grid2">
-          <TimeTile label="Asleep" minutes={asleep} onChange={setAsleep} />
-          <TimeTile label="Woke" minutes={woke} onChange={setWoke} />
+          <TimeTile label="Asleep" minutes={asleep} onChange={editAsleep} />
+          <TimeTile label="Woke" minutes={woke} onChange={editWoke} />
         </div>
+        {lastSleep && (
+          <button type="button" className={`chip sm${carried ? ' on' : ''}`} style={{ alignSelf: 'flex-start' }} aria-pressed={carried} onClick={sameAsYesterday}>
+            Same as last night: {fmtClock(lastSleep.asleep)} to {fmtClock(lastSleep.woke)}
+          </button>
+        )}
       </div>
 
       <div className="col gap8">
         <div className="lbl">How rested do you feel?</div>
-        <div className="row">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <button key={n} type="button" className={`round${rested === n ? ' on' : ''}`} style={{ fontSize: 16, color: rested === n ? undefined : 'var(--quiet)' }} onClick={() => setRested(rested === n ? undefined : n)}>
-              {n}
-            </button>
-          ))}
-        </div>
-        <div className="row t12 d">
-          <span>Drained</span>
-          <span>Great</span>
-        </div>
+        <Scale value={rested} onChange={setRested} low="Drained" high="Great" label="Rested" />
       </div>
 
       {settings.prefs.confirmSteps && (
@@ -145,18 +150,28 @@ function MorningForm({ settings, today, days, questions }: { settings: Settings;
         </>
       )}
 
-      {settings.homes.length > 1 && (
-        <div className="row">
-          <div className="t15">Where are you today?</div>
-          <div className="row" style={{ gap: 8 }}>
-            {settings.homes.map((h) => (
-              <button key={h.id} type="button" className={`chip${home === h.id ? ' on' : ''}`} onClick={() => setHome(h.id)}>
-                {h.name}
-              </button>
-            ))}
-          </div>
+      <div className="rule" />
+
+      <div className="col gap8">
+        <div className="lbl">Energy</div>
+        <Scale value={energy} onChange={setEnergy} low="Flat" high="Charged" label="Energy" />
+      </div>
+
+      <div className="row">
+        <div className="t15">Stomach settled?</div>
+        <div className="row" style={{ gap: 8 }}>
+          {([true, false] as const).map((v) => (
+            <button key={String(v)} type="button" className={`chip${stomach === v ? ' on' : ''}`} aria-pressed={stomach === v} onClick={() => setStomach(stomach === v ? undefined : v)}>
+              {v ? 'Yes' : 'No'}
+            </button>
+          ))}
         </div>
-      )}
+      </div>
+
+      <div className="col gap8">
+        <div className="lbl">Anything sore?</div>
+        <BodyMap value={sore} onChange={setSore} />
+      </div>
 
       {questions.map((q) => (
         <div key={q.id} className="row">
@@ -180,4 +195,27 @@ function MorningForm({ settings, today, days, questions }: { settings: Settings;
       </button>
     </Sheet>
   );
+}
+
+function Scale({ value, onChange, low, high, label }: { value: number | undefined; onChange: (v: number | undefined) => void; low: string; high: string; label: string }) {
+  return (
+    <>
+      <div className="row" role="radiogroup" aria-label={label}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button key={n} type="button" role="radio" aria-checked={value === n} className={`round${value === n ? ' on' : ''}`} style={{ fontSize: 16, color: value === n ? undefined : 'var(--quiet)' }} onClick={() => onChange(value === n ? undefined : n)}>
+            {n}
+          </button>
+        ))}
+      </div>
+      <div className="row t12 d">
+        <span>{low}</span>
+        <span>{high}</span>
+      </div>
+    </>
+  );
+}
+
+function fmtClock(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  return `${h % 12 || 12}:${String(minutes % 60).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`;
 }

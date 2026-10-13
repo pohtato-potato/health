@@ -1,0 +1,85 @@
+/*
+ * Dusk Strata: the app is lit by where you are on the walk and the hour.
+ * Night-indigo ground; metric inks that never change meaning; ember and gold
+ * kept for moments and records; each tab faintly tinted.
+ * These override the v1 token names so every screen picks up the new world,
+ * and add the v2 tokens.
+ */
+:root {
+  --ink: #0e1020;
+  --deep: #080a17;
+  --ticker: #0a0c19;
+  --tabbar: #0a0c19;
+  --surface: #171b36;
+  --raised: #1e2346;
+  --hairline: #232849;
+  --divider: #1d2140;
+  --track: #262243;
+  --btn-border: #2a2f55;
+  --text: #ede6da;
+  --quiet: #aeabbd;
+  --dim: #8e8ba6;
+  --faint: #6b6890;
+  --voice: #e8dfd1;
+
+  /* Metric inks. Their meaning never changes, on any theme. */
+  --kcal: #e98a5b;
+  --protein: #b7a6f0;
+  --steps: #8fc9b0;
+  --sleep: #8fb6c9;
+  --gold: #f2c46d;
+  --ember: #e98a5b;
+  --rose: #e79a9a;
+  --apricot: #e98a5b;
+  --lavender: #b7a6f0;
+  --sage: #8fc9b0;
+  --blue: #8fb6c9;
+
+  /* Form, sloppy to textbook. */
+  --f1: #e79a9a;
+  --f2: #e9a77c;
+  --f3: #f2c46d;
+  --f4: #8fc9b0;
+  --f5: #7fd6c2;
+
+  /* Places. */
+  --pl-home: #8fc9b0;
+  --pl-office: #e98a5b;
+  --pl-family: #b7a6f0;
+  --pl-trip: #8fb6c9;
+  --pl-friends: #e79a9a;
+
+  /* Each tab carries a faint tint of its own. */
+  --tint-today: #e98a5b;
+  --tint-train: #f2c46d;
+  --tint-walk: #8fc9b0;
+  --tint-you: #b7a6f0;
+
+  --gold-bg: #221d14;
+  --gold-border: #6b5a33;
+  --sage-bg: #13201d;
+  --sage-border: #2f4a3f;
+  --lav-bg: #1a1730;
+  --lav-border: #3a3350;
+  color-scheme: dark;
+}
+
+::selection {
+  background: rgba(242, 196, 109, 0.35);
+  color: var(--text);
+}
+
+/* Tab tints: the active tab takes its world's colour, with a small dot beneath. */
+.tabbar a.on[data-tab='today'] { color: var(--tint-today); }
+.tabbar a.on[data-tab='train'] { color: var(--tint-train); }
+.tabbar a.on[data-tab='walk'] { color: var(--tint-walk); }
+.tabbar a.on[data-tab='you'] { color: var(--tint-you); }
+.tabbar a.on::after {
+  content: '';
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  margin: 2px auto 0;
+}
+.tabbar .plus span { box-shadow: 0 8px 18px -6px rgba(0, 0, 0, 0.7); }

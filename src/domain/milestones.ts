@@ -128,3 +128,14 @@ export function flightNo(id: string): string {
   for (const c of id) h = (h * 31 + c.charCodeAt(0)) % 900;
   return `HL ${100 + h}`;
 }
+
+export type DepartureGroup = 'walk' | 'steps' | 'training' | 'shape';
+
+/** The board's filter a milestone belongs to; fixed dates show only under "all". */
+export function milestoneGroup(kind: Milestone['kind']): DepartureGroup | undefined {
+  if (kind === 'walk') return 'walk';
+  if (kind === 'streak') return 'steps';
+  if (kind === 'training') return 'training';
+  if (kind === 'waist' || kind === 'weight') return 'shape';
+  return undefined;
+}

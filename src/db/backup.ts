@@ -3,6 +3,7 @@ import { validatePlan } from '../domain/plan';
 import type { Settings } from '../domain/types';
 import { bump, defaultSettings, patchSettings } from './actions';
 import { TABLES, db, type TableName } from './db';
+import { migrateToV2 } from './migrate';
 
 export interface BackupFile {
   app: 'health';
@@ -62,6 +63,7 @@ export async function restoreData(b: BackupFile) {
     const s = (b.tables.settings?.[0] as Partial<Settings> | undefined) ?? {};
     await db.settings.put({ ...defaultSettings(), ...s, id: 'app' });
   });
+  await migrateToV2(db);
 }
 
 export function backupFileName(d = new Date()): string {

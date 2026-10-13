@@ -22,8 +22,9 @@ describe.skipIf(!existsSync(path))('private starter file', () => {
   });
   it('builds both sessions and their short versions', () => {
     const { s } = load();
-    expect(buildSession(s.plan!, 'A').length).toBe(10);
-    expect(buildSession(s.plan!, 'B').length).toBe(11);
+    // Every exercise in each session, so the counts follow the plan (v2 dropped the dead bug).
+    for (const id of ['A', 'B']) expect(buildSession(s.plan!, id).length).toBe(s.plan!.sessions.find((x) => x.id === id)!.exercises.length);
+    expect(buildSession(s.plan!, 'A').some((e) => e.id === 'dead-bug')).toBe(false);
     expect(buildSession(s.plan!, 'B', { short: true }).length).toBe(3);
   });
   it('starts every exercise from its plan load', () => {

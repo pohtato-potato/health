@@ -12,6 +12,7 @@ import { Icon } from '../ui/Icon';
 import { Sheet } from '../ui/Sheet';
 import { stepStreakFor, weeksFor } from '../state/derived';
 import { nextCheckInDate } from './Photos';
+import { milestoneGroup, type DepartureGroup } from '../domain/milestones';
 
 export interface BoardRow {
   m: Milestone;
@@ -79,7 +80,10 @@ function Board({ rows, onRow, limit }: { rows: BoardRow[]; onRow: (r: BoardRow) 
       </div>
       {shown.map((r) => (
         <button key={r.m.id} type="button" className="board-row" role="row" onClick={() => onRow(r)}>
-          <span>{fmtDayMonth(r.m.eta).toUpperCase()}</span>
+          <span>
+            {fmtDayMonth(r.m.eta).toUpperCase()}
+            {r.status === 'Delayed' && r.scheduled && r.scheduled !== r.m.eta ? <span className="was">{fmtDayMonth(r.scheduled).toUpperCase()}</span> : null}
+          </span>
           <span className="dest">{r.m.dest.toUpperCase()}</span>
           <span>{flightNo(r.m.id)}</span>
           <span className={r.status === 'Boarding' ? 'blink' : undefined} style={{ color: STATUS_COLOR[r.status] }}>
@@ -115,18 +119,35 @@ export function DeparturesPage() {
   const rows = useBoard();
   const arrivals = useLiveQuery(async () => (await db.seen.toArray()).filter((s) => /^(city:|km:|chapter:|waist:\d|streak:)/.test(s.id)).sort((a, b) => b.at - a.at), []);
   const [pass, setPass] = useState<BoardRow | null>(null);
+  const [group, setGroup] = useState<DepartureGroup | 'all'>('all');
   if (!rows || !arrivals) return <div className="page bare" />;
+  const shown = group === 'all' ? rows : rows.filter((r) => milestoneGroup(r.m.kind) === group);
   return (
     <div className="page bare">
-      <button type="button" className="backlink" onClick={() => back('/journey')}>
+      <button type="button" className="backlink" onClick={() => back('/walk')}>
         <Icon name="left" size={20} stroke={1.8} />
-        Journey
+        Walk
       </button>
       <div className="col gap6">
         <h1 className="h1">Departures</h1>
         <div className="t15 q lh">Every milestone ahead, with an arrival time from your current pace. Tap one for its boarding pass.</div>
       </div>
-      <Board rows={rows} onRow={setPass} />
+      <div className="row" style={{ gap: 8, overflowX: 'auto', justifyContent: 'flex-start' }} role="radiogroup" aria-label="Show departures for">
+        {(
+          [
+            ['all', 'All'],
+            ['walk', 'Walk'],
+            ['steps', 'Steps'],
+            ['training', 'Training'],
+            ['shape', 'Shape'],
+          ] as [DepartureGroup | 'all', string][]
+        ).map(([id, label]) => (
+          <button key={id} type="button" role="radio" aria-checked={group === id} className={`chip sm${group === id ? ' on' : ''}`} onClick={() => setGroup(id)}>
+            {label}
+          </button>
+        ))}
+      </div>
+      <Board rows={shown} onRow={setPass} />
       <div className="t12 d lh">The first time a milestone appears, its time is fixed. If your pace slips, it shows as delayed; pick it up and it's back on time.</div>
       {arrivals.length > 0 && (
         <div className="card" style={{ gap: 0 }}>

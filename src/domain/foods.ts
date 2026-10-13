@@ -1,5 +1,7 @@
 import { fmtInt } from './format';
-import type { Food, FoodEntry, Meal } from './types';
+import { atOn, type DayKey } from './dates';
+import { homePlace } from './places';
+import type { Food, FoodEntry, Meal, MealTimes, Place, Settings } from './types';
 
 export function valuesFor(food: Food, amount: number): { kcal: number; protein: number } {
   const f = amount / (food.per || 1);
@@ -117,4 +119,27 @@ export function savedThisWeek(days: { date: string; kcal: number; logged: boolea
     saved += Math.max(0, d.kcalMax - d.kcal);
   }
   return Math.round(saved / 10) * 10;
+}
+
+/** Meal times for a place. Trips and friends' places keep home's rhythm. */
+export function mealTimesFor(settings: Pick<Settings, 'places'>, place: Place): MealTimes {
+  if (place.kind === 'home' || place.kind === 'office') return place.meals;
+  return homePlace(settings).meals;
+}
+
+/** How close to a meal's time "now" still counts as eating it live. */
+const LIVE_WINDOW_MS = 90 * 60_000;
+
+/**
+ * When a meal was eaten: now, if now is within 90 minutes of the meal's time on that date;
+ * otherwise that date at the meal's time. Logging yesterday's dinner after midnight stays on yesterday.
+ */
+export function eatenAtFor(date: DayKey, meal: Meal, place: Place, settings: Pick<Settings, 'places'>, now = Date.now()): number {
+  const planned = atOn(date, mealTimesFor(settings, place)[meal]);
+  return Math.abs(now - planned) <= LIVE_WINDOW_MS ? now : planned;
+}
+
+/** The time an entry belongs to on the timeline. */
+export function entryTime(e: Pick<FoodEntry, 'at' | 'eatenAt'>): number {
+  return e.eatenAt ?? e.at;
 }

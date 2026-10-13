@@ -6,7 +6,7 @@ import { exerciseMark } from './marks';
 import { findExercise, groupExercises, isSuperset, topOfRange } from './plan';
 import { triggerMet } from './progression';
 import { targetsOn } from './rings';
-import type { SetEntry } from './types';
+import type { SetEntry, Settings } from './types';
 import { QUAD_DONE_KM, STRIDE_M, statesReached } from './walk';
 
 export type Category = 'start' | 'steps' | 'india' | 'training' | 'strength' | 'food' | 'water' | 'sleep' | 'body' | 'streaks' | 'nights' | 'joints' | 'data' | 'secret';
@@ -655,12 +655,12 @@ secret('Utha le re baba', "Lift the heaviest single dumbbell you've ever used.",
 secret('Rishtey mein toh hum tumhare baap lagte hain', 'Beat one of your records by 20% or more.', 'g', 'Naam hai...', (s) =>
   recordJumps(s).some(({ set, prevLoad, prevVal }) => (prevLoad > 0 && (set.loadKg ?? 0) >= prevLoad * 1.2) || (prevVal > 0 && (set.reps ?? set.seconds ?? 0) >= prevVal * 1.2)),
 );
-secret('Mogambo khush hua', 'Close calories, protein, steps, water and sleep in one day.', 'g', 'Someone very dramatic is pleased.', (s) => s.daily.some((d) => d.perfect && d.waterOk && d.sleepOk));
+secret('Mogambo khush hua', 'Close calories, protein, steps and sleep in one day.', 'g', 'Someone very dramatic is pleased.', (s) => s.daily.some((d) => d.perfect && d.sleepOk));
 secret('Apun hi bhagwan hai', 'Hit every daily and weekly target in one week.', 'p', 'Kabhi kabhi lagta hai...', (s) =>
   s.daily.some((d, i) => {
     if (weekday(d.date) !== 0) return false;
     const w = s.daily.slice(i, i + 7);
-    return w.length === 7 && w.every((x) => x.perfect && x.waterOk && x.sleepOk) && w.filter((x) => x.trained).length >= s.weeks.perWeek;
+    return w.length === 7 && w.every((x) => x.perfect && x.sleepOk) && w.filter((x) => x.trained).length >= s.weeks.perWeek;
   }),
 );
 secret('Chhota packet, bada dhamaka', 'Set a record in a short session.', 's', 'Small packet.', (s) => {
@@ -886,4 +886,54 @@ export function fmtProgress(p: [number, number]): string {
   const [v, goal] = p;
   if (goal >= 1000) return `${fmtInt(Math.min(v, goal))} of ${fmtInt(goal)}`;
   return `${Math.round(Math.min(v, goal) * 10) / 10} of ${goal}`;
+}
+
+/**
+ * Retired in v2: the morning log is no longer timed, identical step counts are usually a
+ * copied number, water is no longer tracked, and the Passport is gone. Kept so old unlocks
+ * still resolve.
+ */
+export const RETIRED_ACHIEVEMENTS: string[] = [
+  ...['World record', 'Glitch in the Matrix', 'Speedrunner', 'Pi day'].map(slug),
+  ...ACHIEVEMENTS.filter((a) => a.cat === 'water' || (typeof a.desc === 'string' && /passport/i.test(a.desc))).map((a) => a.id),
+];
+
+/** The achievements that count and show. */
+export const ACTIVE_ACHIEVEMENTS: AchDef[] = ACHIEVEMENTS.filter((a) => !RETIRED_ACHIEVEMENTS.includes(a.id));
+
+/** What the owner sees and counts toward. */
+export function visibleAchievements(_settings?: Pick<Settings, 'prefs'>): AchDef[] {
+  return ACTIVE_ACHIEVEMENTS;
+}
+
+export interface AchSet {
+  id: string;
+  name: string;
+  /** What finishing the set unlocks. */
+  unlocks: string;
+  ids: string[];
+}
+
+const setOf = (id: string, name: string, cat: Category, unlocks: string, max = 10): AchSet => ({
+  id,
+  name,
+  unlocks,
+  ids: ACTIVE_ACHIEVEMENTS.filter((a) => a.cat === cat && !a.soon).slice(0, max).map((a) => a.id),
+});
+
+/** Themed sets: finishing one unlocks a theme, a moment style or a map finish. */
+export const ACH_SETS: AchSet[] = [
+  setOf('iron', 'Iron at home', 'training', 'a confetti style'),
+  setOf('strength', 'Under the bar', 'strength', 'the level-up chime'),
+  setOf('road', 'The long road', 'india', 'the gold route on the map'),
+  setOf('steps', 'Ten lakh club', 'steps', 'the gold-coin moment'),
+  setOf('fuel', 'Fuelled', 'food', 'the harvest theme'),
+  setOf('sleep', 'Night owl reformed', 'sleep', 'the moonlight theme'),
+  setOf('steady', 'Steady hands', 'streaks', 'shooting stars'),
+].filter((s) => s.ids.length >= 4);
+
+/** How far through a set you are, and whether it is finished. */
+export function setProgress(set: AchSet, unlocked: Set<string>): { done: number; total: number; complete: boolean } {
+  const done = set.ids.filter((id) => unlocked.has(id)).length;
+  return { done, total: set.ids.length, complete: done === set.ids.length };
 }

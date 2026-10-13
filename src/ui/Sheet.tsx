@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode, type TouchEvent } from 'react';
+import { useEffect, useRef, useState, type ReactNode, type TouchEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { closeSheet } from '../router';
 import { Icon } from './Icon';
@@ -24,6 +24,12 @@ export function Sheet({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const drag = useRef<{ y: number; dy: number } | null>(null);
+  // Taps are ignored until the sheet has finished sliding in, so a tap meant for the page below can't land on a row.
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const t = window.setTimeout(() => setReady(true), 350);
+    return () => window.clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -75,7 +81,7 @@ export function Sheet({
             </div>
           )}
         </div>
-        <div className="sheet-body">{children}</div>
+        <div className="sheet-body" style={ready ? undefined : { pointerEvents: 'none' }} onAnimationEnd={() => setReady(true)}>{children}</div>
       </div>
     </>,
     document.body,

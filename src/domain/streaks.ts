@@ -116,3 +116,13 @@ export function weightTrend(points: { date: DayKey; kg: number }[], alpha = 0.1)
     return { date: p.date, kg: p.kg, trend: Math.round(t * 100) / 100 };
   });
 }
+
+const weeks = (n: number) => `${n} week${n === 1 ? '' : 's'}`;
+
+/** "This week 2 of 4 · 3 weeks running · best run 5 weeks". */
+export function trainingStreakLine(w: TrainingWeeks, perWeek: number): string {
+  const parts = [`This week ${w.thisWeek} of ${perWeek}`];
+  if (w.streak > 0) parts.push(`${weeks(w.streak)} running`);
+  if (w.best > 0) parts.push(`best run ${weeks(w.best)}`);
+  return parts.join(' · ');
+}

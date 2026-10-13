@@ -1,7 +1,8 @@
 import { addDays, dayRange, weekStart, type DayKey } from './dates';
 import { stepsGoal, targetsOn } from './rings';
 import { stepStreak, trainingWeeks, type StepStreak, type TrainingWeeks } from './streaks';
-import type { Day, Occasion, OccasionKind, Settings, Targets } from './types';
+import { placeFor } from './places';
+import type { Day, Occasion, OccasionKind, Settings, Status, Targets } from './types';
 
 /**
  * Occasion mode: festivals, weddings, travel, being ill. Calories move up to
@@ -13,8 +14,21 @@ export const OCCASION_KINDS: { id: OccasionKind; name: string; hint: string }[] 
   { id: 'wedding', name: 'Wedding', hint: 'Sangeet to reception' },
   { id: 'travel', name: 'Travel', hint: 'Trips and time away' },
   { id: 'sick', name: 'Ill', hint: 'Rest first' },
+  { id: 'injured', name: 'Injured', hint: 'Let it heal; training adapts' },
+  { id: 'break', name: 'Break', hint: 'Time off on purpose' },
   { id: 'other', name: 'Something else', hint: 'Anything that takes over a few days' },
 ];
+
+/** The day status an occasion puts on its days. */
+export const STATUS_OF: Record<OccasionKind, Status> = {
+  festival: 'occasion',
+  wedding: 'occasion',
+  travel: 'travelling',
+  sick: 'sick',
+  injured: 'injured',
+  break: 'break',
+  other: 'occasion',
+};
 
 export function occasionOn(settings: Pick<Settings, 'occasions'>, date: DayKey): Occasion | undefined {
   return settings.occasions?.find((o) => date >= o.from && date <= o.to);
@@ -55,14 +69,17 @@ export function targetsAt(settings: Pick<Settings, 'targets' | 'occasions' | 'ma
 }
 
 /** The step streak, with nights out easing the goal and occasions pausing it. */
-export function stepStreakOf(settings: Pick<Settings, 'targets' | 'occasions'>, days: Day[], today: DayKey, fallback = 10000): StepStreak {
+export function stepStreakOf(settings: Pick<Settings, 'targets' | 'occasions' | 'places'>, days: Day[], today: DayKey, fallback = 10000): StepStreak {
   const steps = new Map<DayKey, number>();
   const eased = new Set<DayKey>();
+  const status = new Set<DayKey>();
   for (const d of days) {
     if (d.steps !== undefined) steps.set(d.date, d.steps);
-    if (d.eased) eased.add(d.date);
+    if (d.eased || placeFor(d, settings).eased) eased.add(d.date);
+    if (d.status) status.add(d.date);
   }
-  const forgiven = new Set([...eased, ...pausedDays(settings.occasions)]);
+  // Night-out days and statuses forgive a miss; eased places only lower the goal.
+  const forgiven = new Set([...days.filter((d) => d.eased).map((d) => d.date), ...status, ...pausedDays(settings.occasions)]);
   const goal = (d: DayKey) => {
     const t = targetsOn(settings.targets, d);
     return t ? stepsGoal(t, eased.has(d)) : fallback;
@@ -70,12 +87,14 @@ export function stepStreakOf(settings: Pick<Settings, 'targets' | 'occasions'>, 
   return stepStreak(steps, goal, today, forgiven);
 }
 
-export function trainingWeeksOf(settings: Pick<Settings, 'occasions'>, sessionDates: DayKey[], perWeek: number, today: DayKey): TrainingWeeks {
-  return trainingWeeks(sessionDates, perWeek, today, pausedWeeks(settings.occasions));
+export function trainingWeeksOf(settings: Pick<Settings, 'occasions'>, sessionDates: DayKey[], perWeek: number, today: DayKey, days: Pick<Day, 'date' | 'status'>[] = []): TrainingWeeks {
+  const paused = pausedWeeks(settings.occasions);
+  for (const d of days) if (d.status) paused.add(weekStart(d.date));
+  return trainingWeeks(sessionDates, perWeek, today, paused);
 }
 
 /** The weight trend at the start and just after the end: did it hold steady? */
-export function heldSteady(o: Occasion, trend: { date: DayKey; trend: number }[], today: DayKey): { change: number } | undefined {
+export function heldSteady(o: Pick<Occasion, 'from' | 'to'>, trend: { date: DayKey; trend: number }[], today: DayKey): { change: number } | undefined {
   const after = addDays(o.to, 2);
   if (today < after) return undefined;
   const at = (d: DayKey) => [...trend].reverse().find((t) => t.date <= d)?.trend;

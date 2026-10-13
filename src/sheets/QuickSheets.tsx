@@ -1,18 +1,24 @@
 import { useEffect, useState } from 'react';
-import { addDays, dayKey, weekStart } from '../domain/dates';
+import { addDays, atOn, dayKey, weekStart } from '../domain/dates';
 import { fmtDayMonth, fmtInt, fmtLitres, fmtTime, weekdayName } from '../domain/format';
 import { DRINKS, FREE_MEAL_SIZES, mealForTime } from '../domain/foods';
-import type { Meal } from '../domain/types';
-import { addEntry, addWater, bump, deleteEntry, deleteMeasurement, patchDay, saveMeasurement, setSteps, setTick } from '../db/actions';
+import type { ChecklistItem, Meal } from '../domain/types';
+import { addEntry, addWater, bump, deleteEntry, deleteMeasurement, patchDay, patchSettings, saveMeasurement, setMissed, setSteps, setTick } from '../db/actions';
+import { uid } from '../db/db';
+import { isLateTick, slotStatus, slotTime } from '../domain/checklist';
+import { Check } from '../ui/Check';
 import { stepsGoal } from '../domain/rings';
 import { useAllDays, useEntriesBetween, useMeasurements, useSettings, useToday } from '../db/hooks';
-import { closeSheet, go, useRoute } from '../router';
-import { DecField, IntField } from '../ui/controls';
+import { closeSheet } from '../router';
+import { DecField, IntField, TimeTile } from '../ui/controls';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
-import { checklistSlots, freeMealSaved, targetsFor } from '../state/derived';
+import { dayRings, freeMealSaved, targetsFor } from '../state/derived';
+import { isEased, placeFor } from '../domain/places';
 import { prefOn } from '../domain/types';
 import { MealPicker } from './FoodForms';
+import { DateChip, useLogDate } from '../ui/DateChip';
+import { courseOn } from '../domain/medicines';
 
 export function WaterSheet() {
   const settings = useSettings();
@@ -74,17 +80,16 @@ function OtherAmount({ onAdd }: { onAdd: (ml: number) => void }) {
 }
 
 export function StepsSheet() {
-  const { params } = useRoute();
   const settings = useSettings();
   const today = useToday();
   const days = useAllDays();
-  const date = params.get('d') ?? today;
+  const [date, setDate] = useLogDate();
   if (!settings || !days) return <Sheet title="Steps">{null}</Sheet>;
   const day = days.find((d) => d.date === date);
-  return <StepsForm key={date} date={date} today={today} initial={day?.steps} at={day?.stepsAt} target={stepsGoal(targetsFor(settings, date), day?.eased)} loop={settings.loopSteps} outdoors={!!day?.outdoors} />;
+  return <StepsForm key={date} date={date} today={today} initial={day?.steps} at={day?.stepsAt} target={stepsGoal(dayRings(settings, date, day, []).targets, isEased(day, placeFor(day, settings)))} loop={settings.loopSteps} outdoors={!!day?.outdoors} onDate={setDate} />;
 }
 
-function StepsForm({ date, today, initial, at, target, loop, outdoors: wasOutdoors }: { date: string; today: string; initial?: number; at?: number; target: number; loop?: number; outdoors: boolean }) {
+function StepsForm({ date, today, initial, at, target, loop, outdoors: wasOutdoors, onDate }: { date: string; today: string; initial?: number; at?: number; target: number; loop?: number; outdoors: boolean; onDate: (d: string) => void }) {
   const toast = useToast();
   const [steps, setStepsV] = useState<number | undefined>(initial);
   const [outdoors, setOutdoors] = useState(wasOutdoors);
@@ -98,6 +103,7 @@ function StepsForm({ date, today, initial, at, target, loop, outdoors: wasOutdoo
   };
   return (
     <Sheet title="Steps" sub={date === today ? 'Today, from Samsung Health' : fmtDayMonth(date)}>
+      <DateChip value={date} onChange={onDate} />
       <label className="flabel">
         <span className="lbl sage">{date === today ? 'Steps so far' : 'Final steps'}</span>
         <IntField value={steps} onChange={setStepsV} placeholder="0" autoFocus label="Steps" />
@@ -122,43 +128,104 @@ export function ChecklistSheet() {
   const settings = useSettings();
   const today = useToday();
   const days = useAllDays();
+  const [date, setDate] = useLogDate();
+  const [late, setLate] = useState<string | null>(null);
+  const [other, setOther] = useState<number | undefined>();
   if (!settings || !days) return <Sheet title="Checklist">{null}</Sheet>;
-  const day = days.find((d) => d.date === today);
-  const slots = checklistSlots(settings);
+  const day = days.find((d) => d.date === date);
+  const items = settings.checklist.filter((i) => i.active);
+
+  const saveItems = (next: ChecklistItem[]) => patchSettings((s) => ({ checklist: s.checklist.map((i) => next.find((n) => n.id === i.id) ?? i).concat(next.filter((n) => !s.checklist.some((i) => i.id === n.id))) }));
+  const tick = (key: string, slot: string, on: boolean) => {
+    if (on && isLateTick(date, slotTime(slot, settings, day), Date.now())) {
+      setLate(key);
+      setOther(undefined);
+      return;
+    }
+    setLate(null);
+    void setTick(date, key, on);
+  };
+
   return (
-    <Sheet title="Checklist" sub="Today">
-      {slots.length === 0 ? (
-        <div className="t14 q lh">Nothing on your checklist yet. Add supplements or medicines in Settings.</div>
-      ) : (
-        <div className="list">
-          {slots.map((s) => {
-            const t = day?.ticks?.[s.key];
+    <Sheet title="Checklist" sub={date === today ? 'Today' : fmtDayMonth(date)}>
+      <DateChip value={date} onChange={setDate} />
+      {items.length === 0 && <div className="t14 q lh">Nothing on your checklist yet. Add a supplement or medicine below.</div>}
+      {items.map((item) => (
+        <div key={item.id} className="col gap4">
+          <div className="row" style={{ gap: 8 }}>
+            <input
+              className="field inline-name"
+              defaultValue={item.name}
+              aria-label="Item name"
+              spellCheck
+              autoCapitalize="sentences"
+              onBlur={(e) => {
+                const v = e.target.value.trim();
+                if (!v) e.target.value = item.name;
+                else if (v !== item.name) void saveItems([{ ...item, name: v }]);
+              }}
+            />
+            <button type="button" className="chip sm" aria-label={`Add a time for ${item.name}`} onClick={() => saveItems([{ ...item, slots: [...item.slots, '9 pm'] }])}>
+              + time
+            </button>
+            {item.slots.length > 1 && (
+              <button type="button" className="chip sm" aria-label={`Remove the last time for ${item.name}`} onClick={() => saveItems([{ ...item, slots: item.slots.slice(0, -1) }])}>
+                − time
+              </button>
+            )}
+          </div>
+          {(courseOn(date, item).length ? courseOn(date, item) : ['Daily']).map((slot, n) => {
+            const key = `${item.id}:${n}`;
+            const st = slotStatus(day, key);
+            const planned = slotTime(slot, settings, day);
             return (
-              <label key={s.key} className="li" style={{ minHeight: 56 }}>
-                <span className="s">
-                  <span>{s.name}</span>
-                  <small>
-                    {s.slot}
-                    {t ? ` · done ${fmtTime(t)}` : ''}
-                  </small>
-                </span>
-                <input type="checkbox" className="cb" checked={!!t} onChange={(e) => setTick(today, s.key, e.target.checked)} />
-              </label>
+              <div key={key} className="col">
+                <div className="row" style={{ gap: 8 }}>
+                  <Check
+                    checked={st.kind === 'taken'}
+                    onChange={(on) => tick(key, slot, on)}
+                    label={slot}
+                    detail={st.kind === 'taken' ? `Taken ${fmtTime(st.at)}` : st.kind === 'missed' ? 'Missed' : 'Not logged'}
+                  />
+                  <button type="button" className={`chip sm${st.kind === 'missed' ? ' on' : ''}`} aria-pressed={st.kind === 'missed'} onClick={() => void setMissed(date, key, st.kind !== 'missed')}>
+                    Missed
+                  </button>
+                </div>
+                {late === key && (
+                  <div className="notice" role="group" aria-label="When did you take it?">
+                    <div className="t14">When did you take it?</div>
+                    <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start', marginTop: 8 }}>
+                      <button type="button" className="chip sm" onClick={() => { setLate(null); void setTick(date, key, true, atOn(date, planned)); }}>
+                        At {fmtTime(atOn(date, planned))}
+                      </button>
+                      <button type="button" className="chip sm" onClick={() => { setLate(null); void setTick(date, key, true); }}>
+                        Just now
+                      </button>
+                    </div>
+                    <div className="row" style={{ gap: 8, marginTop: 8, width: '100%' }}>
+                      <TimeTile label="Other time" minutes={other} onChange={setOther} />
+                      <button type="button" className="btn" disabled={other === undefined} onClick={() => { setLate(null); void setTick(date, key, true, atOn(date, other!)); }}>
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
-      )}
-      <div className="t12 d lh">No streaks or confetti here. It's a plain record you can show your doctor.</div>
-      <button type="button" className="link" style={{ alignSelf: 'center' }} onClick={() => go('/settings', { at: 'checklist' })}>
-        Edit the checklist
+      ))}
+      <button type="button" className="link" style={{ alignSelf: 'flex-start' }} onClick={() => saveItems([{ id: uid(), name: 'New item', slots: ['Morning'], active: true }])}>
+        + Add an item
       </button>
+      <div className="t12 d lh">No streaks or confetti here. It's a plain record you can show your doctor.</div>
     </Sheet>
   );
 }
 
 export function WaistSheet() {
   const measurements = useMeasurements();
-  const today = useToday();
+  const [date, setDate] = useLogDate();
   const toast = useToast();
   const [standing, setStanding] = useState<number | undefined>();
   const [slouched, setSlouched] = useState<number | undefined>();
@@ -169,7 +236,7 @@ export function WaistSheet() {
   const lastShoulders = [...measurements].reverse().find((m) => m.shoulders !== undefined);
 
   const save = async () => {
-    const m = await saveMeasurement({ date: today, waistStanding: standing, waistSlouched: slouched, shoulders });
+    const m = await saveMeasurement({ date, waistStanding: standing, waistSlouched: slouched, shoulders });
     closeSheet();
     const diff = standing !== undefined && last?.waistStanding !== undefined ? standing - last.waistStanding : undefined;
     toast({
@@ -182,6 +249,7 @@ export function WaistSheet() {
 
   return (
     <Sheet title="Waist" sub="At the navel, same time of day, tape snug not tight">
+      <DateChip value={date} onChange={setDate} />
       <div className="grid2">
         <label className="flabel">
           <span className="lbl pearl">Standing straight</span>
@@ -211,7 +279,7 @@ export function WaistSheet() {
 }
 
 export function DrinkSheet() {
-  const today = useToday();
+  const [date, setDate] = useLogDate();
   const toast = useToast();
   const [meal, setMeal] = useState<Meal>(mealForTime());
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -223,7 +291,7 @@ export function DrinkSheet() {
     for (const d of DRINKS) {
       const c = counts[d.id] ?? 0;
       if (!c) continue;
-      const e = await addEntry({ date: today, meal, at: Date.now(), kind: 'drink', name: d.name, portion: `${c} × ${d.measure}`, kcal: c * d.kcal, protein: 0, drink: { type: d.id, count: c } });
+      const e = await addEntry({ date, meal, at: Date.now(), kind: 'drink', name: d.name, portion: `${c} × ${d.measure}`, kcal: c * d.kcal, protein: 0, drink: { type: d.id, count: c } });
       ids.push(e.id);
     }
     closeSheet();
@@ -232,6 +300,7 @@ export function DrinkSheet() {
 
   return (
     <Sheet title="Drinks" sub="Rough calories, in the measures they come in">
+      <DateChip value={date} onChange={setDate} />
       <MealPicker meal={meal} onChange={setMeal} />
       <div className="list">
         {DRINKS.map((d) => {
@@ -269,6 +338,7 @@ export function DrinkSheet() {
 export function FreeMealSheet() {
   const settings = useSettings();
   const today = useToday();
+  const [date, setDate] = useLogDate();
   useEffect(() => {
     void bump('free-open', { day: dayKey() });
   }, []);
@@ -284,7 +354,7 @@ export function FreeMealSheet() {
   const saved = settings && prefOn(settings.prefs, 'freeMealSaveUp') ? freeMealSaved(settings, week, today) : 0;
 
   const save = async () => {
-    const e = await addEntry({ date: today, meal, at: Date.now(), kind: 'free', name: name.trim() || 'Free meal', portion: `${pick.name}, about ${fmtInt(pick.kcal)} kcal`, kcal: pick.kcal, protein: 0 });
+    const e = await addEntry({ date, meal, at: Date.now(), kind: 'free', name: name.trim() || 'Free meal', portion: `${pick.name}, about ${fmtInt(pick.kcal)} kcal`, kcal: pick.kcal, protein: 0 });
     if (saved >= 200) void bump('saveup-used');
     closeSheet();
     toast({ kicker: 'Free meal', text: 'Enjoy it. Tomorrow is an ordinary day.', tone: 'gold', action: { label: 'Undo', run: () => deleteEntry(e.id) } });
@@ -292,6 +362,7 @@ export function FreeMealSheet() {
 
   return (
     <Sheet title="Free meal" sub="One a week. The calorie ceiling lifts for today.">
+      <DateChip value={date} onChange={setDate} />
       {used && <div className="banner">This week's free meal was on {weekdayName(used.date)}. You can still log another; it just won't be free.</div>}
       {saved > 0 && !used && (
         <div className="banner" style={{ borderColor: 'var(--gold-border)', background: 'var(--gold-bg)' }}>

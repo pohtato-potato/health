@@ -46,7 +46,7 @@ export function forecasts(f: ForecastInput): Forecast[] {
     out.push({ id: 'recovery', value: 'Rest', title: 'Recovery', text: `${fmtInt(f.sessionsLast5)} sessions in five days. The plan says sit down, and so do I.`, weight: 85 });
   }
   if (f.sessionDue && f.readiness?.known && f.beatPct !== undefined) {
-    const bits = [f.sleepMin !== undefined ? `${fmtDuration(f.sleepMin)} of sleep` : '', f.readiness.parts[1].name.toLowerCase().includes('rested') ? f.readiness.parts[1].name.replace('Felt rested, ', 'rested ') : '', f.readiness.parts[2].points === 15 ? 'a rest day behind you' : ''].filter(Boolean);
+    const bits = f.readiness.parts.filter((p) => p.delta > 0).slice(0, 2).map((p) => p.label.toLowerCase());
     out.push({
       id: 'records',
       value: `${f.beatPct}%`,

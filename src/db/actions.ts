@@ -1,4 +1,6 @@
-import { dayKey, type DayKey } from '../domain/dates';
+import { addDays, atOn, dayKey, type DayKey, logMinutes } from '../domain/dates';
+import { eatenAtFor, mealTimesFor } from '../domain/foods';
+import { placeFor } from '../domain/places';
 import type { Swap } from '../domain/plan';
 import type {
   Day,
@@ -8,11 +10,14 @@ import type {
   SetEntry,
   Settings,
   Sleep,
+  Status,
   TargetsRecord,
   Targets,
   TrainingSession,
 } from '../domain/types';
 import { db, uid } from './db';
+import { recordEdit } from './edits';
+import { logUsage } from './usage';
 import { DEFAULT_EQUIPMENT, DEFAULT_PLAN } from '../domain/defaultPlan';
 
 export function defaultSettings(): Settings {
@@ -87,72 +92,128 @@ export async function bump(id: string, opts: { day?: DayKey; value?: string; by?
 }
 
 export async function setSteps(date: DayKey, steps: number, final = false) {
+  void logUsage('log', 'steps');
   await patchDay(date, { steps: Math.max(0, Math.round(steps)), stepsAt: Date.now(), ...(final ? { stepsFinal: true } : {}) });
-  if (date === dayKey() && new Date().getHours() < 12 && steps > 9000) await bump('steps-9000-by-noon', { day: date });
+  if (date === dayKey() && logMinutes(Date.now()) < 720 && steps > 9000) await bump('steps-9000-by-noon', { day: date });
 }
 
 export interface MorningInput {
   weightKg?: number;
   sleep?: Sleep;
   yesterdaySteps?: number;
-  home?: string;
+  /** Where the day starts. Also written to the v1 `home` so older readers follow. */
+  place?: string;
   answers?: Record<string, boolean>;
-  seconds?: number;
+  /** Readiness: energy 1–5, stomach settled, soreness by muscle. */
+  energy?: number;
+  stomach?: boolean;
+  soreness?: Day['soreness'];
 }
 
-export async function saveMorningLog(date: DayKey, input: MorningInput, yesterday: DayKey): Promise<{ newBest: boolean }> {
-  let newBest = false;
-  await db.transaction('rw', db.days, db.settings, async () => {
+/** Saves the morning log. Only what was given is written; nothing is carried over silently. */
+export async function saveMorningLog(date: DayKey, input: MorningInput, yesterday: DayKey): Promise<void> {
+  void logUsage('log', 'morning');
+  await db.transaction('rw', db.days, async () => {
     const now = Date.now();
     const cur = (await db.days.get(date)) ?? { date };
-    const morning = { at: cur.morning?.at ?? now, seconds: cur.morning?.seconds ?? input.seconds };
     await db.days.put({
       ...cur,
       date,
       ...(input.weightKg !== undefined ? { weightKg: input.weightKg, weighedAt: now } : {}),
       ...(input.sleep ? { sleep: input.sleep } : {}),
-      ...(input.home ? { home: input.home } : {}),
+      ...(input.place ? { place: input.place, home: input.place } : {}),
+      ...(input.energy !== undefined ? { energy: input.energy } : {}),
+      ...(input.stomach !== undefined ? { stomach: input.stomach } : {}),
+      ...(input.soreness ? { soreness: input.soreness } : {}),
       answers: { ...cur.answers, ...input.answers },
-      morning,
+      morning: { at: cur.morning?.at ?? now },
     });
     if (input.yesterdaySteps !== undefined) {
       const y = (await db.days.get(yesterday)) ?? { date: yesterday };
       await db.days.put({ ...y, date: yesterday, steps: input.yesterdaySteps, stepsFinal: true, stepsAt: now });
     }
-    // Only a first save of the day can set a speed record.
-    if (!cur.morning && input.seconds !== undefined) {
-      const s = await getSettings();
-      if (s.morningBest === undefined || input.seconds < s.morningBest) {
-        newBest = s.morningBest !== undefined;
-        await db.settings.put({ ...s, morningBest: input.seconds });
-      }
-    }
   });
-  return { newBest };
 }
 
-export async function setTick(date: DayKey, key: string, on: boolean) {
+/** Ticks or unticks a checklist slot. A tick clears "missed"; `at` records when it was really taken. */
+export async function setTick(date: DayKey, key: string, on: boolean, at = Date.now()) {
+  void logUsage('tick', key);
+  const had = (await db.days.get(date))?.ticks?.[key] !== undefined;
+  if (had !== on) {
+    const itemId = key.split(':')[0];
+    await patchSettings((s) => ({
+      checklist: s.checklist.map((i) => (i.id === itemId && i.med?.stock ? { ...i, med: { ...i.med, stock: { ...i.med.stock, left: Math.max(0, i.med.stock.left + (on ? -1 : 1) * i.med.stock.perDose) } } } : i)),
+    }));
+  }
   await patchDay(date, (d) => {
     const ticks = { ...d.ticks };
-    if (on) ticks[key] = Date.now();
-    else delete ticks[key];
-    return { ticks };
+    const missed = { ...d.missed };
+    if (on) {
+      ticks[key] = at;
+      delete missed[key];
+    } else delete ticks[key];
+    return { ticks, missed };
   });
 }
 
+/** Marks a slot as missed, which also clears its tick. */
+export async function setMissed(date: DayKey, key: string, on: boolean) {
+  await patchDay(date, (d) => {
+    const ticks = { ...d.ticks };
+    const missed: Record<string, true> = { ...d.missed };
+    if (on) {
+      missed[key] = true;
+      delete ticks[key];
+    } else delete missed[key];
+    return { ticks, missed };
+  });
+}
+
+/** When an entry was eaten, from the day's place at the time it was logged. */
+async function plannedEatenAt(date: DayKey, meal: FoodEntry['meal'], at: number, live: boolean): Promise<number> {
+  const [day, settings] = await Promise.all([db.days.get(date), getSettings()]);
+  const place = placeFor(day, settings, at);
+  return live ? eatenAtFor(date, meal, place, settings, at) : atOn(date, mealTimesFor(settings, place)[meal]);
+}
+
+/** Adds an entry. Without an eatenAt, it is worked out from the day's place and the meal. */
 export async function addEntry(e: Omit<FoodEntry, 'id'> & { id?: string }): Promise<FoodEntry> {
-  const entry: FoodEntry = { ...e, id: e.id ?? uid() };
+  const eatenAt = e.eatenAt ?? (await plannedEatenAt(e.date, e.meal, e.at, true));
+  const entry: FoodEntry = { ...e, id: e.id ?? uid(), eatenAt };
   await db.entries.put(entry);
+  void logUsage('log', 'food');
   return entry;
 }
 
+/** Adds a plate of entries at once. Entries for the same day and meal share one eaten-at time. */
+export async function addEntries(batch: (Omit<FoodEntry, 'id'> & { id?: string })[]): Promise<FoodEntry[]> {
+  const times = new Map<string, number>();
+  const out: FoodEntry[] = [];
+  for (const e of batch) {
+    const k = `${e.date}|${e.meal}`;
+    if (!times.has(k)) times.set(k, e.eatenAt ?? (await plannedEatenAt(e.date, e.meal, e.at, true)));
+    out.push({ ...e, id: e.id ?? uid(), eatenAt: times.get(k)! });
+  }
+  await db.entries.bulkPut(out);
+  void logUsage('log', 'food');
+  return out;
+}
+
+/** Updates an entry. Moving it to another meal moves its eaten-at time to that meal's time. */
 export async function updateEntry(id: string, patch: Partial<FoodEntry>) {
-  await db.entries.update(id, patch);
+  const before = await db.entries.get(id);
+  const full = { ...patch };
+  if (before && patch.meal && patch.meal !== before.meal && patch.eatenAt === undefined) {
+    full.eatenAt = await plannedEatenAt(patch.date ?? before.date, patch.meal, before.at, false);
+  }
+  await db.entries.update(id, full);
+  if (before) await recordEdit('entries', id, before, { ...before, ...full });
 }
 
 export async function deleteEntry(id: string): Promise<FoodEntry | undefined> {
   const e = await db.entries.get(id);
   await db.entries.delete(id);
+  if (e) await recordEdit('entries', id, e, undefined);
   return e;
 }
 
@@ -188,6 +249,8 @@ export async function startSession(opts: {
   swaps: Swap[];
   tempo: Record<string, boolean>;
   readiness?: number;
+  readinessX?: Partial<Record<string, number>>;
+  lighter?: boolean;
 }): Promise<TrainingSession> {
   const existing = await activeSession();
   if (existing) return existing;
@@ -203,6 +266,8 @@ export async function startSession(opts: {
     swapped: opts.swaps.length ? opts.swaps : undefined,
     tempo: opts.tempo,
     readiness: opts.readiness,
+    readinessX: opts.readinessX,
+    lighter: opts.lighter || undefined,
   };
   await db.sessions.put(s);
   return s;
@@ -213,17 +278,22 @@ export async function patchSession(id: string, patch: Partial<TrainingSession>) 
 }
 
 export async function logSet(set: Omit<SetEntry, 'id'> & { id?: string }): Promise<SetEntry> {
+  void logUsage('log', 'set');
   const rec: SetEntry = { ...set, id: set.id ?? uid() };
+  const before = set.id ? await db.sets.get(set.id) : undefined;
   await db.sets.put(rec);
+  if (before) await recordEdit('sets', rec.id, before, rec);
   return rec;
 }
 
 export async function deleteSet(id: string) {
+  const before = await db.sets.get(id);
   await db.sets.delete(id);
+  if (before) await recordEdit('sets', id, before, undefined);
 }
 
-export async function finishSession(id: string, flags: string[], notes: string) {
-  await db.sessions.update(id, { status: 'done', endedAt: Date.now(), flags, notes: notes.trim() || undefined });
+export async function finishSession(id: string, flags: string[], notes: string, quality?: number, context?: string[]) {
+  await db.sessions.update(id, { status: 'done', endedAt: Date.now(), flags, notes: notes.trim() || undefined, ...(quality !== undefined ? { quality } : {}), ...(context ? { context } : {}) });
 }
 
 /** Throws away a session and its sets. */
@@ -231,5 +301,36 @@ export async function discardSession(id: string) {
   await db.transaction('rw', db.sessions, db.sets, async () => {
     await db.sets.where('sessionId').equals(id).delete();
     await db.sessions.delete(id);
+  });
+}
+
+/** Moves an entry to another meal; its eaten-at time moves to that meal's time. */
+export async function moveEntry(id: string, meal: FoodEntry['meal']) {
+  await updateEntry(id, { meal });
+}
+
+/** Marks a day's food complete (or not). Works for any date. */
+export async function closeDay(date: DayKey, done: boolean) {
+  await patchDay(date, { foodDone: done });
+}
+
+/** Puts a status on every day from..to, or takes it off when status is undefined. */
+export async function setStatusRange(from: DayKey, to: DayKey, status: Status | undefined) {
+  await db.transaction('rw', db.days, async () => {
+    for (let d = from; d <= to; d = addDays(d, 1)) {
+      const cur = (await db.days.get(d)) ?? { date: d };
+      const next = { ...cur, date: d };
+      if (status) next.status = status;
+      else delete next.status;
+      await db.days.put(next);
+    }
+  });
+}
+
+/** Before noon, or on a day with no place yet, sets where the day is; later it records a mid-day change. */
+export async function changePlace(date: DayKey, place: string, at = Date.now()) {
+  await patchDay(date, (d) => {
+    if (!d.place || logMinutes(at) < 720) return { place, home: place, placeChanges: undefined };
+    return { placeChanges: [...(d.placeChanges ?? []), { at, place }] };
   });
 }

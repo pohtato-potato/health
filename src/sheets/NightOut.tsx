@@ -4,17 +4,18 @@ import { fmt1, fmtInt, weekdayName } from '../domain/format';
 import { DRINKS, FREE_MEAL_SIZES, mealForTime } from '../domain/foods';
 import { prefOn } from '../domain/types';
 import { addEntry, bump, deleteEntry, patchDay } from '../db/actions';
-import { useEntriesBetween, useSettings, useToday } from '../db/hooks';
+import { useEntriesBetween, useSettings } from '../db/hooks';
 import { closeSheet } from '../router';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
 import { freeMealSaved, targetsFor } from '../state/derived';
 import { stepsGoal } from '../domain/rings';
+import { DateChip, useLogDate } from '../ui/DateChip';
 
 /** A free meal and drinks in one go. Tomorrow eases off a little. */
 export function NightOutSheet() {
   const settings = useSettings();
-  const today = useToday();
+  const [today, setDate] = useLogDate();
   const toast = useToast();
   const ws = weekStart(today);
   const week = useEntriesBetween(ws, addDays(ws, 6));
@@ -69,6 +70,7 @@ export function NightOutSheet() {
 
   return (
     <Sheet title="Night out" sub={`${weekdayName(today)}${who ? ` · ${who}` : ''}`} tall>
+      <DateChip value={today} onChange={setDate} />
       <label className="flabel">
         <span className="lbl">With who, or where? Optional</span>
         <input className="field" value={who} onChange={(e) => setWho(e.target.value)} placeholder="with friends" />
