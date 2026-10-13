@@ -43,6 +43,7 @@ import { PlanEditor } from './screens/PlanEditor';
 import { RecordsWall } from './screens/RecordsWall';
 import { MuscleMapPage } from './screens/MuscleMap';
 import { ShortSessionSheet } from './sheets/ShortSession';
+import { WeeklyReviewPage } from './screens/WeeklyReview';
 
 /** A page loaded when first opened, from its module's named export. */
 function page<K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K) {
@@ -94,15 +95,16 @@ const SHEETS: Record<string, () => ReactNode> = {
 const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/today': { el: () => <Today />, tab: 'today' },
   '/train': { el: () => <Train />, tab: 'train' },
-  '/tracks': { el: () => <Tracks />, tab: 'tracks' },
-  '/journey': { el: () => <Journey />, tab: 'journey' },
+  '/tracks': { el: () => <Tracks />, tab: 'you' },
+  '/journey': { el: () => <Journey />, tab: 'walk' },
   '/track': { el: () => <TrackPage /> },
   '/food': { el: () => <FoodToday /> },
   '/close': { el: () => <CloseDay /> },
   '/plan': { el: () => <PlanEditor /> },
   '/records': { el: () => <RecordsWall /> },
   '/muscles': { el: () => <MuscleMapPage /> },
-  '/you': { el: () => <You /> },
+  '/you': { el: () => <You />, tab: 'you' },
+  '/review': { el: () => <WeeklyReviewPage /> },
   '/settings': { el: () => <SettingsScreen /> },
   '/session': { el: () => <SessionScreen /> },
   '/session/done': { el: () => <SessionDone /> },

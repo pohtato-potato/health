@@ -72,10 +72,8 @@
 /* Tab tints: the active tab takes its world's colour, with a small dot beneath. */
 .tabbar a.on[data-tab='today'] { color: var(--tint-today); }
 .tabbar a.on[data-tab='train'] { color: var(--tint-train); }
-.tabbar a.on[data-tab='walk'],
-.tabbar a.on[data-tab='journey'] { color: var(--tint-walk); }
-.tabbar a.on[data-tab='you'],
-.tabbar a.on[data-tab='tracks'] { color: var(--tint-you); }
+.tabbar a.on[data-tab='walk'] { color: var(--tint-walk); }
+.tabbar a.on[data-tab='you'] { color: var(--tint-you); }
 .tabbar a.on::after {
   content: '';
   width: 4px;

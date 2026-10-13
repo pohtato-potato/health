@@ -735,3 +735,50 @@
   height: 100%;
   background: var(--gold);
 }
+
+/* You: doors and the heatmap */
+.doors {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.door {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 14px 16px;
+  min-height: 88px;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  text-align: left;
+}
+.heatmap {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 1fr);
+  gap: 4px;
+}
+.heat {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 4px;
+  background: var(--track);
+}
+.heat.empty {
+  background: transparent;
+  border: 1px solid var(--btn-border);
+}
+.heat.future {
+  background: transparent;
+}
+.heat i {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text);
+}

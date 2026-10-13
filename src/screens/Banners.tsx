@@ -9,7 +9,7 @@ import { addDays, dayKey, weekday } from '../domain/dates';
 import { fmtDayMonth } from '../domain/format';
 import { lastFullWeek } from '../domain/weekly';
 import { go } from '../router';
-import { nextCheckInDate } from './Photos';
+import { checkInDue } from '../domain/checkinSchedule';
 import { Icon } from '../ui/Icon';
 import { useToast } from '../ui/Toasts';
 import { modelFor } from './MaintenanceCards';
@@ -31,9 +31,10 @@ export function Banners() {
   const [busy, setBusy] = useState(false);
   if (!settings || !days || !checkins || recapNote === undefined || !usage) return null;
   const recapReady = !recapNote?.recapSeenAt && weekday(dayKey()) <= 2 && days.some((d) => d.date >= lastWeek && d.date <= addDays(lastWeek, 6));
-  const due = nextCheckInDate(checkins);
   const today = dayKey();
-  const checkinDue = due ? due <= today : Date.now() - settings.createdAt > 3 * 86_400_000;
+  const lastCheck = checkins.map((c) => c.date).sort().pop();
+  // Monthly, on a fixed day; the first one is offered a few days after starting.
+  const checkinDue = lastCheck ? checkInDue(today, settings.checkInDay ?? 1, lastCheck) : Date.now() - settings.createdAt > 3 * 86_400_000;
 
   const last = settings.backup.lastQuick;
   const hasData = days.length > 0;
@@ -105,7 +106,7 @@ export function Banners() {
       el: (
         <>
           <Icon name="camera" size={20} color="var(--pearl)" />
-          <span className="grow">{due ? 'Your monthly check-in is due.' : 'Time for your first check-in: photos and a tape measure.'}</span>
+          <span className="grow">{lastCheck ? 'Your monthly check-in is due.' : 'Time for your first check-in: photos and a tape measure.'}</span>
           <button type="button" className="btn sm" onClick={() => go('/checkin')}>
             Start
           </button>
