@@ -123,7 +123,13 @@ export function BodyMap({ value, onChange }: { value: Soreness; onChange: (v: So
 }
 
 /** The same figure, showing this week's training: brighter where more hard sets landed (0 to 1). */
-export function BodyHeat({ heat, label }: { heat: Partial<Record<MuscleId, number>>; label: string }) {
+export function BodyHeat({ heat, label, side }: { heat: Partial<Record<MuscleId, number>>; label: string; side?: 'front' | 'back' }) {
+  if (side)
+    return (
+      <svg viewBox="0 0 132 252" className="bodymap one" role="img" aria-label={label}>
+        <Figure regions={side === 'front' ? FRONT : BACK} value={{}} heat={heat} label={side === 'front' ? 'Front' : 'Back'} dx={6} />
+      </svg>
+    );
   return (
     <svg viewBox="0 0 260 252" className="bodymap" role="img" aria-label={label}>
       <Figure regions={FRONT} value={{}} heat={heat} label="Front" dx={6} />

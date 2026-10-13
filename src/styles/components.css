@@ -1244,3 +1244,40 @@
   position: absolute;
   inset: -3px;
 }
+
+/* Train (s7): the week as dots, static chips, record medals. */
+.wk-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--btn-border);
+}
+.wk-dot.on {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+.chip.static {
+  pointer-events: none;
+}
+.rec-medal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 6px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--medal) 45%, transparent);
+  background: color-mix(in srgb, var(--medal) 10%, transparent);
+  text-align: center;
+}
+.rec-medal b {
+  font-size: 26px;
+  color: var(--medal);
+  line-height: 1.1;
+}
+
+/* Page blocks keep their height; the page scrolls instead of squashing them. */
+.page > *,
+.sheet-body > * {
+  flex-shrink: 0;
+}
