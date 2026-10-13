@@ -4,7 +4,7 @@ import { addExercise, moveExercise, removeExercise, setSuperset, updateExercise 
 import { patchSettings } from '../db/actions';
 import { uid } from '../db/db';
 import { useSettings } from '../db/hooks';
-import { back } from '../router';
+import { back, useRoute } from '../router';
 import { DecField, IntField, Seg, SwitchRow } from '../ui/controls';
 import { Icon } from '../ui/Icon';
 import { useToast } from '../ui/Toasts';
@@ -29,9 +29,13 @@ export function PlanEditor() {
 
 function Editor({ initial }: { initial: PlanDef }) {
   const toast = useToast();
+  const { params } = useRoute();
+  // Opened from an exercise's guide: start on that exercise, unfolded.
+  const asked = params.get('ex');
+  const home = initial.sessions.find((s) => s.exercises.some((e) => e.id === asked));
   const [plan, setPlan] = useState(initial);
-  const [sid, setSid] = useState(initial.sessions[0].id);
-  const [open, setOpen] = useState<string | null>(null);
+  const [sid, setSid] = useState(home?.id ?? initial.sessions[0].id);
+  const [open, setOpen] = useState<string | null>(home ? asked : null);
   const session = plan.sessions.find((s) => s.id === sid)!;
   const dirty = plan !== initial;
   const errs = validatePlan(plan);

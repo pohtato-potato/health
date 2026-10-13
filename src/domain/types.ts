@@ -83,6 +83,16 @@ export interface Appointment {
   notes: string[];
 }
 
+/** A personal experiment: change one thing from a date and watch one measure. */
+export interface Experiment {
+  id: string;
+  question: string;
+  metric: 'steps' | 'sleep' | 'protein' | 'kcal' | 'energy' | 'readiness';
+  from: DayKey;
+  /** The last day of it; open while running. */
+  to?: DayKey;
+}
+
 /** What an on-time dose can earn; each switchable. */
 export interface MedRewards {
   lantern: boolean;
@@ -199,6 +209,8 @@ export interface Settings {
   appointments?: Appointment[];
   /** v2: the switchable rewards for on-time doses. */
   medRewards?: MedRewards;
+  /** v2: personal experiments. */
+  experiments?: Experiment[];
   homes: Home[];
   equipment: Equipment;
   loopSteps?: number;

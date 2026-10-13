@@ -1,9 +1,9 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
-import { addDays, daysBetween } from '../domain/dates';
+import { addDays } from '../domain/dates';
 import { fmtInt } from '../domain/format';
 import { strengthScores } from '../domain/insights';
-import { CONFETTI, STAT_NAMES, TITLES, charStats, hasReward, levelOf, rewardAch, xpFrom, type CharStats } from '../domain/rewards';
+import { CONFETTI, STAT_NAMES_V2, TITLES, charStatsV2, hasReward, levelOf, rewardAch, xpFrom, type CharStatsV2 } from '../domain/rewards';
 import { themeById } from '../domain/themes';
 import { prefOn, type Settings } from '../domain/types';
 import { patchSettings } from '../db/actions';
@@ -13,7 +13,11 @@ import { back } from '../router';
 import { Icon } from '../ui/Icon';
 import { ThemeSheet, useUnlockedIds } from '../ui/Theme';
 import { summaries } from '../state/Challenge';
-import { flagEvents, targetsFor } from '../state/derived';
+import { targetsFor } from '../state/derived';
+import { sri } from '../domain/sleepRegularity';
+import { formTrend } from '../domain/trackStats';
+import { kmFromSteps } from '../domain/walk';
+import { loadedSteps } from '../walk/journal';
 
 /** The worn title's name, if any. */
 export function wornTitle(settings: Settings, unlocked: Set<string>, level: number): string | undefined {
@@ -42,21 +46,23 @@ export function CharacterPage() {
   const today = useToday();
   const [themes, setThemes] = useState(false);
   if (!lv || !sets) return <div className="page bare" />;
-  const { settings, unlocked, days, sessions, all } = lv;
+  const { settings, unlocked, days, all } = lv;
 
   const scores = strengthScores(sets, today).filter((s) => s.series.length >= 2);
   const gain = scores.length ? scores.reduce((n, s) => n + (s.now / s.series[0] - 1), 0) / scores.length : 0;
   const t = targetsFor(settings, today);
   const week = days.filter((d) => d.date >= addDays(today, -7) && d.date < today && d.steps !== undefined);
   const recent = (n: number) => all.filter((d) => d.date >= addDays(today, -n) && d.date < today);
-  const events = flagEvents(settings.plan, sessions, days);
-  const stats = charStats({
+  const loaded = loadedSteps(sets);
+  const stats = charStatsV2({
     strengthGain: gain,
+    ladderClimbs: sets.filter((s) => s.mark === '!!' && s.date > addDays(today, -28)).length,
     stepsRatio: week.length ? week.reduce((n, d) => n + d.steps!, 0) / week.length / t.steps : 0,
-    sleepNights14: recent(14).filter((d) => d.sleepOk).length,
+    carrySteps14: [...loaded].filter(([d]) => d > addDays(today, -14)).reduce((n, [, v]) => n + v, 0),
     proteinDays14: recent(14).filter((d) => d.proteinOk).length,
-    logged30: recent(30).filter((d) => d.logged || d.steps > 0).length,
-    daysSinceFlag: events.length ? daysBetween(events[events.length - 1].date, today) : undefined,
+    sri: sri(days.filter((d) => d.date <= today && d.date > addDays(today, -14))),
+    cleanRatio: formTrend(sets, today).now,
+    km: kmFromSteps(days.reduce((n, d) => n + (d.steps ?? 0), 0)),
   });
   const title = wornTitle(settings, unlocked, lv.level);
   const reward = (r: string) => hasReward(unlocked, r);
@@ -95,10 +101,10 @@ export function CharacterPage() {
 
       <div className="card" style={{ gap: 12 }}>
         <div className="lbl">Stats</div>
-        {(Object.keys(STAT_NAMES) as (keyof CharStats)[]).map((k) => (
+        {(Object.keys(STAT_NAMES_V2) as (keyof CharStatsV2)[]).map((k) => (
           <div key={k} className="col gap4">
             <div className="row base">
-              <span className="t15">{STAT_NAMES[k].name}</span>
+              <span className="t15">{STAT_NAMES_V2[k].name}</span>
               <span className="num tn" style={{ fontSize: 18 }}>
                 {stats[k]}
                 <span className="t12 q"> / 20</span>
@@ -107,7 +113,7 @@ export function CharacterPage() {
             <div className="bar">
               <i style={{ width: `${(stats[k] / 20) * 100}%`, background: 'var(--gold)' }} />
             </div>
-            <span className="t12 q">{STAT_NAMES[k].what}</span>
+            <span className="t12 q">{STAT_NAMES_V2[k].what}</span>
           </div>
         ))}
         <div className="t12 d lh">XP comes from achievements, perfect days, sessions and check-ins. Stats follow the last few weeks, so they rise and fall with you.</div>

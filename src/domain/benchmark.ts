@@ -45,3 +45,15 @@ export function weeklyCheckIn(m: Pick<MaintenanceModel, 'kcal' | 'band' | 'statu
   const text = `Maintenance moved to ${fmtInt(m.kcal)} (±${m.band}). Keep your targets, or adjust?`;
   return move > 0 ? { text, proposal: { kcalMin: targets.kcalMin + move, kcalMax: targets.kcalMax + move } } : { text };
 }
+
+/**
+ * Waist ÷ height on a future date if the current trend holds, with a range that widens
+ * the further out it is (a third of the expected change, plus a floor for tape error).
+ */
+export function benchmarkOn(b: { current: number; slope?: number }, today: DayKey, date: DayKey): { value: number; range: [number, number] } | undefined {
+  if (b.slope === undefined) return undefined;
+  const days = Math.max(0, daysBetween(today, date));
+  const value = b.current + b.slope * days;
+  const spread = 0.005 + Math.abs(b.slope * days) / 3;
+  return { value, range: [value - spread, value + spread] };
+}

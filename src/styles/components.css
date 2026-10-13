@@ -1038,3 +1038,62 @@
   display: block;
   max-height: 70vh;
 }
+
+/* Monthly film: full-screen colour fields and huge type, tap to advance. */
+.film {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  padding: calc(env(safe-area-inset-top) + 14px) 22px calc(env(safe-area-inset-bottom) + 22px);
+  transition: background-color 0.5s ease;
+  cursor: pointer;
+}
+.film-bars {
+  display: flex;
+  gap: 4px;
+}
+.film-bars i {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(237, 230, 218, 0.22);
+}
+.film-bars i.on {
+  background: var(--text);
+}
+.film-close {
+  align-self: flex-end;
+  margin-top: 8px;
+}
+.film-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+}
+.film-big {
+  font-family: var(--serif);
+  font-weight: 300;
+  line-height: 0.95;
+  overflow-wrap: anywhere;
+}
+.film-foot {
+  cursor: default;
+}
+@media (prefers-reduced-motion: reduce) {
+  .film {
+    transition: none;
+  }
+}
+
+/* Settings: three short parts (your plan, your data, the feel). */
+.settings-part {
+  margin: 18px 0 2px;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 22px;
+  color: var(--text);
+}

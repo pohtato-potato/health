@@ -89,6 +89,19 @@ export function SettingsScreen() {
         Settings
       </h1>
 
+      <h2 className="settings-part">Your plan</h2>
+
+      <Group id="you" title="You">
+        <LinkRow title="Name" value={settings.name || 'Not set'} onClick={() => setEditor('you')} />
+        <LinkRow title="Height" value={settings.heightCm ? `${settings.heightCm} cm` : 'Not set'} onClick={() => setEditor('you')} />
+        <LinkRow title="Goal date" value={settings.goalDate ? fmtDayMonth(settings.goalDate) + ` ${settings.goalDate.slice(0, 4)}` : 'Not set'} onClick={() => setEditor('you')} />
+        <LinkRow title="Birthday" sub="For a theme on the day" value={settings.birthday ? fmtDayMonth(`2000-${settings.birthday}`) : 'Not set'} onClick={() => setEditor('you')} />
+        <div className="li">
+          <span>Units</span>
+          <span className="v">kg and inches</span>
+        </div>
+      </Group>
+
       <Group id="targets" title="Targets">
         <LinkRow title="Calories" value={`${fmtInt(t.kcalMin)}–${fmtInt(t.kcalMax)} kcal`} onClick={() => setEditor('targets')} />
         <LinkRow title="Protein" value={`${t.proteinG} g`} onClick={() => setEditor('targets')} />
@@ -105,7 +118,22 @@ export function SettingsScreen() {
         <SwitchRow title="Suggest target changes" sub="Only ever more food or more steps, and only when you tap to accept" checked={prefOn(p, 'suggestTargets')} onChange={(v) => setPref('suggestTargets', v)} />
       </Group>
 
+      <Group id="walking" title="Walking and places">
+        <div className="li" style={{ minHeight: 64 }}>
+          <span className="s">
+            <span>Your loop at home</span>
+            <small>Steps for one lap, used for laps stats</small>
+          </span>
+          <div style={{ width: 92 }}>
+            <IntField value={settings.loopSteps} onChange={(v) => patchSettings({ loopSteps: v })} placeholder="steps" className="field sm" />
+          </div>
+        </div>
+        <SwitchRow title="Confirm yesterday's steps each morning" sub="Samsung Health has the final count by then" checked={p.confirmSteps} onChange={(v) => setPref('confirmSteps', v)} />
+        <LinkRow title="Places" sub="Each brings its meal times, step goal and the foods shown first" value={(settings.places?.length ? settings.places : settings.homes).map((h) => h.name).join(', ')} onClick={() => setEditor('homes')} />
+      </Group>
+
       <Group id="checklist" title="Daily checklist">
+        <LinkRow title="Medicines" sub="Courses, stock, appointments and rewards" onClick={() => go('/medicines')} />
         {settings.checklist.map((i) => (
           <div key={i.id} className="li">
             <button type="button" className="s grow" style={{ textAlign: 'left' }} onClick={() => (setItem(i), setEditor('item'))}>
@@ -127,6 +155,67 @@ export function SettingsScreen() {
         <div className="li" style={{ minHeight: 44 }}>
           <small className="t12 d">No streaks or confetti here. It's a plain record you can show your doctor.</small>
         </div>
+      </Group>
+
+      <Group id="training" title="Training setup">
+        <SwitchRow
+          title="Battery saver for sessions"
+          sub={battery !== undefined ? `On by itself below 30%. The phone reports ${Math.round(battery * 100)}% now.` : "This browser doesn't report the battery, so switch it on by hand."}
+          checked={!!settings.prefs.batterySaver}
+          onChange={(v) => setPref('batterySaver', v)}
+        />
+        <LinkRow
+          title="Plan"
+          sub={settings.plan ? `${settings.plan.sessions.length} sessions · ${settings.plan.flags.length} joint checks` : 'None yet'}
+          value={settings.plan ? `${settings.plan.name}, from ${fmtDayMonth(settings.plan.from)}` : 'Import'}
+          onClick={() => (settings.plan ? go('/plan') : planInput.current?.click())}
+        />
+        {settings.plan && (
+          <button type="button" className="li q" onClick={() => planInput.current?.click()}>
+            Import a plan from a file
+          </button>
+        )}
+        <input ref={planInput} type="file" accept="application/json,.json" hidden onChange={(e) => (pickPlan(e.target.files?.[0]), (e.target.value = ''))} />
+        {plates.map((pl) => (
+          <SwitchRow
+            key={pl.kg}
+            title={`${fmtKg(pl.kg)} kg plates × ${pl.count}`}
+            sub={pl.owned ? undefined : 'Switch on when they arrive. Suggested loads then use them.'}
+            checked={pl.owned}
+            onChange={(v) => {
+              void patchSettings((s) => ({ equipment: { ...s.equipment, plates: s.equipment.plates.map((x) => (x.kg === pl.kg ? { ...x, owned: v } : x)) } }));
+              if (v) void bump('plates-on');
+            }}
+          />
+        ))}
+        <LinkRow
+          title="Plates and dumbbells"
+          sub={
+            plates.length
+              ? `Pairs: ${loadOptions(settings.equipment, 'pair').map(fmtKg).join(', ')} kg · one dumbbell: ${loadOptions(settings.equipment, 'single').map(fmtKg).join(', ')} kg`
+              : 'Tell Health what you have, and it suggests loads you can actually make.'
+          }
+          onClick={() => setEditor('plates')}
+        />
+        <SwitchRow title="Resistance band" checked={settings.equipment.band} onChange={(v) => patchSettings((s) => ({ equipment: { ...s.equipment, band: v } }))} />
+        <SwitchRow title="Soft ding when rest ends" sub="Plays in your headphones over your music" checked={p.ding} onChange={(v) => setPref('ding', v)} />
+        <button
+          type="button"
+          className="li"
+          onClick={() => {
+            unlockAudio();
+            scheduleDing(0.05);
+          }}
+        >
+          <span className="s">
+            <span>Test the ding</span>
+            <small>Play music first, then tap: it should sound over it</small>
+          </span>
+          <Icon name="play" size={18} stroke={1.8} color="var(--quiet)" />
+        </button>
+        <SwitchRow title="Keep the screen on during sessions" sub="So the timer and ding stay on time" checked={p.wakeLock} onChange={(v) => setPref('wakeLock', v)} />
+        <SwitchRow title="Buzz on records" checked={p.buzz} onChange={(v) => setPref('buzz', v)} />
+        <SwitchRow title="Tempo coach" sub="A Coach button on slow-lowering sets: the phone buzzes 3 seconds down, 1 up" checked={prefOn(p, 'tempoCoach')} onChange={(v) => setPref('tempoCoach', v)} />
       </Group>
 
       <Group id="food-categories" title="Food categories">
@@ -159,19 +248,7 @@ export function SettingsScreen() {
         </div>
       </Group>
 
-      <Group id="walking" title="Walking and places">
-        <div className="li" style={{ minHeight: 64 }}>
-          <span className="s">
-            <span>Your loop at home</span>
-            <small>Steps for one lap, used for laps stats</small>
-          </span>
-          <div style={{ width: 92 }}>
-            <IntField value={settings.loopSteps} onChange={(v) => patchSettings({ loopSteps: v })} placeholder="steps" className="field sm" />
-          </div>
-        </div>
-        <SwitchRow title="Confirm yesterday's steps each morning" sub="Samsung Health has the final count by then" checked={p.confirmSteps} onChange={(v) => setPref('confirmSteps', v)} />
-        <LinkRow title="Places" sub="Each brings its meal times, step goal and the foods shown first" value={(settings.places?.length ? settings.places : settings.homes).map((h) => h.name).join(', ')} onClick={() => setEditor('homes')} />
-      </Group>
+      <h2 className="settings-part">Your data</h2>
 
       <Group id="backups" title="Backups" plain>
         <div className="col gap12" style={{ padding: '18px 18px 6px', background: 'var(--surface)', border: '1px solid var(--hairline)', borderRadius: 20 }}>
@@ -299,123 +376,6 @@ export function SettingsScreen() {
         <LastfmFields settings={settings} />
       </Group>
 
-      <Group id="training" title="Training setup">
-        <SwitchRow
-          title="Battery saver for sessions"
-          sub={battery !== undefined ? `On by itself below 30%. The phone reports ${Math.round(battery * 100)}% now.` : "This browser doesn't report the battery, so switch it on by hand."}
-          checked={!!settings.prefs.batterySaver}
-          onChange={(v) => setPref('batterySaver', v)}
-        />
-        <LinkRow
-          title="Plan"
-          sub={settings.plan ? `${settings.plan.sessions.length} sessions · ${settings.plan.flags.length} joint checks` : 'None yet'}
-          value={settings.plan ? `${settings.plan.name}, from ${fmtDayMonth(settings.plan.from)}` : 'Import'}
-          onClick={() => (settings.plan ? go('/plan') : planInput.current?.click())}
-        />
-        {settings.plan && (
-          <button type="button" className="li q" onClick={() => planInput.current?.click()}>
-            Import a plan from a file
-          </button>
-        )}
-        <input ref={planInput} type="file" accept="application/json,.json" hidden onChange={(e) => (pickPlan(e.target.files?.[0]), (e.target.value = ''))} />
-        {plates.map((pl) => (
-          <SwitchRow
-            key={pl.kg}
-            title={`${fmtKg(pl.kg)} kg plates × ${pl.count}`}
-            sub={pl.owned ? undefined : 'Switch on when they arrive. Suggested loads then use them.'}
-            checked={pl.owned}
-            onChange={(v) => {
-              void patchSettings((s) => ({ equipment: { ...s.equipment, plates: s.equipment.plates.map((x) => (x.kg === pl.kg ? { ...x, owned: v } : x)) } }));
-              if (v) void bump('plates-on');
-            }}
-          />
-        ))}
-        <LinkRow
-          title="Plates and dumbbells"
-          sub={
-            plates.length
-              ? `Pairs: ${loadOptions(settings.equipment, 'pair').map(fmtKg).join(', ')} kg · one dumbbell: ${loadOptions(settings.equipment, 'single').map(fmtKg).join(', ')} kg`
-              : 'Tell Health what you have, and it suggests loads you can actually make.'
-          }
-          onClick={() => setEditor('plates')}
-        />
-        <SwitchRow title="Resistance band" checked={settings.equipment.band} onChange={(v) => patchSettings((s) => ({ equipment: { ...s.equipment, band: v } }))} />
-        <SwitchRow title="Soft ding when rest ends" sub="Plays in your headphones over your music" checked={p.ding} onChange={(v) => setPref('ding', v)} />
-        <button
-          type="button"
-          className="li"
-          onClick={() => {
-            unlockAudio();
-            scheduleDing(0.05);
-          }}
-        >
-          <span className="s">
-            <span>Test the ding</span>
-            <small>Play music first, then tap: it should sound over it</small>
-          </span>
-          <Icon name="play" size={18} stroke={1.8} color="var(--quiet)" />
-        </button>
-        <SwitchRow title="Keep the screen on during sessions" sub="So the timer and ding stay on time" checked={p.wakeLock} onChange={(v) => setPref('wakeLock', v)} />
-        <SwitchRow title="Buzz on records" checked={p.buzz} onChange={(v) => setPref('buzz', v)} />
-        <SwitchRow title="Tempo coach" sub="A Coach button on slow-lowering sets: the phone buzzes 3 seconds down, 1 up" checked={prefOn(p, 'tempoCoach')} onChange={(v) => setPref('tempoCoach', v)} />
-      </Group>
-
-      <Group id="feel" title="Voice and feel">
-        <LinkRow title="Voice" value={settings.voice === 'comm' ? 'Commentator' : settings.voice.charAt(0).toUpperCase() + settings.voice.slice(1)} onClick={() => back('/you')} />
-        <SwitchRow title="News ticker on Today" checked={prefOn(p, 'ticker')} onChange={(v) => setPref('ticker', v)} />
-        <SwitchRow title="Shake for a stat" sub="Shake the phone anywhere in the app" checked={prefOn(p, 'shake')} onChange={(v) => setPref('shake', v)} />
-        <LinkRow title="Theme" value={themeById(settings.theme)?.name ?? 'Dusk'} onClick={() => setEditor('theme')} />
-        <SwitchRow title="Seasonal themes" sub="Diwali, Holi and your birthday take over for the day" checked={prefOn(p, 'seasonal')} onChange={(v) => setPref('seasonal', v)} />
-      </Group>
-
-      <Group id="privacy" title="Privacy">
-        <SwitchRow title="Blur photos until tapped" checked={prefOn(p, 'blurPhotos')} onChange={(v) => setPref('blurPhotos', v)} />
-        {canUseFingerprint() && (
-          <SwitchRow
-            title="Fingerprint to open photos"
-            sub="Uses the phone's own screen lock. A gate for casual eyes: the photos never leave this phone either way."
-            checked={prefOn(p, 'lockPhotos') && !!settings.photoKey}
-            onChange={async (v) => {
-              if (!v) return setPref('lockPhotos', false);
-              try {
-                const key = await registerFingerprint();
-                await patchSettings((s) => ({ photoKey: key, prefs: { ...s.prefs, lockPhotos: true } }));
-              } catch {
-                toast({ text: 'The fingerprint wasn’t set up. Try again, or keep the blur on.' });
-              }
-            }}
-          />
-        )}
-      </Group>
-
-      <Group id="home" title="Home screen">
-        <div className="li" style={{ minHeight: 64 }}>
-          <span className="s">
-            <span>Shortcuts</span>
-            <small>Long-press the Health icon for Morning log, Add food and Start session.</small>
-          </span>
-        </div>
-        {!pwa.installed && (
-          <div className="li" style={{ minHeight: 64 }}>
-            <span className="s">
-              <span>Install</span>
-              <small>In Chrome, tap ⋮ then Add to Home screen, and open Health from its icon.</small>
-            </span>
-          </div>
-        )}
-      </Group>
-
-      <Group id="you" title="You">
-        <LinkRow title="Name" value={settings.name || 'Not set'} onClick={() => setEditor('you')} />
-        <LinkRow title="Height" value={settings.heightCm ? `${settings.heightCm} cm` : 'Not set'} onClick={() => setEditor('you')} />
-        <LinkRow title="Goal date" value={settings.goalDate ? fmtDayMonth(settings.goalDate) + ` ${settings.goalDate.slice(0, 4)}` : 'Not set'} onClick={() => setEditor('you')} />
-        <LinkRow title="Birthday" sub="For a theme on the day" value={settings.birthday ? fmtDayMonth(`2000-${settings.birthday}`) : 'Not set'} onClick={() => setEditor('you')} />
-        <div className="li">
-          <span>Units</span>
-          <span className="v">kg and inches</span>
-        </div>
-      </Group>
-
       <Group id="storage" title="Storage">
         <div className="li" style={{ minHeight: 64 }}>
           <span className="s">
@@ -441,6 +401,53 @@ export function SettingsScreen() {
         >
           Erase everything on this phone
         </button>
+      </Group>
+
+      <h2 className="settings-part">The feel</h2>
+
+      <Group id="feel" title="Voice and feel">
+        <LinkRow title="Voice" value={settings.voice === 'comm' ? 'Commentator' : settings.voice.charAt(0).toUpperCase() + settings.voice.slice(1)} onClick={() => back('/you')} />
+        <SwitchRow title="News ticker on Today" checked={prefOn(p, 'ticker')} onChange={(v) => setPref('ticker', v)} />
+        <SwitchRow title="Shake for a stat" sub="Shake the phone anywhere in the app" checked={prefOn(p, 'shake')} onChange={(v) => setPref('shake', v)} />
+        <LinkRow title="Theme" value={themeById(settings.theme)?.name ?? 'Dusk'} onClick={() => setEditor('theme')} />
+        <SwitchRow title="Seasonal themes" sub="Diwali, Holi and your birthday take over for the day" checked={prefOn(p, 'seasonal')} onChange={(v) => setPref('seasonal', v)} />
+      </Group>
+
+      <Group id="home" title="Home screen">
+        <div className="li" style={{ minHeight: 64 }}>
+          <span className="s">
+            <span>Shortcuts</span>
+            <small>Long-press the Health icon for Morning log, Add food and Start session.</small>
+          </span>
+        </div>
+        {!pwa.installed && (
+          <div className="li" style={{ minHeight: 64 }}>
+            <span className="s">
+              <span>Install</span>
+              <small>In Chrome, tap ⋮ then Add to Home screen, and open Health from its icon.</small>
+            </span>
+          </div>
+        )}
+      </Group>
+
+      <Group id="privacy" title="Privacy">
+        <SwitchRow title="Blur photos until tapped" checked={prefOn(p, 'blurPhotos')} onChange={(v) => setPref('blurPhotos', v)} />
+        {canUseFingerprint() && (
+          <SwitchRow
+            title="Fingerprint to open photos"
+            sub="Uses the phone's own screen lock. A gate for casual eyes: the photos never leave this phone either way."
+            checked={prefOn(p, 'lockPhotos') && !!settings.photoKey}
+            onChange={async (v) => {
+              if (!v) return setPref('lockPhotos', false);
+              try {
+                const key = await registerFingerprint();
+                await patchSettings((s) => ({ photoKey: key, prefs: { ...s.prefs, lockPhotos: true } }));
+              } catch {
+                toast({ text: 'The fingerprint wasn’t set up. Try again, or keep the blur on.' });
+              }
+            }}
+          />
+        )}
       </Group>
 
       <div className="t12 d center" style={{ paddingTop: 18 }}>

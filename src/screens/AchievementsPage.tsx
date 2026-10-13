@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { buildStats } from '../domain/achStats';
-import { ACTIVE_ACHIEVEMENTS as ACHIEVEMENTS, CATEGORIES, fmtProgress, text, type AchDef } from '../domain/achievements';
+import { ACH_SETS, ACTIVE_ACHIEVEMENTS as ACHIEVEMENTS, CATEGORIES, fmtProgress, setProgress, text, type AchDef } from '../domain/achievements';
 import { fmtDayMonth } from '../domain/format';
 import { useToday } from '../db/hooks';
 import { back } from '../router';
@@ -157,6 +157,32 @@ export function AchievementsPage() {
               </span>
             </div>
           ))}
+        </div>
+      )}
+      {filter === 'all' && (
+        <div className="card" style={{ gap: 0 }}>
+          <div className="lbl" style={{ paddingBottom: 6 }}>
+            Sets
+          </div>
+          {ACH_SETS.map((set) => {
+            const p = setProgress(set, new Set(unlocked.map((a) => a.id)));
+            return (
+              <div key={set.id} className="col gap6" style={{ padding: '10px 0', borderTop: '1px solid var(--divider)' }}>
+                <div className="row base">
+                  <b className="sf" style={{ fontWeight: 400, fontSize: 17 }}>
+                    {set.name}
+                  </b>
+                  <span className={`t12 ${p.complete ? 'gold' : 'q'}`}>
+                    {p.done} of {p.total}
+                  </span>
+                </div>
+                <div className="bar" style={{ height: 6 }}>
+                  <i style={{ width: `${(p.done / p.total) * 100}%`, background: p.complete ? 'var(--gold)' : 'var(--lavender)' }} />
+                </div>
+                <span className="t13 q">{p.complete ? `Finished: ${set.unlocks} is yours.` : `Finish it for ${set.unlocks}.`}</span>
+              </div>
+            );
+          })}
         </div>
       )}
       {filter === 'near' && near.length === 0 && <div className="t14 q">Nothing close yet. Keep logging and this fills up.</div>}

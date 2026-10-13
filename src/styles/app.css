@@ -1845,15 +1845,25 @@ textarea.field {
   padding: 10px 0;
 }
 .board-row .dest {
+  /* Two full lines for each destination: no names cut off. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+.board-row .was {
+  display: block;
+  color: #8a8a90;
+  text-decoration: line-through;
+  font-size: 10px;
 }
 .board-row > span:last-child {
   text-align: right;
 }
 .blink {
-  animation: blink 1.2s steps(2, jump-none) infinite;
+  animation: blink 2.4s ease-in-out infinite;
 }
 @keyframes blink {
   50% {

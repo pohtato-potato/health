@@ -13,6 +13,7 @@ import { back } from '../router';
 import { Seg } from '../ui/controls';
 import { Icon } from '../ui/Icon';
 import { journeyStart } from './Journey';
+import { benchmarkOn, benchmarkProgress } from '../domain/benchmark';
 
 const POSES: { id: Pose; label: string }[] = [
   { id: 'front', label: 'Front' },
@@ -122,6 +123,21 @@ export function RevealPage() {
             ? `${daysBetween(today, goal)} days to go. Waiting inside: ${lines.length} line${lines.length === 1 ? '' : 's'}, ${checkins.length} check-in${checkins.length === 1 ? '' : 's'}, and the whole year as a timelapse.`
             : 'Set a goal date in Settings, and everything you seal opens on that day.'}
         </div>
+        {(() => {
+          const b = goal && settings.heightCm ? benchmarkProgress(measurements, settings.heightCm, today) : undefined;
+          const f = b && goal ? benchmarkOn(b, today, goal) : undefined;
+          return f && b ? (
+            <div className="card" style={{ alignSelf: 'stretch', textAlign: 'left' }}>
+              <div className="lbl pearl">The forecast for that day</div>
+              <div className="num" style={{ fontSize: 30 }}>
+                {f.value.toFixed(2)} <span className="t14 q">waist ÷ height</span>
+              </div>
+              <div className="t13 q lh">
+                Between {f.range[0].toFixed(2)} and {f.range[1].toFixed(2)} if the last weeks' trend holds; {b.goal.toFixed(2)} is the goal. It is a straight line drawn forward, so treat it as a direction, not a promise.
+              </div>
+            </div>
+          ) : null;
+        })()}
       </div>
     );
   }

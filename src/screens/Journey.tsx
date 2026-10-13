@@ -14,6 +14,7 @@ import { ChallengeCard } from '../state/Challenge';
 import { OnThisDayCard } from './OnThisDay';
 import { ReviewSheet, reviewDue } from './Review';
 import { useState } from 'react';
+import { clockAt, rimFraction } from '../domain/journeyClock';
 import type { Day, FoodEntry, Settings, TrainingSession } from '../domain/types';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -124,37 +125,81 @@ const CLOCK_LINES: [number, string][] = [
   [24, 'Nearly midnight. Reveal day is almost here.'],
 ];
 
-/** The whole journey squeezed into one day. */
+/** The sky's colour through the day, for the clock's ring: night, dawn, day, dusk, night. */
+const SKY: [number, number, string][] = [
+  [0, 5, '#1c2050'],
+  [5, 8, '#e79a9a'],
+  [8, 17, '#8fb4ff'],
+  [17, 20, '#b7a6f0'],
+  [20, 24, '#1c2050'],
+];
+
+/**
+ * The whole journey as one day, on a ring that moves through night, dawn, day and dusk:
+ * the elapsed part lit in gold, check-ins marked on the rim, reveal day at midnight.
+ */
 function JourneyClock({ start, end, today }: { start: DayKey; end: DayKey; today: DayKey }) {
-  const total = Math.max(1, daysBetween(start, end));
-  const f = Math.min(1, Math.max(0, daysBetween(start, today) / total));
-  const minutes = Math.round(f * 1440);
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  const label = `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 || h === 24 ? 'am' : 'pm'}`;
+  const checkins = useLiveQuery(() => db.checkins.toArray(), []) ?? [];
+  const c = clockAt(start, end, today);
+  const h = Math.floor(c.minutes / 60);
   const line = CLOCK_LINES.find(([until]) => h < until)?.[1] ?? CLOCK_LINES[CLOCK_LINES.length - 1][1];
-  const angle = f * 2 * Math.PI - Math.PI / 2;
+  const R = 86;
+  const C = 100;
+  const at = (f: number) => f * 2 * Math.PI - Math.PI / 2;
+  const pt = (f: number, r: number) => ({ x: C + r * Math.cos(at(f)), y: C + r * Math.sin(at(f)) });
+  const hand = pt(c.fraction, R - 22);
   return (
-    <div className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-      <svg width="84" height="84" viewBox="0 0 84 84" role="img" aria-label={`Journey clock at ${label}`} style={{ flexShrink: 0 }}>
-        <circle cx="42" cy="42" r="38" fill="none" stroke="var(--hairline)" strokeWidth="1.5" />
-        <path d={arc(42, 42, 38, -Math.PI / 2, angle)} fill="none" stroke="var(--gold)" strokeWidth="2.5" strokeLinecap="round" />
-        {Array.from({ length: 24 }, (_, i) => {
-          const a = (i / 24) * 2 * Math.PI - Math.PI / 2;
-          const r1 = i % 6 === 0 ? 30 : 33;
-          return <line key={i} x1={42 + r1 * Math.cos(a)} y1={42 + r1 * Math.sin(a)} x2={42 + 35 * Math.cos(a)} y2={42 + 35 * Math.sin(a)} stroke="var(--dim)" strokeWidth={i % 6 === 0 ? 1.5 : 0.8} />;
+    <div className="card" style={{ alignItems: 'center' }}>
+      <div className="lbl gold" style={{ alignSelf: 'flex-start' }}>
+        Journey clock
+      </div>
+      <svg width="220" height="220" viewBox="0 0 200 200" role="img" aria-label={`Journey clock at ${c.label}, day ${c.day} of ${c.total}`}>
+        {SKY.map(([h0, h1, color]) => (
+          <path key={h0} d={arc(C, C, R, at(h0 / 24), at(h1 / 24))} fill="none" stroke={color} strokeOpacity="0.32" strokeWidth="10" />
+        ))}
+        <path d={arc(C, C, R, at(0), at(c.fraction))} fill="none" stroke="var(--gold)" strokeWidth="4" strokeLinecap="round" />
+        {checkins
+          .filter((x) => x.date >= start && x.date <= end)
+          .map((x) => {
+            const p = pt(rimFraction(start, end, x.date), R);
+            return <circle key={x.id} cx={p.x} cy={p.y} r="3.4" fill="var(--pearl)" stroke="var(--ink)" strokeWidth="1.2" />;
+          })}
+        <circle cx={C} cy={C - R} r="5" fill="none" stroke="var(--gold)" strokeWidth="1.6" />
+        {[
+          ['midnight', 0],
+          ['6 am', 0.25],
+          ['noon', 0.5],
+          ['6 pm', 0.75],
+        ].map(([t, f]) => {
+          const p = pt(f as number, R - 20);
+          return (
+            <text key={t as string} x={p.x} y={p.y + 3} textAnchor="middle" fill="var(--dim)" fontSize="8.5" fontFamily="var(--sans)">
+              {t}
+            </text>
+          );
         })}
-        <line x1="42" y1="42" x2={42 + 24 * Math.cos(angle)} y2={42 + 24 * Math.sin(angle)} stroke="var(--text)" strokeWidth="2.2" strokeLinecap="round" />
-        <circle cx="42" cy="42" r="3" fill="var(--text)" />
+        <line x1={C} y1={C} x2={hand.x} y2={hand.y} stroke="var(--text)" strokeWidth="2.4" strokeLinecap="round" />
+        <circle cx={C} cy={C} r="3.4" fill="var(--text)" />
+        <text x={C} y={C + 28} textAnchor="middle" fill="var(--text)" fontSize="15" fontFamily="var(--serif)">
+          {c.label}
+        </text>
+        <text x={C} y={C + 42} textAnchor="middle" fill="var(--quiet)" fontSize="8.5" fontFamily="var(--sans)">
+          day {fmtInt(c.day)} of {fmtInt(c.total)}
+        </text>
       </svg>
-      <div className="col gap4">
-        <div className="lbl gold">Journey clock</div>
-        <div className="sf" style={{ fontSize: 24 }}>
-          It's {label}.
-        </div>
-        <div className="t13 q lh">
-          {MONTHS[Number(start.slice(5, 7)) - 1]} to {MONTHS[Number(end.slice(5, 7)) - 1]} squeezed into one day. {line}
-        </div>
+      <div className="place-key t12 q" style={{ alignSelf: 'flex-start' }}>
+        <span>
+          <i className="key-dot solid" style={{ background: 'var(--gold)' }} /> so far
+        </span>
+        <span>
+          <i className="key-dot solid" style={{ background: 'var(--pearl)' }} /> check-ins
+        </span>
+        <span>
+          <i className="key-dot" style={{ borderColor: 'var(--gold)' }} /> reveal day
+        </span>
+      </div>
+      <div className="t14 q lh" style={{ alignSelf: 'stretch' }}>
+        {MONTHS[Number(start.slice(5, 7)) - 1]} to {MONTHS[Number(end.slice(5, 7)) - 1]} squeezed into one day. {line}
       </div>
     </div>
   );

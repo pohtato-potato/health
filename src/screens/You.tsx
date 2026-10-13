@@ -5,6 +5,7 @@ import { fmtDayMonth, fmtInt } from '../domain/format';
 import { lastFullWeek } from '../domain/weekly';
 import { chapterAt, kmFromSteps, positionAt, STRIDE_M } from '../domain/walk';
 import { whatIf } from '../domain/whatIf';
+import { lastMonth } from '../domain/film';
 import { useAllDays, useAllSets, useEntriesBetween, useMeasurements, useSessions, useSettings, useToday } from '../db/hooks';
 import { go } from '../router';
 import { Dial } from '../ui/Dial';
@@ -13,12 +14,16 @@ import { BenchmarkCard } from './BenchmarkCard';
 import { useLevel, wornTitle } from './Character';
 import { Heatmap } from './Heatmap';
 
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
 const DOORS: { label: string; sub: string; path: string; icon: IconName }[] = [
   { label: 'Tracks', sub: 'Every measure', path: '/tracks', icon: 'tracks' },
   { label: 'Medicines', sub: 'Courses, stock, visits', path: '/medicines', icon: 'pill' },
   { label: 'Diary', sub: 'Every day', path: '/diary', icon: 'calendar' },
   { label: 'Achievements', sub: 'Sets and progress', path: '/achievements', icon: 'win' },
   { label: 'Character', sub: 'Stats and titles', path: '/character', icon: 'shield' },
+  { label: 'Journey clock', sub: 'The whole journey as one day', path: '/journey', icon: 'clock' },
+  { label: 'Experiments', sub: 'Change one thing, see what moves', path: '/experiments', icon: 'trend' },
   { label: 'Night sky', sub: 'A star per perfect day', path: '/sky', icon: 'night' },
 ];
 
@@ -75,6 +80,16 @@ export function You() {
             <span className="t13 q">A short review, tap through</span>
           </span>
           <span className="btn sm">Open</span>
+        </button>
+      )}
+
+      {Number(today.slice(8, 10)) <= 7 && days.some((d) => d.date.startsWith(lastMonth(today))) && (
+        <button type="button" className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }} onClick={() => go('/film')}>
+          <span className="col gap2 grow" style={{ textAlign: 'left' }}>
+            <span className="t16">Your {MONTH_NAMES[Number(lastMonth(today).slice(5, 7)) - 1]} film</span>
+            <span className="t13 q">Last month in big numbers, titled by your workout song</span>
+          </span>
+          <span className="btn sm">Play</span>
         </button>
       )}
 

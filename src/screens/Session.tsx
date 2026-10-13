@@ -541,12 +541,15 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
 
             {(() => {
               const cue = cueFor(ex, history.filter((h) => h.exerciseId === ex.id));
-              return cue ? (
+              return (
                 <div className="cue">
-                  <span className="lbl sm gold">Your cue</span>
-                  <span className="t15 lh">{cue}</span>
+                  {cue && <span className="lbl sm gold">Your cue</span>}
+                  {cue && <span className="t15 lh">{cue}</span>}
+                  <button type="button" className="link t13" style={{ alignSelf: 'flex-start', minHeight: 32 }} onClick={() => go('/guide', { ex: ex.id })}>
+                    The full guide
+                  </button>
                 </div>
-              ) : null;
+              );
             })()}
             <SetTable
               ex={ex}

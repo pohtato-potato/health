@@ -931,3 +931,9 @@ export const ACH_SETS: AchSet[] = [
   setOf('sleep', 'Night owl reformed', 'sleep', 'the moonlight theme'),
   setOf('steady', 'Steady hands', 'streaks', 'shooting stars'),
 ].filter((s) => s.ids.length >= 4);
+
+/** How far through a set you are, and whether it is finished. */
+export function setProgress(set: AchSet, unlocked: Set<string>): { done: number; total: number; complete: boolean } {
+  const done = set.ids.filter((id) => unlocked.has(id)).length;
+  return { done, total: set.ids.length, complete: done === set.ids.length };
+}

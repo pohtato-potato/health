@@ -45,6 +45,9 @@ import { WalkTab } from './screens/WalkTab';
 import { ArrivalCardPage } from './screens/ArrivalCard';
 import { NightSkyPage } from './screens/NightSky';
 import { MedicinesPage } from './screens/Medicines';
+import { ExerciseGuidePage } from './screens/ExerciseGuide';
+import { MonthlyFilmPage } from './screens/MonthlyFilm';
+import { ExperimentsPage } from './screens/Experiments';
 
 /** A page loaded when first opened, from its module's named export. */
 function page<K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K) {
@@ -99,6 +102,9 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/arrival': { el: () => <ArrivalCardPage /> },
   '/sky': { el: () => <NightSkyPage /> },
   '/medicines': { el: () => <MedicinesPage /> },
+  '/guide': { el: () => <ExerciseGuidePage /> },
+  '/film': { el: () => <MonthlyFilmPage /> },
+  '/experiments': { el: () => <ExperimentsPage /> },
   '/track': { el: () => <TrackPage /> },
   '/food': { el: () => <FoodToday /> },
   '/close': { el: () => <CloseDay /> },
