@@ -1,5 +1,10 @@
-import type { DayKey } from './dates';
+import { daysBetween, type DayKey } from './dates';
 import type { ForecastRecord } from './types';
+
+/** A date as a day count, so date forecasts can be stored as numbers. */
+export function dayNumber(d: DayKey): number {
+  return daysBetween('2000-01-01', d);
+}
 
 /**
  * Fills in the outcome of every forecast whose day has come, once. A forecast already

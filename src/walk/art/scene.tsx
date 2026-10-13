@@ -64,7 +64,7 @@ export function Scene({ city, region: regionIn, part, people = false, landmarkSc
   const accent = mix(light.sky[2], '#ffffff', 0.5);
   const sunY = { dawn: 0.5, day: 0.18, dusk: 0.46, night: 0.2 }[part] * H;
   const id = `scene-${region}-${part}-${city ?? 'none'}`.replace(/\s/g, '');
-  const ground = H * 0.74;
+  const ground = H * 0.8;
   const s = 1.15 * landmarkScale;
 
   return (
@@ -87,6 +87,7 @@ export function Scene({ city, region: regionIn, part, people = false, landmarkSc
         <circle cx={W * 0.78} cy={sunY} r={70} fill={`url(#${id}-glow)`} />
         <circle cx={W * 0.78} cy={sunY} r={part === 'night' ? 9 : 13} fill={light.glow} />
         <path d={shapes[0]} fill={light.layers[0]} />
+        <path d={shapes[1]} fill={light.layers[1]} />
         {lm && (
           <g transform={`translate(${W * 0.5 - 60 * s} ${ground}) scale(${s})`}>
             {lm.paths.map((d, i) => (
@@ -96,7 +97,6 @@ export function Scene({ city, region: regionIn, part, people = false, landmarkSc
             {lit && lm.lights?.map((d, i) => <path key={`l${i}`} d={d} fill="#f2c46d" opacity={0.9} />)}
           </g>
         )}
-        <path d={shapes[1]} fill={light.layers[1]} />
         <path d={shapes[2]} fill={light.layers[2]} />
         <path d={shapes[3]} fill={light.layers[3]} />
         {people && (

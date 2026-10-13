@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { addEntry, changePlace, closeDay, moveEntry, patchSettings, setStatusRange } from '../src/db/actions';
 import { db, HealthDB, setDatabase } from '../src/db/db';
 import { resolveForecasts, saveForecast } from '../src/db/forecasts';
+import { dayNumber } from '../src/domain/forecastStore';
 
 let n = 0;
 beforeEach(async () => {
@@ -67,5 +68,14 @@ describe('forecast store', () => {
     await resolveForecasts('2026-11-12');
     const r = (await db.forecasts.toArray())[0];
     expect(r.outcome).toBeCloseTo(0.5208, 3);
+  });
+
+  it('a walk forecast is a hit when the city is reached inside its range', async () => {
+    await saveForecast({ kind: 'walk:Agra', targetDate: '2026-10-20', low: dayNumber('2026-10-10'), high: dayNumber('2026-10-20') }, '2026-10-01');
+    for (let i = 1; i <= 14; i++) await db.days.put({ date: `2026-10-${String(i).padStart(2, '0')}`, steps: 25000 });
+    await resolveForecasts('2026-10-21');
+    const r = (await db.forecasts.toArray()).find((x) => x.kind === 'walk:Agra')!;
+    expect(r.outcome).toBeGreaterThanOrEqual(r.low);
+    expect(r.outcome).toBeLessThanOrEqual(r.high);
   });
 });

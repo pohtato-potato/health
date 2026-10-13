@@ -804,3 +804,18 @@
   border: 1px dashed var(--btn-border);
   color: var(--dim);
 }
+
+/* Arrival flyover */
+.flyover {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: var(--deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.flyover svg {
+  width: 100%;
+  height: 100%;
+}

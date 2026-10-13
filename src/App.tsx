@@ -45,6 +45,7 @@ import { MuscleMapPage } from './screens/MuscleMap';
 import { ShortSessionSheet } from './sheets/ShortSession';
 import { WeeklyReviewPage } from './screens/WeeklyReview';
 import { WalkTab } from './screens/WalkTab';
+import { ArrivalCardPage } from './screens/ArrivalCard';
 
 /** A page loaded when first opened, from its module's named export. */
 function page<K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K) {
@@ -99,6 +100,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/tracks': { el: () => <Tracks />, tab: 'you' },
   '/journey': { el: () => <Journey /> },
   '/walk': { el: () => <WalkTab />, tab: 'walk' },
+  '/arrival': { el: () => <ArrivalCardPage /> },
   '/track': { el: () => <TrackPage /> },
   '/food': { el: () => <FoodToday /> },
   '/close': { el: () => <CloseDay /> },
