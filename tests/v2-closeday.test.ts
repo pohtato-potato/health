@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { addEntry, closeDay, moveEntry, patchSettings, setStatusRange } from '../src/db/actions';
+import { addEntry, changePlace, closeDay, moveEntry, patchSettings, setStatusRange } from '../src/db/actions';
 import { db, HealthDB, setDatabase } from '../src/db/db';
 
 let n = 0;
@@ -41,5 +41,17 @@ describe('status ranges', () => {
     await setStatusRange('2026-10-13', '2026-10-14', undefined);
     expect((await db.days.get('2026-10-12'))?.status).toBe('sick');
     expect((await db.days.get('2026-10-13'))?.status).toBeUndefined();
+  });
+});
+
+describe('changing place from Today', () => {
+  it('sets the day place in the morning, and records a mid-day change later', async () => {
+    await changePlace('2026-10-13', 'p-office', new Date(2026, 9, 13, 9, 0).getTime());
+    expect((await db.days.get('2026-10-13'))?.place).toBe('p-office');
+    const t = new Date(2026, 9, 13, 18, 30).getTime();
+    await changePlace('2026-10-13', 'p-home', t);
+    const d = await db.days.get('2026-10-13');
+    expect(d?.place).toBe('p-office');
+    expect(d?.placeChanges).toEqual([{ at: t, place: 'p-home' }]);
   });
 });

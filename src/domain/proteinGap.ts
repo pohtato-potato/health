@@ -35,6 +35,9 @@ export function proteinGap(
     .filter(({ v }) => v.protein > 0 && v.kcal > 0)
     .sort((a, b) => (b.v.protein / b.v.kcal) * Math.log2(1 + (eaten.get(b.f.id) ?? 0)) - (a.v.protein / a.v.kcal) * Math.log2(1 + (eaten.get(a.f.id) ?? 0)));
   let room = Math.max(0, today.kcalMax - today.kcal);
+  // When one usual food closes the gap alone, the lightest such food is enough.
+  const single = ranked.filter(({ v }) => v.protein >= gapG && v.kcal <= room).sort((a, b) => a.v.kcal - b.v.kcal)[0];
+  if (single) return { mode: 'gap', gapG, picks: [{ foodId: single.f.id, name: single.f.name, amount: single.f.defaultAmount, proteinG: single.v.protein, kcal: single.v.kcal }] };
   let left = gapG;
   const picks: GapPick[] = [];
   for (const { f, v } of ranked) {

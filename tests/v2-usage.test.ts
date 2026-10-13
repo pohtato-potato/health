@@ -47,4 +47,11 @@ describe('usage log and edit history', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0].at).toBe(now - 10 * day);
   });
+
+  it('logging food, a set, steps, a tick or the morning log records a log event', async () => {
+    await addEntry(entry);
+    await logSet(set);
+    const kinds = (await db.usage.toArray()).map((u) => `${u.kind}:${u.detail}`);
+    expect(kinds).toEqual(expect.arrayContaining(['log:food', 'log:set']));
+  });
 });

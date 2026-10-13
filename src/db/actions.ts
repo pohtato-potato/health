@@ -17,6 +17,7 @@ import type {
 } from '../domain/types';
 import { db, uid } from './db';
 import { recordEdit } from './edits';
+import { logUsage } from './usage';
 import { DEFAULT_EQUIPMENT, DEFAULT_PLAN } from '../domain/defaultPlan';
 
 export function defaultSettings(): Settings {
@@ -91,6 +92,7 @@ export async function bump(id: string, opts: { day?: DayKey; value?: string; by?
 }
 
 export async function setSteps(date: DayKey, steps: number, final = false) {
+  void logUsage('log', 'steps');
   await patchDay(date, { steps: Math.max(0, Math.round(steps)), stepsAt: Date.now(), ...(final ? { stepsFinal: true } : {}) });
   if (date === dayKey() && new Date().getHours() < 12 && steps > 9000) await bump('steps-9000-by-noon', { day: date });
 }
@@ -110,6 +112,7 @@ export interface MorningInput {
 
 /** Saves the morning log. Only what was given is written; nothing is carried over silently. */
 export async function saveMorningLog(date: DayKey, input: MorningInput, yesterday: DayKey): Promise<void> {
+  void logUsage('log', 'morning');
   await db.transaction('rw', db.days, async () => {
     const now = Date.now();
     const cur = (await db.days.get(date)) ?? { date };
@@ -134,6 +137,7 @@ export async function saveMorningLog(date: DayKey, input: MorningInput, yesterda
 
 /** Ticks or unticks a checklist slot. A tick clears "missed"; `at` records when it was really taken. */
 export async function setTick(date: DayKey, key: string, on: boolean, at = Date.now()) {
+  void logUsage('tick', key);
   await patchDay(date, (d) => {
     const ticks = { ...d.ticks };
     const missed = { ...d.missed };
@@ -170,6 +174,7 @@ export async function addEntry(e: Omit<FoodEntry, 'id'> & { id?: string }): Prom
   const eatenAt = e.eatenAt ?? (await plannedEatenAt(e.date, e.meal, e.at, true));
   const entry: FoodEntry = { ...e, id: e.id ?? uid(), eatenAt };
   await db.entries.put(entry);
+  void logUsage('log', 'food');
   return entry;
 }
 
@@ -183,6 +188,7 @@ export async function addEntries(batch: (Omit<FoodEntry, 'id'> & { id?: string }
     out.push({ ...e, id: e.id ?? uid(), eatenAt: times.get(k)! });
   }
   await db.entries.bulkPut(out);
+  void logUsage('log', 'food');
   return out;
 }
 
@@ -261,6 +267,7 @@ export async function patchSession(id: string, patch: Partial<TrainingSession>) 
 }
 
 export async function logSet(set: Omit<SetEntry, 'id'> & { id?: string }): Promise<SetEntry> {
+  void logUsage('log', 'set');
   const rec: SetEntry = { ...set, id: set.id ?? uid() };
   const before = set.id ? await db.sets.get(set.id) : undefined;
   await db.sets.put(rec);
@@ -306,5 +313,13 @@ export async function setStatusRange(from: DayKey, to: DayKey, status: Status | 
       else delete next.status;
       await db.days.put(next);
     }
+  });
+}
+
+/** Before noon, or on a day with no place yet, sets where the day is; later it records a mid-day change. */
+export async function changePlace(date: DayKey, place: string, at = Date.now()) {
+  await patchDay(date, (d) => {
+    if (!d.place || new Date(at).getHours() < 12) return { place, home: place, placeChanges: undefined };
+    return { placeChanges: [...(d.placeChanges ?? []), { at, place }] };
   });
 }

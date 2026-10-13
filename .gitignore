@@ -14,3 +14,4 @@ private/
 # Local working folders (plan ledger, design-tool sketches)
 .superpowers/
 .impeccable/
+tsconfig.tsbuildinfo

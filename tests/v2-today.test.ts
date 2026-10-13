@@ -44,6 +44,11 @@ describe('protein gap', () => {
     expect(g.picks.reduce((n, p) => n + p.kcal, 0)).toBeLessThanOrEqual(2050 - 1240);
   });
 
+  it('a small gap gets the lightest usual food that covers it', () => {
+    const g = proteinGap({ protein: 126, proteinTarget: 130, kcal: 1500, kcalMax: 2050 }, foods, history, at(13, 19));
+    expect(g.picks.map((p) => p.foodId)).toEqual(['eggs']);
+  });
+
   it('after 22:00 protein gap yields to close the day', () => {
     expect(proteinGap({ protein: 96, proteinTarget: 130, kcal: 1240, kcalMax: 2050 }, foods, history, at(13, 22, 5)).mode).toBe('close');
   });
