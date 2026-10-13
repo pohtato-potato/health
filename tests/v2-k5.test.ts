@@ -77,8 +77,13 @@ describe('monthly film', () => {
     ];
     const f = monthlyFilm('2026-09', { days, sessions: [s1], sets: [{ date: '2026-09-03', mark: '!!' as const }], songs });
     expect(f.title).toBe('cold/mess');
-    expect(f.slides.map((s) => s.big)).toEqual(['25,000', '1', '1', '15,000']);
+    expect(f.heading).toBe('September, scored by cold/mess');
+    // Kilometres first, as in the mockup, then sessions, records and the best day.
+    expect(f.slides.map((s) => s.big)).toEqual(['19', '1', '1', '15,000']);
+    expect(f.slides[0].small).toMatch(/^kilometres walked/);
+    expect(f.next).toMatch(/^Next: /);
     expect(monthlyFilm('2026-08', { days, sessions: [], sets: [], songs: [] }).title).toBe('August');
+    expect(monthlyFilm('2026-08', { days, sessions: [], sets: [], songs: [] }).heading).toBe('August');
   });
 });
 
