@@ -2,6 +2,7 @@ import type { DayKey } from './dates';
 import { lowerFirst } from './format';
 import { fmtKg, isBigJump, nextLoad } from './loads';
 import { bandLevel, bottomOfRange, exerciseName, realSets, topOfRange, valueOfSet, type ExerciseDef, type PlanState, type TriggerDef } from './plan';
+import { FORM_LABELS } from './quality';
 import type { Equipment, SetEntry } from './types';
 
 export type AdviceKind = 'heavier' | 'tempo-first' | 'needs-plates' | 'maxed' | 'variant' | 'add-load' | 'band';
@@ -231,7 +232,10 @@ export function heavierOffer(st: ExerciseStatus): HeavierOffer | undefined {
   const forms = working.map((s) => s.form).filter((f) => f !== undefined);
   const rirs = working.map((s) => s.rir).filter((r) => r !== undefined);
   const lines = [`Last time: ${reps.join(', ')}${st.loadKg !== null ? ` at ${fmtKg(st.loadKg)} kg` : ''}, every set at the top.`];
-  if (forms.length) lines.push(`Form ${Math.min(...forms)} or better on every set.`);
+  if (forms.length) {
+    const low = Math.min(...forms);
+    lines.push(low === 5 ? 'Textbook form on every set.' : `Form ${FORM_LABELS[low - 1]} or better on every set.`);
+  }
   if (rirs.length) lines.push(`${Math.min(...rirs)}${Math.min(...rirs) >= 3 ? '+' : ''} rep${Math.min(...rirs) === 1 ? '' : 's'} left in the tank.`);
   return { from: st.loadKg ?? 0, to: toKg, case: lines };
 }
@@ -245,4 +249,16 @@ export function loadTonight(st: ExerciseStatus, decision: 'yes' | 'no' | undefin
 export function loadSoFar(mine: SetEntry[], exerciseId: string, fallback: number | null): number | null {
   const done = realSets(mine).filter((s) => s.exerciseId === exerciseId && !s.drop);
   return done.length ? done.reduce((a, b) => (b.at > a.at ? b : a)).loadKg : fallback;
+}
+
+/** What to do tonight, after the heavier offer has been answered (or held back by the form gate). */
+export function adviceTonight(st: ExerciseStatus, decision: 'yes' | 'no' | undefined): string | undefined {
+  const a = st.advice;
+  if (!a) return undefined;
+  if ((a.kind !== 'heavier' && a.kind !== 'add-load') || a.toKg === undefined) return a.tonight;
+  const now = st.loadKg !== null ? `${fmtKg(st.loadKg)} kg` : 'bodyweight';
+  if (decision === 'yes') return a.tonight;
+  if (decision === 'no') return `Staying at ${now} tonight. Heavier is offered again next time.`;
+  if (!heavierOffer(st)) return `${fmtKg(a.toKg)} kg is next, once every set is solid (form 4+) with a rep in reserve. Tonight, ${now}.`;
+  return a.tonight;
 }

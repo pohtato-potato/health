@@ -2,9 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { buzz, scheduleDing, unlockAudio, wakeLockManager } from '../audio';
 import { lowerFirst } from '../domain/format';
 import { chipLoads, fmtKg } from '../domain/loads';
-import { describe, findLogged, SetTable, type Row } from './session/SetTable';
+import { describe, findLogged, SetTable, type Draft, type Row } from './session/SetTable';
 import { HeavierMoment } from './session/HeavierMoment';
 import { markFor } from '../domain/marks';
+import { cueFor } from '../domain/quality';
+import { challengeRest } from '../domain/setChallenges';
 import {
   allExercises,
   bottomOfRange,
@@ -24,7 +26,7 @@ import {
   type ExerciseDef,
   type PlanDef,
 } from '../domain/plan';
-import { exerciseStatus, heavierOffer, historyFor, loadSoFar, loadTonight } from '../domain/progression';
+import { adviceTonight, exerciseStatus, heavierOffer, historyFor, loadSoFar, loadTonight } from '../domain/progression';
 import type { SetEntry, Settings, Side, TrainingSession } from '../domain/types';
 import { bump, deleteSet, discardSession, logSet, patchSession, patchSettings, startSession } from '../db/actions';
 import { APP_START } from '../appStart';
@@ -145,7 +147,7 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
     return i < 0 ? Math.max(groups.length - 1, 0) : i;
   });
   const [editing, setEditing] = useState<string | null>(null);
-  const [draft, setDraft] = useState<{ kg?: string; val?: string }>({});
+  const [draft, setDraft] = useState<Draft>({});
   const [rest, setRest] = useState<{ endsAt: number; total: number } | null>(null);
   const [watch, setWatch] = useState<{ key: string; startedAt: number } | null>(null);
   const [swapFor, setSwapFor] = useState<string | null>(null);
@@ -251,11 +253,20 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
     const tempo = !!session.tempo?.[r.ex.id];
     const lead = sidesFor(r.ex, session.firstSide?.[r.ex.id])[0];
     const firstSide = lead === 'both' ? undefined : lead;
-    const base = { setNo: r.setNo, side: r.side, loadKg: asSaved.loadKg, tempo, drop: r.drop || undefined, ...(firstSide ? { firstSide } : {}) };
+    const prev = existing ?? undefined;
+    const quality = {
+      form: draft.form ?? prev?.form,
+      cleanReps: draft.form === 5 ? undefined : draft.clean ?? prev?.cleanReps,
+      rir: draft.rir ?? prev?.rir,
+      challenges: draft.challenges ?? prev?.challenges,
+      faults: draft.faults ?? prev?.faults,
+      discomfort: draft.discomfort ?? prev?.discomfort,
+    };
+    const base = { setNo: r.setNo, side: r.side, loadKg: asSaved.loadKg, tempo, drop: r.drop || undefined, ...(firstSide ? { firstSide } : {}), ...quality };
     const measure = measured(r.ex, val);
     // A record has to beat everything before it, earlier sets tonight included.
     const before = [...history, ...mine.filter((s) => s.id !== existing?.id && (!existing || s.at < existing.at))];
-    const mark = markFor({ ...base, ...measure }, historyFor(r.ex, settings.planState, before), st.last?.sets ?? [], bottomOfRange(r.ex) ?? 1);
+    const mark = markFor({ ...base, ...measure }, historyFor(r.ex, settings.planState, before), st.last?.sets ?? [], bottomOfRange(r.ex) ?? 1, { clean: settings.formRecordsClean !== false });
     await logSet({
       id: existing?.id,
       sessionId: session.id,
@@ -286,7 +297,8 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
     const next = rows[idx + 1];
     if (!next || next.setNo !== r.setNo || rows.slice(idx + 1).every((x) => findLogged(mine, x))) {
       if (!rested) return;
-      startRest(Math.max(...group.map((e) => e.restSec ?? (measureOf(e) === 'seconds' ? 60 : 90))));
+      const done = findLogged(mine, r);
+      startRest(Math.max(...group.map((e) => challengeRest(e, e.id === r.ex.id ? { challenges: done?.challenges ?? draft.challenges } : {}))));
     } else if (next.ex.id !== r.ex.id) {
       window.setTimeout(() => document.getElementById(`row-${next.key}`)?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' }), 120);
     }
@@ -412,7 +424,7 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
             {st.advice && (
               <div className="col gap4" style={{ padding: '12px 16px', border: '1px solid var(--gold-border)', borderRadius: 16, background: 'var(--gold-bg)' }}>
                 <div className="lbl sm gold">{st.advice.title}</div>
-                <div className="t14 lh">{st.advice.tonight}</div>
+                <div className="t14 lh">{adviceTonight(st, session.heavier?.[ex.id])}</div>
                 {st.advice.toVariant !== undefined && (
                   <button
                     type="button"
@@ -489,6 +501,15 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
 
             {coach === ex.id && <TempoCoach key={current?.key ?? ex.id} reps={topOfRange(ex) ?? bottomOfRange(ex) ?? 10} vibrate={settings.prefs.buzz} onStop={() => setCoach(null)} />}
 
+            {(() => {
+              const cue = cueFor(ex, history.filter((h) => h.exerciseId === ex.id));
+              return cue ? (
+                <div className="cue">
+                  <span className="lbl sm gold">Your cue</span>
+                  <span className="t15 lh">{cue}</span>
+                </div>
+              ) : null;
+            })()}
             <SetTable
               ex={ex}
               st={st}
@@ -502,7 +523,7 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
                 setEditing(key);
                 const r = exRows.find((x) => x.key === key);
                 const s = r && findLogged(mine, r);
-                setDraft(s ? { kg: s.loadKg?.toString(), val: valueOf(s)?.toString() } : {});
+                setDraft(s ? { kg: s.loadKg?.toString(), val: valueOf(s)?.toString(), form: s.form, clean: s.cleanReps, rir: s.rir, challenges: s.challenges, faults: s.faults, discomfort: s.discomfort === 'knee' || s.discomfort === 'wrist' ? s.discomfort : undefined } : {});
               }}
               defaults={defaults}
               kgEditable={kgEditable}

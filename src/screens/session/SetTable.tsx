@@ -1,6 +1,7 @@
 import { unlockAudio } from '../../audio';
 import { fmtKg } from '../../domain/loads';
-import { measureOf, valueOfSet, type ExerciseDef } from '../../domain/plan';
+import { CHALLENGE_NAMES, measureOf, valueOfSet, type ExerciseDef } from '../../domain/plan';
+import { FAULTS, FORM_LABELS } from '../../domain/quality';
 import type { ExerciseStatus } from '../../domain/progression';
 import type { SetEntry, Side } from '../../domain/types';
 import { Dial } from '../../ui/Dial';
@@ -17,7 +18,15 @@ export interface Row {
 export interface Draft {
   kg?: string;
   val?: string;
+  form?: 1 | 2 | 3 | 4 | 5;
+  clean?: number;
+  rir?: number;
+  challenges?: string[];
+  faults?: string[];
+  discomfort?: 'knee' | 'wrist';
 }
+
+const toggle = (xs: string[] | undefined, x: string) => (xs?.includes(x) ? xs.filter((y) => y !== x) : [...(xs ?? []), x]);
 
 export const findLogged = (mine: SetEntry[], r: Row) => mine.find((s) => s.exerciseId === r.ex.id && s.setNo === r.setNo && s.side === r.side && !!s.drop === r.drop);
 
@@ -173,7 +182,8 @@ export function SetTable({
                   </div>
                   <div className={`t16 center ${logged ? '' : 'f'}`}>
                     {logged ? valueOfSet(logged) : d.val ?? ''}
-                    {logged?.cleanReps !== undefined && logged.cleanReps < (logged.reps ?? 0) && <span className="t11 q"> · {logged.cleanReps}</span>}
+                    {logged?.cleanReps !== undefined && logged.cleanReps < (logged.reps ?? 0) && <span className="t11 q"> · {logged.cleanReps} clean</span>}
+                    {logged?.form && <i className="formdot" style={{ background: `var(--f${logged.form})` }} aria-label={`form ${FORM_LABELS[logged.form - 1]}`} />}
                   </div>
                   <div className="mark" style={{ color: logged?.mark === '!!' ? 'var(--gold)' : logged?.mark === '!' ? 'var(--sage)' : 'var(--quiet)' }}>
                     {logged?.mark ?? ''}
@@ -215,6 +225,85 @@ export function SetTable({
                     ))}
                   </div>
                 ) : null}
+                {measure === 'reps' && !r.drop && (
+                  <>
+                    <div className="chiprow" role="radiogroup" aria-label="Form">
+                      {FORM_LABELS.map((word, i) => {
+                        const f = (i + 1) as 1 | 2 | 3 | 4 | 5;
+                        const on = draft.form === f;
+                        return (
+                          <button key={word} type="button" role="radio" aria-checked={on} className={`chip sm formchip${on ? ' on' : ''}`} style={on ? { background: `var(--f${f})`, borderColor: `var(--f${f})` } : undefined} onClick={() => setDraft({ ...draft, form: on ? undefined : f })}>
+                            {f} {word}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {draft.form !== undefined && draft.form < 5 && (
+                      <div className="row" style={{ gap: 10, justifyContent: 'flex-start' }}>
+                        <span className="t13 q">Clean reps before it slipped</span>
+                        <input
+                          className="field sm"
+                          style={{ width: 64 }}
+                          inputMode="numeric"
+                          aria-label="Clean reps"
+                          placeholder={String(valNow ?? '')}
+                          value={draft.clean ?? ''}
+                          onChange={(e) => setDraft({ ...draft, clean: e.target.value ? Number(e.target.value.replace(/[^\d]/g, '')) : undefined })}
+                        />
+                      </div>
+                    )}
+                    <div className="chiprow" role="radiogroup" aria-label="Reps in reserve">
+                      <span className="t13 q" style={{ alignSelf: 'center', flexShrink: 0 }}>
+                        Left in the tank
+                      </span>
+                      {[0, 1, 2, 3].map((n) => {
+                        const on = draft.rir === n;
+                        return (
+                          <button key={n} type="button" role="radio" aria-checked={on} className={`chip sm${on ? ' on' : ''}`} onClick={() => setDraft({ ...draft, rir: on ? undefined : n })}>
+                            {n === 3 ? '3+' : n}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+                {(ex.challenges?.length ?? 0) > 0 && (
+                  <div className="chiprow" aria-label="Challenges">
+                    {ex.challenges!.map((c) => {
+                      const on = !!draft.challenges?.includes(c);
+                      return (
+                        <button key={c} type="button" aria-pressed={on} className={`chip sm${on ? ' on' : ''}`} onClick={() => setDraft({ ...draft, challenges: toggle(draft.challenges, c) })}>
+                          {CHALLENGE_NAMES[c]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                <details className="setmore">
+                  <summary className="t13 q">Faults or discomfort</summary>
+                  <div className="col gap8" style={{ paddingTop: 8 }}>
+                    <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
+                      {FAULTS.map((f) => {
+                        const on = !!draft.faults?.includes(f.id);
+                        return (
+                          <button key={f.id} type="button" aria-pressed={on} className={`chip sm${on ? ' on' : ''}`} onClick={() => setDraft({ ...draft, faults: toggle(draft.faults, f.id) })}>
+                            {f.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
+                      {(['knee', 'wrist'] as const).map((j) => {
+                        const on = draft.discomfort === j;
+                        return (
+                          <button key={j} type="button" aria-pressed={on} className={`chip sm${on ? ' on' : ''}`} onClick={() => setDraft({ ...draft, discomfort: on ? undefined : j })}>
+                            {j === 'knee' ? 'Knee felt off' : 'Wrist felt off'}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </details>
                 <div className="row" style={{ justifyContent: 'flex-start', gap: 16 }}>
                   {editing === r.key ? (
                     <>

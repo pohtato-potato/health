@@ -3,7 +3,7 @@ import { chipLoads, isBigJump, loadOptions, nextLoad } from '../src/domain/loads
 import type { SetEntry } from '../src/domain/types';
 import { exerciseMark, markFor } from '../src/domain/marks';
 import { buildSession, findExercise, groupExercises, isPlaceholder, measured, measureOf, nextSessionId, realSets, sidesFor, targetText, topOfRange, validatePlan, valueOfSet } from '../src/domain/plan';
-import { exerciseStatus, heavierOffer, hitTop, loadSoFar, loadTonight, triggerMet } from '../src/domain/progression';
+import { adviceTonight, exerciseStatus, heavierOffer, hitTop, loadSoFar, loadTonight, triggerMet } from '../src/domain/progression';
 import { EQ, PLAN, sets } from './fixtures';
 
 const ex = (id: string) => findExercise(PLAN, id)!;
@@ -226,5 +226,14 @@ describe('v2 session rules', () => {
     const skipped = { ...done[0], id: 'sk', setNo: 2, at: done[0].at + 1, loadKg: null, reps: undefined, skipped: true };
     expect(loadSoFar([...done, skipped], 'squat', 10)).toBe(12.5);
     expect(loadSoFar([skipped], 'squat', 10)).toBe(10);
+  });
+
+  it('the advice line follows the heavier answer', () => {
+    const eqNoSmall2 = { ...EQ, plates: [EQ.plates[0]] };
+    const solid = exerciseStatus(ex('squat'), state, eqNoSmall2, sets('squat', 'Squat', 's1', '2026-01-02', 10, [15, 15, 15], { tempo: true }).map((x) => ({ ...x, form: 5 as const, rir: 2 })));
+    expect(adviceTonight(solid, 'yes')).toBe('Tonight: 15 kg, up from 10.');
+    expect(adviceTonight(solid, 'no')).toBe('Staying at 10 kg tonight. Heavier is offered again next time.');
+    const shaky = exerciseStatus(ex('squat'), state, eqNoSmall2, sets('squat', 'Squat', 's1', '2026-01-02', 10, [15, 15, 15], { tempo: true }).map((x) => ({ ...x, form: 3 as const })));
+    expect(adviceTonight(shaky, undefined)).toBe('15 kg is next, once every set is solid (form 4+) with a rep in reserve. Tonight, 10 kg.');
   });
 });
