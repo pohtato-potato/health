@@ -959,9 +959,9 @@
 }
 
 .sky {
-  width: 100%;
-  border-radius: 20px;
-  background: radial-gradient(ellipse at 50% 120%, #1d2353, #05081f 70%);
+  width: calc(100% + 44px);
+  margin: 0 -22px;
+  background: linear-gradient(180deg, #05081f 0, #0d1033 60%, #1a1f4d 100%);
 }
 
 /* Medicines: the last-week strip and the kept count. */

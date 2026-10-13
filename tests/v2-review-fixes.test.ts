@@ -88,3 +88,12 @@ describe('departures board labels (s39)', () => {
     expect(boardTag({ id: 'weeks:4', kind: 'training' })).toMatch(/· TRAIN$/);
   });
 });
+
+describe('night sky stars spread out', () => {
+  it('days next to each other in a month do not land on the same spot', async () => {
+    const { skyStars } = await import('../src/domain/nightSky');
+    const s = skyStars(['2026-10-05', '2026-10-06', '2026-10-07']);
+    const d = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
+    expect(Math.min(d(s[0], s[1]), d(s[1], s[2]), d(s[0], s[2]))).toBeGreaterThan(6);
+  });
+});
