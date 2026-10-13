@@ -35,6 +35,7 @@ describe('protein gap', () => {
   const history = [...e('shake', 6), ...e('eggs', 8), ...e('paneer', 2), ...e('lentil-chips', 1)];
 
   it('never suggests removing food and picks usuals first', () => {
+    expect(proteinGap({ protein: 96, proteinTarget: 130, kcal: 1240, kcalMax: 2050 }, foods, history, at(14, 0, 30)).mode).toBe('close');
     const g = proteinGap({ protein: 96, proteinTarget: 130, kcal: 1240, kcalMax: 2050 }, foods, history, at(13, 19));
     expect(g.mode).toBe('gap');
     expect(g.gapG).toBe(34);

@@ -5,7 +5,7 @@ import { useAllDays, useAllEntries, useSettings } from '../db/hooks';
 import { applyUpdate, promptInstall, usePwa } from '../pwa';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
-import { addDays, dayKey, weekday } from '../domain/dates';
+import { addDays, dayKey, logWeekdaySun, weekday } from '../domain/dates';
 import { fmtDayMonth, fmtTime } from '../domain/format';
 import { lastFullWeek } from '../domain/weekly';
 import { go, openSheet } from '../router';
@@ -183,7 +183,7 @@ export function Banners() {
       ),
     });
   }
-  const weekdayNow = new Date().getDay();
+  const weekdayNow = logWeekdaySun(Date.now());
   if (settings.reviewDay !== undefined && weekdayNow === settings.reviewDay)
     candidates.push({
       id: 'review-day',

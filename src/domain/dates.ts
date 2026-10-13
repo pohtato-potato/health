@@ -82,3 +82,14 @@ export function minutesSinceMidnight(ts: number): number {
 export function isSameDay(ts: number, key: DayKey): boolean {
   return dayKey(new Date(ts)) === key;
 }
+
+/** Minutes into the logging day: 00:00–03:59 count as 24:00–27:59 of the day before. */
+export function logMinutes(ts: number): number {
+  const m = minutesSinceMidnight(ts);
+  return m < DAY_STARTS_AT_MIN ? m + 1440 : m;
+}
+
+/** The logging day's weekday, 0 = Sunday, so a Sunday-night session after midnight is still Sunday. */
+export function logWeekdaySun(ts: number): number {
+  return parseDay(dayOfLogging(ts)).getDay();
+}

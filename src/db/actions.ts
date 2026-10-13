@@ -1,4 +1,4 @@
-import { addDays, atOn, dayKey, type DayKey } from '../domain/dates';
+import { addDays, atOn, dayKey, type DayKey, logMinutes } from '../domain/dates';
 import { eatenAtFor, mealTimesFor } from '../domain/foods';
 import { placeFor } from '../domain/places';
 import type { Swap } from '../domain/plan';
@@ -94,7 +94,7 @@ export async function bump(id: string, opts: { day?: DayKey; value?: string; by?
 export async function setSteps(date: DayKey, steps: number, final = false) {
   void logUsage('log', 'steps');
   await patchDay(date, { steps: Math.max(0, Math.round(steps)), stepsAt: Date.now(), ...(final ? { stepsFinal: true } : {}) });
-  if (date === dayKey() && new Date().getHours() < 12 && steps > 9000) await bump('steps-9000-by-noon', { day: date });
+  if (date === dayKey() && logMinutes(Date.now()) < 720 && steps > 9000) await bump('steps-9000-by-noon', { day: date });
 }
 
 export interface MorningInput {
@@ -330,7 +330,7 @@ export async function setStatusRange(from: DayKey, to: DayKey, status: Status | 
 /** Before noon, or on a day with no place yet, sets where the day is; later it records a mid-day change. */
 export async function changePlace(date: DayKey, place: string, at = Date.now()) {
   await patchDay(date, (d) => {
-    if (!d.place || new Date(at).getHours() < 12) return { place, home: place, placeChanges: undefined };
+    if (!d.place || logMinutes(at) < 720) return { place, home: place, placeChanges: undefined };
     return { placeChanges: [...(d.placeChanges ?? []), { at, place }] };
   });
 }

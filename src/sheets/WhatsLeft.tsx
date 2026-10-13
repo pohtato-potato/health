@@ -10,6 +10,7 @@ import { closeSheet, replaceSheet } from '../router';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
 import { dayRings, freeMealsThisWeek } from '../state/derived';
+import { logMinutes } from '../domain/dates';
 
 /** From this hour the sheet asks to close the day instead of suggesting food. */
 const LATE_HOUR = 22;
@@ -45,7 +46,7 @@ export function WhatsLeft() {
   };
 
   // From 22:00 the question is whether the day is done, not what else to eat.
-  if (new Date().getHours() >= LATE_HOUR) {
+  if (logMinutes(Date.now()) >= LATE_HOUR * 60) {
     return (
       <Sheet title="It's late">
         <div className="t15 lh">Mark the day complete? Averages then count it as a full day of eating.</div>

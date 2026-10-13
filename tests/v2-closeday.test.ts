@@ -56,6 +56,15 @@ describe('changing place from Today', () => {
     expect(d?.place).toBe('p-office');
     expect(d?.placeChanges).toEqual([{ at: t, place: 'p-home' }]);
   });
+
+  it('just after midnight, before the 4 am rollover, a change is a late move, not a new start', async () => {
+    await changePlace('2026-10-13', 'p-office', new Date(2026, 9, 13, 9, 0).getTime());
+    const late = new Date(2026, 9, 14, 0, 30).getTime();
+    await changePlace('2026-10-13', 'p-home', late);
+    const d = await db.days.get('2026-10-13');
+    expect(d?.place).toBe('p-office');
+    expect(d?.placeChanges).toEqual([{ at: late, place: 'p-home' }]);
+  });
 });
 
 describe('forecast store', () => {

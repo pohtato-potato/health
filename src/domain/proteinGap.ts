@@ -1,3 +1,4 @@
+import { logMinutes } from './dates';
 import { fmtInt } from './format';
 import { valuesFor } from './foods';
 import type { Food, FoodEntry } from './types';
@@ -25,7 +26,7 @@ export function proteinGap(
   max = 2,
 ): { mode: 'gap' | 'close' | 'done'; gapG: number; picks: GapPick[] } {
   const gapG = Math.max(0, Math.round(today.proteinTarget - today.protein));
-  if (new Date(now).getHours() >= CLOSE_THE_DAY_HOUR) return { mode: 'close', gapG, picks: [] };
+  if (logMinutes(now) >= CLOSE_THE_DAY_HOUR * 60) return { mode: 'close', gapG, picks: [] };
   if (gapG <= 0) return { mode: 'done', gapG: 0, picks: [] };
   const eaten = new Map<string, number>();
   for (const e of history) if (e.foodId) eaten.set(e.foodId, (eaten.get(e.foodId) ?? 0) + 1);
