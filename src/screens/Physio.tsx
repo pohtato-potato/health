@@ -143,7 +143,7 @@ export function PhysioPage() {
             <div key={x.name} className="col gap2">
               <span className="t15">{x.name}</span>
               {(x.lines.length ? x.lines : ['Not done in this period']).map((l) => (
-                <span key={l} className="t13 q mono">
+                <span key={l} className="t13 q tn">
                   {l}
                 </span>
               ))}

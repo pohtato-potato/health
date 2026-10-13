@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
-import { addDays, dayRange, weekStart, type DayKey } from '../domain/dates';
-import { fmt1, fmtDayLong, fmtDuration, fmtInt, fmtLitres, fmtTime, weekdayName } from '../domain/format';
+import { addDays, weekStart } from '../domain/dates';
+import { fmtDayShort, fmtDuration, fmtInt } from '../domain/format';
 import { findSession } from '../domain/plan';
 import { sleepMinutes, stepsGoal } from '../domain/rings';
-import { MEAL_NAMES, MEALS, type Day, type FoodEntry, type Settings, type TrainingSession } from '../domain/types';
+import { type Day, type Settings } from '../domain/types';
 import { voiceLine, plainFlagLine, type Moment } from '../domain/voice';
-import { addEntries, addWater, bump, changePlace, deleteEntry } from '../db/actions';
+import { addEntries, bump, changePlace, deleteEntry } from '../db/actions';
 import { useKonami } from '../ui/useKonami';
 import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useMeasurements, useSessions, useSettings, useToday } from '../db/hooks';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -13,28 +13,26 @@ import { db } from '../db/db';
 import { Ticker, tickerContext } from '../ui/Ticker';
 import { prefOn } from '../domain/types';
 import { voiceFor } from '../domain/voice';
-import { entryTime, mealForTime, portionFor } from '../domain/foods';
+import { mealForTime, portionFor } from '../domain/foods';
 import { kmFromSteps } from '../domain/walk';
 import { placeFor } from '../domain/places';
 import { proteinGap, stepTopUp } from '../domain/proteinGap';
 import { WalkScene } from '../walk/WalkScene';
-import { go, openSheet } from '../router';
+import { go } from '../router';
 import { Icon } from '../ui/Icon';
 import { Rings } from '../ui/Rings';
 import { useToast } from '../ui/Toasts';
 import {
-  checklistSlots,
   dayRings,
   doneSessions,
   nextUp,
   recentFlag,
-  stepStreakFor,
   swapSentence,
-  targetsFor,
   weeksFor,
 } from '../state/derived';
 import { Banners } from './Banners';
-import { ForecastCard } from './Readiness';
+import { forecastData } from '../state/forecastData';
+import { readinessText } from '../domain/readiness';
 import { OccasionCard } from '../sheets/Occasion';
 import { SeasonStrip, useUnlockedIds } from '../ui/Theme';
 import { hasReward } from '../domain/rewards';
@@ -73,7 +71,6 @@ export function Today() {
   const { totals, rings, targets } = dayRings(settings, today, day, entries);
   const up = nextUp(settings, sessions, sets, days);
   const weeks = weeksFor(settings, sessions, today, days);
-  const streak = stepStreakFor(settings, days, today);
   const trainedToday = doneSessions(sessions).filter((s) => s.date === today);
   const flag = recentFlag(settings.plan, sessions, days, today);
 
@@ -123,50 +120,32 @@ export function Today() {
     );
     toast({ text: `Added ${added.map((e) => e.name).join(' and ')}`, sub: `+${Math.round(gap.picks.reduce((n, p) => n + p.proteinG, 0))} g protein`, action: { label: 'Undo', run: () => added.forEach((e) => void deleteEntry(e.id)) } });
   };
-  const slots = checklistSlots(settings);
-  const ticked = slots.filter((s) => day?.ticks?.[s.key]);
-  const nextSlot = slots.find((s) => !day?.ticks?.[s.key]);
-  const water = day?.waterMl ?? 0;
-
-  const logWater = async () => {
-    await addWater(today, 250);
-    toast({ text: `Water: ${fmtLitres(water + 250)} of ${fmtLitres(targets.waterMl)} L`, action: { label: 'Undo', run: () => addWater(today, -250) } });
-  };
-
-
   const ticker = prefOn(settings.prefs, 'ticker');
+  const ready = forecastData(settings, today, days, monthEntries.filter((e) => e.date >= addDays(today, -2)), sessions, sets).readiness;
+  const ringRow = (dot: string, value: string, unit: string, right: string, kind: string) => (
+    <button
+      type="button"
+      className="ring-row"
+      onClick={(e) => {
+        e.stopPropagation();
+        go('/track', { k: kind });
+      }}
+    >
+      <i style={{ background: dot }} />
+      <b className="serif tn">{value}</b>
+      <span className="t13 q">{unit}</span>
+      <span className="t12 q grow right tn">{right}</span>
+    </button>
+  );
   return (
     <>
     {ticker && <Ticker ctx={tickerContext(settings, today, days, monthEntries, sessions, sets, measurements, unlockedCount ?? 0)} />}
     <div className={`page${ticker ? ' after-ticker' : ''}`}>
-      <div className="row top">
-        <div className="col gap4">
-          <h1 className="lbl" style={{ margin: 0 }}>
-            {fmtDayLong(today)}
-          </h1>
-          <PlaceChip settings={settings} today={today} day={day} />
-        </div>
-        <button type="button" onClick={() => go('/you')} aria-label="You and settings" style={{ width: 48, height: 48, position: 'relative', flexShrink: 0 }}>
-          <svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true" style={{ position: 'absolute', inset: 0 }}>
-            <circle cx="24" cy="24" r="22" fill="var(--surface)" stroke="var(--hairline)" strokeWidth="2" />
-            {weeks.thisWeek > 0 && (
-              <circle
-                cx="24"
-                cy="24"
-                r="22"
-                fill="none"
-                stroke="var(--gold)"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeDasharray={`${Math.min(weeks.thisWeek / weeks.perWeek, 1) * 138} 138`}
-                transform="rotate(-90 24 24)"
-              />
-            )}
-          </svg>
-          <span className="sf" style={{ position: 'relative', fontSize: 18 }}>
-            {(settings.name || 'You').charAt(0).toUpperCase()}
-          </span>
-        </button>
+      <div className="row base">
+        <h1 className="t14" style={{ margin: 0, fontWeight: 600 }}>
+          {fmtDayShort(today)}
+        </h1>
+        <PlaceChip settings={settings} today={today} day={day} />
       </div>
 
       <WalkScene km={walkKm} />
@@ -176,8 +155,9 @@ export function Today() {
       </div>
 
       {themeDay && (
-        <div className="t13 q lh">
-          <span className="gold">{themeDay.name}.</span> {themeDay.why}
+        <div className="card">
+          <div className="lbl gold">Why today · {themeDay.name}</div>
+          <div className="t14 lh">{themeDay.why}</div>
         </div>
       )}
 
@@ -185,7 +165,7 @@ export function Today() {
 
       <Banners />
 
-      <button type="button" className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 18 }} onClick={() => go('/food')}>
+      <div className="card rings-card" style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
         <div onPointerDown={konami.onPointerDown} onPointerUp={konami.onPointerUp} onClickCapture={konami.onClickCapture} style={konami.style}>
           {themeDay ? (
             <ThemedRings style={themeDay.ring} progress={[rings.kcal.progress, rings.protein.progress, rings.steps.progress]} label={`Rings for ${themeDay.name}: ${rings.closed} of 3 closed`} center={`${rings.closed}/3`} />
@@ -198,59 +178,53 @@ export function Today() {
             />
           )}
         </div>
-        <div className="grow col gap12">
-          <div className="col gap2">
-            <div className="lbl apri">{rings.kcal.closed ? 'Calories · in range' : rings.kcal.state === 'over' ? 'Calories · over range' : 'Calories'}</div>
-            <div className="tn t17">
-              {fmtInt(totals.kcal)}{' '}
-              <span className="t13 q" style={{ whiteSpace: 'nowrap' }}>
-                of {fmtInt(targets.kcalMin)}–{fmtInt(targets.kcalMax)}
-              </span>
-            </div>
-          </div>
-          <div className="col gap2">
-            <div className="lbl lav">Protein{rings.protein.closed ? ' · closed' : ''}</div>
-            <div className="tn t17">
-              {Math.round(totals.protein)} g <span className="t13 q">of {targets.proteinG} g</span>
-            </div>
-          </div>
-          <div
-            className="col gap2"
-            role="button"
-            tabIndex={0}
-            onClick={(e) => {
-              e.stopPropagation();
-              openSheet('steps');
-            }}
-          >
-            <div className="lbl sage">Steps{rings.steps.closed ? ' · closed' : ''}</div>
-            <div className="tn t17">
-              {day?.steps !== undefined ? fmtInt(totals.steps) : 'Not logged'} <span className="t13 q">of {fmtInt(stepsGoal(targets, totals.eased))}{totals.eased ? ', eased' : ''}</span>
-            </div>
-            {topUp && <div className="t12 sage">{topUp}</div>}
-          </div>
+        <div className="grow col gap6">
+          {ringRow('var(--kcal)', fmtInt(totals.kcal), 'kcal', `${fmtInt(targets.kcalMin)}–${fmtInt(targets.kcalMax)}`, 'food')}
+          {ringRow('var(--protein)', `${Math.round(totals.protein)} g`, 'protein', `of ${targets.proteinG}`, 'food')}
+          {ringRow('var(--steps)', day?.steps !== undefined ? fmtInt(totals.steps) : '—', 'steps', `${totals.eased ? 'eased ' : 'of '}${fmtInt(stepsGoal(targets, totals.eased))}`, 'steps')}
+          {topUp && <div className="t12 sage">{topUp}</div>}
         </div>
-      </button>
+      </div>
 
       <NextUpCard settings={settings} up={up} active={active} trainedToday={trainedToday} weeks={weeks} />
 
-      <ForecastCard settings={settings} today={today} days={days} entries={monthEntries} sessions={sessions} sets={sets} />
+      <button type="button" className="card ready-card" onClick={() => go('/readiness')}>
+        <span className="col" style={{ alignItems: 'center', minWidth: 64 }}>
+          <span className="serif tn" style={{ fontSize: 34, lineHeight: 1, color: ready.known ? readinessInk(ready.score) : 'var(--quiet)' }}>
+            {readinessText(ready)}
+          </span>
+          <span className="t12 q">{ready.known ? 'ready' : 'log sleep'}</span>
+        </span>
+        <span className="col gap4 grow">
+          {ready.known ? (
+            [...ready.parts]
+              .sort((x, y) => Math.abs(y.delta) - Math.abs(x.delta))
+              .slice(0, 3)
+              .map((pt) => (
+                <span key={pt.key} className="row t13">
+                  <span>{pt.label}</span>
+                  <span className="tn" style={{ color: pt.delta > 0 ? 'var(--sage)' : 'var(--rose)' }}>
+                    {pt.delta > 0 ? '+' : '−'}
+                    {Math.abs(pt.delta)}
+                  </span>
+                </span>
+              ))
+          ) : (
+            <span className="t13 q lh">Not enough data yet. The morning log's sleep makes this a real score.</span>
+          )}
+        </span>
+      </button>
 
       {gap.mode === 'gap' && gap.picks.length > 0 && (
-        <div className="card">
-          <div className="row base">
-            <div className="lav num tn" style={{ fontSize: 22 }}>
-              {gap.gapG} g
-            </div>
-            <div className="t13 q">protein to go</div>
-          </div>
-          <div className="t15 lh">{gap.picks.map((p) => p.name).join(' and ')} would close it.</div>
-          <div className="row t13 tn" style={{ justifyContent: 'flex-start', gap: 14 }}>
-            <span className="lav">+{Math.round(gap.picks.reduce((n, p) => n + p.proteinG, 0))} g</span>
-            <span className="apri">+{fmtInt(gap.picks.reduce((n, p) => n + p.kcal, 0))} kcal</span>
-          </div>
-          <button type="button" className="btn block" onClick={addGap}>
-            {gap.picks.length === 1 ? 'Add it' : gap.picks.length === 2 ? 'Add both' : 'Add them'}
+        <div className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <span className="col gap2 grow">
+            <span className="t15">
+              <span className="tn" style={{ color: 'var(--protein)' }}>{gap.gapG} g</span> protein to go
+            </span>
+            <span className="t13 q lh">{gap.picks.map((p) => p.name).join(' and ')}</span>
+          </span>
+          <button type="button" className="btn sm" onClick={addGap}>
+            + {gap.picks.length === 1 ? 'Add it' : gap.picks.length === 2 ? 'Add both' : 'Add them'}
           </button>
         </div>
       )}
@@ -265,227 +239,16 @@ export function Today() {
         </span>
         <Icon name="right" size={16} stroke={1.8} color="var(--dim)" />
       </button>
-
-      <div className="grid3">
-        {prefOn(settings.prefs, 'water') && (
-        <div className="card sm">
-          <div className="lbl sm blue">Water</div>
-          <div className="num tn" style={{ fontSize: 22 }}>
-            {fmtLitres(water)}
-            <span className="t12 q"> L</span>
-          </div>
-          <div className="bar">
-            <i style={{ width: `${Math.min(water / targets.waterMl, 1) * 100}%`, background: 'var(--blue)' }} />
-          </div>
-          <button type="button" className="btn ghost sm" style={{ marginTop: 4, height: 34, fontSize: 13 }} onClick={logWater}>
-            +250 ml
-          </button>
-        </div>
-        )}
-        {slots.length > 0 ? (
-          <button type="button" className="card sm" onClick={() => openSheet('checklist')}>
-            <div className="lbl sm">Checklist</div>
-            <div className="num tn" style={{ fontSize: 22 }}>
-              {ticked.length}
-              <span className="t12 q"> of {slots.length}</span>
-            </div>
-            <div className="row" style={{ gap: 5, justifyContent: 'flex-start', flexWrap: 'wrap' }}>
-              {slots.slice(0, 8).map((s) => (
-                <i
-                  key={s.key}
-                  style={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: 6,
-                    background: day?.ticks?.[s.key] ? 'var(--text)' : 'transparent',
-                    border: day?.ticks?.[s.key] ? 0 : '1.5px solid var(--faint)',
-                  }}
-                />
-              ))}
-            </div>
-            <div className="t12 q" style={{ marginTop: 4 }}>
-              {nextSlot ? `${nextSlot.name}, ${nextSlot.slot.toLowerCase()}` : 'All done'}
-            </div>
-          </button>
-        ) : (
-          <button type="button" className="card sm" onClick={() => openSheet('steps')}>
-            <div className="lbl sm sage">Steps</div>
-            <div className="num tn" style={{ fontSize: 22 }}>
-              {day?.steps !== undefined ? fmtInt(day.steps) : '—'}
-            </div>
-            <div className="t12 q">{day?.stepsAt ? `at ${fmtTime(day.stepsAt)}` : 'Tap to log'}</div>
-          </button>
-        )}
-        <button type="button" className="card sm" onClick={() => openSheet('morning')}>
-          <div className="lbl sm">Morning log</div>
-          <div className="num" style={{ fontSize: 22 }}>
-            {day?.morning ? 'Done' : 'Not yet'}
-          </div>
-          <div className="t12 q">{day?.morning ? fmtTime(day.morning.at) : 'Weight, sleep, steps'}</div>
-        </button>
-      </div>
-
-      <Timeline day={day} entries={entries} sessions={sessions.filter((s) => s.date === today)} settings={settings} />
-
-      <WeekStrip settings={settings} today={today} days={days} entries={weekEntries} sessions={sessions} streak={streak} weeks={weeks} />
     </div>
     </>
   );
 }
 
-function Timeline({ day, entries, sessions, settings }: { day: Day | undefined; entries: FoodEntry[]; sessions: TrainingSession[]; settings: Settings }) {
-  type Row = { at: number | null; title: string; sub: string; right?: { a: string; b?: string; cls?: string }; open: () => void };
-  const rows: Row[] = [];
-
-  if (day?.morning) {
-    const bits: string[] = [];
-    if (day.weightKg !== undefined) bits.push(`${fmt1(day.weightKg)} kg`);
-    if (day.sleep) bits.push(`slept ${fmtDuration(sleepMinutes(day.sleep.asleep, day.sleep.woke))}`);
-    if (day.sleep?.rested) bits.push(`rested ${day.sleep.rested}/5`);
-    rows.push({ at: day.morning.at, title: 'Morning log', sub: bits.join(' · ') || 'Saved', open: () => openSheet('morning') });
-  }
-
-  const slots = checklistSlots(settings);
-  const ticks = slots.filter((s) => day?.ticks?.[s.key]);
-  if (ticks.length) {
-    const first = Math.min(...ticks.map((s) => day!.ticks![s.key]));
-    const names = ticks.map((s) => (settings.checklist.find((i) => i.id === s.itemId)?.slots.length ?? 0) > 1 ? `${s.name} (${s.slot.toLowerCase()})` : s.name);
-    rows.push({ at: first, title: 'Checklist', sub: names.join(', '), open: () => openSheet('checklist') });
-  }
-
-  for (const meal of MEALS) {
-    const es = entries.filter((e) => e.meal === meal);
-    if (!es.length) continue;
-    const kcal = es.reduce((s, e) => s + e.kcal, 0);
-    const protein = es.reduce((s, e) => s + e.protein, 0);
-    rows.push({
-      at: Math.min(...es.map(entryTime)),
-      title: MEAL_NAMES[meal],
-      sub: es.map((e) => (e.kind === 'drink' ? `${e.name} ×${e.drink?.count ?? 1}` : e.name)).join(', '),
-      right: { a: fmtInt(kcal), b: `${Math.round(protein)} g` },
-      open: () => go('/food'),
-    });
-  }
-
-  for (const s of sessions) {
-    const def = settings.plan ? findSession(settings.plan, s.session) : undefined;
-    const mins = Math.round(((s.endedAt ?? Date.now()) - s.startedAt) / 60000);
-    rows.push({
-      at: s.startedAt,
-      title: def?.name ?? `Session ${s.session}`,
-      sub: s.status === 'active' ? 'In progress' : `${mins} min${s.short ? ' · short session' : ''}`,
-      open: () => (s.status === 'active' ? go('/session') : go('/session/view', { id: s.id })),
-    });
-  }
-
-  rows.sort((a, b) => (a.at ?? Infinity) - (b.at ?? Infinity));
-
-  if (day?.steps !== undefined) {
-    rows.push({
-      at: null,
-      title: 'Steps',
-      sub: day.stepsAt ? `Updated ${fmtTime(day.stepsAt)}` : 'Logged',
-      right: { a: fmtInt(day.steps), cls: 'sage' },
-      open: () => openSheet('steps'),
-    });
-  }
-  if (day?.waterMl && prefOn(settings.prefs, 'water')) {
-    const glasses = Math.round(day.waterMl / 250);
-    rows.push({
-      at: null,
-      title: 'Water',
-      sub: `${glasses} glass${glasses === 1 ? '' : 'es'}`,
-      right: { a: `${fmtLitres(day.waterMl)} L`, cls: 'blue' },
-      open: () => openSheet('water'),
-    });
-  }
-
-  return (
-    <div className="card" style={{ gap: 0, paddingBottom: 12 }}>
-      <div className="row" style={{ paddingBottom: 10 }}>
-        <div className="lbl">Today's log</div>
-        <div className="t13 d">Timeline</div>
-      </div>
-      {rows.length === 0 && <div className="t14 q" style={{ padding: '4px 0 12px' }}>Nothing yet. Everything you log today lines up here.</div>}
-      {rows.map((r, i) => (
-        <button type="button" key={i} className="tl" onClick={r.open}>
-          <div className="time">{r.at === null ? 'All day' : fmtTime(r.at)}</div>
-          <div className="col gap2" style={{ minWidth: 0 }}>
-            <div className="t15">{r.title}</div>
-            <div className="t13 q">{r.sub}</div>
-          </div>
-          <div className={`t13 tn right ${r.right?.cls ?? ''}`}>
-            {r.right?.a}
-            {r.right?.b && <div className="lav">{r.right.b}</div>}
-          </div>
-        </button>
-      ))}
-      <button type="button" className="dashed" style={{ marginTop: 10 }} onClick={() => openSheet('log')}>
-        + Add to today
-      </button>
-    </div>
-  );
+/** Readiness colours: rose under 60, gold 60–74, sage 75 and up. */
+export function readinessInk(score: number): string {
+  return score < 60 ? 'var(--rose)' : score < 75 ? 'var(--gold)' : 'var(--sage)';
 }
 
-function WeekStrip({
-  settings,
-  today,
-  days,
-  entries,
-  sessions,
-  streak,
-  weeks,
-}: {
-  settings: Settings;
-  today: DayKey;
-  days: Day[];
-  entries: FoodEntry[];
-  sessions: TrainingSession[];
-  streak: ReturnType<typeof stepStreakFor>;
-  weeks: ReturnType<typeof weeksFor>;
-}) {
-  const ws = weekStart(today);
-  const week = dayRange(ws, addDays(ws, 6));
-  const done = new Set(doneSessions(sessions).map((s) => s.date));
-  let perfect = 0;
-  const cells = week.map((d) => {
-    const day = days.find((x) => x.date === d);
-    const { rings } = dayRings(settings, d, day, entries.filter((e) => e.date === d));
-    if (rings.perfect && d <= today) perfect++;
-    return { d, perfect: rings.perfect && d <= today, trained: done.has(d) };
-  });
-  return (
-    <div className="card" style={{ gap: 14 }}>
-      <div className="week7">
-        {cells.map((c) => (
-          <div key={c.d}>
-            <div className={`t12 ${c.d === today ? '' : 'q'}`} style={c.d === today ? { fontWeight: 600 } : undefined}>
-              {weekdayName(c.d).charAt(0)}
-            </div>
-            <div className={`wdot${c.perfect ? ' full' : c.d === today ? ' today' : c.d > today ? ' future' : ''}`} />
-            <div className={`wpip${c.trained ? ' on' : ''}`} />
-          </div>
-        ))}
-      </div>
-      <div className="row t13 q">
-        <span>
-          {perfect} perfect day{perfect === 1 ? '' : 's'} · workouts {Math.min(weeks.thisWeek, weeks.perWeek)} of {weeks.perWeek}
-        </span>
-        <span>
-          {streak.current > 0 ? `Steps ${streak.current} day${streak.current === 1 ? '' : 's'}` : 'No step streak yet'}
-          {streak.shields > 0 ? ` · ${streak.shields} shield${streak.shields === 1 ? '' : 's'}` : ''}
-        </span>
-      </div>
-      {targetsFor(settings, today).steps > 0 && streak.current > 0 && streak.shields < 2 && (
-        <div className="t12 d">
-          Next shield in {streak.toNextShield} day{streak.toNextShield === 1 ? '' : 's'} of {fmtInt(targetsFor(settings, today).steps)}+ steps.
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** The voice line stays put for the whole day instead of changing on every reload. */
 function lineForTheDay(today: string, line: string): string {
   const key = 'health.line';
   try {
@@ -505,12 +268,12 @@ function PlaceChip({ settings, today, day }: { settings: Settings; today: string
   const here = placeFor(day, settings, Date.now());
   if (!places.length) return null;
   return (
-    <div className="col gap8">
-      <button type="button" className="t14" style={{ textAlign: 'left', minHeight: 32 }} aria-expanded={open} onClick={() => setOpen(!open)}>
-        {here.name} · <span className="q" style={{ textDecoration: 'underline', textUnderlineOffset: 3 }}>change</span>
+    <div className="col gap8" style={{ alignItems: 'flex-end' }}>
+      <button type="button" className="place-chip" aria-expanded={open} onClick={() => setOpen(!open)}>
+        {here.name} · <span className="q">change</span>
       </button>
       {open && (
-        <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
+        <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-end' }}>
           {places.map((p) => (
             <button
               key={p.id}

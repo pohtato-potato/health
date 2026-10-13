@@ -5,109 +5,180 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { nextCheckInDate } from '../screens/Photos';
 import { findSession } from '../domain/plan';
-import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useMeasurements, useSessions, useSettings, useToday } from '../db/hooks';
+import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useMeasurements, useSessions, useSettings, useToday } from '../db/hooks';
 import { go, replaceSheet } from '../router';
 import { Icon, type IconName } from '../ui/Icon';
 import { Sheet } from '../ui/Sheet';
+import { DateChip, useLogDate } from '../ui/DateChip';
 import { checklistSlots, dayRings, freeMealsThisWeek, nextUp } from '../state/derived';
 import { occasionOn } from '../domain/occasions';
 import { prefOn } from '../domain/types';
 
+/** Words that open a log directly from the search box. */
+const ACTIONS: { words: string[]; label: string; icon: IconName; color: string; open: () => void }[] = [
+  { words: ['weight', 'kg', 'weigh', 'sleep', 'morning'], label: 'Morning log', icon: 'sun', color: 'var(--gold)', open: () => replaceSheet('morning') },
+  { words: ['step', 'walk'], label: 'Steps', icon: 'steps', color: 'var(--steps)', open: () => replaceSheet('steps') },
+  { words: ['waist', 'tape', 'inch'], label: 'Waist', icon: 'tape', color: 'var(--pearl)', open: () => replaceSheet('waist') },
+  { words: ['drink', 'beer', 'wine', 'whisky', 'alcohol'], label: 'Drinks', icon: 'drink', color: 'var(--gold)', open: () => replaceSheet('drink') },
+  { words: ['night out', 'party', 'friends'], label: 'Night out', icon: 'night', color: 'var(--gold)', open: () => replaceSheet('nightout') },
+  { words: ['free', 'cheat', 'treat'], label: 'Free meal', icon: 'free', color: 'var(--kcal)', open: () => replaceSheet('free') },
+  { words: ['pill', 'medicine', 'creatine', 'drops', 'tablet', 'checklist'], label: 'Checklist', icon: 'pill', color: 'var(--pearl)', open: () => replaceSheet('checklist') },
+  { words: ['photo', 'check-in', 'checkin'], label: 'Check-in', icon: 'camera', color: 'var(--pearl)', open: () => go('/checkin') },
+  { words: ['sick', 'ill', 'injured', 'travel', 'status', 'break'], label: 'Status', icon: 'calendar', color: 'var(--gold)', open: () => replaceSheet('more') },
+  { words: ['close', 'done', 'day'], label: 'Close the day', icon: 'check', color: 'var(--gold)', open: () => go('/close') },
+];
+
+/** The + sheet (s2): six drawn tiles tinted by their metric, More, and one search box for anything. */
 export function LogSheet() {
   const settings = useSettings();
   const today = useToday();
+  const [date, setDate] = useLogDate();
   const days = useAllDays();
-  const entries = useEntries(today);
+  const entries = useEntries(date);
   const sessions = useSessions();
   const sets = useAllSets();
   const active = useActiveSession();
+  const foods = useFoods();
+  const [q, setQ] = useState('');
+
+  if (!settings || !days || !entries || !sessions || !sets || active === undefined || !foods) return <Sheet title="Log">{null}</Sheet>;
+
+  const day = days.find((d) => d.date === date);
+  const { totals, targets } = dayRings(settings, date, day, entries);
+  const up = nextUp(settings, sessions, sets, days);
+  const plan = settings.plan;
+  const slots = checklistSlots(settings, date);
+  const ticked = slots.filter((s) => day?.ticks?.[s.key]).length;
+  const sessionName = active ? findSession(plan!, active.session)?.name ?? 'Session' : findSession(plan ?? { sessions: [] } as never, up?.sessionId ?? '')?.name;
+  const d: Record<string, string> = date === today ? {} : { d: date };
+
+  const tile = (icon: IconName, color: string, title: string, sub: string, onClick: () => void) => (
+    <button type="button" className="log-tile" onClick={onClick} style={{ ['--tint' as string]: color }}>
+      <span className="log-ic">
+        <Icon name={icon} size={22} color={color} />
+      </span>
+      <b>{title}</b>
+      <span>{sub}</span>
+    </button>
+  );
+
+  const query = q.trim().toLowerCase();
+  const actions = query ? ACTIONS.filter((a) => a.words.some((w) => w.startsWith(query) || query.includes(w)) || a.label.toLowerCase().includes(query)) : [];
+  const foodHits = query ? foods.filter((f) => !f.archived && f.name.toLowerCase().includes(query)).slice(0, 5) : [];
+
+  return (
+    <Sheet title="Log">
+      <DateChip value={date} onChange={setDate} />
+      <div className="log-grid">
+        {tile('food', 'var(--kcal)', 'Food', totals.entries ? `${fmtInt(totals.kcal)} kcal` : 'Nothing yet', () => replaceSheet('addfood', d))}
+        {tile('sun', 'var(--gold)', 'Morning log', day?.morning ? `Done ${fmtTime(day.morning.at)}` : 'Weight, sleep', () => replaceSheet('morning', d))}
+        {slots.length > 0
+          ? tile('pill', 'var(--pearl)', 'Checklist', `${ticked} of ${slots.length}`, () => replaceSheet('checklist', d))
+          : tile('pill', 'var(--pearl)', 'Checklist', 'Set up', () => go('/medicines'))}
+        {tile('steps', 'var(--steps)', 'Steps', day?.steps !== undefined ? fmtInt(day.steps) : 'Not logged', () => replaceSheet('steps', d))}
+        {plan && (active || up)
+          ? tile('train', 'var(--protein)', sessionName ?? 'Session', active ? 'In progress' : 'Start', () => (active ? go('/session') : go('/session', { start: up!.sessionId })))
+          : tile('train', 'var(--protein)', 'Session', 'No plan yet', () => go('/plan'))}
+        {tile('check', 'var(--gold)', 'Close the day', day?.foodDone ? 'Closed' : 'Meals, checklist', () => go('/close', d))}
+        {prefOn(settings.prefs, 'water') && tile('water', 'var(--blue)', 'Water', `${fmtLitres(totals.waterMl)} of ${fmtLitres(targets.waterMl)} L`, () => replaceSheet('water', d))}
+      </div>
+      <button type="button" className="wide" onClick={() => replaceSheet('more', d)}>
+        <span className="col gap2">
+          <span className="t15">More</span>
+          <span className="t12 q">Drinks, night out, free meal, waist, status, check-in</span>
+        </span>
+        <Icon name="right" size={18} stroke={1.8} color="var(--quiet)" />
+      </button>
+      <label className="log-search">
+        <Icon name="search" size={18} color="var(--quiet)" />
+        <input className="field" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Log anything: “chai”, “waist”…" aria-label="Log anything" />
+      </label>
+      {(actions.length > 0 || foodHits.length > 0) && (
+        <div className="list">
+          {actions.map((a) => (
+            <button key={a.label} type="button" className="li" onClick={a.open}>
+              <span className="row" style={{ gap: 10 }}>
+                <Icon name={a.icon} size={18} color={a.color} />
+                <span>{a.label}</span>
+              </span>
+              <Icon name="right" size={16} color="var(--dim)" />
+            </button>
+          ))}
+          {foodHits.map((f) => (
+            <button key={f.id} type="button" className="li" onClick={() => replaceSheet('addfood', { ...d, food: f.id })}>
+              <span className="row" style={{ gap: 10 }}>
+                <Icon name="food" size={18} color="var(--kcal)" />
+                <span>{f.name}</span>
+              </span>
+              <span className="t12 q tn">{fmtInt(f.kcal)} kcal</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {query && actions.length === 0 && foodHits.length === 0 && (
+        <button type="button" className="link t14" onClick={() => replaceSheet('quick', d)}>
+          Nothing called “{q.trim()}” yet. Quick-add its calories instead
+        </button>
+      )}
+    </Sheet>
+  );
+}
+
+/** + › More (s44): the less frequent logs, and status, which relaxes targets and pauses streaks. */
+export function MoreSheet() {
+  const settings = useSettings();
+  const today = useToday();
+  const [date] = useLogDate();
+  const entries = useEntries(date);
   const measurements = useMeasurements();
   const ws = weekStart(today);
   const weekEntries = useEntriesBetween(ws, addDays(ws, 6));
   const checkins = useLiveQuery(() => db.checkins.toArray(), []);
-  const [more, setMore] = useState(false);
-
-  if (!settings || !days || !entries || !sessions || !sets || active === undefined || !measurements || !weekEntries) return <Sheet title="Log">{null}</Sheet>;
-
-  const day = days.find((d) => d.date === today);
-  const { totals, targets } = dayRings(settings, today, day, entries);
-  const up = nextUp(settings, sessions, sets, days);
-  const plan = settings.plan;
-  const slots = checklistSlots(settings);
-  const ticked = slots.filter((s) => day?.ticks?.[s.key]).length;
-  const lastWaist = [...measurements].reverse().find((m) => m.waistStanding !== undefined);
+  if (!settings || !entries || !measurements || !weekEntries || !checkins) return <Sheet title="More">{null}</Sheet>;
+  const d: Record<string, string> = date === today ? {} : { d: date };
   const drinks = entries.filter((e) => e.kind === 'drink').reduce((n, e) => n + (e.drink?.count ?? 1), 0);
   const freeUsed = freeMealsThisWeek(weekEntries, today);
-  const checkinDue = checkins ? nextCheckInDate(checkins) : undefined;
-
+  const lastWaist = [...measurements].reverse().find((m) => m.waistStanding !== undefined);
+  const due = nextCheckInDate(checkins);
+  const current = occasionOn(settings, today);
+  const STATUSES: { label: string; kind?: string }[] = [
+    { label: 'Sick', kind: 'sick' },
+    { label: 'Injured', kind: 'injured' },
+    { label: 'Travelling', kind: 'travel' },
+    { label: 'Break', kind: 'break' },
+    { label: 'Occasion', kind: 'festival' },
+    { label: 'None' },
+  ];
   const tile = (icon: IconName, color: string, title: string, sub: string, onClick: () => void) => (
-    <button type="button" className="tile" onClick={onClick}>
-      <Icon name={icon} color={color} />
-      <div className="col gap2">
-        <b>{title}</b>
-        <span>{sub}</span>
-      </div>
+    <button type="button" className="log-tile" onClick={onClick} style={{ ['--tint' as string]: color }}>
+      <span className="log-ic">
+        <Icon name={icon} size={22} color={color} />
+      </span>
+      <b>{title}</b>
+      <span>{sub}</span>
     </button>
   );
-
   return (
-    <Sheet title="Log">
-      <div className="col gap8">
-        <button type="button" className="wide" onClick={() => replaceSheet('morning')}>
-          <span className="col gap2">
-            <span className="t15">Morning log</span>
-            <span className="t12 q">{day?.morning ? `Done at ${fmtTime(day.morning.at)} · tap to edit` : 'Weight, sleep and yesterday’s steps'}</span>
-          </span>
-          {day?.morning?.seconds !== undefined ? (
-            <span className={`t12 ${settings.morningBest === day.morning.seconds ? 'gold' : 'q'}`}>{day.morning.seconds.toFixed(1)} s</span>
-          ) : (
-            <Icon name="right" size={18} stroke={1.8} color="var(--quiet)" />
-          )}
-        </button>
-        {plan && (
-          <button type="button" className="wide" onClick={() => (active ? go('/session') : up && go('/session', { start: up.sessionId }))}>
-            <span className="col gap2">
-              <span className="t15">{active ? `Resume ${findSession(plan, active.session)?.name ?? 'session'}` : `Start ${findSession(plan, up?.sessionId ?? '')?.name ?? 'session'}`}</span>
-              <span className="t12 q">{active ? 'In progress' : findSession(plan, up?.sessionId ?? '')?.focus}</span>
-            </span>
-            <Icon name="right" size={18} stroke={1.8} color="var(--quiet)" />
-          </button>
-        )}
+    <Sheet title="More">
+      <div className="log-grid">
+        {tile('drink', 'var(--gold)', 'Drinks', drinks ? `${drinks} today` : 'None today', () => replaceSheet('drink', d))}
+        {tile('night', 'var(--gold)', 'Night out', 'Meal and drinks', () => replaceSheet('nightout', d))}
+        {tile('free', 'var(--kcal)', 'Free meal', freeUsed ? 'Used this week' : '1 left this week', () => replaceSheet('free', d))}
+        {tile('tape', 'var(--pearl)', 'Waist', lastWaist?.waistStanding !== undefined ? `${lastWaist.waistStanding} in last` : 'Standing', () => replaceSheet('waist', d))}
+        {tile('camera', 'var(--pearl)', 'Check-in', due ? (due <= today ? 'Due now' : `due ${fmtDayMonth(due)}`) : 'Photos and tape', () => go('/checkin'))}
       </div>
-
-      <div className="grid3">
-        {tile('food', 'var(--apricot)', 'Food', totals.entries ? `${fmtInt(totals.kcal)} kcal today` : 'Nothing yet', () => replaceSheet('addfood'))}
-        {slots.length > 0
-          ? tile('pill', 'var(--quiet)', 'Checklist', `${ticked} of ${slots.length} done`, () => replaceSheet('checklist'))
-          : tile('pill', 'var(--quiet)', 'Checklist', 'Set up in Settings', () => go('/settings', { at: 'checklist' }))}
-        {tile('steps', 'var(--sage)', 'Steps', day?.steps !== undefined ? `${fmtInt(day.steps)} so far` : 'Not logged', () => replaceSheet('steps'))}
-        {tile('check', 'var(--gold)', 'Close the day', day?.foodDone ? 'Closed' : 'Meals, checklist, steps', () => go('/close'))}
-        {prefOn(settings.prefs, 'water') && tile('water', 'var(--blue)', 'Water', `${fmtLitres(totals.waterMl)} of ${fmtLitres(targets.waterMl)} L`, () => replaceSheet('water'))}
+      <div className="lbl">Status</div>
+      <div className="status-row" role="radiogroup" aria-label="Status">
+        {STATUSES.map((st) => {
+          const on = st.kind ? current?.kind === st.kind || (st.kind === 'festival' && !!current && !['sick', 'injured', 'travel', 'break'].includes(current.kind)) : !current;
+          return (
+            <button key={st.label} type="button" role="radio" aria-checked={on} className={`chip sm${on ? ' on' : ''}`} onClick={() => replaceSheet('occasion', st.kind ? { kind: st.kind } : {})}>
+              {st.label}
+            </button>
+          );
+        })}
       </div>
-
-      <button type="button" className="wide" aria-expanded={more} onClick={() => setMore(!more)}>
-        <span className="col gap2">
-          <span className="t15">More</span>
-          <span className="t12 q">
-            Drinks, night out, free meal, waist, status{checkinDue && checkinDue <= today ? ', check-in due' : ', check-in'}
-          </span>
-        </span>
-        <Icon name={more ? 'up' : 'down'} size={18} stroke={1.8} color="var(--quiet)" />
-      </button>
-      {more && (
-        <div className="grid3">
-          {tile('drink', 'var(--gold)', 'Drinks', drinks ? `${drinks} today` : 'None today', () => replaceSheet('drink'))}
-          {tile('night', 'var(--gold)', 'Night out', 'Meal and drinks', () => replaceSheet('nightout'))}
-          {tile('free', 'var(--apricot)', 'Free meal', freeUsed ? 'Used this week' : '1 left this week', () => replaceSheet('free'))}
-          {tile('tape', 'var(--pearl)', 'Waist', lastWaist?.waistStanding !== undefined ? `${lastWaist.waistStanding} in last time` : 'Standing, slouched', () => replaceSheet('waist'))}
-          {tile('calendar', 'var(--gold)', 'Status', occasionOn(settings, today) ? `${occasionOn(settings, today)!.name} is on` : 'Ill, travelling, an occasion', () => replaceSheet('occasion'))}
-          {tile('camera', 'var(--pearl)', 'Check-in', checkinDue ? (checkinDue <= today ? 'Due now' : `Due ${fmtDayMonth(checkinDue)}`) : 'Photos and tape', () => go('/checkin'))}
-        </div>
-      )}
-
-      <div className="t13 q center" style={{ paddingTop: 4 }}>
-        Tip: long-press the Health icon on your home screen to jump straight to these.
-      </div>
+      <div className="t13 q lh">A status relaxes targets to maintenance and pauses streaks until you switch it off.</div>
     </Sheet>
   );
 }

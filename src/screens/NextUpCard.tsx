@@ -1,8 +1,8 @@
 import { fmtInt, lowerFirst, weekdayName } from '../domain/format';
-import { findExercise, findSession } from '../domain/plan';
+import { findSession } from '../domain/plan';
 import type { Settings, TrainingSession } from '../domain/types';
 import { useAllSets, useNow } from '../db/hooks';
-import { go, openSheet } from '../router';
+import { go } from '../router';
 import { recordShot } from '../domain/strengthForecast';
 import type { NextUp } from '../state/derived';
 
@@ -88,45 +88,29 @@ export function NextUpCard({
   const met = weeks.thisWeek >= weeks.perWeek;
   const last = up.lastDone;
 
+  const first = up.exercises[0]?.status.name;
   return (
-    <div className="card" style={{ gap: 14 }}>
-      <div className="row">
-        <div className="lbl">Next up</div>
+    <button type="button" className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 12, textAlign: 'left' }} onClick={() => go('/train')}>
+      <span className="col gap4 grow">
+        <span className="serif" style={{ fontSize: 19, fontWeight: 600 }}>
+          {def?.name ?? `Session ${up.sessionId}`} {met ? 'if you feel fresh' : new Date().getHours() >= 15 ? 'tonight' : 'today'}
+        </span>
+        <span className="t13 q">
+          {def?.minutes ?? 60} min{first ? ` · ${lowerFirst(first)} first` : ''}
+          {up.swaps.length ? ` · ${up.swaps.length} swap${up.swaps.length === 1 ? '' : 's'} for a flag` : ''}
+        </span>
         {last && (
-          <div className="t13 q">
+          <span className="t12 q">
             Last: {last.session}, {weekdayName(last.date)}
-          </div>
+          </span>
         )}
-      </div>
-      <div className="col gap4">
-        <div className="sf" style={{ fontSize: 26 }}>
-          {def?.name ?? `Session ${up.sessionId}`}
-        </div>
-        <div className="t14 q">
-          {def?.focus} · {up.exercises.length} exercises · about {def?.minutes ?? 60} min
-        </div>
-      </div>
-      {up.swaps.map((s) => (
-        <div key={s.from} className="t13 apri lh">
-          {s.flag.group} flagged: {lowerFirst(findExercise(plan, s.from)?.name ?? s.from)} {findExercise(plan, s.to) ? `out, ${lowerFirst(findExercise(plan, s.to)!.name)} covers it` : 'out'}.
-        </div>
-      ))}
-      {ready.length > 0 && (
-        <div className="t13 gold">
-          {ready.length === 1 ? `${ready[0].status.name} is` : `${ready.length} exercises are`} ready to go heavier.
-        </div>
+      </span>
+      {(shots.length > 0 || ready.length > 0) && (
+        <span className="t13 gold right" style={{ maxWidth: 130, lineHeight: 1.3 }}>
+          {shots.length ? shots[0].charAt(0).toUpperCase() + shots[0].slice(1) : `${ready.length} ready to go heavier`}
+        </span>
       )}
-      {shots.length > 0 && <div className="t13 gold">{shots[0].charAt(0).toUpperCase() + shots[0].slice(1)}{shots.length > 1 ? `, and ${shots.length - 1} more within reach` : ''}.</div>}
-      {met && <div className="t13 q lh">{weeks.thisWeek} of {weeks.perWeek} done this week. Rest counts as training; a fifth is fine if you feel fresh.</div>}
-      <div className="row" style={{ gap: 10 }}>
-        <button type="button" className={`btn grow${met ? ' ghost' : ''}`} onClick={() => go('/session', { start: up.sessionId })}>
-          Start session
-        </button>
-        <button type="button" className="btn ghost" onClick={() => openSheet('short', { session: up.sessionId })}>
-          Short
-        </button>
-      </div>
-    </div>
+    </button>
   );
 }
 
