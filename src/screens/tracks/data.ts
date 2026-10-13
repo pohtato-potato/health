@@ -50,7 +50,7 @@ export function spanDays(today: DayKey, span: Span | string): DayKey[] {
 
 export const dayLabel = (n: number) => (d: DayKey) => (n <= 7 ? fmtDayShort(d).slice(0, 1) : fmtDayMonth(d));
 
-/** Which kind of place a day was, with a second home told apart from the first ("Delhi"). */
+/** Which kind of place a day was, with a second home told apart from the first (a family home, say). */
 export type PlaceMark = PlaceKind | 'home2';
 
 export function placeMarkOn(data: Pick<TrackData, 'settings' | 'days'>, date: DayKey): PlaceMark {

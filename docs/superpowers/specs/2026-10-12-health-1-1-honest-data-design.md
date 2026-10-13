@@ -24,7 +24,7 @@ Two weeks of real use (27 Sep – 11 Oct) showed six ways the data drifts from t
 
 ### 1. Morning log
 - **No pre-filled answers.**
-  - Weight and sleep start empty. Last known values show as grey hint text ("last: 84.3 kg", "last: 1:35 am → 9:50 am").
+  - Weight and sleep start empty. Last known values show as grey hint text ("last: 72.0 kg", "last: 11:40 pm → 7:10 am").
   - Untouched fields are not saved.
 - **"Same as yesterday".** A chip in the sleep section copies yesterday's times and saves them with `sleep.carried = true`, so charts and stats can tell a copied value from a typed one.
 - **Easy time entry.**

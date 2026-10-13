@@ -129,7 +129,7 @@
   - Retire the two achievements.
 - [ ] **Step 4:** UI changes in `MorningLog.tsx`:
   - `weight`, `asleep` and `woke` start as `day?.… ?? undefined`.
-  - Last values show as placeholders ("last: 84.3 kg"; sleep "last: 1:35 am → 9:50 am").
+  - Last values show as placeholders ("last: 72.0 kg"; sleep "last: 11:40 pm → 7:10 am").
   - A **Same as yesterday** chip copies `lastSleep` with `carried: true`.
   - The sleep is saved only if both times are set.
   - An **Office day** `Switch` sits beside the home chips.
