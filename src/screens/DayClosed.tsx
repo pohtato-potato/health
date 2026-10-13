@@ -9,6 +9,7 @@ import type { DaySummary } from '../domain/usualDay';
 import { voiceFor, voiceLine } from '../domain/voice';
 import { kmFromSteps, positionAt } from '../domain/walk';
 import { back } from '../router';
+import { nextStopLine } from '../walk/journal';
 import { dayRings, nextUp, targetsFor } from '../state/derived';
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -34,6 +35,8 @@ export function DayClosed({ date, summary: s, onDone }: { date: string; summary:
   const walkedToday = day?.steps !== undefined ? kmFromSteps(day.steps) : undefined;
   const total = kmFromSteps(days.filter((d) => d.date <= date).reduce((n, d) => n + (d.steps ?? 0), 0));
   const pos = positionAt(total);
+  const recentKm = days.filter((d) => d.date <= date && d.date > addDays(date, -14) && d.steps !== undefined).map((d) => kmFromSteps(d.steps!));
+  const typicalKm = recentKm.length ? recentKm.reduce((a, b) => a + b, 0) / recentKm.length : undefined;
   const tomorrow = addDays(date, 1);
   const tomorrowPlace = placeFor(days.find((d) => d.date === tomorrow) ?? day, settings);
   const up = nextUp(settings, sessions, sets, days);
@@ -72,7 +75,7 @@ export function DayClosed({ date, summary: s, onDone }: { date: string; summary:
       <div className="card" style={{ gap: 0, padding: '4px 16px' }}>
         {done.length > 0 && row(findSession(settings.plan!, done[0].session)?.name ?? `Session ${done[0].session}`, rec ? `${rec.exercise.toLowerCase()} record, ${rec.reps ?? rec.seconds}` : 'done')}
         {s.checklist.total > 0 && row('Checklist', `${s.checklist.done} of ${s.checklist.total}${meds.length ? ` · ${doses.onTime} on time` : ''}${lanterns ? ` · ${lanterns} lantern${lanterns === 1 ? '' : 's'} lit` : ''}`)}
-        {row('Walk', `${walkedToday !== undefined ? `${walkedToday.toFixed(1)} km` : 'no steps logged'}${pos.to ? ` · ${pos.to.name} in ${fmtInt(Math.ceil(pos.to.km - total))} km` : ''}`)}
+        {row('Walk', `${walkedToday !== undefined ? `${walkedToday.toFixed(1)} km` : 'no steps logged'}${pos.to ? ` · ${nextStopLine(pos.to.name, pos.to.km - total, typicalKm)}` : ''}`)}
       </div>
       <div className="voice center">“{line}”</div>
       <div className="card" style={{ gap: 2 }}>

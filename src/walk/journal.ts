@@ -96,3 +96,8 @@ export function distanceInTerms(km: number): string | undefined {
   const times = Math.floor(km / fit[1]);
   return `You’ve walked ${fit[0]}${times === 1 ? '' : times === 2 ? ', twice' : `, ${times} times`}.`;
 }
+
+/** Day closed's walk line: "Agra tomorrow" when a typical day gets you there, otherwise how far. */
+export function nextStopLine(name: string, kmLeft: number, typicalKm: number | undefined): string {
+  return typicalKm && kmLeft <= typicalKm ? `${name} tomorrow` : `${name} in ${fmtInt(Math.ceil(kmLeft))} km`;
+}

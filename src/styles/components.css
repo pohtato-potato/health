@@ -1152,6 +1152,13 @@
   justify-content: center;
   gap: 14px;
 }
+.wrapped-story .w-big {
+  font-size: 64px;
+  font-weight: 300;
+}
+.wrapped-story .w-body {
+  font-size: 17px;
+}
 .film-big {
   font-family: var(--serif);
   font-weight: 300;
