@@ -63,7 +63,7 @@ export interface Mark {
 }
 
 /** How many marks go round each ring, outer to inner, for the content styles. */
-export const MARKS_PER_RING = [24, 19, 14];
+export const MARKS_PER_RING = [30, 24, 18];
 
 /**
  * The marks that make up a content-styled ring, in order from the top clockwise. The first

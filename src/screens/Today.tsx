@@ -41,6 +41,9 @@ import { OccasionCard } from '../sheets/Occasion';
 import { SeasonStrip, useUnlockedIds } from '../ui/Theme';
 import { hasReward } from '../domain/rewards';
 import { NextUpCard } from './NextUpCard';
+import { regionAt } from '../domain/regions';
+import { themeDayOn } from '../domain/calendar';
+import { ThemedRings } from '../ui/rings/ThemedRings';
 
 export function Today() {
   const unlocked = useUnlockedIds();
@@ -108,6 +111,7 @@ export function Today() {
       });
 
   const walkKm = kmFromSteps(days.reduce((n, d) => n + (d.steps ?? 0), 0));
+  const themeDay = themeDayOn(today, regionAt(walkKm), { birthday: settings.birthday });
   const topUp = stepTopUp({ steps: totals.steps, goal: stepsGoal(targets, totals.eased), eased: !!totals.eased }, Date.now());
   const gap = proteinGap({ protein: totals.protein, proteinTarget: targets.proteinG, kcal: totals.kcal, kcalMax: targets.kcalMax }, foods, monthEntries, Date.now());
   const addGap = async () => {
@@ -177,18 +181,28 @@ export function Today() {
         {flag ? line : lineForTheDay(today, line)}
       </div>
 
+      {themeDay && (
+        <div className="t13 q lh">
+          <span className="gold">{themeDay.name}.</span> {themeDay.why}
+        </div>
+      )}
+
       <SeasonStrip settings={settings} today={today} />
 
       <Banners />
 
       <button type="button" className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 18 }} onClick={() => go('/food')}>
         <div onPointerDown={konami.onPointerDown} onPointerUp={konami.onPointerUp} onClickCapture={konami.onClickCapture} style={konami.style}>
-          <Rings
-            progress={[rings.kcal.progress, rings.protein.progress, rings.steps.progress]}
-            label={`Rings: ${rings.closed} of 3 closed`}
-            gold={!!unlocked && hasReward(unlocked, 'Gold rings') && prefOn(settings.prefs, 'goldRings')}
-            center={`${rings.closed}/3`}
-          />
+          {themeDay ? (
+            <ThemedRings style={themeDay.ring} progress={[rings.kcal.progress, rings.protein.progress, rings.steps.progress]} label={`Rings for ${themeDay.name}: ${rings.closed} of 3 closed`} center={`${rings.closed}/3`} />
+          ) : (
+            <Rings
+              progress={[rings.kcal.progress, rings.protein.progress, rings.steps.progress]}
+              label={`Rings: ${rings.closed} of 3 closed`}
+              gold={!!unlocked && hasReward(unlocked, 'Gold rings') && prefOn(settings.prefs, 'goldRings')}
+              center={`${rings.closed}/3`}
+            />
+          )}
         </div>
         <div className="grow col gap12">
           <div className="col gap2">
