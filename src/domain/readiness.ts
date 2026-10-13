@@ -1,88 +1,24 @@
-import { addDays, type DayKey } from './dates';
 import { fmtDuration } from './format';
-import { sleepMinutes } from './rings';
-import type { Day, FoodEntry, SetEntry, TrainingSession } from './types';
-
-export interface ReadinessPart {
-  name: string;
-  points: number;
-  max: number;
-  note?: string;
-}
+import type { SetEntry, TrainingSession } from './types';
 
 export interface Readiness {
   score: number;
   band: 'rest' | 'easy' | 'steady' | 'push';
   label: string;
-  parts: ReadinessPart[];
+  /** Every reason, largest first: "Slept 6 h 10, 50 m short −5". */
+  parts: ReadinessReason[];
   /** Enough to say anything: last night's sleep at least. */
   known: boolean;
+  /** The inputs as -1…+1 values, kept on the session for refitting. */
+  x: Partial<Record<ReadinessKey, number>>;
 }
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
-/**
- * A simple readiness score, with every point shown: sleep 25, how rested 20,
- * rest since training 15, recent load 15, last night's drinks 10, joints 15.
- */
-export function readiness(input: {
-  today: DayKey;
-  day?: Day;
-  sleepTarget: number;
-  sessions: TrainingSession[];
-  entriesYesterday: FoodEntry[];
-  flagDates: DayKey[];
-}): Readiness {
-  const { today, day, sleepTarget } = input;
-  const parts: ReadinessPart[] = [];
-  const done = input.sessions.filter((s) => s.status === 'done' && s.date < today).sort((a, b) => a.startedAt - b.startedAt);
-
-  // Sleep: full marks 40 minutes past the target, nothing below 160 short of it.
-  if (day?.sleep) {
-    const m = sleepMinutes(day.sleep.asleep, day.sleep.woke);
-    const full = sleepTarget + 40;
-    const pts = Math.round(25 * clamp((m - (sleepTarget - 160)) / 200, 0, 1));
-    const note = m >= full ? 'Full marks.' : m >= sleepTarget ? `Above your ${fmtDuration(sleepTarget)} line. ${full - m} more minutes would have been full marks.` : `${fmtDuration(sleepTarget - m)} under your line.`;
-    parts.push({ name: `Sleep, ${fmtDuration(m)}`, points: pts, max: 25, note });
-  } else {
-    parts.push({ name: 'Sleep, not logged', points: 13, max: 25, note: 'Log it in the morning log for a truer score.' });
-  }
-
-  const rested = day?.sleep?.rested;
-  parts.push({ name: rested ? `Felt rested, ${rested} of 5` : 'How rested, not logged', points: rested ? rested * 4 : 10, max: 20 });
-
-  const last = done[done.length - 1];
-  const sinceLast = last ? Math.round((Date.parse(`${today}T12:00:00`) - Date.parse(`${last.date}T12:00:00`)) / 86_400_000) : 99;
-  parts.push({
-    name: !last ? 'No sessions yet' : sinceLast <= 1 ? 'Trained yesterday' : `A rest day since ${sinceLast === 2 ? 'the day before yesterday' : `${sinceLast} days ago`}`,
-    points: !last ? 15 : sinceLast <= 1 ? 5 : 15,
-    max: 15,
-  });
-
-  const recent = done.filter((s) => s.date >= addDays(today, -4)).length;
-  parts.push({
-    name: `Training load: ${recent} session${recent === 1 ? '' : 's'} in 4 days`,
-    points: recent <= 1 ? 15 : recent === 2 ? 13 : recent === 3 ? 10 : 5,
-    max: 15,
-    note: recent >= 4 ? 'High. The plan says rest.' : recent === 3 ? 'Slightly high, not a problem.' : undefined,
-  });
-
-  const drinks = input.entriesYesterday.filter((e) => e.kind === 'drink').reduce((n, e) => n + (e.drink?.count ?? 1), 0);
-  parts.push({ name: drinks ? `${drinks} drink${drinks === 1 ? '' : 's'} last night` : 'No drinks last night', points: drinks === 0 ? 10 : drinks <= 2 ? 6 : 2, max: 10 });
-
-  const lastFlag = [...input.flagDates].sort().pop();
-  const cleanSessions = lastFlag ? done.filter((s) => s.date > lastFlag).length : done.length;
-  parts.push({
-    name: lastFlag ? `Joints clear for ${cleanSessions} session${cleanSessions === 1 ? '' : 's'}` : 'No joint flags',
-    points: lastFlag ? 15 - Math.round(8 * 0.85 ** cleanSessions) : 15,
-    max: 15,
-    note: lastFlag && cleanSessions < 12 ? 'A recent flag still counts a little.' : undefined,
-  });
-
-  const score = parts.reduce((n, p) => n + p.points, 0);
+/** The band and its words for a score. */
+export function bandFor(score: number): { band: Readiness['band']; label: string } {
   const band = score >= 80 ? 'push' : score >= 65 ? 'steady' : score >= 50 ? 'easy' : 'rest';
-  const label = { push: 'Good to push', steady: 'Steady', easy: 'Take it easy', rest: 'Rest' }[band];
-  return { score, band, label, parts, known: !!day?.sleep };
+  return { band, label: { push: 'Good to push', steady: 'Steady', easy: 'Take it easy', rest: 'Rest' }[band] };
 }
 
 /**
@@ -99,4 +35,123 @@ export function beatChance(score: number, sessions: TrainingSession[], sets: Set
     if (mine.length) return { pct: Math.round((mine.filter((x) => x.mark === '!' || x.mark === '!!').length / mine.length) * 100), learned: true };
   }
   return { pct: clamp(Math.round(score * 0.9 + 8), 25, 95), learned: false };
+}
+
+/* ------------------------------------------------------------------ */
+/* v2: eleven inputs, each a signed reason; weights refitted monthly.  */
+/* ------------------------------------------------------------------ */
+
+export const READINESS_KEYS = ['sleep', 'rested', 'office', 'stomach', 'soreness', 'flags', 'energy', 'effort', 'restDays', 'stepsYesterday', 'timeOfDay'] as const;
+export type ReadinessKey = (typeof READINESS_KEYS)[number];
+export type Weights = Record<ReadinessKey, number>;
+
+/** Points each input moves the score at its strongest (documented defaults). */
+export const DEFAULT_WEIGHTS: Weights = {
+  sleep: 10,
+  rested: 6,
+  office: 3,
+  stomach: 4,
+  soreness: 8,
+  flags: 8,
+  energy: 6,
+  effort: 4,
+  restDays: 6,
+  stepsYesterday: 3,
+  timeOfDay: 3,
+};
+
+export interface ReadinessInputs {
+  sleepNeed: number;
+  sleepMin?: number;
+  rested?: number;
+  office?: boolean;
+  stomach?: boolean;
+  soreness?: Partial<Record<string, 1 | 2 | 3>>;
+  /** Sessions since the last joint flag; undefined when there has never been one. */
+  sessionsSinceFlag?: number;
+  energy?: number;
+  /** Average reps in reserve last session. */
+  lastRir?: number;
+  /** Days between the last session and today, minus one. */
+  restDays?: number;
+  stepsYesterday?: number;
+  stepsGoal?: number;
+  hour?: number;
+}
+
+export interface ReadinessReason {
+  key: ReadinessKey;
+  label: string;
+  delta: number;
+}
+
+const BASE = 75;
+const AREA: Record<string, string> = { quads: 'Quads', hamstrings: 'Hamstrings', glutes: 'Glutes', calves: 'Calves', chest: 'Chest', 'upper-back': 'Upper back', lats: 'Lats', 'front-delts': 'Shoulders', 'side-delts': 'Shoulders', 'rear-delts': 'Shoulders', biceps: 'Arms', triceps: 'Arms', forearms: 'Forearms', abs: 'Core' };
+
+/** Each present input as a value from -1 (worst) to +1 (best), with its plain label. */
+export function readinessFeatures(i: ReadinessInputs): Partial<Record<ReadinessKey, { x: number; label: string }>> {
+  const f: Partial<Record<ReadinessKey, { x: number; label: string }>> = {};
+  if (i.sleepMin !== undefined) {
+    const gap = i.sleepMin - i.sleepNeed;
+    f.sleep = { x: clamp(gap / 120, -1, 1), label: gap >= 0 ? `Slept ${fmtDuration(i.sleepMin)}` : `Slept ${fmtDuration(i.sleepMin)}, ${fmtDuration(-gap)} short` };
+  }
+  if (i.rested !== undefined) f.rested = { x: (i.rested - 3) / 2, label: `Felt rested ${i.rested} of 5` };
+  if (i.office) f.office = { x: -1, label: 'Office day' };
+  if (i.stomach === false) f.stomach = { x: -1, label: 'Stomach unsettled' };
+  if (i.soreness) {
+    const entries = Object.entries(i.soreness).filter(([, v]) => v);
+    if (entries.length) {
+      const [worst] = entries.sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0));
+      const load = clamp(entries.reduce((n, [, v]) => n + (v ?? 0), 0) / 4, 0, 1);
+      f.soreness = { x: -load, label: `${AREA[worst[0]] ?? worst[0]} sore` };
+    }
+  }
+  if (i.sessionsSinceFlag !== undefined) f.flags = { x: -(0.85 ** i.sessionsSinceFlag), label: i.sessionsSinceFlag === 0 ? 'Joint flag last session' : `Joint flag ${i.sessionsSinceFlag} sessions ago` };
+  if (i.energy !== undefined) f.energy = { x: (i.energy - 3) / 2, label: `Energy ${i.energy} of 5` };
+  if (i.lastRir !== undefined) f.effort = { x: clamp((i.lastRir - 2) / 2, -1, 0.5), label: i.lastRir < 1 ? 'Last session was all-out' : 'Last session left reps in reserve' };
+  if (i.restDays !== undefined) f.restDays = { x: i.restDays <= 0 ? -0.5 : i.restDays === 1 ? 0.5 : 1, label: i.restDays <= 0 ? 'Trained yesterday' : i.restDays === 1 ? 'One rest day' : i.restDays === 2 ? 'Two rest days' : `${i.restDays} rest days` };
+  if (i.stepsYesterday !== undefined && i.stepsGoal && i.stepsYesterday > i.stepsGoal * 1.4) f.stepsYesterday = { x: -1, label: 'Big walking day yesterday' };
+  if (i.hour !== undefined && (i.hour >= 22 || i.hour < 6)) f.timeOfDay = { x: -1, label: 'Late in the night' };
+  return f;
+}
+
+/** The score with every reason, largest first. Missing inputs simply drop out. */
+export function readinessScore(i: ReadinessInputs, weights: Weights = DEFAULT_WEIGHTS): { score: number; parts: ReadinessReason[]; known: boolean; x: Partial<Record<ReadinessKey, number>> } {
+  const f = readinessFeatures(i);
+  const x: Partial<Record<ReadinessKey, number>> = {};
+  const parts: ReadinessReason[] = [];
+  for (const k of READINESS_KEYS) {
+    const v = f[k];
+    if (!v) continue;
+    x[k] = v.x;
+    const delta = Math.round(v.x * weights[k]);
+    if (delta !== 0) parts.push({ key: k, label: v.label, delta });
+  }
+  parts.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+  const score = clamp(BASE + parts.reduce((n, p) => n + p.delta, 0), 0, 100);
+  return { score, parts, known: i.sleepMin !== undefined, x };
+}
+
+/** Sessions needed before the weights are refitted. */
+export const REFIT_MIN = 8;
+
+/**
+ * Refit each weight to how sessions actually went: the slope of session quality against
+ * the input, capped at ±50 % of the documented default.
+ */
+export function refitWeights(history: { x: Partial<Record<ReadinessKey, number>>; quality: number }[], defaults: Weights = DEFAULT_WEIGHTS): Weights {
+  if (history.length < REFIT_MIN) return { ...defaults };
+  const out = { ...defaults };
+  for (const k of READINESS_KEYS) {
+    const pts = history.filter((h) => h.x[k] !== undefined).map((h) => [h.x[k]!, h.quality] as const);
+    if (pts.length < 5) continue;
+    const mx = pts.reduce((n, p) => n + p[0], 0) / pts.length;
+    const my = pts.reduce((n, p) => n + p[1], 0) / pts.length;
+    const vx = pts.reduce((n, p) => n + (p[0] - mx) ** 2, 0);
+    if (vx < 1e-6) continue;
+    const slope = pts.reduce((n, p) => n + (p[0] - mx) * (p[1] - my), 0) / vx;
+    const d = defaults[k];
+    out[k] = Math.round(clamp(slope, d * 0.5, d * 1.5) * 10) / 10;
+  }
+  return out;
 }

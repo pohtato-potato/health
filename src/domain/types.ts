@@ -199,6 +199,8 @@ export interface Settings {
   turnSteps?: number;
   /** The learned maintenance estimate, refreshed as data comes in. */
   maintenance?: { kcal: number; at: number; weeks: number };
+  /** v2: readiness weights refitted to how sessions went, and when. */
+  readinessWeights?: { at: number; weights: import('./readiness').Weights; sessions: number };
   createdAt: number;
 }
 
@@ -318,6 +320,8 @@ export interface TrainingSession {
   tempo?: Record<string, boolean>;
   /** Readiness when the session started, to learn what the score predicts. */
   readiness?: number;
+  /** v2: the readiness inputs at the start, -1…+1, for refitting the weights. */
+  readinessX?: Partial<Record<string, number>>;
   context?: string[];
   quality?: number;
   /** Lifting and rest spans, in ms since epoch. */

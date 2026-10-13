@@ -1,5 +1,8 @@
-import { addDays } from '../domain/dates';
-import { fmtInt } from '../domain/format';
+import { useEffect } from 'react';
+import { addDays, dayKey } from '../domain/dates';
+import { DEFAULT_WEIGHTS, READINESS_KEYS, REFIT_MIN, refitWeights, type ReadinessKey } from '../domain/readiness';
+import { patchSettings } from '../db/actions';
+import { fmtDayMonth, fmtInt } from '../domain/format';
 import type { Day, FoodEntry, SetEntry, Settings, TrainingSession } from '../domain/types';
 import { useAllDays, useAllSets, useEntriesBetween, useSessions, useSettings, useToday } from '../db/hooks';
 import { back, go } from '../router';
@@ -99,23 +102,24 @@ export function ReadinessPage() {
 
       <div className="card" style={{ gap: 0 }}>
         <div className="lbl" style={{ paddingBottom: 6 }}>
-          What went into it
+          Why {r.score}
         </div>
+        {r.parts.length === 0 && <div className="t14 q lh">Nothing logged yet today. The morning log's sleep, energy and soreness make this real.</div>}
         {r.parts.map((p) => (
-          <div key={p.name} className="col gap4" style={{ padding: '10px 0', borderTop: '1px solid var(--divider)' }}>
-            <div className="row base">
-              <span className="t15">{p.name}</span>
-              <span className="t14 tn q">
-                {p.points} / {p.max}
-              </span>
-            </div>
-            <div className="bar">
-              <i style={{ width: `${(p.points / p.max) * 100}%`, background: 'var(--blue)' }} />
-            </div>
-            {p.note && <span className="t13 q">{p.note}</span>}
+          <div key={p.key} className="row base" style={{ padding: '10px 0', borderTop: '1px solid var(--divider)' }}>
+            <span className="t15">{p.label}</span>
+            <span className="t15 tn" style={{ color: p.delta > 0 ? 'var(--steps)' : 'var(--rose)' }}>
+              {p.delta > 0 ? '+' : '−'}
+              {Math.abs(p.delta)}
+            </span>
           </div>
         ))}
+        <div className="t12 q lh" style={{ paddingTop: 8 }}>
+          Starts at 75; each reason moves it.
+        </div>
       </div>
+
+      <WeightsCard settings={settings} sessions={sessions} />
 
       {scored.length >= 10 && (high !== undefined || low !== undefined) && (
         <div className="card">
@@ -162,3 +166,52 @@ export function ReadinessPage() {
     </div>
   );
 }
+
+/** How the score is worked out: the weights, and the monthly refit against how sessions went. */
+function WeightsCard({ settings, sessions }: { settings: Settings; sessions: TrainingSession[] }) {
+  const fitted = settings.readinessWeights;
+  const history = sessions.filter((x) => x.status === 'done' && x.quality !== undefined && x.readinessX).map((x) => ({ x: x.readinessX as Partial<Record<ReadinessKey, number>>, quality: x.quality! }));
+  const due = history.length >= REFIT_MIN && (!fitted || Date.now() - fitted.at > 30 * 86_400_000);
+  useEffect(() => {
+    if (due) void patchSettings({ readinessWeights: { at: Date.now(), weights: refitWeights(history), sessions: history.length } });
+  }, [due]);
+  const w = fitted?.weights ?? DEFAULT_WEIGHTS;
+  return (
+    <details className="card">
+      <summary className="row base" style={{ minHeight: 44, cursor: 'pointer' }}>
+        <span className="lbl">How it's worked out</span>
+        <span className="t13 q">{fitted ? `Refitted ${fmtDayMonth(dayKey(new Date(fitted.at)))}` : 'Default weights'}</span>
+      </summary>
+      <div className="col" style={{ paddingTop: 6 }}>
+        {READINESS_KEYS.map((k) => (
+          <div key={k} className="row t14" style={{ minHeight: 32 }}>
+            <span className="q">{WEIGHT_NAMES[k]}</span>
+            <span className="tn">
+              up to {w[k]}
+              {fitted && w[k] !== DEFAULT_WEIGHTS[k] ? <span className="t12 q"> (was {DEFAULT_WEIGHTS[k]})</span> : null}
+            </span>
+          </div>
+        ))}
+        <div className="t13 q lh" style={{ paddingTop: 8 }}>
+          {fitted
+            ? `Fitted each month to how ${fitted.sessions} sessions actually went, never more than half above or below the defaults.`
+            : `After ${REFIT_MIN} rated sessions the weights are fitted each month to how your sessions actually go.`}
+        </div>
+      </div>
+    </details>
+  );
+}
+
+const WEIGHT_NAMES: Record<ReadinessKey, string> = {
+  sleep: 'Sleep against your need',
+  rested: 'How rested you feel',
+  office: 'Office day',
+  stomach: 'Stomach',
+  soreness: 'Soreness',
+  flags: 'Joint flags',
+  energy: 'Energy',
+  effort: 'Last session’s effort',
+  restDays: 'Rest days',
+  stepsYesterday: 'Steps yesterday',
+  timeOfDay: 'Time of day',
+};

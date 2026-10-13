@@ -663,3 +663,19 @@
   animation: none !important;
   transition: none !important;
 }
+
+/* Body map */
+.bodymap {
+  width: 100%;
+  max-width: 340px;
+  align-self: center;
+}
+.bodymap-region {
+  cursor: pointer;
+  outline: none;
+}
+.bodymap-region:focus-visible ellipse,
+.bodymap-region:focus-visible rect {
+  stroke: var(--gold);
+  stroke-width: 2;
+}

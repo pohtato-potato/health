@@ -242,6 +242,7 @@ export async function startSession(opts: {
   swaps: Swap[];
   tempo: Record<string, boolean>;
   readiness?: number;
+  readinessX?: Partial<Record<string, number>>;
 }): Promise<TrainingSession> {
   const existing = await activeSession();
   if (existing) return existing;
@@ -257,6 +258,7 @@ export async function startSession(opts: {
     swapped: opts.swaps.length ? opts.swaps : undefined,
     tempo: opts.tempo,
     readiness: opts.readiness,
+    readinessX: opts.readinessX,
   };
   await db.sessions.put(s);
   return s;

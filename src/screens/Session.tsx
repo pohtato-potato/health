@@ -31,14 +31,14 @@ import type { SetEntry, Settings, Side, TrainingSession } from '../domain/types'
 import { bump, deleteSet, discardSession, logSet, patchSession, patchSettings, startSession } from '../db/actions';
 import { APP_START } from '../appStart';
 import { setRestRunning } from '../state/restState';
-import { useActiveSession, useAllDays, useAllSets, useAllSetsWithSkips, useEntriesBetween, useNow, useSessions, useSettings } from '../db/hooks';
-import { addDays, dayKey } from '../domain/dates';
-import { readiness } from '../domain/readiness';
+import { useActiveSession, useAllDays, useAllSets, useAllSetsWithSkips, useNow, useSessions, useSettings } from '../db/hooks';
+import { dayKey } from '../domain/dates';
+import { readinessFor } from '../state/readinessFor';
 import { go, useRoute } from '../router';
 import { Icon } from '../ui/Icon';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
-import { flagEvents, nextUp, pendingSwaps, targetsFor } from '../state/derived';
+import { flagEvents, nextUp, pendingSwaps } from '../state/derived';
 import { clock } from './NextUpCard';
 import { TempoCoach } from '../ui/TempoCoach';
 import { RestPill } from '../ui/RestPill';
@@ -56,13 +56,12 @@ export function SessionScreen() {
   const sets = useAllSets();
   const withSkips = useAllSetsWithSkips();
   const days = useAllDays();
-  const yesterdayEntries = useEntriesBetween(addDays(dayKey(), -1), addDays(dayKey(), -1));
   const starting = useRef(false);
   const start = params.get('start');
   const short = params.get('short') === '1';
 
   useEffect(() => {
-    if (!settings || active === undefined || !sessions || !sets || !days || !yesterdayEntries || starting.current) return;
+    if (!settings || active === undefined || !sessions || !sets || !days || starting.current) return;
     if (active) {
       if (start) go('/session', undefined, { replace: true });
       return;
@@ -78,14 +77,7 @@ export function SessionScreen() {
     const exs = buildSession(plan, sessionId, { short, swaps });
     const tempo = Object.fromEntries(exs.map((ex) => [ex.id, exerciseStatus(ex, settings.planState, settings.equipment, sets, plan.bigJump).tempo]));
     const today = dayKey();
-    const score = readiness({
-      today,
-      day: days.find((d) => d.date === today),
-      sleepTarget: targetsFor(settings, today).sleepMin,
-      sessions,
-      entriesYesterday: yesterdayEntries,
-      flagDates: flagEvents(plan, sessions, days).map((e) => e.date),
-    }).score;
+    const ready = readinessFor(settings, today, days, sessions, sets, flagEvents(plan, sessions, days).map((e) => e.date));
     void startSession({
       session: sessionId,
       planName: plan.name,
@@ -93,13 +85,14 @@ export function SessionScreen() {
       short,
       swaps: swaps.map(({ from, to, reason }) => ({ from, to, reason })),
       tempo,
-      readiness: score,
+      readiness: ready.score,
+      readinessX: ready.x,
     }).then(() => {
       starting.current = false;
       if (Date.now() - APP_START < 60_000) void bump('leeroy');
       go('/session', undefined, { replace: true });
     });
-  }, [settings, active, sessions, sets, days, yesterdayEntries, start, short]);
+  }, [settings, active, sessions, sets, days, start, short]);
 
   if (!settings?.plan || !active || !sets || !withSkips) return <div className="page bare" />;
   return <Runner session={active} settings={settings} plan={settings.plan} allSets={withSkips} />;

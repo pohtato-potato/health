@@ -9,24 +9,10 @@ import { useAllDays, useAllSets, useSessions, useSettings } from '../db/hooks';
 import { DateChip, useLogDate } from '../ui/DateChip';
 import { closeSheet } from '../router';
 import { DecField, IntField, TimeTile } from '../ui/controls';
+import { BodyMap } from '../ui/BodyMap';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
 import { morningQuestions, swapSentence } from '../state/derived';
-
-/** Soreness areas until the body map (E5) arrives: one chip per area, tap to step through how sore. */
-const SORE_AREAS: { id: MuscleId; name: string }[] = [
-  { id: 'chest', name: 'Chest' },
-  { id: 'upper-back', name: 'Upper back' },
-  { id: 'lats', name: 'Lats' },
-  { id: 'front-delts', name: 'Shoulders' },
-  { id: 'biceps', name: 'Arms' },
-  { id: 'abs', name: 'Core' },
-  { id: 'glutes', name: 'Glutes' },
-  { id: 'quads', name: 'Quads' },
-  { id: 'hamstrings', name: 'Hamstrings' },
-  { id: 'calves', name: 'Calves' },
-];
-const SORE_WORD = ['', 'mild', 'sore', 'very'] as const;
 
 export function MorningLog() {
   const settings = useSettings();
@@ -78,14 +64,6 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
     setWoke(m);
     setCarried(false);
   };
-  const stepSore = (id: MuscleId) => {
-    const next = (((sore[id] ?? 0) + 1) % 4) as 0 | 1 | 2 | 3;
-    const copy = { ...sore };
-    if (next) copy[id] = next;
-    else delete copy[id];
-    setSore(copy);
-  };
-
   const save = async () => {
     setSaving(true);
     await saveMorningLog(
@@ -192,17 +170,7 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
 
       <div className="col gap8">
         <div className="lbl">Anything sore?</div>
-        <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
-          {SORE_AREAS.map((a) => {
-            const lvl = sore[a.id] ?? 0;
-            return (
-              <button key={a.id} type="button" className={`chip sm${lvl ? ' on' : ''}`} aria-label={`${a.name}${lvl ? `, ${SORE_WORD[lvl]}` : ', not sore'}. Tap to change`} onClick={() => stepSore(a.id)}>
-                {a.name}
-                {lvl ? <span className="t12"> · {SORE_WORD[lvl]}</span> : null}
-              </button>
-            );
-          })}
-        </div>
+        <BodyMap value={sore} onChange={setSore} />
       </div>
 
       {questions.map((q) => (
