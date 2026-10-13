@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { addEntry, changePlace, closeDay, moveEntry, patchSettings, setStatusRange } from '../src/db/actions';
 import { db, HealthDB, setDatabase } from '../src/db/db';
+import { resolveForecasts, saveForecast } from '../src/db/forecasts';
 
 let n = 0;
 beforeEach(async () => {
@@ -53,5 +54,18 @@ describe('changing place from Today', () => {
     const d = await db.days.get('2026-10-13');
     expect(d?.place).toBe('p-office');
     expect(d?.placeChanges).toEqual([{ at: t, place: 'p-home' }]);
+  });
+});
+
+describe('forecast store', () => {
+  it('one forecast per kind per day, resolved later against what happened', async () => {
+    await saveForecast({ kind: 'whtr', targetDate: '2026-11-10', low: 0.51, high: 0.52 }, '2026-10-13');
+    await saveForecast({ kind: 'whtr', targetDate: '2026-11-10', low: 0.515, high: 0.525 }, '2026-10-13');
+    expect(await db.forecasts.count()).toBe(1);
+    await db.measurements.put({ id: 'm1', date: '2026-11-09', at: 1, waistStanding: 36.5 });
+    await patchSettings({ heightCm: 178 });
+    await resolveForecasts('2026-11-12');
+    const r = (await db.forecasts.toArray())[0];
+    expect(r.outcome).toBeCloseTo(0.5208, 3);
   });
 });

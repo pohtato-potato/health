@@ -12,7 +12,7 @@ export function whtr(waistIn: number, heightCm: number): number {
 export const WHTR_GOALS = [0.5, 0.45];
 
 /** Where the waist-to-height ratio stands, the next goal, and when the trend reaches it. */
-export function benchmarkProgress(measurements: Measurement[], heightCm: number, today: DayKey): { current: number; goal: number; projected?: DayKey } | undefined {
+export function benchmarkProgress(measurements: Measurement[], heightCm: number, today: DayKey): { current: number; goal: number; projected?: DayKey; slope?: number } | undefined {
   const pts = measurements
     .filter((m) => m.waistStanding !== undefined && m.date <= today)
     .sort((a, b) => a.date.localeCompare(b.date))
@@ -27,8 +27,8 @@ export function benchmarkProgress(measurements: Measurement[], heightCm: number,
   const my = pts.reduce((a, p) => a + p.r, 0) / pts.length;
   const vx = xs.reduce((n, x) => n + (x - mx) ** 2, 0);
   const slope = vx ? xs.reduce((n, x, i) => n + (x - mx) * (pts[i].r - my), 0) / vx : 0;
-  if (slope >= 0) return { current, goal };
-  return { current, goal, projected: addDays(pts[pts.length - 1].date, Math.ceil((goal - current) / slope)) };
+  if (slope >= 0) return { current, goal, slope };
+  return { current, goal, slope, projected: addDays(pts[pts.length - 1].date, Math.ceil((goal - current) / slope)) };
 }
 
 /** Maintenance has to move this much before the weekly check-in speaks up. */
