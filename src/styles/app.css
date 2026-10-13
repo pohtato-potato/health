@@ -1672,6 +1672,15 @@ textarea.field {
   --gold-border: #7a5626;
   --gold-rule: #4a3518;
 }
+:root.theme-diwali .tabbar .plus span {
+  background: #f5b94a;
+}
+:root.theme-holi .tabbar .plus span {
+  background: #ff7aa8;
+}
+:root.theme-birthday .tabbar .plus span {
+  background: #f7c96b;
+}
 :root.theme-holi {
   --ink: #0f0d14;
   --surface: #17141f;

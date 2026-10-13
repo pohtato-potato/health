@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { PartOfDay } from '../../domain/dates';
 import { lightFor, mix, REGIONS, type RegionId } from '../../ui/light';
 import { landmarkFor } from './landmarks';
+import { FestiveDecor, festiveSky, type Festive } from './festive';
 import { PEOPLE, WALKER } from './people';
 
 const W = 390;
@@ -46,10 +47,11 @@ function ridge(y: number, amp: number, bumps: number, rnd: () => number): string
  * stop's landmark between the far ridge and the near ground, stars at night, warm windows
  * at dusk and night, and optionally a few people on the road. All vector, no raster.
  */
-export function Scene({ city, region: regionIn, part, people = false, landmarkScale = 1, caption, className, overlay }: { city?: string; region?: RegionId; part: PartOfDay; people?: boolean; landmarkScale?: number; caption?: React.ReactNode; className?: string; overlay?: React.ReactNode }) {
+export function Scene({ city, region: regionIn, part, people = false, landmarkScale = 1, caption, className, overlay, festive }: { city?: string; region?: RegionId; part: PartOfDay; people?: boolean; landmarkScale?: number; caption?: React.ReactNode; className?: string; overlay?: React.ReactNode; festive?: Festive }) {
   const lm = city ? landmarkFor(city) : undefined;
   const region = regionIn ?? lm?.region ?? 'plains';
-  const light = lightFor(part, region);
+  const base = lightFor(part, region);
+  const light = festive ? { ...base, sky: festiveSky(festive, base.sky) } : base;
   const shapes = useMemo(() => {
     const rnd = seeded(REGIONS.indexOf(region) * 977 + 13);
     const { amp, bumps } = RELIEF[region];
@@ -86,6 +88,7 @@ export function Scene({ city, region: regionIn, part, people = false, landmarkSc
         {part === 'night' && stars.map(([x, y, rr], i) => <circle key={i} cx={x} cy={y} r={rr} fill="#f6eed9" opacity={0.35 + (i % 3) * 0.2} />)}
         <circle cx={W * 0.78} cy={sunY} r={70} fill={`url(#${id}-glow)`} />
         <circle cx={W * 0.78} cy={sunY} r={part === 'night' ? 9 : 13} fill={light.glow} />
+        {festive && <FestiveDecor f={festive} W={W} />}
         <path d={shapes[0]} fill={light.layers[0]} />
         <path d={shapes[1]} fill={light.layers[1]} />
         {lm && (

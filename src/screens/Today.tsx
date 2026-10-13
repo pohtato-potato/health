@@ -44,6 +44,8 @@ import { daysBetween } from '../domain/dates';
 import { journeyStart as journeyStartOf } from './Journey';
 import { PlaceIcon } from '../ui/PlaceIcon';
 import { STATUSES, StatusRow } from '../ui/StatusRow';
+import { seasonalThemeOn } from '../domain/themes';
+import type { Festive } from '../walk/art/festive';
 
 export function Today() {
   const unlocked = useUnlockedIds();
@@ -153,7 +155,7 @@ export function Today() {
         <PlaceChip settings={settings} today={today} day={day} />
       </div>
 
-      <WalkScene km={walkKm} dayN={daysBetween(journeyStartOf(settings, days), today) + 1} />
+      <WalkScene km={walkKm} dayN={daysBetween(journeyStartOf(settings, days), today) + 1} festive={prefOn(settings.prefs, 'seasonal') ? seasonalThemeOn(today, settings.birthday) as Festive | undefined : undefined} />
 
       <div className="voice" style={flag ? { fontStyle: 'normal', fontFamily: 'var(--sans)', fontSize: 15, color: 'var(--apricot)' } : undefined}>
         {flag ? line : lineForTheDay(today, line)}

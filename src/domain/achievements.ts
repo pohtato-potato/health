@@ -727,7 +727,7 @@ secret('Sigma grindset', 'Finish the morning log before 6 am, 7 days in a row.',
   }) >= 7,
 );
 secret('Ctrl+Z', 'Undo an entry within 5 seconds.', 'b', 'Everyone makes typos.', (s) => count(s, 'undo-fast') > 0);
-secret('Konami code', 'Swipe ↑ ↑ ↓ ↓ ← → ← → across the rings.', 's', 'Thirty lives not included.', (s) => count(s, 'konami') > 0, { reward: 'The Retro theme' });
+secret('Konami code', 'Swipe ↑ ↑ ↓ ↓ ← → ← → across the rings.', 's', 'An old cheat code still works, swiped across the rings.', (s) => count(s, 'konami') > 0, { reward: 'The Retro theme' });
 secret('Error 404', "Find the page that doesn't exist.", 's', 'One link leads nowhere. Or somewhere.', (s) => count(s, '404') > 0);
 secret('Rickrolled', 'Tap the headline about never giving up.', 'b', 'Some headlines are traps.', (s) => count(s, 'rickroll') > 0);
 secret('Clickbait', 'Tap the news ticker 25 times.', 'b', 'Read all about it.', (s) => count(s, 'ticker-tap') >= 25, { progress: (s) => [count(s, 'ticker-tap'), 25] });

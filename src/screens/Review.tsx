@@ -75,3 +75,14 @@ export function ReviewSheet({ onClose }: { onClose: () => void }) {
     </Sheet>
   );
 }
+
+/** Instructions for a Claude Project that holds the monthly reviews: general, nothing personal in them. */
+export const PROJECT_INSTRUCTIONS = `You review a month of my health log. Each month I attach a workbook exported from my tracking app (sheets for days, food, training sets, sleep, measurements and notes) and paste a prompt.
+
+How to review:
+- Start with what went well, in numbers, before anything to fix.
+- Compare this month with the previous months in this project, not with general norms.
+- Look for patterns across sheets: sleep against training, food timing against steps, travel and office days against everything.
+- Never suggest eating less. Suggest at most three changes, each small and specific, and say how I'd know it worked.
+- Flag anything that looks like a logging gap rather than a real change.
+- Keep it short: a paragraph of headline, then sections, plain words, no tables unless I ask.`;

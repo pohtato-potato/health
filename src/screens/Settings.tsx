@@ -21,7 +21,7 @@ import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
 import { targetsFor } from '../state/derived';
 import { ThemeSheet, useUnlockedIds } from '../ui/Theme';
-import { ReviewSheet } from './Review';
+import { PROJECT_INSTRUCTIONS, ReviewSheet } from './Review';
 import { themeById } from '../domain/themes';
 import { askConfirm } from '../ui/Confirm';
 import { useBatteryLevel } from '../ui/RestScreen';
@@ -391,6 +391,27 @@ export function SettingsScreen() {
           </span>
           <Icon name="right" size={18} stroke={1.8} color="var(--dim)" />
         </button>
+        <div className="card" style={{ gap: 10 }}>
+          <div className="row base">
+            <span className="t15">Claude Project instructions</span>
+            <button
+              type="button"
+              className="btn ghost sm"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(PROJECT_INSTRUCTIONS);
+                  toast({ kicker: 'Copied', text: 'Paste into a Claude Project’s instructions.', tone: 'sage' });
+                } catch {
+                  toast({ kicker: 'Copy', text: 'Select the text and copy it by hand.', tone: 'sage' });
+                }
+              }}
+            >
+              Copy
+            </button>
+          </div>
+          <div className="t12 q lh">Make a Project in Claude for your monthly reviews and paste these in, so every month is read against the last.</div>
+          <div className="t13 lh prompt-box">{PROJECT_INSTRUCTIONS}</div>
+        </div>
       </Group>
 
       <Group id="lastfm" title="Last.fm">
@@ -431,7 +452,12 @@ export function SettingsScreen() {
         <SwitchRow title="News ticker on Today" checked={prefOn(p, 'ticker')} onChange={(v) => setPref('ticker', v)} />
         <SwitchRow title="Shake for a stat" sub="Shake the phone anywhere in the app" checked={prefOn(p, 'shake')} onChange={(v) => setPref('shake', v)} />
         <LinkRow title="Theme" value={themeById(settings.theme)?.name ?? 'Dusk'} onClick={() => setEditor('theme')} />
+      </Group>
+
+      <Group id="moments" title="Moments and themes">
+        <SwitchRow title="Moments" sub="Full-screen celebrations for records, firsts and perfect days" checked={prefOn(p, 'moments')} onChange={(v) => setPref('moments', v)} />
         <SwitchRow title="Seasonal themes" sub="Diwali, Holi and your birthday take over for the day" checked={prefOn(p, 'seasonal')} onChange={(v) => setPref('seasonal', v)} />
+        <SwitchRow title="Quiet in public" sub="No confetti or buzz from 10 pm to 7 am, or while a session runs in the background" checked={prefOn(p, 'quietPublic')} onChange={(v) => setPref('quietPublic', v)} />
       </Group>
 
       <Group id="home" title="Home screen and ticker">

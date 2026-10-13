@@ -64,3 +64,27 @@ describe('day closed walk line', () => {
     expect(nextStopLine('Agra', 6, undefined)).toBe('Agra in 6 km');
   });
 });
+
+describe('theme days', () => {
+  it('tints the sky toward the festival and leaves ordinary days alone', async () => {
+    const { festiveSky } = await import('../src/walk/art/festive');
+    const sky: [string, string, string] = ['#101020', '#202040', '#404080'];
+    expect(festiveSky(undefined, sky)).toEqual(sky);
+    const d = festiveSky('diwali', sky);
+    expect(d).not.toEqual(sky);
+    expect(d).toHaveLength(3);
+    expect(festiveSky('holi', sky)).not.toEqual(d);
+  });
+});
+
+describe('quiet in public', () => {
+  it('holds back confetti and sound late at night, early morning, and while the app is in the background', async () => {
+    const { quietNow } = await import('../src/ui/quiet');
+    const at = (h: number, m = 0) => new Date(2026, 9, 14, h, m).getTime();
+    expect(quietNow(true, at(22, 0), false)).toBe(true);
+    expect(quietNow(true, at(6, 59), false)).toBe(true);
+    expect(quietNow(true, at(7, 0), false)).toBe(false);
+    expect(quietNow(true, at(15), true)).toBe(true);
+    expect(quietNow(false, at(23), true)).toBe(false);
+  });
+});

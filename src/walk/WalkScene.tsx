@@ -4,6 +4,7 @@ import { positionAt } from '../domain/walk';
 import { Scene } from './art/scene';
 import { landmarkFor } from './art/landmarks';
 import { regionAt } from './regions';
+import type { Festive } from './art/festive';
 
 /** The landmark ahead grows as you near it: small from 60 km out, full size on arrival. */
 export function approachScale(kmToNext: number | undefined): number {
@@ -21,7 +22,7 @@ export function ghostX(youX: number, km: number, ghostKm: number): number {
   return youX - Math.max(36, Math.min(youX - 24, 36 + (km - ghostKm) * 0.5));
 }
 
-export function WalkScene({ km, ghostKm, caption = true, hero, carryFrac = 0, built, dayN, lanterns = 0 }: { km: number; ghostKm?: number; caption?: boolean; hero?: boolean; carryFrac?: number; built?: string; dayN?: number; lanterns?: number }) {
+export function WalkScene({ km, ghostKm, caption = true, hero, carryFrac = 0, built, dayN, lanterns = 0, festive }: { festive?: Festive; km: number; ghostKm?: number; caption?: boolean; hero?: boolean; carryFrac?: number; built?: string; dayN?: number; lanterns?: number }) {
   const pos = positionAt(km);
   const ahead = pos.to ?? pos.from;
   const toNext = pos.to ? Math.max(0, pos.to.km - km) : undefined;
@@ -83,6 +84,7 @@ export function WalkScene({ km, ghostKm, caption = true, hero, carryFrac = 0, bu
       region={regionAt(km)}
       part={partOfDay(new Date())}
       people={!hero}
+      festive={festive}
       landmarkScale={approachScale(toNext)}
       className={hero ? 'walk-hero' : undefined}
       overlay={overlay}

@@ -30,6 +30,12 @@ export function AchievementsPage() {
     .sort((x, y) => y.pct - x.pct)
     .slice(0, 6);
   const recent = [...unlocked].sort((x, y) => got(y)!.at - got(x)!.at).slice(0, 5);
+  // Secret hints unlock as you go: one per five achievements, the Konami code's first.
+  const secrets = ACHIEVEMENTS.filter((a) => a.cat === 'secret');
+  const hintsOpen = Math.floor(unlocked.length / 5);
+  const lockedSecrets = secrets.filter((a) => !got(a)).sort((x, y) => Number(y.name === 'Konami code') - Number(x.name === 'Konami code'));
+  const hinted = new Set(lockedSecrets.slice(0, hintsOpen).map((a) => a.id));
+  const nextHintAt = (hintsOpen + 1) * 5;
   const lastSecret = [...unlocked].filter((a) => a.cat === 'secret').sort((x, y) => got(y)!.at - got(x)!.at)[0];
 
   const list = (defs: AchDef[]) =>
@@ -59,7 +65,7 @@ export function AchievementsPage() {
             </span>
           </div>
           <span className="t13 q lh">
-            {secretLocked ? `Hint: ${a.hint}` : text(a.desc, stats)}
+            {secretLocked ? (hinted.has(a.id) ? `Hint: ${a.hint}` : `A hint opens at ${nextHintAt} achievements.`) : text(a.desc, stats)}
             {u && !u.quiet ? ` ${fmtDayMonth(u.date)}.` : ''}
             {!u && a.soon ? ' Arrives with a later update.' : ''}
           </span>
@@ -94,8 +100,11 @@ export function AchievementsPage() {
             {unlocked.length}
           </span>{' '}
           <span className="q">
-            of {ACHIEVEMENTS.length} · {secretsFound} secret{secretsFound === 1 ? '' : 's'} found
+            of {ACHIEVEMENTS.length}
           </span>
+        </div>
+        <div className="t13 lavender">
+          Secrets {secretsFound} of {secrets.length} · hints unlock as you go
         </div>
       </div>
 
