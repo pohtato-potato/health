@@ -140,7 +140,7 @@ export function WalkTab({ extraTabs }: { extraTabs?: { id: string; label: string
           </div>
           <div className="list">
             {[
-              { label: 'The map', sub: 'Your trail across India', path: '/map' },
+              { label: 'Route', sub: 'The whole walk on one map', path: '/map' },
               { label: 'Departures', sub: 'Every milestone ahead', path: '/departures' },
               { label: 'Overview', sub: 'The walk in numbers', path: '/journey' },
             ].map((x) => (

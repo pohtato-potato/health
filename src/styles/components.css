@@ -1029,3 +1029,12 @@
   padding: 2px 4px 2px 14px;
   border-left: 2px solid var(--hairline);
 }
+
+/* Walk › Route: the whole-walk map. */
+.route-map {
+  margin: 0 -8px;
+}
+.route-map svg {
+  display: block;
+  max-height: 70vh;
+}
