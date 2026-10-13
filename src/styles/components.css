@@ -624,3 +624,42 @@
   background: var(--gold-bg);
   border: 1px solid var(--gold-border);
 }
+
+/* Rest: the dock and the battery saver's black screen. */
+.restdock {
+  position: sticky;
+  bottom: calc(12px + var(--safe-bottom));
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.restdock .restpill {
+  flex: 1;
+}
+.restscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 86;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+.restscreen-time {
+  font-size: 96px;
+  color: #6b6890;
+  letter-spacing: -0.02em;
+}
+/* Battery saver: true black, nothing moving. */
+.page.saver {
+  background: #000;
+}
+.page.saver *,
+.page.saver *::before,
+.page.saver *::after {
+  animation: none !important;
+  transition: none !important;
+}

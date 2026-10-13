@@ -24,10 +24,12 @@ import { ThemeSheet, useUnlockedIds } from '../ui/Theme';
 import { ReviewSheet } from './Review';
 import { themeById } from '../domain/themes';
 import { askConfirm } from '../ui/Confirm';
+import { useBatteryLevel } from '../ui/RestScreen';
 
 type Editor = null | 'targets' | 'item' | 'homes' | 'you' | 'plates' | 'theme' | 'review';
 
 export function SettingsScreen() {
+  const battery = useBatteryLevel();
   const settings = useSettings();
   const today = useToday();
   const { params } = useRoute();
@@ -262,6 +264,12 @@ export function SettingsScreen() {
       </Group>
 
       <Group id="training" title="Training setup">
+        <SwitchRow
+          title="Battery saver for sessions"
+          sub={battery !== undefined ? `On by itself below 30%. The phone reports ${Math.round(battery * 100)}% now.` : "This browser doesn't report the battery, so switch it on by hand."}
+          checked={!!settings.prefs.batterySaver}
+          onChange={(v) => setPref('batterySaver', v)}
+        />
         <LinkRow
           title="Plan"
           sub={settings.plan ? `${settings.plan.sessions.length} sessions · ${settings.plan.flags.length} joint checks` : 'None yet'}

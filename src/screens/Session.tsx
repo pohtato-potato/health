@@ -36,12 +36,14 @@ import { addDays, dayKey } from '../domain/dates';
 import { readiness } from '../domain/readiness';
 import { go, useRoute } from '../router';
 import { Icon } from '../ui/Icon';
-import { MiniRing } from '../ui/Rings';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
 import { flagEvents, nextUp, pendingSwaps, targetsFor } from '../state/derived';
 import { clock } from './NextUpCard';
 import { TempoCoach } from '../ui/TempoCoach';
+import { RestPill } from '../ui/RestPill';
+import { RestScreen, useBatteryLevel } from '../ui/RestScreen';
+import { batteryMode } from '../domain/rest';
 import { ClipButtons } from './Clips';
 import { prefOn } from '../domain/types';
 import { askConfirm } from '../ui/Confirm';
@@ -148,7 +150,10 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
   });
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>({});
-  const [rest, setRest] = useState<{ endsAt: number; total: number } | null>(null);
+  const [rest, setRest] = useState<{ from: number; endsAt: number; total: number } | null>(null);
+  const [restHidden, setRestHidden] = useState(false);
+  const level = useBatteryLevel();
+  const saver = batteryMode(level, !!settings.prefs.batterySaver);
   const [watch, setWatch] = useState<{ key: string; startedAt: number } | null>(null);
   const [swapFor, setSwapFor] = useState<string | null>(null);
   const [coach, setCoach] = useState<string | null>(null);
@@ -181,12 +186,19 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
     if (!editing) setDraft({});
   }, [current?.key, editing]);
 
+  /** Each rest is kept as a span, so the finale can say where the hour went. */
+  const logRest = (r: { from: number; endsAt: number }) => {
+    const to = Math.min(Date.now(), r.endsAt);
+    if (to > r.from) void patchSession(session.id, { restLog: [...(session.restLog ?? []), { from: r.from, to, kind: 'rest' }] });
+  };
   const startRest = (sec: number) => {
     setRestRunning(true);
     cancelDing.current?.();
     window.clearTimeout(buzzTimer.current);
+    if (rest) logRest(rest);
     const endsAt = Date.now() + sec * 1000;
-    setRest({ endsAt, total: sec });
+    setRest({ from: Date.now(), endsAt, total: sec });
+    setRestHidden(false);
     if (settings.prefs.ding) cancelDing.current = scheduleDing(sec);
     buzzTimer.current = window.setTimeout(() => buzz([90, 70, 90]), sec * 1000);
   };
@@ -195,11 +207,12 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
     const left = Math.max(0, (rest.endsAt - Date.now()) / 1000) + sec;
     cancelDing.current?.();
     window.clearTimeout(buzzTimer.current);
-    setRest({ endsAt: Date.now() + left * 1000, total: rest.total + sec });
+    setRest({ from: rest.from, endsAt: Date.now() + left * 1000, total: rest.total + sec });
     if (settings.prefs.ding) cancelDing.current = scheduleDing(left);
     buzzTimer.current = window.setTimeout(() => buzz([90, 70, 90]), left * 1000);
   };
   const stopRest = () => {
+    if (rest) logRest(rest);
     setRestRunning(false);
     cancelDing.current?.();
     cancelDing.current = null;
@@ -352,7 +365,7 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
   const answer = (exId: string, v: 'yes' | 'no') => patchSession(session.id, { heavier: { ...session.heavier, [exId]: v } });
 
   return (
-    <div className="page bare" style={{ gap: 16, paddingTop: 'calc(14px + var(--safe-top))' }}>
+    <div className={`page bare${saver ? ' saver' : ''}`} style={{ gap: 16, paddingTop: 'calc(14px + var(--safe-top))' }}>
       <div className="row">
         <button type="button" className="icon-btn" aria-label="Minimise session" onClick={() => go('/today')}>
           <Icon name="down" size={22} />
@@ -545,22 +558,21 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
         );
       })}
 
-      {rest && (
-        <div className="rest" style={{ position: 'sticky', bottom: 'calc(12px + var(--safe-bottom))', zIndex: 5, boxShadow: '0 -8px 30px rgba(0,0,0,.35)' }}>
-          <MiniRing progress={restLeft / rest.total} size={50} label="Rest timer" />
-          <div className="grow col gap2">
-            <div className="lbl sm blue">{restLeft > 0 ? `Rest · ${settings.prefs.ding ? 'ding at 0:00' : 'no ding'}` : 'Rest over'}</div>
-            <div className="num tn" style={{ fontSize: 26 }}>
-              {restLeft > 0 ? clock(restLeft * 1000 + 999) : 'Go'}
-            </div>
-          </div>
-          {restLeft > 0 && (
-            <button type="button" className="btn ghost sm" onClick={() => extendRest(30)}>
-              +30 s
-            </button>
-          )}
-          <button type="button" className="icon-btn" aria-label="Stop the rest timer" onClick={stopRest}>
-            <Icon name="close" size={18} stroke={1.8} />
+      {rest && restLeft > 0 && saver && !restHidden && <RestScreen endsAt={rest.endsAt} total={rest.total} onEndNow={stopRest} onHide={() => setRestHidden(true)} />}
+
+      {rest && restLeft > 0 && (
+        <div className="restdock">
+          <RestPill endsAt={rest.endsAt} total={rest.total} onEnd={() => setRestRunning(false)} onEndNow={stopRest} />
+          <button type="button" className="chip sm" onClick={() => extendRest(30)}>
+            +30 s
+          </button>
+        </div>
+      )}
+      {rest && restLeft <= 0 && (
+        <div className="row t14 q" style={{ gap: 12 }}>
+          <span>Rest ended {clock(Math.max(0, now - rest.endsAt))} ago.</span>
+          <button type="button" className="link" onClick={stopRest}>
+            Clear
           </button>
         </div>
       )}
