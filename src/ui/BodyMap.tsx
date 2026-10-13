@@ -49,15 +49,32 @@ function Outline() {
   );
 }
 
-function Figure({ regions, value, onTap, label, dx }: { regions: Region[]; value: Soreness; onTap: (id: MuscleId) => void; label: string; dx: number }) {
+/** Regions stand in for a few muscles each when showing training heat. */
+const ALSO: Partial<Record<MuscleId, MuscleId[]>> = { 'front-delts': ['side-delts', 'rear-delts'] };
+
+function Figure({ regions, value, onTap, label, dx, heat }: { regions: Region[]; value: Soreness; onTap?: (id: MuscleId) => void; label: string; dx: number; heat?: Partial<Record<MuscleId, number>> }) {
   return (
     <g transform={`translate(${dx} 0)`}>
       <Outline />
       {regions.map((r) => {
         const lvl = value[r.id] ?? 0;
-        const key = (e: KeyboardEvent) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onTap(r.id));
+        if (heat) {
+          const h = Math.max(heat[r.id] ?? 0, ...(ALSO[r.id] ?? []).map((x) => heat[x] ?? 0));
+          return (
+            <g key={r.id}>
+              {r.shapes.map((sh, i) =>
+                sh.kind === 'ellipse' ? (
+                  <ellipse key={i} cx={sh.cx} cy={sh.cy} rx={sh.rx} ry={sh.ry} fill="var(--gold)" fillOpacity={0.06 + h * 0.8} stroke="var(--btn-border)" strokeWidth="1" />
+                ) : (
+                  <rect key={i} x={sh.x} y={sh.y} width={sh.w} height={sh.h} rx={sh.r} fill="var(--gold)" fillOpacity={0.06 + h * 0.8} stroke="var(--btn-border)" strokeWidth="1" />
+                ),
+              )}
+            </g>
+          );
+        }
+        const key = (e: KeyboardEvent) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onTap?.(r.id));
         return (
-          <g key={r.id} role="button" tabIndex={0} aria-label={`${r.name}, ${WORD[lvl]}. Tap to change`} className="bodymap-region" onClick={() => onTap(r.id)} onKeyDown={key}>
+          <g key={r.id} role="button" tabIndex={0} aria-label={`${r.name}, ${WORD[lvl]}. Tap to change`} className="bodymap-region" onClick={() => onTap?.(r.id)} onKeyDown={key}>
             {r.shapes.map((s, i) =>
               s.kind === 'ellipse' ? (
                 <ellipse key={`hit${i}`} cx={s.cx} cy={s.cy} rx={Math.max(s.rx, 15)} ry={Math.max(s.ry, 15)} fill="transparent" />
@@ -102,5 +119,15 @@ export function BodyMap({ value, onChange }: { value: Soreness; onChange: (v: So
         {sore.length ? sore.map((r) => `${r.name} ${WORD[value[r.id]!]}`).join(', ') : 'Nothing sore. Tap an area if it is.'}
       </div>
     </div>
+  );
+}
+
+/** The same figure, showing this week's training: brighter where more hard sets landed (0 to 1). */
+export function BodyHeat({ heat, label }: { heat: Partial<Record<MuscleId, number>>; label: string }) {
+  return (
+    <svg viewBox="0 0 260 252" className="bodymap" role="img" aria-label={label}>
+      <Figure regions={FRONT} value={{}} heat={heat} label="Front" dx={6} />
+      <Figure regions={BACK} value={{}} heat={heat} label="Back" dx={134} />
+    </svg>
   );
 }

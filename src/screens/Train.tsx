@@ -11,6 +11,7 @@ import { doneSessions, nextUp, triggersMet, weeksFor } from '../state/derived';
 import { NextUpCard } from './NextUpCard';
 import { sessionStats } from './SessionDone';
 import { trainingStreakLine } from '../domain/streaks';
+import { MuscleCard } from './MuscleMap';
 
 export function Train() {
   const settings = useSettings();
@@ -83,6 +84,8 @@ export function Train() {
       ))}
 
       <NextUpCard settings={settings} up={up} active={active} trainedToday={trainedToday} weeks={weeks} />
+
+      <MuscleCard sets={sets} plan={plan} today={today} />
       {!active && !trainedToday.length && short.length > 0 && (
         <div className="t13 q lh" style={{ marginTop: -6, padding: '0 4px' }}>
           Short on time: {short.join(' · ')}.{' '}
