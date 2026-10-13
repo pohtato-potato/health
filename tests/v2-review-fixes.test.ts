@@ -14,3 +14,15 @@ describe('the logging day runs 4 am to 4 am', () => {
     expect(logWeekdaySun(new Date(2026, 9, 12, 9, 0).getTime())).toBe(1);
   });
 });
+
+describe('nothing active needs water, which v2 no longer logs', () => {
+  it('water-only secrets are retired and the rest no longer ask for water', async () => {
+    const { ACTIVE_ACHIEVEMENTS } = await import('../src/domain/achievements');
+    const names = ACTIVE_ACHIEVEMENTS.map((a) => a.name);
+    expect(names).not.toContain('Pi day');
+    expect(names).toContain('Mogambo khush hua');
+    expect(names).toContain('Apun hi bhagwan hai');
+    for (const a of ACTIVE_ACHIEVEMENTS) if (typeof a.desc === 'string') expect(a.desc).not.toMatch(/water/i);
+    for (const a of ACTIVE_ACHIEVEMENTS) expect(String(a.test)).not.toMatch(/waterOk|\.water\b/);
+  });
+});
