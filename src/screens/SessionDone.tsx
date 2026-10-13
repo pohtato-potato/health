@@ -6,20 +6,25 @@ import { findExercise, findSession, type PlanDef } from '../domain/plan';
 import { exerciseStatus } from '../domain/progression';
 import type { SetEntry, Settings, TrainingSession } from '../domain/types';
 import { discardSession, finishSession } from '../db/actions';
-import { useActiveSession, useAllSets, useSessions, useSettings } from '../db/hooks';
+import { useActiveSession, useAllSets, useAllSetsWithSkips, useSessions, useSettings } from '../db/hooks';
 import { go } from '../router';
 import { useToast } from '../ui/Toasts';
 import { doneSessions, swapSentence } from '../state/derived';
 import { Confetti } from '../ui/Confetti';
-import { useMoments, type RecordPage } from '../ui/Moments';
+import { type RecordPage } from '../ui/Moments';
+import { Finale } from './session/Finale';
+import { sessionQuality } from '../domain/sessionQuality';
 import { askConfirm } from '../ui/Confirm';
 
 export function SessionDone() {
   const settings = useSettings();
   const active = useActiveSession();
   const sets = useAllSets();
+  const withSkips = useAllSetsWithSkips();
   const sessions = useSessions();
-  if (!settings || active === undefined || !sets || !sessions) return <div className="page bare" />;
+  const [finale, setFinale] = useState<{ session: TrainingSession; mine: SetEntry[]; pages: RecordPage[]; quality: number } | null>(null);
+  if (finale) return <Finale {...finale} onClose={() => go('/train', undefined, { replace: true })} />;
+  if (!settings || active === undefined || !sets || !sessions || !withSkips) return <div className="page bare" />;
   if (!active || !settings.plan) {
     return (
       <div className="page bare">
@@ -30,7 +35,7 @@ export function SessionDone() {
       </div>
     );
   }
-  return <DoneForm session={active} plan={settings.plan} sets={sets} sessions={sessions} settings={settings} />;
+  return <DoneForm session={active} plan={settings.plan} sets={sets} withSkips={withSkips} sessions={sessions} settings={settings} onFinale={setFinale} />;
 }
 
 export interface RecordLine {
@@ -98,9 +103,8 @@ export function sessionStats(mine: SetEntry[], plan?: PlanDef) {
   return { sets: working.length, reps, kg: Math.round(kg), records: new Set(mine.filter((s) => s.mark === '!!').map((s) => s.exerciseId)).size };
 }
 
-function DoneForm({ session, plan, sets, sessions, settings }: { session: TrainingSession; plan: PlanDef; sets: SetEntry[]; sessions: TrainingSession[]; settings: Settings }) {
+function DoneForm({ session, plan, sets, withSkips, sessions, settings, onFinale }: { session: TrainingSession; plan: PlanDef; sets: SetEntry[]; withSkips: SetEntry[]; sessions: TrainingSession[]; settings: Settings; onFinale: (f: { session: TrainingSession; mine: SetEntry[]; pages: RecordPage[]; quality: number }) => void }) {
   const toast = useToast();
-  const moments = useMoments();
   const [flags, setFlags] = useState<string[]>(session.flags ?? []);
   const [notes, setNotes] = useState(session.notes ?? '');
   const [saving, setSaving] = useState(false);
@@ -128,16 +132,13 @@ function DoneForm({ session, plan, sets, sessions, settings }: { session: Traini
 
   const save = async () => {
     setSaving(true);
-    await finishSession(session.id, flags, notes);
-    if (records.length) {
-      const pages = recordPages(mine, sets, plan, settings, session.date);
-      if (pages.length) moments.show({ kind: 'record', key: `record:${session.id}`, pages });
-    } else {
-      toast({ text: `${def?.name ?? 'Session'} saved · ${stats.sets} sets` });
-    }
+    const withSkipped = withSkips.filter((s) => s.sessionId === session.id);
+    const quality = sessionQuality(withSkipped);
+    await finishSession(session.id, flags, notes, quality);
     const raised = plan.flags.filter((f) => flags.includes(f.id));
     if (raised.length) toast({ kicker: `${raised[0].group} flagged`, text: swapSentence(plan, raised[0].swap) ?? 'Noted in your joint log.', sub: raised[0].advice, ms: 7000 });
-    go('/train', undefined, { replace: true });
+    else if (!records.length) toast({ text: `${def?.name ?? 'Session'} saved · ${stats.sets} sets` });
+    onFinale({ session: { ...session, endedAt: Date.now() }, mine: withSkipped, pages: records.length ? recordPages(mine, sets, plan, settings, session.date) : [], quality });
   };
 
   const discard = async () => {
