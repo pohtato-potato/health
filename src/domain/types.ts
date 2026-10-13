@@ -137,6 +137,8 @@ export interface Prefs {
   water?: boolean;
   /** Battery saver for sessions: true black, no animation, the dimmed rest screen. */
   batterySaver?: boolean;
+  /** Check-in photos shot in a mirror: flip them back so left stays left. */
+  mirrorCheckIn?: boolean;
 }
 
 const PREF_DEFAULTS: Required<Prefs> = {
@@ -157,6 +159,7 @@ const PREF_DEFAULTS: Required<Prefs> = {
   goldRings: false,
   water: false,
   batterySaver: false,
+  mirrorCheckIn: false,
 };
 
 export function prefOn(prefs: Prefs, key: keyof Prefs): boolean {
