@@ -38,7 +38,7 @@ export function WalkTab({ extraTabs }: { extraTabs?: { id: string; label: string
 
   return (
     <div className="page walk">
-      <WalkScene km={km} ghostKm={ghost} />
+      <WalkScene km={km} ghostKm={ghost} caption={false} />
       <div className="col gap4">
         <div className="row base">
           <h1 className="h1">{pos.done ? 'Leh, the end of the road' : `Near ${pos.from.name}`}</h1>

@@ -15,11 +15,10 @@ import { Ticker, tickerContext } from '../ui/Ticker';
 import { prefOn } from '../domain/types';
 import { voiceFor } from '../domain/voice';
 import { entryTime, mealForTime, portionFor } from '../domain/foods';
-import { kmFromSteps, positionAt } from '../domain/walk';
-import { regionAt } from '../domain/regions';
+import { kmFromSteps } from '../domain/walk';
 import { placeFor } from '../domain/places';
 import { proteinGap, stepTopUp } from '../domain/proteinGap';
-import { Band } from '../ui/Band';
+import { WalkScene } from '../walk/WalkScene';
 import { go, openSheet } from '../router';
 import { Icon } from '../ui/Icon';
 import { Rings } from '../ui/Rings';
@@ -109,7 +108,6 @@ export function Today() {
       });
 
   const walkKm = kmFromSteps(days.reduce((n, d) => n + (d.steps ?? 0), 0));
-  const walk = positionAt(walkKm);
   const topUp = stepTopUp({ steps: totals.steps, goal: stepsGoal(targets, totals.eased), eased: !!totals.eased }, Date.now());
   const gap = proteinGap({ protein: totals.protein, proteinTarget: targets.proteinG, kcal: totals.kcal, kcalMax: targets.kcalMax }, foods, monthEntries, Date.now());
   const addGap = async () => {
@@ -173,7 +171,7 @@ export function Today() {
         </button>
       </div>
 
-      <Band region={regionAt(walkKm)} place={`Near ${walk.from.name}`} nextKm={walk.to ? Math.max(0, Math.round(walk.to.km - walkKm)) : undefined} nextName={walk.to?.name} />
+      <WalkScene km={walkKm} />
 
       <div className="voice" style={flag ? { fontStyle: 'normal', fontFamily: 'var(--sans)', fontSize: 15, color: 'var(--apricot)' } : undefined}>
         {flag ? line : lineForTheDay(today, line)}
