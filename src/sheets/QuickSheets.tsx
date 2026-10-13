@@ -9,7 +9,7 @@ import { isLateTick, slotStatus, slotTime } from '../domain/checklist';
 import { Check } from '../ui/Check';
 import { stepsGoal } from '../domain/rings';
 import { useAllDays, useEntriesBetween, useMeasurements, useSettings, useToday } from '../db/hooks';
-import { closeSheet } from '../router';
+import { closeSheet, go } from '../router';
 import { DecField, IntField, TimeTile } from '../ui/controls';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
@@ -18,7 +18,7 @@ import { isEased, placeFor } from '../domain/places';
 import { prefOn } from '../domain/types';
 import { MealPicker } from './FoodForms';
 import { DateChip, useLogDate } from '../ui/DateChip';
-import { courseOn } from '../domain/medicines';
+import { courseOn, dayDoses, DEFAULT_MED_REWARDS } from '../domain/medicines';
 
 export function WaterSheet() {
   const settings = useSettings();
@@ -131,6 +131,7 @@ export function ChecklistSheet() {
   const [date, setDate] = useLogDate();
   const [late, setLate] = useState<string | null>(null);
   const [other, setOther] = useState<number | undefined>();
+  const [editing, setEditing] = useState<string | null>(null);
   if (!settings || !days) return <Sheet title="Checklist">{null}</Sheet>;
   const day = days.find((d) => d.date === date);
   const items = settings.checklist.filter((i) => i.active);
@@ -146,78 +147,91 @@ export function ChecklistSheet() {
     void setTick(date, key, on);
   };
 
+  const lanterns = dayDoses(items.filter((i) => i.med), day ?? { date }, settings).onTime;
+  const lanternOnReward = (settings.medRewards ?? DEFAULT_MED_REWARDS).lantern;
+
   return (
     <Sheet title="Checklist" sub={date === today ? 'Today' : fmtDayMonth(date)}>
       <DateChip value={date} onChange={setDate} />
       {items.length === 0 && <div className="t14 q lh">Nothing on your checklist yet. Add a supplement or medicine below.</div>}
-      {items.map((item) => (
-        <div key={item.id} className="col gap4">
-          <div className="row" style={{ gap: 8 }}>
-            <input
-              className="field inline-name"
-              defaultValue={item.name}
-              aria-label="Item name"
-              spellCheck
-              autoCapitalize="sentences"
-              onBlur={(e) => {
-                const v = e.target.value.trim();
-                if (!v) e.target.value = item.name;
-                else if (v !== item.name) void saveItems([{ ...item, name: v }]);
-              }}
-            />
-            <button type="button" className="chip sm" aria-label={`Add a time for ${item.name}`} onClick={() => saveItems([{ ...item, slots: [...item.slots, '9 pm'] }])}>
-              + time
-            </button>
-            {item.slots.length > 1 && (
-              <button type="button" className="chip sm" aria-label={`Remove the last time for ${item.name}`} onClick={() => saveItems([{ ...item, slots: item.slots.slice(0, -1) }])}>
-                − time
-              </button>
-            )}
-          </div>
-          {(courseOn(date, item).length ? courseOn(date, item) : ['Daily']).map((slot, n) => {
-            const key = `${item.id}:${n}`;
-            const st = slotStatus(day, key);
-            const planned = slotTime(slot, settings, day);
-            return (
-              <div key={key} className="col">
-                <div className="row" style={{ gap: 8 }}>
-                  <Check
-                    checked={st.kind === 'taken'}
-                    onChange={(on) => tick(key, slot, on)}
-                    label={slot}
-                    detail={st.kind === 'taken' ? `Taken ${fmtTime(st.at)}` : st.kind === 'missed' ? 'Missed' : 'Not logged'}
-                  />
-                  <button type="button" className={`chip sm${st.kind === 'missed' ? ' on' : ''}`} aria-pressed={st.kind === 'missed'} onClick={() => void setMissed(date, key, st.kind !== 'missed')}>
-                    Missed
-                  </button>
-                </div>
-                {late === key && (
-                  <div className="notice" role="group" aria-label="When did you take it?">
-                    <div className="t14">When did you take it?</div>
-                    <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start', marginTop: 8 }}>
-                      <button type="button" className="chip sm" onClick={() => { setLate(null); void setTick(date, key, true, atOn(date, planned)); }}>
-                        At {fmtTime(atOn(date, planned))}
-                      </button>
-                      <button type="button" className="chip sm" onClick={() => { setLate(null); void setTick(date, key, true); }}>
-                        Just now
-                      </button>
-                    </div>
-                    <div className="row" style={{ gap: 8, marginTop: 8, width: '100%' }}>
-                      <TimeTile label="Other time" minutes={other} onChange={setOther} />
-                      <button type="button" className="btn" disabled={other === undefined} onClick={() => { setLate(null); void setTick(date, key, true, atOn(date, other!)); }}>
-                        Save
-                      </button>
-                    </div>
+      {items.map((item) => {
+        const slots = courseOn(date, item).length ? courseOn(date, item) : ['Daily'];
+        return (
+          <div key={item.id} className="panel col" style={{ gap: 0 }}>
+            <div className="row base" style={{ paddingBottom: 6 }}>
+              {editing === item.id ? (
+                <input
+                  className="field inline-name"
+                  defaultValue={item.name}
+                  aria-label="Item name"
+                  spellCheck
+                  autoCapitalize="sentences"
+                  autoFocus
+                  onBlur={(e) => {
+                    const v = e.target.value.trim();
+                    if (v && v !== item.name) void saveItems([{ ...item, name: v }]);
+                    setEditing(null);
+                  }}
+                />
+              ) : (
+                <button type="button" className="t16" style={{ textAlign: 'left', minHeight: 36 }} onClick={() => setEditing(item.id)} aria-label={`Rename ${item.name}`}>
+                  {item.name}
+                </button>
+              )}
+              {item.med?.dose && <span className="t12 q">{item.med.dose}</span>}
+            </div>
+            {slots.map((slot, n) => {
+              const key = `${item.id}:${n}`;
+              const st = slotStatus(day, key);
+              const planned = slotTime(slot, settings, day);
+              const due = atOn(date, planned);
+              return (
+                <div key={key} className="col" style={{ borderTop: '1px solid var(--divider)' }}>
+                  <div className="row" style={{ gap: 8, minHeight: 52 }}>
+                    <Check checked={st.kind === 'taken'} onChange={(on) => tick(key, slot, on)} label={slot} detail={st.kind === 'taken' ? `taken ${fmtTime(st.at)}` : st.kind === 'missed' ? 'missed' : due > Date.now() ? `due ${fmtTime(due)}` : 'not logged'} />
+                    <button type="button" className={`chip sm${st.kind === 'missed' ? ' on' : ''}`} aria-pressed={st.kind === 'missed'} onClick={() => void setMissed(date, key, st.kind !== 'missed')}>
+                      Missed
+                    </button>
                   </div>
-                )}
-              </div>
-            );
-          })}
+                  {late === key && (
+                    <div className="notice" role="group" aria-label="When did you take it?">
+                      <div className="t14">Ticked late. When?</div>
+                      <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start', marginTop: 8 }}>
+                        <button type="button" className="chip sm" onClick={() => { setLate(null); void setTick(date, key, true, due); }}>
+                          At {fmtTime(due)}
+                        </button>
+                        <button type="button" className="chip sm" onClick={() => { setLate(null); void setTick(date, key, true); }}>
+                          Just now
+                        </button>
+                      </div>
+                      <div className="row" style={{ gap: 8, marginTop: 8, width: '100%' }}>
+                        <TimeTile label="Other time" minutes={other} onChange={setOther} />
+                        <button type="button" className="btn" disabled={other === undefined} onClick={() => { setLate(null); void setTick(date, key, true, atOn(date, other!)); }}>
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+      {lanternOnReward && items.some((i) => i.med) && (
+        <div className="row t13">
+          <span className="q">On time lights a lantern at tonight's camp</span>
+          <span className="gold tn">{lanterns} lit</span>
         </div>
-      ))}
-      <button type="button" className="link" style={{ alignSelf: 'flex-start' }} onClick={() => saveItems([{ id: uid(), name: 'New item', slots: ['Morning'], active: true }])}>
-        + Add an item
-      </button>
+      )}
+      <div className="row" style={{ gap: 8 }}>
+        <button type="button" className="btn ghost grow" onClick={() => saveItems([{ id: uid(), name: 'New item', slots: ['Morning'], active: true }])}>
+          Add an item
+        </button>
+        <button type="button" className="btn ghost grow" onClick={() => go('/medicines')}>
+          Schedule in Medicines
+        </button>
+      </div>
       <div className="t12 d lh">No streaks or confetti here. It's a plain record you can show your doctor.</div>
     </Sheet>
   );
