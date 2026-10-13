@@ -4,7 +4,8 @@ import { useAllDays, useAllEntries, useAllSets, useMeasurements, useSessions, us
 import { addDays, dayRange, type DayKey } from '../../domain/dates';
 import { fmtDayMonth, fmtDayShort } from '../../domain/format';
 import { homePlace, placeFor } from '../../domain/places';
-import type { CheckIn, Day, FoodEntry, Measurement, PlaceKind, SetEntry, Settings, TrainingSession } from '../../domain/types';
+import type { PlaceMarkKind } from '../../ui/PlaceIcon';
+import type { CheckIn, Day, FoodEntry, Measurement, SetEntry, Settings, TrainingSession } from '../../domain/types';
 
 export interface TrackData {
   settings: Settings;
@@ -51,7 +52,7 @@ export function spanDays(today: DayKey, span: Span | string): DayKey[] {
 export const dayLabel = (n: number) => (d: DayKey) => (n <= 7 ? fmtDayShort(d).slice(0, 1) : fmtDayMonth(d));
 
 /** Which kind of place a day was, with a second home told apart from the first (a family home, say). */
-export type PlaceMark = PlaceKind | 'home2';
+export type PlaceMark = Exclude<PlaceMarkKind, 'night'>;
 
 export function placeMarkOn(data: Pick<TrackData, 'settings' | 'days'>, date: DayKey): PlaceMark {
   const p = placeFor(data.days.get(date), data.settings);

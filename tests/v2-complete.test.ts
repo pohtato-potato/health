@@ -55,3 +55,15 @@ describe('status in one tap', () => {
     expect((await db.settings.get('app'))?.activeStatus).toBeUndefined();
   });
 });
+
+describe('place marks (round 5)', () => {
+  it('tells a second home from the first, and keeps each kind its colour', async () => {
+    const { markFor, PLACE_INKS } = await import('../src/ui/PlaceIcon');
+    expect(markFor({ id: 'flat', kind: 'home' }, 'flat')).toBe('home');
+    expect(markFor({ id: 'family', kind: 'home' }, 'flat')).toBe('home2');
+    expect(markFor({ id: 'city', kind: 'office' }, 'flat')).toBe('office');
+    expect(PLACE_INKS.home2).toBe('var(--lavender)');
+    expect(PLACE_INKS.friends).toBe('var(--rose)');
+    expect(PLACE_INKS.trip).toBe('var(--blue)');
+  });
+});

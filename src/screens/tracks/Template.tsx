@@ -3,25 +3,19 @@ import { back } from '../../router';
 import { Seg } from '../../ui/controls';
 import { Icon } from '../../ui/Icon';
 import type { PlaceMark } from './data';
+import { PLACE_INKS, PLACE_LABELS, placePath } from '../../ui/PlaceIcon';
 
-/** The colour of each kind of place, the same everywhere a day carries one. */
-export const PLACE_INK: Record<PlaceMark, string> = {
-  home: 'var(--sage)',
-  home2: 'var(--pearl)',
-  office: 'var(--apricot)',
-  trip: 'var(--blue)',
-  friends: 'var(--lavender)',
-};
+const PLACE_INK = PLACE_INKS;
+const PLACE_NAME = PLACE_LABELS;
 
-const PLACE_NAME: Record<PlaceMark, string> = { home: 'home', home2: 'second home', office: 'office', trip: 'trip', friends: 'friends' };
-
-/** A small glyph per place kind: a roof for homes, a block for the office, a dot for trips, a diamond for friends. */
+/** A place's round-5 mark, drawn in its colour at a column's foot. */
 function PlaceGlyph({ kind, x, y, s = 5 }: { kind: PlaceMark; x: number; y: number; s?: number }) {
-  const fill = PLACE_INK[kind];
-  if (kind === 'home' || kind === 'home2') return <path d={`M${x - s} ${y + s * 0.8}L${x} ${y - s * 0.8}L${x + s} ${y + s * 0.8}Z`} fill={fill} />;
-  if (kind === 'office') return <rect x={x - s * 0.8} y={y - s * 0.8} width={s * 1.6} height={s * 1.6} rx={1} fill={fill} />;
-  if (kind === 'trip') return <circle cx={x} cy={y} r={s * 0.85} fill={fill} />;
-  return <path d={`M${x} ${y - s}L${x + s} ${y}L${x} ${y + s}L${x - s} ${y}Z`} fill={fill} />;
+  const k = s / 12;
+  return (
+    <g transform={`translate(${x - s} ${y - s}) scale(${k})`}>
+      <path d={placePath(kind)} fill="none" stroke={PLACE_INK[kind]} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
+    </g>
+  );
 }
 
 export interface HeroPoint {
@@ -171,15 +165,15 @@ export function HeroChart({
           {places.map((k) => (
             <span key={k}>
               <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-                <PlaceGlyph kind={k} x={6} y={6} s={4.5} />
+                <PlaceGlyph kind={k} x={6} y={6} s={6} />
               </svg>
               {PLACE_NAME[k]}
             </span>
           ))}
           {points.some((p) => p.nightOut) && (
             <span>
-              <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-                <circle cx="6" cy="6" r="5" fill="none" stroke="var(--gold)" strokeWidth="1.2" />
+              <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true">
+                <path d={placePath('night')} fill="none" stroke="var(--gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               night out
             </span>
