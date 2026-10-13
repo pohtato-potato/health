@@ -8,6 +8,9 @@ import { Seg } from '../ui/controls';
 import { Icon } from '../ui/Icon';
 import { distanceInTerms, ghostLastMonth, journal, loadedSteps } from '../walk/journal';
 import { WalkScene } from '../walk/WalkScene';
+import { meetBuilt, structuresFrom } from '../walk/camps';
+import { effectiveKm, PASSES, strengthIndex } from '../walk/passes';
+import { detourKm, QuestPanel, SouvenirShelf, useQuestState } from '../walk/WalkExtras';
 
 type Tab = 'journal' | 'route';
 
@@ -19,13 +22,23 @@ export function WalkTab({ extraTabs }: { extraTabs?: { id: string; label: string
   const sessions = useSessions();
   const sets = useAllSets();
   const [tab, setTab] = useState<string>('journal');
+  const quests = useQuestState();
   if (!settings || !days || !sessions || !sets) return <div className="page" />;
   const steps = days.reduce((n, d) => n + (d.steps ?? 0), 0);
-  const km = kmFromSteps(steps);
+  const strength = strengthIndex(sets, today);
+  const raw = Math.max(0, kmFromSteps(steps) - detourKm(quests ?? []));
+  const km = effectiveKm(raw, strength);
+  const waiting = PASSES.find((p) => p.km === km && raw > km);
+  const records = new Set(sets.filter((x) => x.mark === '!!').map((x) => x.sessionId));
+  const built = structuresFrom(days, sessions, records);
+  const met = meetBuilt(km, built);
   const pos = positionAt(km);
   const chapter = chapterAt(km);
   const loaded = loadedSteps(sets);
-  const lines = journal(days, sessions, today, loaded);
+  const lines = journal(days, sessions, today, loaded).map((l) => {
+    const b = built.find((x) => x.date === l.date);
+    return b ? { ...l, body: `${l.body} Built a ${b.kind} by the road.` } : l;
+  });
   const ghost = ghostLastMonth(days, today);
   const recent = days.filter((d) => d.date >= addDays(today, -14) && d.date < today && d.steps !== undefined);
   const perDay = recent.length ? recent.reduce((n, d) => n + d.steps!, 0) / recent.length : undefined;
@@ -34,7 +47,13 @@ export function WalkTab({ extraTabs }: { extraTabs?: { id: string; label: string
   const endName = positionAt(chapter.end).from.name;
   const terms = distanceInTerms(km);
 
-  const tabs: { id: string; label: string }[] = [{ id: 'journal', label: 'Journal' }, { id: 'route', label: 'Route' }, ...(extraTabs ?? []).map(({ id, label }) => ({ id, label }))];
+  const tabs: { id: string; label: string }[] = [
+    { id: 'journal', label: 'Journal' },
+    { id: 'route', label: 'Route' },
+    { id: 'souvenirs', label: 'Souvenirs' },
+    { id: 'quests', label: 'Quests' },
+    ...(extraTabs ?? []).map(({ id, label }) => ({ id, label })),
+  ];
 
   return (
     <div className="page walk">
@@ -49,6 +68,16 @@ export function WalkTab({ extraTabs }: { extraTabs?: { id: string; label: string
           {pos.to ? ` · ${fmtInt(Math.max(0, Math.round(pos.to.km - km)))} km to ${pos.to.name}` : ''}
         </div>
         {terms && <div className="t14">{terms}</div>}
+        {waiting && (
+          <div className="t14 gold lh">
+            Waiting at the foot of {waiting.name}, {fmtInt(waiting.heightM)} m. It opens at strength +{waiting.need}%; you're at +{strength}%. Training gets you over.
+          </div>
+        )}
+        {met.map((b) => (
+          <div key={b.name} className="t14 gold">
+            You passed something you built: {b.name}.
+          </div>
+        ))}
         {ghost !== undefined && <div className="t13 q">A month ago you were {fmtInt(Math.round(km - ghost))} km back, near {positionAt(ghost).from.name}.</div>}
       </div>
 
@@ -94,6 +123,9 @@ export function WalkTab({ extraTabs }: { extraTabs?: { id: string; label: string
           </div>
         </div>
       )}
+
+      {tab === 'souvenirs' && <SouvenirShelf km={km} />}
+      {tab === 'quests' && <QuestPanel days={days} km={km} />}
 
       {extraTabs?.find((t) => t.id === tab)?.body}
     </div>

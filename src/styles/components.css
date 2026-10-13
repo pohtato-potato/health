@@ -782,3 +782,25 @@
   border-radius: 50%;
   background: var(--text);
 }
+
+/* Walk: the souvenir shelf */
+.shelf {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.niche {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  min-height: 64px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, var(--raised), var(--surface));
+  border: 1px solid var(--gold-border);
+}
+.niche.waiting {
+  background: transparent;
+  border: 1px dashed var(--btn-border);
+  color: var(--dim);
+}
