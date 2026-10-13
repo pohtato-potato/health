@@ -46,7 +46,7 @@ function ridge(y: number, amp: number, bumps: number, rnd: () => number): string
  * stop's landmark between the far ridge and the near ground, stars at night, warm windows
  * at dusk and night, and optionally a few people on the road. All vector, no raster.
  */
-export function Scene({ city, region: regionIn, part, people = false, landmarkScale = 1, caption, className }: { city?: string; region?: RegionId; part: PartOfDay; people?: boolean; landmarkScale?: number; caption?: React.ReactNode; className?: string }) {
+export function Scene({ city, region: regionIn, part, people = false, landmarkScale = 1, caption, className, overlay }: { city?: string; region?: RegionId; part: PartOfDay; people?: boolean; landmarkScale?: number; caption?: React.ReactNode; className?: string; overlay?: React.ReactNode }) {
   const lm = city ? landmarkFor(city) : undefined;
   const region = regionIn ?? lm?.region ?? 'plains';
   const light = lightFor(part, region);
@@ -109,6 +109,7 @@ export function Scene({ city, region: regionIn, part, people = false, landmarkSc
             </g>
           </g>
         )}
+        {overlay}
       </svg>
       {caption && <figcaption className="band-caption">{caption}</figcaption>}
     </figure>

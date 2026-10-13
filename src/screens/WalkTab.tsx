@@ -67,6 +67,7 @@ export function WalkTab({ extraTabs }: { extraTabs?: { id: string; label: string
   const record = forecasts ? recordLine(trackRecord(forecasts.filter((f) => f.kind.startsWith('walk:')).map((f) => ({ ...f, kind: 'walk' })), 'walk')) : undefined;
   const cards = reachedCards(km);
   const terms = distanceInTerms(km);
+  const todaySteps = days.find((d) => d.date === today)?.steps ?? 0;
 
   const tabs: { id: string; label: string }[] = [
     { id: 'journal', label: 'Journal' },
@@ -78,16 +79,17 @@ export function WalkTab({ extraTabs }: { extraTabs?: { id: string; label: string
 
   return (
     <div className="page walk">
-      <WalkScene km={km} ghostKm={ghost} caption={false} />
-      <div className="col gap4">
-        <div className="row base">
+      <div className="walk-top">
+        <WalkScene km={km} ghostKm={ghost} caption={false} hero carryFrac={todaySteps ? (loaded.get(today) ?? 0) / todaySteps : 0} built={built.at(-1)?.kind} />
+        <div className="walk-title">
           <h1 className="h1">{pos.done ? 'Leh, the end of the road' : `Near ${pos.from.name}`}</h1>
-          <span className="t13 q">Chapter {chapter.n}</span>
+          <span className="t13 tn">
+            {fmtInt(Math.round(km))} km · Chapter {chapter.n}
+          </span>
         </div>
-        <div className="t14 q">
-          {fmtInt(Math.round(km))} km walked
-          {pos.to ? ` · ${fmtInt(Math.max(0, Math.round(pos.to.km - km)))} km to ${pos.to.name}` : ''}
-        </div>
+      </div>
+      <div className="col gap4">
+        {pos.to && <div className="t14 q">{fmtInt(Math.max(0, Math.round(pos.to.km - km)))} km to {pos.to.name}</div>}
         {terms && <div className="t14">{terms}</div>}
         {waiting && (
           <div className="t14 gold lh">
@@ -113,6 +115,12 @@ export function WalkTab({ extraTabs }: { extraTabs?: { id: string; label: string
               <span className="t13 q lh">{l.body}</span>
             </div>
           ))}
+          {forecast && (
+            <div className="t13 lh" style={{ padding: '12px 0 4px', borderTop: '1px solid var(--divider)' }}>
+              {forecast.name} around {fmtDayMonthFrom(forecast.date, today)}
+              {record ? <span className="q"> · {record}</span> : null}
+            </div>
+          )}
         </div>
       )}
 
