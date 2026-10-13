@@ -49,7 +49,9 @@ export function Train() {
     <div className="page">
       <div className="row">
         <h1 className="h1">Train</h1>
-        <div className="t13 q">{plan.name}</div>
+        <button type="button" className="chip sm" onClick={() => go('/records')}>
+          Records
+        </button>
       </div>
 
       <div className="card" style={{ gap: 14 }}>

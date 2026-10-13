@@ -701,3 +701,11 @@
   background: var(--steps);
   border-color: var(--steps);
 }
+
+.medal {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
+}

@@ -40,6 +40,7 @@ import { OccasionSheet } from './sheets/Occasion';
 import { MyTracksSheet } from './screens/CustomTracks';
 import { CloseDay } from './screens/CloseDay';
 import { PlanEditor } from './screens/PlanEditor';
+import { RecordsWall } from './screens/RecordsWall';
 
 /** A page loaded when first opened, from its module's named export. */
 function page<K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K) {
@@ -96,6 +97,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/food': { el: () => <FoodToday /> },
   '/close': { el: () => <CloseDay /> },
   '/plan': { el: () => <PlanEditor /> },
+  '/records': { el: () => <RecordsWall /> },
   '/you': { el: () => <You /> },
   '/settings': { el: () => <SettingsScreen /> },
   '/session': { el: () => <SessionScreen /> },
