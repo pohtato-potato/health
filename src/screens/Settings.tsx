@@ -25,6 +25,8 @@ import { ReviewSheet } from './Review';
 import { themeById } from '../domain/themes';
 import { askConfirm } from '../ui/Confirm';
 import { useBatteryLevel } from '../ui/RestScreen';
+import { setupGaps } from '../domain/setupCheck';
+import { saveAuditPack } from '../export/saveAuditPack';
 
 type Editor = null | 'targets' | 'item' | 'homes' | 'you' | 'plates' | 'theme' | 'review';
 
@@ -82,6 +84,7 @@ export function SettingsScreen() {
         <Icon name="left" size={20} stroke={1.8} />
         You
       </button>
+      <SetupCard settings={settings} />
       <h1 className="h1" style={{ fontSize: 32, marginBottom: 6 }}>
         Settings
       </h1>
@@ -253,6 +256,35 @@ export function SettingsScreen() {
           >
             Export workbook
           </button>
+          <button
+            type="button"
+            className="btn ghost"
+            onClick={async () => {
+              try {
+                const r = await saveAuditPack();
+                if (r !== 'cancelled') toast({ kicker: 'Audit pack', text: 'Ready for Claude: the workbook, usage, edits and notes. No secrets inside.', tone: 'sage' });
+              } catch (e) {
+                toast({ text: `Export failed: ${(e as Error).message}` });
+              }
+            }}
+          >
+            Export the audit pack
+          </button>
+          <div className="col gap8">
+            <span className="lbl">Review day</span>
+            <div className="row wrap" style={{ gap: 6, justifyContent: 'flex-start' }} role="radiogroup" aria-label="Review day">
+              {['Off', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => {
+                const v = i === 0 ? undefined : i - 1;
+                const on = settings.reviewDay === v;
+                return (
+                  <button key={d} type="button" role="radio" aria-checked={on} className={`chip sm${on ? ' on' : ''}`} onClick={() => patchSettings({ reviewDay: v })}>
+                    {d}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <AuditNoteBox />
         </div>
         <button type="button" className="card" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }} onClick={() => setEditor('review')}>
           <span className="col gap2">
@@ -671,8 +703,13 @@ function YouEditor({ settings, onClose }: { settings: Settings; onClose: () => v
   const [height, setHeight] = useState<number | undefined>(settings.heightCm);
   const [goal, setGoal] = useState(settings.goalDate ?? '');
   const [birthday, setBirthday] = useState(settings.birthday ? `2000-${settings.birthday}` : '');
+  const [birthYear, setBirthYear] = useState<number | undefined>(settings.birthYear);
   return (
     <Sheet title="You" onClose={onClose}>
+      <label className="flabel">
+        <span className="lbl">Birth year, for the maintenance estimate</span>
+        <IntField value={birthYear} onChange={setBirthYear} placeholder="e.g. 1995" />
+      </label>
       <label className="flabel">
         <span className="lbl">Name, for the greeting</span>
         <input className="field" value={name} onChange={(e) => setName(e.target.value)} />
@@ -693,7 +730,7 @@ function YouEditor({ settings, onClose }: { settings: Settings; onClose: () => v
         type="button"
         className="btn lg block"
         onClick={async () => {
-          await patchSettings({ name: name.trim(), heightCm: height, goalDate: goal || undefined, birthday: birthday ? birthday.slice(5) : undefined });
+          await patchSettings({ name: name.trim(), heightCm: height, goalDate: goal || undefined, birthday: birthday ? birthday.slice(5) : undefined, birthYear: birthYear && birthYear > 1900 ? birthYear : undefined });
           onClose();
         }}
       >
@@ -772,6 +809,43 @@ function LastfmFields({ settings }: { settings: Settings }) {
         <input className="field" value={key} onChange={(e) => setKey(e.target.value)} onBlur={save} autoCapitalize="none" autoComplete="off" spellCheck={false} />
       </label>
       <small className="t12 q lh">Sessions show what was playing. The key stays on this phone and is left out of audit exports.</small>
+    </div>
+  );
+}
+
+/** What is still missing, at the top of Settings, so every feature can work. */
+function SetupCard({ settings }: { settings: Settings }) {
+  const gaps = setupGaps(settings);
+  if (!gaps.length) return null;
+  return (
+    <div className="notice" role="status">
+      <span className="t15">
+        Setup: {gaps.length} thing{gaps.length === 1 ? '' : 's'} missing
+      </span>
+      <span className="t13 q">{gaps.map((g) => g.label).join(', ')}</span>
+    </div>
+  );
+}
+
+/** A note left while using the app ("this looked wrong"), for the next review. */
+function AuditNoteBox() {
+  const toast = useToast();
+  const [text, setText] = useState('');
+  return (
+    <div className="col gap8">
+      <textarea className="field" rows={2} value={text} onChange={(e) => setText(e.target.value)} placeholder="Something looked wrong or could be better? Leave a note for the review." spellCheck />
+      <button
+        type="button"
+        className="btn ghost sm"
+        disabled={!text.trim()}
+        onClick={async () => {
+          await db.auditNotes.add({ at: Date.now(), screen: 'settings', text: text.trim() });
+          setText('');
+          toast({ text: 'Noted for the next review' });
+        }}
+      >
+        Save the note
+      </button>
     </div>
   );
 }

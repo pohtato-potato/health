@@ -160,6 +160,37 @@ export function Banners() {
       ),
     });
 
+  const weekdayNow = new Date().getDay();
+  if (settings.reviewDay !== undefined && weekdayNow === settings.reviewDay)
+    candidates.push({
+      id: 'review-day',
+      priority: 3,
+      el: (
+        <>
+          <Icon name="save" size={20} color="var(--protein)" />
+          <span className="grow">Review day. Export the audit pack and ask Claude what to change.</span>
+          <button type="button" className="btn sm" onClick={() => go('/settings', { at: 'data' })}>
+            Open
+          </button>
+        </>
+      ),
+    });
+  const lastFull = settings.backup.lastFull;
+  if (weekdayNow === 0 && (!lastFull || Date.now() - lastFull > 6 * 86_400_000) && !nudge)
+    candidates.push({
+      id: 'backup-sunday',
+      priority: 6,
+      el: (
+        <>
+          <Icon name="save" size={20} color="var(--gold)" />
+          <span className="grow">Sunday: time for the weekly full backup, photos included.</span>
+          <button type="button" className="btn sm" onClick={() => go('/settings', { at: 'backup' })}>
+            Back up
+          </button>
+        </>
+      ),
+    });
+
   // One banner at a time, near the hour you usually log.
   const shown = pickBanner(candidates, usage, Date.now());
   return shown ? <div className="banner">{shown.el}</div> : null;
