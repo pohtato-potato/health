@@ -14,6 +14,7 @@ import { DateChip, useLogDate } from '../ui/DateChip';
 import { Icon } from '../ui/Icon';
 import { useToast } from '../ui/Toasts';
 import { DayClosed } from './DayClosed';
+import { tonightTarget, usualWake } from '../domain/sleepRegularity';
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -36,6 +37,8 @@ export function CloseDay() {
   const ticked = slots.filter((s) => day?.ticks?.[s.key]).length;
   const draft = entries.length ? [] : usualDay(place.id, parseDay(date).getDay(), dayMap, history, date);
   const todays = sessions.filter((s) => s.date === date);
+  const tomorrowPlace = dayMap.get(addDays(date, 1))?.place ?? place.id;
+  const tonight = tonightTarget(usualWake(days, tomorrowPlace, date) ?? 450, targets.sleepMin);
 
   if (closed) {
     return <DayClosed date={date} summary={daySummary(day, entries, todays, targets, slots.length)} onDone={() => setClosed(false)} />;
@@ -58,6 +61,11 @@ export function CloseDay() {
       {draft.length > 0 && <UsualDraft key={date} draft={draft} date={date} label={`a usual ${WEEKDAYS[parseDay(date).getDay()]} at ${place.name}`} />}
 
       <MealBoard date={date} entries={entries} />
+
+      <div className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <Icon name="sleep" size={22} color="var(--sleep)" />
+        <span className="t15 lh">{tonight.text}</span>
+      </div>
 
       <div className="list">
         <button type="button" className="li" onClick={() => openSheet('checklist')}>

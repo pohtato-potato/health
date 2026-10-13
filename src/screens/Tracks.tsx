@@ -22,6 +22,7 @@ import { openShakeStat } from '../ui/Shake';
 import { doneSessions, flagEvents, stepStreakFor, targetsFor, weeksFor } from '../state/derived';
 import { autoMarkers } from '../domain/markers';
 import { BenchmarkCard } from './BenchmarkCard';
+import { sri } from '../domain/sleepRegularity';
 
 type Kind = 'steps' | 'sleep' | 'weight' | 'waist' | 'calories' | 'protein' | 'water' | 'training' | 'drinks' | 'joints' | 'custom';
 
@@ -422,6 +423,20 @@ export function TrackPage() {
         </div>
         {extra}
         {kind === 'steps' && <StepsExtras days={[...data.days.values()]} today={today} range={range} settings={settings} />}
+        {kind === 'sleep' && (() => {
+          const r = sri([...data.days.values()].filter((d) => d.date <= today && d.date >= addDays(today, -7)));
+          return r !== undefined ? (
+            <div className="card">
+              <div className="row base">
+                <div className="lbl blue">Regularity</div>
+                <div className="num tn" style={{ fontSize: 24 }}>
+                  {r}
+                </div>
+              </div>
+              <div className="t13 q lh">How alike your sleep and wake times were night to night this week, 100 being identical. An approximation of the Sleep Regularity Index from your logged times.</div>
+            </div>
+          ) : null;
+        })()}
         {kind === 'sleep' && <SleepExtras days={[...data.days.values()]} today={today} settings={settings} />}
         {kind === 'calories' && <WeekGapCard entries={data.entries} today={today} />}
         {kind === 'calories' && <SourcesCard entries={data.entries} range={range} kind="kcal" />}
