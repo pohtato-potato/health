@@ -36,3 +36,13 @@ describe('readiness without a morning log', () => {
     expect(readinessText({ score: 72, known: true })).toBe('72');
   });
 });
+
+describe('a rest survives leaving the session screen', () => {
+  it('resumes with the ding rescheduled, or shows how long ago it ended', async () => {
+    const { resumeRest } = await import('../src/domain/rest');
+    const active = { from: 1_000_000, endsAt: 1_090_000, total: 90 };
+    expect(resumeRest(active, 1_030_000)).toEqual({ rest: active, dingSec: 60 });
+    expect(resumeRest(active, 1_150_000)).toEqual({ rest: active });
+    expect(resumeRest(undefined, 1_150_000)).toEqual({ rest: null });
+  });
+});

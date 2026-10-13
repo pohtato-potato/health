@@ -43,7 +43,7 @@ import { clock } from './NextUpCard';
 import { TempoCoach } from '../ui/TempoCoach';
 import { RestPill } from '../ui/RestPill';
 import { RestScreen, useBatteryLevel } from '../ui/RestScreen';
-import { batteryMode } from '../domain/rest';
+import { batteryMode, resumeRest, type ActiveRest } from '../domain/rest';
 import { prefOn } from '../domain/types';
 import { askConfirm } from '../ui/Confirm';
 import { withTrip } from '../domain/trip';
@@ -158,7 +158,12 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
   });
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>({});
-  const [rest, setRest] = useState<{ from: number; endsAt: number; total: number } | null>(null);
+  // The running rest lives on the session row too, so minimising the session doesn't drop it.
+  const [rest, setRestState] = useState<ActiveRest | null>(() => resumeRest(session.activeRest ?? undefined, Date.now()).rest);
+  const setRest = (r: ActiveRest | null) => {
+    setRestState(r);
+    void patchSession(session.id, { activeRest: r });
+  };
   const [restHidden, setRestHidden] = useState(false);
   const level = useBatteryLevel();
   const saver = batteryMode(level, !!settings.prefs.batterySaver);
@@ -174,6 +179,15 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
     wl.start();
     return () => wl.stop();
   }, [settings.prefs.wakeLock]);
+
+  // Back from elsewhere mid-rest: the ding and buzz are set again for what's left.
+  useEffect(() => {
+    const back = resumeRest(session.activeRest ?? undefined, Date.now());
+    if (back.dingSec === undefined) return;
+    setRestRunning(true);
+    if (settings.prefs.ding) cancelDing.current = scheduleDing(back.dingSec);
+    buzzTimer.current = window.setTimeout(() => buzz([90, 70, 90]), back.dingSec * 1000);
+  }, []);
 
   useEffect(
     () => () => {

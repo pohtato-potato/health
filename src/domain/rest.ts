@@ -31,3 +31,15 @@ export const LOW_BATTERY = 0.3;
 export function batteryMode(level: number | undefined, manual: boolean): boolean {
   return manual || (level !== undefined && level < LOW_BATTERY);
 }
+
+export interface ActiveRest {
+  from: number;
+  endsAt: number;
+  total: number;
+}
+
+/** Coming back to a session: the rest that was running, and how long until its ding if it hasn't ended. */
+export function resumeRest(active: ActiveRest | undefined, now: number): { rest: ActiveRest | null; dingSec?: number } {
+  if (!active) return { rest: null };
+  return active.endsAt > now ? { rest: active, dingSec: Math.ceil((active.endsAt - now) / 1000) } : { rest: active };
+}
