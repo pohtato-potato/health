@@ -4,7 +4,8 @@ import { fmtDayLong, fmtDayMonth, fmtInt, lowerFirst, weekdayName } from '../dom
 import { fmtKg } from '../domain/loads';
 import { findExercise, findSession, type PlanDef } from '../domain/plan';
 import { exerciseStatus } from '../domain/progression';
-import type { Day, SetEntry, Settings, TrainingSession } from '../domain/types';
+import type { Day, SetEntry, Settings, SongRecord, TrainingSession } from '../domain/types';
+import { fetchSessionTracks } from '../sources/lastfm';
 import { discardSession, finishSession } from '../db/actions';
 import { useActiveSession, useAllDays, useAllSets, useAllSetsWithSkips, useSessions, useSettings } from '../db/hooks';
 import { go } from '../router';
@@ -25,7 +26,7 @@ export function SessionDone() {
   const withSkips = useAllSetsWithSkips();
   const days = useAllDays();
   const sessions = useSessions();
-  const [finale, setFinale] = useState<{ session: TrainingSession; mine: SetEntry[]; pages: RecordPage[]; quality: number } | null>(null);
+  const [finale, setFinale] = useState<{ session: TrainingSession; mine: SetEntry[]; pages: RecordPage[]; quality: number; songs: SongRecord[] } | null>(null);
   if (finale) return <Finale {...finale} onClose={() => go('/train', undefined, { replace: true })} />;
   if (!settings || active === undefined || !sets || !sessions || !withSkips) return <div className="page bare" />;
   if (!active || !settings.plan) {
@@ -106,7 +107,7 @@ export function sessionStats(mine: SetEntry[], plan?: PlanDef) {
   return { sets: working.length, reps, kg: Math.round(kg), records: new Set(mine.filter((s) => s.mark === '!!').map((s) => s.exerciseId)).size };
 }
 
-function DoneForm({ session, plan, days, sets, withSkips, sessions, settings, onFinale }: { session: TrainingSession; plan: PlanDef; days: Day[]; sets: SetEntry[]; withSkips: SetEntry[]; sessions: TrainingSession[]; settings: Settings; onFinale: (f: { session: TrainingSession; mine: SetEntry[]; pages: RecordPage[]; quality: number }) => void }) {
+function DoneForm({ session, plan, days, sets, withSkips, sessions, settings, onFinale }: { session: TrainingSession; plan: PlanDef; days: Day[]; sets: SetEntry[]; withSkips: SetEntry[]; sessions: TrainingSession[]; settings: Settings; onFinale: (f: { session: TrainingSession; mine: SetEntry[]; pages: RecordPage[]; quality: number; songs: SongRecord[] }) => void }) {
   const toast = useToast();
   const [flags, setFlags] = useState<string[]>(session.flags ?? []);
   const [notes, setNotes] = useState(session.notes ?? '');
@@ -145,7 +146,10 @@ function DoneForm({ session, plan, days, sets, withSkips, sessions, settings, on
     const raised = plan.flags.filter((f) => flags.includes(f.id));
     if (raised.length) toast({ kicker: `${raised[0].group} flagged`, text: swapSentence(plan, raised[0].swap) ?? 'Noted in your joint log.', sub: raised[0].advice, ms: 7000 });
     else if (!records.length) toast({ text: `${def?.name ?? 'Session'} saved · ${stats.sets} set${stats.sets === 1 ? '' : 's'}` });
-    onFinale({ session: { ...session, endedAt: Date.now() }, mine: withSkipped, pages: records.length ? recordPages(mine, sets, plan, settings, session.date) : [], quality });
+    const ended = { ...session, endedAt: Date.now() };
+    // The soundtrack, if Last.fm is set up and online; never holds the finale up for long.
+    const songs = await Promise.race([fetchSessionTracks(ended, settings), new Promise<SongRecord[]>((r) => setTimeout(() => r([]), 4000))]);
+    onFinale({ session: ended, mine: withSkipped, pages: records.length ? recordPages(mine, sets, plan, settings, session.date) : [], quality, songs });
   };
 
   const discard = async () => {

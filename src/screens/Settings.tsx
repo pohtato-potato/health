@@ -263,6 +263,10 @@ export function SettingsScreen() {
         </button>
       </Group>
 
+      <Group id="lastfm" title="Last.fm">
+        <LastfmFields settings={settings} />
+      </Group>
+
       <Group id="training" title="Training setup">
         <SwitchRow
           title="Battery saver for sessions"
@@ -752,4 +756,24 @@ function parseList(s: string): number[] {
     .split(/[,\s]+/)
     .map((x) => parseFloat(x))
     .filter((x) => Number.isFinite(x) && x > 0);
+}
+
+/** Username and API key, typed here and kept only on this phone. */
+function LastfmFields({ settings }: { settings: Settings }) {
+  const [user, setUser] = useState(settings.lastfm?.users[0] ?? '');
+  const [key, setKey] = useState(settings.lastfm?.key ?? '');
+  const save = () => patchSettings({ lastfm: user.trim() && key.trim() ? { key: key.trim(), users: [user.trim()] } : undefined });
+  return (
+    <div className="col gap8" style={{ padding: '12px 0' }}>
+      <label className="flabel">
+        <span className="lbl">Username</span>
+        <input className="field" value={user} onChange={(e) => setUser(e.target.value)} onBlur={save} autoCapitalize="none" autoComplete="off" />
+      </label>
+      <label className="flabel">
+        <span className="lbl">API key</span>
+        <input className="field" value={key} onChange={(e) => setKey(e.target.value)} onBlur={save} autoCapitalize="none" autoComplete="off" spellCheck={false} />
+      </label>
+      <small className="t12 q lh">Sessions show what was playing. The key stays on this phone and is left out of audit exports.</small>
+    </div>
+  );
 }

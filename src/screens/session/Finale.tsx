@@ -1,17 +1,20 @@
 import { hourBreakdown } from '../../domain/muscles';
 import { cleanOf, FAULTS, FORM_LABELS, topFault } from '../../domain/quality';
-import type { SetEntry, TrainingSession } from '../../domain/types';
+import type { SetEntry, SongRecord, TrainingSession } from '../../domain/types';
+import { songAt, topWorkoutArtists } from '../../sources/lastfm';
 import { Story, type StoryCard } from '../../ui/Story';
 import type { RecordPage } from '../../ui/Moments';
 
 const mins = (ms: number) => `${Math.round(ms / 60000)} min`;
 
 /** The session finale: records one by one, where the hour went, the form, then the quality score. */
-export function Finale({ session, mine, pages, quality, onClose }: { session: TrainingSession; mine: SetEntry[]; pages: RecordPage[]; quality: number; onClose: () => void }) {
+export function Finale({ session, mine, pages, quality, songs = [], onClose }: { session: TrainingSession; mine: SetEntry[]; pages: RecordPage[]; quality: number; songs?: SongRecord[]; onClose: () => void }) {
   const done = mine.filter((s) => !s.skipped && !s.drop);
   const cards: StoryCard[] = [];
 
   for (const p of pages) {
+    const recordSet = mine.find((s) => s.mark === '!!' && s.exercise === p.name);
+    const song = recordSet ? songAt(recordSet.at, songs) : undefined;
     cards.push({
       id: `rec-${p.name}`,
       ground: 'radial-gradient(circle at 50% 30%, #3a2e17, var(--deep) 70%)',
@@ -26,6 +29,33 @@ export function Finale({ session, mine, pages, quality, onClose }: { session: Tr
           <div className="t15 lh">{p.detail}</div>
           {p.previous && <div className="t14 q">{p.previous}</div>}
           {p.next && <div className="t14 q">Next: {p.next}</div>}
+          {song && (
+            <div className="t14">
+              Set to <span className="gold">{song.track}</span>, {song.artist}
+            </div>
+          )}
+        </>
+      ),
+    });
+  }
+
+  if (songs.length) {
+    const top = topWorkoutArtists(songs)[0];
+    cards.push({
+      id: 'soundtrack',
+      ground: 'radial-gradient(circle at 50% 25%, #1f2a4a, var(--deep) 70%)',
+      body: (
+        <>
+          <div className="lbl blue">The soundtrack</div>
+          <div className="finale-big" style={{ fontSize: 48 }}>
+            {songs.length} {songs.length === 1 ? 'track' : 'tracks'}
+          </div>
+          {songs.slice(0, 5).map((s) => (
+            <div key={s.id} className="t15">
+              {s.track} <span className="q">· {s.artist}</span>
+            </div>
+          ))}
+          {top && top.plays > 1 && <div className="t14 q">Most played: {top.artist}.</div>}
         </>
       ),
     });
