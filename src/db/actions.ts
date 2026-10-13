@@ -70,6 +70,14 @@ export async function patchDay(date: DayKey, patch: Partial<Day> | ((d: Day) => 
   });
 }
 
+/** A day edit the owner makes by hand: kept in the edit history so it can be undone. */
+export async function editDay(date: DayKey, patch: Partial<Day> | ((d: Day) => Partial<Day>)) {
+  const before = await db.days.get(date);
+  await patchDay(date, patch);
+  const after = await db.days.get(date);
+  return recordEdit('days', date, before, after);
+}
+
 export async function addWater(date: DayKey, ml: number) {
   const h = new Date().getHours();
   const part = h < 12 ? 1 : h < 17 ? 2 : 4;
@@ -91,10 +99,11 @@ export async function bump(id: string, opts: { day?: DayKey; value?: string; by?
   });
 }
 
-export async function setSteps(date: DayKey, steps: number, final = false) {
+export async function setSteps(date: DayKey, steps: number, final = false): Promise<number> {
   void logUsage('log', 'steps');
-  await patchDay(date, { steps: Math.max(0, Math.round(steps)), stepsAt: Date.now(), ...(final ? { stepsFinal: true } : {}) });
+  const id = await editDay(date, { steps: Math.max(0, Math.round(steps)), stepsAt: Date.now(), ...(final ? { stepsFinal: true } : {}) });
   if (date === dayKey() && logMinutes(Date.now()) < 720 && steps > 9000) await bump('steps-9000-by-noon', { day: date });
+  return id;
 }
 
 export interface MorningInput {
@@ -111,8 +120,9 @@ export interface MorningInput {
 }
 
 /** Saves the morning log. Only what was given is written; nothing is carried over silently. */
-export async function saveMorningLog(date: DayKey, input: MorningInput, yesterday: DayKey): Promise<void> {
+export async function saveMorningLog(date: DayKey, input: MorningInput, yesterday: DayKey): Promise<number> {
   void logUsage('log', 'morning');
+  const before = await db.days.get(date);
   await db.transaction('rw', db.days, async () => {
     const now = Date.now();
     const cur = (await db.days.get(date)) ?? { date };
@@ -133,6 +143,7 @@ export async function saveMorningLog(date: DayKey, input: MorningInput, yesterda
       await db.days.put({ ...y, date: yesterday, steps: input.yesterdaySteps, stepsFinal: true, stepsAt: now });
     }
   });
+  return recordEdit('days', date, before, await db.days.get(date));
 }
 
 /** Ticks or unticks a checklist slot. A tick clears "missed"; `at` records when it was really taken. */

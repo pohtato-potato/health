@@ -273,6 +273,7 @@ export function SetTable({
                       const on = !!draft.challenges?.includes(c);
                       return (
                         <button key={c} type="button" aria-pressed={on} className={`chip sm${on ? ' on' : ''}`} onClick={() => setDraft({ ...draft, challenges: toggle(draft.challenges, c) })}>
+                          <Icon name="bolt" size={13} color="var(--gold)" />
                           {CHALLENGE_NAMES[c]}
                         </button>
                       );
@@ -297,6 +298,7 @@ export function SetTable({
                         const on = draft.discomfort === j;
                         return (
                           <button key={j} type="button" aria-pressed={on} className={`chip sm${on ? ' on' : ''}`} onClick={() => setDraft({ ...draft, discomfort: on ? undefined : j })}>
+                            <Icon name="joint" size={13} color="var(--rose)" />
                             {j === 'knee' ? 'Knee felt off' : 'Wrist felt off'}
                           </button>
                         );
@@ -315,7 +317,8 @@ export function SetTable({
                       </button>
                     </>
                   ) : (
-                    <button type="button" className="t13 q" style={{ minHeight: 44 }} onClick={() => onSkip(r)}>
+                    <button type="button" className="t13 q row" style={{ minHeight: 44, gap: 4 }} onClick={() => onSkip(r)}>
+                      <Icon name="skip" size={14} color="var(--quiet)" />
                       Skip this set
                     </button>
                   )}

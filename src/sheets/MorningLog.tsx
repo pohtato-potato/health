@@ -19,6 +19,7 @@ import { placeOptions } from '../domain/places';
 import { ensurePlace } from '../db/actions';
 import { PlaceIcon } from '../ui/PlaceIcon';
 import { StatusRow } from '../ui/StatusRow';
+import { undoEdit } from '../db/edits';
 
 export function MorningLog() {
   const settings = useSettings();
@@ -73,7 +74,7 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
   };
   const save = async () => {
     setSaving(true);
-    await saveMorningLog(
+    const editId = await saveMorningLog(
       today,
       {
         weightKg: weight,
@@ -93,7 +94,7 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
       const f = flagged[0];
       toast({ kicker: `${f.group} flagged`, text: swapSentence(settings.plan, f.swap) ?? 'Noted.', sub: f.advice, ms: 7000 });
     } else {
-      toast({ text: day?.morning ? 'Morning log updated' : 'Morning log saved' });
+      toast({ text: day?.morning ? 'Morning log updated' : 'Morning log saved', action: { label: 'Undo', run: () => void undoEdit(editId) } });
     }
   };
 

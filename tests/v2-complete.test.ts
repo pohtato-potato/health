@@ -67,3 +67,16 @@ describe('place marks (round 5)', () => {
     expect(PLACE_INKS.trip).toBe('var(--blue)');
   });
 });
+
+describe('day edits can be undone', () => {
+  it('records a steps change in the edit history and puts it back on undo', async () => {
+    const { setSteps } = await import('../src/db/actions');
+    const { undoEdit } = await import('../src/db/edits');
+    await setSteps('2026-10-14', 9000);
+    await setSteps('2026-10-14', 11920);
+    const last = (await db.edits.toArray()).filter((e) => e.table === 'days').pop()!;
+    expect((last.after as { steps: number }).steps).toBe(11920);
+    await undoEdit(last.id!);
+    expect((await db.days.get('2026-10-14'))?.steps).toBe(9000);
+  });
+});
