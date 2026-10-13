@@ -5,7 +5,7 @@ import { useAllDays, useAllEntries, useSettings } from '../db/hooks';
 import { applyUpdate, promptInstall, usePwa } from '../pwa';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
-import { addDays, dayKey, logWeekdaySun, weekday } from '../domain/dates';
+import { addDays, dayKey, logMinutes, logWeekdaySun, weekday } from '../domain/dates';
 import { fmtDayMonth, fmtTime } from '../domain/format';
 import { lastFullWeek } from '../domain/weekly';
 import { go, openSheet } from '../router';
@@ -100,6 +100,22 @@ export function Banners() {
         </>
       ),
     });
+  const todayDay = days.find((d) => d.date === today);
+  if (!todayDay?.morning && logMinutes(Date.now()) < 14 * 60)
+    candidates.push({
+      id: 'morning-log',
+      priority: 7,
+      anytime: true,
+      el: (
+        <>
+          <Icon name="sun" size={20} color="var(--gold)" />
+          <span className="grow">Morning log: weight, sleep and yesterday's steps.</span>
+          <button type="button" className="btn sm" onClick={() => openSheet('morning')}>
+            Log
+          </button>
+        </>
+      ),
+    });
   if (checkinDue)
     candidates.push({
       id: 'checkin',
@@ -161,7 +177,6 @@ export function Banners() {
       ),
     });
 
-  const todayDay = days.find((d) => d.date === today);
   const dose = nextDose(Date.now(), doseSchedule(settings.checklist.filter((i) => i.med), today, settings, todayDay), todayDay?.ticks, todayDay?.missed);
   if (dose && dose.at - Date.now() <= 2 * 3_600_000) {
     const mins = Math.round((dose.at - Date.now()) / 60_000);

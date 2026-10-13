@@ -4,7 +4,7 @@ import { addDays } from '../domain/dates';
 import { fmtInt } from '../domain/format';
 import { strengthScores } from '../domain/insights';
 import { CONFETTI, STAT_NAMES_V2, TITLES, charStatsV2, hasReward, levelOf, rewardAch, xpFrom, type CharStatsV2 } from '../domain/rewards';
-import { themeById } from '../domain/themes';
+import { availableThemes, themeById, THEMES } from '../domain/themes';
 import { prefOn, type Settings } from '../domain/types';
 import { patchSettings } from '../db/actions';
 import { db } from '../db/db';
@@ -98,6 +98,35 @@ export function CharacterPage() {
           </div>
         </div>
       </div>
+
+      {(() => {
+        // The wardrobe: everything earned that can be worn, one tap each.
+        const titles = TITLES.filter((x) => x.unlocked(unlocked, lv.level));
+        const themesOpen = availableThemes(unlocked);
+        const confetti = CONFETTI.filter((c) => !c.reward || reward(c.reward));
+        const gold = reward('Gold rings');
+        const total = TITLES.length + THEMES.filter((t) => !t.seasonalOnly).length + CONFETTI.length + 1;
+        const locked = total - titles.length - themesOpen.length - confetti.length - (gold ? 1 : 0);
+        const chip = (key: string, label: string, on: boolean, wear: () => void) => (
+          <button key={key} type="button" className={`chip sm${on ? ' on' : ''}`} aria-pressed={on} onClick={wear} style={{ flex: 'none' }}>
+            {label}
+          </button>
+        );
+        return (
+          <div className="card" style={{ gap: 10 }}>
+            <div className="row base">
+              <div className="lbl">Wardrobe · tap to wear</div>
+              <div className="t12 q">{locked} locked</div>
+            </div>
+            <div className="row" style={{ gap: 8, overflowX: 'auto', justifyContent: 'flex-start', paddingBottom: 2 }}>
+              {titles.map((x) => chip(`t-${x.id}`, `the ${x.name}`, settings.title === x.id, () => patchSettings({ title: settings.title === x.id ? undefined : x.id })))}
+              {themesOpen.map((t) => chip(`th-${t.id}`, t.name, (settings.theme ?? 'dusk') === t.id, () => patchSettings({ theme: t.id })))}
+              {gold && chip('gold', 'Gold rings', prefOn(settings.prefs, 'goldRings'), () => patchSettings((s) => ({ prefs: { ...s.prefs, goldRings: !prefOn(s.prefs, 'goldRings') } })))}
+              {confetti.map((c) => chip(`c-${c.id}`, `${c.name} confetti`, (settings.confetti ?? 'classic') === c.id, () => patchSettings({ confetti: c.id })))}
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="card" style={{ gap: 12 }}>
         <div className="lbl">Stats</div>

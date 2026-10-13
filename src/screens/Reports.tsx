@@ -1,7 +1,9 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { achievementById } from '../domain/achievements';
-import { challengeFor } from '../domain/challenges';
+import { pickChallenge } from '../domain/challenges';
+import { summaries } from '../state/Challenge';
+import { checklistSlots } from '../state/derived';
 import { addDays, type DayKey } from '../domain/dates';
 import { fmt1, fmtDayMonth, fmtDuration, fmtInt, lowerFirst } from '../domain/format';
 import { WEEKDAY_NAMES } from '../domain/insights';
@@ -88,13 +90,17 @@ export function ClimatePage() {
   const [from, to0] = monthRange(month);
   const to = to0 < today ? to0 : addDays(today, -1);
   const s = usePeriod(from, to);
-  if (!s || !settings) return <div className="page bare" />;
+  const allDays = useAllDays();
+  const allEntries = useAllEntries();
+  if (!s || !settings || !allDays || !allEntries) return <div className="page bare" />;
   const sleepShare = share(s.sleepNights, s.sleepLogged);
   const sky = sleepShare >= 0.7 ? 'Mostly sunny' : sleepShare >= 0.4 ? 'Bright spells' : 'Overcast';
   const windShare = share(s.stepTarget, s.days);
   const wind = windShare >= 0.8 ? 'steady winds' : windShare >= 0.5 ? 'a fresh breeze' : 'light airs';
   const change = s.trendStart !== undefined && s.trendEnd !== undefined ? s.trendEnd - s.trendStart : undefined;
   const nextMonth = addDays(to0, 1).slice(0, 7);
+  const histTo = addDays(`${nextMonth}-01`, -1) < today ? addDays(`${nextMonth}-01`, -1) : addDays(today, -1);
+  const outlook = pickChallenge(nextMonth, summaries(settings, allDays, allEntries, addDays(`${nextMonth}-01`, -30), histTo), { checklist: checklistSlots(settings).length > 0 });
   const tiles = [
     { icon: 'sun', name: 'Sunshine', what: 'Sleep', value: s.sleepAvg ? `${fmtDuration(Math.round(s.sleepAvg))} a night` : '—', cond: sky, line: s.sleepLogged ? `On target ${s.sleepNights} of ${s.sleepLogged} nights.${s.bestNight ? ` Longest: ${fmtDuration(s.bestNight.minutes)} on ${fmtDayMonth(s.bestNight.date)}.` : ''}` : 'No nights logged.' },
     { icon: 'wind', name: 'Winds', what: 'Steps', value: s.stepsAvg ? `${fmtInt(s.stepsAvg)} a day` : '—', cond: wind.charAt(0).toUpperCase() + wind.slice(1), line: s.bestSteps ? `Gusting to ${fmtInt(s.bestSteps.steps)} on ${fmtDayMonth(s.bestSteps.date)}. Target reached on ${s.stepTarget} days.` : 'No steps logged.' },
@@ -144,7 +150,7 @@ export function ClimatePage() {
       <div className="card">
         <div className="lbl">Outlook for {monthName(nextMonth)}</div>
         <div className="t15 lh">
-          {challengeFor(nextMonth).title}: {lowerFirst(challengeFor(nextMonth).text)}
+          {outlook.title}: {lowerFirst(outlook.text)}
         </div>
       </div>
       <button type="button" className="btn lg ghost block" onClick={() => go('/wrapped', { m: month })}>
@@ -168,6 +174,7 @@ export function WrappedPage() {
   const from = year ? start : mFrom;
   const to = year ? end : mTo0 < today ? mTo0 : addDays(today, -1);
   const s = usePeriod(from, to);
+  const [i, setI] = useState(0);
   if (!s || !settings) return <div className="page bare" />;
   const title = year ? (settings.goalDate && today >= settings.goalDate ? 'Your year' : 'The journey so far') : monthName(month);
   const place = [...ROUTE].reverse().find((r) => r.km <= s.km && r.km > 0);
@@ -221,20 +228,52 @@ export function WrappedPage() {
       : []),
   ];
 
+  const c = cards[Math.min(i, cards.length - 1)];
+  const last = i >= cards.length - 1;
   return (
-    <div className="page bare">
-      <button type="button" className="backlink" onClick={() => back('/journey')}>
-        <Icon name="left" size={20} stroke={1.8} />
-        Journey
+    <div className="film wrapped-story" style={{ background: c.bg, color: c.ink }} onClick={() => (last ? undefined : setI(i + 1))}>
+      <div className="film-bars" aria-hidden="true">
+        {cards.map((_, k) => (
+          <i key={k} className={k <= i ? 'on' : undefined} />
+        ))}
+      </div>
+      <button
+        type="button"
+        className="icon-btn film-close"
+        aria-label="Close"
+        onClick={(e) => {
+          e.stopPropagation();
+          back('/journey');
+        }}
+      >
+        <Icon name="close" size={22} />
       </button>
-      {cards.map((c, i) => (
-        <div key={i} className="wrapped" style={{ background: c.bg, color: c.ink }}>
-          <div className="w-k">{c.kicker}</div>
-          <div className="w-big">{c.big}</div>
-          {c.body && <div className="w-body">{c.body}</div>}
+      <div className="film-body" aria-live="polite">
+        <div className="w-k">{c.kicker}</div>
+        <div className="w-big">{c.big}</div>
+        {c.body && <div className="w-body">{c.body}</div>}
+      </div>
+      {last ? (
+        <div className="col gap8 film-foot">
+          <div className="t13 center lh" style={{ opacity: 0.8 }}>
+            {year ? 'Every day since the start, in one place.' : `See you in ${monthName(addDays(mTo0, 1).slice(0, 7))}.`}
+          </div>
+          <button
+            type="button"
+            className="btn ghost block"
+            onClick={(e) => {
+              e.stopPropagation();
+              setI(0);
+            }}
+          >
+            Again
+          </button>
         </div>
-      ))}
-      <div className="t13 q center lh">{year ? 'Every day since the start, in one place.' : `See you in ${monthName(addDays(mTo0, 1).slice(0, 7))}.`}</div>
+      ) : (
+        <div className="t12 film-foot center" style={{ opacity: 0.7 }}>
+          Tap for the next one
+        </div>
+      )}
     </div>
   );
 }

@@ -62,7 +62,9 @@ export function MiniRing({
   width = 5,
   label,
   children,
+  textColor = 'var(--text)',
 }: {
+  textColor?: string;
   progress: number;
   size?: number;
   color?: string;
@@ -90,7 +92,7 @@ export function MiniRing({
         />
       )}
       {children && (
-        <text x="30" y="36.5" textAnchor="middle" fill="var(--text)" fontFamily="var(--serif)" fontWeight="300" fontSize="19">
+        <text x="30" y="36.5" textAnchor="middle" fill={textColor} fontFamily="var(--serif)" fontWeight="300" fontSize="19">
           {children}
         </text>
       )}

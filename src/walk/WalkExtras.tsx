@@ -2,11 +2,12 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { addDays, dayKey } from '../domain/dates';
 import { fmtInt } from '../domain/format';
-import { ALL_STATES, statesReached } from '../domain/walk';
+import { ALL_STATES, ALL_STOPS, statesReached } from '../domain/walk';
 import type { Day } from '../domain/types';
 import { questOffer, QUESTS, type Quest } from './quests';
 export { detourKm } from './quests';
-import { souvenirFor } from './souvenirs';
+import { souvenirFor, souvenirShape } from './souvenirs';
+import { SouvenirArt } from './SouvenirArt';
 
 /** The souvenir shelf: one per state reached, dashed spaces for the rest. */
 export function SouvenirShelf({ km }: { km: number }) {
@@ -19,8 +20,9 @@ export function SouvenirShelf({ km }: { km: number }) {
         const s = souvenirFor(name);
         return (
           <div key={name} className={`niche${got ? '' : ' waiting'}`}>
+            <span className="niche-art">{got && <SouvenirArt shape={souvenirShape(name)} size={36} />}</span>
             <span className="t14">{got ? s?.name : 'Waiting'}</span>
-            <span className="t12 q">{name}</span>
+            <span className="t12 q">{got ? s?.note : name}</span>
           </div>
         );
       })}
@@ -50,6 +52,7 @@ export function QuestPanel({ days, km }: { days: Day[]; km: number }) {
       {offer ? (
         <div className="card gold">
           <div className="lbl gold">Side quest: {offer.name}</div>
+          <QuestSketch quest={offer} />
           <div className="t15 lh">
             You beat your step average this week. A {fmtInt(offer.detourKm)} km detour each way to {offer.name}, for {offer.reward}. The detour doesn’t move you along the route.
           </div>
@@ -76,5 +79,21 @@ export function QuestPanel({ days, km }: { days: Day[]; km: number }) {
         </div>
       )}
     </div>
+  );
+}
+
+/** The detour drawn off the route: the road, the stop it leaves from, and the spur out to the quest. */
+export function QuestSketch({ quest }: { quest: Quest }) {
+  const stop = ALL_STOPS.reduce((a, b) => (Math.abs(b.km - quest.nearKm) < Math.abs(a.km - quest.nearKm) ? b : a));
+  return (
+    <svg viewBox="0 0 300 92" width="100%" height="92" role="img" aria-label={`${fmtInt(quest.detourKm)} km detour from ${stop.name} to ${quest.name}`}>
+      <path d="M8 70 C 70 64, 110 74, 150 66 S 240 58, 292 62" fill="none" stroke="var(--sage)" strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M150 66 C 168 48, 196 30, 232 22" fill="none" stroke="var(--gold)" strokeWidth="1.8" strokeDasharray="4 4" strokeLinecap="round" />
+      <circle cx="150" cy="66" r="4" fill="var(--text)" />
+      <circle cx="232" cy="22" r="5" fill="none" stroke="var(--gold)" strokeWidth="1.8" />
+      <text x="150" y="86" textAnchor="middle" fontSize="11" fill="var(--dim)" fontFamily="var(--sans)">{stop.name}</text>
+      <text x="226" y="14" textAnchor="end" fontSize="11" fontWeight="600" fill="var(--gold)" fontFamily="var(--sans)">{quest.name}</text>
+      <text x="198" y="52" fontSize="11" fill="var(--gold)" fontFamily="var(--sans)">{fmtInt(quest.detourKm)} km</text>
+    </svg>
   );
 }

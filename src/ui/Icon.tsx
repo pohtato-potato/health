@@ -2,6 +2,9 @@ import type { CSSProperties, ReactNode } from 'react';
 
 /** Stroke line icons only, drawn on a 24 px grid. No food pictures, ever. */
 const PATHS: Record<string, ReactNode> = {
+  bolt: <path d="M13 3 5 13.5h6L10 21l8-10.5h-6Z" />,
+  joint: <path d="M12 3v6M12 15v6M9 12a3 3 0 1 0 6 0 3 3 0 0 0-6 0" />,
+  skip: <path d="M6 6l8 6-8 6V6ZM17.5 6v12" />,
   home: <path d="M4 11.5 12 5l8 6.5M6.5 10v9h11v-9M10 19v-5h4v5" />,
   office: <path d="M5 20V5.5h9V20M14 9h5v11M3.5 20h17M8 9h3M8 12.5h3M8 16h3M16.5 12.5h0M16.5 16h0" />,
   today: (

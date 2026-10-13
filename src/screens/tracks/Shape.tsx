@@ -47,6 +47,7 @@ export function ShapeTrack({ data }: { data: TrackData }) {
     waistIn: waistNow && waistThen && waistThen !== waistNow ? waistNow.waistStanding! - waistThen.waistStanding! : undefined,
     strengthPct: strengthNow - strengthThen,
   });
+  const sessionDays = new Set(data.sessions.filter((x) => x.status === 'done').map((x) => x.date));
   const due = nextCheckInDate(data.checkins);
   const last = data.checkins.map((c) => c.date).sort().pop();
 
@@ -64,8 +65,9 @@ export function ShapeTrack({ data }: { data: TrackData }) {
           mode="dots"
           color="var(--pearl)"
           secondColor="var(--apricot)"
+          thirdColor="var(--protein)"
           fmt={(n) => fmt1(n)}
-          points={range.map((d) => ({ label: label(d), value: byDate.get(d)?.kg ?? null, trend: byDate.get(d)?.trend ?? null, second: waistOn.get(d) ?? null, marker: markers.get(d) }))}
+          points={range.map((d) => ({ label: label(d), value: byDate.get(d)?.kg ?? null, trend: byDate.get(d)?.trend ?? null, second: waistOn.get(d) ?? null, third: sessionDays.has(d) ? strengthIndex(data.sets.filter((x) => x.date <= d), d) : null, marker: markers.get(d) }))}
         />
       }
       insights={[
@@ -83,6 +85,9 @@ export function ShapeTrack({ data }: { data: TrackData }) {
         </span>
         <span>
           <i className="key-dot solid" style={{ background: 'var(--apricot)' }} /> waist
+        </span>
+        <span>
+          <i className="key-dot solid" style={{ background: 'var(--protein)' }} /> strength
         </span>
         <span>
           <i className="key-dot solid" style={{ background: 'var(--gold)' }} /> marker

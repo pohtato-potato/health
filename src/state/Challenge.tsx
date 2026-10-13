@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect } from 'react';
-import { challengeFor, type DaySummary } from '../domain/challenges';
+import { pickChallenge, type DaySummary } from '../domain/challenges';
 import { addDays, dayRange, daysBetween, type DayKey } from '../domain/dates';
 import { fmtInt } from '../domain/format';
 import { sleepMinutes } from '../domain/rings';
@@ -47,10 +47,13 @@ export function useChallenge() {
   const today = useToday();
   const days = useAllDays();
   const month = today.slice(0, 7);
-  const entries = useEntriesBetween(`${month}-01`, today);
+  const from = addDays(`${month}-01`, -30);
+  const entries = useEntriesBetween(from, today);
   if (!settings || !days || !entries) return undefined;
-  const def = challengeFor(month);
-  const list = summaries(settings, days, entries, `${month}-01`, today);
+  // Chosen from the thirty days before the month began, so it holds still all month.
+  const all = summaries(settings, days, entries, from, today);
+  const def = pickChallenge(month, all, { checklist: checklistSlots(settings).length > 0 });
+  const list = all.filter((d) => d.date >= `${month}-01`);
   const last = prevMonth(month);
   const lastMonthSteps = days.filter((d) => d.date.startsWith(last)).reduce((n, d) => n + (d.steps ?? 0), 0);
   const progress = def.progress(list, { lastMonthSteps, month });

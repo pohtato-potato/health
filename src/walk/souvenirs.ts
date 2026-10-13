@@ -41,3 +41,50 @@ export const SOUVENIRS: Record<string, { name: string; note: string }> = {
 export function souvenirFor(state: string): { name: string; note: string } | undefined {
   return SOUVENIRS[state];
 }
+
+/** The twelve drawn shapes a souvenir can take on the shelf. */
+export const SOUVENIR_SHAPES = ['jali', 'tile', 'kite', 'shell', 'lamp', 'textile', 'pottery', 'mask', 'boat', 'flower', 'leaf', 'bell'] as const;
+export type SouvenirShape = (typeof SOUVENIR_SHAPES)[number];
+
+const SHAPE_OF: Record<string, SouvenirShape> = {
+  Delhi: 'bell',
+  Haryana: 'textile',
+  'Uttar Pradesh': 'flower',
+  Rajasthan: 'pottery',
+  'Madhya Pradesh': 'jali',
+  Maharashtra: 'textile',
+  Telangana: 'tile',
+  'Andhra Pradesh': 'mask',
+  Karnataka: 'bell',
+  'Tamil Nadu': 'lamp',
+  Odisha: 'mask',
+  'West Bengal': 'pottery',
+  Jharkhand: 'mask',
+  Bihar: 'flower',
+  Gujarat: 'kite',
+  Puducherry: 'leaf',
+  Kerala: 'boat',
+  Lakshadweep: 'shell',
+  Goa: 'tile',
+  'Dadra and Nagar Haveli and Daman and Diu': 'kite',
+  Chhattisgarh: 'lamp',
+  'Andaman and Nicobar Islands': 'shell',
+  Sikkim: 'textile',
+  Assam: 'leaf',
+  Meghalaya: 'leaf',
+  Tripura: 'lamp',
+  Mizoram: 'textile',
+  Manipur: 'pottery',
+  Nagaland: 'bell',
+  'Arunachal Pradesh': 'leaf',
+  Uttarakhand: 'flower',
+  'Himachal Pradesh': 'textile',
+  Chandigarh: 'jali',
+  Punjab: 'flower',
+  'Jammu and Kashmir': 'boat',
+  Ladakh: 'bell',
+};
+
+export function souvenirShape(state: string): SouvenirShape {
+  return SHAPE_OF[state] ?? 'tile';
+}

@@ -165,3 +165,8 @@ export function readinessToStore(r: { score: number; known: boolean; x: Partial<
 export function readinessText(r: { score: number; known: boolean }): string {
   return r.known ? String(r.score) : '—';
 }
+
+/** Readiness colours: rose under 60, gold 60–74, sage 75 and up. */
+export function readinessInk(score: number): string {
+  return score < 60 ? 'var(--rose)' : score < 75 ? 'var(--gold)' : 'var(--sage)';
+}

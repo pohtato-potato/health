@@ -3,25 +3,19 @@ import { back } from '../../router';
 import { Seg } from '../../ui/controls';
 import { Icon } from '../../ui/Icon';
 import type { PlaceMark } from './data';
+import { PLACE_INKS, PLACE_LABELS, placePath } from '../../ui/PlaceIcon';
 
-/** The colour of each kind of place, the same everywhere a day carries one. */
-export const PLACE_INK: Record<PlaceMark, string> = {
-  home: 'var(--sage)',
-  home2: 'var(--pearl)',
-  office: 'var(--apricot)',
-  trip: 'var(--blue)',
-  friends: 'var(--lavender)',
-};
+const PLACE_INK = PLACE_INKS;
+const PLACE_NAME = PLACE_LABELS;
 
-const PLACE_NAME: Record<PlaceMark, string> = { home: 'home', home2: 'second home', office: 'office', trip: 'trip', friends: 'friends' };
-
-/** A small glyph per place kind: a roof for homes, a block for the office, a dot for trips, a diamond for friends. */
+/** A place's round-5 mark, drawn in its colour at a column's foot. */
 function PlaceGlyph({ kind, x, y, s = 5 }: { kind: PlaceMark; x: number; y: number; s?: number }) {
-  const fill = PLACE_INK[kind];
-  if (kind === 'home' || kind === 'home2') return <path d={`M${x - s} ${y + s * 0.8}L${x} ${y - s * 0.8}L${x + s} ${y + s * 0.8}Z`} fill={fill} />;
-  if (kind === 'office') return <rect x={x - s * 0.8} y={y - s * 0.8} width={s * 1.6} height={s * 1.6} rx={1} fill={fill} />;
-  if (kind === 'trip') return <circle cx={x} cy={y} r={s * 0.85} fill={fill} />;
-  return <path d={`M${x} ${y - s}L${x + s} ${y}L${x} ${y + s}L${x - s} ${y}Z`} fill={fill} />;
+  const k = s / 12;
+  return (
+    <g transform={`translate(${x - s} ${y - s}) scale(${k})`}>
+      <path d={placePath(kind)} fill="none" stroke={PLACE_INK[kind]} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
+    </g>
+  );
 }
 
 export interface HeroPoint {
@@ -30,6 +24,8 @@ export interface HeroPoint {
   value: number | null;
   trend?: number | null;
   second?: number | null;
+  /** A third series on its own scale (Shape's strength). */
+  third?: number | null;
   place?: PlaceMark;
   nightOut?: boolean;
   marker?: string;
@@ -51,6 +47,7 @@ export function HeroChart({
   target,
   mode = 'bars',
   secondColor,
+  thirdColor,
   height = 190,
   label,
 }: {
@@ -61,6 +58,7 @@ export function HeroChart({
   target?: number;
   mode?: 'bars' | 'dots';
   secondColor?: string;
+  thirdColor?: string;
   height?: number;
   label: string;
 }) {
@@ -140,6 +138,23 @@ export function HeroChart({
         })}
         {secondColor &&
           points.map((p, i) => (p.second !== null && p.second !== undefined ? <circle key={`s${i}`} cx={cx(i)} cy={ys(p.second)} r="3.2" fill={secondColor} stroke="var(--ink)" strokeWidth="1" /> : null))}
+        {thirdColor &&
+          (() => {
+            const vs = points.map((p, i) => ({ i, v: p.third })).filter((p): p is { i: number; v: number } => p.v !== null && p.v !== undefined);
+            if (!vs.length) return null;
+            const lo3 = Math.min(...vs.map((p) => p.v));
+            const hi3 = Math.max(...vs.map((p) => p.v));
+            const pad3 = (hi3 - lo3) * 0.2 || 1;
+            const y3 = (v: number) => top + (1 - (v - (lo3 - pad3)) / (hi3 + pad3 - (lo3 - pad3))) * (H - top - bottom);
+            return (
+              <g>
+                {vs.length > 1 && <path d={vs.map((p, k) => `${k ? 'L' : 'M'}${cx(p.i).toFixed(1)} ${y3(p.v).toFixed(1)}`).join(' ')} fill="none" stroke={thirdColor} strokeWidth="1.4" strokeDasharray="3 3" />}
+                {vs.map((p) => (
+                  <circle key={`t${p.i}`} cx={cx(p.i)} cy={y3(p.v)} r="2.6" fill={thirdColor} />
+                ))}
+              </g>
+            );
+          })()}
         {trend.length > 1 && <path d={trend.map((p, k) => `${k ? 'L' : 'M'}${cx(p.i).toFixed(1)} ${y(p.v).toFixed(1)}`).join(' ')} fill="none" stroke={mode === 'bars' ? 'var(--text)' : color} strokeOpacity={mode === 'bars' ? 0.7 : 1} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
         {points.map((p, i) =>
           p.marker ? (
@@ -171,15 +186,15 @@ export function HeroChart({
           {places.map((k) => (
             <span key={k}>
               <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-                <PlaceGlyph kind={k} x={6} y={6} s={4.5} />
+                <PlaceGlyph kind={k} x={6} y={6} s={6} />
               </svg>
               {PLACE_NAME[k]}
             </span>
           ))}
           {points.some((p) => p.nightOut) && (
             <span>
-              <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-                <circle cx="6" cy="6" r="5" fill="none" stroke="var(--gold)" strokeWidth="1.2" />
+              <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true">
+                <path d={placePath('night')} fill="none" stroke="var(--gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               night out
             </span>

@@ -2,6 +2,7 @@ import type { Day, SetEntry, SongRecord, TrainingSession } from './types';
 import { fmtInt } from './format';
 import { kmFromSteps } from './walk';
 import { distanceInTerms } from '../walk/journal';
+import { weekStart } from './dates';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -58,4 +59,35 @@ export function lastMonth(today: string): string {
   const [y, m] = today.split('-').map(Number);
   const d = new Date(y, m - 2, 1, 12);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+type FilmSet = Pick<SetEntry, 'date' | 'exerciseId' | 'exercise' | 'loadKg' | 'reps' | 'mark'> & { skipped?: boolean };
+const lifted = (x: FilmSet) => !x.skipped && x.loadKg !== null && !!x.reps;
+
+/** The month's strongest week: the most weight moved (load × reps), by the Monday it starts. */
+export function strongestWeek(month: string, sets: FilmSet[]): { from: string; kg: number; sets: number } | undefined {
+  const weeks = new Map<string, { kg: number; sets: number }>();
+  for (const x of sets) {
+    if (!x.date.startsWith(month) || !lifted(x)) continue;
+    const w = weekStart(x.date);
+    const cur = weeks.get(w) ?? { kg: 0, sets: 0 };
+    weeks.set(w, { kg: cur.kg + x.loadKg! * x.reps!, sets: cur.sets + 1 });
+  }
+  const best = [...weeks].sort((a, b) => b[1].kg - a[1].kg || a[0].localeCompare(b[0]))[0];
+  return best ? { from: best[0], ...best[1] } : undefined;
+}
+
+/** The record you didn't see coming: the month's biggest jump over a previous best weight. */
+export function surpriseRecord(month: string, sets: FilmSet[]): { exercise: string; date: string; from: number; to: number; pct: number } | undefined {
+  let out: { exercise: string; date: string; from: number; to: number; pct: number } | undefined;
+  for (const r of sets) {
+    if (!r.date.startsWith(month) || r.mark !== '!!' || !lifted(r)) continue;
+    const before = sets.filter((x) => x.exerciseId === r.exerciseId && x.date < r.date && lifted(x)).map((x) => x.loadKg!);
+    if (!before.length) continue;
+    const from = Math.max(...before);
+    if (r.loadKg! <= from) continue;
+    const pct = Math.round(((r.loadKg! - from) / from) * 100);
+    if (!out || pct > out.pct) out = { exercise: r.exercise, date: r.date, from, to: r.loadKg!, pct };
+  }
+  return out;
 }

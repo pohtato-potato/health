@@ -13,6 +13,8 @@ import { useUnlockedIds } from './Theme';
 import { confettiPalette } from '../domain/rewards';
 import { Backdrop } from './moments/Backdrop';
 import type { MomentStyle } from '../domain/firsts';
+import { Embers, FirstArt } from './FirstArt';
+import { quietNow } from './quiet';
 
 export type Tier = 'b' | 's' | 'g' | 'p';
 
@@ -72,14 +74,19 @@ export function MomentsProvider({ children }: { children: ReactNode }) {
   const special = settings && unlocked ? confettiPalette(settings.confetti, unlocked) : undefined;
   const current = queue[0];
 
+  const momentsOn = useRef(true);
+  momentsOn.current = !settings || prefOn(settings.prefs, 'moments');
   const show = useCallback((m: MomentData) => {
+    // With moments off, it is still marked as seen, so it doesn't wait to appear later.
+    if (!momentsOn.current) return void db.seen.put({ id: m.key, at: Date.now() });
     setQueue((q) => (q.some((x) => x.key === m.key) ? q : [...q, m]));
   }, []);
+  const quiet = !!settings && quietNow(prefOn(settings.prefs, 'quietPublic'), Date.now(), document.hidden);
 
   useEffect(() => {
     if (!current) return;
     void db.seen.put({ id: current.key, at: Date.now() });
-    if (settings && settings.prefs.buzz) buzz(current.kind === 'perfect' || current.kind === 'golden' ? [60, 50, 60, 50, 120] : [70, 50, 70]);
+    if (settings && settings.prefs.buzz && !quietNow(prefOn(settings.prefs, 'quietPublic'), Date.now(), document.hidden)) buzz(current.kind === 'perfect' || current.kind === 'golden' ? [60, 50, 60, 50, 120] : [70, 50, 70]);
     history.pushState({ moment: true, inApp: history.state?.inApp }, '');
     // Only the key matters: a new moment gets its own history entry.
   }, [current?.key]);
@@ -107,7 +114,7 @@ export function MomentsProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={{ show }}>
       {children}
-      {current && settings && createPortal(<MomentView key={current.key} m={current} onClose={close} voice={settings.voice} shuffle={prefOn(settings.prefs, 'shuffleVoices')} special={special} />, document.body)}
+      {current && settings && createPortal(<MomentView key={current.key} m={current} onClose={close} voice={settings.voice} shuffle={prefOn(settings.prefs, 'shuffleVoices')} special={special} quiet={quiet} />, document.body)}
     </Ctx.Provider>
   );
 }
@@ -115,7 +122,7 @@ export function MomentsProvider({ children }: { children: ReactNode }) {
 const ALL = ['var(--apricot)', 'var(--lavender)', 'var(--sage)', 'var(--gold)', 'var(--pearl)'];
 const GOLD = ['var(--gold)', '#f0d79e', '#c9a85a', 'var(--gold)'];
 
-function MomentView({ m, onClose, voice, shuffle, special }: { m: MomentData; onClose: () => void; voice: VoiceId; shuffle: boolean; special?: string[] }) {
+function MomentView({ m, onClose, voice, shuffle, special, quiet }: { m: MomentData; onClose: () => void; voice: VoiceId; shuffle: boolean; special?: string[]; quiet?: boolean }) {
   const today = useToday();
   const v = voiceFor(voice, shuffle, today);
   const line = (moment: Moment, vars = {}) => voiceLine(v, moment, `${today}${m.key}`, vars);
@@ -137,12 +144,15 @@ function MomentView({ m, onClose, voice, shuffle, special }: { m: MomentData; on
       backdrop = 'polaroid';
       body = (
         <>
-          <div className="first-ember" aria-hidden />
+          <FirstArt kg={m.key.match(/^first:load:([\d.]+)/)?.[1]} />
           <div className="col gap8" style={{ alignItems: 'center', textAlign: 'center' }}>
             <div className="sf" style={{ fontSize: 40, lineHeight: 1.05 }}>
               {m.title}
             </div>
             <div className="t15 q">{m.detail}</div>
+          </div>
+          <div className="col gap6" style={{ alignItems: 'center' }}>
+            <Embers count={m.count} />
             <div className="t13 gold">Firsts so far: {m.count}</div>
           </div>
         </>
@@ -182,7 +192,7 @@ function MomentView({ m, onClose, voice, shuffle, special }: { m: MomentData; on
       );
       break;
     case 'record':
-      return <RecordView m={m} onClose={onClose} closeBtn={closeBtn} voiceText={line('record')} palette={special ?? GOLD} />;
+      return <RecordView m={m} onClose={onClose} closeBtn={closeBtn} voiceText={line('record')} palette={special ?? GOLD} quiet={quiet} />;
     case 'streak':
       confetti = ['var(--gold)', 'var(--sage)', '#f0d79e'];
       body = (
@@ -344,7 +354,7 @@ function MomentView({ m, onClose, voice, shuffle, special }: { m: MomentData; on
   return (
     <div className="moment" role="dialog" aria-modal="true">
       {backdrop && <Backdrop style={backdrop} seed={m.key.length} />}
-      {confetti && <Confetti palette={special ?? confetti} count={30} height={Math.round(window.innerHeight * 0.6)} width={390} seed={m.key.length * 7 + 3} />}
+      {confetti && !quiet && <Confetti palette={special ?? confetti} count={30} height={Math.round(window.innerHeight * 0.6)} width={390} seed={m.key.length * 7 + 3} />}
       {closeBtn}
       <div className="col gap20 moment-body">{body}</div>
       <div className="moment-foot">{foot}</div>
@@ -352,13 +362,13 @@ function MomentView({ m, onClose, voice, shuffle, special }: { m: MomentData; on
   );
 }
 
-function RecordView({ m, onClose, closeBtn, voiceText, palette }: { m: Extract<MomentData, { kind: 'record' }>; onClose: () => void; closeBtn: ReactNode; voiceText: string; palette: string[] }) {
+function RecordView({ m, onClose, closeBtn, voiceText, palette, quiet }: { m: Extract<MomentData, { kind: 'record' }>; onClose: () => void; closeBtn: ReactNode; voiceText: string; palette: string[]; quiet?: boolean }) {
   const [i, setI] = useState(0);
   const p = m.pages[i];
   const last = i === m.pages.length - 1;
   return (
     <div className="moment" role="dialog" aria-modal="true">
-      <Confetti palette={palette} count={26} height={Math.round(window.innerHeight * 0.55)} width={390} seed={i * 11 + 5} />
+      {!quiet && <Confetti palette={palette} count={26} height={Math.round(window.innerHeight * 0.55)} width={390} seed={i * 11 + 5} />}
       {m.pages.length > 1 && (
         <div className="t13 q" style={{ position: 'absolute', top: 'calc(24px + var(--safe-top))', left: 0, right: 0, textAlign: 'center' }}>
           {i + 1} of {m.pages.length}

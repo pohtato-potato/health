@@ -69,3 +69,28 @@ export function challengeFor(month: string): ChallengeDef {
   }
   return BY_MONTH[Number(month.slice(5, 7))];
 }
+
+const MONTH_DAYS = (month: string) => new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
+
+/**
+ * The month's challenge from your own last thirty days: the weakest of protein days, sleep nights,
+ * morning logs and the checklist, with a goal a little above where it stands. Diwali still takes
+ * over its month; with under two weeks of history it falls back to the calendar's challenge.
+ */
+export function pickChallenge(month: string, history: DaySummary[], has: { checklist: boolean }): ChallengeDef {
+  const fixed = challengeFor(month);
+  if (fixed.id.startsWith('diwali-')) return fixed;
+  const recent = history.filter((d) => d.date < `${month}-01`).slice(-30);
+  if (recent.length < 14) return fixed;
+  const habits: { id: string; title: string; unit: string; text: (n: number) => string; ok: (d: DaySummary) => boolean }[] = [
+    { id: 'protein', title: 'Protein, every day', unit: 'days', text: (n) => `Close the protein ring on ${n} days.`, ok: (d) => d.proteinOk },
+    { id: 'sleep', title: 'Sleep on it', unit: 'nights', text: (n) => `Reach your sleep target on ${n} nights.`, ok: (d) => d.sleepOk },
+    { id: 'mornings', title: 'Mornings first', unit: 'days', text: (n) => `Do the morning log on ${n} days.`, ok: (d) => d.morning },
+    ...(has.checklist ? [{ id: 'checklist', title: 'Tick, tick, tick', unit: 'days', text: (n: number) => `Finish the daily checklist on ${n} days.`, ok: (d: DaySummary) => d.checklist }] : []),
+  ];
+  const rated = habits.map((h) => ({ h, rate: recent.filter(h.ok).length / recent.length })).sort((a, b) => a.rate - b.rate);
+  const { h, rate } = rated[0];
+  const days = MONTH_DAYS(month);
+  const goal = Math.max(5, Math.min(days - 2, Math.round((rate + 0.15) * days)));
+  return { id: `${h.id}-${month}`, title: h.title, text: h.text(goal), goal, unit: h.unit, progress: count(h.ok) };
+}

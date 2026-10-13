@@ -1,13 +1,13 @@
 import { useState, type ReactNode } from 'react';
 import { addDays, dayRange, daysBetween, weekday, weekStart, type DayKey } from '../domain/dates';
-import { fmt1, fmtClock, fmtDayMonth, fmtDuration, fmtInt, fmtLitres } from '../domain/format';
-import { WEEKDAYS, WEEKDAY_NAMES, bedtimeFor, drinkNights, morningAfter, raceLastWeek, sleepPayoff, sleepWindows, sources, strengthScores, tshirtTrend, weekdayPattern, type Strength } from '../domain/insights';
+import { fmt1, fmtClock, fmtDayMonth, fmtDayShort, fmtDuration, fmtInt, fmtLitres } from '../domain/format';
+import { WEEKDAYS, WEEKDAY_NAMES, bedtimeFor, drinkNights, morningAfter, raceLastWeek, sleepPayoff, sleepWindows, sources, strengthScores, tshirtVsLast, weekdayPattern, type Strength } from '../domain/insights';
 import type { CheckIn, Day, FoodEntry, Measurement, SetEntry, Settings, TrainingSession } from '../domain/types';
 import { flagEvents, targetsFor } from '../state/derived';
 import { usualWake } from './TodayNight';
 import { Spark } from '../ui/Charts';
 import { Icon } from '../ui/Icon';
-import { go } from '../router';
+import { go, openSheet } from '../router';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -200,26 +200,26 @@ function SleepWindowChart({ nights, bed }: { nights: ReturnType<typeof sleepWind
 /* ── Waist and shape ───────────────────────────────────────────────── */
 
 export function WaistExtras({ checkins }: { measurements?: Measurement[]; settings?: Settings; checkins: CheckIn[] }) {
-  const tee = tshirtTrend(checkins);
+  const tee = tshirtVsLast(checkins);
   return (
     <>
       {tee && (
-        <Card title="The t-shirt test" color="var(--pearl)" right={<span className="t12 q">{tee.count} check-ins</span>}>
-          {(['shoulders', 'arms', 'stomach'] as const).map((k) => (
-            <div key={k} className="col gap4">
-              <div className="row base t14">
-                <span>{k === 'shoulders' ? 'Shoulders fill it out' : k === 'arms' ? 'Sleeves fit the arms' : 'Sits flat on the stomach'}</span>
-                <span className="tn">
-                  {tee.latest.tshirt![k]} / 5
-                  {tee.count > 1 && tee.latest.tshirt![k] !== tee.first.tshirt![k] ? <span className={tee.latest.tshirt![k] > tee.first.tshirt![k] ? 'sage' : 'q'}> ({tee.latest.tshirt![k] > tee.first.tshirt![k] ? '+' : '−'}{Math.abs(tee.latest.tshirt![k] - tee.first.tshirt![k])})</span> : null}
+        <Card title="The t-shirt test" color="var(--pearl)" right={<span className="t12 q">{tee.since ? 'vs last month' : 'first rating'}</span>}>
+          <div className="grid3">
+            {(['shoulders', 'arms', 'stomach'] as const).map((k) => {
+              const ch = tee.change?.[k] ?? 0;
+              return (
+                <span key={k} className="col" style={{ alignItems: 'center', gap: 2 }}>
+                  <b className="serif tn" style={{ fontSize: 24 }}>
+                    {tee.latest[k]}
+                    {ch !== 0 && <span className={`t14 ${ch > 0 ? 'sage' : 'apri'}`}> {ch > 0 ? '↑' : '↓'}</span>}
+                  </b>
+                  <span className="t12 q">{k}</span>
                 </span>
-              </div>
-              <div className="bar">
-                <i style={{ width: `${(tee.latest.tshirt![k] / 5) * 100}%`, background: 'var(--pearl)' }} />
-              </div>
-            </div>
-          ))}
-          <div className="t13 q lh">Rated at each monthly check-in, in the same t-shirt{tee.count > 1 ? `, since ${fmtDayMonth(tee.first.date)}` : ''}.</div>
+              );
+            })}
+          </div>
+          <div className="t13 q lh">Rated at each monthly check-in, in the same t-shirt{tee.since ? `; the arrows compare with ${fmtDayMonth(tee.since)}` : ''}.</div>
         </Card>
       )}
     </>
@@ -335,12 +335,20 @@ export function DrinksExtras({ entries, days, today }: { entries: FoodEntry[]; d
           {monthDays.map((d) => {
             const n = byDate.get(d);
             return (
-              <div key={d} className="col" style={{ alignItems: 'center', gap: 2, padding: '4px 0', borderRadius: 8, background: n ? 'var(--gold-bg)' : undefined, opacity: d > today ? 0.35 : 1 }}>
+              <button
+                key={d}
+                type="button"
+                className="col"
+                disabled={d > today}
+                aria-label={`Add drinks to ${fmtDayMonth(d)}`}
+                onClick={() => openSheet('drink', d === today ? {} : { d })}
+                style={{ alignItems: 'center', gap: 2, padding: '4px 0', minHeight: 40, borderRadius: 8, background: n ? 'var(--gold-bg)' : undefined, opacity: d > today ? 0.35 : 1 }}
+              >
                 <span className={`t12 ${n ? 'gold' : 'q'}`}>{Number(d.slice(8))}</span>
                 <span style={{ height: 6, display: 'flex', gap: 2 }}>
                   {n && Array.from({ length: Math.min(n.count, 4) }, (_, i) => <i key={i} style={{ width: 4, height: 4, borderRadius: 2, background: 'var(--gold)' }} />)}
                 </span>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -350,9 +358,35 @@ export function DrinksExtras({ entries, days, today }: { entries: FoodEntry[]; d
                 .sort((a, b) => b[1] - a[1])
                 .map(([t, c]) => `${c} ${t.toLowerCase()}`)
                 .join(', ')}.`
-            : 'No drinks logged this month.'}
+            : 'Nothing logged this month. Tap a day to add.'}
         </div>
+        {!inMonth.length && offset === 0 && (() => {
+          // The last Saturday (or Friday) night, for the night out that was never logged.
+          let sat = today;
+          while (weekday(sat) !== 5 && sat > addDays(today, -7)) sat = addDays(sat, -1);
+          return (
+            <div className="col gap8">
+              <div className="t14 lh">Had drinks on Saturday night? Add them to that day and the morning after updates.</div>
+              <button type="button" className="btn ghost sm" style={{ alignSelf: 'flex-start' }} onClick={() => openSheet('drink', { d: sat })}>
+                Add to {fmtDayShort(sat)}
+              </button>
+            </div>
+          );
+        })()}
       </Card>
+
+      {!(after.sleep || after.steps || after.rested) && (
+        <Card title="The morning after, once there's data">
+          <div className="row t14">
+            <span>Steps</span>
+            <span className="q">compared with your normal days</span>
+          </div>
+          <div className="row t14">
+            <span>Sleep and readiness</span>
+            <span className="q">the night after and the next session</span>
+          </div>
+        </Card>
+      )}
 
       {(after.sleep || after.steps || after.rested) && (
         <Card title="The morning after">

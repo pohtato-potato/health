@@ -19,6 +19,7 @@ import { prefOn } from '../domain/types';
 import { MealPicker } from './FoodForms';
 import { DateChip, useLogDate } from '../ui/DateChip';
 import { courseOn, dayDoses, DEFAULT_MED_REWARDS } from '../domain/medicines';
+import { undoEdit } from '../db/edits';
 
 export function WaterSheet() {
   const settings = useSettings();
@@ -95,11 +96,12 @@ function StepsForm({ date, today, initial, at, target, loop, outdoors: wasOutdoo
   const [outdoors, setOutdoors] = useState(wasOutdoors);
   const save = async () => {
     if (steps === undefined) return;
-    await setSteps(date, steps, date < today);
+    const editId = await setSteps(date, steps, date < today);
     if (outdoors !== wasOutdoors) await patchDay(date, { outdoors });
     closeSheet();
     const left = target - steps;
-    toast(left <= 0 ? { kicker: 'Steps ring closed', text: `${fmtInt(steps)} steps`, tone: 'sage' } : { text: `${fmtInt(steps)} steps · ${fmtInt(left)} to go` });
+    const undo = { label: 'Undo', run: () => void undoEdit(editId) };
+    toast(left <= 0 ? { kicker: 'Steps ring closed', text: `${fmtInt(steps)} steps`, tone: 'sage', action: undo } : { text: `Steps changed to ${fmtInt(steps)} · ${fmtInt(left)} to go`, action: undo });
   };
   return (
     <Sheet title="Steps" sub={date === today ? 'Today, from Samsung Health' : fmtDayMonth(date)}>
@@ -188,7 +190,7 @@ export function ChecklistSheet() {
               return (
                 <div key={key} className="col" style={{ borderTop: '1px solid var(--divider)' }}>
                   <div className="row" style={{ gap: 8, minHeight: 52 }}>
-                    <Check checked={st.kind === 'taken'} onChange={(on) => tick(key, slot, on)} label={slot} detail={st.kind === 'taken' ? `taken ${fmtTime(st.at)}` : st.kind === 'missed' ? 'missed' : due > Date.now() ? `due ${fmtTime(due)}` : 'not logged'} />
+                    <Check checked={st.kind === 'taken'} missed={st.kind === 'missed'} onChange={(on) => tick(key, slot, on)} label={slot} detail={st.kind === 'taken' ? `taken ${fmtTime(st.at)}` : st.kind === 'missed' ? 'missed' : due > Date.now() ? `due ${fmtTime(due)}` : 'not logged'} />
                     <button type="button" className={`chip sm${st.kind === 'missed' ? ' on' : ''}`} aria-pressed={st.kind === 'missed'} onClick={() => void setMissed(date, key, st.kind !== 'missed')}>
                       Missed
                     </button>

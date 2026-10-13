@@ -1,6 +1,6 @@
 import { addDays, atOn, dayKey, type DayKey, logMinutes } from '../domain/dates';
 import { eatenAtFor, mealTimesFor } from '../domain/foods';
-import { placeFor } from '../domain/places';
+import { offeredPlace, placeFor } from '../domain/places';
 import type { Swap } from '../domain/plan';
 import type {
   Day,
@@ -70,6 +70,14 @@ export async function patchDay(date: DayKey, patch: Partial<Day> | ((d: Day) => 
   });
 }
 
+/** A day edit the owner makes by hand: kept in the edit history so it can be undone. */
+export async function editDay(date: DayKey, patch: Partial<Day> | ((d: Day) => Partial<Day>)) {
+  const before = await db.days.get(date);
+  await patchDay(date, patch);
+  const after = await db.days.get(date);
+  return recordEdit('days', date, before, after);
+}
+
 export async function addWater(date: DayKey, ml: number) {
   const h = new Date().getHours();
   const part = h < 12 ? 1 : h < 17 ? 2 : 4;
@@ -91,10 +99,11 @@ export async function bump(id: string, opts: { day?: DayKey; value?: string; by?
   });
 }
 
-export async function setSteps(date: DayKey, steps: number, final = false) {
+export async function setSteps(date: DayKey, steps: number, final = false): Promise<number> {
   void logUsage('log', 'steps');
-  await patchDay(date, { steps: Math.max(0, Math.round(steps)), stepsAt: Date.now(), ...(final ? { stepsFinal: true } : {}) });
+  const id = await editDay(date, { steps: Math.max(0, Math.round(steps)), stepsAt: Date.now(), ...(final ? { stepsFinal: true } : {}) });
   if (date === dayKey() && logMinutes(Date.now()) < 720 && steps > 9000) await bump('steps-9000-by-noon', { day: date });
+  return id;
 }
 
 export interface MorningInput {
@@ -111,8 +120,9 @@ export interface MorningInput {
 }
 
 /** Saves the morning log. Only what was given is written; nothing is carried over silently. */
-export async function saveMorningLog(date: DayKey, input: MorningInput, yesterday: DayKey): Promise<void> {
+export async function saveMorningLog(date: DayKey, input: MorningInput, yesterday: DayKey): Promise<number> {
   void logUsage('log', 'morning');
+  const before = await db.days.get(date);
   await db.transaction('rw', db.days, async () => {
     const now = Date.now();
     const cur = (await db.days.get(date)) ?? { date };
@@ -133,6 +143,7 @@ export async function saveMorningLog(date: DayKey, input: MorningInput, yesterda
       await db.days.put({ ...y, date: yesterday, steps: input.yesterdaySteps, stepsFinal: true, stepsAt: now });
     }
   });
+  return recordEdit('days', date, before, await db.days.get(date));
 }
 
 /** Ticks or unticks a checklist slot. A tick clears "missed"; `at` records when it was really taken. */
@@ -333,4 +344,36 @@ export async function changePlace(date: DayKey, place: string, at = Date.now()) 
     if (!d.place || logMinutes(at) < 720) return { place, home: place, placeChanges: undefined };
     return { placeChanges: [...(d.placeChanges ?? []), { at, place }] };
   });
+}
+
+/** The place of this kind, creating the offered Home or Office the first time it is picked. */
+export async function ensurePlace(kind: 'home' | 'office'): Promise<string> {
+  const s = await getSettings();
+  const found = (s.places ?? []).find((p) => p.kind === kind);
+  if (found) return found.id;
+  const base = offeredPlace(kind);
+  const id = (s.places ?? []).some((p) => p.id === base.id) ? `${base.id}-${uid().slice(0, 4)}` : base.id;
+  await patchSettings((st) => ({ places: [...(st.places ?? []), { ...base, id }] }));
+  return id;
+}
+
+/** Switches a status on from today, open-ended: it carries to each new day until switched off. */
+export async function startStatus(today: DayKey, status: Status) {
+  await setStatusRange(today, today, status);
+  await patchSettings({ activeStatus: { status, from: today, through: today } });
+}
+
+/** Fills the running status onto every day since it was last carried, up to today. */
+export async function carryStatus(today: DayKey) {
+  const s = await getSettings();
+  const a = s.activeStatus;
+  if (!a || a.through >= today) return;
+  await setStatusRange(addDays(a.through, 1), today, a.status);
+  await patchSettings({ activeStatus: { ...a, through: today } });
+}
+
+/** Switches the running status off from today. */
+export async function endStatus(today: DayKey) {
+  await setStatusRange(today, today, undefined);
+  await patchSettings({ activeStatus: undefined });
 }

@@ -11,6 +11,7 @@ import { MiniRing } from '../ui/Rings';
 import { forecastData } from '../state/forecastData';
 import { targetsFor } from '../state/derived';
 import { GOOD_LINE, readinessHits } from '../domain/trackStats';
+import { readinessInk } from '../domain/readiness';
 
 const BAND_LINE = {
   push: 'Every sign points to a good session.',
@@ -29,7 +30,7 @@ export function ForecastCard({ settings, today, days, entries, sessions, sets }:
   return (
     <button type="button" className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }} onClick={() => go('/readiness')}>
       {pick.id === 'records' ? (
-        <MiniRing progress={fd.readiness.known ? fd.readiness.score / 100 : 0} size={72} width={5} label={fd.readiness.known ? `Readiness ${fd.readiness.score}` : 'Readiness: not enough data yet'}>
+        <MiniRing progress={fd.readiness.known ? fd.readiness.score / 100 : 0} size={72} width={5} color={fd.readiness.known ? readinessInk(fd.readiness.score) : 'var(--quiet)'} label={fd.readiness.known ? `Readiness ${fd.readiness.score}` : 'Readiness: not enough data yet'}>
           {readinessText(fd.readiness)}
         </MiniRing>
       ) : (
@@ -82,7 +83,7 @@ export function ReadinessPage() {
       </button>
       <div className="col gap12" style={{ alignItems: 'center', textAlign: 'center' }}>
         <div className="lbl blue">Readiness</div>
-        <MiniRing progress={r.known ? r.score / 100 : 0} size={150} width={4} label={r.known ? `Readiness ${r.score}` : 'Readiness: not enough data yet'}>
+        <MiniRing progress={r.known ? r.score / 100 : 0} size={150} width={4} color={r.known ? readinessInk(r.score) : 'var(--quiet)'} textColor={r.known ? readinessInk(r.score) : 'var(--quiet)'} label={r.known ? `Readiness ${r.score}` : 'Readiness: not enough data yet'}>
           {readinessText(r)}
         </MiniRing>
         <div className="sf" style={{ fontSize: 26 }}>

@@ -134,3 +134,11 @@ export function recompVerdict(c: { weightKg?: number; waistIn?: number; strength
   if (c.weightKg >= 0.5 || c.waistIn >= 0.5) return 'gaining';
   return 'steady';
 }
+
+/** A lift's line on Tracks › Training (s25): heavier, past its range with nowhere heavier to go, or how far up the ladder. */
+export function liftLine(st: { advice?: { kind: string } }, ladder: { done: number; of: number }): string {
+  const k = st.advice?.kind;
+  if (k === 'maxed' || k === 'needs-plates') return 'past range · try a challenge';
+  if (k === 'heavier' || k === 'add-load' || k === 'variant' || k === 'band') return 'ready to go heavier';
+  return ladder.of ? `ladder ${ladder.done} / ${ladder.of}` : 'building';
+}

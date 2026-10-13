@@ -86,6 +86,7 @@ export function CloseDay() {
                 <div className="row" style={{ gap: 8, minHeight: 50 }}>
                   <Check
                     checked={st.kind === 'taken'}
+                    missed={st.kind === 'missed'}
                     onChange={(on) => void setTick(date, sl.key, on, on && now - due > 2 * 3_600_000 ? due : undefined)}
                     label={`${sl.name} · ${sl.slot.toLowerCase()}`}
                     detail={st.kind === 'taken' ? fmtTime(st.at) : st.kind === 'missed' ? 'missed' : `due ${fmtTime(due)}`}

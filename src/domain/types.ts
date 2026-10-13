@@ -149,6 +149,10 @@ export interface Prefs {
   batterySaver?: boolean;
   /** Check-in photos shot in a mirror: flip them back so left stays left. */
   mirrorCheckIn?: boolean;
+  /** Full-screen celebrations: records, firsts, perfect days. */
+  moments?: boolean;
+  /** No confetti or buzz from 10 pm to 7 am, or while the app is in the background. */
+  quietPublic?: boolean;
 }
 
 const PREF_DEFAULTS: Required<Prefs> = {
@@ -170,6 +174,8 @@ const PREF_DEFAULTS: Required<Prefs> = {
   water: false,
   batterySaver: false,
   mirrorCheckIn: false,
+  moments: true,
+  quietPublic: true,
 };
 
 export function prefOn(prefs: Prefs, key: keyof Prefs): boolean {
@@ -211,6 +217,8 @@ export interface Settings {
   medRewards?: MedRewards;
   /** v2: personal experiments. */
   experiments?: Experiment[];
+  /** v2: a status switched on in one tap, carried day to day until switched off. */
+  activeStatus?: { status: Status; from: DayKey; through: DayKey };
   homes: Home[];
   equipment: Equipment;
   loopSteps?: number;

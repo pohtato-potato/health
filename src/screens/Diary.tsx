@@ -10,6 +10,7 @@ import { sleepMinutes } from '../domain/rings';
 import { back, go, openSheet } from '../router';
 import { checklistSlots } from '../state/derived';
 import { Icon } from '../ui/Icon';
+import { PlaceIcon } from '../ui/PlaceIcon';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -43,10 +44,12 @@ export function DiaryPage() {
   const moves = (day?.placeChanges ?? []).map((c) => `${(settings.places?.find((p) => p.id === c.place)?.name ?? 'elsewhere').toLowerCase()} from ${fmtTime(c.at)}`);
   const d: Record<string, string> = date === today ? {} : { d: date };
 
-  const row = (label: string, value: string, logged: boolean, open: () => void) => (
+  const row = (label: string, value: string, logged: boolean, open: () => void, icon?: React.ReactNode) => (
     <button type="button" className="diary-row" onClick={open}>
       <span className="t14 q">{label}</span>
-      <span className={`t15${logged ? '' : ' q'}`}>{logged ? value : `${value} · add`}</span>
+      <span className={`t15${logged ? '' : ' q'}`}>
+        {icon} {logged ? value : `${value} · add`}
+      </span>
     </button>
   );
 
@@ -85,7 +88,7 @@ export function DiaryPage() {
             ticked + missed > 0,
             () => openSheet('checklist', d),
           )}
-        {row('Place', [place.name, ...moves].join(', then '), true, () => openSheet('morning', d))}
+        {row('Place', [place.name, ...moves].join(', then '), true, () => openSheet('morning', d), <PlaceIcon place={place} size={16} />)}
         {row('Drinks', drinks ? `${drinks}` : 'none', drinks > 0, () => openSheet('drink', d))}
       </div>
       <div className="t13 q lh">Tap any row to change it. Every change can be undone.</div>
