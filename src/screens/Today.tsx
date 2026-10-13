@@ -18,7 +18,7 @@ import { kmFromSteps } from '../domain/walk';
 import { placeFor } from '../domain/places';
 import { proteinGap, stepTopUp } from '../domain/proteinGap';
 import { WalkScene } from '../walk/WalkScene';
-import { go } from '../router';
+import { go, openSheet } from '../router';
 import { Icon } from '../ui/Icon';
 import { Rings } from '../ui/Rings';
 import { useToast } from '../ui/Toasts';
@@ -40,6 +40,10 @@ import { NextUpCard } from './NextUpCard';
 import { regionAt } from '../domain/regions';
 import { themeDayOn } from '../domain/calendar';
 import { ThemedRings } from '../ui/rings/ThemedRings';
+import { daysBetween } from '../domain/dates';
+import { journeyStart as journeyStartOf } from './Journey';
+import { PlaceIcon } from '../ui/PlaceIcon';
+import { STATUSES, StatusRow } from '../ui/StatusRow';
 
 export function Today() {
   const unlocked = useUnlockedIds();
@@ -122,13 +126,14 @@ export function Today() {
   };
   const ticker = prefOn(settings.prefs, 'ticker');
   const ready = forecastData(settings, today, days, monthEntries.filter((e) => e.date >= addDays(today, -2)), sessions, sets).readiness;
-  const ringRow = (dot: string, value: string, unit: string, right: string, kind: string) => (
+  // As in v1: the calorie and protein rings open meal logging, steps opens steps logging.
+  const ringRow = (dot: string, value: string, unit: string, right: string, open: () => void) => (
     <button
       type="button"
       className="ring-row"
       onClick={(e) => {
         e.stopPropagation();
-        go('/track', { k: kind });
+        open();
       }}
     >
       <i style={{ background: dot }} />
@@ -148,7 +153,7 @@ export function Today() {
         <PlaceChip settings={settings} today={today} day={day} />
       </div>
 
-      <WalkScene km={walkKm} />
+      <WalkScene km={walkKm} dayN={daysBetween(journeyStartOf(settings, days), today) + 1} />
 
       <div className="voice" style={flag ? { fontStyle: 'normal', fontFamily: 'var(--sans)', fontSize: 15, color: 'var(--apricot)' } : undefined}>
         {flag ? line : lineForTheDay(today, line)}
@@ -166,7 +171,7 @@ export function Today() {
       <Banners />
 
       <div className="card rings-card" style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-        <div onPointerDown={konami.onPointerDown} onPointerUp={konami.onPointerUp} onClickCapture={konami.onClickCapture} style={konami.style}>
+        <div role="button" tabIndex={0} aria-label="Log food" onClick={() => go('/food')} onKeyDown={(e) => e.key === 'Enter' && go('/food')} onPointerDown={konami.onPointerDown} onPointerUp={konami.onPointerUp} onClickCapture={konami.onClickCapture} style={konami.style}>
           {themeDay ? (
             <ThemedRings style={themeDay.ring} progress={[rings.kcal.progress, rings.protein.progress, rings.steps.progress]} label={`Rings for ${themeDay.name}: ${rings.closed} of 3 closed`} center={`${rings.closed}/3`} />
           ) : (
@@ -179,9 +184,9 @@ export function Today() {
           )}
         </div>
         <div className="grow col gap6">
-          {ringRow('var(--kcal)', fmtInt(totals.kcal), 'kcal', `${fmtInt(targets.kcalMin)}–${fmtInt(targets.kcalMax)}`, 'food')}
-          {ringRow('var(--protein)', `${Math.round(totals.protein)} g`, 'protein', `of ${targets.proteinG}`, 'food')}
-          {ringRow('var(--steps)', day?.steps !== undefined ? fmtInt(totals.steps) : '—', 'steps', `${totals.eased ? 'eased ' : 'of '}${fmtInt(stepsGoal(targets, totals.eased))}`, 'steps')}
+          {ringRow('var(--kcal)', fmtInt(totals.kcal), 'kcal', `${fmtInt(targets.kcalMin)}–${fmtInt(targets.kcalMax)}`, () => go('/food'))}
+          {ringRow('var(--protein)', `${Math.round(totals.protein)} g`, 'protein', `of ${targets.proteinG}`, () => go('/food'))}
+          {ringRow('var(--steps)', day?.steps !== undefined ? fmtInt(totals.steps) : '—', 'steps', `${totals.eased ? 'eased ' : 'of '}${fmtInt(stepsGoal(targets, totals.eased))}`, () => openSheet('steps'))}
           {topUp && <div className="t12 sage">{topUp}</div>}
         </div>
       </div>
@@ -267,27 +272,34 @@ function PlaceChip({ settings, today, day }: { settings: Settings; today: string
   const places = settings.places?.length ? settings.places : [];
   const here = placeFor(day, settings, Date.now());
   if (!places.length) return null;
+  const status = day?.status;
   return (
     <div className="col gap8" style={{ alignItems: 'flex-end' }}>
       <button type="button" className="place-chip" aria-expanded={open} onClick={() => setOpen(!open)}>
-        {here.name} · <span className="q">change</span>
+        <PlaceIcon place={here} size={14} /> {here.name}
+        {status ? ` · ${STATUSES.find((x) => x.id === status)?.label.toLowerCase()}` : ''} · <span className="q">change</span>
       </button>
       {open && (
-        <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-end' }}>
-          {places.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              className={`chip sm${p.id === here.id ? ' on' : ''}`}
-              aria-pressed={p.id === here.id}
-              onClick={() => {
-                setOpen(false);
-                if (p.id !== here.id) void changePlace(today, p.id);
-              }}
-            >
-              {p.name}
-            </button>
-          ))}
+        <div className="panel col gap8" style={{ alignSelf: 'stretch' }}>
+          <span className="lbl">Where now</span>
+          <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
+            {places.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                className={`chip sm${p.id === here.id ? ' on' : ''}`}
+                aria-pressed={p.id === here.id}
+                onClick={() => {
+                  setOpen(false);
+                  if (p.id !== here.id) void changePlace(today, p.id);
+                }}
+              >
+                <PlaceIcon place={p} size={14} /> {p.name}
+              </button>
+            ))}
+          </div>
+          <span className="lbl">Status</span>
+          <StatusRow today={today} current={status} />
         </div>
       )}
     </div>

@@ -11,8 +11,8 @@ import { Icon, type IconName } from '../ui/Icon';
 import { Sheet } from '../ui/Sheet';
 import { DateChip, useLogDate } from '../ui/DateChip';
 import { checklistSlots, dayRings, freeMealsThisWeek, nextUp } from '../state/derived';
-import { occasionOn } from '../domain/occasions';
 import { prefOn } from '../domain/types';
+import { StatusRow } from '../ui/StatusRow';
 
 /** Words that open a log directly from the search box. */
 const ACTIONS: { words: string[]; label: string; icon: IconName; color: string; open: () => void }[] = [
@@ -134,21 +134,13 @@ export function MoreSheet() {
   const ws = weekStart(today);
   const weekEntries = useEntriesBetween(ws, addDays(ws, 6));
   const checkins = useLiveQuery(() => db.checkins.toArray(), []);
+  const days = useAllDays();
   if (!settings || !entries || !measurements || !weekEntries || !checkins) return <Sheet title="More">{null}</Sheet>;
   const d: Record<string, string> = date === today ? {} : { d: date };
   const drinks = entries.filter((e) => e.kind === 'drink').reduce((n, e) => n + (e.drink?.count ?? 1), 0);
   const freeUsed = freeMealsThisWeek(weekEntries, today);
   const lastWaist = [...measurements].reverse().find((m) => m.waistStanding !== undefined);
   const due = nextCheckInDate(checkins);
-  const current = occasionOn(settings, today);
-  const STATUSES: { label: string; kind?: string }[] = [
-    { label: 'Sick', kind: 'sick' },
-    { label: 'Injured', kind: 'injured' },
-    { label: 'Travelling', kind: 'travel' },
-    { label: 'Break', kind: 'break' },
-    { label: 'Occasion', kind: 'festival' },
-    { label: 'None' },
-  ];
   const tile = (icon: IconName, color: string, title: string, sub: string, onClick: () => void) => (
     <button type="button" className="log-tile" onClick={onClick} style={{ ['--tint' as string]: color }}>
       <span className="log-ic">
@@ -168,16 +160,10 @@ export function MoreSheet() {
         {tile('camera', 'var(--pearl)', 'Check-in', due ? (due <= today ? 'Due now' : `due ${fmtDayMonth(due)}`) : 'Photos and tape', () => go('/checkin'))}
       </div>
       <div className="lbl">Status</div>
-      <div className="status-row" role="radiogroup" aria-label="Status">
-        {STATUSES.map((st) => {
-          const on = st.kind ? current?.kind === st.kind || (st.kind === 'festival' && !!current && !['sick', 'injured', 'travel', 'break'].includes(current.kind)) : !current;
-          return (
-            <button key={st.label} type="button" role="radio" aria-checked={on} className={`chip sm${on ? ' on' : ''}`} onClick={() => replaceSheet('occasion', st.kind ? { kind: st.kind } : {})}>
-              {st.label}
-            </button>
-          );
-        })}
-      </div>
+      <StatusRow today={today} current={days?.find((x) => x.date === today)?.status} />
+      <button type="button" className="link t13" style={{ alignSelf: 'flex-start', minHeight: 36 }} onClick={() => replaceSheet('occasion')}>
+        Name an occasion or set dates
+      </button>
       <div className="t13 q lh">A status relaxes targets to maintenance and pauses streaks until you switch it off.</div>
     </Sheet>
   );

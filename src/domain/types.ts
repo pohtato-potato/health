@@ -211,6 +211,8 @@ export interface Settings {
   medRewards?: MedRewards;
   /** v2: personal experiments. */
   experiments?: Experiment[];
+  /** v2: a status switched on in one tap, carried day to day until switched off. */
+  activeStatus?: { status: Status; from: DayKey; through: DayKey };
   homes: Home[];
   equipment: Equipment;
   loopSteps?: number;

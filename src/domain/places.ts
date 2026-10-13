@@ -55,3 +55,28 @@ export function targetsFor(day: Pick<Day, 'date' | 'status'>, settings: Pick<Set
   if (!t || !day.status) return t;
   return { ...t, kcalMax: Math.max(t.kcalMax, maintenanceKcal(settings, t)) };
 }
+
+/** A place offered before it exists: picking it creates it. */
+export type OfferedPlace = Place & { virtual?: boolean };
+
+const OFFERED: Record<'home' | 'office', Place> = {
+  home: { id: 'home', name: 'Home', kind: 'home', meals: DEFAULT_MEAL_TIMES.home, eased: false, foodsFirst: 'home' },
+  office: { id: 'office', name: 'Office', kind: 'office', meals: DEFAULT_MEAL_TIMES.office, eased: true, foodsFirst: 'outside' },
+};
+
+/** Home and Office are always the two big choices; every other place sits in the row below. */
+export function placeOptions(settings: Pick<Settings, 'places'>): { home: OfferedPlace; office: OfferedPlace; rest: Place[] } {
+  const places = settings.places ?? [];
+  const home = places.find((p) => p.kind === 'home');
+  const office = places.find((p) => p.kind === 'office');
+  return {
+    home: home ?? { ...OFFERED.home, virtual: true },
+    office: office ?? { ...OFFERED.office, virtual: true },
+    rest: places.filter((p) => p !== home && p !== office),
+  };
+}
+
+/** The offered place's template, for creating it. */
+export function offeredPlace(kind: 'home' | 'office'): Place {
+  return { ...OFFERED[kind], meals: { ...OFFERED[kind].meals } };
+}

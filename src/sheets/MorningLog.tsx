@@ -11,11 +11,14 @@ import { closeSheet } from '../router';
 import { IntField } from '../ui/controls';
 import { Dial } from '../ui/Dial';
 import { Wheel } from '../ui/Wheel';
-import { Icon } from '../ui/Icon';
 import { BodyMap } from '../ui/BodyMap';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
 import { morningQuestions, swapSentence } from '../state/derived';
+import { placeOptions } from '../domain/places';
+import { ensurePlace } from '../db/actions';
+import { PlaceIcon } from '../ui/PlaceIcon';
+import { StatusRow } from '../ui/StatusRow';
 
 export function MorningLog() {
   const settings = useSettings();
@@ -103,27 +106,35 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
           <span className="t12 q">change any time</span>
         </div>
         {(() => {
-          const big = [places.find((p) => p.kind === 'home'), places.find((p) => p.kind === 'office')].filter((p): p is (typeof places)[number] => !!p);
-          const rest = places.filter((p) => !big.includes(p));
+          const o = placeOptions(settings);
+          const big = [o.home, o.office];
           return (
             <>
               <div className="grid2">
                 {big.map((p) => (
-                  <button key={p.id} type="button" className={`place-big ${p.kind}${place === p.id ? ' on' : ''}`} aria-pressed={place === p.id} onClick={() => setPlace(p.id)}>
-                    <Icon name={p.kind === 'office' ? 'office' : 'home'} size={18} />
+                  <button
+                    key={p.id}
+                    type="button"
+                    className={`place-big ${p.kind}${place === p.id && !p.virtual ? ' on' : ''}`}
+                    aria-pressed={place === p.id && !p.virtual}
+                    onClick={async () => setPlace(p.virtual ? await ensurePlace(p.kind as 'home' | 'office') : p.id)}
+                  >
+                    <PlaceIcon place={p} size={18} />
                     {p.name}
                   </button>
                 ))}
               </div>
-              {rest.length > 0 && (
-                <div className="place-row" style={{ gridTemplateColumns: `repeat(${Math.min(rest.length, 3)}, minmax(0, 1fr))` }}>
-                  {rest.map((p) => (
+              {o.rest.length > 0 && (
+                <div className="place-row" style={{ gridTemplateColumns: `repeat(${Math.min(o.rest.length, 3)}, minmax(0, 1fr))` }}>
+                  {o.rest.map((p) => (
                     <button key={p.id} type="button" className={`chip sm${place === p.id ? ' on' : ''}`} aria-pressed={place === p.id} onClick={() => setPlace(p.id)}>
-                      {p.name}
+                      <PlaceIcon place={p} size={14} /> {p.name}
                     </button>
                   ))}
                 </div>
               )}
+              <span className="lbl">Status</span>
+              <StatusRow today={today} current={day?.status} />
             </>
           );
         })()}

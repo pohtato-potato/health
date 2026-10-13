@@ -18,12 +18,15 @@ import { db } from './db/db';
 import { migrateToV2 } from './db/migrate';
 import { resolveForecasts } from './db/forecasts';
 import { logUsage } from './db/usage';
+import { carryStatus } from './db/actions';
+import { dayKey } from './domain/dates';
 
 void initPwa();
 
 // Bring 1.x data up to v2 once; safe to run on every start.
 void migrateToV2(db);
 void resolveForecasts();
+void carryStatus(dayKey());
 void logUsage('open');
 
 // Leave yesterday's postcard for Logbook on the shared shelf, now and whenever Health comes back to the front.

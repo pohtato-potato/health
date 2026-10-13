@@ -16,7 +16,7 @@ export function approachScale(kmToNext: number | undefined): number {
  * On the Walk tab (s11) it is full-bleed with the title over the sky, your trail in sage with
  * today's carry steps in gold, a marker for where you are, and what you built last.
  */
-export function WalkScene({ km, caption = true, hero, carryFrac = 0, built }: { km: number; ghostKm?: number; caption?: boolean; hero?: boolean; carryFrac?: number; built?: string }) {
+export function WalkScene({ km, caption = true, hero, carryFrac = 0, built, dayN }: { km: number; ghostKm?: number; caption?: boolean; hero?: boolean; carryFrac?: number; built?: string; dayN?: number }) {
   const pos = positionAt(km);
   const ahead = pos.to ?? pos.from;
   const toNext = pos.to ? Math.max(0, pos.to.km - km) : undefined;
@@ -63,6 +63,7 @@ export function WalkScene({ km, caption = true, hero, carryFrac = 0, built }: { 
             <span className="band-place">Near {pos.from.name}</span>
             {toNext !== undefined && (
               <span className="band-next t13">
+                {dayN ? `Day ${fmtInt(dayN)} · ` : ''}
                 <span className="num tn">{fmtInt(Math.round(toNext))}</span> km to {lm?.label ?? ahead.name}
               </span>
             )}

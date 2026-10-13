@@ -1,6 +1,6 @@
 import { addDays, atOn, dayKey, type DayKey, logMinutes } from '../domain/dates';
 import { eatenAtFor, mealTimesFor } from '../domain/foods';
-import { placeFor } from '../domain/places';
+import { offeredPlace, placeFor } from '../domain/places';
 import type { Swap } from '../domain/plan';
 import type {
   Day,
@@ -333,4 +333,36 @@ export async function changePlace(date: DayKey, place: string, at = Date.now()) 
     if (!d.place || logMinutes(at) < 720) return { place, home: place, placeChanges: undefined };
     return { placeChanges: [...(d.placeChanges ?? []), { at, place }] };
   });
+}
+
+/** The place of this kind, creating the offered Home or Office the first time it is picked. */
+export async function ensurePlace(kind: 'home' | 'office'): Promise<string> {
+  const s = await getSettings();
+  const found = (s.places ?? []).find((p) => p.kind === kind);
+  if (found) return found.id;
+  const base = offeredPlace(kind);
+  const id = (s.places ?? []).some((p) => p.id === base.id) ? `${base.id}-${uid().slice(0, 4)}` : base.id;
+  await patchSettings((st) => ({ places: [...(st.places ?? []), { ...base, id }] }));
+  return id;
+}
+
+/** Switches a status on from today, open-ended: it carries to each new day until switched off. */
+export async function startStatus(today: DayKey, status: Status) {
+  await setStatusRange(today, today, status);
+  await patchSettings({ activeStatus: { status, from: today, through: today } });
+}
+
+/** Fills the running status onto every day since it was last carried, up to today. */
+export async function carryStatus(today: DayKey) {
+  const s = await getSettings();
+  const a = s.activeStatus;
+  if (!a || a.through >= today) return;
+  await setStatusRange(addDays(a.through, 1), today, a.status);
+  await patchSettings({ activeStatus: { ...a, through: today } });
+}
+
+/** Switches the running status off from today. */
+export async function endStatus(today: DayKey) {
+  await setStatusRange(today, today, undefined);
+  await patchSettings({ activeStatus: undefined });
 }
