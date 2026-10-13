@@ -10,6 +10,7 @@ import { useAllDays, useMeasurements, useSessions, useSettings, useToday, useNow
 import { back, go } from '../router';
 import { Icon } from '../ui/Icon';
 import { Sheet } from '../ui/Sheet';
+import { RouteSwitch } from '../walk/RouteSwitch';
 import { stepStreakFor, weeksFor } from '../state/derived';
 import { nextCheckInDate } from './Photos';
 import { milestoneGroup, type DepartureGroup } from '../domain/milestones';
@@ -137,6 +138,7 @@ export function DeparturesPage() {
         <Icon name="left" size={20} stroke={1.8} />
         Walk
       </button>
+      <RouteSwitch on="departures" />
       <div className="col gap6">
         <h1 className="h1">Departures</h1>
         <div className="t15 q lh">Every milestone ahead, with an arrival time from your current pace. Tap one for its boarding pass.</div>

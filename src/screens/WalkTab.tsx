@@ -1,4 +1,5 @@
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { addDays } from '../domain/dates';
 import { fmtDayMonthFrom, fmtInt } from '../domain/format';
 import { chapterAt, kmFromSteps, positionAt } from '../domain/walk';
@@ -18,7 +19,8 @@ import { dayNumber } from '../domain/forecastStore';
 import { meetBuilt, structuresFrom } from '../walk/camps';
 import { bestStrengthIndex, effectiveKm, PASSES } from '../walk/passes';
 import { detourKm, QuestPanel, SouvenirShelf, useQuestState } from '../walk/WalkExtras';
-import { lanternOn } from '../domain/medicines';
+import { dayDoses, lanternOn } from '../domain/medicines';
+import { peopleMet } from '../walk/people';
 
 type Tab = 'journal' | 'route';
 
@@ -30,6 +32,9 @@ export function WalkTab({ extraTabs }: { extraTabs?: { id: string; label: string
   const sessions = useSessions();
   const sets = useAllSets();
   const [tab, setTab] = useState<string>('journal');
+  // The journal is a sheet: a few days showing, pulled up over the scene for the rest.
+  const [up, setUp] = useState(false);
+  const dragFrom = useRef<number | null>(null);
   const quests = useQuestState();
   const forecasts = useLiveQuery(() => db.forecasts.toArray(), []);
   // Keep today's walk forecast so its track record can be checked when the day comes.
@@ -55,11 +60,16 @@ export function WalkTab({ extraTabs }: { extraTabs?: { id: string; label: string
   const pos = positionAt(km);
   const chapter = chapterAt(km);
   const loaded = loadedSteps(sets);
-  const lines = journal(days, sessions, today, loaded).map((l) => {
+  const meetings = new Map(peopleMet(days.filter((d) => d.date <= today)).map((m) => [m.date, m.who]));
+  const lines: (ReturnType<typeof journal>[number] & { met?: string })[] = journal(days, sessions, today, loaded).map((l) => {
     const b = built.find((x) => x.date === l.date);
     const withCamp = b ? { ...l, body: `${l.body} Built a ${b.kind} by the road.` } : l;
-    return lanternOn(settings, days.find((d) => d.date === l.date)) ? { ...withCamp, body: `${withCamp.body} A lantern burned at camp: every dose on time.` } : withCamp;
+    const lit = lanternOn(settings, days.find((d) => d.date === l.date)) ? { ...withCamp, body: `${withCamp.body} A lantern burned at camp: every dose on time.` } : withCamp;
+    const m = meetings.get(l.date);
+    return m ? { ...lit, met: `${m.name}, ${m.who}. ${m.line}` } : lit;
   });
+  const todayDay = days.find((d) => d.date === today);
+  const lanterns = todayDay && lanternOn(settings, todayDay) ? dayDoses(settings.checklist.filter((i) => i.active && i.med), todayDay, settings).onTime : 0;
   const ghost = ghostLastMonth(days, today);
   const recent = days.filter((d) => d.date >= addDays(today, -14) && d.date < today && d.steps !== undefined);
   const perDay = recent.length ? recent.reduce((n, d) => n + d.steps!, 0) / recent.length : undefined;
@@ -67,6 +77,8 @@ export function WalkTab({ extraTabs }: { extraTabs?: { id: string; label: string
   const record = forecasts ? recordLine(trackRecord(forecasts.filter((f) => f.kind.startsWith('walk:')).map((f) => ({ ...f, kind: 'walk' })), 'walk')) : undefined;
   const cards = reachedCards(km);
   const terms = distanceInTerms(km);
+  // Raised, the sheet lives at the top of the document so nothing above it traps its position.
+  const portal = (el: ReactNode) => (up ? createPortal(<>{el}<div className="scrim" style={{ zIndex: 44 }} onClick={() => setUp(false)} /></>, document.body) : el);
   const todaySteps = days.find((d) => d.date === today)?.steps ?? 0;
 
   const tabs: { id: string; label: string }[] = [
@@ -80,7 +92,7 @@ export function WalkTab({ extraTabs }: { extraTabs?: { id: string; label: string
   return (
     <div className="page walk">
       <div className="walk-top">
-        <WalkScene km={km} ghostKm={ghost} caption={false} hero carryFrac={todaySteps ? (loaded.get(today) ?? 0) / todaySteps : 0} built={built.at(-1)?.kind} />
+        <WalkScene km={km} ghostKm={ghost} caption={false} hero carryFrac={todaySteps ? (loaded.get(today) ?? 0) / todaySteps : 0} built={built.at(-1)?.kind} lanterns={lanterns} />
         <div className="walk-title">
           <h1 className="h1">{pos.done ? 'Leh, the end of the road' : `Near ${pos.from.name}`}</h1>
           <span className="t13 tn">
@@ -106,13 +118,31 @@ export function WalkTab({ extraTabs }: { extraTabs?: { id: string; label: string
 
       <Seg options={tabs} value={tab as Tab} onChange={setTab} />
 
-      {tab === 'journal' && (
-        <div className="card" style={{ gap: 0 }}>
+      {tab === 'journal' && portal(
+        <div className={`card pull-sheet${up ? ' up' : ''}`} style={{ gap: 0 }}>
+          {lines.length > 4 && (
+            <button
+              type="button"
+              className="pull-handle"
+              aria-expanded={up}
+              aria-label={up ? 'Lower the journal' : 'Pull up the whole journal'}
+              onPointerDown={(e) => (dragFrom.current = e.clientY)}
+              onPointerUp={(e) => {
+                const dy = dragFrom.current === null ? 0 : e.clientY - dragFrom.current;
+                dragFrom.current = null;
+                setUp(dy < -24 ? true : dy > 24 ? false : !up);
+              }}
+            >
+              <i />
+              <span className="t12 q">{up ? 'Journal · pull down' : `Journal · ${lines.length} days · pull up`}</span>
+            </button>
+          )}
           {lines.length === 0 && <div className="t14 q lh">Log today's steps and the road starts writing itself.</div>}
-          {lines.slice(0, 30).map((l) => (
+          {lines.slice(0, up ? 60 : 4).map((l) => (
             <div key={l.date} className="col gap2" style={{ padding: '10px 0', borderTop: '1px solid var(--divider)' }}>
               <span className="t14">{l.head}</span>
               <span className="t13 q lh">{l.body}</span>
+              {l.met && <span className="t13 lh met-line"><b>Met ·</b> {l.met}</span>}
             </div>
           ))}
           {forecast && (
@@ -121,7 +151,7 @@ export function WalkTab({ extraTabs }: { extraTabs?: { id: string; label: string
               {record ? <span className="q"> · {record}</span> : null}
             </div>
           )}
-        </div>
+        </div>,
       )}
 
       {tab === 'route' && (

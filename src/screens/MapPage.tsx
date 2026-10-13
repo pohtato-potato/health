@@ -15,6 +15,10 @@ import { back, go } from '../router';
 import { TIER_COLOR } from '../ui/Moments';
 import { Icon } from '../ui/Icon';
 import { useUnlockedIds } from '../ui/Theme';
+import { useState } from 'react';
+import { RouteSwitch } from '../walk/RouteSwitch';
+import { useZoomPan } from '../walk/zoom';
+import { reachedCards } from '../walk/cards';
 
 const path = (pts: { x: number; y: number }[]) => (pts.length ? `M${pts.map((p) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' L')}` : '');
 
@@ -26,6 +30,8 @@ export function MapPage() {
   const sets = useAllSets();
   const sessions = useSessions();
   const quests = useQuestState();
+  const zp = useZoomPan(300, 322);
+  const [picked, setPicked] = useState<Stop | null>(null);
   if (!settings || !days || !unlocked || !sets || !sessions || !quests) return <div className="page" />;
 
   const steps = new Map(days.filter((d) => d.steps !== undefined).map((d) => [d.date, d.steps!]));
@@ -50,6 +56,7 @@ export function MapPage() {
   const gold = hasReward(unlocked, 'A gold route on your map');
   const walkedColor = gold ? 'var(--gold)' : 'var(--sage)';
 
+  const cards = new Set(reachedCards(km).map((c) => c.city));
   const next = CHAPTERS.find((c) => c.n === ch.n + 1);
   const label = (s: Stop, i: number, list: Stop[]) => (
     <text key={`${s.name}-${i}`} x={s.side === 'l' ? s.x - 5 : s.x + 4.5} y={s.y + 3} textAnchor={s.side === 'l' ? 'end' : 'start'} fill={i === list.length - 1 ? 'var(--gold)' : s.km <= km ? 'var(--text)' : 'var(--quiet)'}>
@@ -63,6 +70,7 @@ export function MapPage() {
         <Icon name="left" size={20} stroke={1.8} />
         Walk
       </button>
+      <RouteSwitch on="route" />
       <div className="row base">
         <h1 className="h1">India</h1>
         <span className="t13 q">
@@ -70,8 +78,8 @@ export function MapPage() {
         </span>
       </div>
 
-      <div className="route-map">
-        <svg width="100%" viewBox="0 0 300 322" role="img" aria-label={`India with the three chapters of the walk; ${fmtInt(Math.round(km))} km walked, now near ${pos.from.name}.`}>
+      <div className="route-map" style={{ position: 'relative' }}>
+        <svg width="100%" viewBox="0 0 300 322" {...zp.handlers} style={{ touchAction: 'none', display: 'block' }} role="img" aria-label={`India with the three chapters of the walk; ${fmtInt(Math.round(km))} km walked, now near ${pos.from.name}.`}>
           <defs>
             <linearGradient id="landg" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0" stopColor="#1f2452" />
@@ -82,6 +90,7 @@ export function MapPage() {
               <stop offset="1" stopColor="#EDE6DA" stopOpacity="0" />
             </radialGradient>
           </defs>
+          <g transform={`translate(${zp.view.x} ${zp.view.y}) scale(${zp.view.k})`}>
           <g stroke="#1b1f45" strokeWidth=".5">
             <path d="M0 60h300M0 120h300M0 180h300M0 240h300M0 300h300M60 0v322M120 0v322M180 0v322M240 0v322" />
           </g>
@@ -165,8 +174,54 @@ export function MapPage() {
           <g fontFamily="var(--sans)" fontSize={ch.route.length > 12 ? 5.6 : 6.2}>
             {ch.route.map((s, i, list) => (i > 0 && list.slice(0, i).some((p) => p.name === s.name) ? null : label(s, i, list)))}
           </g>
+          {/* Tap targets for each stop, larger than the dots. */}
+          <g fill="transparent">
+            {ch.route.map((s, i) => (
+              <circle
+                key={`hit-${s.name}-${i}`}
+                cx={s.x}
+                cy={s.y}
+                r={11 / zp.view.k}
+                style={{ cursor: 'pointer' }}
+                onClick={() => {
+                  if (zp.wasGesture()) return;
+                  if (s.km <= km && cards.has(s.name)) go('/arrival', { city: s.name });
+                  else setPicked(s);
+                }}
+              >
+                <title>{s.name}</title>
+              </circle>
+            ))}
+          </g>
+          </g>
         </svg>
+        <div className="map-zoom">
+          <button type="button" className="icon-btn" aria-label="Zoom in" onClick={() => zp.zoom(1.5)}>
+            +
+          </button>
+          <button type="button" className="icon-btn" aria-label="Zoom out" onClick={() => zp.zoom(1 / 1.5)}>
+            −
+          </button>
+          {zp.view.k > 1 && (
+            <button type="button" className="icon-btn" aria-label="Show all of India" onClick={zp.reset}>
+              ⤢
+            </button>
+          )}
+        </div>
       </div>
+      {picked && (
+        <div className="card row" role="status">
+          <span className="col gap2">
+            <span className="t15">{picked.name}</span>
+            <span className="t13 q">
+              {picked.km <= km ? `Passed at ${fmtInt(Math.round(picked.km))} km` : `${fmtInt(Math.ceil(picked.km - km))} km ahead${eta(picked.km) ? ` · around ${fmtDayMonthFrom(eta(picked.km)!, today)}` : ''}`}
+            </span>
+          </span>
+          <button type="button" className="btn ghost sm" onClick={() => setPicked(null)}>
+            Close
+          </button>
+        </div>
+      )}
       <div className="place-key t12 q">
         <span>
           <i className="key-dot solid" style={{ background: walkedColor }} /> walked
