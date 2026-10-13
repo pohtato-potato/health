@@ -16,16 +16,19 @@ import { Heatmap } from './Heatmap';
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
+/** The four big doors from s13; everything else sits in the list below them. */
 const DOORS: { label: string; sub: string; path: string; icon: IconName }[] = [
   { label: 'Tracks', sub: 'Every measure', path: '/tracks', icon: 'tracks' },
   { label: 'Medicines', sub: 'Courses, stock, visits', path: '/medicines', icon: 'pill' },
-  { label: 'Diary', sub: 'Every day', path: '/diary', icon: 'calendar' },
-  { label: 'Achievements', sub: 'Sets and progress', path: '/achievements', icon: 'win' },
-  { label: 'Character', sub: 'Stats and titles', path: '/character', icon: 'shield' },
-  { label: 'Journey clock', sub: 'The whole journey as one day', path: '/journey', icon: 'clock' },
-  { label: 'Experiments', sub: 'Change one thing, see what moves', path: '/experiments', icon: 'trend' },
-  { label: 'Reveal day', sub: 'Sealed until the day', path: '/reveal', icon: 'lock' },
   { label: 'Night sky', sub: 'A star per perfect day', path: '/sky', icon: 'night' },
+  { label: 'Diary', sub: 'Every day', path: '/diary', icon: 'calendar' },
+];
+const MORE: { label: string; sub: string; path: string }[] = [
+  { label: 'Achievements', sub: 'Sets and progress', path: '/achievements' },
+  { label: 'Character', sub: 'Stats, titles and the wardrobe', path: '/character' },
+  { label: 'Journey clock', sub: 'The whole journey as one day', path: '/journey' },
+  { label: 'Reveal day', sub: 'Sealed until the day', path: '/reveal' },
+  { label: 'Experiments', sub: 'Change one thing, see what moves', path: '/experiments' },
 ];
 
 /** The You tab: the body benchmark first, then doors, every day, the week's review and what-ifs. */
@@ -70,6 +73,18 @@ export function You() {
             <Icon name={d.icon} size={20} color="var(--quiet)" />
             <span className="t15">{d.label}</span>
             <span className="t12 q">{d.sub}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="list">
+        {MORE.map((m) => (
+          <button key={m.path} type="button" className="li" onClick={() => go(m.path)}>
+            <span className="s">
+              <span>{m.label}</span>
+              <small>{m.sub}</small>
+            </span>
+            <Icon name="right" size={16} stroke={1.8} color="var(--dim)" />
           </button>
         ))}
       </div>
