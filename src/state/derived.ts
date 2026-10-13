@@ -7,6 +7,7 @@ import { ringsFor, targetsOn, totalsFor, type Rings, type Totals } from '../doma
 import { maintenanceKcal, stepStreakOf, trainingWeeksOf, withOccasion } from '../domain/occasions';
 import type { Day, FoodEntry, SetEntry, Settings, Targets, TrainingSession } from '../domain/types';
 import { isEased, placeFor } from '../domain/places';
+import { courseOn } from '../domain/medicines';
 
 export const FALLBACK_TARGETS: Targets = {
   kcalMin: 2000,
@@ -135,10 +136,13 @@ export interface Slot {
   slot: string;
 }
 
-export function checklistSlots(s: Settings): Slot[] {
+export function checklistSlots(s: Settings, date: DayKey = dayKey()): Slot[] {
   return s.checklist
     .filter((i) => i.active)
-    .flatMap((i) => (i.slots.length ? i.slots : ['Daily']).map((slot, n) => ({ key: `${i.id}:${n}`, itemId: i.id, name: i.name, slot })));
+    .flatMap((i) => {
+      const slots = courseOn(date, i);
+      return (slots.length ? slots : i.med?.courses?.some((c) => c.from <= date) ? [] : ['Daily']).map((slot, n) => ({ key: `${i.id}:${n}`, itemId: i.id, name: i.name, slot }));
+    });
 }
 
 /** Free meals used this week (Monday to Sunday). */

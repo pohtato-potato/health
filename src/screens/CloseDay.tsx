@@ -33,7 +33,7 @@ export function CloseDay() {
   const day = dayMap.get(date);
   const place = placeFor(day, settings);
   const { targets } = dayRings(settings, date, day, entries);
-  const slots = checklistSlots(settings);
+  const slots = checklistSlots(settings, date);
   const ticked = slots.filter((s) => day?.ticks?.[s.key]).length;
   const draft = entries.length ? [] : usualDay(place.id, parseDay(date).getDay(), dayMap, history, date);
   const todays = sessions.filter((s) => s.date === date);

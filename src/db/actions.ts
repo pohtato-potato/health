@@ -138,6 +138,13 @@ export async function saveMorningLog(date: DayKey, input: MorningInput, yesterda
 /** Ticks or unticks a checklist slot. A tick clears "missed"; `at` records when it was really taken. */
 export async function setTick(date: DayKey, key: string, on: boolean, at = Date.now()) {
   void logUsage('tick', key);
+  const had = (await db.days.get(date))?.ticks?.[key] !== undefined;
+  if (had !== on) {
+    const itemId = key.split(':')[0];
+    await patchSettings((s) => ({
+      checklist: s.checklist.map((i) => (i.id === itemId && i.med?.stock ? { ...i, med: { ...i.med, stock: { ...i.med.stock, left: Math.max(0, i.med.stock.left + (on ? -1 : 1) * i.med.stock.perDose) } } } : i)),
+    }));
+  }
   await patchDay(date, (d) => {
     const ticks = { ...d.ticks };
     const missed = { ...d.missed };

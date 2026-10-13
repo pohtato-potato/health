@@ -15,6 +15,7 @@ import { Heatmap } from './Heatmap';
 
 const DOORS: { label: string; sub: string; path: string; icon: IconName }[] = [
   { label: 'Tracks', sub: 'Every measure', path: '/tracks', icon: 'tracks' },
+  { label: 'Medicines', sub: 'Courses, stock, visits', path: '/medicines', icon: 'pill' },
   { label: 'Diary', sub: 'Every day', path: '/diary', icon: 'calendar' },
   { label: 'Achievements', sub: 'Sets and progress', path: '/achievements', icon: 'win' },
   { label: 'Character', sub: 'Stats and titles', path: '/character', icon: 'shield' },

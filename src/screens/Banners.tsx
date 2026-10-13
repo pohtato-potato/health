@@ -6,9 +6,9 @@ import { applyUpdate, promptInstall, usePwa } from '../pwa';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { addDays, dayKey, weekday } from '../domain/dates';
-import { fmtDayMonth } from '../domain/format';
+import { fmtDayMonth, fmtTime } from '../domain/format';
 import { lastFullWeek } from '../domain/weekly';
-import { go } from '../router';
+import { go, openSheet } from '../router';
 import { checkInDue } from '../domain/checkinSchedule';
 import { Icon } from '../ui/Icon';
 import { useToast } from '../ui/Toasts';
@@ -16,6 +16,7 @@ import { modelFor } from './MaintenanceCards';
 import { weeklyCheckIn } from '../domain/benchmark';
 import { targetsFor } from '../state/derived';
 import { patchSettings, setTargets } from '../db/actions';
+import { doseSchedule, nextDose } from '../domain/medicines';
 
 /** One quiet banner on Today: a new version, a backup nudge, the week, a check-in, installing. Never notifications. */
 export function Banners() {
@@ -160,6 +161,28 @@ export function Banners() {
       ),
     });
 
+  const todayDay = days.find((d) => d.date === today);
+  const dose = nextDose(Date.now(), doseSchedule(settings.checklist.filter((i) => i.med), today, settings, todayDay), todayDay?.ticks, todayDay?.missed);
+  if (dose && dose.at - Date.now() <= 2 * 3_600_000) {
+    const mins = Math.round((dose.at - Date.now()) / 60_000);
+    const when = mins > 0 ? `in ${mins >= 60 ? `${Math.floor(mins / 60)} h ` : ''}${mins % 60} min` : mins === 0 ? 'now' : `${-mins} min ago`;
+    candidates.push({
+      id: 'next-dose',
+      priority: 8,
+      anytime: true,
+      el: (
+        <>
+          <Icon name="pill" size={20} color="var(--sage)" />
+          <span className="grow">
+            {dose.name} at {fmtTime(dose.at)} · {when}
+          </span>
+          <button type="button" className="btn sm" onClick={() => openSheet('checklist')}>
+            Tick
+          </button>
+        </>
+      ),
+    });
+  }
   const weekdayNow = new Date().getDay();
   if (settings.reviewDay !== undefined && weekdayNow === settings.reviewDay)
     candidates.push({

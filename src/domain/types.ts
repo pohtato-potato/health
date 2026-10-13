@@ -59,6 +59,36 @@ export interface ChecklistItem {
   /** One tick per slot per day, e.g. ['Morning', '9 pm']. */
   slots: string[];
   active: boolean;
+  /** v2: medicine details, when the item is a medicine or supplement. */
+  med?: MedInfo;
+}
+
+export interface MedInfo {
+  kind: 'medicine' | 'supplement';
+  form?: 'drops' | 'tablet' | 'capsule' | 'powder' | 'liquid' | 'other';
+  /** "1 drop, both eyes", "5 g". */
+  dose?: string;
+  /** Courses that end or change: from each date on, these slots (none ends it). */
+  courses?: { from: DayKey; slots: string[] }[];
+  /** Pills or doses left, and how many one dose uses. */
+  stock?: { left: number; perDose: number };
+}
+
+export interface Appointment {
+  id: string;
+  date: DayKey;
+  /** Minutes after midnight. */
+  time?: number;
+  title: string;
+  notes: string[];
+}
+
+/** What an on-time dose can earn; each switchable. */
+export interface MedRewards {
+  lantern: boolean;
+  keptWeek: boolean;
+  perfectDay: boolean;
+  keptCount: boolean;
 }
 
 export interface Home {
@@ -162,6 +192,10 @@ export interface Settings {
   voice: VoiceId;
   targets: TargetsRecord[];
   checklist: ChecklistItem[];
+  /** v2: doctor appointments, with notes to take along. */
+  appointments?: Appointment[];
+  /** v2: the switchable rewards for on-time doses. */
+  medRewards?: MedRewards;
   homes: Home[];
   equipment: Equipment;
   loopSteps?: number;

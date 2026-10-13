@@ -5,6 +5,7 @@ import { useAllDays, useAllEntries, useSettings, useToday } from '../db/hooks';
 import { back } from '../router';
 import { dayRings } from '../state/derived';
 import { Icon } from '../ui/Icon';
+import { dosesAllowPerfect } from '../domain/medicines';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -17,7 +18,7 @@ export function NightSkyPage() {
   if (!settings || !days || !entries) return <div className="page bare" />;
   const byDate = new Map<string, typeof entries>();
   for (const e of entries) byDate.set(e.date, [...(byDate.get(e.date) ?? []), e]);
-  const perfect = days.filter((d) => d.date < today && byDate.has(d.date) && dayRings(settings, d.date, d, byDate.get(d.date)!).rings.perfect).map((d) => d.date);
+  const perfect = days.filter((d) => d.date < today && byDate.has(d.date) && dayRings(settings, d.date, d, byDate.get(d.date)!).rings.perfect && dosesAllowPerfect(settings, d)).map((d) => d.date);
   const stars = skyStars(perfect);
   const months = [...new Set(perfect.map((d) => d.slice(0, 7)))].sort().reverse();
   const nextSky = CALENDAR.filter((e) => e.kind === 'sky' && e.from >= today).sort((a, b) => a.from.localeCompare(b.from))[0];

@@ -18,6 +18,7 @@ import { dayNumber } from '../domain/forecastStore';
 import { meetBuilt, structuresFrom } from '../walk/camps';
 import { effectiveKm, PASSES, strengthIndex } from '../walk/passes';
 import { detourKm, QuestPanel, SouvenirShelf, useQuestState } from '../walk/WalkExtras';
+import { lanternOn } from '../domain/medicines';
 
 type Tab = 'journal' | 'route';
 
@@ -55,7 +56,8 @@ export function WalkTab({ extraTabs }: { extraTabs?: { id: string; label: string
   const loaded = loadedSteps(sets);
   const lines = journal(days, sessions, today, loaded).map((l) => {
     const b = built.find((x) => x.date === l.date);
-    return b ? { ...l, body: `${l.body} Built a ${b.kind} by the road.` } : l;
+    const withCamp = b ? { ...l, body: `${l.body} Built a ${b.kind} by the road.` } : l;
+    return lanternOn(settings, days.find((d) => d.date === l.date)) ? { ...withCamp, body: `${withCamp.body} A lantern burned at camp: every dose on time.` } : withCamp;
   });
   const ghost = ghostLastMonth(days, today);
   const recent = days.filter((d) => d.date >= addDays(today, -14) && d.date < today && d.steps !== undefined);

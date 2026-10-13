@@ -11,6 +11,7 @@ import { useMoments, type MomentData } from '../ui/Moments';
 import { useToast } from '../ui/Toasts';
 import { go } from '../router';
 import { checklistSlots, dayRings, stepStreakFor, targetsFor, weeksFor } from './derived';
+import { DEFAULT_MED_REWARDS, keptWeek } from '../domain/medicines';
 
 export const STEP_MILESTONES = [7, 14, 21, 30, 50, 75, 100, 150, 200, 250, 300, 365];
 export const WEEK_MILESTONES = [2, 4, 8, 12, 16, 20, 26, 39, 52];
@@ -231,6 +232,12 @@ export function CelebrationWatcher() {
       })) {
         push({ kind: 'golden', ...g });
       }
+    }
+
+    // A kept week: every dose of last week on time, offered early in the new week.
+    const lastWs = addDays(ws, -7);
+    if ((settings.medRewards ?? DEFAULT_MED_REWARDS).keptWeek && today <= addDays(ws, 2) && keptWeek(settings.checklist, days, settings, lastWs)) {
+      push({ kind: 'golden', key: `keptweek:${lastWs}`, kicker: 'A kept week', place: `Week of ${fmtDayMonth(lastWs)}`, title: 'Every dose on time', text: 'Seven days, and every dose within the hour. That is the quiet kind of discipline.' });
     }
   }, [settings, days, week, sessions, sets, measurements, seen, today, ws, show, toast]);
 

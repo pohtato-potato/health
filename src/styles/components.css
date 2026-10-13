@@ -959,3 +959,32 @@
   border-radius: 20px;
   background: radial-gradient(ellipse at 50% 120%, #1d2353, #05081f 70%);
 }
+
+/* Medicines: the last-week strip and the kept count. */
+.med-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.med-day {
+  display: grid;
+  place-items: center;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  color: var(--quiet);
+}
+.med-day.on-time { background: var(--sage-bg); border-color: var(--sage-border); color: var(--sage); }
+.med-day.late { background: var(--gold-bg); border-color: var(--gold-border); color: var(--gold); }
+.med-day.missed { border-color: var(--rose); color: var(--rose); }
+.kept-pill {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  background: var(--sage-bg);
+  border: 1px solid var(--sage-border);
+  color: var(--sage);
+}
+.kept-pill.paused { background: transparent; border-color: var(--hairline); color: var(--quiet); }

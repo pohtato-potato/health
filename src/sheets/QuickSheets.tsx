@@ -18,6 +18,7 @@ import { isEased, placeFor } from '../domain/places';
 import { prefOn } from '../domain/types';
 import { MealPicker } from './FoodForms';
 import { DateChip, useLogDate } from '../ui/DateChip';
+import { courseOn } from '../domain/medicines';
 
 export function WaterSheet() {
   const settings = useSettings();
@@ -173,7 +174,7 @@ export function ChecklistSheet() {
               </button>
             )}
           </div>
-          {(item.slots.length ? item.slots : ['Daily']).map((slot, n) => {
+          {(courseOn(date, item).length ? courseOn(date, item) : ['Daily']).map((slot, n) => {
             const key = `${item.id}:${n}`;
             const st = slotStatus(day, key);
             const planned = slotTime(slot, settings, day);
