@@ -8,7 +8,10 @@ import { saveMorningLog } from '../db/actions';
 import { useAllDays, useAllSets, useSessions, useSettings } from '../db/hooks';
 import { DateChip, useLogDate } from '../ui/DateChip';
 import { closeSheet } from '../router';
-import { DecField, IntField, TimeTile } from '../ui/controls';
+import { IntField } from '../ui/controls';
+import { Dial } from '../ui/Dial';
+import { Wheel } from '../ui/Wheel';
+import { Icon } from '../ui/Icon';
 import { BodyMap } from '../ui/BodyMap';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
@@ -47,6 +50,7 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
   const [sore, setSore] = useState<Partial<Record<MuscleId, 1 | 2 | 3>>>(day?.soreness ?? {});
   const [answers, setAnswers] = useState<Record<string, boolean>>(() => Object.fromEntries(questions.map((q) => [q.id, day?.answers?.[q.id] ?? false])));
   const [saving, setSaving] = useState(false);
+  const [more, setMore] = useState(day?.energy !== undefined || day?.stomach !== undefined);
 
   const sleepLen = asleep !== undefined && woke !== undefined ? sleepMinutes(asleep, woke) : undefined;
 
@@ -93,84 +97,117 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
   return (
     <Sheet title="Morning log" sub={fmtDayLong(today)}>
       <DateChip value={today} onChange={onDate} />
-      <div className="col gap8">
-        <div className="lbl pearl">Where are you today?</div>
-        <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
-          {places.map((p) => (
-            <button key={p.id} type="button" className={`chip${p.kind === 'home' || p.kind === 'office' ? '' : ' sm'}${place === p.id ? ' on' : ''}`} aria-pressed={place === p.id} onClick={() => setPlace(p.id)}>
-              {p.name}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="rule" />
-
-      <div className="col gap8">
-        <div className="lbl pearl">Weight</div>
-        <DecField value={weight} onChange={setWeight} placeholder={lastWeight ? `Last: ${lastWeight.toFixed(1)} kg. Leave empty if not weighed` : 'Your weight in kg'} label="Weight in kg" />
-        <div className="t12 q">After the toilet, before food or water.</div>
-      </div>
-
-      <div className="rule" />
-
-      <div className="col gap8">
+      <div className="panel col gap10">
         <div className="row base">
-          <div className="lbl blue">Sleep</div>
-          <div className="t15 blue tn">{sleepLen !== undefined ? fmtDuration(sleepLen) : ''}</div>
+          <span className="lbl">Where today</span>
+          <span className="t12 q">change any time</span>
+        </div>
+        {(() => {
+          const big = [places.find((p) => p.kind === 'home'), places.find((p) => p.kind === 'office')].filter((p): p is (typeof places)[number] => !!p);
+          const rest = places.filter((p) => !big.includes(p));
+          return (
+            <>
+              <div className="grid2">
+                {big.map((p) => (
+                  <button key={p.id} type="button" className={`place-big ${p.kind}${place === p.id ? ' on' : ''}`} aria-pressed={place === p.id} onClick={() => setPlace(p.id)}>
+                    <Icon name={p.kind === 'office' ? 'office' : 'home'} size={18} />
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+              {rest.length > 0 && (
+                <div className="place-row" style={{ gridTemplateColumns: `repeat(${Math.min(rest.length, 3)}, minmax(0, 1fr))` }}>
+                  {rest.map((p) => (
+                    <button key={p.id} type="button" className={`chip sm${place === p.id ? ' on' : ''}`} aria-pressed={place === p.id} onClick={() => setPlace(p.id)}>
+                      {p.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          );
+        })()}
+      </div>
+
+      <div className="panel col gap8">
+        <div className="row base">
+          <span className="lbl">Weight</span>
+          <span className="t12 q">{weight === undefined ? 'drag to set' : lastWeight ? `last ${lastWeight.toFixed(1)}` : ''}</span>
+        </div>
+        <div style={{ opacity: weight === undefined ? 0.45 : 1 }}>
+          <Dial value={weight ?? lastWeight ?? 75} step={0.1} min={35} max={200} major={10} onChange={setWeight} label="Weight in kg" unit="kg" />
+        </div>
+        <div className="t12 q">After the toilet, before food or water. Leave it if you didn't weigh.</div>
+      </div>
+
+      <div className="panel col gap10">
+        <div className="row base">
+          <span className="lbl" style={{ color: 'var(--sleep)' }}>
+            Sleep
+          </span>
+          {lastSleep && (
+            <button type="button" className={`chip sm${carried ? ' on' : ''}`} aria-pressed={carried} onClick={sameAsYesterday}>
+              Same as yesterday
+            </button>
+          )}
         </div>
         <div className="grid2">
-          <TimeTile label="Asleep" minutes={asleep} onChange={editAsleep} />
-          <TimeTile label="Woke" minutes={woke} onChange={editWoke} />
+          <SleepWheel label="Asleep" value={asleep} hint={lastSleep?.asleep ?? 23 * 60} from={19 * 60} to={29 * 60} onChange={editAsleep} />
+          <SleepWheel label="Woke" value={woke} hint={lastSleep?.woke ?? 7 * 60} from={4 * 60} to={13 * 60} onChange={editWoke} />
         </div>
-        {lastSleep && (
-          <button type="button" className={`chip sm${carried ? ' on' : ''}`} style={{ alignSelf: 'flex-start' }} aria-pressed={carried} onClick={sameAsYesterday}>
-            Same as last night: {fmtClock(lastSleep.asleep)} to {fmtClock(lastSleep.woke)}
-          </button>
-        )}
-      </div>
-
-      <div className="col gap8">
-        <div className="lbl">How rested do you feel?</div>
-        <Scale value={rested} onChange={setRested} low="Drained" high="Great" label="Rested" />
+        <div className="row" style={{ gap: 10 }}>
+          <span className="t13 q tn" style={{ whiteSpace: 'nowrap' }}>
+            {sleepLen !== undefined ? `${fmtDuration(sleepLen)} · how rested` : 'How rested'}
+          </span>
+          <div className="row" role="radiogroup" aria-label="How rested" style={{ gap: 6 }}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button key={n} type="button" role="radio" aria-checked={rested === n} className={`round sm${rested === n ? ' on' : ''}`} onClick={() => setRested(rested === n ? undefined : n)}>
+                {n}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {settings.prefs.confirmSteps && (
-        <>
-          <div className="rule" />
-          <label className="flabel">
-            <span className="lbl sage">Yesterday's final steps</span>
-            <IntField value={steps} onChange={setSteps} placeholder="From Samsung Health" label="Yesterday's final steps" />
-            <span className="t13 q lh">
-              {yesterday?.steps !== undefined && yesterday.stepsAt
-                ? `You logged ${fmtInt(yesterday.steps)} at ${fmtTime(yesterday.stepsAt)}. Samsung Health has the final count by now.`
-                : 'Samsung Health has the final count by now.'}
-            </span>
-          </label>
-        </>
+        <label className="panel flabel">
+          <span className="lbl" style={{ color: 'var(--steps)' }}>
+            Yesterday's final steps
+          </span>
+          <IntField value={steps} onChange={setSteps} placeholder="From Samsung Health" label="Yesterday's final steps" />
+          <span className="t12 q lh">
+            {yesterday?.steps !== undefined && yesterday.stepsAt ? `You logged ${fmtInt(yesterday.steps)} at ${fmtTime(yesterday.stepsAt)}. The final count is ready by now.` : 'The final count is ready by now.'}
+          </span>
+        </label>
       )}
 
-      <div className="rule" />
-
-      <div className="col gap8">
-        <div className="lbl">Energy</div>
-        <Scale value={energy} onChange={setEnergy} low="Flat" high="Charged" label="Energy" />
-      </div>
-
-      <div className="row">
-        <div className="t15">Stomach settled?</div>
-        <div className="row" style={{ gap: 8 }}>
-          {([true, false] as const).map((v) => (
-            <button key={String(v)} type="button" className={`chip${stomach === v ? ' on' : ''}`} aria-pressed={stomach === v} onClick={() => setStomach(stomach === v ? undefined : v)}>
-              {v ? 'Yes' : 'No'}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="col gap8">
-        <div className="lbl">Anything sore?</div>
-        <BodyMap value={sore} onChange={setSore} />
+      <div className="panel col gap10">
+        <button type="button" className="row" aria-expanded={more} onClick={() => setMore(!more)} style={{ minHeight: 40 }}>
+          <span className="t15">Energy, stomach, soreness</span>
+          <span className="t12 q">{energy !== undefined || stomach !== undefined || Object.keys(sore).length ? 'answered' : '3 quick taps'}</span>
+        </button>
+        {more && (
+          <>
+            <div className="col gap8">
+              <div className="lbl">Energy</div>
+              <Scale value={energy} onChange={setEnergy} low="Flat" high="Charged" label="Energy" />
+            </div>
+            <div className="row">
+              <div className="t15">Stomach settled?</div>
+              <div className="row" style={{ gap: 8 }}>
+                {([true, false] as const).map((v) => (
+                  <button key={String(v)} type="button" className={`chip${stomach === v ? ' on' : ''}`} aria-pressed={stomach === v} onClick={() => setStomach(stomach === v ? undefined : v)}>
+                    {v ? 'Yes' : 'No'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="col gap8">
+              <div className="lbl">Anything sore?</div>
+              <BodyMap value={sore} onChange={setSore} />
+            </div>
+          </>
+        )}
       </div>
 
       {questions.map((q) => (
@@ -218,4 +255,23 @@ function Scale({ value, onChange, low, high, label }: { value: number | undefine
 function fmtClock(minutes: number): string {
   const h = Math.floor(minutes / 60);
   return `${h % 12 || 12}:${String(minutes % 60).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`;
+}
+
+/**
+ * One wheel of times in five-minute steps. Last night's time sits in the middle, greyed,
+ * until the wheel is touched: nothing is saved unless it is set.
+ */
+function SleepWheel({ label, value, hint, from, to, onChange }: { label: string; value: number | undefined; hint: number; from: number; to: number; onChange: (m: number) => void }) {
+  const items: number[] = [];
+  for (let m = from; m <= to; m += 5) items.push(m);
+  const norm = (m: number) => (m < from ? m + 1440 : m);
+  const shown = norm(value ?? hint);
+  return (
+    <div className="col" style={{ alignItems: 'center', gap: 4 }}>
+      <span className="t12 q">{label}</span>
+      <div style={{ opacity: value === undefined ? 0.45 : 1 }}>
+        <Wheel width={110} label={label} items={items} value={items.reduce((best, m) => (Math.abs(m - shown) < Math.abs(best - shown) ? m : best), items[0])} format={(m) => fmtClock(m % 1440)} onChange={(m) => onChange(m % 1440)} />
+      </div>
+    </div>
+  );
 }

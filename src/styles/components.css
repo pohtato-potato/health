@@ -26,7 +26,9 @@
   align-items: center;
   justify-content: center;
   scroll-snap-align: start;
-  font-family: var(--mono);
+  font-family: var(--serif);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   font-variant-numeric: tabular-nums;
   font-size: 18px;
   color: var(--dim);
@@ -1194,4 +1196,51 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
+}
+
+/* Morning log (s5): panels, Home and Office as big buttons, the rest on an even row. */
+.panel {
+  flex-shrink: 0;
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+}
+.place-big {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 56px;
+  border-radius: 16px;
+  border: 1.5px solid var(--hairline);
+  background: var(--raised);
+  font-size: 16px;
+  font-weight: 600;
+}
+.place-big.home.on {
+  border-color: var(--sage);
+  color: var(--sage);
+  background: var(--sage-bg);
+}
+.place-big.office.on {
+  border-color: var(--apricot);
+  background: var(--apricot);
+  color: var(--ink);
+}
+.place-row {
+  display: grid;
+  gap: 8px;
+}
+.round.sm {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  font-size: 14px;
+  position: relative;
+}
+.round.sm::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
 }
