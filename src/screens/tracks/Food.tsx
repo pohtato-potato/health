@@ -7,6 +7,8 @@ import { MaintenanceCard, modelFor, WeekGapCard } from '../MaintenanceCards';
 import { SourcesCard } from '../TrackExtras';
 import { dayLabel, foodByDay, kindOn, placeMarkOn, spanDays, type Span, type TrackData } from './data';
 import { changeText, HeroChart, TrackShell } from './Template';
+import { weekBudget } from '../../domain/budgets';
+import { weekStart } from '../../domain/dates';
 
 /** Food: calories and protein on one chart against the range, then the budget, office against home, late protein, sources and maintenance. */
 export function FoodTrack({ data }: { data: TrackData }) {
@@ -70,6 +72,24 @@ export function FoodTrack({ data }: { data: TrackData }) {
         rows: [...logged].reverse().slice(0, 30).map((d) => [fmtDayShort(d), `${fmtInt(food.get(d)!.kcal)} kcal · ${Math.round(food.get(d)!.protein)} g`]),
       }}
     >
+      {(() => {
+        const b = weekBudget(t, data.days, data.entries, weekStart(today), today);
+        return (
+          <div className="card" style={{ gap: 6 }}>
+            <div className="row base">
+              <span className="lbl">Weekly budget left</span>
+              <span className="t12 q">to Sunday</span>
+            </div>
+            <div className="row base t15 tn" style={{ justifyContent: 'flex-start', gap: 14 }}>
+              <span style={{ color: 'var(--kcal)' }}>{fmtInt(Math.max(0, b.kcal.left))} kcal</span>
+              <span style={{ color: 'var(--protein)' }}>{fmtInt(Math.max(0, b.protein.left))} g</span>
+            </div>
+            <div className="t12 q">
+              About {fmtInt(Math.max(0, b.kcal.perDayLeft))} kcal and {fmtInt(Math.max(0, b.protein.perDayLeft))} g a day for the rest of the week.
+            </div>
+          </div>
+        );
+      })()}
       <WeekGapCard entries={data.entries} today={today} />
       {totalP > 0 && (
         <div className="card">

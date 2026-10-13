@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
-import { addDays, parseDay } from '../domain/dates';
-import { fmtInt } from '../domain/format';
-import { mealForTime, portionFor, recentFoodIds, stepFor, unitLabel, usageOf, valuesFor } from '../domain/foods';
+import { addDays, atOn, parseDay } from '../domain/dates';
+import { fmtInt, fmtTime } from '../domain/format';
+import { mealForTime, mealTimesFor, portionFor, recentFoodIds, stepFor, unitLabel, usageOf, valuesFor } from '../domain/foods';
 import { MEAL_NAMES, MEALS, type Food, type Meal } from '../domain/types';
 import { addEntries, addEntry, deleteEntry } from '../db/actions';
 import { placeFor } from '../domain/places';
@@ -10,12 +10,15 @@ import { useAllDays, useEntriesBetween, useFoods, useSettings, useToday } from '
 import { MealRow } from './Meals';
 import { patchSettings } from '../db/actions';
 import { replaceSheet, useRoute } from '../router';
-import { Seg, Stepper } from '../ui/controls';
+import { Seg, Stepper, TimeTile } from '../ui/controls';
 import { Icon } from '../ui/Icon';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
 import { askConfirm } from '../ui/Confirm';
 import { DateChip, useLogDate } from '../ui/DateChip';
+
+/** Each own category tab in its own colour. */
+const CAT_INKS = ['var(--protein)', 'var(--kcal)', 'var(--steps)', 'var(--blue)', 'var(--gold)', 'var(--pearl)'];
 
 type Tab = 'recent' | 'frequent' | 'mine' | 'meals' | `cat:${string}`;
 
@@ -31,6 +34,8 @@ export function AddFood() {
 
   const [meal, setMeal] = useState<Meal>((params.get('meal') as Meal) || mealForTime());
   const [query, setQuery] = useState('');
+  const [eaten, setEaten] = useState<number | undefined>();
+  const [changeTime, setChangeTime] = useState(false);
   const [tab, setTab] = useState<Tab | null>(null);
   const [pickedId, setPickedId] = useState<string | null>(params.get('food'));
   const [amount, setAmount] = useState<number | null>(null);
@@ -75,7 +80,7 @@ export function AddFood() {
 
   const log = async (food: Food, a: number) => {
     const v = valuesFor(food, a);
-    const e = await addEntry({ date, meal, at: Date.now(), kind: 'food', foodId: food.id, name: food.name, amount: a, portion: portionFor(food, a), ...v });
+    const e = await addEntry({ date, meal, at: Date.now(), kind: 'food', foodId: food.id, name: food.name, amount: a, portion: portionFor(food, a), ...v, ...(eaten !== undefined ? { eatenAt: atOn(date, eaten) } : {}) });
     toast({ text: `${food.name} · ${fmtInt(v.kcal)} kcal · ${Math.round(v.protein)} g`, sub: `Added to ${MEAL_NAMES[meal].toLowerCase()}`, action: { label: 'Undo', run: () => deleteEntry(e.id) } });
     setPickedId(null);
     setAmount(null);
@@ -104,7 +109,7 @@ export function AddFood() {
   };
   const logPlate = async () => {
     const at = Date.now();
-    const added = await addEntries(plateItems.map(({ food, amount: a }) => ({ date, meal, at, kind: 'food' as const, foodId: food.id, name: food.name, amount: a, portion: portionFor(food, a), ...valuesFor(food, a) })));
+    const added = await addEntries(plateItems.map(({ food, amount: a }) => ({ date, meal, at, kind: 'food' as const, foodId: food.id, name: food.name, amount: a, portion: portionFor(food, a), ...valuesFor(food, a), ...(eaten !== undefined ? { eatenAt: atOn(date, eaten) } : {}) })));
     toast({ text: `${added.length} food${added.length === 1 ? '' : 's'} · ${fmtInt(plateTotal.kcal)} kcal · ${Math.round(plateTotal.protein)} g`, sub: `Added to ${MEAL_NAMES[meal].toLowerCase()}`, action: { label: 'Undo', run: () => added.forEach((e) => void deleteEntry(e.id)) } });
     setPlate(null);
   };
@@ -122,14 +127,23 @@ export function AddFood() {
         </div>
       }
     >
+      <div className="row base t13">
+        <span className="q">
+          eaten <span style={{ color: 'var(--kcal)' }}>{fmtTime(atOn(date, eaten ?? mealTimesFor(settings, place)[meal]))}</span>
+        </span>
+        <button type="button" className="link t13" style={{ minHeight: 32 }} aria-expanded={changeTime} onClick={() => setChangeTime(!changeTime)}>
+          change
+        </button>
+      </div>
+      {changeTime && <TimeTile label="Eaten at" minutes={eaten ?? mealTimesFor(settings, place)[meal]} onChange={setEaten} />}
       {!query && usuals.length > 0 && (
         <div className="col gap8">
-          <div className="lbl">
+          <div className="lbl" style={{ color: 'var(--kcal)' }}>
             Usual for {MEAL_NAMES[meal].toLowerCase()} at {place.name}
           </div>
           <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
             {usuals.map((f) => (
-              <button key={f.id} type="button" className="chip sm" aria-label={`${plate ? 'Put on the plate' : 'Add'}: ${f.name}, ${portionFor(f, f.defaultAmount)}`} onClick={() => tapAdd(f)}>
+              <button key={f.id} type="button" style={{ color: (f.protein * 4) / Math.max(f.kcal, 1) >= 0.25 ? 'var(--protein)' : 'var(--kcal)', borderColor: 'color-mix(in srgb, currentColor 40%, transparent)' }} className="chip sm" aria-label={`${plate ? 'Put on the plate' : 'Add'}: ${f.name}, ${portionFor(f, f.defaultAmount)}`} onClick={() => tapAdd(f)}>
                 + {f.name}
               </button>
             ))}
@@ -186,8 +200,8 @@ export function AddFood() {
       )}
       {!query && (
         <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
-          {(settings.foodCategories ?? []).map((c) => (
-            <button key={c.id} type="button" className={`chip sm${activeTab === `cat:${c.id}` ? ' on' : ''}`} aria-pressed={activeTab === `cat:${c.id}`} onClick={() => setTab(`cat:${c.id}`)}>
+          {(settings.foodCategories ?? []).map((c, i) => (
+            <button key={c.id} type="button" className={`chip sm${activeTab === `cat:${c.id}` ? ' on' : ''}`} style={activeTab === `cat:${c.id}` ? { background: CAT_INKS[i % CAT_INKS.length], borderColor: CAT_INKS[i % CAT_INKS.length] } : { color: CAT_INKS[i % CAT_INKS.length] }} aria-pressed={activeTab === `cat:${c.id}`} onClick={() => setTab(`cat:${c.id}`)}>
               {c.name}
             </button>
           ))}
