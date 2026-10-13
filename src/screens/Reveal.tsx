@@ -104,40 +104,50 @@ export function RevealPage() {
   const goal = settings.goalDate;
   const lines = checkins.filter((c): c is CheckIn & { line: string } => !!c.line?.trim());
   const backLink = (
-    <button type="button" className="backlink" onClick={() => back('/journey')}>
+    <button type="button" className="backlink" onClick={() => back('/you')}>
       <Icon name="left" size={20} stroke={1.8} />
-      Journey
+      You
     </button>
   );
 
   if (!goal || today < goal) {
+    const b = goal && settings.heightCm ? benchmarkProgress(measurements, settings.heightCm, today) : undefined;
+    const f = b && goal ? benchmarkOn(b, today, goal) : undefined;
+    const start = checkins[0]?.date ?? today;
+    const monthly = goal ? Math.max(1, Math.round(daysBetween(start, goal) / 30.4) + 1) : 0;
+    const waiting: [string, string][] = [
+      ['Photo timelapse', `${checkins.length} of ${monthly} check-ins so far`],
+      ['First and last photo', 'side by side'],
+      ['Sealed lines', `${lines.length} sealed · read back in order`],
+      ...(f ? ([['Your benchmark', `forecast ${f.range[0].toFixed(2)}–${f.range[1].toFixed(2)}`]] as [string, string][]) : []),
+    ];
     return (
-      <div className="page bare" style={{ alignItems: 'center', textAlign: 'center', gap: 16 }}>
-        <div style={{ alignSelf: 'flex-start' }}>{backLink}</div>
-        <Icon name="lock" size={44} color="var(--gold)" />
-        <div className="sf" style={{ fontSize: 28 }}>
-          {goal ? `Sealed until ${fmtDayMonth(goal)}` : 'No reveal day yet'}
-        </div>
-        <div className="t15 q lh">
-          {goal
-            ? `${daysBetween(today, goal)} days to go. Waiting inside: ${lines.length} line${lines.length === 1 ? '' : 's'}, ${checkins.length} check-in${checkins.length === 1 ? '' : 's'}, and the whole year as a timelapse.`
-            : 'Set a goal date in Settings, and everything you seal opens on that day.'}
-        </div>
-        {(() => {
-          const b = goal && settings.heightCm ? benchmarkProgress(measurements, settings.heightCm, today) : undefined;
-          const f = b && goal ? benchmarkOn(b, today, goal) : undefined;
-          return f && b ? (
-            <div className="card" style={{ alignSelf: 'stretch', textAlign: 'left' }}>
-              <div className="lbl pearl">The forecast for that day</div>
-              <div className="num" style={{ fontSize: 30 }}>
-                {f.value.toFixed(2)} <span className="t14 q">waist ÷ height</span>
+      <div className="page bare">
+        {backLink}
+        {goal ? (
+          <>
+            <div className="col gap2">
+              <div className="serif tn" style={{ fontSize: 64, lineHeight: 1 }}>
+                {fmtInt(daysBetween(today, goal))}
               </div>
-              <div className="t13 q lh">
-                Between {f.range[0].toFixed(2)} and {f.range[1].toFixed(2)} from the last weeks' trend, slowing as it goes; {b.goal.toFixed(2)} is the goal. Treat it as a direction, not a promise.
-              </div>
+              <div className="t15 q">days to reveal day, {fmtDayMonth(goal)}</div>
             </div>
-          ) : null;
-        })()}
+            <div className="card" style={{ gap: 0, padding: '4px 16px' }}>
+              {waiting.map(([k, v]) => (
+                <div key={k} className="diary-row" style={{ textAlign: 'left' }}>
+                  <span className="row" style={{ gap: 10 }}>
+                    <Icon name="lock" size={16} color="var(--gold)" />
+                    <span className="t15">{k}</span>
+                  </span>
+                  <span className="t13 q right">{v}</span>
+                </div>
+              ))}
+            </div>
+            <div className="voice">Nothing here opens early. That’s the point.</div>
+          </>
+        ) : (
+          <div className="t15 q lh">Set a goal date in Settings, and everything you seal opens on that day.</div>
+        )}
       </div>
     );
   }

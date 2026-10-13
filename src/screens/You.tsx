@@ -24,6 +24,7 @@ const DOORS: { label: string; sub: string; path: string; icon: IconName }[] = [
   { label: 'Character', sub: 'Stats and titles', path: '/character', icon: 'shield' },
   { label: 'Journey clock', sub: 'The whole journey as one day', path: '/journey', icon: 'clock' },
   { label: 'Experiments', sub: 'Change one thing, see what moves', path: '/experiments', icon: 'trend' },
+  { label: 'Reveal day', sub: 'Sealed until the day', path: '/reveal', icon: 'lock' },
   { label: 'Night sky', sub: 'A star per perfect day', path: '/sky', icon: 'night' },
 ];
 
