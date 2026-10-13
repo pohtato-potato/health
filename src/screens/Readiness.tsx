@@ -10,6 +10,7 @@ import { Icon } from '../ui/Icon';
 import { MiniRing } from '../ui/Rings';
 import { forecastData } from '../state/forecastData';
 import { targetsFor } from '../state/derived';
+import { GOOD_LINE, readinessHits } from '../domain/trackStats';
 
 const BAND_LINE = {
   push: 'Every sign points to a good session.',
@@ -119,6 +120,7 @@ export function ReadinessPage() {
         </div>
       </div>
 
+      <HitsCard sessions={sessions} />
       <WeightsCard settings={settings} sessions={sessions} />
 
       {scored.length >= 10 && (high !== undefined || low !== undefined) && (
@@ -168,6 +170,24 @@ export function ReadinessPage() {
 }
 
 /** How the score is worked out: the weights, and the monthly refit against how sessions went. */
+/** How well the score has called it: good score and good session together, or neither. */
+function HitsCard({ sessions }: { sessions: TrainingSession[] }) {
+  const h = readinessHits(sessions);
+  if (h.total < 3) return null;
+  return (
+    <div className="card">
+      <div className="lbl blue">How well it predicts</div>
+      <div className="row base">
+        <span className="num" style={{ fontSize: 30 }}>
+          {h.agreed} <span className="t14 q">of {h.total}</span>
+        </span>
+        <span className="t13 q">sessions called right</span>
+      </div>
+      <div className="t13 q lh">A call is right when a score of {GOOD_LINE} or more met a session of quality {GOOD_LINE} or more, or a lower score met a weaker session.</div>
+    </div>
+  );
+}
+
 function WeightsCard({ settings, sessions }: { settings: Settings; sessions: TrainingSession[] }) {
   const fitted = settings.readinessWeights;
   const history = sessions.filter((x) => x.status === 'done' && x.quality !== undefined && x.readinessX).map((x) => ({ x: x.readinessX as Partial<Record<ReadinessKey, number>>, quality: x.quality! }));

@@ -988,3 +988,44 @@
   color: var(--sage);
 }
 .kept-pill.paused { background: transparent; border-color: var(--hairline); color: var(--quiet); }
+
+/* Tracks: small multiples, the place key under hero charts, and the insight lines. */
+.tracks-grid .ttile {
+  height: auto;
+  min-height: 112px;
+  gap: 6px;
+}
+.tracks-grid .ttile .v {
+  font-size: 28px;
+}
+.tracks-grid .ttile .sub {
+  white-space: normal;
+  line-height: 1.3;
+}
+.place-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+.place-key > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.key-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.4px solid;
+  display: inline-block;
+}
+.key-dot.solid {
+  border: 0;
+}
+.insights {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 2px 4px 2px 14px;
+  border-left: 2px solid var(--hairline);
+}
