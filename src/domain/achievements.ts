@@ -894,7 +894,7 @@ export function fmtProgress(p: [number, number]): string {
  * still resolve.
  */
 export const RETIRED_ACHIEVEMENTS: string[] = [
-  ...['World record', 'Glitch in the Matrix', 'Speedrunner', 'Pi day'].map(slug),
+  ...['World record', 'Glitch in the Matrix', 'Speedrunner', 'Pi day', 'Voice of reason'].map(slug),
   ...ACHIEVEMENTS.filter((a) => a.cat === 'water' || (typeof a.desc === 'string' && /passport/i.test(a.desc))).map((a) => a.id),
 ];
 

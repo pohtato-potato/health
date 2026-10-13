@@ -133,7 +133,7 @@ export function RevealPage() {
                 {f.value.toFixed(2)} <span className="t14 q">waist ÷ height</span>
               </div>
               <div className="t13 q lh">
-                Between {f.range[0].toFixed(2)} and {f.range[1].toFixed(2)} if the last weeks' trend holds; {b.goal.toFixed(2)} is the goal. It is a straight line drawn forward, so treat it as a direction, not a promise.
+                Between {f.range[0].toFixed(2)} and {f.range[1].toFixed(2)} from the last weeks' trend, slowing as it goes; {b.goal.toFixed(2)} is the goal. Treat it as a direction, not a promise.
               </div>
             </div>
           ) : null;

@@ -121,9 +121,13 @@ describe('experiment metrics', () => {
 });
 
 describe('reveal-day forecast', () => {
-  it('waist ÷ height on reveal day from the current trend, with a range', () => {
+  it('waist ÷ height on reveal day from the current trend, slowing as it goes, with a range', () => {
     const f = benchmarkOn({ current: 0.55, slope: -0.0005 }, '2026-10-13', '2027-01-21');
-    expect(f?.value).toBeCloseTo(0.5, 3);
+    // 100 days at a rate that halves about every six weeks: about 49 days' worth of the current rate.
+    expect(f?.value).toBeCloseTo(0.5256, 3);
+    // Far out, the line flattens instead of running on.
+    const far = benchmarkOn({ current: 0.532, slope: -0.00082 }, '2026-10-13', '2027-05-31')!;
+    expect(far.value).toBeGreaterThan(0.47);
     expect(f!.range[0]).toBeLessThan(f!.value);
     expect(f!.range[1]).toBeGreaterThan(f!.value);
     expect(benchmarkOn({ current: 0.55 }, '2026-10-13', '2027-01-21')).toBeUndefined();

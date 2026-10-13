@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { benchmarkProgress } from '../domain/benchmark';
 import { addDays, daysBetween, dayKey } from '../domain/dates';
-import { fmtDayMonth, fmtInt } from '../domain/format';
+import { fmtDayMonth, fmtDayMonthFrom, fmtInt } from '../domain/format';
 import { lastFullWeek } from '../domain/weekly';
 import { chapterAt, kmFromSteps, positionAt, STRIDE_M } from '../domain/walk';
 import { whatIf } from '../domain/whatIf';
@@ -61,7 +61,7 @@ export function You() {
         </button>
       </div>
 
-      {settings.heightCm ? <BenchmarkCard measurements={measurements} heightCm={settings.heightCm} today={today} /> : null}
+      {settings.heightCm ? <BenchmarkCard measurements={measurements} heightCm={settings.heightCm} today={today} reveal={settings.goalDate} /> : null}
 
       <div className="doors">
         {DOORS.map((d) => (
@@ -129,16 +129,16 @@ function WhatIfCard({ days, measurements, heightCm, today }: { days: ReturnType<
       <div className="row t15">
         <span>{end}</span>
         <span className="tn">
-          {fmtDayMonth(addDays(today, then.walkDays))}
-          {then.walkDays !== now.walkDays ? <span className="t12 q"> (was {fmtDayMonth(addDays(today, now.walkDays))})</span> : null}
+          {fmtDayMonthFrom(addDays(today, then.walkDays), today)}
+          {then.walkDays !== now.walkDays ? <span className="t12 q"> (was {fmtDayMonthFrom(addDays(today, now.walkDays), today)})</span> : null}
         </span>
       </div>
       {then.revealDays !== undefined && now.revealDays !== undefined && (
         <div className="row t15">
           <span>Waist ÷ height under {base.goal}</span>
           <span className="tn">
-            {fmtDayMonth(addDays(today, then.revealDays))}
-            {then.revealDays !== now.revealDays ? <span className="t12 q"> (was {fmtDayMonth(addDays(today, now.revealDays))})</span> : null}
+            {fmtDayMonthFrom(addDays(today, then.revealDays), today)}
+            {then.revealDays !== now.revealDays ? <span className="t12 q"> (was {fmtDayMonthFrom(addDays(today, now.revealDays), today)})</span> : null}
           </span>
         </div>
       )}

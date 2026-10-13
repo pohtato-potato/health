@@ -28,6 +28,11 @@ export function fmtDayMonth(key: DayKey): string {
   return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
 }
 
+/** "2 Nov", or "18 Oct 2027" when it falls in another year than `today`. */
+export function fmtDayMonthFrom(key: DayKey, today: DayKey): string {
+  return key.slice(0, 4) === today.slice(0, 4) ? fmtDayMonth(key) : `${fmtDayMonth(key)} ${key.slice(0, 4)}`;
+}
+
 export function weekdayName(key: DayKey): string {
   return WEEKDAYS[parseDay(key).getDay()];
 }

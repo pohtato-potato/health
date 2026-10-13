@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { addDays } from '../domain/dates';
-import { fmtDayMonth, fmtInt } from '../domain/format';
+import { fmtDayMonthFrom, fmtInt } from '../domain/format';
 import { chapterAt, kmFromSteps, positionAt } from '../domain/walk';
 import { useAllDays, useAllSets, useSessions, useSettings, useToday } from '../db/hooks';
 import { go } from '../router';
@@ -121,10 +121,10 @@ export function WalkTab({ extraTabs }: { extraTabs?: { id: string; label: string
           {forecast && (
             <div className="card">
               <div className="t16">
-                {forecast.name} around {fmtDayMonth(forecast.date)}
+                {forecast.name} around {fmtDayMonthFrom(forecast.date, today)}
               </div>
               <div className="t13 q">
-                Between {fmtDayMonth(forecast.range[0])} and {fmtDayMonth(forecast.range[1])}, at your two-week average of {fmtInt(Math.round(perDay!))} steps a day.
+                Between {fmtDayMonthFrom(forecast.range[0], today)} and {fmtDayMonthFrom(forecast.range[1], today)}, at your two-week average of {fmtInt(Math.round(perDay!))} steps a day.
               </div>
               {record && <div className="t12 q">{record}.</div>}
             </div>

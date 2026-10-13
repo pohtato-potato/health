@@ -1,5 +1,5 @@
 import { addDays, dayKey, parseDay } from '../domain/dates';
-import { fmtDayMonth, fmtInt } from '../domain/format';
+import { fmtDayMonth, fmtDayMonthFrom, fmtInt } from '../domain/format';
 import { CHAPTERS, CITIES, INDIA_OUTLINE, PLACE_COUNT, arrivals, kmFromSteps, positionAt, statesReached, ALL_STATES, type Stop } from '../domain/walk';
 import { hasReward } from '../domain/rewards';
 import { useAllDays, useAllSets, useSessions, useSettings, useToday } from '../db/hooks';
@@ -37,8 +37,9 @@ export function MapPage() {
   const ch = pos.chapter;
   const seenNames = new Set<string>();
   const reached = arrivals(steps).filter((a) => !seenNames.has(a.name) && seenNames.add(a.name));
-  const week = Array.from({ length: 7 }, (_, i) => steps.get(addDays(today, -i)) ?? 0);
-  const pace = kmFromSteps(week.reduce((a, b) => a + b, 0)) / 7;
+  // Pace from the logged days of the last two weeks, not counting today's partial count.
+  const logged = Array.from({ length: 14 }, (_, i) => steps.get(addDays(today, -1 - i))).filter((v): v is number => v !== undefined);
+  const pace = logged.length ? kmFromSteps(logged.reduce((a, b) => a + b, 0)) / logged.length : 0;
   const toNext = pos.to ? pos.to.km - km : 0;
   const eta = (target: number) => (pace > 0.1 ? dayKey(new Date(parseDay(today).getTime() + Math.ceil((target - km) / pace) * 86_400_000)) : undefined);
   const states = statesReached(km);
@@ -209,7 +210,7 @@ export function MapPage() {
               <span>Next stop</span>
               <small>
                 {pos.to.name} · {fmtInt(Math.ceil(toNext))} km{pos.to.sea ? ' by sea' : ''}
-                {eta(pos.to.km) ? ` · around ${fmtDayMonth(eta(pos.to.km)!)}` : ''}
+                {eta(pos.to.km) ? ` · around ${fmtDayMonthFrom(eta(pos.to.km)!, today)}` : ''}
               </small>
             </span>
           </div>
@@ -244,7 +245,7 @@ export function MapPage() {
           {!pos.done && eta(ch.end) && (
             <div className="row">
               <span>{ch.route[ch.route.length - 1].name}</span>
-              <span className="q">around {fmtDayMonth(eta(ch.end)!)} at your pace</span>
+              <span className="q">around {fmtDayMonthFrom(eta(ch.end)!, today)} at your pace</span>
             </div>
           )}
           <div className="row">

@@ -46,14 +46,18 @@ export function weeklyCheckIn(m: Pick<MaintenanceModel, 'kcal' | 'band' | 'statu
   return move > 0 ? { text, proposal: { kcalMin: targets.kcalMin + move, kcalMax: targets.kcalMax + move } } : { text };
 }
 
+/** Days for the rate of change to fall to 1/e: waist change slows as it goes (about half every six weeks). */
+export const BENCHMARK_TAU = 60;
+
 /**
- * Waist ÷ height on a future date if the current trend holds, with a range that widens
- * the further out it is (a third of the expected change, plus a floor for tape error).
+ * Waist ÷ height on a future date from the current trend, slowing as it goes rather than running
+ * on in a straight line, with a range that widens the further out it is.
  */
 export function benchmarkOn(b: { current: number; slope?: number }, today: DayKey, date: DayKey): { value: number; range: [number, number] } | undefined {
   if (b.slope === undefined) return undefined;
   const days = Math.max(0, daysBetween(today, date));
-  const value = b.current + b.slope * days;
-  const spread = 0.005 + Math.abs(b.slope * days) / 3;
+  const effective = BENCHMARK_TAU * (1 - Math.exp(-days / BENCHMARK_TAU));
+  const value = b.current + b.slope * effective;
+  const spread = 0.005 + Math.abs(b.slope * effective) / 3;
   return { value, range: [value - spread, value + spread] };
 }

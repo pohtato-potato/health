@@ -59,3 +59,22 @@ describe('a crossed pass stays crossed', () => {
     expect(effectiveKm(PASSES[0].km + 50, best)).toBe(PASSES[0].km + 50);
   });
 });
+
+describe('far-off dates say their year', () => {
+  it('adds the year only when it is not this year', async () => {
+    const { fmtDayMonthFrom } = await import('../src/domain/format');
+    expect(fmtDayMonthFrom('2026-11-02', '2026-10-13')).toBe('2 Nov');
+    expect(fmtDayMonthFrom('2027-10-18', '2026-10-13')).toBe('18 Oct 2027');
+  });
+});
+
+describe('nothing asks for features v2 removed', () => {
+  it('no monthly challenge is about water', async () => {
+    const { challengeFor } = await import('../src/domain/challenges');
+    for (let m = 1; m <= 12; m++) expect(challengeFor(`2027-${String(m).padStart(2, '0')}`).text).not.toMatch(/water/i);
+  });
+  it('no active achievement asks to try the voices', async () => {
+    const { ACTIVE_ACHIEVEMENTS } = await import('../src/domain/achievements');
+    expect(ACTIVE_ACHIEVEMENTS.map((a) => a.name)).not.toContain('Voice of reason');
+  });
+});

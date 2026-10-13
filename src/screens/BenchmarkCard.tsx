@@ -1,15 +1,15 @@
 import { useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { benchmarkProgress } from '../domain/benchmark';
+import { benchmarkOn, benchmarkProgress } from '../domain/benchmark';
 import { addDays } from '../domain/dates';
 import { recordLine, trackRecord } from '../domain/forecastStore';
 import { db } from '../db/db';
 import { saveForecast } from '../db/forecasts';
-import { fmtDayMonth } from '../domain/format';
+import { fmtDayMonthFrom } from '../domain/format';
 import type { Measurement } from '../domain/types';
 
 /** The main body goal: waist-to-height under 0.5, then 0.45, with the trend's date. */
-export function BenchmarkCard({ measurements, heightCm, today }: { measurements: Measurement[]; heightCm: number; today: string }) {
+export function BenchmarkCard({ measurements, heightCm, today, reveal }: { measurements: Measurement[]; heightCm: number; today: string; reveal?: string }) {
   const b = benchmarkProgress(measurements, heightCm, today);
   const record = useLiveQuery(async () => trackRecord(await db.forecasts.toArray(), 'whtr'), []);
   // Each day's view of where the ratio will be in four weeks is kept, to be checked later.
@@ -23,8 +23,8 @@ export function BenchmarkCard({ measurements, heightCm, today }: { measurements:
   return (
     <div className="card">
       <div className="row base">
-        <div className="lbl">Waist to height</div>
-        <div className="t13 q">goal under {b.goal}</div>
+        <div className="lbl">Athletic benchmark · waist ÷ height</div>
+        <div className="t13 q">goal {b.goal.toFixed(2)}</div>
       </div>
       <div className="num tn" style={{ fontSize: 30 }}>
         {b.current.toFixed(3)}
@@ -36,9 +36,17 @@ export function BenchmarkCard({ measurements, heightCm, today }: { measurements:
         {b.current < b.goal
           ? 'Under the goal. Weight is context; this is the number that matters.'
           : b.projected
-            ? `At this rate, under ${b.goal} around ${fmtDayMonth(b.projected)}.`
+            ? `At this rate, under ${b.goal} around ${fmtDayMonthFrom(b.projected, today)}.`
             : 'A date appears once three waist readings show a trend.'}
       </div>
+      {reveal && reveal > today && (() => {
+        const f = benchmarkOn(b, today, reveal);
+        return f ? (
+          <div className="t13 lh">
+            Reveal day: <span className="tn">{f.range[0].toFixed(2)}–{f.range[1].toFixed(2)}</span>
+          </div>
+        ) : null;
+      })()}
       {line && <div className="t12 q">{line}.</div>}
     </div>
   );
