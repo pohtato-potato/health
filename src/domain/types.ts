@@ -200,6 +200,9 @@ export interface Settings {
   /** The learned maintenance estimate, refreshed as data comes in. */
   maintenance?: { kcal: number; at: number; weeks: number };
   /** v2: readiness weights refitted to how sessions went, and when. */
+  /** v2: a lighter week the owner accepted, and when the offer was last waved off. */
+  lighterWeek?: { from: DayKey; to: DayKey };
+  lighterDismissed?: DayKey;
   readinessWeights?: { at: number; weights: import('./readiness').Weights; sessions: number };
   createdAt: number;
 }
@@ -333,6 +336,8 @@ export interface TrainingSession {
   firstSide?: Record<string, 'L' | 'R'>;
   /** v2: big dials and chips instead of the keyboard. */
   tiredHands?: boolean;
+  /** v2: part of a lighter week, one set fewer per exercise. */
+  lighter?: boolean;
 }
 
 export interface SetEntry {

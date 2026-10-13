@@ -47,6 +47,7 @@ import { batteryMode } from '../domain/rest';
 import { ClipButtons } from './Clips';
 import { prefOn } from '../domain/types';
 import { askConfirm } from '../ui/Confirm';
+import { withTrip } from '../domain/trip';
 
 export function SessionScreen() {
   const { params } = useRoute();
@@ -58,7 +59,8 @@ export function SessionScreen() {
   const days = useAllDays();
   const starting = useRef(false);
   const start = params.get('start');
-  const short = params.get('short') === '1';
+  const only = params.get('only')?.split(',').filter(Boolean);
+  const short = params.get('short') === '1' || !!only;
 
   useEffect(() => {
     if (!settings || active === undefined || !sessions || !sets || !days || starting.current) return;
@@ -66,7 +68,7 @@ export function SessionScreen() {
       if (start) go('/session', undefined, { replace: true });
       return;
     }
-    const plan = settings.plan;
+    const plan = settings.plan ? withTrip(settings.plan) : undefined;
     if (!start || !plan) {
       go('/train', undefined, { replace: true });
       return;
@@ -74,9 +76,10 @@ export function SessionScreen() {
     starting.current = true;
     const sessionId = start === 'next' ? nextUp(settings, sessions, sets, days)?.sessionId ?? plan.rotation[0] : start;
     const swaps = pendingSwaps(plan, sessions, days).filter((s) => s.flag.swap?.session === sessionId);
-    const exs = buildSession(plan, sessionId, { short, swaps });
-    const tempo = Object.fromEntries(exs.map((ex) => [ex.id, exerciseStatus(ex, settings.planState, settings.equipment, sets, plan.bigJump).tempo]));
     const today = dayKey();
+    const exs = buildSession(plan, sessionId, { short: short && !only, swaps }).filter((e) => !only || only.includes(e.id));
+    const lighter = !!settings.lighterWeek && today >= settings.lighterWeek.from && today <= settings.lighterWeek.to;
+    const tempo = Object.fromEntries(exs.map((ex) => [ex.id, exerciseStatus(ex, settings.planState, settings.equipment, sets, plan.bigJump).tempo]));
     const ready = readinessFor(settings, today, days, sessions, sets, flagEvents(plan, sessions, days).map((e) => e.date));
     void startSession({
       session: sessionId,
@@ -87,6 +90,7 @@ export function SessionScreen() {
       tempo,
       readiness: ready.score,
       readinessX: ready.x,
+      lighter,
     }).then(() => {
       starting.current = false;
       if (Date.now() - APP_START < 60_000) void bump('leeroy');
@@ -95,7 +99,7 @@ export function SessionScreen() {
   }, [settings, active, sessions, sets, days, start, short]);
 
   if (!settings?.plan || !active || !sets || !withSkips) return <div className="page bare" />;
-  return <Runner session={active} settings={settings} plan={settings.plan} allSets={withSkips} />;
+  return <Runner session={active} settings={settings} plan={withTrip(settings.plan)} allSets={withSkips} />;
 }
 
 function rowsFor(group: ExerciseDef[], extra: Record<string, number>, first: Record<string, 'L' | 'R'> = {}): Row[] {
@@ -118,7 +122,14 @@ const valueOf = valueOfSet;
 function Runner({ session, settings, plan, allSets }: { session: TrainingSession; settings: Settings; plan: PlanDef; allSets: SetEntry[] }) {
   const toast = useToast();
   const now = useNow(250);
-  const exs = useMemo(() => session.exercises.map((id) => findExercise(plan, id)).filter((e): e is ExerciseDef => !!e), [session.exercises, plan]);
+  const exs = useMemo(
+    () =>
+      session.exercises
+        .map((id) => findExercise(plan, id))
+        .filter((e): e is ExerciseDef => !!e)
+        .map((e) => (session.lighter ? { ...e, sets: Math.max(1, e.sets - 1) } : e)),
+    [session.exercises, plan, session.lighter],
+  );
   const groups = useMemo(() => groupExercises(exs), [exs]);
   const mine = useMemo(() => allSets.filter((s) => s.sessionId === session.id), [allSets, session.id]);
   const history = useMemo(() => realSets(allSets.filter((s) => s.sessionId !== session.id)), [allSets, session.id]);

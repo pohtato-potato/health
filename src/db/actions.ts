@@ -243,6 +243,7 @@ export async function startSession(opts: {
   tempo: Record<string, boolean>;
   readiness?: number;
   readinessX?: Partial<Record<string, number>>;
+  lighter?: boolean;
 }): Promise<TrainingSession> {
   const existing = await activeSession();
   if (existing) return existing;
@@ -259,6 +260,7 @@ export async function startSession(opts: {
     tempo: opts.tempo,
     readiness: opts.readiness,
     readinessX: opts.readinessX,
+    lighter: opts.lighter || undefined,
   };
   await db.sessions.put(s);
   return s;
@@ -283,8 +285,8 @@ export async function deleteSet(id: string) {
   if (before) await recordEdit('sets', id, before, undefined);
 }
 
-export async function finishSession(id: string, flags: string[], notes: string, quality?: number) {
-  await db.sessions.update(id, { status: 'done', endedAt: Date.now(), flags, notes: notes.trim() || undefined, ...(quality !== undefined ? { quality } : {}) });
+export async function finishSession(id: string, flags: string[], notes: string, quality?: number, context?: string[]) {
+  await db.sessions.update(id, { status: 'done', endedAt: Date.now(), flags, notes: notes.trim() || undefined, ...(quality !== undefined ? { quality } : {}), ...(context ? { context } : {}) });
 }
 
 /** Throws away a session and its sets. */

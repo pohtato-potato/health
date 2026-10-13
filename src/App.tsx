@@ -42,6 +42,7 @@ import { CloseDay } from './screens/CloseDay';
 import { PlanEditor } from './screens/PlanEditor';
 import { RecordsWall } from './screens/RecordsWall';
 import { MuscleMapPage } from './screens/MuscleMap';
+import { ShortSessionSheet } from './sheets/ShortSession';
 
 /** A page loaded when first opened, from its module's named export. */
 function page<K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K) {
@@ -84,6 +85,7 @@ const SHEETS: Record<string, () => ReactNode> = {
   free: () => <FreeMealSheet />,
   nightout: () => <NightOutSheet />,
   win: () => <WinSheet />,
+  short: () => <ShortSessionSheet />,
   savemeal: () => <SaveMealSheet />,
   occasion: () => <OccasionSheet />,
   mytracks: () => <MyTracksSheet />,

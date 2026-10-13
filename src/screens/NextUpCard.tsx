@@ -76,7 +76,7 @@ export function NextUpCard({
           {sd?.name ?? `Session ${s.session}`}
         </div>
         <div className="t14 q">
-          {mins} min · {fmtInt(n)} sets{s.short ? ' · short' : ''}. Next time: {def?.name ?? up.sessionId}.
+          {mins} min · {fmtInt(n)} set{n === 1 ? '' : 's'}{s.short ? ' · short' : ''}. Next time: {def?.name ?? up.sessionId}.
         </div>
       </button>
     );
