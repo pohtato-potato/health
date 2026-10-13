@@ -16,7 +16,7 @@ import { useEffect } from 'react';
 import { saveForecast } from '../db/forecasts';
 import { dayNumber } from '../domain/forecastStore';
 import { meetBuilt, structuresFrom } from '../walk/camps';
-import { effectiveKm, PASSES, strengthIndex } from '../walk/passes';
+import { bestStrengthIndex, effectiveKm, PASSES } from '../walk/passes';
 import { detourKm, QuestPanel, SouvenirShelf, useQuestState } from '../walk/WalkExtras';
 import { lanternOn } from '../domain/medicines';
 
@@ -44,7 +44,8 @@ export function WalkTab({ extraTabs }: { extraTabs?: { id: string; label: string
   }, [keep?.name, keep?.range[0], keep?.range[1], today]);
   if (!settings || !days || !sessions || !sets) return <div className="page" />;
   const steps = days.reduce((n, d) => n + (d.steps ?? 0), 0);
-  const strength = strengthIndex(sets, today);
+  // The best strength reached so far: once a pass opens it stays open.
+  const strength = bestStrengthIndex(sets, today);
   const raw = Math.max(0, kmFromSteps(steps) - detourKm(quests ?? []));
   const km = effectiveKm(raw, strength);
   const waiting = PASSES.find((p) => p.km === km && raw > km);

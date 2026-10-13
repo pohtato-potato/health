@@ -46,3 +46,16 @@ describe('a rest survives leaving the session screen', () => {
     expect(resumeRest(undefined, 1_150_000)).toEqual({ rest: null });
   });
 });
+
+describe('a crossed pass stays crossed', () => {
+  it('passes open on the best strength reached, not just the last two weeks', async () => {
+    const { bestStrengthIndex, effectiveKm, PASSES, strengthIndex } = await import('../src/walk/passes');
+    const set = (date: string, loadKg: number) => ({ id: date, sessionId: date, date, exerciseId: 'row', exercise: 'Row', setNo: 1, side: undefined, loadKg, reps: 10, at: 0 }) as never;
+    const sets = [set('2026-01-05', 10), set('2026-02-20', 12)];
+    // Two months on with no lifting, the recent index has fallen to 0, but the best stays.
+    expect(strengthIndex(sets, '2026-04-20')).toBe(0);
+    const best = bestStrengthIndex(sets, '2026-04-20');
+    expect(best).toBeGreaterThanOrEqual(PASSES[0].need);
+    expect(effectiveKm(PASSES[0].km + 50, best)).toBe(PASSES[0].km + 50);
+  });
+});

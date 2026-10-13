@@ -4,7 +4,7 @@ import { CHAPTERS, CITIES, INDIA_OUTLINE, PLACE_COUNT, arrivals, kmFromSteps, po
 import { hasReward } from '../domain/rewards';
 import { useAllDays, useAllSets, useSessions, useSettings, useToday } from '../db/hooks';
 import { structuresFrom } from '../walk/camps';
-import { effectiveKm, strengthIndex } from '../walk/passes';
+import { bestStrengthIndex, effectiveKm } from '../walk/passes';
 import { detourKm } from '../walk/quests';
 import { routeLayers } from '../walk/routeMap';
 import { useQuestState } from '../walk/WalkExtras';
@@ -30,7 +30,7 @@ export function MapPage() {
 
   const steps = new Map(days.filter((d) => d.steps !== undefined).map((d) => [d.date, d.steps!]));
   const totalSteps = [...steps.values()].reduce((a, b) => a + b, 0);
-  const km = effectiveKm(Math.max(0, kmFromSteps(totalSteps) - detourKm(quests)), strengthIndex(sets, today));
+  const km = effectiveKm(Math.max(0, kmFromSteps(totalSteps) - detourKm(quests)), bestStrengthIndex(sets, today));
   const records = new Set(sets.filter((x) => x.mark === '!!').map((x) => x.sessionId));
   const layers = routeLayers(km, structuresFrom(days, sessions, records), quests);
   const pos = positionAt(km);

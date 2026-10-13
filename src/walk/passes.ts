@@ -48,3 +48,9 @@ export function strengthIndex(sets: SetEntry[], today: DayKey): number {
   }
   return gains.length ? Math.round((gains.reduce((x, y) => x + y, 0) / gains.length) * 100) : 0;
 }
+
+/** The best strength index reached on any training day so far: once a pass opens, it stays open. */
+export function bestStrengthIndex(sets: SetEntry[], today: DayKey): number {
+  const dates = [...new Set(realSets(sets).map((s) => s.date))].filter((d) => d <= today);
+  return Math.max(strengthIndex(sets, today), ...dates.map((d) => strengthIndex(sets.filter((s) => s.date <= d), d)));
+}
