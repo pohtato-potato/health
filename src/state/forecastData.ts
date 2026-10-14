@@ -1,4 +1,4 @@
-import { addDays, weekday, type DayKey } from '../domain/dates';
+import { addDays, logHour, weekday, type DayKey } from '../domain/dates';
 import { forecasts, pickForecast, type Forecast } from '../domain/forecast';
 import { findSession } from '../domain/plan';
 import { beatChance, type Readiness } from '../domain/readiness';
@@ -42,7 +42,7 @@ export function forecastData(settings: Settings, today: DayKey, days: Day[], _en
 
   const list = forecasts({
     today,
-    hour: new Date().getHours(),
+    hour: logHour(Date.now()),
     readiness: r,
     beatPct: beat.pct,
     sessionDue,

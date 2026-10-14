@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { addDays, atOn, parseDay } from '../domain/dates';
 import { fmtInt, fmtTime } from '../domain/format';
-import { mealForTime, mealTimesFor, portionFor, recentFoodIds, stepFor, unitLabel, usageOf, valuesFor } from '../domain/foods';
+import { eatenAtFor, mealForTime, mealTimesFor, portionFor, recentFoodIds, stepFor, unitLabel, usageOf, valuesFor } from '../domain/foods';
 import { MEAL_NAMES, MEALS, type Food, type Meal } from '../domain/types';
 import { addEntries, addEntry, deleteEntry } from '../db/actions';
 import { placeFor } from '../domain/places';
@@ -129,7 +129,7 @@ export function AddFood() {
     >
       <div className="row base t13">
         <span className="q">
-          eaten <span style={{ color: 'var(--kcal)' }}>{fmtTime(atOn(date, eaten ?? mealTimesFor(settings, place)[meal]))}</span>
+          eaten <span style={{ color: 'var(--kcal)' }}>{fmtTime(eaten !== undefined ? atOn(date, eaten) : eatenAtFor(date, meal, place, settings))}</span>
         </span>
         <button type="button" className="link t13" style={{ minHeight: 32 }} aria-expanded={changeTime} onClick={() => setChangeTime(!changeTime)}>
           change

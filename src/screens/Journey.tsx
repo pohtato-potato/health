@@ -64,16 +64,6 @@ export function Journey() {
 
       <AchievementsCard />
 
-      <button type="button" className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }} onClick={() => go('/passport')}>
-        <span style={{ width: 38, height: 50, borderRadius: '4px 7px 7px 4px', background: 'linear-gradient(160deg, #1c2a4a, #121c33)', border: '1px solid #2c3d63', flexShrink: 0 }} aria-hidden="true" />
-        <span className="col gap2" style={{ flex: 1 }}>
-          <span className="lbl" style={{ color: '#d9b45f' }}>
-            Health Passport
-          </span>
-          <span className="t14 q">Stamps for every city, state and festival</span>
-        </span>
-        <Icon name="right" size={16} stroke={1.8} color="var(--dim)" />
-      </button>
 
       <Reports today={today} settings={settings} />
 

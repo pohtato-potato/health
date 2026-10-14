@@ -1,4 +1,4 @@
-import { addDays, atOn, dayKey, type DayKey, logMinutes } from '../domain/dates';
+import { addDays, atOn, dayKey, type DayKey, logHour, logMinutes } from '../domain/dates';
 import { eatenAtFor, mealTimesFor } from '../domain/foods';
 import { offeredPlace, placeFor } from '../domain/places';
 import type { Swap } from '../domain/plan';
@@ -79,7 +79,7 @@ export async function editDay(date: DayKey, patch: Partial<Day> | ((d: Day) => P
 }
 
 export async function addWater(date: DayKey, ml: number) {
-  const h = new Date().getHours();
+  const h = logHour(Date.now());
   const part = h < 12 ? 1 : h < 17 ? 2 : 4;
   let total = 0;
   await patchDay(date, (d) => {

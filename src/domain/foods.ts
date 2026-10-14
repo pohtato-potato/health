@@ -50,6 +50,8 @@ export function stepFor(food: Food): number {
 /** The meal a new entry probably belongs to, from the clock. */
 export function mealForTime(d: Date = new Date()): Meal {
   const h = d.getHours() + d.getMinutes() / 60;
+  // Before 4 am it's still the night before: a late bite belongs with dinner.
+  if (h < 4) return 'dinner';
   if (h < 11) return 'breakfast';
   if (h < 15.5) return 'lunch';
   if (h < 19) return 'snacks';

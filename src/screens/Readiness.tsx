@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { addDays, dayKey } from '../domain/dates';
+import { addDays, dayKey, logHour } from '../domain/dates';
 import { DEFAULT_WEIGHTS, READINESS_KEYS, readinessText, REFIT_MIN, refitWeights, type ReadinessKey } from '../domain/readiness';
 import { patchSettings } from '../db/actions';
 import { fmtDayMonth, fmtInt } from '../domain/format';
@@ -25,7 +25,7 @@ export function ForecastCard({ settings, today, days, entries, sessions, sets }:
   const fd = forecastData(settings, today, days, entries, sessions, sets);
   const pick = fd.pick;
   if (!pick) return null;
-  const hour = new Date().getHours();
+  const hour = logHour(Date.now());
   const [first, ...rest] = pick.text.split(/(?<=\.) /);
   return (
     <button type="button" className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }} onClick={() => go('/readiness')}>
