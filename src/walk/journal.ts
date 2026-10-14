@@ -18,10 +18,11 @@ const nearestStop = (km: number) => ALL_STOPS.reduce((a, b) => (Math.abs(b.km - 
  * One line a day, newest first: "Day 16 · 15,820 steps · crossed into Rajasthan near
  * Bharatpur", with a line about the land, or the session and what it built.
  */
-export function journal(days: Pick<Day, 'date' | 'steps'>[], sessions: Pick<TrainingSession, 'date' | 'status' | 'session'>[], today: DayKey, loaded: Map<DayKey, number> = new Map()): JournalLine[] {
+export function journal(days: Pick<Day, 'date' | 'steps'>[], sessions: Pick<TrainingSession, 'date' | 'status' | 'session'>[], today: DayKey, loaded: Map<DayKey, number> = new Map(), start?: DayKey): JournalLine[] {
   const sorted = [...days].filter((d) => d.date <= today).sort((a, b) => a.date.localeCompare(b.date));
   if (!sorted.length) return [];
-  const first = sorted[0].date;
+  // Day numbers count from the journey's start when given, so they match Today's.
+  const first = start && start < sorted[0].date ? start : sorted[0].date;
   const out: JournalLine[] = [];
   let km = 0;
   for (const d of sorted) {

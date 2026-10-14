@@ -1,4 +1,4 @@
-import { daysBetween, addDays, type DayKey } from '../domain/dates';
+import { daysBetween, addDays, logHour, type DayKey } from '../domain/dates';
 import { placeFor } from '../domain/places';
 import { realSets } from '../domain/plan';
 import { bandFor, DEFAULT_WEIGHTS, readinessScore, type Readiness, type ReadinessInputs } from '../domain/readiness';
@@ -28,7 +28,7 @@ export function readinessInputsFor(settings: Settings, today: DayKey, days: Day[
     restDays: last ? Math.max(0, daysBetween(last.date, today) - 1) : undefined,
     stepsYesterday: yesterday?.steps,
     stepsGoal: stepsGoal(t, false),
-    hour: now.getHours(),
+    hour: logHour(now.getTime()),
   };
 }
 

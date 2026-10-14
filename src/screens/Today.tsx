@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
-import { addDays, weekStart } from '../domain/dates';
+import { addDays, logHour, weekStart } from '../domain/dates';
 import { fmtDayShort, fmtDuration, fmtInt } from '../domain/format';
 import { findSession } from '../domain/plan';
 import { sleepMinutes, stepsGoal } from '../domain/rings';
 import { type Day, type Settings } from '../domain/types';
-import { voiceLine, plainFlagLine, type Moment } from '../domain/voice';
+import { pinnedLine, voiceLine, plainFlagLine, type Moment } from '../domain/voice';
 import { addEntries, bump, changePlace, deleteEntry } from '../db/actions';
 import { useKonami } from '../ui/useKonami';
 import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useMeasurements, useSessions, useSettings, useToday } from '../db/hooks';
@@ -81,7 +81,8 @@ export function Today() {
   const flag = recentFlag(settings.plan, sessions, days, today);
 
   const now = new Date();
-  const hour = now.getHours();
+  // Hours on the logging day: at 1 am it is still the evening before.
+  const hour = logHour(now.getTime());
   const prevWeigh = [...days].filter((d) => d.date < today && d.weightKg !== undefined).sort((a, b) => b.date.localeCompare(a.date))[0];
   const sleepMin = day?.sleep ? sleepMinutes(day.sleep.asleep, day.sleep.woke) : undefined;
   const sessionName = up && settings.plan ? findSession(settings.plan, up.sessionId)?.name ?? `Session ${up.sessionId}` : 'Your session';
@@ -158,7 +159,7 @@ export function Today() {
       <WalkScene km={walkKm} dayN={daysBetween(journeyStartOf(settings, days), today) + 1} festive={prefOn(settings.prefs, 'seasonal') ? seasonalThemeOn(today, settings.birthday) as Festive | undefined : undefined} />
 
       <div className="voice" style={flag ? { fontStyle: 'normal', fontFamily: 'var(--sans)', fontSize: 15, color: 'var(--apricot)' } : undefined}>
-        {flag ? line : lineForTheDay(today, line)}
+        {flag ? line : lineForTheDay(today, moment, line)}
       </div>
 
       {themeDay && (
@@ -252,12 +253,13 @@ export function Today() {
 }
 
 
-function lineForTheDay(today: string, line: string): string {
+function lineForTheDay(today: string, moment: string, line: string): string {
   const key = 'health.line';
   try {
-    const kept = JSON.parse(localStorage.getItem(key) ?? 'null') as { date: string; line: string } | null;
-    if (kept?.date === today) return kept.line;
-    localStorage.setItem(key, JSON.stringify({ date: today, line }));
+    const kept = JSON.parse(localStorage.getItem(key) ?? 'null') as { date: string; moment: string; line: string } | null;
+    const p = pinnedLine(kept, today, moment, line);
+    if (p.keep !== kept) localStorage.setItem(key, JSON.stringify(p.keep));
+    return p.line;
   } catch {
     /* storage can be unavailable; the line just isn't pinned */
   }

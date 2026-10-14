@@ -1,4 +1,4 @@
-import { logMinutes } from './dates';
+import { logHour, logMinutes } from './dates';
 import { fmtInt } from './format';
 import { valuesFor } from './foods';
 import type { Food, FoodEntry } from './types';
@@ -57,7 +57,7 @@ const STEPS_PER_MIN = 100;
 /** "3,200 to go, about a 30-minute walk." After 18:00 on eased days, when an hour's walk would do it. */
 export function stepTopUp(t: { steps: number; goal: number; eased: boolean }, now: number): string | undefined {
   const left = t.goal - t.steps;
-  if (!t.eased || left <= 0 || new Date(now).getHours() < 18) return undefined;
+  if (!t.eased || left <= 0 || logHour(now) < 18) return undefined;
   const minutes = Math.max(5, Math.round(left / STEPS_PER_MIN / 5) * 5);
   if (minutes > 60) return undefined;
   return `${fmtInt(left)} to go, about a ${minutes}-minute walk.`;

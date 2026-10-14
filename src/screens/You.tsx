@@ -13,6 +13,7 @@ import { Icon, type IconName } from '../ui/Icon';
 import { BenchmarkCard } from './BenchmarkCard';
 import { useLevel, wornTitle } from './Character';
 import { Heatmap } from './Heatmap';
+import { openShakeStat } from '../ui/Shake';
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -87,6 +88,13 @@ export function You() {
             <Icon name="right" size={16} stroke={1.8} color="var(--dim)" />
           </button>
         ))}
+        <button type="button" className="li" onClick={openShakeStat}>
+          <span className="s">
+            <span>A stat from your data</span>
+            <small>The same as shaking the phone</small>
+          </span>
+          <Icon name="right" size={16} stroke={1.8} color="var(--dim)" />
+        </button>
       </div>
 
       {hasLastWeek && (

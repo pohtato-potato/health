@@ -5,6 +5,7 @@ import { useAllSets, useNow } from '../db/hooks';
 import { go } from '../router';
 import { recordShot } from '../domain/strengthForecast';
 import type { NextUp } from '../state/derived';
+import { logHour } from '../domain/dates';
 
 export function NextUpCard({
   settings,
@@ -93,7 +94,7 @@ export function NextUpCard({
     <button type="button" className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 12, textAlign: 'left' }} onClick={() => go('/train')}>
       <span className="col gap4 grow">
         <span className="serif" style={{ fontSize: 19, fontWeight: 600 }}>
-          {def?.name ?? `Session ${up.sessionId}`} {met ? 'if you feel fresh' : new Date().getHours() >= 15 ? 'tonight' : 'today'}
+          {def?.name ?? `Session ${up.sessionId}`} {met ? 'if you feel fresh' : logHour(Date.now()) >= 15 ? 'tonight' : 'today'}
         </span>
         <span className="t13 q">
           {def?.minutes ?? 60} min{first ? ` · ${lowerFirst(first)} first` : ''}

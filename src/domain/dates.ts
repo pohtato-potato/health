@@ -89,6 +89,11 @@ export function logMinutes(ts: number): number {
   return m < DAY_STARTS_AT_MIN ? m + 1440 : m;
 }
 
+/** The hour on the logging day: 1 am is 25, so "after 6 pm" still holds at 1 am. */
+export function logHour(ts: number): number {
+  return Math.floor(logMinutes(ts) / 60);
+}
+
 /** The logging day's weekday, 0 = Sunday, so a Sunday-night session after midnight is still Sunday. */
 export function logWeekdaySun(ts: number): number {
   return parseDay(dayOfLogging(ts)).getDay();

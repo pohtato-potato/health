@@ -21,6 +21,7 @@ import { bestStrengthIndex, effectiveKm, PASSES } from '../walk/passes';
 import { detourKm, QuestPanel, SouvenirShelf, useQuestState } from '../walk/WalkExtras';
 import { dayDoses, lanternOn } from '../domain/medicines';
 import { peopleMet } from '../walk/people';
+import { journeyStart } from './Journey';
 
 type Tab = 'journal' | 'route';
 
@@ -61,7 +62,7 @@ export function WalkTab({ extraTabs }: { extraTabs?: { id: string; label: string
   const chapter = chapterAt(km);
   const loaded = loadedSteps(sets);
   const meetings = new Map(peopleMet(days.filter((d) => d.date <= today)).map((m) => [m.date, m.who]));
-  const lines: (ReturnType<typeof journal>[number] & { met?: string })[] = journal(days, sessions, today, loaded).map((l) => {
+  const lines: (ReturnType<typeof journal>[number] & { met?: string })[] = journal(days, sessions, today, loaded, journeyStart(settings, days)).map((l) => {
     const b = built.find((x) => x.date === l.date);
     const withCamp = b ? { ...l, body: `${l.body} Built a ${b.kind} by the road.` } : l;
     const lit = lanternOn(settings, days.find((d) => d.date === l.date)) ? { ...withCamp, body: `${withCamp.body} A lantern burned at camp: every dose on time.` } : withCamp;
