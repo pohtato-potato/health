@@ -1,3 +1,4 @@
+import { SessionProto } from './screens/proto/SessionProto';
 import { prefOn } from './domain/types';
 import { Suspense, lazy, useEffect, type ComponentType, type ReactNode } from 'react';
 import { findSession } from './domain/plan';
@@ -134,6 +135,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/character': { el: () => <CharacterPage /> },
   '/physio': { el: () => <PhysioPage /> },
   '/reveal': { el: () => <RevealPage /> },
+  '/proto/session': { el: () => <SessionProto /> },
 };
 
 export function App() {
