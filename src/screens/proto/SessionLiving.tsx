@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from 'react';
 import { back, useRoute } from '../../router';
 import { Icon } from '../../ui/Icon';
 
@@ -97,23 +97,73 @@ const START = Date.now() - 34 * 60000;
 const SONG = 'Midnight City · M83';
 
 const LOOKS = [
-  { id: 'glow', name: 'Glow' },
   { id: 'aurora', name: 'Aurora' },
+  { id: 'glow', name: 'Glow' },
   { id: 'tide', name: 'Tide' },
 ] as const;
 type Look = (typeof LOOKS)[number]['id'];
+
+/** Themes from the app's own list: each gives the tap its own shape and the rings their own colours. */
+const THEMES = [
+  { id: 'dusk', name: 'Dusk', rings: ['#b7a6f0', '#bfe8d4', '#c3d0f2'] },
+  { id: 'diwali', name: 'Diwali', rings: ['#f5b94a', '#f28c4b', '#ffe0a3'] },
+  { id: 'holi', name: 'Holi', rings: ['#ff7aa8', '#5fd6a0', '#7fb2ff'] },
+  { id: 'moonlight', name: 'Moonlight', rings: ['#d9e4f2', '#a8d0e6', '#8fa6c9'] },
+  { id: 'sunrise', name: 'Sunrise', rings: ['#ffb86b', '#ff8a6b', '#ffd3a0'] },
+  { id: 'retro', name: 'Retro', rings: ['#6ff07a', '#f6d743', '#3fbf5a'] },
+] as const;
+type ThemeId = (typeof THEMES)[number]['id'];
+
+const RESTS = [
+  { id: 'fade', name: 'Fade' },
+  { id: 'ring', name: 'Ring' },
+  { id: 'next', name: 'Next first' },
+  { id: 'saver', name: 'Low battery' },
+] as const;
+type RestLook = (typeof RESTS)[number]['id'];
+
 const SCREENS = ['before', 'guide', 'set', 'check', 'rest', 'plates', 'record', 'finale'] as const;
 type Screen = (typeof SCREENS)[number];
 const SCREEN_NAMES: Record<Screen, string> = { before: 'Before', guide: 'Guide', set: 'Set', check: 'Check', rest: 'Rest', plates: 'Plates', record: 'Record', finale: 'Finale' };
 
 type Mark = 'ok' | 'slip';
 type Side = 'L' | 'R' | 'both';
-type State = 'build' | 'in' | 'burn' | 'record' | 'rest' | 'calm';
-type Done = { ex: string; setNo: number; side: Side; reps: number; burn?: number; checks: Record<string, Mark>; rir?: number; record: boolean };
+type SetState = 'build' | 'in' | 'burn' | 'record';
+type State = SetState | 'rest' | 'calm';
+type Done = { ex: string; setNo: number; side: Side; reps: number; burn?: number; checks: Record<string, Mark>; rir?: number; record: boolean; state: SetState };
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 const clock = (ms: number) => new Date(ms).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
 const STATE_WORD: Record<State, string> = { build: 'building', in: 'in range', burn: 'in the burn', record: 'new record', rest: 'rest', calm: '' };
+
+/** A closed outline for a theme's tap ripple, in a -50…50 box. */
+function shapePath(theme: ThemeId): string {
+  const polar = (r: (t: number) => number, n = 120) =>
+    Array.from({ length: n }, (_, i) => {
+      const t = (i / n) * Math.PI * 2;
+      return `${i ? 'L' : 'M'}${(r(t) * Math.cos(t)).toFixed(1)},${(r(t) * Math.sin(t)).toFixed(1)}`;
+    }).join(' ') + 'Z';
+  const star = (points: number, outer: number, inner: number) =>
+    Array.from({ length: points * 2 }, (_, i) => {
+      const t = (i / (points * 2)) * Math.PI * 2 - Math.PI / 2;
+      const r = i % 2 ? inner : outer;
+      return `${i ? 'L' : 'M'}${(r * Math.cos(t)).toFixed(1)},${(r * Math.sin(t)).toFixed(1)}`;
+    }).join(' ') + 'Z';
+  switch (theme) {
+    case 'diwali':
+      return polar((t) => 38 + 9 * Math.cos(8 * t)); // a marigold rosette
+    case 'holi':
+      return polar((t) => 38 + 7 * Math.sin(5 * t) + 4 * Math.sin(3 * t + 1)); // a powder splash
+    case 'moonlight':
+      return star(4, 48, 14); // a sparkle
+    case 'sunrise':
+      return star(12, 48, 38); // a sun
+    case 'retro':
+      return 'M-40,-40 L40,-40 L40,40 L-40,40 Z'; // a pixel
+    default:
+      return polar(() => 46);
+  }
+}
 
 function useEngine() {
   const [screen, setScreen] = useState<Screen>('before');
@@ -138,7 +188,7 @@ function useEngine() {
   const reps = taps.length;
 
   useEffect(() => {
-    const t = window.setInterval(() => setNow(Date.now()), 500);
+    const t = window.setInterval(() => setNow(Date.now()), 100);
     return () => window.clearInterval(t);
   }, []);
   useEffect(() => {
@@ -155,11 +205,19 @@ function useEngine() {
   const late = gaps.slice(-2);
   const slowing = gaps.length >= 5 && late.reduce((a, b) => a + b, 0) / late.length > 1.3 * (early.reduce((a, b) => a + b, 0) / early.length);
   const record = reps > ex.best;
-  const state: State = screen === 'rest' ? 'rest' : screen === 'record' ? 'record' : screen !== 'set' ? 'calm' : record ? 'record' : burn !== undefined ? 'burn' : reps >= ex.lo ? 'in' : 'build';
+  const setState: SetState = record ? 'record' : burn !== undefined ? 'burn' : reps >= ex.lo ? 'in' : 'build';
+  // The check keeps the colour the set ended in; rest starts there and fades to blue.
+  const state: State = screen === 'rest' ? 'rest' : screen === 'record' ? 'record' : screen === 'set' || screen === 'check' ? setState : 'calm';
+  const lastState = done[done.length - 1]?.state ?? 'in';
   const nudge = ex.isolation && prevHere?.rir !== undefined && prevHere.rir >= 2;
   const lightLegs = legs !== undefined && legs >= 4;
   const elapsed = (now - START) / 60000;
   const finishAt = START + 92 * 60000;
+  // Tempo: each tap is the top of a rep; the next 3 s lower, then 1 s lifts.
+  const since = taps.length ? (now - taps[taps.length - 1]) / 1000 : undefined;
+  const tempoPhase: 'idle' | 'down' | 'up' = !ex.tempo || since === undefined || since >= 4 ? 'idle' : since < 3 ? 'down' : 'up';
+  const tempoBeat = tempoPhase === 'down' ? 3 - Math.floor(since!) : tempoPhase === 'up' ? 0 : -1;
+  const tempoFrac = tempoPhase === 'down' ? since! / 3 : tempoPhase === 'up' ? 1 - (since! - 3) : 0;
 
   const tapDown = (e: PointerEvent<HTMLElement>) => {
     held.current = false;
@@ -191,7 +249,7 @@ function useEngine() {
     setScreen('check');
   };
   const saveCheck = () => {
-    setDone([...done, { ex: ex.id, setNo, side, reps, burn, checks, rir, record }]);
+    setDone([...done, { ex: ex.id, setNo, side, reps, burn, checks, rir, record, state: setState }]);
     setScreen(record ? 'record' : 'rest');
   };
   const nextSet = () => {
@@ -221,30 +279,50 @@ function useEngine() {
       setBurn(undefined);
       if (ex.perSide && side === 'both') setSide(ex.lead ?? 'L');
     }
-    if (s === 'check' && reps === 0) setTaps(Array.from({ length: 11 }, (_, i) => Date.now() - (11 - i) * 3000));
-    if (s === 'record' && !done.some((d) => d.record)) setDone([...done, { ex: ex.id, setNo, side, reps: ex.best + 1, burn: ex.best - 3, checks: { [ex.checks[0]]: 'ok', [ex.checks[1]]: 'ok' }, rir: 0, record: true }]);
+    if (s === 'check' && reps === 0) {
+      setTaps(Array.from({ length: 11 }, (_, i) => Date.now() - (11 - i) * 3000 - 10000));
+      setBurn(9);
+    }
+    if ((s === 'record' || s === 'rest') && !done.length) setDone([{ ex: ex.id, setNo, side, reps: ex.best + 1, burn: ex.best - 3, checks: { [ex.checks[0]]: 'ok', [ex.checks[1]]: 'ok', [ex.checks[2]]: 'slip' }, rir: 0, record: s === 'record', state: s === 'record' ? 'record' : 'burn' }]);
     setSheet(null);
     setScreen(s);
   };
   const nextLabel = ex.perSide && side === (ex.lead ?? 'L') ? `Set ${setNo} · ${side === 'L' ? 'right' : 'left'} side` : `Set ${Math.min(ex.sets, setNo + 1)}${ex.perSide ? ` · ${ex.lead === 'R' ? 'right' : 'left'} first` : ''}`;
 
-  return { screen, go, setScreen, ex, exIdx, pick, setNo, side, reps, taps, gaps, slowing, burn, record, state, done, mine, prevHere, checks, setChecks, rir, setRir, restLeft, setRestLeft, sheet, setSheet, ripples, setRipples, legs, setLegs, lightLegs, kit, setKit, notes, setNotes, nudge, elapsed, finishAt, tapDown, tapUp, tapCancel, undo, finishSet, saveCheck, nextSet, nextLabel };
+  return { screen, go, setScreen, ex, exIdx, pick, setNo, side, reps, taps, gaps, slowing, burn, record, state, lastState, done, mine, prevHere, checks, setChecks, rir, setRir, restLeft, setRestLeft, sheet, setSheet, ripples, setRipples, legs, setLegs, lightLegs, kit, setKit, notes, setNotes, nudge, elapsed, finishAt, tapDown, tapUp, tapCancel, undo, finishSet, saveCheck, nextSet, nextLabel, tempoPhase, tempoBeat, tempoFrac };
 }
 type E = ReturnType<typeof useEngine>;
 
 export function SessionProto() {
   const { params } = useRoute();
-  const [look, setLook] = useState<Look>(((params.get('v') as Look) || 'glow') as Look);
+  const [look, setLook] = useState<Look>(((params.get('v') as Look) || 'aurora') as Look);
+  const [theme, setTheme] = useState<ThemeId>('dusk');
+  const [restLook, setRestLook] = useState<RestLook>('fade');
   const e = useEngine();
+  const t = THEMES.find((x) => x.id === theme)!;
   const fill = e.screen === 'set' ? Math.min(1, e.reps / e.ex.hi) : e.screen === 'rest' ? e.restLeft / REST : 0.25;
+  const style = {
+    ['--fill' as string]: String(fill),
+    ['--restfrac' as string]: String(e.restLeft / REST),
+    ['--tempo' as string]: String(e.tempoFrac),
+    ['--ring1' as string]: t.rings[0],
+    ['--ring2' as string]: t.rings[1],
+    ['--ring3' as string]: t.rings[2],
+  } as CSSProperties;
   return (
-    <div className={`lc look-${look} st-${e.state}`} style={{ ['--fill' as string]: String(fill) }}>
+    <div className={`lc look-${look} th-${theme} st-${e.state} from-${e.lastState}${e.screen === 'rest' ? ` rest-${restLook}` : ''} tempo-${e.tempoPhase}`} style={style}>
       <Field look={look} />
       <div className="lc-dev" aria-label="Prototype controls">
         <div className="lc-dev-row">
           {LOOKS.map((l) => (
             <button key={l.id} type="button" className={look === l.id ? 'on' : ''} onClick={() => setLook(l.id)}>
               {l.name}
+            </button>
+          ))}
+          <span className="lc-dev-sep" />
+          {THEMES.map((x) => (
+            <button key={x.id} type="button" className={theme === x.id ? 'on' : ''} onClick={() => setTheme(x.id)}>
+              {x.name}
             </button>
           ))}
         </div>
@@ -255,13 +333,22 @@ export function SessionProto() {
             </button>
           ))}
         </div>
+        {e.screen === 'rest' && (
+          <div className="lc-dev-row">
+            {RESTS.map((r) => (
+              <button key={r.id} type="button" className={restLook === r.id ? 'on' : ''} onClick={() => setRestLook(r.id)}>
+                Rest · {r.name}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       <div className="lc-body">
         {e.screen === 'before' && <Before e={e} />}
         {e.screen === 'guide' && <Guide e={e} />}
-        {e.screen === 'set' && <SetScreen e={e} />}
+        {e.screen === 'set' && <SetScreen e={e} theme={theme} />}
         {e.screen === 'check' && <Check e={e} />}
-        {e.screen === 'rest' && <Rest e={e} />}
+        {e.screen === 'rest' && (restLook === 'ring' ? <RestRing e={e} /> : restLook === 'next' ? <RestNext e={e} /> : restLook === 'saver' ? <RestSaver e={e} /> : <RestFade e={e} />)}
         {e.screen === 'plates' && <Plates e={e} />}
         {e.screen === 'record' && <Record e={e} />}
         {e.screen === 'finale' && <Finale />}
@@ -272,7 +359,7 @@ export function SessionProto() {
   );
 }
 
-/** The living background. Glow: a soft field; aurora: drifting light; tide: colour rising with the reps. */
+/** The living background. Aurora: drifting lights; glow: a soft field; tide: colour rising with the reps. */
 function Field({ look }: { look: Look }) {
   return (
     <div className="lc-field" aria-hidden="true">
@@ -281,6 +368,7 @@ function Field({ look }: { look: Look }) {
           <i className="blob b1" />
           <i className="blob b2" />
           <i className="blob b3" />
+          <i className="blob b4" />
         </>
       )}
       {look === 'tide' && (
@@ -288,6 +376,7 @@ function Field({ look }: { look: Look }) {
           <i className="wave" />
         </div>
       )}
+      <i className="lc-dim" />
     </div>
   );
 }
@@ -338,25 +427,42 @@ function SideBadge({ e }: { e: E }) {
   return <span className={`lc-side${lead ? ' lead' : ''}`}>{e.side === 'L' ? 'LEFT' : 'RIGHT'}{lead ? ' FIRST' : ''}</span>;
 }
 
-function TempoBeat({ on }: { on: boolean }) {
-  if (!on) return null;
+/** Tempo, woven into the set: after each tap the count's ring drains for the 3-second lowering, then refills on the lift. */
+function TempoRing({ e }: { e: E }) {
+  const R = 118;
+  const C = 2 * Math.PI * R;
   return (
-    <div className="lc-tempo" aria-label="Tempo on: lower for 3 seconds, lift for 1">
-      <span className="lc-tempo-track">
-        <i />
-      </span>
-      <span className="t14">
-        <b>Tempo</b> · lower 3 s · lift 1 s
-      </span>
+    <svg className="lc-tempo-ring" viewBox="0 0 260 260" aria-hidden="true">
+      <circle cx="130" cy="130" r={R} className="track" />
+      <circle cx="130" cy="130" r={R} className="arc" strokeDasharray={C} strokeDashoffset={C * (e.tempoPhase === 'down' ? e.tempoFrac : e.tempoPhase === 'up' ? e.tempoFrac : 0)} transform="rotate(-90 130 130)" />
+    </svg>
+  );
+}
+
+function TempoLine({ e }: { e: E }) {
+  if (!e.ex.tempo) return null;
+  const beats = [3, 2, 1, 0];
+  return (
+    <div className="lc-tempo" aria-live="off" aria-label="Tempo on: lower for 3 seconds, lift for 1">
+      <span className="lc-tempo-label">Tempo</span>
+      {beats.map((b) => (
+        <span key={b} className={`beat${e.tempoBeat === b ? ' on' : ''}${b === 0 ? ' up' : ''}`}>
+          {b === 0 ? 'lift' : b}
+        </span>
+      ))}
+      <span className="lc-tempo-word">{e.tempoPhase === 'down' ? 'lowering' : e.tempoPhase === 'up' ? 'lift' : 'tap at the top'}</span>
     </div>
   );
 }
 
-function Ripples({ e }: { e: E }) {
+function Ripples({ e, theme }: { e: E; theme: ThemeId }) {
+  const d = shapePath(theme);
   return (
     <>
       {e.ripples.map((r) => (
-        <i key={r.id} className={`lc-ripple ${r.cls}`} style={{ left: r.x, top: r.y }} onAnimationEnd={() => e.setRipples((rs) => rs.filter((x) => x.id !== r.id))} />
+        <svg key={r.id} className={`lc-ripple ${r.cls}`} viewBox="-50 -50 100 100" style={{ left: r.x, top: r.y }} onAnimationEnd={() => e.setRipples((rs) => rs.filter((x) => x.id !== r.id))} aria-hidden="true">
+          <path d={d} vectorEffect="non-scaling-stroke" />
+        </svg>
       ))}
     </>
   );
@@ -466,7 +572,7 @@ function Guide({ e }: { e: E }) {
         </span>
         {e.ex.kg !== null && <span className="lc-pill">{e.ex.kg} kg</span>}
         <SideBadge e={e} />
-        {e.ex.tempo && <span className="lc-pill tempo">Tempo on</span>}
+        {e.ex.tempo && <span className="lc-pill tempo">Tempo: lower 3 s, lift 1 s</span>}
       </div>
       {e.ex.perSide && e.ex.leadWhy && <p className="lc-small">Left first: {e.ex.leadWhy}.</p>}
       <div className="lc-guide">
@@ -505,7 +611,7 @@ function Guide({ e }: { e: E }) {
 
 /* ---------- the set ---------- */
 
-function SetScreen({ e }: { e: E }) {
+function SetScreen({ e, theme }: { e: E; theme: ThemeId }) {
   return (
     <section className="lc-screen">
       <Top e={e} />
@@ -527,8 +633,11 @@ function SetScreen({ e }: { e: E }) {
             {e.side}
           </span>
         )}
-        <Ripples e={e} />
-        <div className={`lc-count num tn ${e.state}`}>{e.reps}</div>
+        <Ripples e={e} theme={theme} />
+        <div className="lc-countwrap">
+          {e.ex.tempo && <TempoRing e={e} />}
+          <div className={`lc-count num tn ${e.state}`}>{e.reps}</div>
+        </div>
         <div className="lc-word">{e.state === 'record' ? `new record · best was ${e.ex.best}` : STATE_WORD[e.state]}</div>
         <div className="lc-aim">
           aim{' '}
@@ -537,7 +646,7 @@ function SetScreen({ e }: { e: E }) {
           </b>{' '}
           · best <b>{e.ex.best}</b>
         </div>
-        <TempoBeat on={e.ex.tempo} />
+        <TempoLine e={e} />
         <div className="lc-hint">
           {e.burn === undefined ? 'Tap anywhere for each rep · hold when the burn starts' : `Burn from rep ${e.burn} · ${Math.max(0, e.reps - e.burn)} past it`}
           {e.slowing && <span className="lc-slow"> · reps slowing</span>}
@@ -555,17 +664,28 @@ function SetScreen({ e }: { e: E }) {
   );
 }
 
-/* ---------- the check after a set ---------- */
+/* ---------- the check after a set, still in the set's colour ---------- */
 
 function Check({ e }: { e: E }) {
   const prev = e.prevHere;
   return (
     <section className="lc-screen">
       <Top e={e} />
-      <h2 className="lc-name" style={{ marginTop: 10 }}>
-        {e.reps} reps{e.ex.kg !== null ? ` at ${e.ex.kg} kg` : ''}
-        {e.ex.perSide && e.side !== 'both' ? ` · ${e.side === 'L' ? 'left' : 'right'}` : ''}
-      </h2>
+      <div className="lc-check-head">
+        <span className={`lc-count num tn ${e.state}`} style={{ fontSize: 64 }}>
+          {e.reps}
+        </span>
+        <span className="col">
+          <span className="lc-name" style={{ fontSize: 26 }}>
+            reps{e.ex.kg !== null ? ` at ${e.ex.kg} kg` : ''}
+            {e.ex.perSide && e.side !== 'both' ? ` · ${e.side === 'L' ? 'left' : 'right'}` : ''}
+          </span>
+          <span className="lc-word" style={{ textAlign: 'left', fontSize: 18 }}>
+            {STATE_WORD[e.state]}
+            {e.burn !== undefined ? ` · burn from ${e.burn}` : ''}
+          </span>
+        </span>
+      </div>
       <p className="lc-small">{prev ? 'Last set’s answers are filled in. Change only what was different.' : 'Tap once if it went well, twice if it slipped.'}</p>
       <div className="lc-checks">
         {e.ex.checks.map((text) => {
@@ -603,54 +723,162 @@ function Check({ e }: { e: E }) {
   );
 }
 
-/* ---------- rest ---------- */
+/* ---------- rest, four ways ---------- */
 
-function Rest({ e }: { e: E }) {
+function JustNow({ e }: { e: E }) {
   const d = e.done[e.done.length - 1];
+  if (!d) return null;
+  const ok = Object.values(d.checks).filter((m) => m === 'ok').length;
+  const slip = Object.values(d.checks).filter((m) => m === 'slip').length;
+  return (
+    <div className="lc-justnow">
+      Just now <b className={`num tn${d.record ? ' goldtxt' : ''}`}>{d.reps}</b>
+      {d.record && <span className="lc-tag gold">record</span>}
+      {d.burn !== undefined && <span className="lc-tag burn">burn from {d.burn}</span>}
+      {ok > 0 && <span className="lc-tag ok">{ok} went well</span>}
+      {slip > 0 && <span className="lc-tag slip">{slip} slipped</span>}
+    </div>
+  );
+}
+
+function NextCard({ e, big }: { e: E; big?: boolean }) {
+  return (
+    <div className={`lc-card${big ? ' lc-next-big' : ''}`}>
+      <div className="lc-card-h">Next</div>
+      <div className="lc-next-row">
+        <span className="lc-next-title">{e.nextLabel}</span>
+        {e.ex.kg !== null && <span className="num tn lc-next-kg">{e.ex.kg} kg</span>}
+      </div>
+      <div className="lc-small">
+        {e.ex.short} · aim {e.ex.lo}–{e.ex.hi}
+        {e.ex.tempo ? ' · tempo on' : ''}
+      </div>
+      <div className="lc-cue">{e.ex.cue}</div>
+    </div>
+  );
+}
+
+function RestFoot({ e }: { e: E }) {
+  return (
+    <div className="lc-actions" style={{ marginTop: 'auto' }}>
+      <button type="button" className="lc-ghost" onClick={() => e.setRestLeft((s) => s + 30)}>
+        +30 s
+      </button>
+      <Primary tone="rest" onClick={e.nextSet}>
+        Ready
+      </Primary>
+    </div>
+  );
+}
+
+function NoteLink({ e }: { e: E }) {
   const [noting, setNoting] = useState(false);
-  const ok = d ? Object.values(d.checks).filter((m) => m === 'ok').length : 0;
-  const slip = d ? Object.values(d.checks).filter((m) => m === 'slip').length : 0;
+  return noting ? (
+    <textarea className="lc-note" placeholder={`A note on ${e.ex.short.toLowerCase()} for next time and the coach…`} defaultValue={e.notes[e.ex.id]} onBlur={(x) => (e.setNotes({ ...e.notes, [e.ex.id]: x.target.value }), setNoting(false))} autoFocus />
+  ) : (
+    <button type="button" className="lc-link" onClick={() => setNoting(true)}>
+      {e.notes[e.ex.id] ? `Note: ${e.notes[e.ex.id]}` : '+ Note on this exercise'}
+    </button>
+  );
+}
+
+/** Fade: rest starts in the set's colour and fades to blue as it runs down. */
+function RestFade({ e }: { e: E }) {
   return (
     <section className="lc-screen">
       <Top e={e} />
       <div className="lc-rest-time num tn">{mmss(e.restLeft)}</div>
       <div className="lc-word">{e.restLeft === 0 ? 'rest is over' : 'rest'}</div>
-      {d && (
-        <div className="lc-justnow">
-          Just now <b className={`num tn${d.record ? ' goldtxt' : ''}`}>{d.reps}</b>
-          {d.record && <span className="lc-tag gold">record</span>}
-          {d.burn !== undefined && <span className="lc-tag burn">burn from {d.burn}</span>}
-          {ok > 0 && <span className="lc-tag ok">{ok} went well</span>}
-          {slip > 0 && <span className="lc-tag slip">{slip} slipped</span>}
-        </div>
-      )}
-      <div className="lc-card">
-        <div className="lc-card-h">Next</div>
-        <div className="lc-next-row">
-          <span className="lc-next-title">{e.nextLabel}</span>
-          {e.ex.kg !== null && <span className="num tn lc-next-kg">{e.ex.kg} kg</span>}
-        </div>
-        <div className="lc-small">
-          {e.ex.short} · aim {e.ex.lo}–{e.ex.hi}
-        </div>
-        <div className="lc-cue">{e.ex.cue}</div>
-      </div>
+      <JustNow e={e} />
+      <NextCard e={e} />
       <div className="lc-adapt">Rest is 1:30 here: your reps dropped from 18 to 15 across sets last time.</div>
-      {noting ? (
-        <textarea className="lc-note" placeholder={`A note on ${e.ex.short.toLowerCase()} for next time and the coach…`} defaultValue={e.notes[e.ex.id]} onBlur={(x) => (e.setNotes({ ...e.notes, [e.ex.id]: x.target.value }), setNoting(false))} autoFocus />
-      ) : (
-        <button type="button" className="lc-link" onClick={() => setNoting(true)}>
-          {e.notes[e.ex.id] ? `Note: ${e.notes[e.ex.id]}` : '+ Note on this exercise'}
-        </button>
-      )}
-      <div className="lc-actions" style={{ marginTop: 'auto' }}>
-        <button type="button" className="lc-ghost" onClick={() => e.setRestLeft((s) => s + 30)}>
-          +30 s
-        </button>
-        <Primary tone="rest" onClick={e.nextSet}>
-          Ready
-        </Primary>
+      <NoteLink e={e} />
+      <RestFoot e={e} />
+    </section>
+  );
+}
+
+/** Ring: the time inside a ring that empties, in the theme's colour. */
+function RestRing({ e }: { e: E }) {
+  const R = 118;
+  const C = 2 * Math.PI * R;
+  return (
+    <section className="lc-screen">
+      <Top e={e} />
+      <div className="lc-rest-ring">
+        <svg viewBox="0 0 260 260" width="250" height="250" aria-hidden="true">
+          <circle cx="130" cy="130" r={R} className="track" />
+          <circle cx="130" cy="130" r={R} className="fill" strokeDasharray={C} strokeDashoffset={C * (1 - e.restLeft / REST)} transform="rotate(-90 130 130)" />
+        </svg>
+        <div className="lc-rest-ring-in">
+          <b className="num tn">{mmss(e.restLeft)}</b>
+          <span className="lc-small">rest</span>
+        </div>
       </div>
+      <JustNow e={e} />
+      <NextCard e={e} />
+      <RestFoot e={e} />
+    </section>
+  );
+}
+
+/** Next first: the next set leads; the time is a bar at the top. */
+function RestNext({ e }: { e: E }) {
+  return (
+    <section className="lc-screen">
+      <Top e={e} />
+      <div className="lc-rest-bar">
+        <span className="num tn">{mmss(e.restLeft)}</span>
+        <span className="bar">
+          <i style={{ width: `${(e.restLeft / REST) * 100}%` }} />
+        </span>
+      </div>
+      <div className="lc-kicker" style={{ marginTop: 12 }}>
+        Up next
+      </div>
+      <h1 className="lc-h1" style={{ fontSize: 44 }}>
+        {e.nextLabel}
+      </h1>
+      <div className="lc-bignums">
+        <span>
+          <b className="num tn">{e.ex.kg ?? '—'}</b>
+          <small>kg</small>
+        </span>
+        <span>
+          <b className="num tn">
+            {e.ex.lo}–{e.ex.hi}
+          </b>
+          <small>reps</small>
+        </span>
+        <span>
+          <b className="num tn">{e.ex.last[Math.min(e.setNo, e.ex.sets - 1)]}</b>
+          <small>last time</small>
+        </span>
+      </div>
+      <div className="lc-cue" style={{ fontSize: 17 }}>
+        {e.ex.cue}
+      </div>
+      <JustNow e={e} />
+      <RestFoot e={e} />
+    </section>
+  );
+}
+
+/** Low battery: true black, still bright enough to read, nothing moving. */
+function RestSaver({ e }: { e: E }) {
+  return (
+    <section className="lc-screen lc-saver">
+      <div className="lc-rest-time num tn" style={{ marginTop: 60 }}>
+        {mmss(e.restLeft)}
+      </div>
+      <div className="lc-saver-next">
+        Next: <b>{e.nextLabel}</b>
+        {e.ex.kg !== null && <> · {e.ex.kg} kg</>}
+      </div>
+      <div className="lc-small" style={{ textAlign: 'center' }}>
+        Battery saver · no motion · the screen stays on
+      </div>
+      <RestFoot e={e} />
     </section>
   );
 }
@@ -715,29 +943,37 @@ function Record({ e }: { e: E }) {
   );
 }
 
-/* ---------- the finale: joint checks first, the recap as rings, the best moment last ---------- */
+/* ---------- the finale ---------- */
 
-function Arc({ r, frac, cls, w }: { r: number; frac: number; cls: string; w: number }) {
+function Arc({ r, frac, cls, w, delay = 0 }: { r: number; frac: number; cls: string; w: number; delay?: number }) {
   const C = 2 * Math.PI * r;
   return (
     <>
       <circle cx="150" cy="150" r={r} className="ring-track" strokeWidth={w} />
-      <circle cx="150" cy="150" r={r} className={`ring-fill ${cls}`} strokeWidth={w} strokeDasharray={C} style={{ ['--c' as string]: String(C), ['--off' as string]: String(C * (1 - frac)) }} transform="rotate(-90 150 150)" />
+      <circle cx="150" cy="150" r={r} className={`ring-fill ${cls}`} strokeWidth={w} strokeDasharray={C} style={{ ['--c' as string]: String(C), ['--off' as string]: String(C * (1 - frac)), animationDelay: `${delay}s` }} transform="rotate(-90 150 150)" />
     </>
   );
 }
 
+const FINALE_STEPS = ['Flags', 'Records', 'Soundtrack', 'The hour', 'Form', 'Recap', 'Best'];
+
+/**
+ * The finale: joint checks first; then the records one by one with their songs, the soundtrack,
+ * where the hour went, form, and the recap rings with the session's quality; the best moment last.
+ */
 function Finale() {
   const [step, setStep] = useState(0);
   const [flags, setFlags] = useState<string[]>([]);
   const FLAGS = ['Knee', 'Lower back', 'Wrist', 'Shoulder', 'Eyes'];
+  const next = () => setStep((s) => Math.min(FINALE_STEPS.length - 1, s + 1));
   return (
     <section className="lc-screen">
-      <div className="lc-steps" aria-label={`Step ${step + 1} of 3`}>
-        {[0, 1, 2].map((i) => (
-          <i key={i} className={i <= step ? 'on' : ''} />
+      <div className="lc-steps" aria-label={`${FINALE_STEPS[step]}, ${step + 1} of ${FINALE_STEPS.length}`}>
+        {FINALE_STEPS.map((s, i) => (
+          <i key={s} className={i <= step ? 'on' : ''} />
         ))}
       </div>
+
       {step === 0 && (
         <>
           <h1 className="lc-h1" style={{ marginTop: 18 }}>
@@ -754,25 +990,126 @@ function Finale() {
               );
             })}
           </div>
-          <div style={{ marginTop: 'auto' }}>
-            <Primary onClick={() => setStep(1)}>{flags.length ? `Flag ${flags.join(', ').toLowerCase()}` : 'Nothing to flag'}</Primary>
+          <textarea className="lc-note" placeholder="A note on tonight, for you and the coach…" />
+        </>
+      )}
+
+      {step === 1 && (
+        <>
+          <div className="lc-kicker gold" style={{ marginTop: 18 }}>
+            2 records tonight
+          </div>
+          <div className="lc-recs">
+            <div className="lc-rec">
+              <div className="lc-small">Romanian deadlift · 10 kg</div>
+              <div className="lc-bloom num tn" style={{ fontSize: 72 }}>
+                19 <span className="unit">reps</span>
+              </div>
+              <div className="lc-small">Up from 18 on 18 Oct · next: 20 at 10 kg, or 12.5 kg once the iron plates come</div>
+              <div className="lc-small">
+                Set to <b>{SONG}</b>
+              </div>
+            </div>
+            <div className="lc-rec">
+              <div className="lc-small">Lean-away lateral · left · 5 kg</div>
+              <div className="lc-bloom num tn" style={{ fontSize: 72 }}>
+                17 <span className="unit">reps</span>
+              </div>
+              <div className="lc-small">Up from 16 on 13 Oct · the left side now leads the right by one</div>
+              <div className="lc-small">
+                Set to <b>Breathe · Télépopmusik</b>
+              </div>
+            </div>
           </div>
         </>
       )}
-      {step === 1 && (
+
+      {step === 2 && (
         <>
           <div className="lc-kicker" style={{ marginTop: 18 }}>
-            Session C · 88 min
+            The soundtrack
+          </div>
+          <h1 className="lc-h1">14 tracks</h1>
+          <div className="lc-card">
+            {['Midnight City · M83', 'Breathe · Télépopmusik', 'Intro · The xx', 'Kids · MGMT', 'Teardrop · Massive Attack'].map((s, i) => (
+              <div key={s} className="lc-row">
+                <span className="num tn q">{i + 1}</span>
+                <span className="grow">{s}</span>
+                {i < 2 && <span className="lc-tag gold">record</span>}
+              </div>
+            ))}
+          </div>
+          <p className="lc-small">Most played: M83, three times. Your records this month came during M83 twice.</p>
+        </>
+      )}
+
+      {step === 3 && (
+        <>
+          <div className="lc-kicker" style={{ marginTop: 18 }}>
+            Where the hour went
+          </div>
+          <h1 className="lc-h1">88 min</h1>
+          <div className="lc-hourbar" aria-hidden="true">
+            <i className="lift" style={{ width: '38%' }} />
+            <i className="rest" style={{ width: '40%' }} />
+            <i className="between" style={{ width: '22%' }} />
+          </div>
+          <div className="lc-hour-rows">
+            <div>
+              <span className="dot lift" />
+              Lifting<b className="num tn">33 min</b>
+            </div>
+            <div>
+              <span className="dot rest" />
+              Resting<b className="num tn">35 min</b>
+            </div>
+            <div>
+              <span className="dot between" />
+              Between rest and lifting<b className="num tn">20 min</b>
+            </div>
+          </div>
+          <p className="lc-small">Longest rest 6:40, after the plate change. Your usual Session C is 92 min, so tonight was 4 min quicker.</p>
+        </>
+      )}
+
+      {step === 4 && (
+        <>
+          <div className="lc-kicker" style={{ marginTop: 18 }}>
+            Form
+          </div>
+          <h1 className="lc-h1">78% went well</h1>
+          <div className="lc-card">
+            <div className="lc-row">
+              <span className="grow">Back stayed flat</span>
+              <span className="lc-tag ok">every set</span>
+            </div>
+            <div className="lc-row">
+              <span className="grow">No shrug</span>
+              <span className="lc-tag ok">5 of 6</span>
+            </div>
+            <div className="lc-row">
+              <span className="grow">Head in line</span>
+              <span className="lc-tag slip">slipped 2 of 3</span>
+            </div>
+          </div>
+          <p className="lc-small">Most common slip: head dropping on RDLs. Tomorrow's form focus is aimed at it. Left and right were within one rep on every per-side set.</p>
+        </>
+      )}
+
+      {step === 5 && (
+        <>
+          <div className="lc-kicker" style={{ marginTop: 18 }}>
+            Session C · quality 89
           </div>
           <div className="lc-recap-rings">
             <svg viewBox="0 0 300 300" width="280" height="280" aria-hidden="true">
-              <Arc r={132} frac={1} cls="session" w={12} />
-              <Arc r={108} frac={0.92} cls="sets" w={12} />
-              <Arc r={84} frac={0.78} cls="checks" w={12} />
+              <Arc r={132} frac={1} cls="r1" w={12} />
+              <Arc r={108} frac={0.92} cls="r2" w={12} delay={0.25} />
+              <Arc r={84} frac={0.78} cls="r3" w={12} delay={0.5} />
             </svg>
             <div className="lc-recap-in">
-              <b className="num tn">26</b>
-              <span className="lc-small">sets</span>
+              <b className="num tn">89</b>
+              <span className="lc-small">quality</span>
             </div>
           </div>
           <div className="lc-legend">
@@ -780,12 +1117,11 @@ function Finale() {
             <span className="t">24 of 26 sets in range</span>
             <span className="c">78% of form checks went well</span>
           </div>
-          <div style={{ marginTop: 'auto' }}>
-            <Primary onClick={() => setStep(2)}>And the best part</Primary>
-          </div>
+          <p className="lc-small">A properly good session. Quality counts form, effort against the 1–2 reps-left target, and sets completed.</p>
         </>
       )}
-      {step === 2 && (
+
+      {step === 6 && (
         <div className="lc-record" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <Dust n={14} />
           <div className="lc-record-in">
@@ -799,11 +1135,20 @@ function Finale() {
               Also new: your first left-side lean-away past 16.
             </div>
           </div>
+        </div>
+      )}
+
+      <div style={{ marginTop: 'auto' }}>
+        {step < FINALE_STEPS.length - 1 ? (
+          <Primary tone={step === 0 ? undefined : step === 1 ? 'gold' : undefined} onClick={next}>
+            {step === 0 ? (flags.length ? `Flag ${flags.join(', ').toLowerCase()}` : 'Nothing to flag') : step === 5 ? 'And the best part' : 'Next'}
+          </Primary>
+        ) : (
           <Primary tone="gold" onClick={() => back('/train')}>
             Done
           </Primary>
-        </div>
-      )}
+        )}
+      </div>
     </section>
   );
 }
