@@ -26,6 +26,7 @@ export interface ExportData {
   trackValues?: TrackValue[];
 }
 
+const measuredSteps = (day: Day | undefined) => (day?.stepsEstimated ? undefined : day?.steps);
 const r1 = (n: number | undefined | null) => (n === undefined || n === null ? null : Math.round(n * 10) / 10);
 const r2 = (n: number | undefined | null) => (n === undefined || n === null ? null : Math.round(n * 100) / 100);
 
@@ -81,6 +82,7 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
       'energy_1_5',
       'stomach_ok',
       'sore_areas',
+      'steps_estimated',
     ],
   ];
   for (const date of dates) {
@@ -124,6 +126,7 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
       day?.energy ?? null,
       day?.stomach ?? null,
       day?.soreness ? Object.keys(day.soreness).join('; ') || null : null,
+      day?.steps !== undefined ? !!day.stepsEstimated : null,
     ]);
   }
 
@@ -209,7 +212,7 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
         w,
         r2(avg(ds.map((x) => byDay.get(x)?.weightKg))),
         r2(lastTrend),
-        avg(ds.map((x) => byDay.get(x)?.steps)) !== null ? Math.round(avg(ds.map((x) => byDay.get(x)?.steps))!) : null,
+        avg(ds.map((x) => measuredSteps(byDay.get(x)))) !== null ? Math.round(avg(ds.map((x) => measuredSteps(byDay.get(x))))!) : null,
         food.kcal !== null ? Math.round(food.kcal) : null,
         r1(food.protein),
         r2(avg(rows.map((row) => row[8] as number | null))),
@@ -284,7 +287,8 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
   const weeks = t ? trainingWeeksOf(s, done.map((x) => x.date), t.sessionsPerWeek, today) : undefined;
   const last7 = daily.slice(1).filter((row) => (row[0] as string) > addDays(today, -7));
   const avg7 = (i: number) => {
-    const v = last7.map((row) => row[i]).filter((x): x is number => typeof x === 'number');
+    // Steps typed as estimates stay out of the step average.
+    const v = last7.filter((row) => i !== 3 || row[row.length - 1] !== true).map((row) => row[i]).filter((x): x is number => typeof x === 'number');
     return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
   };
   const km = kmFromSteps([...stepsMap.values()].reduce((a, b) => a + b, 0));
@@ -316,7 +320,7 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
     ['Everything logged in the Health app, one sheet per log. Dates are YYYY-MM-DD in phone time. Weights in kg, waist and shoulders in inches.'],
     [''],
     ['Summary: the headline numbers at export time.'],
-    ['Daily: one row per day. Rings close when kcal lands between kcal_min and kcal_max, protein reaches its target, and steps reach theirs. trend_kg smooths daily weigh-ins.'],
+    ['Daily: one row per day. steps_estimated marks steps typed as a guess; step averages leave them out. Rings close when kcal lands between kcal_min and kcal_max, protein reaches its target, and steps reach theirs. trend_kg smooths daily weigh-ins.'],
     ['Food log: every entry. kind is food, quick (a typed estimate), free (the weekly free meal) or drink.'],
     ['My foods: saved foods. kcal and protein are for values_per of the measured_in unit.'],
     ['Sets: one row per set, in the training plan’s own schema (date, session, exercise, set, side, load_kg, reps, seconds, notes). load_kg is per dumbbell. mark: !! record, ! beat last time, = matched.'],

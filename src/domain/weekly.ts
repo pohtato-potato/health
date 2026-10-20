@@ -43,6 +43,7 @@ export function weekStats(settings: Settings, from: DayKey, days: Day[], entries
   const ids = new Set(done.map((s) => s.id));
   const mine = sets.filter((x) => ids.has(x.sessionId));
   let steps = 0;
+  let measuredSteps = 0;
   let stepDays = 0;
   let inRange = 0;
   let perfect = 0;
@@ -57,7 +58,11 @@ export function weekStats(settings: Settings, from: DayKey, days: Day[], entries
     const t = targetsAt(settings, d);
     if (day?.steps !== undefined) {
       steps += day.steps;
-      stepDays++;
+      // Estimates count toward the week's total but not its average.
+      if (!day.stepsEstimated) {
+        measuredSteps += day.steps;
+        stepDays++;
+      }
     }
     if (t) {
       const r = ringsFor(totalsFor(day, es), t);
@@ -84,7 +89,7 @@ export function weekStats(settings: Settings, from: DayKey, days: Day[], entries
     to,
     days: range.filter((d) => byDate.has(d) || entries.some((e) => e.date === d)).length,
     steps,
-    stepsAvg: stepDays ? Math.round(steps / stepDays) : 0,
+    stepsAvg: stepDays ? Math.round(measuredSteps / stepDays) : 0,
     sleepAvg: sleeps.length ? sleeps.reduce((a, b) => a + b, 0) / sleeps.length : undefined,
     kcalAvg: kcalAvg === undefined ? undefined : Math.round(kcalAvg),
     foodBasis: food.basis,

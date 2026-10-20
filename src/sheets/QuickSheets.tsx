@@ -1,3 +1,4 @@
+import { usualWater } from '../domain/water';
 import { useEffect, useState } from 'react';
 import { addDays, atOn, dayKey, weekStart } from '../domain/dates';
 import { fmtDayMonth, fmtInt, fmtLitres, fmtTime, weekdayName } from '../domain/format';
@@ -28,6 +29,7 @@ export function WaterSheet() {
   if (!settings || !days) return <Sheet title="Water">{null}</Sheet>;
   const ml = days.find((d) => d.date === today)?.waterMl ?? 0;
   const target = targetsFor(settings, today).waterMl;
+  const usual = usualWater(days, today) ?? target;
   return (
     <Sheet title="Water" sub={`Aim: ${fmtLitres(target)} L a day`}>
       <div className="col gap8" style={{ alignItems: 'center', padding: '8px 0' }}>
@@ -42,6 +44,11 @@ export function WaterSheet() {
           <i style={{ width: `${Math.min(ml / target, 1) * 100}%`, background: 'var(--blue)' }} />
         </div>
       </div>
+      {ml < usual && (
+        <button type="button" className="btn lg block" onClick={() => addWater(today, usual - ml)}>
+          A usual day · {fmtLitres(usual)} L
+        </button>
+      )}
       <div className="grid3">
         <button type="button" className="btn ghost" onClick={() => addWater(today, -250)} disabled={ml <= 0}>
           −250 ml
@@ -93,10 +100,14 @@ export function StepsSheet() {
 function StepsForm({ date, today, initial, at, target, loop, outdoors: wasOutdoors, onDate }: { date: string; today: string; initial?: number; at?: number; target: number; loop?: number; outdoors: boolean; onDate: (d: string) => void }) {
   const toast = useToast();
   const [steps, setStepsV] = useState<number | undefined>(initial);
+  const [estimate, setEstimate] = useState<boolean | undefined>(undefined);
+  // A number exactly at the target, or a round thousand, is usually typed from memory.
+  const looksTyped = steps !== undefined && steps > 0 && (steps === target || steps % 1000 === 0);
+  const estimated = estimate ?? looksTyped;
   const [outdoors, setOutdoors] = useState(wasOutdoors);
   const save = async () => {
     if (steps === undefined) return;
-    const editId = await setSteps(date, steps, date < today);
+    const editId = await setSteps(date, steps, date < today, estimated);
     if (outdoors !== wasOutdoors) await patchDay(date, { outdoors });
     closeSheet();
     const left = target - steps;
@@ -114,6 +125,13 @@ function StepsForm({ date, today, initial, at, target, loop, outdoors: wasOutdoo
           {steps !== undefined && loop ? `That's about ${fmtInt(Math.round(steps / loop))} laps of your loop. ` : ''}
           Aim: {fmtInt(target)}.
         </span>
+      </label>
+      <label className="row" style={{ minHeight: 48 }}>
+        <span className="col gap2">
+          <span className="t15">An estimate</span>
+          <span className="t12 q">Not read off the phone. Averages leave estimates out.</span>
+        </span>
+        <input type="checkbox" className="sw" checked={estimated} onChange={(e) => setEstimate(e.target.checked)} />
       </label>
       <label className="row" style={{ minHeight: 48 }}>
         <span className="t15">Some of it outdoors</span>

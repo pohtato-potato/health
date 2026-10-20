@@ -1,0 +1,59 @@
+/*
+ * Low vision (PRODUCT.md): the owner has about 40% vision loss and poor depth perception.
+ * Larger text raises the floor of the small type and makes set inputs easy to hit; high
+ * contrast brings quiet and dim text up close to full brightness.
+ */
+:root.large-text body {
+  font-size: 16px;
+}
+:root.large-text .t11,
+:root.large-text .lbl.sm {
+  font-size: 13px;
+}
+:root.large-text .t12,
+:root.large-text .lbl {
+  font-size: 14px;
+}
+:root.large-text .t13 {
+  font-size: 15px;
+}
+:root.large-text .t14,
+:root.large-text .t15 {
+  font-size: 16px;
+}
+:root.large-text .t16,
+:root.large-text .t17 {
+  font-size: 18px;
+}
+:root.large-text .setrow {
+  grid-template-columns: 34px minmax(0, 1fr) 64px 64px 26px 48px;
+  min-height: 64px;
+}
+:root.large-text .setrow.head {
+  font-size: 12px;
+}
+:root.large-text .field.sm {
+  height: 52px;
+  font-size: 18px;
+}
+:root.large-text .okdot {
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  border-width: 2px;
+}
+:root.large-text .chip.sm {
+  min-height: 44px;
+}
+
+:root.contrast,
+:root.contrast.night {
+  --text: #ffffff;
+  --quiet: #e2e0e6;
+  --dim: #cfcdd4;
+  --faint: #a9adb8;
+  --voice: #ece9f5;
+  --hairline: #4a5160;
+  --divider: #3a404c;
+  --btn-border: #6b7385;
+}

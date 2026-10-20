@@ -96,7 +96,7 @@ export function SettingsScreen() {
     export: `Audit pack · review day ${settings.reviewDay !== undefined ? ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][settings.reviewDay] : 'not set'}`,
     lastfm: settings.lastfm?.key ? `connected · ${settings.lastfm.users.length} user${settings.lastfm.users.length === 1 ? '' : 's'}` : 'not connected',
     storage: pwa.persisted ? 'protected' : 'not protected yet',
-    feel: `battery saver ${p.batterySaver ? 'on' : 'automatic below 30%'}`,
+    feel: `${prefOn(p, 'largeText') ? 'larger text' : 'standard text'}${prefOn(p, 'highContrast') ? ' · high contrast' : ''} · battery saver ${p.batterySaver ? 'on' : 'automatic below 30%'}`,
     home: `ticker ${prefOn(p, 'ticker') ? 'on' : 'off'}`,
     privacy: `photos ${prefOn(p, 'blurPhotos') ? 'blurred' : 'shown'}${prefOn(p, 'lockPhotos') && settings.photoKey ? ' · locked' : ''}`,
   };
@@ -466,6 +466,9 @@ export function SettingsScreen() {
       <h2 className="settings-part">The feel</h2>
 
       <Group id="feel" title="Battery saver and feel">
+        <SwitchRow title="Larger text" sub="Small labels and set inputs get bigger" checked={prefOn(p, 'largeText')} onChange={(v) => setPref('largeText', v)} />
+        <SwitchRow title="High contrast" sub="Quiet text and borders close to full brightness" checked={prefOn(p, 'highContrast')} onChange={(v) => setPref('highContrast', v)} />
+        <SwitchRow title="Big dials for every set" sub="Reps on a dial and loads as chips, no small fields to aim at" checked={prefOn(p, 'bigSetControls')} onChange={(v) => setPref('bigSetControls', v)} />
         <LinkRow title="Voice" value={settings.voice === 'comm' ? 'Commentator' : settings.voice.charAt(0).toUpperCase() + settings.voice.slice(1)} onClick={() => back('/you')} />
         <SwitchRow title="News ticker on Today" checked={prefOn(p, 'ticker')} onChange={(v) => setPref('ticker', v)} />
         <SwitchRow title="Shake for a stat" sub="Shake the phone anywhere in the app" checked={prefOn(p, 'shake')} onChange={(v) => setPref('shake', v)} />

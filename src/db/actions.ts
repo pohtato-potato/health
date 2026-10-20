@@ -99,9 +99,9 @@ export async function bump(id: string, opts: { day?: DayKey; value?: string; by?
   });
 }
 
-export async function setSteps(date: DayKey, steps: number, final = false): Promise<number> {
+export async function setSteps(date: DayKey, steps: number, final = false, estimated = false): Promise<number> {
   void logUsage('log', 'steps');
-  const id = await editDay(date, { steps: Math.max(0, Math.round(steps)), stepsAt: Date.now(), ...(final ? { stepsFinal: true } : {}) });
+  const id = await editDay(date, { steps: Math.max(0, Math.round(steps)), stepsAt: Date.now(), stepsEstimated: estimated || undefined, ...(final ? { stepsFinal: true } : {}) });
   if (date === dayKey() && logMinutes(Date.now()) < 720 && steps > 9000) await bump('steps-9000-by-noon', { day: date });
   return id;
 }
