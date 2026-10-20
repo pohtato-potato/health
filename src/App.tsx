@@ -1,4 +1,4 @@
-import { SessionProto } from './screens/proto/SessionProto';
+import { SessionProto } from './screens/proto/SessionLiving';
 import { prefOn } from './domain/types';
 import { Suspense, lazy, useEffect, type ComponentType, type ReactNode } from 'react';
 import { findSession } from './domain/plan';
