@@ -87,7 +87,8 @@ describe('diff, apply and undo (#4)', () => {
 // The acceptance checklist, run against the real Plan v1 when it sits in tests/fixtures (git-ignored).
 const PLAN_FILE = new URL('./fixtures/health-plan-2026-10-20.json', import.meta.url);
 describe.runIf(existsSync(PLAN_FILE))('Plan v1 import (acceptance)', () => {
-  const v1 = upgradePlan(JSON.parse(readFileSync(PLAN_FILE, 'utf8')) as PlanDef);
+  // A skipped describe still runs its body, so read the file only when it is there (CI has no copy).
+  const v1 = (existsSync(PLAN_FILE) ? upgradePlan(JSON.parse(readFileSync(PLAN_FILE, 'utf8')) as PlanDef) : undefined) as PlanDef;
   // The A/B plan in use until 19 Oct, as the export's Plan and Sets sheets show it.
   const oldExs: [string, string, ExerciseDef['load'], number?][] = [
     ['row', 'One-arm dumbbell row', 'single', 10], ['rdl', 'Romanian deadlift', 'pair', 10], ['curl', 'Curl', 'pair', 5], ['wrist-curl', 'Wrist curl', 'pair', 5],
