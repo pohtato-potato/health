@@ -139,7 +139,7 @@ export function MoreSheet() {
   const d: Record<string, string> = date === today ? {} : { d: date };
   const drinks = entries.filter((e) => e.kind === 'drink').reduce((n, e) => n + (e.drink?.count ?? 1), 0);
   const freeUsed = freeMealsThisWeek(weekEntries, today);
-  const lastWaist = [...measurements].reverse().find((m) => m.waistStanding !== undefined);
+  const lastWaist = [...measurements].reverse().find((m) => m.waistRelaxed !== undefined || m.waistStanding !== undefined);
   const due = nextCheckInDate(checkins);
   const tile = (icon: IconName, color: string, title: string, sub: string, onClick: () => void) => (
     <button type="button" className="log-tile" onClick={onClick} style={{ ['--tint' as string]: color }}>
@@ -156,7 +156,7 @@ export function MoreSheet() {
         {tile('drink', 'var(--gold)', 'Drinks', drinks ? `${drinks} today` : 'None today', () => replaceSheet('drink', d))}
         {tile('night', 'var(--gold)', 'Night out', 'Meal and drinks', () => replaceSheet('nightout', d))}
         {tile('free', 'var(--kcal)', 'Free meal', freeUsed ? 'Used this week' : '1 left this week', () => replaceSheet('free', d))}
-        {tile('tape', 'var(--pearl)', 'Waist', lastWaist?.waistStanding !== undefined ? `${lastWaist.waistStanding} in last` : 'Standing', () => replaceSheet('waist', d))}
+        {tile('tape', 'var(--pearl)', 'Waist', lastWaist ? `${lastWaist.waistRelaxed ?? lastWaist.waistStanding} in ${lastWaist.waistRelaxed !== undefined ? 'relaxed' : 'tucked'}` : 'Relaxed', () => replaceSheet('waist', d))}
         {tile('camera', 'var(--pearl)', 'Check-in', due ? (due <= today ? 'Due now' : `due ${fmtDayMonth(due)}`) : 'Photos and tape', () => go('/checkin'))}
       </div>
       <div className="lbl">Status</div>

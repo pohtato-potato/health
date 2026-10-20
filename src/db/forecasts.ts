@@ -1,7 +1,7 @@
 import { daysBetween, dayKey, type DayKey } from '../domain/dates';
 import { dayNumber, resolveAll } from '../domain/forecastStore';
 import { arrivals } from '../domain/walk';
-import { whtr } from '../domain/benchmark';
+import { whtr, whtrWaists } from '../domain/benchmark';
 import { db } from './db';
 import { getSettings } from './actions';
 
@@ -16,8 +16,8 @@ export async function resolveForecasts(today: DayKey = dayKey()) {
   const steps = new Map(days.filter((d) => d.steps !== undefined).map((d) => [d.date, d.steps!]));
   const arrived = new Map(arrivals(steps).map((a) => [a.name, a.date]));
   const nearest = (date: DayKey) =>
-    measurements
-      .filter((m) => m.waistStanding !== undefined && Math.abs(daysBetween(m.date, date)) <= 3)
+    whtrWaists(measurements)
+      .filter((m) => Math.abs(daysBetween(m.date, date)) <= 3)
       .sort((a, b) => Math.abs(daysBetween(a.date, date)) - Math.abs(daysBetween(b.date, date)))[0];
   const actual = (kind: string, date: DayKey) => {
     if (kind.startsWith('walk:')) {
@@ -27,7 +27,7 @@ export async function resolveForecasts(today: DayKey = dayKey()) {
     }
     if (kind === 'whtr' && settings.heightCm) {
       const m = nearest(date);
-      return m ? whtr(m.waistStanding!, settings.heightCm) : undefined;
+      return m ? whtr(m.waist, settings.heightCm) : undefined;
     }
     return undefined;
   };

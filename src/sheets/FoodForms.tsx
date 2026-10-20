@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { barcodeSupported, lookupBarcode, scanBarcode, type ScannedFood } from '../sources/barcode';
 import { fmtInt } from '../domain/format';
 import { mealForTime, portionFor, stepFor, unitLabel, valuesFor } from '../domain/foods';
-import { impossibleDensity, portionWarning, similarFood } from '../domain/foodChecks';
+import { impossibleDensity, isWeighedMeat, lightDishWarning, portionWarning, QUICK_PROTEIN_KCAL, similarFood } from '../domain/foodChecks';
 import { MEAL_NAMES, MEALS, type Food, type FoodEntry, type FoodUnit, type Meal, type Settings } from '../domain/types';
-import { addEntry, archiveFood, deleteEntry, patchSettings, saveFood, updateEntry } from '../db/actions';
+import { addEntry, archiveFood, deleteEntry, mergeFoods, patchSettings, saveFood, updateEntry } from '../db/actions';
+import { askConfirm } from '../ui/Confirm';
+import { okToAdd } from '../ui/doubleTap';
 import { uid } from '../db/db';
 import { db } from '../db/db';
 import { useFoods, useSettings } from '../db/hooks';
@@ -43,6 +45,7 @@ function FoodFormInner({ existing, initialName, homes, meal, categories }: { exi
   const [sized, setSized] = useState(!!existing?.sizes);
   const [cats, setCats] = useState<Set<string>>(() => new Set(categories.filter((c) => existing && c.foodIds.includes(existing.id)).map((c) => c.id)));
   const [newCat, setNewCat] = useState('');
+  const [weighed, setWeighed] = useState<'raw' | 'cooked' | undefined>(existing?.weighed);
 
   const per = unit === 'g' || unit === 'ml' ? 100 : 1;
   const perLabel = unit === 'g' ? 'per 100 g' : unit === 'ml' ? 'per 100 ml' : unit === 'piece' ? `per ${unitName || 'piece'}` : 'per serving';
@@ -50,8 +53,10 @@ function FoodFormInner({ existing, initialName, homes, meal, categories }: { exi
   const draft = { name: name.trim(), unit, per, kcal: kcal ?? 0, protein: protein ?? 0, defaultAmount: usual ?? 0 };
   const impossible = kcal !== undefined && impossibleDensity(draft);
   const large = kcal !== undefined && (usual ?? 0) > 0 ? portionWarning(draft) : null;
-  const twin = !existing && name.trim() ? similarFood(name, allFoods ?? []) : null;
-  const ok = name.trim() && kcal !== undefined && kcal >= 0 && (protein ?? 0) >= 0 && (usual ?? 0) > 0 && !impossible;
+  const twin = name.trim() ? similarFood(name, (allFoods ?? []).filter((f) => f.id !== existing?.id)) : null;
+  const light = kcal !== undefined && lightDishWarning(draft);
+  const meat = isWeighedMeat(draft);
+  const ok = name.trim() && kcal !== undefined && kcal >= 0 && (protein ?? 0) >= 0 && (usual ?? 0) > 0 && !impossible && (!meat || !!weighed);
 
   /** Turns a large gram or piece portion into one serving of the same calories. */
   const makeOneServing = () => {
@@ -80,6 +85,7 @@ function FoodFormInner({ existing, initialName, homes, meal, categories }: { exi
       home,
       presets: unit === 'g' || unit === 'ml' ? Array.from(new Set([100, usual!, usual! * 2])).sort((a, b) => a - b).slice(0, 3) : existing?.presets,
       sizes: sized ? existing?.sizes ?? DEFAULT_SIZES : undefined,
+      weighed: meat ? weighed : undefined,
     });
     const fresh = newCat.trim();
     await patchSettings((st) => {
@@ -92,6 +98,15 @@ function FoodFormInner({ existing, initialName, homes, meal, categories }: { exi
     toast({ text: existing ? `${food.name} updated` : `${food.name} saved to your foods` });
     if (existing) closeSheet();
     else replaceSheet('addfood', { food: food.id, ...(meal ? { meal } : {}) });
+  };
+
+  const merge = async (into: Food) => {
+    if (!existing) return;
+    const ok = await askConfirm({ title: `Merge ${existing.name} into ${into.name}?`, body: `Past entries move to ${into.name} and keep the numbers they were logged with. ${existing.name} leaves your foods.`, yes: 'Merge' });
+    if (!ok) return;
+    const n = await mergeFoods(existing.id, into.id);
+    toast({ text: `Merged into ${into.name}`, sub: `${n} past entr${n === 1 ? 'y' : 'ies'} moved` });
+    closeSheet();
   };
 
   const remove = async () => {
@@ -188,6 +203,18 @@ function FoodFormInner({ existing, initialName, homes, meal, categories }: { exi
           That's more than pure fat (900 kcal per 100 {unit}). Check the number.
         </div>
       )}
+      {meat && (
+        <div className="flabel">
+          <span className="lbl">The numbers are for meat weighed</span>
+          <Seg options={[{ id: 'raw', label: 'Raw' }, { id: 'cooked', label: 'Cooked' }]} value={weighed ?? ('' as 'raw')} onChange={setWeighed} />
+          <span className="t13 q lh">Raw meat weighs about a third more than cooked. Logging asks which you weighed, and converts.</span>
+        </div>
+      )}
+      {light && !impossible && (
+        <div className="notice warn t14 lh" role="alert">
+          {fmtInt(((kcal ?? 0) / per) * 100)} kcal per 100 {unit} is a lot for {name.trim().toLowerCase()}: most are under 250. Check it's per 100 {unit}, not per bowl.
+        </div>
+      )}
       {large && !impossible && (
         <div className="notice t14 lh" role="status">
           {name.trim() || 'This'} at {portionFor({ id: '', createdAt: 0, ...draft, unitName: unitName || 'piece' } as Food, usual!)} is {fmtInt(large.kcal)} kcal. Is that right?
@@ -201,9 +228,15 @@ function FoodFormInner({ existing, initialName, homes, meal, categories }: { exi
       {twin && (
         <div className="notice t14 lh" role="status">
           You already have {twin.name} ({fmtInt(twin.kcal)} kcal {twin.unit === 'g' || twin.unit === 'ml' ? `per 100 ${twin.unit}` : `per ${twin.unitName ?? twin.unit}`}).
-          <button type="button" className="chip sm" style={{ marginTop: 8 }} onClick={() => replaceSheet('addfood', { food: twin.id, ...(meal ? { meal } : {}) })}>
-            Use that one
-          </button>
+          {existing ? (
+            <button type="button" className="chip sm" style={{ marginTop: 8 }} onClick={() => void merge(twin)}>
+              Merge into {twin.name}
+            </button>
+          ) : (
+            <button type="button" className="chip sm" style={{ marginTop: 8 }} onClick={() => replaceSheet('addfood', { food: twin.id, ...(meal ? { meal } : {}) })}>
+              Use that one
+            </button>
+          )}
         </div>
       )}
 
@@ -261,8 +294,10 @@ export function QuickKcal() {
   const [protein, setProtein] = useState<number | 'unknown' | undefined>();
   const ready = kcal !== undefined && name.trim() !== '' && protein !== undefined;
 
+  const bigNoProtein = protein === 0 && (kcal ?? 0) > QUICK_PROTEIN_KCAL;
   const add = async () => {
     if (!ready) return;
+    if (!(await okToAdd({ date, name: name.trim() }))) return;
     const unknown = protein === 'unknown';
     const e = await addEntry({ date, meal, at: Date.now(), kind: 'quick', name: name.trim(), portion: 'Estimate', kcal: Math.round(kcal!), protein: unknown ? 0 : protein, ...(unknown ? { proteinUnknown: true } : {}) });
     toast({ text: `${e.name} · ${fmtInt(e.kcal)} kcal`, action: { label: 'Undo', run: () => deleteEntry(e.id) } });
@@ -290,6 +325,14 @@ export function QuickKcal() {
             </button>
           ))}
         </div>
+        {bigNoProtein && (
+          <div className="notice t14 lh" role="status">
+            0 g for {fmtInt(kcal!)} kcal? Most meals that size have some. “Not sure” keeps the protein count honest instead of counting zero.
+            <button type="button" className="chip sm" style={{ marginTop: 8 }} onClick={() => setProtein('unknown')}>
+              Make it Not sure
+            </button>
+          </div>
+        )}
       </div>
       <button type="button" className="btn lg block" disabled={!ready} onClick={add}>
         Add to {MEAL_NAMES[meal].toLowerCase()}

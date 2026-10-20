@@ -12,6 +12,7 @@ import { entryTime } from '../domain/foods';
 import { dayFoodLabel, foodDaysFor, type FoodBasis } from '../domain/logged';
 import { placeFor } from '../domain/places';
 import { checklistSlots } from '../state/derived';
+import { whtrWaists } from '../domain/benchmark';
 
 export interface ExportData {
   settings: Settings;
@@ -40,7 +41,9 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
   const allDates = [...new Set([...d.days.map((x) => x.date), ...d.entries.map((e) => e.date), ...done.map((x) => x.date)])].sort();
   const first = allDates[0];
   const dates = first ? dayRange(first, today > allDates[allDates.length - 1] ? today : allDates[allDates.length - 1]) : [];
-  const slots = s.checklist.filter((i) => i.active).flatMap((i) => (i.slots.length ? i.slots : ['Daily']).map((_, n) => `${i.id}:${n}`));
+  // Columns for every slot an item has ever had; each day counts only the slots scheduled on it, so a finished course drops out.
+  const slots = [...new Set(s.checklist.filter((i) => i.active).flatMap((i) => [i.slots, ...(i.med?.courses ?? []).map((c) => c.slots)].flatMap((sl) => (sl.length ? sl : ['Daily']).map((_, n) => `${i.id}:${n}`))))];
+  const slotsOn = (date: DayKey) => checklistSlots(s, date).map((x) => x.key);
   const plan = s.plan;
 
   // Daily
@@ -86,7 +89,8 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
     const totals = totalsFor(day, es);
     const rings = t ? ringsFor(totals, t) : undefined;
     const sleepMin = day?.sleep ? sleepMinutes(day.sleep.asleep, day.sleep.woke) : undefined;
-    const ticks = slots.filter((k) => day?.ticks?.[k]).length;
+    const due = slotsOn(date);
+    const ticks = due.filter((k) => day?.ticks?.[k]).length;
     daily.push([
       date,
       r1(day?.weightKg),
@@ -109,8 +113,8 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
       totals.freeMeal || null,
       es.filter((e) => e.kind === 'drink').reduce((n, e) => n + (e.drink?.count ?? 1), 0) || null,
       done.some((x) => x.date === date) || null,
-      slots.length ? ticks : null,
-      slots.length || null,
+      due.length ? ticks : null,
+      due.length || null,
       s.homes.find((h) => h.id === day?.home)?.name ?? null,
       day?.morning?.seconds ?? null,
       dayFoodLabel(day, es.length).replace('-', ' '),
@@ -216,7 +220,8 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
 
   // Measurements
   const heightIn = s.heightCm ? s.heightCm / 2.54 : undefined;
-  const measures: Cell[][] = [['date', 'waist_standing_in', 'waist_slouched_in', 'shoulders_in', 'shoulder_to_waist', 'waist_to_height', 'note']];
+  const measures: Cell[][] = [['date', 'waist_standing_in', 'waist_slouched_in', 'shoulders_in', 'shoulder_to_waist', 'waist_to_height', 'note', 'waist_relaxed_in', 'waist_to_height_basis']];
+  const whtrRows = new Map(whtrWaists(d.measurements).map((w) => [`${w.date}|${w.at}`, w]));
   let lastShoulders: number | undefined;
   for (const m of [...d.measurements].sort((a, b) => a.date.localeCompare(b.date) || a.at - b.at)) {
     if (m.shoulders !== undefined) lastShoulders = m.shoulders;
@@ -226,8 +231,10 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
       m.waistSlouched ?? null,
       m.shoulders ?? null,
       lastShoulders && m.waistStanding ? r2(lastShoulders / m.waistStanding) : null,
-      heightIn && m.waistStanding ? Math.round((m.waistStanding / heightIn) * 1000) / 1000 : null,
+      heightIn && whtrRows.get(`${m.date}|${m.at}`) ? Math.round((whtrRows.get(`${m.date}|${m.at}`)!.waist / heightIn) * 1000) / 1000 : null,
       m.note ?? null,
+      m.waistRelaxed ?? null,
+      whtrRows.get(`${m.date}|${m.at}`) ? (whtrRows.get(`${m.date}|${m.at}`)!.relaxed ? 'relaxed' : 'tucked') : null,
     ]);
   }
 
@@ -281,6 +288,7 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
   const pos = positionAt(km);
   const latestTrend = weightTrend(weighIns).pop();
   const lastWaist = [...d.measurements].sort((a, b) => b.date.localeCompare(a.date) || b.at - a.at).find((m) => m.waistStanding !== undefined);
+  const lastRelaxed = [...d.measurements].sort((a, b) => b.date.localeCompare(a.date) || b.at - a.at).find((m) => m.waistRelaxed !== undefined);
   const food7 = foodAvg(dates.filter((x) => x > addDays(today, -7)));
   const summary: Cell[][] = [
     ['measure', 'value', 'note'],
@@ -288,6 +296,7 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
     ['first day logged', first ?? null, null],
     ['weight trend, kg', r2(latestTrend?.trend), latestTrend ? `Smoothed; last weigh-in ${latestTrend.kg} kg on ${latestTrend.date}` : null],
     ['waist standing, in', lastWaist?.waistStanding ?? null, lastWaist?.date ?? null],
+    ['waist relaxed, in', lastRelaxed?.waistRelaxed ?? null, lastRelaxed?.date ?? null],
     ['steps, 7-day average', avg7(3) !== null ? Math.round(avg7(3)!) : null, t ? `Target ${t.steps}` : null],
     ['kcal, 7-day average', food7.kcal !== null ? Math.round(food7.kcal) : null, [t ? `Target ${t.kcalMin}–${t.kcalMax}` : null, basisText(food7.n, food7.basis)].filter(Boolean).join('; ') || null],
     ['protein g, 7-day average', r1(food7.protein), [t ? `Target ${t.proteinG}` : null, basisText(food7.n, food7.basis)].filter(Boolean).join('; ') || null],
@@ -310,7 +319,7 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
     ['Sets: one row per set, in the training plan’s own schema (date, session, exercise, set, side, load_kg, reps, seconds, notes). load_kg is per dumbbell. mark: !! record, ! beat last time, = matched.'],
     ['Sessions: one row per session, with joint flags and any swaps.'],
     ['Weekly: Monday-to-Sunday averages. Food averages count complete days when any are marked, else days with entries; food_basis says which and how many.'],
-    ['Measurements: waist standing and slouched, shoulders, and the shoulder-to-waist ratio (it should rise).'],
+    ['Measurements: waist standing (stomach tucked), relaxed and slouched, shoulders, and the shoulder-to-waist ratio (it should rise). Waist-to-height uses the relaxed waist once there is one; waist_to_height_basis says which.'],
     ['Records: the best set per exercise id (the highest estimated one-rep max for loaded reps), the best at each load, and any older names. Skipped and placeholder sets are left out.'],
     ['Targets history: the targets in force from each date.'],
     ['Plan: the training plan as it stands.'],
@@ -334,15 +343,24 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
           {
             name: 'Checklist',
             rows: [
-              ['date', ...checklistSlots(s).map((x) => `${x.name} (${x.slot})`)],
+              [
+                'date',
+                ...slots.map((k) => {
+                  const [id, n] = k.split(':');
+                  const item = s.checklist.find((i) => i.id === id)!;
+                  const label = [item.slots, ...[...(item.med?.courses ?? [])].reverse().map((c) => c.slots)].map((sl) => sl[Number(n)]).find(Boolean) ?? 'Daily';
+                  return `${item.name} (${label})`;
+                }),
+              ],
               ...dates.map((date) => [
                 date,
                 ...slots.map((k) => {
+                  if (!slotsOn(date).includes(k)) return null;
                   const st = slotStatus(byDay.get(date), k);
                   if (st.kind === 'missed') return 'missed';
                   if (st.kind === 'not-logged') return 'not logged';
                   const t = new Date(st.at);
-                  return `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`;
+                  return `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}${st.late ? ' (recorded late)' : ''}`;
                 }),
               ]),
             ] as Cell[][],

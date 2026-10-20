@@ -87,14 +87,14 @@ export function CloseDay() {
                   <Check
                     checked={st.kind === 'taken'}
                     missed={st.kind === 'missed'}
-                    onChange={(on) => void setTick(date, sl.key, on, on && now - due > 2 * 3_600_000 ? due : undefined)}
+                    onChange={(on) => void (on && now - due > 2 * 3_600_000 ? setTick(date, sl.key, true, due, now) : setTick(date, sl.key, on))}
                     label={`${sl.name} · ${sl.slot.toLowerCase()}`}
-                    detail={st.kind === 'taken' ? fmtTime(st.at) : st.kind === 'missed' ? 'missed' : `due ${fmtTime(due)}`}
+                    detail={st.kind === 'taken' ? `${fmtTime(st.at)}${st.late ? ' · recorded late' : ''}` : st.kind === 'missed' ? 'missed' : `due ${fmtTime(due)}`}
                   />
                 </div>
                 {st.kind === 'not-logged' && due < now && (
                   <div className="row" style={{ gap: 6, justifyContent: 'flex-start', paddingBottom: 10 }}>
-                    <button type="button" className="chip sm" onClick={() => void setTick(date, sl.key, true, due)}>
+                    <button type="button" className="chip sm" onClick={() => void setTick(date, sl.key, true, due, now - due > 2 * 3_600_000 ? now : undefined)}>
                       At {fmtTime(due)}
                     </button>
                     <button type="button" className="chip sm" onClick={() => void setTick(date, sl.key, true)}>

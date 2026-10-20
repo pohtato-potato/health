@@ -299,6 +299,8 @@ export interface Day {
   answers?: Record<string, boolean>;
   /** Checklist ticks, keyed `${itemId}:${slotIndex}`, valued by time. */
   ticks?: Record<string, number>;
+  /** Ticks recorded well after the planned time, keyed like ticks, valued by when they were recorded. */
+  ticksLate?: Record<string, number>;
   /** Parts of the day water was logged in: 1 morning, 2 afternoon, 4 evening. */
   waterParts?: number;
   /** Walking tagged as outdoors. */
@@ -349,6 +351,8 @@ export interface Food {
   /** Outside dishes: small, regular and large as multiples of the usual amount. */
   sizes?: { s: number; m: number; l: number };
   archived?: boolean;
+  /** For meat weighed in grams: whether the kcal and protein are for raw or cooked weight. */
+  weighed?: 'raw' | 'cooked';
   createdAt: number;
 }
 
@@ -449,8 +453,10 @@ export interface Measurement {
   id: string;
   date: DayKey;
   at: number;
-  /** Inches. */
+  /** Inches, standing with the stomach tucked in. The long-running trend series. */
   waistStanding?: number;
+  /** Inches, standing relaxed, breathing out: the reading waist-to-height uses. */
+  waistRelaxed?: number;
   waistSlouched?: number;
   shoulders?: number;
   note?: string;

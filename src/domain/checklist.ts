@@ -26,11 +26,11 @@ export function isLateTick(date: DayKey, slotMin: number, now: number): boolean 
   return now - atOn(date, slotMin) > LATE_TICK_MIN * 60_000;
 }
 
-export type SlotStatus = { kind: 'taken'; at: number } | { kind: 'missed' } | { kind: 'not-logged' };
+export type SlotStatus = { kind: 'taken'; at: number; late?: boolean } | { kind: 'missed' } | { kind: 'not-logged' };
 
-export function slotStatus(day: Pick<Day, 'ticks' | 'missed'> | undefined, key: string): SlotStatus {
+export function slotStatus(day: Pick<Day, 'ticks' | 'missed' | 'ticksLate'> | undefined, key: string): SlotStatus {
   const at = day?.ticks?.[key];
-  if (at !== undefined) return { kind: 'taken', at };
+  if (at !== undefined) return { kind: 'taken', at, ...(day?.ticksLate?.[key] !== undefined ? { late: true } : {}) };
   if (day?.missed?.[key]) return { kind: 'missed' };
   return { kind: 'not-logged' };
 }
