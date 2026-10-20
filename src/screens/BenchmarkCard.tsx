@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { benchmarkOn, benchmarkProgress, whtr, WHTR_GOALS } from '../domain/benchmark';
+import { benchmarkOn, benchmarkProgress, whtr, whtrWaists, WHTR_GOALS } from '../domain/benchmark';
 import { addDays, daysBetween } from '../domain/dates';
 import { recordLine, trackRecord } from '../domain/forecastStore';
 import { db } from '../db/db';
@@ -55,10 +55,9 @@ export function BenchmarkCard({ measurements, heightCm, today, reveal }: { measu
 
 /** Waist ÷ height readings as dots, the trend carried on to reveal day inside a widening cone, and the goal lines. */
 function BenchmarkChart({ measurements, heightCm, today, reveal, b }: { measurements: Measurement[]; heightCm: number; today: string; reveal?: string; b: { current: number; slope?: number; goal: number } }) {
-  const pts = measurements
-    .filter((m) => m.waistStanding !== undefined && m.date <= today)
-    .sort((x, y) => x.date.localeCompare(y.date))
-    .map((m) => ({ date: m.date, r: whtr(m.waistStanding!, heightCm) }));
+  const pts = whtrWaists(measurements)
+    .filter((m) => m.date <= today)
+    .map((m) => ({ date: m.date, r: whtr(m.waist, heightCm) }));
   if (pts.length < 2) return null;
   const end = reveal && reveal > today ? reveal : addDays(today, 28);
   const start = pts[0].date;

@@ -1,3 +1,4 @@
+import { usualWater } from '../domain/water';
 import { useEffect, useState } from 'react';
 import { addDays, atOn, dayKey, weekStart } from '../domain/dates';
 import { fmtDayMonth, fmtInt, fmtLitres, fmtTime, weekdayName } from '../domain/format';
@@ -28,6 +29,7 @@ export function WaterSheet() {
   if (!settings || !days) return <Sheet title="Water">{null}</Sheet>;
   const ml = days.find((d) => d.date === today)?.waterMl ?? 0;
   const target = targetsFor(settings, today).waterMl;
+  const usual = usualWater(days, today) ?? target;
   return (
     <Sheet title="Water" sub={`Aim: ${fmtLitres(target)} L a day`}>
       <div className="col gap8" style={{ alignItems: 'center', padding: '8px 0' }}>
@@ -42,6 +44,11 @@ export function WaterSheet() {
           <i style={{ width: `${Math.min(ml / target, 1) * 100}%`, background: 'var(--blue)' }} />
         </div>
       </div>
+      {ml < usual && (
+        <button type="button" className="btn lg block" onClick={() => addWater(today, usual - ml)}>
+          A usual day · {fmtLitres(usual)} L
+        </button>
+      )}
       <div className="grid3">
         <button type="button" className="btn ghost" onClick={() => addWater(today, -250)} disabled={ml <= 0}>
           −250 ml
@@ -93,10 +100,14 @@ export function StepsSheet() {
 function StepsForm({ date, today, initial, at, target, loop, outdoors: wasOutdoors, onDate }: { date: string; today: string; initial?: number; at?: number; target: number; loop?: number; outdoors: boolean; onDate: (d: string) => void }) {
   const toast = useToast();
   const [steps, setStepsV] = useState<number | undefined>(initial);
+  const [estimate, setEstimate] = useState<boolean | undefined>(undefined);
+  // A number exactly at the target, or a round thousand, is usually typed from memory.
+  const looksTyped = steps !== undefined && steps > 0 && (steps === target || steps % 1000 === 0);
+  const estimated = estimate ?? looksTyped;
   const [outdoors, setOutdoors] = useState(wasOutdoors);
   const save = async () => {
     if (steps === undefined) return;
-    const editId = await setSteps(date, steps, date < today);
+    const editId = await setSteps(date, steps, date < today, estimated);
     if (outdoors !== wasOutdoors) await patchDay(date, { outdoors });
     closeSheet();
     const left = target - steps;
@@ -114,6 +125,13 @@ function StepsForm({ date, today, initial, at, target, loop, outdoors: wasOutdoo
           {steps !== undefined && loop ? `That's about ${fmtInt(Math.round(steps / loop))} laps of your loop. ` : ''}
           Aim: {fmtInt(target)}.
         </span>
+      </label>
+      <label className="row" style={{ minHeight: 48 }}>
+        <span className="col gap2">
+          <span className="t15">An estimate</span>
+          <span className="t12 q">Not read off the phone. Averages leave estimates out.</span>
+        </span>
+        <input type="checkbox" className="sw" checked={estimated} onChange={(e) => setEstimate(e.target.checked)} />
       </label>
       <label className="row" style={{ minHeight: 48 }}>
         <span className="t15">Some of it outdoors</span>
@@ -141,6 +159,8 @@ export function ChecklistSheet() {
   const saveItems = (next: ChecklistItem[]) => patchSettings((s) => ({ checklist: s.checklist.map((i) => next.find((n) => n.id === i.id) ?? i).concat(next.filter((n) => !s.checklist.some((i) => i.id === n.id))) }));
   const tick = (key: string, slot: string, on: boolean) => {
     if (on && isLateTick(date, slotTime(slot, settings, day), Date.now())) {
+      // A batch of ticks at night is a record, not the dose time: default to the planned time.
+      void setTick(date, key, true, atOn(date, slotTime(slot, settings, day)), Date.now());
       setLate(key);
       setOther(undefined);
       return;
@@ -157,7 +177,10 @@ export function ChecklistSheet() {
       <DateChip value={date} onChange={setDate} />
       {items.length === 0 && <div className="t14 q lh">Nothing on your checklist yet. Add a supplement or medicine below.</div>}
       {items.map((item) => {
-        const slots = courseOn(date, item).length ? courseOn(date, item) : ['Daily'];
+        const on = courseOn(date, item);
+        // A course that has ended (its last change has no times) is off the checklist.
+        if (!on.length && item.med?.courses?.some((c) => c.from <= date)) return null;
+        const slots = on.length ? on : ['Daily'];
         return (
           <div key={item.id} className="panel col" style={{ gap: 0 }}>
             <div className="row base" style={{ paddingBottom: 6 }}>
@@ -190,16 +213,16 @@ export function ChecklistSheet() {
               return (
                 <div key={key} className="col" style={{ borderTop: '1px solid var(--divider)' }}>
                   <div className="row" style={{ gap: 8, minHeight: 52 }}>
-                    <Check checked={st.kind === 'taken'} missed={st.kind === 'missed'} onChange={(on) => tick(key, slot, on)} label={slot} detail={st.kind === 'taken' ? `taken ${fmtTime(st.at)}` : st.kind === 'missed' ? 'missed' : due > Date.now() ? `due ${fmtTime(due)}` : 'not logged'} />
+                    <Check checked={st.kind === 'taken'} missed={st.kind === 'missed'} onChange={(on) => tick(key, slot, on)} label={slot} detail={st.kind === 'taken' ? `taken ${fmtTime(st.at)}${st.late ? ' · recorded late' : ''}` : st.kind === 'missed' ? 'missed' : due > Date.now() ? `due ${fmtTime(due)}` : 'not logged'} />
                     <button type="button" className={`chip sm${st.kind === 'missed' ? ' on' : ''}`} aria-pressed={st.kind === 'missed'} onClick={() => void setMissed(date, key, st.kind !== 'missed')}>
                       Missed
                     </button>
                   </div>
                   {late === key && (
                     <div className="notice" role="group" aria-label="When did you take it?">
-                      <div className="t14">Ticked late. When?</div>
+                      <div className="t14">Recorded late, so it's saved at the planned {fmtTime(due)}. Taken at another time?</div>
                       <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start', marginTop: 8 }}>
-                        <button type="button" className="chip sm" onClick={() => { setLate(null); void setTick(date, key, true, due); }}>
+                        <button type="button" className="chip sm on" onClick={() => setLate(null)}>
                           At {fmtTime(due)}
                         </button>
                         <button type="button" className="chip sm" onClick={() => { setLate(null); void setTick(date, key, true); }}>
@@ -208,7 +231,7 @@ export function ChecklistSheet() {
                       </div>
                       <div className="row" style={{ gap: 8, marginTop: 8, width: '100%' }}>
                         <TimeTile label="Other time" minutes={other} onChange={setOther} />
-                        <button type="button" className="btn" disabled={other === undefined} onClick={() => { setLate(null); void setTick(date, key, true, atOn(date, other!)); }}>
+                        <button type="button" className="btn" disabled={other === undefined} onClick={() => { setLate(null); void setTick(date, key, true, atOn(date, other!), Date.now()); }}>
                           Save
                         </button>
                       </div>
@@ -243,22 +266,27 @@ export function WaistSheet() {
   const measurements = useMeasurements();
   const [date, setDate] = useLogDate();
   const toast = useToast();
-  const [standing, setStanding] = useState<number | undefined>();
+  const [relaxed, setRelaxed] = useState<number | undefined>();
+  const [tucked, setTucked] = useState<number | undefined>();
   const [slouched, setSlouched] = useState<number | undefined>();
   const [shoulders, setShoulders] = useState<number | undefined>();
   const [more, setMore] = useState(false);
   if (!measurements) return <Sheet title="Waist">{null}</Sheet>;
-  const last = [...measurements].reverse().find((m) => m.waistStanding !== undefined);
-  const lastShoulders = [...measurements].reverse().find((m) => m.shoulders !== undefined);
+  const latest = (k: 'waistRelaxed' | 'waistStanding' | 'waistSlouched' | 'shoulders') => [...measurements].sort((a, b) => a.date.localeCompare(b.date) || a.at - b.at).reverse().find((m) => m[k] !== undefined);
+  const lastRelaxed = latest('waistRelaxed');
+  const lastTucked = latest('waistStanding');
+  const lastSlouched = latest('waistSlouched');
+  const lastShoulders = latest('shoulders');
 
   const save = async () => {
-    const m = await saveMeasurement({ date, waistStanding: standing, waistSlouched: slouched, shoulders });
+    const m = await saveMeasurement({ date, waistRelaxed: relaxed, waistStanding: tucked, waistSlouched: slouched, shoulders });
     closeSheet();
-    const diff = standing !== undefined && last?.waistStanding !== undefined ? standing - last.waistStanding : undefined;
+    const diff = relaxed !== undefined && lastRelaxed?.waistRelaxed !== undefined ? relaxed - lastRelaxed.waistRelaxed : tucked !== undefined && lastTucked?.waistStanding !== undefined ? tucked - lastTucked.waistStanding : undefined;
+    const since = relaxed !== undefined && lastRelaxed ? lastRelaxed : lastTucked;
     toast({
       kicker: 'Waist',
-      text: standing !== undefined ? `${standing} in standing` : 'Measurement saved',
-      sub: diff !== undefined && diff !== 0 ? `${diff > 0 ? '+' : '−'}${Math.abs(Math.round(diff * 10) / 10)} in since ${fmtDayMonth(last!.date)}` : undefined,
+      text: relaxed !== undefined ? `${relaxed} in relaxed` : tucked !== undefined ? `${tucked} in tucked` : 'Measurement saved',
+      sub: diff !== undefined && diff !== 0 && since ? `${diff > 0 ? '+' : '−'}${Math.abs(Math.round(diff * 10) / 10)} in since ${fmtDayMonth(since.date)}` : undefined,
       action: { label: 'Undo', run: () => deleteMeasurement(m.id) },
     });
   };
@@ -266,28 +294,33 @@ export function WaistSheet() {
   return (
     <Sheet title="Waist" sub="At the navel, same time of day, tape snug not tight">
       <DateChip value={date} onChange={setDate} />
-      <div className="grid2">
-        <label className="flabel">
-          <span className="lbl pearl">Standing straight</span>
-          <DecField value={standing} onChange={setStanding} placeholder={last?.waistStanding ? String(last.waistStanding) : 'inches'} autoFocus />
-        </label>
-        <label className="flabel">
-          <span className="lbl">Slouched</span>
-          <DecField value={slouched} onChange={setSlouched} placeholder={last?.waistSlouched ? String(last.waistSlouched) : 'inches'} />
-        </label>
-      </div>
-      <div className="t13 q lh">The gap between standing and slouched tracks posture.{last ? ` Last time, ${fmtDayMonth(last.date)}: ${last.waistStanding} in standing${last.waistSlouched ? `, ${last.waistSlouched} slouched` : ''}.` : ''}</div>
+      <label className="flabel">
+        <span className="lbl pearl">Waist, relaxed</span>
+        <DecField value={relaxed} onChange={setRelaxed} placeholder={lastRelaxed?.waistRelaxed ? String(lastRelaxed.waistRelaxed) : 'inches'} autoFocus />
+        <span className="t13 q lh">Stand normally, breathe out, and let the stomach go: don’t pull it in. Waist-to-height uses this one.</span>
+      </label>
+      <label className="flabel">
+        <span className="lbl">Stomach tucked, optional</span>
+        <DecField value={tucked} onChange={setTucked} placeholder={lastTucked?.waistStanding ? String(lastTucked.waistStanding) : 'inches'} />
+        <span className="t13 q lh">Keeps the older trend line going.{lastTucked ? ` Last ${lastTucked.waistStanding} in, ${fmtDayMonth(lastTucked.date)}.` : ''}</span>
+      </label>
       {more ? (
-        <label className="flabel">
-          <span className="lbl">Shoulders, around the widest point</span>
-          <DecField value={shoulders} onChange={setShoulders} placeholder={lastShoulders?.shoulders ? String(lastShoulders.shoulders) : 'inches'} />
-        </label>
+        <div className="grid2">
+          <label className="flabel">
+            <span className="lbl">Slouched</span>
+            <DecField value={slouched} onChange={setSlouched} placeholder={lastSlouched?.waistSlouched ? String(lastSlouched.waistSlouched) : 'inches'} />
+          </label>
+          <label className="flabel">
+            <span className="lbl">Shoulders, widest point</span>
+            <DecField value={shoulders} onChange={setShoulders} placeholder={lastShoulders?.shoulders ? String(lastShoulders.shoulders) : 'inches'} />
+          </label>
+        </div>
       ) : (
         <button type="button" className="link" onClick={() => setMore(true)}>
-          + Shoulders too
+          + Slouched and shoulders
         </button>
       )}
-      <button type="button" className="btn lg block" disabled={standing === undefined && slouched === undefined && shoulders === undefined} onClick={save}>
+      <button type="button" className="btn lg block" disabled={relaxed === undefined && tucked === undefined && slouched === undefined && shoulders === undefined} onClick={save}>
         Save
       </button>
     </Sheet>

@@ -1,3 +1,4 @@
+import { loggedLater } from '../domain/trainingChecks';
 import { fmtDayLong, fmtDuration, fmtInt, fmtTime, lowerFirst } from '../domain/format';
 import { daysBetween } from '../domain/dates';
 import { sleepMinutes } from '../domain/rings';
@@ -95,7 +96,7 @@ export function SessionView() {
         </h1>
         <div className="t14 q">
           {def?.focus ? `${def.focus} · ` : ''}
-          {mins} min{s.short ? ' · short session' : ''}
+          {loggedLater(mine) ? 'Logged later, so no timing' : `${mins} min`}{s.short ? ' · short session' : ''}
         </div>
       </div>
 

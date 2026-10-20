@@ -27,6 +27,8 @@ import { askConfirm } from '../ui/Confirm';
 import { useBatteryLevel } from '../ui/RestScreen';
 import { setupGaps } from '../domain/setupCheck';
 import { saveAuditPack } from '../export/saveAuditPack';
+import { undoImport, undoOnOffer } from '../domain/planImport';
+import { PlanImportSheet } from '../sheets/PlanImportSheet';
 
 type Editor = null | 'targets' | 'item' | 'homes' | 'you' | 'plates' | 'theme' | 'review';
 
@@ -79,6 +81,7 @@ export function SettingsScreen() {
     }
   };
 
+  const undo = undoOnOffer(settings);
   const last = settings.backup.lastQuick;
   const plates = settings.equipment.plates;
   const meds = settings.checklist.filter((i) => i.active && i.med).length;
@@ -93,7 +96,7 @@ export function SettingsScreen() {
     export: `Audit pack · review day ${settings.reviewDay !== undefined ? ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][settings.reviewDay] : 'not set'}`,
     lastfm: settings.lastfm?.key ? `connected · ${settings.lastfm.users.length} user${settings.lastfm.users.length === 1 ? '' : 's'}` : 'not connected',
     storage: pwa.persisted ? 'protected' : 'not protected yet',
-    feel: `battery saver ${p.batterySaver ? 'on' : 'automatic below 30%'}`,
+    feel: `${prefOn(p, 'largeText') ? 'larger text' : 'standard text'}${prefOn(p, 'highContrast') ? ' · high contrast' : ''} · battery saver ${p.batterySaver ? 'on' : 'automatic below 30%'}`,
     home: `ticker ${prefOn(p, 'ticker') ? 'on' : 'off'}`,
     privacy: `photos ${prefOn(p, 'blurPhotos') ? 'blurred' : 'shown'}${prefOn(p, 'lockPhotos') && settings.photoKey ? ' · locked' : ''}`,
   };
@@ -194,6 +197,21 @@ export function SettingsScreen() {
         {settings.plan && (
           <button type="button" className="li q" onClick={() => planInput.current?.click()}>
             Import a plan from a file
+          </button>
+        )}
+        {undo && (
+          <button
+            type="button"
+            className="li q"
+            onClick={async () => {
+              const ok = await askConfirm({ title: `Undo importing “${undo.name}”?`, body: `${undo.plan ? `“${undo.plan.name}” comes back` : 'The plan is removed'}, with its variants and where the loop stood. Sessions logged since stay.`, yes: 'Undo import' });
+              const back = ok && undoImport(settings);
+              if (!back) return;
+              await patchSettings(back);
+              toast({ text: undo.plan ? `${undo.plan.name} is your plan again` : 'Import undone' });
+            }}
+          >
+            Undo import of {undo.name}
           </button>
         )}
         <input ref={planInput} type="file" accept="application/json,.json" hidden onChange={(e) => (pickPlan(e.target.files?.[0]), (e.target.value = ''))} />
@@ -448,6 +466,9 @@ export function SettingsScreen() {
       <h2 className="settings-part">The feel</h2>
 
       <Group id="feel" title="Battery saver and feel">
+        <SwitchRow title="Larger text" sub="Small labels and set inputs get bigger" checked={prefOn(p, 'largeText')} onChange={(v) => setPref('largeText', v)} />
+        <SwitchRow title="High contrast" sub="Quiet text and borders close to full brightness" checked={prefOn(p, 'highContrast')} onChange={(v) => setPref('highContrast', v)} />
+        <SwitchRow title="Big dials for every set" sub="Reps on a dial and loads as chips, no small fields to aim at" checked={prefOn(p, 'bigSetControls')} onChange={(v) => setPref('bigSetControls', v)} />
         <LinkRow title="Voice" value={settings.voice === 'comm' ? 'Commentator' : settings.voice.charAt(0).toUpperCase() + settings.voice.slice(1)} onClick={() => back('/you')} />
         <SwitchRow title="News ticker on Today" checked={prefOn(p, 'ticker')} onChange={(v) => setPref('ticker', v)} />
         <SwitchRow title="Shake for a stat" sub="Shake the phone anywhere in the app" checked={prefOn(p, 'shake')} onChange={(v) => setPref('shake', v)} />
@@ -530,26 +551,7 @@ export function SettingsScreen() {
           </button>
         </Sheet>
       )}
-      {pending?.kind === 'plan' && (
-        <Sheet title={`Use “${pending.plan.name}”?`} onClose={() => setPending(null)}>
-          <div className="t15 lh">
-            {pending.plan.sessions.map((s) => `${s.name}: ${s.exercises.length} exercises`).join(' · ')}. {pending.plan.flags.length} joint checks, {pending.plan.triggers?.length ?? 0} triggers.
-          </div>
-          <div className="t14 q lh">Your logged sessions stay. Exercises with the same id keep their history, so loads carry over.</div>
-          <button
-            type="button"
-            className="btn lg block"
-            onClick={async () => {
-              await patchSettings({ plan: pending.plan });
-              await bump('plan-import');
-              setPending(null);
-              toast({ text: `${pending.plan.name} is your plan now` });
-            }}
-          >
-            Use this plan
-          </button>
-        </Sheet>
-      )}
+      {pending?.kind === 'plan' && <PlanImportSheet plan={pending.plan} settings={settings} onClose={() => setPending(null)} />}
     </div>
   );
 }
@@ -810,11 +812,13 @@ function YouEditor({ settings, onClose }: { settings: Settings; onClose: () => v
 function PlatesEditor({ settings, onClose }: { settings: Settings; onClose: () => void }) {
   const [plates, setPlates] = useState(settings.equipment.plates.map((p) => ({ ...p })));
   const [fixed, setFixed] = useState(settings.equipment.fixed.join(', '));
-  const eq = { ...settings.equipment, plates, fixed: parseList(fixed) };
+  const [sleeve, setSleeve] = useState<number | undefined>(settings.equipment.sleeveMm);
+  const eq = { ...settings.equipment, plates, fixed: parseList(fixed), sleeveMm: sleeve };
   return (
     <Sheet title="Plates and dumbbells" sub="Loads are per dumbbell. Plates go on in matching pairs." onClose={onClose} tall>
       {plates.map((p, i) => (
-        <div key={i} className="grid3" style={{ alignItems: 'end' }}>
+        <div key={i} className="col gap6">
+        <div className="grid3" style={{ alignItems: 'end' }}>
           <label className="flabel">
             <span className="lbl">Plate kg</span>
             <DecField value={p.kg} onChange={(v) => setPlates(plates.map((x, j) => (j === i ? { ...x, kg: v ?? 0 } : x)))} />
@@ -828,10 +832,20 @@ function PlatesEditor({ settings, onClose }: { settings: Settings; onClose: () =
             <input type="checkbox" className="sw" checked={p.owned} onChange={(e) => setPlates(plates.map((x, j) => (j === i ? { ...x, owned: e.target.checked } : x)))} />
           </label>
         </div>
+          <label className="flabel">
+            <span className="lbl">Width of one plate, mm (optional)</span>
+            <DecField value={p.thicknessMm} onChange={(v) => setPlates(plates.map((x, j) => (j === i ? { ...x, thicknessMm: v || undefined } : x)))} placeholder="e.g. 30 for PVC, 18 for cast iron" />
+          </label>
+        </div>
       ))}
       <button type="button" className="link" onClick={() => setPlates([...plates, { kg: 2.5, count: 4, owned: true }])}>
         + Add a plate size
       </button>
+      <label className="flabel">
+        <span className="lbl">Handle sleeve, mm each side (optional)</span>
+        <DecField value={sleeve} onChange={(v) => setSleeve(v || undefined)} placeholder="Collar to the end of the handle" />
+        <span className="t13 q lh">With plate widths and this set, loads only count when the plates fit on the handle.</span>
+      </label>
       <label className="flabel">
         <span className="lbl">Fixed dumbbells, kg each</span>
         <input className="field" value={fixed} onChange={(e) => setFixed(e.target.value)} placeholder="e.g. 1, 2.5, 5" />
@@ -843,7 +857,7 @@ function PlatesEditor({ settings, onClose }: { settings: Settings; onClose: () =
         type="button"
         className="btn lg block"
         onClick={async () => {
-          await patchSettings((s) => ({ equipment: { ...s.equipment, plates: plates.filter((p) => p.kg > 0 && p.count > 0), fixed: parseList(fixed) } }));
+          await patchSettings((s) => ({ equipment: { ...s.equipment, plates: plates.filter((p) => p.kg > 0 && p.count > 0), fixed: parseList(fixed), sleeveMm: sleeve } }));
           onClose();
         }}
       >

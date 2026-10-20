@@ -14,14 +14,18 @@ export function loadOptions(eq: Equipment, kind: 'pair' | 'single', includeUnown
   // Pairs of plates per dumbbell available for each plate size.
   const maxPairs = plates.map((p) => Math.floor(p.count / (kind === 'pair' ? 4 : 2)));
   const out = new Set<number>();
-  const walk = (i: number, total: number) => {
+  // Each pair of plates puts one plate on each side of the handle. With a sleeve length and plate
+  // widths set, a load only counts when that side's plates fit.
+  const sleeve = eq.sleeveMm;
+  const walk = (i: number, total: number, width: number) => {
+    if (sleeve !== undefined && width > sleeve + 1e-9) return;
     if (i === plates.length) {
       if (total > 0) out.add(round(total));
       return;
     }
-    for (let k = 0; k <= maxPairs[i]; k++) walk(i + 1, total + 2 * k * plates[i].kg);
+    for (let k = 0; k <= maxPairs[i]; k++) walk(i + 1, total + 2 * k * plates[i].kg, width + k * (plates[i].thicknessMm ?? 0));
   };
-  walk(0, 0);
+  walk(0, 0, 0);
   for (const kg of eq.fixed) out.add(round(kg));
   return [...out].sort((a, b) => a - b);
 }

@@ -1,3 +1,4 @@
+import { prefOn } from './domain/types';
 import { Suspense, lazy, useEffect, type ComponentType, type ReactNode } from 'react';
 import { findSession } from './domain/plan';
 import { fmtLitres } from './domain/format';
@@ -144,6 +145,12 @@ export function App() {
   useEffect(() => {
     document.documentElement.classList.toggle('night', night);
   }, [night]);
+  const largeText = settings ? prefOn(settings.prefs, 'largeText') : true;
+  const contrast = settings ? prefOn(settings.prefs, 'highContrast') : false;
+  useEffect(() => {
+    document.documentElement.classList.toggle('large-text', largeText);
+    document.documentElement.classList.toggle('contrast', contrast);
+  }, [largeText, contrast]);
   useThemeClass(settings, today, night);
 
   if (!settings) return null;

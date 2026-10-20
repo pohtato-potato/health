@@ -1,6 +1,6 @@
 import { addDays, dayKey, weekStart, type DayKey } from '../domain/dates';
 import { lowerFirst } from '../domain/format';
-import { buildSession, findExercise, findSession, nextSessionId, type FlagDef, type PlanDef, type Swap } from '../domain/plan';
+import { buildSession, findExercise, findSession, nextInLoop, type FlagDef, type PlanDef, type Swap } from '../domain/plan';
 import { exerciseStatus, triggerMet, type ExerciseStatus } from '../domain/progression';
 import { savedThisWeek } from '../domain/foods';
 import { ringsFor, targetsOn, totalsFor, type Rings, type Totals } from '../domain/rings';
@@ -97,7 +97,7 @@ export function nextUp(settings: Settings, sessions: TrainingSession[], sets: Se
   if (!plan) return undefined;
   const done = doneSessions(sessions);
   const lastDone = done[done.length - 1];
-  const sessionId = nextSessionId(plan, lastDone?.session);
+  const sessionId = nextInLoop(plan, done, settings.rotationStart);
   const swaps = pendingSwaps(plan, sessions, days).filter((s) => plan.flags.find((f) => f.id === s.flag.id)?.swap?.session === sessionId);
   const exs = buildSession(plan, sessionId, { short, swaps });
   return {

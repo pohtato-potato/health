@@ -15,3 +15,7 @@ private/
 .superpowers/
 .impeccable/
 tsconfig.tsbuildinfo
+
+# Personal plan and backup used by the plan-import acceptance test.
+tests/fixtures/health-plan-*.json
+tests/fixtures/health-backup-*.json

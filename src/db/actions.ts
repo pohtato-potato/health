@@ -99,9 +99,9 @@ export async function bump(id: string, opts: { day?: DayKey; value?: string; by?
   });
 }
 
-export async function setSteps(date: DayKey, steps: number, final = false): Promise<number> {
+export async function setSteps(date: DayKey, steps: number, final = false, estimated = false): Promise<number> {
   void logUsage('log', 'steps');
-  const id = await editDay(date, { steps: Math.max(0, Math.round(steps)), stepsAt: Date.now(), ...(final ? { stepsFinal: true } : {}) });
+  const id = await editDay(date, { steps: Math.max(0, Math.round(steps)), stepsAt: Date.now(), stepsEstimated: estimated || undefined, ...(final ? { stepsFinal: true } : {}) });
   if (date === dayKey() && logMinutes(Date.now()) < 720 && steps > 9000) await bump('steps-9000-by-noon', { day: date });
   return id;
 }
@@ -146,8 +146,11 @@ export async function saveMorningLog(date: DayKey, input: MorningInput, yesterda
   return recordEdit('days', date, before, await db.days.get(date));
 }
 
-/** Ticks or unticks a checklist slot. A tick clears "missed"; `at` records when it was really taken. */
-export async function setTick(date: DayKey, key: string, on: boolean, at = Date.now()) {
+/**
+ * Ticks or unticks a checklist slot. A tick clears "missed"; `at` records when it was really taken.
+ * `recordedLate` (when the tick was made) marks a dose ticked well after its time.
+ */
+export async function setTick(date: DayKey, key: string, on: boolean, at = Date.now(), recordedLate?: number) {
   void logUsage('tick', key);
   const had = (await db.days.get(date))?.ticks?.[key] !== undefined;
   if (had !== on) {
@@ -159,11 +162,14 @@ export async function setTick(date: DayKey, key: string, on: boolean, at = Date.
   await patchDay(date, (d) => {
     const ticks = { ...d.ticks };
     const missed = { ...d.missed };
+    const ticksLate = { ...d.ticksLate };
     if (on) {
       ticks[key] = at;
       delete missed[key];
     } else delete ticks[key];
-    return { ticks, missed };
+    if (on && recordedLate !== undefined) ticksLate[key] = recordedLate;
+    else delete ticksLate[key];
+    return { ticks, missed, ticksLate };
   });
 }
 
@@ -238,6 +244,21 @@ export async function archiveFood(id: string, archived = true) {
   await db.foods.update(id, { archived });
 }
 
+/**
+ * Folds one saved food into another: past entries point at the kept food (their numbers stay as
+ * logged), saved meals and categories use it, and the merged food is archived.
+ */
+export async function mergeFoods(fromId: string, intoId: string): Promise<number> {
+  if (fromId === intoId) return 0;
+  const moved = await db.entries.where('foodId').equals(fromId).modify({ foodId: intoId });
+  await patchSettings((s) => ({
+    meals: s.meals?.map((m) => ({ ...m, items: m.items.map((it) => (it.foodId === fromId ? { ...it, foodId: intoId } : it)) })),
+    foodCategories: s.foodCategories?.map((c) => ({ ...c, foodIds: [...new Set(c.foodIds.map((id) => (id === fromId ? intoId : id)))] })),
+  }));
+  await archiveFood(fromId);
+  return moved;
+}
+
 export async function saveMeasurement(m: Omit<Measurement, 'id' | 'at'> & { id?: string }) {
   const rec: Measurement = { ...m, id: m.id ?? uid(), at: Date.now() };
   await db.measurements.put(rec);
@@ -295,6 +316,11 @@ export async function logSet(set: Omit<SetEntry, 'id'> & { id?: string }): Promi
   await db.sets.put(rec);
   if (before) await recordEdit('sets', rec.id, before, rec);
   return rec;
+}
+
+/** Marks saved sets as skipped: they keep the session's shape and leave every stat. */
+export async function markSetsSkipped(ids: string[]) {
+  await db.sets.where('id').anyOf(ids).modify({ skipped: true });
 }
 
 export async function deleteSet(id: string) {

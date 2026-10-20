@@ -132,6 +132,20 @@ export function readinessScore(i: ReadinessInputs, weights: Weights = DEFAULT_WE
   return { score, parts, known: i.sleepMin !== undefined, x };
 }
 
+/** Under "Good to push", the two inputs pulling the score down most, so a low number explains itself. */
+export function heldBackBy(r: { score: number; parts: ReadinessReason[] }): ReadinessReason[] {
+  if (r.score >= 80) return [];
+  return r.parts.filter((p) => p.delta < 0).sort((a, b) => a.delta - b.delta).slice(0, 2);
+}
+
+/** "Held back most by slept 6 h 10, 50 m short (−5) and trained yesterday (−3)." */
+export function heldBackText(r: { score: number; parts: ReadinessReason[] }): string | undefined {
+  const xs = heldBackBy(r);
+  if (!xs.length) return undefined;
+  const one = (p: ReadinessReason) => `${p.label.charAt(0).toLowerCase()}${p.label.slice(1)} (−${Math.abs(p.delta)})`;
+  return `Held back most by ${xs.map(one).join(' and ')}.`;
+}
+
 /** Sessions needed before the weights are refitted. */
 export const REFIT_MIN = 8;
 

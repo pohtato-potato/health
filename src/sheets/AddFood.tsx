@@ -3,7 +3,9 @@ import { addDays, atOn, parseDay } from '../domain/dates';
 import { fmtInt, fmtTime } from '../domain/format';
 import { eatenAtFor, mealForTime, mealTimesFor, portionFor, recentFoodIds, stepFor, unitLabel, usageOf, valuesFor } from '../domain/foods';
 import { MEAL_NAMES, MEALS, type Food, type Meal } from '../domain/types';
-import { addEntries, addEntry, deleteEntry } from '../db/actions';
+import { addEntries, addEntry, deleteEntry, saveFood } from '../db/actions';
+import { isWeighedMeat, toFoodBasis } from '../domain/foodChecks';
+import { okToAdd } from '../ui/doubleTap';
 import { placeFor } from '../domain/places';
 import { SIZE_NAMES, sizeAmount, sizeValues, usualsFor } from '../domain/usuals';
 import { useAllDays, useEntriesBetween, useFoods, useSettings, useToday } from '../db/hooks';
@@ -39,6 +41,8 @@ export function AddFood() {
   const [tab, setTab] = useState<Tab | null>(null);
   const [pickedId, setPickedId] = useState<string | null>(params.get('food'));
   const [amount, setAmount] = useState<number | null>(null);
+  // Meat: what the scale weighed, raw or cooked. Defaults to the food's own basis.
+  const [weighedAs, setWeighedAs] = useState<'raw' | 'cooked' | null>(null);
   // Plate mode: several foods, each with its own amount, added in one go.
   const [plate, setPlate] = useState<Map<string, number> | null>(null);
 
@@ -77,13 +81,19 @@ export function AddFood() {
   const usuals = usualsFor(meal, place.id, parseDay(date).getDay(), history, live, dayMap, date);
   const picked = pickedId ? byId.get(pickedId) : undefined;
   const amt = picked ? amount ?? picked.defaultAmount : 0;
+  const meat = !!picked && isWeighedMeat(picked);
+  const weighed = weighedAs ?? picked?.weighed ?? 'cooked';
+  // The amount in the food's own basis: 200 g weighed raw of a cooked-basis food logs as 150 g.
+  const basisAmt = picked && meat ? toFoodBasis(picked, amt, weighed) : amt;
 
-  const log = async (food: Food, a: number) => {
+  const log = async (food: Food, a: number, weighedNote?: string) => {
+    if (!(await okToAdd({ date, foodId: food.id, name: food.name }))) return;
     const v = valuesFor(food, a);
-    const e = await addEntry({ date, meal, at: Date.now(), kind: 'food', foodId: food.id, name: food.name, amount: a, portion: portionFor(food, a), ...v, ...(eaten !== undefined ? { eatenAt: atOn(date, eaten) } : {}) });
+    const e = await addEntry({ date, meal, at: Date.now(), kind: 'food', foodId: food.id, name: food.name, amount: a, portion: portionFor(food, a) + (weighedNote ?? ''), ...v, ...(eaten !== undefined ? { eatenAt: atOn(date, eaten) } : {}) });
     toast({ text: `${food.name} · ${fmtInt(v.kcal)} kcal · ${Math.round(v.protein)} g`, sub: `Added to ${MEAL_NAMES[meal].toLowerCase()}`, action: { label: 'Undo', run: () => deleteEntry(e.id) } });
     setPickedId(null);
     setAmount(null);
+    setWeighedAs(null);
   };
 
   /** In plate mode a tap puts the food on the plate; otherwise it is logged at its usual amount. */
@@ -221,8 +231,8 @@ export function AddFood() {
               <div className="t13 q">{portionFor(picked, amt)}</div>
             </div>
             <div className="right tn">
-              <div className="t16 apri">{fmtInt(valuesFor(picked, amt).kcal)} kcal</div>
-              <div className="t13 lav">{Math.round(valuesFor(picked, amt).protein)} g protein</div>
+              <div className="t16 apri">{fmtInt(valuesFor(picked, basisAmt).kcal)} kcal</div>
+              <div className="t13 lav">{Math.round(valuesFor(picked, basisAmt).protein)} g protein</div>
             </div>
           </div>
           <Stepper
@@ -257,11 +267,35 @@ export function AddFood() {
               ))}
             </div>
           )}
+          {meat && !picked.weighed && (
+            <div className="notice t14 lh" role="group" aria-label="Raw or cooked">
+              Are {picked.name}’s numbers for raw or cooked weight? Raw meat weighs about a third more, so it changes the count.
+              <div className="row" style={{ gap: 8, marginTop: 8, justifyContent: 'flex-start' }}>
+                <button type="button" className="chip sm" onClick={() => void saveFood({ ...picked, weighed: 'raw' })}>
+                  Raw
+                </button>
+                <button type="button" className="chip sm" onClick={() => void saveFood({ ...picked, weighed: 'cooked' })}>
+                  Cooked
+                </button>
+              </div>
+            </div>
+          )}
+          {meat && picked.weighed && (
+            <div className="col gap6">
+              <span className="lbl">You weighed it</span>
+              <Seg options={[{ id: 'raw', label: 'Raw' }, { id: 'cooked', label: 'Cooked' }]} value={weighed} onChange={setWeighedAs} />
+              {basisAmt !== amt && (
+                <span className="t13 q lh">
+                  {amt} g {weighed} ≈ {basisAmt} g {picked.weighed}, which is what its numbers are for.
+                </span>
+              )}
+            </div>
+          )}
           <div className="row" style={{ gap: 10 }}>
             <button type="button" className="btn ghost sm" onClick={() => setPickedId(null)}>
               Cancel
             </button>
-            <button type="button" className="btn grow" disabled={amt <= 0} onClick={() => log(picked, amt)}>
+            <button type="button" className="btn grow" disabled={amt <= 0} onClick={() => log(picked, basisAmt, basisAmt !== amt ? ` (weighed ${amt} g ${weighed})` : undefined)}>
               Add to {MEAL_NAMES[meal].toLowerCase()}
             </button>
           </div>

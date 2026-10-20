@@ -35,9 +35,10 @@ function useLast() {
     const ms = (await db.measurements.toArray()).sort((a, b) => a.date.localeCompare(b.date) || a.at - b.at);
     const last = checkins[checkins.length - 1];
     const lastWaist = [...ms].reverse().find((m) => m.waistStanding !== undefined);
+    const lastRelaxed = [...ms].reverse().find((m) => m.waistRelaxed !== undefined);
     const lastSlouch = [...ms].reverse().find((m) => m.waistSlouched !== undefined);
     const lastShoulders = [...ms].reverse().find((m) => m.shoulders !== undefined);
-    return { last, count: checkins.length, lastWaist, lastSlouch, lastShoulders };
+    return { last, count: checkins.length, lastWaist, lastRelaxed, lastSlouch, lastShoulders };
   }, []);
 }
 
@@ -54,6 +55,7 @@ export function CheckInScreen() {
   const [shots, setShots] = useState<Partial<Record<Pose, Shot>>>({});
   const [pose, setPose] = useState<Pose>('front');
   const [standing, setStanding] = useState<number | null>(null);
+  const [relaxed, setRelaxed] = useState<number | null>(null);
   const [slouched, setSlouched] = useState<number | null>(null);
   const [shoulders, setShoulders] = useState<number | null>(null);
   const [tee, setTee] = useState<Record<'shoulders' | 'arms' | 'stomach', number>>({ shoulders: 0, arms: 0, stomach: 0 });
@@ -63,6 +65,7 @@ export function CheckInScreen() {
 
   if (!settings || !days || !last) return <div className="page bare" />;
   const std = standing ?? last.lastWaist?.waistStanding ?? 36;
+  const rel = relaxed ?? last.lastRelaxed?.waistRelaxed ?? std + 1;
   const sl = slouched ?? last.lastSlouch?.waistSlouched ?? std + 1.5;
   const sh = shoulders ?? last.lastShoulders?.shoulders ?? 46;
   const stepNo = { photos: 1, tape: 2, tshirt: 3, result: 5 }[step];
@@ -76,7 +79,7 @@ export function CheckInScreen() {
       await db.photos.put({ id: pid, checkinId: id, date, pose: p, blob: s.blob, width: s.width, height: s.height });
       photos[p] = pid;
     }
-    const m: Measurement = { id: uid(), date, at: Date.now(), waistStanding: std, waistSlouched: sl, shoulders: sh };
+    const m: Measurement = { id: uid(), date, at: Date.now(), waistStanding: std, waistRelaxed: rel, waistSlouched: sl, shoulders: sh };
     await db.measurements.put(m);
     const tshirt = tee.shoulders && tee.arms && tee.stomach ? { ...tee } : undefined;
     const c: CheckIn = { id, date, at: Date.now(), photos, measurementId: m.id, tshirt, line: line.trim() || undefined };
@@ -156,7 +159,8 @@ export function CheckInScreen() {
             <b style={{ fontWeight: 500 }}>Shoulders:</b> <span className="q">around the widest point, arms relaxed.</span>
           </div>
         </div>
-        <Measure label="Waist, standing straight" hint={last.lastWaist ? `Last time ${last.lastWaist.waistStanding}` : 'First reading'} value={std} onChange={setStanding} />
+        <Measure label="Waist, relaxed" hint={last.lastRelaxed ? `Last time ${last.lastRelaxed.waistRelaxed} · stand normally, breathe out, don't pull in` : "Stand normally, breathe out, don't pull in"} value={rel} onChange={setRelaxed} />
+        <Measure label="Waist, stomach tucked" hint={last.lastWaist ? `Last time ${last.lastWaist.waistStanding}` : 'First reading'} value={std} onChange={setStanding} />
         <Measure label="Waist, slouched" hint={last.lastSlouch ? `Last time ${last.lastSlouch.waistSlouched} · the gap tracks posture` : 'The gap from standing tracks posture'} value={sl} onChange={setSlouched} />
         <Measure label="Shoulders" hint={last.lastShoulders ? `Last time ${last.lastShoulders.shoulders}` : 'First reading'} value={sh} onChange={setShoulders} />
         <div className="row card" style={{ flexDirection: 'row' }}>

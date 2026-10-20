@@ -110,6 +110,8 @@ export interface Plate {
   kg: number;
   count: number;
   owned: boolean;
+  /** Width of one plate on the bar, mm. Cast iron is thinner than PVC for the same weight. */
+  thicknessMm?: number;
 }
 
 export interface Equipment {
@@ -117,6 +119,8 @@ export interface Equipment {
   plates: Plate[];
   /** Fixed dumbbells owned as pairs, in kg each. */
   fixed: number[];
+  /** Usable sleeve on each side of a dumbbell handle, mm: how much plate fits before the collar. */
+  sleeveMm?: number;
   band: boolean;
   bench: string;
   /** A reward: training at a gym, with a full rack of dumbbells. */
@@ -153,6 +157,12 @@ export interface Prefs {
   moments?: boolean;
   /** No confetti or buzz from 10 pm to 7 am, or while the app is in the background. */
   quietPublic?: boolean;
+  /** Low vision: a larger floor for small text and bigger set inputs (on by default). */
+  largeText?: boolean;
+  /** Low vision: quiet and dim text close to full brightness, firmer borders. */
+  highContrast?: boolean;
+  /** Every set entered with the big dial and chips, never the small fields. */
+  bigSetControls?: boolean;
 }
 
 const PREF_DEFAULTS: Required<Prefs> = {
@@ -176,6 +186,9 @@ const PREF_DEFAULTS: Required<Prefs> = {
   mirrorCheckIn: false,
   moments: true,
   quietPublic: true,
+  largeText: true,
+  highContrast: false,
+  bigSetControls: false,
 };
 
 export function prefOn(prefs: Prefs, key: keyof Prefs): boolean {
@@ -227,6 +240,14 @@ export interface Settings {
   plan?: PlanDef;
   /** Choices made while following the plan: harder variants and band levels. */
   planState: { variants: Record<string, number>; band: Record<string, number> };
+  /** The session picked to start the loop at import; holds until a rotation session is done after `at`. */
+  rotationStart?: { session: string; at: number };
+  /** Old sets looked at and kept as real, by id, so the "unfinished sets" check leaves them be. */
+  keptSets?: string[];
+  /** "Keep it" on an always-skipped exercise, by exercise id: when it was answered. */
+  neglectDismissed?: Record<string, number>;
+  /** What a plan import replaced, so it can be undone for 7 days. */
+  planUndo?: { at: number; name: string; plan?: PlanDef; planState: Settings['planState']; rotationStart?: Settings['rotationStart'] };
   /** Fastest morning log, in seconds. */
   morningBest?: number;
   /** A worn title, by achievement id. */
@@ -287,6 +308,8 @@ export interface Day {
   stepsAt?: number;
   /** Set when the next morning's log confirms the final count. */
   stepsFinal?: boolean;
+  /** Steps typed as a guess, not read off the phone. Streaks still count them; averages leave them out. */
+  stepsEstimated?: boolean;
   waterMl?: number;
   sleep?: Sleep;
   home?: string;
@@ -295,6 +318,8 @@ export interface Day {
   answers?: Record<string, boolean>;
   /** Checklist ticks, keyed `${itemId}:${slotIndex}`, valued by time. */
   ticks?: Record<string, number>;
+  /** Ticks recorded well after the planned time, keyed like ticks, valued by when they were recorded. */
+  ticksLate?: Record<string, number>;
   /** Parts of the day water was logged in: 1 morning, 2 afternoon, 4 evening. */
   waterParts?: number;
   /** Walking tagged as outdoors. */
@@ -345,6 +370,8 @@ export interface Food {
   /** Outside dishes: small, regular and large as multiples of the usual amount. */
   sizes?: { s: number; m: number; l: number };
   archived?: boolean;
+  /** For meat weighed in grams: whether the kcal and protein are for raw or cooked weight. */
+  weighed?: 'raw' | 'cooked';
   createdAt: number;
 }
 
@@ -445,8 +472,10 @@ export interface Measurement {
   id: string;
   date: DayKey;
   at: number;
-  /** Inches. */
+  /** Inches, standing with the stomach tucked in. The long-running trend series. */
   waistStanding?: number;
+  /** Inches, standing relaxed, breathing out: the reading waist-to-height uses. */
+  waistRelaxed?: number;
   waistSlouched?: number;
   shoulders?: number;
   note?: string;

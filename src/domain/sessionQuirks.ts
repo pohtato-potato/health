@@ -1,5 +1,6 @@
 import { findExercise, groupKey, isSuperset, type PlanDef } from './plan';
 import type { SetEntry } from './types';
+import { loggedLater } from './trainingChecks';
 
 export interface Quirks {
   /** The longest gap between two sets, and the set it came before. */
@@ -14,11 +15,13 @@ export interface Quirks {
 export function sessionQuirks(sets: SetEntry[], plan?: PlanDef): Quirks {
   const xs = [...sets].sort((a, b) => a.at - b.at);
   const out: Quirks = {};
-  for (let i = 1; i < xs.length; i++) {
+  // Typed in afterwards, the gaps say nothing about rest: no timing quirks.
+  const timed = !loggedLater(xs);
+  for (let i = 1; timed && i < xs.length; i++) {
     const ms = xs[i].at - xs[i - 1].at;
     if (!out.longestRest || ms > out.longestRest.ms) out.longestRest = { ms, before: xs[i] };
   }
-  if (plan) {
+  if (plan && timed) {
     const group = (s: SetEntry) => {
       const ex = findExercise(plan, s.exerciseId);
       return ex && isSuperset(ex) ? groupKey(ex.order) : undefined;

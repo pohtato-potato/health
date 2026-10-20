@@ -1,3 +1,4 @@
+import { loggedLater } from '../domain/trainingChecks';
 import { fmtInt, lowerFirst, weekdayName } from '../domain/format';
 import { findSession } from '../domain/plan';
 import type { Settings, TrainingSession } from '../domain/types';
@@ -78,7 +79,7 @@ export function NextUpCard({
           {sd?.name ?? `Session ${s.session}`}
         </div>
         <div className="t14 q">
-          {mins} min · {fmtInt(n)} set{n === 1 ? '' : 's'}{s.short ? ' · short' : ''}. Next time: {def?.name ?? up.sessionId}.
+          {sets && loggedLater(sets.filter((x) => x.sessionId === s.id)) ? 'Logged later' : `${mins} min`} · {fmtInt(n)} set{n === 1 ? '' : 's'}{s.short ? ' · short' : ''}. Next time: {def?.name ?? up.sessionId}.
         </div>
       </button>
     );

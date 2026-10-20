@@ -1,3 +1,4 @@
+import { whtrWaists } from '../domain/benchmark';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect } from 'react';
 import { addDays, weekStart, type DayKey } from '../domain/dates';
@@ -32,7 +33,7 @@ export function MaintenanceWatcher() {
 
 /** The energy-balance model with the owner's height, age and latest waist. */
 export function modelFor(settings: Settings, days: Day[], entries: FoodEntry[], today: DayKey, measurements: Measurement[] = []): MaintenanceModel {
-  const waist = [...measurements].reverse().find((x) => x.waistStanding !== undefined)?.waistStanding;
+  const waist = whtrWaists(measurements).pop()?.waist;
   return maintenanceModel({
     days,
     entries,

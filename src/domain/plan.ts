@@ -81,6 +81,10 @@ export interface ExerciseDef {
   noBand?: Partial<Omit<ExerciseDef, 'id' | 'order' | 'noBand'>> & { name: string; load: LoadKind };
   /** Grip-heavy: afterwards, inputs switch to big dials and chips. */
   tiredHands?: boolean;
+  /** The plan asks for a fresh start at startKg: history from before the import no longer sets the load. */
+  resetLoad?: boolean;
+  /** Set on import (ms): sets logged before this don't set the load or the progression. History and records keep them. */
+  loadFrom?: number;
 }
 
 export interface SessionDef {
@@ -125,6 +129,8 @@ export interface PlanDef {
   name: string;
   from: string;
   rotation: string[];
+  /** Sessions outside the rotation, e.g. ["G"] for a gym night. Logged and counted, but the loop doesn't move. */
+  extra?: string[];
   sessions: SessionDef[];
   perWeek?: number;
   warmup?: string;
@@ -175,12 +181,36 @@ export function groupExercises(exs: ExerciseDef[]): ExerciseDef[][] {
   return groups;
 }
 
-/** Alternate from the last session logged. */
+export function rotationOf(plan: PlanDef): string[] {
+  const extra = new Set(plan.extra ?? []);
+  return plan.rotation.length ? plan.rotation : plan.sessions.map((s) => s.id).filter((id) => !extra.has(id));
+}
+
+/** Alternate from the last rotation session logged. A session outside the loop (a trip, a gym night) never resets it. */
 export function nextSessionId(plan: PlanDef, lastDone?: string): string {
-  const rot = plan.rotation.length ? plan.rotation : plan.sessions.map((s) => s.id);
-  if (!lastDone) return rot[0];
-  const i = rot.indexOf(lastDone);
-  return rot[(i + 1) % rot.length];
+  const rot = rotationOf(plan);
+  const i = lastDone ? rot.indexOf(lastDone) : -1;
+  return i < 0 ? rot[0] : rot[(i + 1) % rot.length];
+}
+
+/** Where the loop stands: a start picked at import holds until a rotation session is done after it. */
+export function nextInLoop(plan: PlanDef, done: { session: string; startedAt: number }[], start?: { session: string; at: number }): string {
+  const rot = rotationOf(plan);
+  const inLoop = done.filter((s) => rot.includes(s.session) && (!start || s.startedAt >= start.at)).sort((a, b) => a.startedAt - b.startedAt);
+  const last = inLoop[inLoop.length - 1];
+  if (last) return nextSessionId(plan, last.session);
+  if (start && rot.includes(start.session)) return start.session;
+  return nextSessionId(plan, undefined);
+}
+
+/** Sessions that run outside the loop, such as a gym night. */
+export function extraSessions(plan: PlanDef): SessionDef[] {
+  return (plan.extra ?? []).map((id) => findSession(plan, id)).filter((s): s is SessionDef => !!s);
+}
+
+/** Sets that set an exercise's load: after a reset at import, only the ones since. */
+export function sinceReset<T extends { at: number }>(ex: Pick<ExerciseDef, 'loadFrom'>, sets: T[]): T[] {
+  return ex.loadFrom === undefined ? sets : sets.filter((s) => s.at >= ex.loadFrom!);
 }
 
 export function exerciseName(ex: ExerciseDef, state?: PlanState): string {
@@ -306,6 +336,12 @@ export function validatePlan(p: unknown): string[] {
     if (f.swap && (!ids.has(f.swap.from) || !ids.has(f.swap.to))) errs.push(`The flag "${f.label}" swaps an exercise that isn't in the plan.`);
   }
   if (!Array.isArray(plan.rotation)) errs.push('The plan is missing its rotation, e.g. ["A", "B"].');
+  const sessionIds = new Set((plan.sessions ?? []).map((s) => s.id));
+  for (const id of Array.isArray(plan.rotation) ? plan.rotation : []) if (!sessionIds.has(id)) errs.push(`The rotation names "${id}", which isn't a session.`);
+  for (const id of plan.extra ?? []) {
+    if (!sessionIds.has(id)) errs.push(`The extra session "${id}" isn't a session.`);
+    else if (plan.rotation?.includes(id)) errs.push(`"${id}" is in the rotation and in extra; it can only be one.`);
+  }
   return errs;
 }
 

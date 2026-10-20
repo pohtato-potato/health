@@ -6,6 +6,7 @@ import '@fontsource/dm-mono/latin-500.css';
 import './styles/app.css';
 import './styles/tokens.css';
 import './styles/components.css';
+import './styles/access.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';

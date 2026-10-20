@@ -8,15 +8,26 @@ export function whtr(waistIn: number, heightCm: number): number {
   return Math.round(((waistIn * 2.54) / heightCm) * 10000) / 10000;
 }
 
+/**
+ * Waist readings for waist-to-height: the relaxed series once there is one (the ratio's
+ * definition), else the tucked readings. Never a mix, so the trend compares like with like.
+ */
+export function whtrWaists(measurements: Measurement[]): { date: DayKey; at: number; waist: number; relaxed: boolean }[] {
+  const relaxed = measurements.some((m) => m.waistRelaxed !== undefined);
+  return measurements
+    .map((m) => ({ date: m.date, at: m.at, waist: relaxed ? m.waistRelaxed : m.waistStanding, relaxed }))
+    .filter((m): m is { date: DayKey; at: number; waist: number; relaxed: boolean } => m.waist !== undefined)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.at - b.at);
+}
+
 /** The athletic benchmark: below 0.5 first, then 0.45. */
 export const WHTR_GOALS = [0.5, 0.45];
 
 /** Where the waist-to-height ratio stands, the next goal, and when the trend reaches it. */
 export function benchmarkProgress(measurements: Measurement[], heightCm: number, today: DayKey): { current: number; goal: number; projected?: DayKey; slope?: number } | undefined {
-  const pts = measurements
-    .filter((m) => m.waistStanding !== undefined && m.date <= today)
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .map((m) => ({ date: m.date, r: whtr(m.waistStanding!, heightCm) }));
+  const pts = whtrWaists(measurements)
+    .filter((m) => m.date <= today)
+    .map((m) => ({ date: m.date, r: whtr(m.waist, heightCm) }));
   if (!pts.length) return undefined;
   const current = pts[pts.length - 1].r;
   const goal = WHTR_GOALS.find((g) => current >= g) ?? WHTR_GOALS[WHTR_GOALS.length - 1];
