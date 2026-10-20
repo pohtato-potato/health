@@ -145,7 +145,7 @@ export function App() {
   useEffect(() => {
     document.documentElement.classList.toggle('night', night);
   }, [night]);
-  const largeText = settings ? prefOn(settings.prefs, 'largeText') : true;
+  const largeText = settings ? prefOn(settings.prefs, 'largeText') : false;
   const contrast = settings ? prefOn(settings.prefs, 'highContrast') : false;
   useEffect(() => {
     document.documentElement.classList.toggle('large-text', largeText);

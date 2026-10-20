@@ -157,7 +157,7 @@ export interface Prefs {
   moments?: boolean;
   /** No confetti or buzz from 10 pm to 7 am, or while the app is in the background. */
   quietPublic?: boolean;
-  /** Low vision: a larger floor for small text and bigger set inputs (on by default). */
+  /** A larger floor for small text and bigger set inputs. Off by default: the owner reads with the Android magnifier, where bigger type means more panning. */
   largeText?: boolean;
   /** Low vision: quiet and dim text close to full brightness, firmer borders. */
   highContrast?: boolean;
@@ -186,7 +186,7 @@ const PREF_DEFAULTS: Required<Prefs> = {
   mirrorCheckIn: false,
   moments: true,
   quietPublic: true,
-  largeText: true,
+  largeText: false,
   highContrast: false,
   bigSetControls: false,
 };
