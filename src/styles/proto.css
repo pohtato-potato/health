@@ -14,7 +14,7 @@
 .proto-icon { width: 48px; height: 48px; display: grid; place-items: center; color: var(--quiet); }
 .proto-title { display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
 .proto-title b { font-size: 20px; font-weight: 400; }
-.proto-glance { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--btn-border); font-size: 15px; color: var(--text); }
+.proto-glance { min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--btn-border); font-size: 15px; color: var(--text); }
 
 /* Strip: numbered pills you can hit, current one filled; a gap marks the plate change. */
 .proto-strip { display: flex; gap: 6px; margin: 8px 0 14px; }
@@ -50,6 +50,7 @@
 .proto-count { font-size: 150px; line-height: 0.9; font-weight: 300; transition: color 0.25s; }
 .proto-count.in { color: var(--sage); }
 .proto-count.top { color: var(--gold); }
+.proto-count.burn { color: var(--apricot); }
 .proto-aim { font-size: 17px; color: var(--quiet); }
 .proto-aim b { color: var(--text); font-weight: 500; }
 .proto-hint { font-size: 14px; color: var(--quiet); text-align: center; padding: 0 18px; }
@@ -127,3 +128,93 @@
   .proto-ripple { animation-duration: 0.01s; }
   .proto-ring .fill { transition: none; }
 }
+
+/* ---------- shared additions ---------- */
+.proto-dirs { display: flex; gap: 4px; overflow-x: auto; padding: 4px 0 6px; scrollbar-width: none; }
+.proto-dirs button { flex: none; font-size: 13px; min-height: 32px; padding: 0 10px; border-radius: 999px; border: 1px dashed var(--btn-border); color: var(--quiet); }
+.proto-dirs button.on { border-style: solid; border-color: var(--gold); color: var(--gold); }
+.proto-top.slim { min-height: 44px; }
+.proto-strip button.proto-seg:disabled { opacity: 0.55; }
+.proto-pill.side { color: var(--text); border-color: var(--btn-border); }
+.proto-pill.side.lead { background: var(--text); color: var(--ink); border-color: var(--text); font-weight: 600; }
+.proto-nudge { margin-top: 10px; padding: 9px 12px; border-radius: 12px; font-size: 15px; color: var(--apricot); background: color-mix(in srgb, var(--apricot) 12%, transparent); border: 1px solid color-mix(in srgb, var(--apricot) 35%, transparent); }
+.apri { color: var(--apricot); }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 6px; vertical-align: middle; }
+.dot.burn { background: var(--apricot); }
+.dot.slip { background: var(--rose); }
+
+/* Sets quick look */
+.proto-sets-head, .proto-sets-row { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; }
+.proto-sets-head { padding: 8px 0 4px; }
+.proto-sets-row { min-height: 48px; border-bottom: 1px solid var(--divider); font-size: 17px; }
+.proto-sets-row.now { color: var(--text); font-weight: 600; background: color-mix(in srgb, var(--sage) 8%, transparent); border-radius: 10px; padding: 0 6px; margin: 0 -6px; }
+.proto-sets-row.done { color: var(--text); }
+
+/* ---------- B · Flight board ---------- */
+.proto-flight { margin: 6px 0 14px; display: flex; flex-direction: column; gap: 8px; }
+.proto-flight-row { display: flex; justify-content: space-between; font-size: 14px; }
+.proto-flight-row b { font-size: 18px; font-weight: 400; }
+.proto-flight-line { position: relative; height: 4px; border-radius: 2px; background: var(--track); }
+.proto-flight-line i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; background: var(--blue-soft); }
+.proto-flight-line .xchg { position: absolute; top: -5px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--apricot); background: var(--ink); transform: translateX(-50%); }
+.proto-flight-line .plane { position: absolute; top: -7px; width: 18px; height: 18px; border-radius: 50%; background: var(--text); transform: translateX(-50%); box-shadow: 0 0 0 4px color-mix(in srgb, var(--text) 18%, transparent); }
+.proto-tap.b { justify-content: center; gap: 10px; }
+.proto-tap.b .proto-ladder { position: static; width: calc(100% - 36px); margin-top: 6px; }
+.proto-stats, .proto-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.proto-stats span, .proto-board span { background: var(--surface); border: 1px solid var(--hairline); border-radius: 16px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.proto-stats small, .proto-board small { font-size: 13px; color: var(--quiet); }
+.proto-stats b, .proto-board b { font-size: 24px; font-weight: 400; }
+
+/* ---------- C · Rep timeline ---------- */
+.proto-tap.c { justify-content: flex-start; align-items: stretch; padding: 18px; gap: 10px; }
+.proto-c-head { display: flex; align-items: flex-end; gap: 16px; }
+.proto-c-side { display: flex; flex-direction: column; gap: 4px; padding-bottom: 12px; }
+.proto-bars { flex: 1; min-height: 60px; display: flex; align-items: flex-end; gap: 5px; }
+.proto-bars.big { min-height: 160px; }
+.proto-bars i { flex: 1; border-radius: 6px 6px 3px 3px; background: var(--quiet); transition: height 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+.proto-bars i.empty { background: var(--track); }
+.proto-bars i.in { background: var(--sage); }
+.proto-bars i.top { background: var(--gold); }
+.proto-bars i.burn { background: var(--apricot); }
+.proto-bars i.mark { box-shadow: 0 0 0 1.5px var(--text) inset; }
+.proto-c-axis { display: flex; justify-content: space-between; font-size: 13px; color: var(--quiet); }
+.proto-c-rest { display: flex; flex-direction: column; gap: 10px; padding: 8px 0; }
+.proto-c-restbar { height: 10px; border-radius: 5px; background: var(--track); overflow: hidden; }
+.proto-c-restbar i { display: block; height: 100%; background: var(--blue); transition: width 1s linear; }
+.proto-recap { background: var(--surface); border: 1px solid var(--hairline); border-radius: 22px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; height: 150px; }
+
+/* ---------- D · Living colour ---------- */
+.dir-d { transition: background 0.8s ease; background: radial-gradient(130% 80% at 50% 45%, #232a55 0, var(--ink) 75%); }
+.dir-d.st-in { background: radial-gradient(130% 80% at 50% 45%, #1f4a43 0, #0d1a1d 78%); }
+.dir-d.st-top { background: radial-gradient(130% 80% at 50% 45%, #5a4723 0, #17130b 78%); }
+.dir-d.st-burn { background: radial-gradient(130% 80% at 50% 45%, #6a3420 0, #1a0f0b 78%); }
+.dir-d.resting { background: radial-gradient(130% 80% at 50% 40%, #233a5a 0, #0b1220 78%); }
+.proto-set.d { position: relative; cursor: pointer; user-select: none; -webkit-user-select: none; }
+.proto-d-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+.proto-d-word { font-family: var(--serif); font-size: 22px; font-style: italic; color: color-mix(in srgb, var(--text) 80%, transparent); }
+.dir-d .proto-count.in, .dir-d .proto-count.top, .dir-d .proto-count.burn { color: var(--text); }
+.dir-d .proto-tap, .dir-d .proto-next, .dir-d .proto-pill { background: color-mix(in srgb, var(--ink) 45%, transparent); }
+
+/* ---------- E · Rings ---------- */
+.proto-tap.e { gap: 8px; }
+.proto-rings { position: relative; width: 300px; height: 300px; max-width: 100%; align-self: center; }
+.proto-rings svg { display: block; width: 100%; height: auto; }
+.proto-rings-in { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.ring-track { fill: none; stroke: var(--track); }
+.ring-fill { fill: none; stroke-linecap: round; transition: stroke-dashoffset 0.4s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.3s; }
+.ring-fill.session { stroke: var(--lavender); }
+.ring-fill.sets { stroke: var(--blue-soft); }
+.ring-fill.on { stroke: var(--quiet); }
+.ring-fill.in { stroke: var(--sage); }
+.ring-fill.top { stroke: var(--gold); }
+.ring-fill.burn { stroke: var(--apricot); }
+.ring-fill.rest { stroke: var(--blue); transition: stroke-dashoffset 1s linear; }
+.proto-legend { display: flex; gap: 14px; font-size: 13px; color: var(--quiet); }
+.proto-legend span:before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.lg-rep:before { background: var(--sage); }
+.lg-sets:before { background: var(--blue-soft); }
+.lg-session:before { background: var(--lavender); }
+.dir-d .proto-name, .dir-d .proto-ex { color: var(--text); }
+.proto-tag { font-family: var(--sans); font-size: 13px; margin-left: 8px; padding: 1px 7px; border-radius: 6px; vertical-align: 2px; }
+.proto-tag.burn { color: var(--apricot); border: 1px solid color-mix(in srgb, var(--apricot) 50%, transparent); }
+.proto-tag.slip { color: var(--rose); border: 1px dashed color-mix(in srgb, var(--rose) 60%, transparent); }
