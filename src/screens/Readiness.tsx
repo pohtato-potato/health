@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { addDays, dayKey, logHour } from '../domain/dates';
-import { DEFAULT_WEIGHTS, READINESS_KEYS, readinessText, REFIT_MIN, refitWeights, type ReadinessKey } from '../domain/readiness';
+import { DEFAULT_WEIGHTS, heldBackText, READINESS_KEYS, readinessText, REFIT_MIN, refitWeights, type ReadinessKey } from '../domain/readiness';
 import { patchSettings } from '../db/actions';
 import { fmtDayMonth, fmtInt } from '../domain/format';
 import type { Day, FoodEntry, SetEntry, Settings, TrainingSession } from '../domain/types';
@@ -95,6 +95,7 @@ export function ReadinessPage() {
             {BAND_LINE[r.band]}
           </div>
         )}
+        {r.known && heldBackText(r) && <div className="t14 lh">{heldBackText(r)}</div>}
         <div className="grid2" style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', width: '100%', gap: 6 }}>
           {bands.map((b) => (
             <div key={b} className="col gap4" style={{ alignItems: 'center' }}>

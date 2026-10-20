@@ -32,7 +32,7 @@ import {
 } from '../state/derived';
 import { Banners } from './Banners';
 import { forecastData } from '../state/forecastData';
-import { readinessInk, readinessText } from '../domain/readiness';
+import { heldBackBy, readinessInk, readinessText } from '../domain/readiness';
 import { OccasionCard } from '../sheets/Occasion';
 import { SeasonStrip, useUnlockedIds } from '../ui/Theme';
 import { hasReward } from '../domain/rewards';
@@ -205,8 +205,8 @@ export function Today() {
         </span>
         <span className="col gap4 grow">
           {ready.known ? (
-            [...ready.parts]
-              .sort((x, y) => Math.abs(y.delta) - Math.abs(x.delta))
+            // A low score leads with what is holding it back.
+            (heldBackBy(ready).length ? [...heldBackBy(ready), ...ready.parts.filter((p) => !heldBackBy(ready).includes(p)).sort((x, y) => Math.abs(y.delta) - Math.abs(x.delta))] : [...ready.parts].sort((x, y) => Math.abs(y.delta) - Math.abs(x.delta)))
               .slice(0, 3)
               .map((pt) => (
                 <span key={pt.key} className="row t13">

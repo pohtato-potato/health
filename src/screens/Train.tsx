@@ -2,12 +2,15 @@ import { useState } from 'react';
 import { addDays, daysBetween } from '../domain/dates';
 import { fmtDayMonth, fmtInt, weekdayName } from '../domain/format';
 import { fmtKg } from '../domain/loads';
-import { extraSessions, findSession, realSets } from '../domain/plan';
+import { extraSessions, findSession, realSets, valueOfSet } from '../domain/plan';
+import { removeExercise } from '../domain/planEdit';
+import { loggedLater, neglectedExercises, suspiciousSets } from '../domain/trainingChecks';
+import { askConfirm } from '../ui/Confirm';
 import { recordShot } from '../domain/strengthForecast';
 import { songAt } from '../sources/lastfm';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
-import type { SetEntry } from '../domain/types';
+import type { SetEntry, Settings, TrainingSession } from '../domain/types';
 import { useActiveSession, useAllDays, useAllSets, useSessions, useSettings, useToday } from '../db/hooks';
 import { go, openSheet } from '../router';
 import { Icon } from '../ui/Icon';
@@ -18,7 +21,7 @@ import { MuscleCard } from './MuscleMap';
 import { deloadCase } from '../domain/deload';
 import { placeFor } from '../domain/places';
 import { TRIP_SESSION_ID } from '../domain/trip';
-import { patchSettings } from '../db/actions';
+import { markSetsSkipped, patchSettings } from '../db/actions';
 
 export function Train() {
   const settings = useSettings();
@@ -161,6 +164,8 @@ export function Train() {
         )
       )}
 
+      <TidyCards settings={settings} sessions={sessions} sets={sets} />
+
       <MuscleCard sets={sets} plan={plan} today={today} />
 
       <RecordsCard sets={sets} />
@@ -210,12 +215,13 @@ export function Train() {
               const mine = sets.filter((x) => x.sessionId === s.id);
               const st = sessionStats(mine, plan);
               const mins = Math.round(((s.endedAt ?? s.startedAt) - s.startedAt) / 60000);
+              const later = loggedLater(mine);
               return (
                 <button key={s.id} type="button" className="sess" onClick={() => go('/session/view', { id: s.id })}>
                   <span className="col gap2 t15">
                     {weekdayName(s.date)} · {findSession(plan, s.session)?.name ?? s.session}
                     <span className="t12 q">
-                      {mins} min · {st.sets} set{st.sets === 1 ? '' : 's'}{st.kg ? ` · ${fmtInt(st.kg)} kg moved` : ''}
+                      {later ? 'logged later' : `${mins} min`} · {st.sets} set{st.sets === 1 ? '' : 's'}{st.kg ? ` · ${fmtInt(st.kg)} kg moved` : ''}
                       {s.short ? ' · short' : ''}
                     </span>
                   </span>
@@ -226,6 +232,74 @@ export function Train() {
         </div>
       )}
     </div>
+  );
+}
+
+/** Housekeeping the log needs: sets that look unfinished, and exercises that keep getting left out. */
+function TidyCards({ settings, sessions, sets }: { settings: Settings; sessions: TrainingSession[]; sets: SetEntry[] }) {
+  const plan = settings.plan!;
+  const odd = suspiciousSets(sets, settings.keptSets);
+  const left = neglectedExercises(plan, sessions, sets, 3, settings.neglectDismissed);
+  if (!odd.length && !left.length) return null;
+  const name = (id: string) => sets.find((s) => s.exerciseId === id)?.exercise ?? id;
+  const lines = odd.slice(0, 8).map((s) => `${fmtDayMonth(s.date)}: ${name(s.exerciseId)} ${s.loadKg ? `${fmtKg(s.loadKg)} kg × ` : '× '}${valueOfSet(s) ?? 0}`);
+  return (
+    <>
+      {odd.length > 0 && (
+        <div className="card" style={{ gap: 8 }}>
+          <div className="lbl">Sets that look unfinished</div>
+          <div className="t14 lh">
+            {odd.length} saved set{odd.length === 1 ? '' : 's'} look{odd.length === 1 ? 's' : ''} like a placeholder: 1 rep with no weight, or under a third of the sets around {odd.length === 1 ? 'it' : 'them'}. They count toward records and volume until skipped.
+          </div>
+          <div className="t13 q lh">{lines.join(' · ')}{odd.length > lines.length ? ` · and ${odd.length - lines.length} more` : ''}</div>
+          <div className="row" style={{ gap: 10 }}>
+            <button type="button" className="btn ghost grow" onClick={() => void patchSettings((s) => ({ keptSets: [...(s.keptSets ?? []), ...odd.map((x) => x.id)] }))}>
+              They’re real
+            </button>
+            <button
+              type="button"
+              className="btn grow"
+              onClick={async () => {
+                if (await askConfirm({ title: `Mark ${odd.length} set${odd.length === 1 ? '' : 's'} skipped?`, body: 'They stay in the session as skipped and leave records, volume and progression.', yes: 'Mark skipped' })) await markSetsSkipped(odd.map((x) => x.id));
+              }}
+            >
+              Mark skipped
+            </button>
+          </div>
+        </div>
+      )}
+      {left.map((n) => {
+        const flagged = plan.flags.some((f) => f.swap && (f.swap.from === n.exerciseId || f.swap.to === n.exerciseId));
+        return (
+          <div key={n.exerciseId} className="card" style={{ gap: 8 }}>
+            <div className="lbl">Always skipped</div>
+            <div className="t15 lh">
+              {n.name} was left out of the last {n.missed} {findSession(plan, n.sessionId)?.name ?? n.sessionId} sessions. Move it, swap it, or drop it from the plan?
+            </div>
+            <div className="row wrap" style={{ gap: 8 }}>
+              <button type="button" className="btn ghost grow" onClick={() => void patchSettings((s) => ({ neglectDismissed: { ...s.neglectDismissed, [n.exerciseId]: Date.now() } }))}>
+                Keep it
+              </button>
+              <button type="button" className="btn ghost grow" onClick={() => go('/plan')}>
+                Move or swap
+              </button>
+              {!flagged && (
+                <button
+                  type="button"
+                  className="btn grow"
+                  onClick={async () => {
+                    if (!(await askConfirm({ title: `Drop ${n.name} from the plan?`, body: 'Its history stays. You can add it back in the plan editor.', yes: 'Drop it' }))) return;
+                    await patchSettings((s) => (s.plan ? { plan: { ...s.plan, sessions: s.plan.sessions.map((x) => (x.id === n.sessionId ? removeExercise(x, n.exerciseId) : x)) } } : {}));
+                  }}
+                >
+                  Drop it
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </>
   );
 }
 

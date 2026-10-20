@@ -110,6 +110,8 @@ export interface Plate {
   kg: number;
   count: number;
   owned: boolean;
+  /** Width of one plate on the bar, mm. Cast iron is thinner than PVC for the same weight. */
+  thicknessMm?: number;
 }
 
 export interface Equipment {
@@ -117,6 +119,8 @@ export interface Equipment {
   plates: Plate[];
   /** Fixed dumbbells owned as pairs, in kg each. */
   fixed: number[];
+  /** Usable sleeve on each side of a dumbbell handle, mm: how much plate fits before the collar. */
+  sleeveMm?: number;
   band: boolean;
   bench: string;
   /** A reward: training at a gym, with a full rack of dumbbells. */
@@ -229,6 +233,10 @@ export interface Settings {
   planState: { variants: Record<string, number>; band: Record<string, number> };
   /** The session picked to start the loop at import; holds until a rotation session is done after `at`. */
   rotationStart?: { session: string; at: number };
+  /** Old sets looked at and kept as real, by id, so the "unfinished sets" check leaves them be. */
+  keptSets?: string[];
+  /** "Keep it" on an always-skipped exercise, by exercise id: when it was answered. */
+  neglectDismissed?: Record<string, number>;
   /** What a plan import replaced, so it can be undone for 7 days. */
   planUndo?: { at: number; name: string; plan?: PlanDef; planState: Settings['planState']; rotationStart?: Settings['rotationStart'] };
   /** Fastest morning log, in seconds. */

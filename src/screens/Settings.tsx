@@ -809,11 +809,13 @@ function YouEditor({ settings, onClose }: { settings: Settings; onClose: () => v
 function PlatesEditor({ settings, onClose }: { settings: Settings; onClose: () => void }) {
   const [plates, setPlates] = useState(settings.equipment.plates.map((p) => ({ ...p })));
   const [fixed, setFixed] = useState(settings.equipment.fixed.join(', '));
-  const eq = { ...settings.equipment, plates, fixed: parseList(fixed) };
+  const [sleeve, setSleeve] = useState<number | undefined>(settings.equipment.sleeveMm);
+  const eq = { ...settings.equipment, plates, fixed: parseList(fixed), sleeveMm: sleeve };
   return (
     <Sheet title="Plates and dumbbells" sub="Loads are per dumbbell. Plates go on in matching pairs." onClose={onClose} tall>
       {plates.map((p, i) => (
-        <div key={i} className="grid3" style={{ alignItems: 'end' }}>
+        <div key={i} className="col gap6">
+        <div className="grid3" style={{ alignItems: 'end' }}>
           <label className="flabel">
             <span className="lbl">Plate kg</span>
             <DecField value={p.kg} onChange={(v) => setPlates(plates.map((x, j) => (j === i ? { ...x, kg: v ?? 0 } : x)))} />
@@ -827,10 +829,20 @@ function PlatesEditor({ settings, onClose }: { settings: Settings; onClose: () =
             <input type="checkbox" className="sw" checked={p.owned} onChange={(e) => setPlates(plates.map((x, j) => (j === i ? { ...x, owned: e.target.checked } : x)))} />
           </label>
         </div>
+          <label className="flabel">
+            <span className="lbl">Width of one plate, mm (optional)</span>
+            <DecField value={p.thicknessMm} onChange={(v) => setPlates(plates.map((x, j) => (j === i ? { ...x, thicknessMm: v || undefined } : x)))} placeholder="e.g. 30 for PVC, 18 for cast iron" />
+          </label>
+        </div>
       ))}
       <button type="button" className="link" onClick={() => setPlates([...plates, { kg: 2.5, count: 4, owned: true }])}>
         + Add a plate size
       </button>
+      <label className="flabel">
+        <span className="lbl">Handle sleeve, mm each side (optional)</span>
+        <DecField value={sleeve} onChange={(v) => setSleeve(v || undefined)} placeholder="Collar to the end of the handle" />
+        <span className="t13 q lh">With plate widths and this set, loads only count when the plates fit on the handle.</span>
+      </label>
       <label className="flabel">
         <span className="lbl">Fixed dumbbells, kg each</span>
         <input className="field" value={fixed} onChange={(e) => setFixed(e.target.value)} placeholder="e.g. 1, 2.5, 5" />
@@ -842,7 +854,7 @@ function PlatesEditor({ settings, onClose }: { settings: Settings; onClose: () =
         type="button"
         className="btn lg block"
         onClick={async () => {
-          await patchSettings((s) => ({ equipment: { ...s.equipment, plates: plates.filter((p) => p.kg > 0 && p.count > 0), fixed: parseList(fixed) } }));
+          await patchSettings((s) => ({ equipment: { ...s.equipment, plates: plates.filter((p) => p.kg > 0 && p.count > 0), fixed: parseList(fixed), sleeveMm: sleeve } }));
           onClose();
         }}
       >

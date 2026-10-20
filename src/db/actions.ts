@@ -318,6 +318,11 @@ export async function logSet(set: Omit<SetEntry, 'id'> & { id?: string }): Promi
   return rec;
 }
 
+/** Marks saved sets as skipped: they keep the session's shape and leave every stat. */
+export async function markSetsSkipped(ids: string[]) {
+  await db.sets.where('id').anyOf(ids).modify({ skipped: true });
+}
+
 export async function deleteSet(id: string) {
   const before = await db.sets.get(id);
   await db.sets.delete(id);

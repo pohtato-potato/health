@@ -13,6 +13,7 @@ import { dayFoodLabel, foodDaysFor, type FoodBasis } from '../domain/logged';
 import { placeFor } from '../domain/places';
 import { checklistSlots } from '../state/derived';
 import { whtrWaists } from '../domain/benchmark';
+import { loggedLater } from '../domain/trainingChecks';
 
 export interface ExportData {
   settings: Settings;
@@ -157,16 +158,17 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
   }
 
   // Sessions
-  const sessions: Cell[][] = [['date', 'session', 'start', 'end', 'minutes', 'short', 'sets', 'reps', 'kg_moved', 'records', 'joint_flags', 'swaps', 'notes', 'quality', 'readiness', 'context', 'lighter_week']];
+  const sessions: Cell[][] = [['date', 'session', 'start', 'end', 'minutes', 'short', 'sets', 'reps', 'kg_moved', 'records', 'joint_flags', 'swaps', 'notes', 'quality', 'readiness', 'context', 'lighter_week', 'logged_later']];
   for (const x of done) {
     const mine = d.sets.filter((y) => y.sessionId === x.id);
+    const later = loggedLater(mine);
     const kg = mine.reduce((n, y) => n + (y.loadKg ?? 0) * (y.reps ?? 0) * (plan && findExercise(plan, y.exerciseId)?.load === 'pair' ? 2 : 1), 0);
     sessions.push([
       x.date,
       x.session,
       fmtTime(x.startedAt),
       x.endedAt ? fmtTime(x.endedAt) : null,
-      x.endedAt ? Math.round((x.endedAt - x.startedAt) / 60000) : null,
+      x.endedAt && !later ? Math.round((x.endedAt - x.startedAt) / 60000) : null,
       x.short,
       mine.filter((y) => !y.drop).length,
       mine.reduce((n, y) => n + (y.reps ?? 0), 0),
@@ -179,6 +181,7 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
       x.readiness ?? null,
       x.context?.join('; ') || null,
       !!x.lighter,
+      later,
     ]);
   }
 
@@ -317,7 +320,7 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
     ['Food log: every entry. kind is food, quick (a typed estimate), free (the weekly free meal) or drink.'],
     ['My foods: saved foods. kcal and protein are for values_per of the measured_in unit.'],
     ['Sets: one row per set, in the training plan’s own schema (date, session, exercise, set, side, load_kg, reps, seconds, notes). load_kg is per dumbbell. mark: !! record, ! beat last time, = matched.'],
-    ['Sessions: one row per session, with joint flags and any swaps.'],
+    ['Sessions: one row per session, with joint flags and any swaps. logged_later marks sessions typed in afterwards (sets under 30 s apart on average); their minutes are left blank.'],
     ['Weekly: Monday-to-Sunday averages. Food averages count complete days when any are marked, else days with entries; food_basis says which and how many.'],
     ['Measurements: waist standing (stomach tucked), relaxed and slouched, shoulders, and the shoulder-to-waist ratio (it should rise). Waist-to-height uses the relaxed waist once there is one; waist_to_height_basis says which.'],
     ['Records: the best set per exercise id (the highest estimated one-rep max for loaded reps), the best at each load, and any older names. Skipped and placeholder sets are left out.'],

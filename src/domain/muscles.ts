@@ -34,6 +34,14 @@ export const EXERCISE_MUSCLES: Record<string, Muscles> = {
   'calf-raise': m(['calves']),
   'side-plank': m(['abs']),
   'dead-bug': m(['abs']),
+  'single-leg-bridge': m(['glutes'], ['hamstrings']),
+  'overhead-ext': m(['triceps']),
+  'floor-fly': m(['chest'], ['front-delts']),
+  plank: m(['abs']),
+  'seal-row': m(['upper-back', 'lats'], ['rear-delts', 'biceps']),
+  'seated-lateral': m(['side-delts']),
+  'concentration-curl': m(['biceps']),
+  'close-grip-press': m(['triceps', 'chest'], ['front-delts']),
 };
 
 /** Name keywords for exercises not in the table, most specific first. */

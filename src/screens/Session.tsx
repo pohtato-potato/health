@@ -26,6 +26,7 @@ import {
   type ExerciseDef,
   type PlanDef,
 } from '../domain/plan';
+import { looksUnfinished, movementKind } from '../domain/trainingChecks';
 import { adviceTonight, exerciseStatus, heavierOffer, historyFor, ladder, loadSoFar, loadTonight } from '../domain/progression';
 import type { SetEntry, Settings, Side, TrainingSession } from '../domain/types';
 import { bump, deleteSet, discardSession, logSet, patchSession, patchSettings, startSession } from '../db/actions';
@@ -246,7 +247,8 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
     const st = statuses.get(r.ex.id)!;
     const kg = r.drop ? r.ex.drop?.kg ?? null : loadSoFar(mine, r.ex.id, loadTonight(st, session.heavier?.[r.ex.id]));
     const last = st.last?.sets.find((s) => s.setNo === r.setNo && s.side === r.side && !!s.drop === r.drop);
-    let val = last ? valueOf(last) : undefined;
+    // A "1 rep, no weight" from last time (old band rows) is no target: aim from the range instead.
+    let val = last && !isPlaceholder(last) ? valueOf(last) : undefined;
     // The second side of a set follows the first. With a lead side, it never goes above it.
     const firstSide = sidesFor(r.ex, session.firstSide?.[r.ex.id])[0];
     if (r.ex.perSide && r.side !== firstSide) {
@@ -280,8 +282,17 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
     }
     const loadKg = kgEditable(r) ? (kgText ? parseFloat(kgText) : null) : null;
     const asSaved = { ...measured(r.ex, val), loadKg: Number.isFinite(loadKg as number) ? loadKg : null };
-    if (!existing && isPlaceholder(asSaved)) {
-      const skipIt = await askConfirm({ title: 'Skip this set instead?', body: '1 rep with no weight is usually a set that wasn\'t done. Skipped sets stay out of your stats.', yes: 'Skip it', no: 'Save 1 rep' });
+    // Compare with last time's set, else the best set of this exercise tonight.
+    const tonight = realSets(mine).filter((s) => s.exerciseId === r.ex.id && !s.drop).map((s) => valueOf(s) ?? 0);
+    const reference = (d.last && !isPlaceholder(d.last) ? valueOf(d.last) : undefined) ?? (tonight.length ? Math.max(...tonight) : undefined);
+    if (!existing && !r.drop && looksUnfinished(asSaved, reference)) {
+      const n = valueOfSet(asSaved) ?? 0;
+      const skipIt = await askConfirm({
+        title: 'Real set, or skip?',
+        body: isPlaceholder(asSaved) ? "1 rep with no weight is usually a set that wasn't done. Skipped sets stay out of records and volume." : `${n} is well under the ${reference} it follows. If the set wasn't done, skip it: skipped sets stay out of records and volume.`,
+        yes: 'Skip it',
+        no: `Save ${n}`,
+      });
       if (skipIt) return skip(r);
     }
     const st = statuses.get(r.ex.id)!;
@@ -694,23 +705,45 @@ function SwapSheet({
   onSwap: (to: string | null) => void;
 }) {
   const others = allExercises(plan).filter((e) => !session.exercises.includes(e.id));
+  // A swap keeps the movement type: legs for legs. Anything else asks first, so leg work isn't lost quietly.
+  const kind = movementKind(current);
+  const same = others.filter((e) => movementKind(e) === kind);
+  const different = others.filter((e) => movementKind(e) !== kind);
+  const KIND_WORDS = { legs: 'leg work', push: 'pushing work', pull: 'pulling work', core: 'core work' } as const;
+  const pickDifferent = async (e: ExerciseDef) => {
+    const ok = await askConfirm({
+      title: `Swap ${lowerFirst(current.name)} for ${lowerFirst(e.name)}?`,
+      body: kind ? `That trades ${KIND_WORDS[kind]} for ${movementKind(e) ? KIND_WORDS[movementKind(e)!] : 'something else'}, so tonight has less ${KIND_WORDS[kind]}.` : undefined,
+      yes: 'Swap anyway',
+    });
+    if (ok) onSwap(e.id);
+  };
+  const row = (e: ExerciseDef, onClick: () => void) => (
+    <button key={e.id} type="button" className="li" onClick={onClick}>
+      <span className="s">
+        <span>{e.name}</span>
+        <small>{targetText(e)}</small>
+      </span>
+      <Icon name="right" size={16} stroke={1.8} color="var(--dim)" />
+    </button>
+  );
   return (
     <Sheet title={`Swap ${lowerFirst(current.name)}`} onClose={onClose}>
       <button type="button" className="btn ghost block" onClick={() => onSwap(null)}>
         Skip it tonight
       </button>
-      <div className="lbl">Or do one of these instead</div>
-      <div className="list">
-        {others.map((e) => (
-          <button key={e.id} type="button" className="li" onClick={() => onSwap(e.id)}>
-            <span className="s">
-              <span>{e.name}</span>
-              <small>{targetText(e)}</small>
-            </span>
-            <Icon name="right" size={16} stroke={1.8} color="var(--dim)" />
-          </button>
-        ))}
-      </div>
+      {same.length > 0 && (
+        <>
+          <div className="lbl">Same kind of work{kind ? `: ${KIND_WORDS[kind]}` : ''}</div>
+          <div className="list">{same.map((e) => row(e, () => onSwap(e.id)))}</div>
+        </>
+      )}
+      {different.length > 0 && (
+        <>
+          <div className="lbl">{same.length ? 'Different work' : 'Or do one of these instead'}</div>
+          <div className="list">{different.map((e) => row(e, () => void pickDifferent(e)))}</div>
+        </>
+      )}
     </Sheet>
   );
 }
