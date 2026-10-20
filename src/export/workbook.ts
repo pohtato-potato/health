@@ -1,6 +1,6 @@
 import { addDays, dayRange, weekStart, type DayKey, dayOfLogging } from '../domain/dates';
 import { fmtTime } from '../domain/format';
-import { findExercise, targetText } from '../domain/plan';
+import { findExercise, isPlaceholder, targetText } from '../domain/plan';
 import { ringsFor, sleepMinutes, targetsOn, totalsFor } from '../domain/rings';
 import { weightTrend } from '../domain/streaks';
 import { stepStreakOf, targetsAt, trainingWeeksOf } from '../domain/occasions';
@@ -9,7 +9,7 @@ import { kmFromSteps, positionAt } from '../domain/walk';
 import type { Cell, Sheet } from './xlsx';
 import { slotStatus } from '../domain/checklist';
 import { entryTime } from '../domain/foods';
-import { dayFoodLabel } from '../domain/logged';
+import { dayFoodLabel, foodDaysFor, type FoodBasis } from '../domain/logged';
 import { placeFor } from '../domain/places';
 import { checklistSlots } from '../state/derived';
 
@@ -179,7 +179,15 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
   }
 
   // Weekly
-  const weekly: Cell[][] = [['week_start', 'avg_weight_kg', 'trend_kg_end', 'avg_steps', 'avg_kcal', 'avg_protein_g', 'avg_sleep_hours', 'sessions', 'perfect_days', 'days_logged']];
+  // Food averages count the same days as the app's week: complete days when any, else days with entries.
+  const foodAvg = (ds: DayKey[]) => {
+    const food = foodDaysFor(ds, byDay, ds.flatMap((x) => entriesByDay.get(x) ?? []));
+    const sum = (x: DayKey, k: 'kcal' | 'protein') => (entriesByDay.get(x) ?? []).reduce((n, e) => n + e[k], 0);
+    const mean = (k: 'kcal' | 'protein') => (food.counted.length ? food.counted.reduce((n, x) => n + sum(x, k), 0) / food.counted.length : null);
+    return { kcal: mean('kcal'), protein: mean('protein'), n: food.counted.length, basis: food.basis };
+  };
+  const basisText = (n: number, basis: FoodBasis) => (basis === 'none' ? null : `${basis}, ${n} day${n === 1 ? '' : 's'}`);
+  const weekly: Cell[][] = [['week_start', 'avg_weight_kg', 'trend_kg_end', 'avg_steps', 'avg_kcal', 'avg_protein_g', 'avg_sleep_hours', 'sessions', 'perfect_days', 'days_logged', 'food_basis']];
   if (dates.length) {
     for (let w = weekStart(dates[0]); w <= today; w = addDays(w, 7)) {
       const ds = dayRange(w, addDays(w, 6)).filter((x) => x <= today);
@@ -188,18 +196,20 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
         return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
       };
       const rows = daily.slice(1).filter((row) => ds.includes(row[0] as string));
+      const food = foodAvg(ds);
       const lastTrend = [...ds].reverse().map((x) => trend.get(x)).find((v) => v !== undefined);
       weekly.push([
         w,
         r2(avg(ds.map((x) => byDay.get(x)?.weightKg))),
         r2(lastTrend),
         avg(ds.map((x) => byDay.get(x)?.steps)) !== null ? Math.round(avg(ds.map((x) => byDay.get(x)?.steps))!) : null,
-        avg(rows.map((row) => row[10] as number | null)) !== null ? Math.round(avg(rows.map((row) => row[10] as number | null))!) : null,
-        r1(avg(rows.map((row) => row[11] as number | null))),
+        food.kcal !== null ? Math.round(food.kcal) : null,
+        r1(food.protein),
         r2(avg(rows.map((row) => row[8] as number | null))),
         done.filter((x) => x.date >= w && x.date <= addDays(w, 6)).length,
         rows.filter((row) => row[17] === true).length,
         rows.filter((row) => row.slice(1, 12).some((v) => v !== null)).length,
+        basisText(food.n, food.basis),
       ]);
     }
   }
@@ -221,15 +231,27 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
     ]);
   }
 
-  // Records: the best set for each exercise, heaviest first, then most reps.
-  const records: Cell[][] = [['exercise', 'best_load_kg', 'best_reps_or_seconds', 'side', 'date', 'sessions_done', 'first_date']];
+  // Records: one row per exercise id, so a renamed exercise stays together. The best set is the highest
+  // estimated one-rep max (Epley) for loaded reps, else the most reps, seconds or steps. Skipped and
+  // placeholder sets ("1 rep, no weight") never count.
+  const records: Cell[][] = [['exercise', 'best_load_kg', 'best_reps_or_seconds', 'side', 'date', 'sessions_done', 'first_date', 'exercise_id', 'est_1rm_kg', 'best_per_load', 'other_names']];
   const byEx = new Map<string, SetEntry[]>();
-  for (const x of d.sets) if (doneIds.has(x.sessionId) && !x.drop) byEx.set(x.exercise, [...(byEx.get(x.exercise) ?? []), x]);
-  for (const [name, xs] of [...byEx.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
-    const best = [...xs].sort((a, b) => (b.loadKg ?? 0) - (a.loadKg ?? 0) || (b.reps ?? b.seconds ?? 0) - (a.reps ?? a.seconds ?? 0))[0];
+  for (const x of d.sets) if (doneIds.has(x.sessionId) && !x.drop && !x.skipped && !isPlaceholder(x)) byEx.set(x.exerciseId, [...(byEx.get(x.exerciseId) ?? []), x]);
+  const amount = (x: SetEntry) => x.reps ?? x.seconds ?? x.steps ?? 0;
+  const e1rm = (x: SetEntry) => (x.loadKg && x.reps ? x.loadKg * (1 + x.reps / 30) : null);
+  const score = (x: SetEntry) => e1rm(x) ?? (x.loadKg ?? 0) * 1000 + amount(x);
+  const recRows = [...byEx.entries()].map(([id, xs]) => {
+    const latest = xs.reduce((a, b) => (b.at > a.at ? b : a));
+    const name = (plan && findExercise(plan, id)?.name) ?? latest.exercise;
+    const best = xs.reduce((a, b) => (score(b) > score(a) ? b : a));
+    const perLoad = new Map<number, SetEntry>();
+    for (const x of xs) if (x.loadKg) perLoad.set(x.loadKg, !perLoad.has(x.loadKg) || amount(x) > amount(perLoad.get(x.loadKg)!) ? x : perLoad.get(x.loadKg)!);
+    const loads = [...perLoad.entries()].sort((a, b) => b[0] - a[0]);
+    const others = [...new Set(xs.map((x) => x.exercise))].filter((n) => n !== name);
     const dates2 = xs.map((x) => x.date).sort();
-    records.push([name, best.loadKg, best.reps ?? best.seconds ?? null, best.side, best.date, new Set(xs.map((x) => x.sessionId)).size, dates2[0]]);
-  }
+    return [name, best.loadKg, amount(best) || null, best.side, best.date, new Set(xs.map((x) => x.sessionId)).size, dates2[0], id, r1(e1rm(best)), loads.length > 1 ? loads.map(([kg, x]) => `${kg} kg × ${amount(x)}`).join('; ') : null, others.join('; ') || null] as Cell[];
+  });
+  for (const row of recRows.sort((a, b) => String(a[0]).localeCompare(String(b[0])))) records.push(row);
 
   // Targets history
   const targets: Cell[][] = [['from', 'kcal_min', 'kcal_max', 'protein_g', 'steps', 'water_ml', 'sleep_hours', 'sessions_per_week']];
@@ -258,7 +280,8 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
   const km = kmFromSteps([...stepsMap.values()].reduce((a, b) => a + b, 0));
   const pos = positionAt(km);
   const latestTrend = weightTrend(weighIns).pop();
-  const lastWaist = [...d.measurements].reverse().find((m) => m.waistStanding !== undefined);
+  const lastWaist = [...d.measurements].sort((a, b) => b.date.localeCompare(a.date) || b.at - a.at).find((m) => m.waistStanding !== undefined);
+  const food7 = foodAvg(dates.filter((x) => x > addDays(today, -7)));
   const summary: Cell[][] = [
     ['measure', 'value', 'note'],
     ['exported', `${today} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`, 'Phone time'],
@@ -266,8 +289,8 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
     ['weight trend, kg', r2(latestTrend?.trend), latestTrend ? `Smoothed; last weigh-in ${latestTrend.kg} kg on ${latestTrend.date}` : null],
     ['waist standing, in', lastWaist?.waistStanding ?? null, lastWaist?.date ?? null],
     ['steps, 7-day average', avg7(3) !== null ? Math.round(avg7(3)!) : null, t ? `Target ${t.steps}` : null],
-    ['kcal, 7-day average', avg7(10) !== null ? Math.round(avg7(10)!) : null, t ? `Target ${t.kcalMin}–${t.kcalMax}` : null],
-    ['protein g, 7-day average', r1(avg7(11)), t ? `Target ${t.proteinG}` : null],
+    ['kcal, 7-day average', food7.kcal !== null ? Math.round(food7.kcal) : null, [t ? `Target ${t.kcalMin}–${t.kcalMax}` : null, basisText(food7.n, food7.basis)].filter(Boolean).join('; ') || null],
+    ['protein g, 7-day average', r1(food7.protein), [t ? `Target ${t.proteinG}` : null, basisText(food7.n, food7.basis)].filter(Boolean).join('; ') || null],
     ['sleep hours, 7-day average', r2(avg7(8)), null],
     ['step streak, days', streak?.current ?? null, streak ? `${streak.shields} shields; best ${streak.best}` : null],
     ['training weeks in a row', weeks?.streak ?? null, weeks ? `${weeks.thisWeek} this week` : null],
@@ -286,9 +309,9 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
     ['My foods: saved foods. kcal and protein are for values_per of the measured_in unit.'],
     ['Sets: one row per set, in the training plan’s own schema (date, session, exercise, set, side, load_kg, reps, seconds, notes). load_kg is per dumbbell. mark: !! record, ! beat last time, = matched.'],
     ['Sessions: one row per session, with joint flags and any swaps.'],
-    ['Weekly: Monday-to-Sunday averages.'],
+    ['Weekly: Monday-to-Sunday averages. Food averages count complete days when any are marked, else days with entries; food_basis says which and how many.'],
     ['Measurements: waist standing and slouched, shoulders, and the shoulder-to-waist ratio (it should rise).'],
-    ['Records: the best set per exercise.'],
+    ['Records: the best set per exercise id (the highest estimated one-rep max for loaded reps), the best at each load, and any older names. Skipped and placeholder sets are left out.'],
     ['Targets history: the targets in force from each date.'],
     ['Plan: the training plan as it stands.'],
   ];

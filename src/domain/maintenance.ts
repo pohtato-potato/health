@@ -200,10 +200,11 @@ export function maintenanceModel(input: {
   const range = dayRange(from, to);
   const byDate = new Map(input.days.map((d) => [d.date, d]));
   const inWindow = input.entries.filter((e) => e.date >= from && e.date <= to);
-  const food = foodDaysFor(range, byDate, inWindow);
+  // A few days marked complete mustn't freeze the model: below the minimum, logged days count instead.
+  const food = foodDaysFor(range, byDate, inWindow, MIN_LOGGED_DAYS);
   const weighIns = input.days.filter((d) => d.date >= from && d.date <= to && d.weightKg !== undefined).length;
   const holding = (why: string): MaintenanceModel => ({ kcal: input.previous, band: 0, status: 'holding', method: why, logged: food.counted.length, weighIns });
-  if (food.counted.length < MIN_LOGGED_DAYS) return holding(`Holding: ${food.counted.length} of ${MIN_LOGGED_DAYS} logged days in the last ${window}.`);
+  if (food.counted.length < MIN_LOGGED_DAYS) return holding(`Holding: ${food.counted.length} of ${MIN_LOGGED_DAYS} ${food.basis === 'complete' ? 'complete' : 'logged'} days in the last ${window}.`);
   if (weighIns < MIN_WEIGH_INS) return holding(`Holding: ${weighIns} of ${MIN_WEIGH_INS} weigh-ins in the last ${window} days.`);
 
   const trend = trendWeight(input.days.filter((d) => d.date <= to), waterFlagDays(input.days, input.entries));

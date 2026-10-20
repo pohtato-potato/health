@@ -4,12 +4,13 @@ import type { Day, FoodEntry } from './types';
 export type FoodBasis = 'complete' | 'logged' | 'none';
 
 /**
- * Which days count for food averages. Days marked complete win when there are any;
- * otherwise any day with at least one entry. A day with nothing logged never counts as zero.
+ * Which days count for food averages. Days marked complete win when there are at least
+ * `minComplete` of them (default 1); otherwise any day with at least one entry. A day with
+ * nothing logged never counts as zero.
  */
-export function foodDaysFor(range: DayKey[], days: Map<DayKey, Pick<Day, 'foodDone'>>, entries: Pick<FoodEntry, 'date'>[]): { counted: DayKey[]; basis: FoodBasis } {
+export function foodDaysFor(range: DayKey[], days: Map<DayKey, Pick<Day, 'foodDone'>>, entries: Pick<FoodEntry, 'date'>[], minComplete = 1): { counted: DayKey[]; basis: FoodBasis } {
   const complete = range.filter((d) => days.get(d)?.foodDone);
-  if (complete.length) return { counted: complete, basis: 'complete' };
+  if (complete.length && complete.length >= minComplete) return { counted: complete, basis: 'complete' };
   const withEntries = new Set(entries.map((e) => e.date));
   const logged = range.filter((d) => withEntries.has(d));
   return logged.length ? { counted: logged, basis: 'logged' } : { counted: [], basis: 'none' };
