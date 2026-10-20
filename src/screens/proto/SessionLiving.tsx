@@ -96,28 +96,19 @@ const HOLD_MS = 450;
 const START = Date.now() - 34 * 60000;
 const SONG = 'Midnight City · M83';
 
-const LOOKS = [
-  { id: 'aurora', name: 'Aurora' },
-  { id: 'glow', name: 'Glow' },
-  { id: 'tide', name: 'Tide' },
-] as const;
-type Look = (typeof LOOKS)[number]['id'];
-
 /** Themes from the app's own list: each gives the tap its own shape and the rings their own colours. */
 const THEMES = [
-  { id: 'dusk', name: 'Dusk', rings: ['#b7a6f0', '#bfe8d4', '#c3d0f2'] },
-  { id: 'diwali', name: 'Diwali', rings: ['#f5b94a', '#f28c4b', '#ffe0a3'] },
-  { id: 'holi', name: 'Holi', rings: ['#ff7aa8', '#5fd6a0', '#7fb2ff'] },
-  { id: 'moonlight', name: 'Moonlight', rings: ['#d9e4f2', '#a8d0e6', '#8fa6c9'] },
-  { id: 'sunrise', name: 'Sunrise', rings: ['#ffb86b', '#ff8a6b', '#ffd3a0'] },
-  { id: 'retro', name: 'Retro', rings: ['#6ff07a', '#f6d743', '#3fbf5a'] },
+  { id: 'dusk', name: 'Dusk', rings: ['#b7a6f0', '#6fe0b0', '#ff9f80'] },
+  { id: 'diwali', name: 'Diwali', rings: ['#ffc23d', '#ff6b3d', '#e0479e'] },
+  { id: 'holi', name: 'Holi', rings: ['#ff5c9e', '#3fd68f', '#5c9dff'] },
+  { id: 'moonlight', name: 'Moonlight', rings: ['#e8eef8', '#7fc4f0', '#a58cf0'] },
+  { id: 'sunrise', name: 'Sunrise', rings: ['#ffd166', '#ff7a59', '#c44dff'] },
+  { id: 'retro', name: 'Retro', rings: ['#6ff07a', '#f6d743', '#ff5f5f'] },
 ] as const;
 type ThemeId = (typeof THEMES)[number]['id'];
 
 const RESTS = [
-  { id: 'fade', name: 'Fade' },
-  { id: 'ring', name: 'Ring' },
-  { id: 'next', name: 'Next first' },
+  { id: 'ring', name: 'Normal' },
   { id: 'saver', name: 'Low battery' },
 ] as const;
 type RestLook = (typeof RESTS)[number]['id'];
@@ -250,6 +241,15 @@ function useEngine() {
   };
   const saveCheck = () => {
     setDone([...done, { ex: ex.id, setNo, side, reps, burn, checks, rir, record, state: setState }]);
+    // Per-side work: the second side follows straight on; one rest comes after both.
+    if (ex.perSide && side === (ex.lead ?? 'L') && !record) {
+      setSide(side === 'L' ? 'R' : 'L');
+      setTaps([]);
+      setBurn(undefined);
+      setRipples([]);
+      setScreen('set');
+      return;
+    }
     setScreen(record ? 'record' : 'rest');
   };
   const nextSet = () => {
@@ -287,7 +287,7 @@ function useEngine() {
     setSheet(null);
     setScreen(s);
   };
-  const nextLabel = ex.perSide && side === (ex.lead ?? 'L') ? `Set ${setNo} · ${side === 'L' ? 'right' : 'left'} side` : `Set ${Math.min(ex.sets, setNo + 1)}${ex.perSide ? ` · ${ex.lead === 'R' ? 'right' : 'left'} first` : ''}`;
+  const nextLabel = ex.perSide && side === (ex.lead ?? 'L') ? `Set ${setNo} · ${side === 'L' ? 'right' : 'left'} side` : `Set ${Math.min(ex.sets, setNo + 1)}${ex.perSide ? ` · ${ex.lead === 'R' ? 'right' : 'left'} then ${ex.lead === 'R' ? 'left' : 'right'}` : ''}`;
 
   return { screen, go, setScreen, ex, exIdx, pick, setNo, side, reps, taps, gaps, slowing, burn, record, state, lastState, done, mine, prevHere, checks, setChecks, rir, setRir, restLeft, setRestLeft, sheet, setSheet, ripples, setRipples, legs, setLegs, lightLegs, kit, setKit, notes, setNotes, nudge, elapsed, finishAt, tapDown, tapUp, tapCancel, undo, finishSet, saveCheck, nextSet, nextLabel, tempoPhase, tempoBeat, tempoFrac };
 }
@@ -295,9 +295,8 @@ type E = ReturnType<typeof useEngine>;
 
 export function SessionProto() {
   const { params } = useRoute();
-  const [look, setLook] = useState<Look>(((params.get('v') as Look) || 'aurora') as Look);
-  const [theme, setTheme] = useState<ThemeId>('dusk');
-  const [restLook, setRestLook] = useState<RestLook>('fade');
+  const [theme, setTheme] = useState<ThemeId>(((params.get('theme') as ThemeId) || 'dusk') as ThemeId);
+  const [restLook, setRestLook] = useState<RestLook>('ring');
   const e = useEngine();
   const t = THEMES.find((x) => x.id === theme)!;
   const fill = e.screen === 'set' ? Math.min(1, e.reps / e.ex.hi) : e.screen === 'rest' ? e.restLeft / REST : 0.25;
@@ -310,16 +309,10 @@ export function SessionProto() {
     ['--ring3' as string]: t.rings[2],
   } as CSSProperties;
   return (
-    <div className={`lc look-${look} th-${theme} st-${e.state} from-${e.lastState}${e.screen === 'rest' ? ` rest-${restLook}` : ''} tempo-${e.tempoPhase}`} style={style}>
-      <Field look={look} />
+    <div className={`lc look-aurora th-${theme} st-${e.state} from-${e.lastState}${e.screen === 'rest' ? ` rest-${restLook}` : ''} tempo-${e.tempoPhase}`} style={style}>
+      <Field />
       <div className="lc-dev" aria-label="Prototype controls">
         <div className="lc-dev-row">
-          {LOOKS.map((l) => (
-            <button key={l.id} type="button" className={look === l.id ? 'on' : ''} onClick={() => setLook(l.id)}>
-              {l.name}
-            </button>
-          ))}
-          <span className="lc-dev-sep" />
           {THEMES.map((x) => (
             <button key={x.id} type="button" className={theme === x.id ? 'on' : ''} onClick={() => setTheme(x.id)}>
               {x.name}
@@ -348,7 +341,7 @@ export function SessionProto() {
         {e.screen === 'guide' && <Guide e={e} />}
         {e.screen === 'set' && <SetScreen e={e} theme={theme} />}
         {e.screen === 'check' && <Check e={e} />}
-        {e.screen === 'rest' && (restLook === 'ring' ? <RestRing e={e} /> : restLook === 'next' ? <RestNext e={e} /> : restLook === 'saver' ? <RestSaver e={e} /> : <RestFade e={e} />)}
+        {e.screen === 'rest' && (restLook === 'saver' ? <RestSaver e={e} /> : <RestRing e={e} />)}
         {e.screen === 'plates' && <Plates e={e} />}
         {e.screen === 'record' && <Record e={e} />}
         {e.screen === 'finale' && <Finale />}
@@ -359,23 +352,14 @@ export function SessionProto() {
   );
 }
 
-/** The living background. Aurora: drifting lights; glow: a soft field; tide: colour rising with the reps. */
-function Field({ look }: { look: Look }) {
+/** The living background: drifting lights in the colour of the moment. */
+export function Field() {
   return (
     <div className="lc-field" aria-hidden="true">
-      {look === 'aurora' && (
-        <>
-          <i className="blob b1" />
-          <i className="blob b2" />
-          <i className="blob b3" />
-          <i className="blob b4" />
-        </>
-      )}
-      {look === 'tide' && (
-        <div className="tide">
-          <i className="wave" />
-        </div>
-      )}
+      <i className="blob b1" />
+      <i className="blob b2" />
+      <i className="blob b3" />
+      <i className="blob b4" />
       <i className="lc-dim" />
     </div>
   );
@@ -633,6 +617,12 @@ function SetScreen({ e, theme }: { e: E; theme: ThemeId }) {
             {e.side}
           </span>
         )}
+        {e.ex.kg !== null && (
+          <span className="lc-bigkg" aria-hidden="true">
+            {e.ex.kg}
+            <small>kg</small>
+          </span>
+        )}
         <Ripples e={e} theme={theme} />
         <div className="lc-countwrap">
           {e.ex.tempo && <TempoRing e={e} />}
@@ -782,23 +772,7 @@ function NoteLink({ e }: { e: E }) {
   );
 }
 
-/** Fade: rest starts in the set's colour and fades to blue as it runs down. */
-function RestFade({ e }: { e: E }) {
-  return (
-    <section className="lc-screen">
-      <Top e={e} />
-      <div className="lc-rest-time num tn">{mmss(e.restLeft)}</div>
-      <div className="lc-word">{e.restLeft === 0 ? 'rest is over' : 'rest'}</div>
-      <JustNow e={e} />
-      <NextCard e={e} />
-      <div className="lc-adapt">Rest is 1:30 here: your reps dropped from 18 to 15 across sets last time.</div>
-      <NoteLink e={e} />
-      <RestFoot e={e} />
-    </section>
-  );
-}
-
-/** Ring: the time inside a ring that empties, in the theme's colour. */
+/** Rest: the time inside a ring that empties, while the background fades from the set's colour to blue. */
 function RestRing({ e }: { e: E }) {
   const R = 118;
   const C = 2 * Math.PI * R;
@@ -817,48 +791,8 @@ function RestRing({ e }: { e: E }) {
       </div>
       <JustNow e={e} />
       <NextCard e={e} />
-      <RestFoot e={e} />
-    </section>
-  );
-}
-
-/** Next first: the next set leads; the time is a bar at the top. */
-function RestNext({ e }: { e: E }) {
-  return (
-    <section className="lc-screen">
-      <Top e={e} />
-      <div className="lc-rest-bar">
-        <span className="num tn">{mmss(e.restLeft)}</span>
-        <span className="bar">
-          <i style={{ width: `${(e.restLeft / REST) * 100}%` }} />
-        </span>
-      </div>
-      <div className="lc-kicker" style={{ marginTop: 12 }}>
-        Up next
-      </div>
-      <h1 className="lc-h1" style={{ fontSize: 44 }}>
-        {e.nextLabel}
-      </h1>
-      <div className="lc-bignums">
-        <span>
-          <b className="num tn">{e.ex.kg ?? '—'}</b>
-          <small>kg</small>
-        </span>
-        <span>
-          <b className="num tn">
-            {e.ex.lo}–{e.ex.hi}
-          </b>
-          <small>reps</small>
-        </span>
-        <span>
-          <b className="num tn">{e.ex.last[Math.min(e.setNo, e.ex.sets - 1)]}</b>
-          <small>last time</small>
-        </span>
-      </div>
-      <div className="lc-cue" style={{ fontSize: 17 }}>
-        {e.ex.cue}
-      </div>
-      <JustNow e={e} />
+      <div className="lc-adapt">Rest is 1:30 here: your reps dropped from 18 to 15 across sets last time.</div>
+      <NoteLink e={e} />
       <RestFoot e={e} />
     </section>
   );
@@ -956,6 +890,14 @@ function Arc({ r, frac, cls, w, delay = 0 }: { r: number; frac: number; cls: str
 }
 
 const FINALE_STEPS = ['Flags', 'Records', 'Soundtrack', 'The hour', 'Form', 'Recap', 'Best'];
+const FINALE_TONES = ['calm', 'records', 'music', 'hour', 'form', 'recap', 'best'];
+const TRACKS = [
+  { name: 'Midnight City · M83', art: 'linear-gradient(135deg, #ff5c9e, #7a5cff)', record: true },
+  { name: 'Breathe · Télépopmusik', art: 'linear-gradient(135deg, #3fd6c4, #2a6cff)', record: true },
+  { name: 'Intro · The xx', art: 'linear-gradient(135deg, #f2f2f2, #6a6a7a)', record: false },
+  { name: 'Kids · MGMT', art: 'linear-gradient(135deg, #ffd166, #ff6b3d)', record: false },
+  { name: 'Teardrop · Massive Attack', art: 'linear-gradient(135deg, #6fe0b0, #1d6a5a)', record: false },
+];
 
 /**
  * The finale: joint checks first; then the records one by one with their songs, the soundtrack,
@@ -967,7 +909,7 @@ function Finale() {
   const FLAGS = ['Knee', 'Lower back', 'Wrist', 'Shoulder', 'Eyes'];
   const next = () => setStep((s) => Math.min(FINALE_STEPS.length - 1, s + 1));
   return (
-    <section className="lc-screen">
+    <section className={`lc-screen lc-finale fs-${FINALE_TONES[step]}`}>
       <div className="lc-steps" aria-label={`${FINALE_STEPS[step]}, ${step + 1} of ${FINALE_STEPS.length}`}>
         {FINALE_STEPS.map((s, i) => (
           <i key={s} className={i <= step ? 'on' : ''} />
@@ -1031,11 +973,13 @@ function Finale() {
           </div>
           <h1 className="lc-h1">14 tracks</h1>
           <div className="lc-card">
-            {['Midnight City · M83', 'Breathe · Télépopmusik', 'Intro · The xx', 'Kids · MGMT', 'Teardrop · Massive Attack'].map((s, i) => (
-              <div key={s} className="lc-row">
-                <span className="num tn q">{i + 1}</span>
-                <span className="grow">{s}</span>
-                {i < 2 && <span className="lc-tag gold">record</span>}
+            {TRACKS.map((t, i) => (
+              <div key={t.name} className="lc-track">
+                <i className="art" style={{ background: t.art }} aria-hidden="true" />
+                <span className="grow">
+                  <span className="num tn q">{i + 1}</span> {t.name}
+                </span>
+                {t.record && <span className="lc-tag gold">record</span>}
               </div>
             ))}
           </div>

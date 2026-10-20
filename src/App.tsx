@@ -1,3 +1,4 @@
+import { TrainProto } from './screens/proto/TrainLiving';
 import { SessionProto } from './screens/proto/SessionLiving';
 import { prefOn } from './domain/types';
 import { Suspense, lazy, useEffect, type ComponentType, type ReactNode } from 'react';
@@ -136,6 +137,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/physio': { el: () => <PhysioPage /> },
   '/reveal': { el: () => <RevealPage /> },
   '/proto/session': { el: () => <SessionProto /> },
+  '/proto/train': { el: () => <TrainProto /> },
 };
 
 export function App() {
