@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { addDays, daysBetween } from '../domain/dates';
 import { fmtDayMonth, fmtInt, weekdayName } from '../domain/format';
 import { fmtKg } from '../domain/loads';
-import { findSession, realSets } from '../domain/plan';
+import { extraSessions, findSession, realSets } from '../domain/plan';
 import { recordShot } from '../domain/strengthForecast';
 import { songAt } from '../sources/lastfm';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -113,11 +113,21 @@ export function Train() {
                   <Icon name="clock" size={16} /> 30 min
                 </button>
               </div>
-              {isTripDay && (
-                <button type="button" className="chip sm" style={{ alignSelf: 'flex-start' }} onClick={() => go('/session', { start: TRIP_SESSION_ID })}>
-                  Trip workout instead
-                </button>
+              {(isTripDay || extraSessions(plan).length > 0) && (
+                <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
+                  {isTripDay && (
+                    <button type="button" className="chip sm" onClick={() => go('/session', { start: TRIP_SESSION_ID })}>
+                      Trip workout instead
+                    </button>
+                  )}
+                  {extraSessions(plan).map((x) => (
+                    <button key={x.id} type="button" className="chip sm" onClick={() => go('/session', { start: x.id })}>
+                      {x.name} tonight
+                    </button>
+                  ))}
+                </div>
               )}
+              {extraSessions(plan).length > 0 && <div className="t12 q lh">An extra session counts toward the week; {next?.name ?? `Session ${up.sessionId}`} stays next.</div>}
             </div>
           );
         })()

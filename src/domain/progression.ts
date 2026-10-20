@@ -1,7 +1,7 @@
 import type { DayKey } from './dates';
 import { lowerFirst } from './format';
 import { fmtKg, isBigJump, nextLoad } from './loads';
-import { bandLevel, bottomOfRange, exerciseName, realSets, topOfRange, valueOfSet, type ExerciseDef, type PlanState, type TriggerDef } from './plan';
+import { bandLevel, bottomOfRange, exerciseName, realSets, sinceReset, topOfRange, valueOfSet, type ExerciseDef, type PlanState, type TriggerDef } from './plan';
 import { FORM_LABELS } from './quality';
 import type { Equipment, SetEntry } from './types';
 
@@ -37,11 +37,17 @@ export interface ExerciseStatus {
   advice?: Advice;
 }
 
-/** Working sets (not drop sets) of this exercise and its current variant. */
+/**
+ * Working sets (not drop sets) of this exercise and its current variant, since any load reset.
+ * On the base version, a set under an older name (the plan renamed it) still counts; a variant's sets don't.
+ */
 export function historyFor(ex: ExerciseDef, state: PlanState | undefined, sets: SetEntry[]): SetEntry[] {
   const name = exerciseName(ex, state);
-  return realSets(sets)
-    .filter((s) => s.exerciseId === ex.id && !s.drop && (!ex.variants?.length || s.exercise === name))
+  const onBase = (state?.variants[ex.id] ?? 0) === 0;
+  const variantNames = new Set(ex.variants?.map((v) => v.name));
+  const sameVersion = (s: SetEntry) => !ex.variants?.length || s.exercise === name || (onBase && !variantNames.has(s.exercise));
+  return sinceReset(ex, realSets(sets))
+    .filter((s) => s.exerciseId === ex.id && !s.drop && sameVersion(s))
     .sort((a, b) => a.at - b.at);
 }
 
@@ -81,7 +87,7 @@ export function exerciseStatus(
   const last = lastTime(historyFor(ex, state, allSets));
   const band = bandLevel(ex, state);
   // A new variant starts from the load used on the old one.
-  const anyLast = last ?? lastTime(realSets(allSets).filter((s) => s.exerciseId === ex.id && !s.drop).sort((a, b) => a.at - b.at));
+  const anyLast = last ?? lastTime(sinceReset(ex, realSets(allSets)).filter((s) => s.exerciseId === ex.id && !s.drop).sort((a, b) => a.at - b.at));
   const lastLoad = anyLast ? workingLoad(anyLast.sets) : null;
   const base: ExerciseStatus = {
     name,
@@ -279,7 +285,7 @@ export function adviceTonight(st: ExerciseStatus, decision: 'yes' | 'no' | undef
 export function ladder(ex: ExerciseDef, sets: SetEntry[]): { load: number | null; rungs: { reps: number; done: boolean }[] } {
   const lo = bottomOfRange(ex);
   const hi = topOfRange(ex);
-  const hist = realSets(sets).filter((s) => s.exerciseId === ex.id && !s.drop);
+  const hist = sinceReset(ex, realSets(sets)).filter((s) => s.exerciseId === ex.id && !s.drop);
   const last = lastTime(hist.sort((a, b) => a.at - b.at));
   const load = last ? workingLoad(last.sets) : ex.startKg ?? null;
   if (lo === undefined || hi === undefined) return { load, rungs: [] };

@@ -227,6 +227,10 @@ export interface Settings {
   plan?: PlanDef;
   /** Choices made while following the plan: harder variants and band levels. */
   planState: { variants: Record<string, number>; band: Record<string, number> };
+  /** The session picked to start the loop at import; holds until a rotation session is done after `at`. */
+  rotationStart?: { session: string; at: number };
+  /** What a plan import replaced, so it can be undone for 7 days. */
+  planUndo?: { at: number; name: string; plan?: PlanDef; planState: Settings['planState']; rotationStart?: Settings['rotationStart'] };
   /** Fastest morning log, in seconds. */
   morningBest?: number;
   /** A worn title, by achievement id. */

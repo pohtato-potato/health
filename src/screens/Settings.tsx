@@ -27,6 +27,8 @@ import { askConfirm } from '../ui/Confirm';
 import { useBatteryLevel } from '../ui/RestScreen';
 import { setupGaps } from '../domain/setupCheck';
 import { saveAuditPack } from '../export/saveAuditPack';
+import { undoImport, undoOnOffer } from '../domain/planImport';
+import { PlanImportSheet } from '../sheets/PlanImportSheet';
 
 type Editor = null | 'targets' | 'item' | 'homes' | 'you' | 'plates' | 'theme' | 'review';
 
@@ -79,6 +81,7 @@ export function SettingsScreen() {
     }
   };
 
+  const undo = undoOnOffer(settings);
   const last = settings.backup.lastQuick;
   const plates = settings.equipment.plates;
   const meds = settings.checklist.filter((i) => i.active && i.med).length;
@@ -194,6 +197,21 @@ export function SettingsScreen() {
         {settings.plan && (
           <button type="button" className="li q" onClick={() => planInput.current?.click()}>
             Import a plan from a file
+          </button>
+        )}
+        {undo && (
+          <button
+            type="button"
+            className="li q"
+            onClick={async () => {
+              const ok = await askConfirm({ title: `Undo importing “${undo.name}”?`, body: `${undo.plan ? `“${undo.plan.name}” comes back` : 'The plan is removed'}, with its variants and where the loop stood. Sessions logged since stay.`, yes: 'Undo import' });
+              const back = ok && undoImport(settings);
+              if (!back) return;
+              await patchSettings(back);
+              toast({ text: undo.plan ? `${undo.plan.name} is your plan again` : 'Import undone' });
+            }}
+          >
+            Undo import of {undo.name}
           </button>
         )}
         <input ref={planInput} type="file" accept="application/json,.json" hidden onChange={(e) => (pickPlan(e.target.files?.[0]), (e.target.value = ''))} />
@@ -530,26 +548,7 @@ export function SettingsScreen() {
           </button>
         </Sheet>
       )}
-      {pending?.kind === 'plan' && (
-        <Sheet title={`Use “${pending.plan.name}”?`} onClose={() => setPending(null)}>
-          <div className="t15 lh">
-            {pending.plan.sessions.map((s) => `${s.name}: ${s.exercises.length} exercises`).join(' · ')}. {pending.plan.flags.length} joint checks, {pending.plan.triggers?.length ?? 0} triggers.
-          </div>
-          <div className="t14 q lh">Your logged sessions stay. Exercises with the same id keep their history, so loads carry over.</div>
-          <button
-            type="button"
-            className="btn lg block"
-            onClick={async () => {
-              await patchSettings({ plan: pending.plan });
-              await bump('plan-import');
-              setPending(null);
-              toast({ text: `${pending.plan.name} is your plan now` });
-            }}
-          >
-            Use this plan
-          </button>
-        </Sheet>
-      )}
+      {pending?.kind === 'plan' && <PlanImportSheet plan={pending.plan} settings={settings} onClose={() => setPending(null)} />}
     </div>
   );
 }
