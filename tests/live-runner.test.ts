@@ -26,3 +26,10 @@ describe('the live fields of a saved set', () => {
   });
   it('is empty for a set never counted live', () => expect(liveFields(undefined, undefined)).toEqual({}));
 });
+
+import { nextGroupIndex } from '../src/screens/session/rows';
+describe('the next exercise', () => {
+  it('is the next unfinished group after this one', () => expect(nextGroupIndex([true, false, true, false], 1)).toBe(3));
+  it('wraps to the first unfinished group', () => expect(nextGroupIndex([false, true, true], 2)).toBe(0));
+  it('is none when every group is done', () => expect(nextGroupIndex([true, true], 0)).toBeUndefined());
+});

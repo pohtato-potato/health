@@ -40,6 +40,12 @@ describe('the set screen', () => {
   it('draws no aurora in battery saver', () => {
     expect(html({ saver: true, c: counted(3) })).not.toContain('blob');
   });
+  it('calls a set past the plan an extra set', () => {
+    expect(html({ row: { ...row, setNo: 4, key: 'curl:4:both' }, c: { key: 'curl:4:both', taps: [] } })).toContain('Set 4 of 4 · extra');
+  });
+  it('lets −1 clear a burn marked before the first rep', () => {
+    expect(html({ c: { key: row.key, taps: [], burnAt: 0 } })).toMatch(/<button[^>]*class="lv-ghost"(?![^>]*disabled)[^>]*>−1/);
+  });
   it('shows no best at a new load', () => {
     const h = html({ c: counted(10), bar: 9, firstAtLoad: true });
     expect(h).not.toContain('best');

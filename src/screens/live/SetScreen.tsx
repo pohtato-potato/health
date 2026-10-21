@@ -112,7 +112,8 @@ export function SetScreen(p: Props) {
         <h1 className="lv-name">{p.name}</h1>
         <div className="lv-meta">
           <span className="lv-pill">
-            Set {row.setNo} of {row.ex.sets}
+            Set {row.setNo} of {Math.max(row.ex.sets, row.setNo)}
+            {row.setNo > row.ex.sets ? ' · extra' : ''}
             {row.drop ? ' · drop' : ''}
           </span>
           {p.kg !== null && <span className="lv-pill">{p.kg} kg</span>}
@@ -193,7 +194,7 @@ export function SetScreen(p: Props) {
         </div>
       </div>
       <div className="lv-actions">
-        <button type="button" className="lv-ghost" disabled={c.taps.length === 0} onClick={() => act({ t: 'undo' })}>
+        <button type="button" className="lv-ghost" disabled={c.taps.length === 0 && c.burnAt === undefined} onClick={() => act({ t: 'undo' })}>
           {p.timed ? 'Reset' : '−1'}
         </button>
         <Primary disabled={reps === 0} onClick={p.onDone}>

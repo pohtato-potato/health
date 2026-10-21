@@ -35,7 +35,7 @@ import { db } from '../../db/db';
 import { useMoments } from '../../ui/Moments';
 import { detectFirsts } from '../../domain/firsts';
 import { liveFields, restAfter, rowsFor, type LiveInput } from './rows';
-import { legSets } from '../../domain/sessionEdges';
+import { adaptiveRest, legSets } from '../../domain/sessionEdges';
 
 const valueOf = valueOfSet;
 
@@ -275,7 +275,11 @@ export function useRunner(session: TrainingSession, settings: Settings, plan: Pl
     if (after === 'rest') {
       if (!rested) return;
       const done = findLogged(mine, r);
-      startRest(Math.max(...group.map((e) => challengeRest(e, e.id === r.ex.id ? { challenges: done?.challenges ?? draft.challenges } : {}))));
+      // Each exercise's rest follows how its reps held up last time; a superset rests for the longest.
+      const rests = group.map((e) => adaptiveRest(challengeRest(e, e.id === r.ex.id ? { challenges: done?.challenges ?? draft.challenges } : {}), statuses.get(e.id)?.last?.sets.filter((s) => s.exerciseId === e.id) ?? []));
+      const longest = rests.reduce((a, b) => (b.sec > a.sec ? b : a));
+      void patchSession(session.id, { restWhy: longest.why });
+      startRest(longest.sec);
     } else if (after === 'glide') {
       window.setTimeout(() => document.getElementById(`row-${next.key}`)?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' }), 120);
     }

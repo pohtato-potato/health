@@ -17,6 +17,7 @@ import { useLiveTheme } from '../../ui/live/useLiveTheme';
 import { clock } from '../NextUpCard';
 import { HeavierMoment } from '../session/HeavierMoment';
 import { findLogged, type Row } from '../session/SetTable';
+import { nextGroupIndex } from '../session/rows';
 import type { useRunner } from '../session/useRunner';
 import { BeforeScreen } from './BeforeScreen';
 import { CheckScreen } from './CheckScreen';
@@ -209,7 +210,9 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
   }
 
   // What comes after the rest: the next row here, or the next exercise's first set.
-  const following = r.nextGroup?.[0];
+  const ni = nextGroupIndex(r.groups.map((_, i) => r.complete(i)), r.gi);
+  const nextG = ni === undefined ? undefined : r.groups[ni];
+  const following = nextG?.[0];
   const upNext: Row | undefined = row ?? (following && { ex: following, setNo: 1, side: sidesFor(following, session.firstSide?.[following.id])[0], drop: false, key: '' });
   const lastDone = [...r.mine].filter((s) => !s.skipped).sort((a, b) => b.at - a.at)[0];
   const lastEx = lastDone && r.exs.find((e) => e.id === lastDone.exerciseId);
@@ -240,7 +243,7 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
         onMore={() => r.extendRest(30)}
         onReady={() => {
           r.stopRest();
-          if (!row && r.nextGroup) r.setGi(r.gi + 1);
+          if (!row && ni !== undefined) r.setGi(ni);
         }}
         saver={saver}
         rings={RINGS[theme]}
@@ -253,10 +256,10 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
     return (
       <LiveFrame state="calm" saver={saver} top={top}>
         <div className="lv-ex" style={{ marginTop: 24 }}>
-          <h1 className="lv-name">{r.nextGroup ? `Up next: ${r.nextGroup.map(nameOf).join(' + ')}` : 'Every set is in'}</h1>
+          <h1 className="lv-name">{nextG ? `Up next: ${nextG.map(nameOf).join(' + ')}` : 'Every set is in'}</h1>
         </div>
         <div style={{ marginTop: 'auto' }}>
-          {r.nextGroup ? <Primary onClick={() => r.setGi(r.gi + 1)}>Start {nameOf(r.nextGroup[0])}</Primary> : <Primary onClick={r.finish}>Finish session</Primary>}
+          {nextG ? <Primary onClick={() => r.setGi(ni!)}>Start {nameOf(nextG[0])}</Primary> : <Primary onClick={r.finish}>Finish session</Primary>}
         </div>
       </LiveFrame>
     );

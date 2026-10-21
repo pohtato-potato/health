@@ -50,3 +50,11 @@ export function liveFields(existing: LiveFields | undefined, live: Partial<LiveI
   }
   return out;
 }
+
+/** Where to go after a group: the next unfinished one after it, else the first unfinished anywhere. */
+export function nextGroupIndex(complete: boolean[], gi: number): number | undefined {
+  const after = complete.findIndex((done, i) => i > gi && !done);
+  if (after >= 0) return after;
+  const any = complete.findIndex((done) => !done);
+  return any >= 0 ? any : undefined;
+}

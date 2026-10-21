@@ -114,7 +114,7 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
           <div className="t15 tn">{clock(now - session.startedAt)}</div>
         </div>
         <span className="row" style={{ gap: 4 }}>
-          <button type="button" className="chip sm" onClick={() => patchSession(session.id, { view: 'live' })}>
+          <button type="button" className="chip" style={{ minHeight: 44 }} onClick={() => patchSession(session.id, { view: 'live' })}>
             Live
           </button>
           <button type="button" style={{ height: 44, padding: '0 6px', fontSize: 15, fontWeight: 600 }} onClick={finish}>
