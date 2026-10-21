@@ -1,13 +1,9 @@
 import { addDays, dayKey, parseDay } from '../domain/dates';
 import { fmtDayMonth, fmtDayMonthFrom, fmtInt } from '../domain/format';
-import { CHAPTERS, CITIES, INDIA_OUTLINE, PLACE_COUNT, arrivals, kmFromSteps, positionAt, statesReached, ALL_STATES, type Stop } from '../domain/walk';
+import { CHAPTERS, CITIES, INDIA_OUTLINE, PLACE_COUNT, arrivals, kmFromSteps, positionAt, statesReached, strideM, ALL_STATES, type Stop } from '../domain/walk';
 import { hasReward } from '../domain/rewards';
-import { useAllDays, useAllSets, useSessions, useSettings, useToday } from '../db/hooks';
-import { structuresFrom } from '../walk/camps';
-import { bestStrengthIndex, effectiveKm } from '../walk/passes';
-import { detourKm } from '../walk/quests';
+import { useAllDays, useSettings, useToday } from '../db/hooks';
 import { routeLayers } from '../walk/routeMap';
-import { useQuestState } from '../walk/WalkExtras';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { ACTIVE_ACHIEVEMENTS as ACHIEVEMENTS, achievementById } from '../domain/achievements';
 import { db } from '../db/db';
@@ -27,18 +23,14 @@ export function MapPage() {
   const days = useAllDays();
   const today = useToday();
   const unlocked = useUnlockedIds();
-  const sets = useAllSets();
-  const sessions = useSessions();
-  const quests = useQuestState();
   const zp = useZoomPan(300, 322);
   const [picked, setPicked] = useState<Stop | null>(null);
-  if (!settings || !days || !unlocked || !sets || !sessions || !quests) return <div className="page" />;
+  if (!settings || !days || !unlocked) return <div className="page" />;
 
   const steps = new Map(days.filter((d) => d.steps !== undefined).map((d) => [d.date, d.steps!]));
   const totalSteps = [...steps.values()].reduce((a, b) => a + b, 0);
-  const km = effectiveKm(Math.max(0, kmFromSteps(totalSteps) - detourKm(quests)), bestStrengthIndex(sets, today));
-  const records = new Set(sets.filter((x) => x.mark === '!!').map((x) => x.sessionId));
-  const layers = routeLayers(km, structuresFrom(days, sessions, records), quests);
+  const km = kmFromSteps(totalSteps);
+  const layers = routeLayers(km);
   const pos = positionAt(km);
   const ch = pos.chapter;
   const seenNames = new Set<string>();
@@ -140,14 +132,6 @@ export function MapPage() {
               <path d={path(layers.walked)} fill="none" stroke={walkedColor} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
             </>
           )}
-          {layers.quests.map((q) => (
-            <g key={q.id} opacity={q.taken ? 0.95 : 0.6}>
-              <path d={`M${q.from.x} ${q.from.y}L${q.x} ${q.y}`} stroke="#8FC9B0" strokeWidth="1" strokeDasharray="1.5 2" />
-              <circle cx={q.x} cy={q.y} r="1.8" fill={q.taken ? '#8FC9B0' : 'none'} stroke="#8FC9B0">
-                <title>{`${q.name}${q.taken ? ', taken' : ', a side quest'}`}</title>
-              </circle>
-            </g>
-          ))}
           {ch.route.map((s, i) =>
             s.km > km ? <circle key={`${s.name}-${i}`} cx={s.x} cy={s.y} r="2.1" fill="#3a3f6a" stroke="#0e1020" strokeWidth=".8" /> : null,
           )}
@@ -155,11 +139,6 @@ export function MapPage() {
             <circle key={s.name} cx={s.x} cy={s.y} r="2.6" fill="#F2C46D" stroke="#0e1020" strokeWidth=".8">
               <title>{s.name}</title>
             </circle>
-          ))}
-          {layers.built.map((b, i) => (
-            <path key={`${b.name}-${i}`} d={`M${b.x - 2} ${b.y - 4}l2-2 2 2v2h-4Z`} fill="#F2C46D" opacity=".85">
-              <title>{`You built ${b.name}`}</title>
-            </path>
           ))}
           {!layers.done && (
             <>
@@ -185,7 +164,7 @@ export function MapPage() {
                 style={{ cursor: 'pointer' }}
                 onClick={() => {
                   if (zp.wasGesture()) return;
-                  if (s.km <= km && cards.has(s.name)) go('/arrival', { city: s.name });
+                  if (s.km <= km && cards.has(s.name)) go('/postcard', { c: s.name });
                   else setPicked(s);
                 }}
               >
@@ -241,14 +220,6 @@ export function MapPage() {
             <i className="key-dot solid" style={{ background: '#B7A6F0' }} /> chapter 3
           </span>
         )}
-        <span>
-          <i className="key-dot" style={{ borderColor: '#8FC9B0' }} /> side quests
-        </span>
-        {layers.built.length > 0 && (
-          <span>
-            <i className="key-dot solid" style={{ background: '#F2C46D', borderRadius: 2 }} /> built by you
-          </span>
-        )}
       </div>
       <div className="list">
         <div className="li">
@@ -296,12 +267,6 @@ export function MapPage() {
             </div>
           ) : (
             <div className="gold">Every chapter walked. The whole of India, one lap of home at a time.</div>
-          )}
-          {!pos.done && eta(ch.end) && (
-            <div className="row">
-              <span>{ch.route[ch.route.length - 1].name}</span>
-              <span className="q">around {fmtDayMonthFrom(eta(ch.end)!, today)} at your pace</span>
-            </div>
           )}
           <div className="row">
             <span>Walked in all</span>
@@ -390,7 +355,7 @@ export function MapPage() {
           It took {fmtInt(Math.round(totalSteps / settings.loopSteps))} laps of your home loop to get this far.
         </div>
       ) : null}
-      <div className="t12 d center lh">Distances follow the highways, roughly. Islands are reached by sea.</div>
+      <div className="t12 d center lh">Each step counts as {strideM().toFixed(2)} m (you can change it in Settings). Distances follow the highways, roughly. Islands are reached by sea.</div>
     </div>
   );
 }

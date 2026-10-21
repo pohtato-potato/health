@@ -35,19 +35,6 @@ describe('people met on the road', () => {
   });
 });
 
-describe('drawn souvenirs', () => {
-  it('gives every state one of the twelve drawn shapes, using most of them', async () => {
-    const { souvenirShape, SOUVENIR_SHAPES } = await import('../src/walk/souvenirs');
-    const { ALL_STATES } = await import('../src/domain/walk');
-    expect(SOUVENIR_SHAPES).toHaveLength(12);
-    const used = new Set(ALL_STATES.map((s) => souvenirShape(s.name)));
-    for (const u of used) expect(SOUVENIR_SHAPES).toContain(u);
-    expect(used.size).toBeGreaterThanOrEqual(10);
-    expect(souvenirShape('Goa')).toBe('tile');
-    expect(souvenirShape('Gujarat')).toBe('kite');
-  });
-});
-
 describe('map zoom', () => {
   it('zooms about a point, keeping that point still, within 1x to 4x', async () => {
     const { zoomAbout, clampView } = await import('../src/walk/zoom');

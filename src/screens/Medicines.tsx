@@ -11,7 +11,6 @@ import { IntField, SwitchRow, TimeTile } from '../ui/controls';
 import { Icon } from '../ui/Icon';
 
 const REWARD_ROWS: { id: keyof MedRewards; title: string; sub: string }[] = [
-  { id: 'lantern', title: 'A lantern at camp', sub: "Lit at that night's camp on the Walk" },
   { id: 'keptWeek', title: 'A kept week', sub: 'A moment when every dose of the week was on time' },
   { id: 'perfectDay', title: 'Part of a perfect day', sub: 'Every dose on time also counts toward the night sky' },
   { id: 'keptCount', title: 'A kept count', sub: 'Per medicine; a miss pauses it, never resets it' },

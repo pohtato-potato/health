@@ -1,7 +1,7 @@
 import { addDays, dayRange, daysBetween, weekStart, type DayKey } from '../domain/dates';
 import { fmtDayMonth, fmtInt } from '../domain/format';
 import { lastFullWeek, weekNumber } from '../domain/weekly';
-import { INDIA_OUTLINE, PLACE_COUNT, chapterAt, kmFromSteps, positionAt, statesReached } from '../domain/walk';
+import { INDIA_OUTLINE, PLACE_COUNT, kmFromSteps, positionAt, statesReached } from '../domain/walk';
 import { useAllDays, useAllEntries, useSessions, useSettings, useToday } from '../db/hooks';
 import { go } from '../router';
 import { dayRings, stepStreakFor, targetsFor, weeksFor } from '../state/derived';
@@ -42,7 +42,7 @@ export function Journey() {
         )}
       </div>
 
-      {goal && <JourneyClock start={start} end={goal} today={today} chapterEnd={chapterEndOn(days, today)} />}
+      {goal && <JourneyClock start={start} end={goal} today={today} />}
 
       {phase && (
         <div className="card">
@@ -128,17 +128,7 @@ const SKY: [number, number, string][] = [
  * The whole journey as one day, on a ring that moves through night, dawn, day and dusk:
  * the elapsed part lit in gold, check-ins marked on the rim, reveal day at midnight.
  */
-/** When the current walk chapter ends at the two-week pace, for the clock's rim. */
-function chapterEndOn(days: Day[], today: DayKey): { n: number; date: DayKey } | undefined {
-  const km = kmFromSteps(days.reduce((n, d) => n + (d.steps ?? 0), 0));
-  const ch = chapterAt(km);
-  const recent = days.filter((d) => d.date < today && d.date >= addDays(today, -14) && d.steps !== undefined);
-  if (!recent.length || km >= ch.end) return undefined;
-  const pace = kmFromSteps(recent.reduce((n, d) => n + d.steps!, 0)) / recent.length;
-  return pace > 0.1 ? { n: ch.n, date: addDays(today, Math.ceil((ch.end - km) / pace)) } : undefined;
-}
-
-function JourneyClock({ start, end, today, chapterEnd }: { start: DayKey; end: DayKey; today: DayKey; chapterEnd?: { n: number; date: DayKey } }) {
+function JourneyClock({ start, end, today }: { start: DayKey; end: DayKey; today: DayKey }) {
   const checkins = useLiveQuery(() => db.checkins.toArray(), []) ?? [];
   const c = clockAt(start, end, today);
   const h = Math.floor(c.minutes / 60);
@@ -165,12 +155,6 @@ function JourneyClock({ start, end, today, chapterEnd }: { start: DayKey; end: D
             return <circle key={x.id} cx={p.x} cy={p.y} r="3.4" fill="var(--pearl)" stroke="var(--ink)" strokeWidth="1.2" />;
           })}
         <circle cx={C} cy={C - R} r="5" fill="none" stroke="var(--gold)" strokeWidth="1.6" />
-        {chapterEnd && chapterEnd.date > today && chapterEnd.date < end && (() => {
-          const f = rimFraction(start, end, chapterEnd.date);
-          const a = pt(f, R - 8);
-          const b = pt(f, R + 8);
-          return <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="var(--lavender)" strokeWidth="2.4" strokeLinecap="round" />;
-        })()}
         {[
           ['midnight', 0],
           ['6 am', 0.25],
@@ -203,11 +187,6 @@ function JourneyClock({ start, end, today, chapterEnd }: { start: DayKey; end: D
         <span>
           <i className="key-dot" style={{ borderColor: 'var(--gold)' }} /> reveal day
         </span>
-        {chapterEnd && chapterEnd.date > today && chapterEnd.date < end && (
-          <span>
-            <i className="key-dot solid" style={{ background: 'var(--lavender)', borderRadius: 1 }} /> chapter {chapterEnd.n} ends, {fmtDayMonth(chapterEnd.date)}
-          </span>
-        )}
       </div>
       <div className="t14 q lh" style={{ alignSelf: 'stretch' }}>
         {MONTHS[Number(start.slice(5, 7)) - 1]} to {MONTHS[Number(end.slice(5, 7)) - 1]} squeezed into one day. {line}

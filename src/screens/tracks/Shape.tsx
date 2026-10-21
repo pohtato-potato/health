@@ -6,7 +6,7 @@ import { autoMarkers } from '../../domain/markers';
 import { weightTrend } from '../../domain/streaks';
 import { recompVerdict } from '../../domain/trackStats';
 import { go, openSheet } from '../../router';
-import { strengthIndex } from '../../walk/passes';
+import { strengthIndex } from '../../domain/strength';
 import { BenchmarkCard } from '../BenchmarkCard';
 import { WeightInsights } from '../MaintenanceCards';
 import { nextCheckInDate } from '../Photos';

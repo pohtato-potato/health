@@ -1,7 +1,7 @@
 import { useAllDays, useAllSets, useEntries, useSessions, useSettings } from '../db/hooks';
 import { addDays, parseDay } from '../domain/dates';
 import { fmtInt } from '../domain/format';
-import { dayDoses, DEFAULT_MED_REWARDS } from '../domain/medicines';
+import { dayDoses } from '../domain/medicines';
 import { findSession, realSets } from '../domain/plan';
 import { placeFor } from '../domain/places';
 import { tonightTarget, usualWake } from '../domain/sleepRegularity';
@@ -9,7 +9,7 @@ import type { DaySummary } from '../domain/usualDay';
 import { voiceFor, voiceLine } from '../domain/voice';
 import { kmFromSteps, positionAt } from '../domain/walk';
 import { back } from '../router';
-import { nextStopLine } from '../walk/journal';
+import { nextStopLine } from '../walk/lines';
 import { dayRings, nextUp, targetsFor } from '../state/derived';
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -31,7 +31,6 @@ export function DayClosed({ date, summary: s, onDone }: { date: string; summary:
     .sort((a, b) => (b.reps ?? 0) - (a.reps ?? 0))[0];
   const meds = settings.checklist.filter((i) => i.active && i.med);
   const doses = dayDoses(meds, day ?? { date }, settings);
-  const lanterns = (settings.medRewards ?? DEFAULT_MED_REWARDS).lantern ? doses.onTime : 0;
   const walkedToday = day?.steps !== undefined ? kmFromSteps(day.steps) : undefined;
   const total = kmFromSteps(days.filter((d) => d.date <= date).reduce((n, d) => n + (d.steps ?? 0), 0));
   const pos = positionAt(total);
@@ -74,7 +73,7 @@ export function DayClosed({ date, summary: s, onDone }: { date: string; summary:
       </div>
       <div className="card" style={{ gap: 0, padding: '4px 16px' }}>
         {done.length > 0 && row(findSession(settings.plan!, done[0].session)?.name ?? `Session ${done[0].session}`, rec ? `${rec.exercise.toLowerCase()} record, ${rec.reps ?? rec.seconds}` : 'done')}
-        {s.checklist.total > 0 && row('Checklist', `${s.checklist.done} of ${s.checklist.total}${meds.length ? ` · ${doses.onTime} on time` : ''}${lanterns ? ` · ${lanterns} lantern${lanterns === 1 ? '' : 's'} lit` : ''}`)}
+        {s.checklist.total > 0 && row('Checklist', `${s.checklist.done} of ${s.checklist.total}${meds.length ? ` · ${doses.onTime} on time` : ''}`)}
         {row('Walk', `${walkedToday !== undefined ? `${walkedToday.toFixed(1)} km` : 'no steps logged'}${pos.to ? ` · ${nextStopLine(pos.to.name, pos.to.km - total, typicalKm)}` : ''}`)}
       </div>
       <div className="voice center">“{line}”</div>

@@ -45,7 +45,6 @@ import { MuscleMapPage } from './screens/MuscleMap';
 import { ShortSessionSheet } from './sheets/ShortSession';
 import { WeeklyReviewPage } from './screens/WeeklyReview';
 import { WalkTab } from './screens/WalkTab';
-import { ArrivalCardPage } from './screens/ArrivalCard';
 import { NightSkyPage } from './screens/NightSky';
 import { MedicinesPage } from './screens/Medicines';
 import { ExerciseGuidePage } from './screens/ExerciseGuide';
@@ -64,6 +63,7 @@ const CheckInScreen = page(() => import('./screens/CheckIn'), 'CheckInScreen');
 const PhotosPage = page(() => import('./screens/Photos'), 'PhotosPage');
 const MapPage = page(() => import('./screens/MapPage'), 'MapPage');
 const PostcardPage = page(() => import('./screens/Postcard'), 'PostcardPage');
+const ArrivalRedirect = page(() => import('./screens/Postcard'), 'ArrivalRedirect');
 const DiaryPage = page(() => import('./screens/Diary'), 'DiaryPage');
 const DeparturesPage = page(() => import('./screens/Departures'), 'DeparturesPage');
 const CharacterPage = page(() => import('./screens/Character'), 'CharacterPage');
@@ -104,7 +104,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/tracks': { el: () => <Tracks />, tab: 'you' },
   '/journey': { el: () => <Journey /> },
   '/walk': { el: () => <WalkTab />, tab: 'walk' },
-  '/arrival': { el: () => <ArrivalCardPage /> },
+  '/arrival': { el: () => <ArrivalRedirect /> },
   '/sky': { el: () => <NightSkyPage /> },
   '/medicines': { el: () => <MedicinesPage /> },
   '/guide': { el: () => <ExerciseGuidePage /> },

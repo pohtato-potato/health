@@ -13,7 +13,7 @@ import { forecastData } from '../state/forecastData';
 import { MiniBars, Spark } from '../ui/Charts';
 import { Seg } from '../ui/controls';
 import { Icon } from '../ui/Icon';
-import { strengthIndex } from '../walk/passes';
+import { strengthIndex } from '../domain/strength';
 import { dayLabel, foodByDay, spanDays, useTrackData, type Span, type TrackData } from './tracks/data';
 import { DrinksTrack } from './tracks/Drinks';
 import { FoodTrack } from './tracks/Food';

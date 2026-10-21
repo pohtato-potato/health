@@ -1,11 +1,14 @@
-import { daysBetween } from '../domain/dates';
+import { useEffect } from 'react';
+import { daysBetween, partOfDay } from '../domain/dates';
 import { fmtDayMonth, fmtInt } from '../domain/format';
 import { ALL_STOPS, CITIES, INDIA_OUTLINE, POSTCARDS, arrivals, kmFromSteps } from '../domain/walk';
 import { useAllDays, useSettings } from '../db/hooks';
 import { back, go, useRoute } from '../router';
 import { Icon } from '../ui/Icon';
+import { Scene } from '../walk/art/scene';
+import { cardFor } from '../walk/cards';
 
-/** One card for each city on the walk, sent the day you arrive. */
+/** One page for each city on the walk: its postcard, sent the day you arrive, and what to eat, hear and see there. */
 export function PostcardPage() {
   const route = useRoute();
   const settings = useSettings();
@@ -46,6 +49,7 @@ export function PostcardPage() {
   const thatDay = steps.get(arrival.date);
   const next = ALL_STOPS[at + 1];
   const postmark = fmtDayMonth(arrival.date).toUpperCase();
+  const card = cardFor(stop.name);
 
   return (
     <div className="page">
@@ -53,6 +57,8 @@ export function PostcardPage() {
         <Icon name="left" size={20} stroke={1.8} />
         Map
       </button>
+
+      <Scene city={stop.name} part={partOfDay(new Date())} people />
 
       <article className="postcard" aria-label={`Postcard from ${stop.name}`}>
         <div className="row" style={{ alignItems: 'flex-start' }}>
@@ -87,6 +93,26 @@ export function PostcardPage() {
           {thatDay !== undefined && <> · That day: {fmtInt(thatDay)} steps</>}
         </div>
       </article>
+
+      {card && (
+        <div className="list">
+          {[
+            ['Eat', card.eat],
+            ['Hear', card.hear],
+            ['Land', card.land],
+            ['Next', card.next ? `${card.next.name} · ${fmtInt(card.next.km)} km` : 'The end of the road'],
+          ]
+            .filter(([, v]) => v)
+            .map(([k, v]) => (
+              <div key={k} className="li" style={{ alignItems: 'flex-start', paddingTop: 12, paddingBottom: 12 }}>
+                <span className="t13 q" style={{ width: 52, flexShrink: 0 }}>
+                  {k}
+                </span>
+                <span className="t15 lh grow">{v}</span>
+              </div>
+            ))}
+        </div>
+      )}
 
       <div className="row gap10">
         <button type="button" className="btn lg grow" onClick={() => go('/today')}>
@@ -125,4 +151,12 @@ function Stamp({ x, y, km }: { x: number; y: number; km: number }) {
       </text>
     </svg>
   );
+}
+
+/** Old links to a city's arrival card now open its postcard. */
+export function ArrivalRedirect() {
+  const { params } = useRoute();
+  const city = params.get('city') ?? 'Delhi';
+  useEffect(() => go('/postcard', { c: city }, { replace: true }), [city]);
+  return <div className="page" />;
 }

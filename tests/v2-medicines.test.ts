@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { atOn } from '../src/domain/dates';
-import { dosesAllowPerfect, lanternOn, courseOn, dayDoses, keptCount, keptWeek, nextDose, onTime, refillBy, doseSchedule } from '../src/domain/medicines';
+import { dosesAllowPerfect, courseOn, dayDoses, keptCount, keptWeek, nextDose, onTime, refillBy, doseSchedule } from '../src/domain/medicines';
 import type { ChecklistItem } from '../src/domain/types';
 
 const drops: ChecklistItem = {
@@ -65,13 +65,9 @@ describe('medicines', () => {
     expect(keptWeek([tablet], week.slice(1).map(on), settings, '2026-10-05')).toBe(false);
   });
 
-  it('a lantern and a perfect day follow the reward switches', () => {
-    const day = { date: '2026-10-13', ticks: { 'tab:0': atOn('2026-10-13', 480), 'tab:1': atOn('2026-10-13', 1260) } };
+  it('a perfect day follows its reward switch', () => {
     const late = { date: '2026-10-13', ticks: { 'tab:0': atOn('2026-10-13', 700) } };
-    const s = { places: [], checklist: [tablet], medRewards: { lantern: true, keptWeek: true, perfectDay: true, keptCount: true } };
-    expect(lanternOn(s, day)).toBe(true);
-    expect(lanternOn(s, late)).toBe(false);
-    expect(lanternOn({ ...s, medRewards: { ...s.medRewards, lantern: false } }, day)).toBe(false);
+    const s = { places: [], checklist: [tablet], medRewards: { keptWeek: true, perfectDay: true, keptCount: true } };
     expect(dosesAllowPerfect(s, late)).toBe(false);
     expect(dosesAllowPerfect({ ...s, medRewards: { ...s.medRewards, perfectDay: false } }, late)).toBe(true);
     expect(dosesAllowPerfect({ ...s, checklist: [] }, late)).toBe(true);

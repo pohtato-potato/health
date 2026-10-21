@@ -152,6 +152,15 @@ export function SettingsScreen() {
             <IntField value={settings.loopSteps} onChange={(v) => patchSettings({ loopSteps: v })} placeholder="steps" className="field sm" />
           </div>
         </div>
+        <div className="li" style={{ minHeight: 64 }}>
+          <span className="s">
+            <span>Your stride</span>
+            <small>Metres per step, used for every distance on the walk. Changing it moves the whole walk at once. Leave empty for 0.74</small>
+          </span>
+          <div style={{ width: 92 }}>
+            <DecField value={settings.strideM} onChange={(v) => patchSettings({ strideM: v === undefined || (v >= 0.3 && v <= 1.5) ? v : settings.strideM })} placeholder="0.74" label="Stride in metres" className="field sm" />
+          </div>
+        </div>
         <SwitchRow title="Confirm yesterday's steps each morning" sub="Samsung Health has the final count by then" checked={p.confirmSteps} onChange={(v) => setPref('confirmSteps', v)} />
         <LinkRow title="Places" sub="Each brings its meal times, step goal and the foods shown first" value={(settings.places?.length ? settings.places : settings.homes).map((h) => h.name).join(', ')} onClick={() => setEditor('homes')} />
       </Group>

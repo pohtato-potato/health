@@ -4,11 +4,16 @@ import { dayKey, type DayKey } from '../domain/dates';
 import type { Day, Food, FoodEntry, Measurement, SetEntry, Settings, TrainingSession } from '../domain/types';
 import { defaultSettings } from './actions';
 import { db } from './db';
+import { setStride } from '../domain/walk';
 import { realSets } from '../domain/plan';
 
 /** Undefined while loading, then the settings (defaults if none saved yet). */
 export function useSettings(): Settings | undefined {
-  return useLiveQuery(async () => (await db.settings.get('app')) ?? defaultSettings(), []);
+  return useLiveQuery(async () => {
+    const s = (await db.settings.get('app')) ?? defaultSettings();
+    setStride(s.strideM);
+    return s;
+  }, []);
 }
 
 export function useDay(date: DayKey): Day | undefined | null {
