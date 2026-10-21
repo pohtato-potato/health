@@ -55,6 +55,7 @@ export function RestLive(p: Props) {
             {p.next.kg !== null && <> · {p.next.kg} kg</>}
           </div>
         )}
+        {p.why && <div className="lv-saver-next" style={{ fontSize: 15 }}>{p.why}</div>}
         <div className="lv-small" style={{ textAlign: 'center' }}>
           Battery saver · no motion · the screen stays on
         </div>

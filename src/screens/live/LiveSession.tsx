@@ -291,7 +291,7 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
       return (
         <PlatesScreen
           change={change}
-          forNames={(block?.exs ?? [row.ex]).filter((e) => !r.mine.some((m) => m.exerciseId === e.id)).map(nameOf)}
+          forNames={(block?.exs ?? [row.ex]).filter((e) => !r.mine.some((m) => m.exerciseId === e.id) && r.defaults(firstRow(e)).kg === kg).map(nameOf)}
           collar={collar}
           onCollar={() => patchSession(session.id, { collarCheckedAt: Date.now() })}
           onGo={() => setPlatesSeen([...platesSeen, row.ex.id])}
