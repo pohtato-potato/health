@@ -160,7 +160,7 @@ The same aurora, in two states.
 Below, in both states:
 
 1. **You, four weeks ago:** the same session then and now, exercise by exercise.
-2. **This week on your body:** front and back figures coloured by hard sets against the plan's target per muscle group. Green is on target, yellow low, red high, with a legend and each count against its range. One plain line names the biggest gap. This needs an optional per-region colour on `BodyHeat` (built in the prototype).
+2. **This week on your body:** front and back figures coloured by hard sets against the plan's target per muscle group. Green is on target, yellow low, blue high, with a legend and each count against its range. One plain line names the biggest gap. This needs an optional per-region colour on `BodyHeat` (built in the prototype).
 3. **Records:** the latest three, gold. "All" opens the records wall.
 4. **Your cards** (see below), one row, swipeable.
 5. **This month so far:** sessions, records, the usual session length, and the most improved exercise. The full **monthly report** opens on the 1st.

@@ -418,6 +418,4 @@
 .tr-legend .high:before { background: #7fc4f0; }
 
 .tr-legend .low:before { background: #f5ea6a; }
-.tr-legend .high:before { background: #ff5c5c; }
 .tr-body-row.low .tr-mark { color: #f5ea6a; border: 1px dashed #f5ea6a; }
-.tr-body-row.high .tr-mark { color: #ff8a8a; border: 1px solid #ff5c5c; }
