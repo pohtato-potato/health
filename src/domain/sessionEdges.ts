@@ -48,18 +48,25 @@ const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, 
  * reps that held within 10% take 10 s off, and reps that didn't drop at all 20 s.
  */
 export function adaptiveRest(base: number, last: SetEntry[]): { sec: number; why?: string } {
-  const working = last.filter((s) => !s.drop && !s.skipped && s.reps !== undefined).sort((a, b) => a.setNo - b.setNo);
-  if (working.length < 2) return { sec: base };
-  const first = working[0].reps!;
-  const end = working[working.length - 1].reps!;
-  const drop = first > 0 ? (first - end) / first : 0;
-  if (drop > 0.2) {
-    const sec = base + 15 * Math.min(3, Math.floor(drop / 0.2));
+  const working = last.filter((s) => !s.drop && !s.skipped && s.reps !== undefined);
+  // Each side on its own: the side that fell off most decides.
+  const runs = (['both', 'L', 'R'] as const)
+    .map((side) => working.filter((s) => s.side === side).sort((x, y) => x.setNo - y.setNo))
+    .filter((r) => r.length >= 2)
+    .map((r) => ({ first: r[0].reps!, end: r[r.length - 1].reps! }))
+    .sort((x, y) => (y.first - y.end) / y.first - (x.first - x.end) / x.first);
+  const worst = runs[0];
+  if (!worst || worst.first <= 0) return { sec: base };
+  const { first, end } = worst;
+  const lost = first - end;
+  // Whole numbers, so a 60% drop is exactly three steps.
+  if (lost * 5 > first) {
+    const sec = base + 15 * Math.min(3, Math.floor((lost * 5) / first));
     return { sec, why: `Rest is ${mmss(sec)} here: your reps dropped from ${first} to ${end} across sets last time.` };
   }
-  if (drop <= 0.1) {
-    const sec = base - (drop <= 0 ? 20 : 10);
-    return { sec, why: drop <= 0 ? `Rest is ${mmss(sec)} here: your reps held at ${first} last time.` : `Rest is ${mmss(sec)} here: your reps held from ${first} to ${end} last time.` };
+  if (lost * 10 <= first) {
+    const sec = Math.max(15, base - (lost <= 0 ? 20 : 10));
+    return { sec, why: lost <= 0 ? `Rest is ${mmss(sec)} here: your reps held at ${first} last time.` : `Rest is ${mmss(sec)} here: your reps held from ${first} to ${end} last time.` };
   }
   return { sec: base };
 }
@@ -97,4 +104,9 @@ export function plateChange(prevKg: number | null | undefined, kg: number | null
 export function afterSave(mark: string | undefined, after: 'rest' | 'glide' | 'none'): 'record' | 'rest' | 'next' {
   if (mark === '!!') return 'record';
   return after === 'rest' ? 'rest' : 'next';
+}
+
+/** The load of the last set tonight that had a dumbbell, for the plate change: bodyweight in between doesn't count. */
+export function lastLoad(sets: Pick<SetEntry, 'loadKg' | 'at' | 'skipped'>[]): number | undefined {
+  return [...sets].filter((s) => !s.skipped && s.loadKg !== null).sort((a, b) => b.at - a.at)[0]?.loadKg ?? undefined;
 }

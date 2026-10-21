@@ -73,7 +73,7 @@ import { PlatesScreen } from '../src/screens/live/PlatesScreen';
 
 describe('the plate change', () => {
   const plates = (p: Partial<Parameters<typeof PlatesScreen>[0]> = {}) =>
-    renderToStaticMarkup(<PlatesScreen change={{ from: 10, to: 5 }} forNames={['Skull crusher', 'Floor fly']} collar={false} onCollar={noop} onGo={noop} saver={false} {...p} />);
+    renderToStaticMarkup(<PlatesScreen change={{ from: 10, to: 5 }} forNames={['Skull crusher', 'Floor fly']} collar={false} onGo={noop} saver={false} {...p} />);
   it('shows the change and who it is for', () => {
     const h = plates();
     expect(h).toMatch(/10 kg[\s\S]*→[\s\S]*5 kg/);
@@ -97,7 +97,7 @@ import { SessionLook, SetsLook } from '../src/screens/live/QuickLooks';
 
 describe('the record moment', () => {
   const rec = (p: Partial<Parameters<typeof RecordScreen>[0]> = {}) =>
-    renderToStaticMarkup(<RecordScreen name="Romanian deadlift" kg={10} value="19" was={{ value: 18, date: '2026-10-03' }} onGo={noop} saver={false} {...p} />);
+    renderToStaticMarkup(<RecordScreen name="Romanian deadlift" kg={10} value="19" was={{ value: '18', date: '2026-10-03' }} onGo={noop} saver={false} {...p} />);
   it('names the old best and when', () => expect(rec()).toContain('Your best was 18, on 3 Oct.'));
   it('is gold', () => expect(rec()).toMatch(/class="lv [^"]*st-record/));
   it('names the song when known', () => expect(rec({ song: 'Midnight City · M83' })).toContain('Midnight City · M83'));

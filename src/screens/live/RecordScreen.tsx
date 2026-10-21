@@ -8,7 +8,7 @@ interface Props {
   /** The count, as shown: "19", "1:05". */
   value: string;
   /** The best it beat, and when; none at a first load. */
-  was?: { value: number; date: DayKey };
+  was?: { value: string; date: DayKey };
   song?: string;
   onGo: () => void;
   saver: boolean;

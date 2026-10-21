@@ -23,6 +23,17 @@ function valueFor(s: SetLike, clean?: boolean): number {
   return s.reps ?? s.seconds ?? s.steps ?? 0;
 }
 
+/** The set that holds the record a new set has to beat: the best at this load or heavier, counted as records are. */
+export function recordHolder(set: Pick<SetLike, 'side' | 'loadKg'>, prior: SetEntry[], opts: { clean?: boolean } = {}): SetEntry | undefined {
+  const kg = load(set);
+  return prior
+    .filter((p) => !p.drop && !p.skipped && p.side === set.side && load(p) >= kg)
+    .sort((a, b) => valueFor(b, opts.clean) - valueFor(a, opts.clean))[0];
+}
+
+/** What a set counts for records, as shown. */
+export const recordValue = (s: SetLike, clean?: boolean) => valueFor(s, clean);
+
 /** Heavier than every earlier set on this side: a first time at this load, with no best to show. */
 export function newLoad(set: Pick<SetLike, 'side' | 'loadKg'>, prior: SetEntry[]): boolean {
   const earlier = prior.filter((p) => !p.drop && !p.skipped && p.side === set.side);

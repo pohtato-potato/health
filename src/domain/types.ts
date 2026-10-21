@@ -446,6 +446,8 @@ export interface TrainingSession {
   collarCheckedAt?: number;
   /** v3: a note per exercise, for next time and the coach. */
   exNotes?: Record<string, string>;
+  /** v3: exercises whose plate change or collar check was passed tonight. */
+  platesSeen?: string[];
   /** v3: why the rest running now is the length it is. */
   restWhy?: string;
 }

@@ -259,6 +259,8 @@ export function useRunner(session: TrainingSession, settings: Settings, plan: Pl
       const firstsSoFar = await db.seen.filter((x) => x.id.startsWith('first:')).count();
       firsts.forEach((f, i) => moments.show({ kind: 'first', key: `first:${f.key}`, title: f.title, detail: `${f.detail} · ${fmtDayMonth(session.date)}`, count: firstsSoFar + i + 1 }));
     }
+    // From the live screens a record gets its own screen, and the rest waits for it.
+    if (mark === '!!' && live) return mark;
     if (mark === '!!') {
       toast({ kicker: 'New record', text: `${st.name}: ${describe(base.loadKg, measure)}`, tone: 'gold' });
       if (settings.prefs.buzz) buzz(40);

@@ -100,3 +100,25 @@ describe('after a set is saved', () => {
     expect(afterSave('=', 'none')).toBe('next');
   });
 });
+
+import { lastLoad } from '../src/domain/sessionEdges';
+import { recordHolder } from '../src/domain/marks';
+
+describe('review fixes: rules', () => {
+  const reps = (side: 'L' | 'R' | 'both', ...rs: number[]) => rs.map((r, i) => set({ setNo: i + 1, side, reps: r }));
+  it('adaptive rest looks at each side on its own', () => {
+    const last = [...reps('L', 12, 9, 6), ...reps('R', 12, 12, 12)];
+    expect(adaptiveRest(90, last).sec).toBe(120);
+  });
+  it('a 60% drop earns the full 45 s', () => expect(adaptiveRest(90, reps('both', 10, 6, 4)).sec).toBe(135));
+  it('a short rest never drops under 15 s', () => expect(adaptiveRest(20, reps('both', 12, 12)).sec).toBe(15));
+  it('the plates compare with the last set that had a dumbbell', () => {
+    expect(lastLoad([set({ loadKg: 10, at: 1 }), set({ loadKg: null, at: 2 })])).toBe(10);
+    expect(lastLoad([set({ loadKg: 10, at: 1, skipped: true })])).toBeUndefined();
+  });
+  it('the best a record beat is counted the way records are counted', () => {
+    const prior = [set({ reps: 15, cleanReps: 9, date: '2026-10-01' }), set({ reps: 12, date: '2026-10-05' })];
+    expect(recordHolder({ side: 'both', loadKg: 10 }, prior, { clean: true })?.date).toBe('2026-10-05');
+    expect(recordHolder({ side: 'both', loadKg: 10 }, prior, { clean: false })?.date).toBe('2026-10-01');
+  });
+});

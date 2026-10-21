@@ -21,10 +21,6 @@ export function parseRecent(v: unknown): { artist: string; track: string; at: nu
     .map((t) => ({ artist: artistOf(t), track: t.name!, at: Number(t.date!.uts) * 1000 }));
 }
 
-/**
- * The session's soundtrack, cached in the songs table once fetched. Offline or failing, it
- * returns nothing and caches nothing, so the next open tries again.
- */
 /** What played between two moments, straight from Last.fm, kept nowhere: for the record moment mid-session. */
 export async function fetchRecent(settings: Pick<Settings, 'lastfm'>, from: number, to: number, fetchFn: typeof fetch = fetch): Promise<{ artist: string; track: string; at: number }[]> {
   const lf = settings.lastfm;
@@ -37,6 +33,10 @@ export async function fetchRecent(settings: Pick<Settings, 'lastfm'>, from: numb
   }
 }
 
+/**
+ * The session's soundtrack, cached in the songs table once fetched. Offline or failing, it
+ * returns nothing and caches nothing, so the next open tries again.
+ */
 export async function fetchSessionTracks(session: Pick<TrainingSession, 'id' | 'startedAt' | 'endedAt'>, settings: Pick<Settings, 'lastfm'>, fetchFn: typeof fetch = fetch): Promise<SongRecord[]> {
   const cached = await db.songs.where('id').startsWith(`${session.id}:`).toArray();
   if (cached.length) return cached.sort((a, b) => a.at - b.at);

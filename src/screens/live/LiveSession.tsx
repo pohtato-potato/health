@@ -2,10 +2,9 @@ import { useEffect, useState } from 'react';
 import { checksFor } from '../../domain/checks';
 import { RINGS } from '../../domain/liveLook';
 import { burnNudge, justTags, restoreCounter, seconds, setState } from '../../domain/liveSet';
-import { newLoad, recordBar } from '../../domain/marks';
+import { newLoad, recordBar, recordHolder, recordValue } from '../../domain/marks';
 import { bottomOfRange, measureOf, sidesFor, valueOfSet, type ExerciseDef, type PlanDef } from '../../domain/plan';
-import { addSetup, afterSave, loadBlocks, plateChange, plateChanges, setupOn, usualLength } from '../../domain/sessionEdges';
-import { dayKey } from '../../domain/dates';
+import { addSetup, afterSave, lastLoad, loadBlocks, plateChange, plateChanges, setupOn, usualLength } from '../../domain/sessionEdges';
 import { movementKind } from '../../domain/trainingChecks';
 import { useSessions } from '../../db/hooks';
 import { historyFor } from '../../domain/progression';
@@ -64,9 +63,8 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
   const barOf = (x: Row) => recordBar({ side: x.side, loadKg: r.defaults(x).kg, drop: x.drop }, priorOf(x), bottomOfRange(x.ex) ?? 1, { clean: settings.formRecordsClean !== false });
   const firstAt = (x: Row) => newLoad({ side: x.side, loadKg: r.defaults(x).kg }, priorOf(x));
   const [saving, setSaving] = useState(false);
-  const [platesSeen, setPlatesSeen] = useState<string[]>([]);
   const [look, setLook] = useState<null | 'sets' | 'session'>(null);
-  const [record, setRecord] = useState<{ name: string; kg: number | null; value: string; was?: { value: number; date: string } } | null>(null);
+  const [record, setRecord] = useState<{ row: Row; name: string; kg: number | null; value: string; was?: { value: string; date: string } } | null>(null);
   const [song, setSong] = useState<string | undefined>();
   useEffect(() => {
     if (!record) return setSong(undefined);
@@ -164,7 +162,21 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
     );
   }
 
-  if (record) return <RecordScreen {...record} song={song} onGo={() => setRecord(null)} saver={saver} />;
+  if (record) {
+    const { row: done, ...shown } = record;
+    return (
+      <RecordScreen
+        {...shown}
+        song={song}
+        onGo={() => {
+          setRecord(null);
+          // The rest held back for the record starts now, at full length.
+          r.afterRow(done);
+        }}
+        saver={saver}
+      />
+    );
+  }
 
   if (pending) {
     const x = pending.row;
@@ -198,8 +210,10 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
             setPending(null);
             if (afterSave(res, 'none') === 'record') {
               const kg = r.defaults(x).kg;
-              const best = firstAt(x) ? undefined : priorOf(x).filter((s) => s.side === x.side && !s.drop && !s.skipped && (s.loadKg ?? 0) >= (kg ?? 0)).sort((a, b) => (valueOfSet(b) ?? 0) - (valueOfSet(a) ?? 0))[0];
-              setRecord({ name: nameOf(x.ex), kg, value: timed ? mmss(val) : String(val), was: best ? { value: valueOfSet(best) ?? 0, date: best.date } : undefined });
+              const clean = settings.formRecordsClean !== false;
+              const best = firstAt(x) ? undefined : recordHolder({ side: x.side, loadKg: kg }, priorOf(x), { clean });
+              const shown = (v: number) => (timed ? mmss(v) : String(v));
+              setRecord({ row: x, name: nameOf(x.ex), kg, value: shown(val), was: best ? { value: shown(recordValue(best, clean)), date: best.date } : undefined });
             }
           } finally {
             setSaving(false);
@@ -281,8 +295,8 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
   const lead = leadOf(row.ex);
 
   const firstOfEx = !r.mine.some((m) => m.exerciseId === row.ex.id);
-  if (firstOfEx && !platesSeen.includes(row.ex.id)) {
-    const lastKg = [...r.mine].filter((s) => !s.skipped).sort((a, b) => b.at - a.at)[0]?.loadKg;
+  if (firstOfEx && !session.platesSeen?.includes(row.ex.id)) {
+    const lastKg = lastLoad(r.mine);
     const kg = r.defaults(row).kg;
     const change = plateChange(lastKg, kg);
     const collar = !!row.ex.overFace && !session.collarCheckedAt;
@@ -293,8 +307,7 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
           change={change}
           forNames={(block?.exs ?? [row.ex]).filter((e) => !r.mine.some((m) => m.exerciseId === e.id) && r.defaults(firstRow(e)).kg === kg).map(nameOf)}
           collar={collar}
-          onCollar={() => patchSession(session.id, { collarCheckedAt: Date.now() })}
-          onGo={() => setPlatesSeen([...platesSeen, row.ex.id])}
+          onGo={(ticked) => patchSession(session.id, { platesSeen: [...(session.platesSeen ?? []), row.ex.id], ...(ticked ? { collarCheckedAt: Date.now() } : {}) })}
           saver={saver}
           top={top}
         />
@@ -311,7 +324,7 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
         lead={lead}
         tempo={!!session.tempo?.[row.ex.id]}
         setup={setupOn(settings, row.ex, session.date)}
-        onSetup={(text) => patchSettings((s) => ({ setups: addSetup(s.setups, row.ex.id, dayKey(), text) }))}
+        onSetup={(text) => patchSettings((s) => ({ setups: addSetup(s.setups, row.ex.id, session.date, text) }))}
         checks={checksFor(row.ex)}
         onGo={() => patchSession(session.id, { guided: [...(session.guided ?? []), row.ex.id] })}
         saver={saver}

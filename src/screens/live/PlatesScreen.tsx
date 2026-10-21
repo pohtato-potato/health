@@ -9,8 +9,8 @@ interface Props {
   forNames: string[];
   /** Weight is about to go over the face: the collars are ticked first. */
   collar: boolean;
-  onCollar: () => void;
-  onGo: () => void;
+  /** On Ready; `collarTicked` when the collars were checked here. Saved then, so nothing moves while you tick. */
+  onGo: (collarTicked: boolean) => void;
   saver: boolean;
   top?: ReactNode;
 }
@@ -44,10 +44,7 @@ export function PlatesScreen(p: Props) {
           className={`lv-tick lv-collar${tight ? ' on' : ''}`}
           aria-pressed={tight}
           style={p.change ? undefined : { marginTop: 24 }}
-          onClick={() => {
-            if (!tight) p.onCollar();
-            setTight(!tight);
-          }}
+          onClick={() => setTight(!tight)}
         >
           <span className="box" aria-hidden="true">
             {tight ? '✓' : ''}
@@ -59,7 +56,7 @@ export function PlatesScreen(p: Props) {
         </button>
       )}
       <div style={{ marginTop: 'auto' }}>
-        <Primary disabled={blocked} onClick={p.onGo}>
+        <Primary disabled={blocked} onClick={() => p.onGo(p.collar && tight)}>
           {blocked ? 'Check the collars first' : 'Ready'}
         </Primary>
       </div>
