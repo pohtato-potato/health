@@ -4,6 +4,7 @@ import { fmtKg } from './loads';
 import { GROUPS, musclesOf } from './muscles';
 import { allExercises, realSets, valueOfSet, type PlanDef } from './plan';
 import { loggedLater } from './trainingChecks';
+import { formScore } from './quality';
 import type { SetEntry, TrainingSession } from './types';
 
 const done = (sessions: TrainingSession[]) => sessions.filter((s) => s.status === 'done').sort((a, b) => a.startedAt - b.startedAt);
@@ -111,7 +112,7 @@ export function monthSoFar(sessions: TrainingSession[], sets: SetEntry[], today:
 }
 
 /** The latest session done today, summed up for the card after it. */
-export function tonight(sessions: TrainingSession[], sets: SetEntry[], today: DayKey): { session: TrainingSession; records: SetEntry[]; mins: number; later: boolean; sets: number; liftMin?: number; quality?: number; checks?: number } | undefined {
+export function tonight(sessions: TrainingSession[], sets: SetEntry[], today: DayKey): { session: TrainingSession; records: SetEntry[]; mins: number; later: boolean; sets: number; liftMin?: number; quality?: number; checks?: number; formAvg?: number } | undefined {
   const session = done(sessions)
     .filter((s) => s.date === today)
     .pop();
@@ -119,6 +120,7 @@ export function tonight(sessions: TrainingSession[], sets: SetEntry[], today: Da
   const mine = working(sets.filter((s) => s.sessionId === session.id));
   const timed = mine.length > 0 && mine.every((s) => s.startedAt !== undefined && s.endedAt !== undefined);
   const marks = mine.flatMap((s) => Object.values(s.checks ?? {}));
+  const scores = mine.map(formScore).filter((f): f is NonNullable<typeof f> => f !== undefined);
   return {
     session,
     records: mine.filter((s) => s.mark === '!!'),
@@ -128,6 +130,7 @@ export function tonight(sessions: TrainingSession[], sets: SetEntry[], today: Da
     ...(timed ? { liftMin: Math.round(hourSplit(session, mine).lift / 60_000) } : {}),
     ...(session.quality !== undefined ? { quality: session.quality } : {}),
     ...(marks.length ? { checks: marks.filter((m) => m === 'ok').length / marks.length } : {}),
+    ...(!marks.length && scores.length ? { formAvg: scores.reduce((a, b) => a + b, 0) / scores.length } : {}),
   };
 }
 
@@ -151,4 +154,16 @@ export function heroFor(h: { active: boolean; tonight: boolean; trainedToday: bo
   if (h.active) return 'resume';
   if (h.tonight) return 'tonight';
   return h.up && !h.trainedToday ? 'upnext' : 'nextup';
+}
+
+/** Well enough to glow green: 80% of form checks went well, or old scores averaging solid (4). */
+const GOOD_CHECKS = 0.8;
+const GOOD_FORM = 4;
+
+/** The glow behind Train today: gold for more than one record, green for good form, else calm. */
+export function trainGlow(day: { records: number; checks?: number; formAvg?: number } | undefined): 'record' | 'in' | 'calm' {
+  if (!day) return 'calm';
+  if (day.records >= 2) return 'record';
+  if ((day.checks ?? 0) >= GOOD_CHECKS || (day.formAvg ?? 0) >= GOOD_FORM) return 'in';
+  return 'calm';
 }

@@ -117,3 +117,16 @@ describe('review fixes', () => {
     expect(heroFor({ active: false, tonight: false, trainedToday: false, up: false })).toBe('nextup');
   });
 });
+
+import { trainGlow } from '../src/domain/trainView';
+describe('the glow behind Train', () => {
+  it('is gold on a day with more than one record', () => expect(trainGlow({ records: 2, checks: 0.5 })).toBe('record'));
+  it('is green on a day the form went well', () => {
+    expect(trainGlow({ records: 1, checks: 0.85 })).toBe('in');
+    expect(trainGlow({ records: 0, formAvg: 4.2 })).toBe('in');
+  });
+  it('is calm otherwise', () => {
+    expect(trainGlow({ records: 1, checks: 0.6 })).toBe('calm');
+    expect(trainGlow(undefined)).toBe('calm');
+  });
+});

@@ -17,7 +17,7 @@ import { TRIP_SESSION_ID } from '../domain/trip';
 import { markSetsSkipped, patchSettings } from '../db/actions';
 import { batteryMode } from '../domain/rest';
 import { loadBlocks, plateChanges, usualLength } from '../domain/sessionEdges';
-import { formFocus, fourWeeksAgo, heroFor, monthSoFar, tonight, volumeLine, weekVolume } from '../domain/trainView';
+import { formFocus, fourWeeksAgo, heroFor, monthSoFar, tonight, trainGlow, volumeLine, weekVolume } from '../domain/trainView';
 import { useBatteryLevel } from '../ui/RestScreen';
 import { Aurora } from '../ui/live/Aurora';
 import { TonightCard, UpNextCard } from './train/Cards';
@@ -73,7 +73,7 @@ export function Train() {
   const fmtSet = (s: SetEntry) => `${s.loadKg !== null ? `${fmtKg(s.loadKg)} kg × ` : ''}${valueOfSet(s) ?? 0}${s.seconds !== undefined && s.reps === undefined ? ' s' : ''}`;
 
   return (
-    <div className={`page lv lv-tab ${tn?.records.length ? 'st-record' : 'st-calm'}${saver ? ' saver' : ''}`}>
+    <div className={`page lv lv-tab st-${trainGlow(tn && { records: tn.records.length, checks: tn.checks, formAvg: tn.formAvg })}${saver ? ' saver' : ''}`}>
       <Aurora still={saver} />
       <div className="lv-tr-head">
         <h1 className="lv-h1">Train</h1>
