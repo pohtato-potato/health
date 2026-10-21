@@ -1,6 +1,6 @@
 # Walk scoping decisions
 
-Date: 21 Oct 2026 · Branch: `scope/walk` · Status: round 2 answered; round 3 sent as a pinboard
+Date: 21 Oct 2026 · Branch: `scope/walk` · Status: round 3 answered; only the journal is open
 
 Scoping for the Walk tab (`#/walk`). No visual design here: design happens later, outside this repo. **The repo is public:** personal values stay out.
 
@@ -126,6 +126,35 @@ All 66 answered on the second pinboard. The owner's notes are paraphrased.
 33. A weekly report from the road. Wrapped, when it comes, is about the walk only.
 34. Stride is typed in as a length in Settings (default 0.74 m).
 
-## Open questions (round 3)
+## Round 3 verdicts (21 Oct 2026)
 
-Sent as a third private pinboard. It covers: how challenges work (how many at once, length, where from, how they end); the mix of stop frequency and stretch length, since both options were pinned; how a small stop shows if not as a postcard; when a full-screen arrival plays; where and how long the weekly report is; when Wrapped comes; the journal; after India; and the remaining status and place maybes.
+Answered on the third pinboard. The owner's notes are paraphrased.
+
+- **Challenges:** pinned up to two at once, challenges of a few weeks, a mix of lengths, famous walks of the world, themed routes in India, wild routes, routes from books and films, counting from the day you join, no deadlines, an optional target date that is never a penalty, a stamp and a full-screen moment on finishing, and cards under the main walk. Notes: any challenge over 500 km may be added as a third, optional slot (main walk plus two plus one long one). The famous walks are the heart of it: historically and culturally important routes, with a piece of their history shared each day on the track, and a comparison of the owner's walk with the original walkers' (where the history records it).
+- **Pace:** pinned both "stops follow the land" and "a stop every two or three days, always"; stretches of one to two weeks set by the land; a small stop shown as a line under the title; several facts per stop, one tap for the next; the week's stops in the weekly report. Stops in the scene and on the map are maybes.
+- **Arrivals:** play right after the steps are logged, whenever a place is reached. Replay from the passport.
+- **Weekly report:** on the Walk tab on Mondays (on Today is a maybe), as a few tap-through cards, covering places, stops and people and the numbers, with no report for an empty week. A paragraph is dropped.
+- **Wrapped:** only a "so far" version you can open any time. A December, anniversary or reveal-day Wrapped is dropped.
+- **Journal:** the owner asked what it does now before deciding.
+- **After India:** a new country becomes the main walk, and the owner picks which. "Only challenges" is dropped.
+- **Last maybes:** the walker rests at camp on status days; travel days say you travelled; tomorrow's line on Today as well. Place marks on the trail are dropped.
+
+## Decisions from round 3
+
+35. Challenges run beside the main walk: up to two at once, plus a third slot for one challenge over 500 km.
+36. Challenges come in all four kinds: famous historical walks, themed routes in India, wild routes, and routes from books and films. Lengths range from a few weeks to long ones.
+37. Each famous walk shares a piece of its history each day, and compares the owner's pace with the original walkers' where that is recorded.
+38. A challenge counts from the day you join, has no deadline, may carry an optional target date that is never a penalty, and ends with a passport stamp and a full-screen moment.
+39. Active challenges show as cards under the main walk.
+40. Small stops follow the land but never leave more than about three days without one. Each has several facts, one tap for the next, and shows as a line under the title on the day you reach it.
+41. Named stretches run one to two weeks, ending where the land changes.
+42. An arrival plays right after the steps that reach it are logged, and can be replayed from the passport.
+43. The weekly report is a few tap-through cards on the Walk tab on Mondays, covering places, stops, people and the numbers, and is skipped for an empty week.
+44. Wrapped is a "so far" view of the walk, open any time.
+45. When India is finished, the owner picks a new country as the main walk.
+46. On sick, injured and break days the walker rests at camp; travel days say so. Tomorrow's line appears on the Walk tab and on Today.
+
+## Open questions (round 4)
+
+- The journal: keep it, change it or remove it, now that the owner has its description.
+- Smaller maybes for the design pass: tomorrow's report on Today, small stops in the scene and on the map, map targets and labels.
