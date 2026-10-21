@@ -4,7 +4,7 @@ import { RINGS } from '../../domain/liveLook';
 import { burnNudge, justTags, restoreCounter, seconds, setState } from '../../domain/liveSet';
 import { newLoad, recordBar } from '../../domain/marks';
 import { bottomOfRange, measureOf, sidesFor, valueOfSet, type ExerciseDef, type PlanDef } from '../../domain/plan';
-import { addSetup, loadBlocks, plateChanges, setupOn, usualLength } from '../../domain/sessionEdges';
+import { addSetup, loadBlocks, plateChange, plateChanges, setupOn, usualLength } from '../../domain/sessionEdges';
 import { dayKey } from '../../domain/dates';
 import { movementKind } from '../../domain/trainingChecks';
 import { useSessions } from '../../db/hooks';
@@ -21,6 +21,7 @@ import type { useRunner } from '../session/useRunner';
 import { BeforeScreen } from './BeforeScreen';
 import { CheckScreen } from './CheckScreen';
 import { GuideScreen } from './GuideScreen';
+import { PlatesScreen } from './PlatesScreen';
 import { LiveFrame, Primary } from './Frame';
 import { RestLive } from './RestLive';
 import { SetScreen } from './SetScreen';
@@ -58,6 +59,7 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
   const barOf = (x: Row) => recordBar({ side: x.side, loadKg: r.defaults(x).kg, drop: x.drop }, priorOf(x), bottomOfRange(x.ex) ?? 1, { clean: settings.formRecordsClean !== false });
   const firstAt = (x: Row) => newLoad({ side: x.side, loadKg: r.defaults(x).kg }, priorOf(x));
   const [saving, setSaving] = useState(false);
+  const [platesSeen, setPlatesSeen] = useState<string[]>([]);
 
   const top = (
     <>
@@ -219,6 +221,28 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
 
   const prev = prevOf(row);
   const lead = leadOf(row.ex);
+
+  const firstOfEx = !r.mine.some((m) => m.exerciseId === row.ex.id);
+  if (firstOfEx && !platesSeen.includes(row.ex.id)) {
+    const lastKg = [...r.mine].filter((s) => !s.skipped).sort((a, b) => b.at - a.at)[0]?.loadKg;
+    const kg = r.defaults(row).kg;
+    const change = plateChange(lastKg, kg);
+    const collar = !!row.ex.overFace && !session.collarCheckedAt;
+    if (change || collar) {
+      const block = blocks.find((b) => b.exs.some((e) => e.id === row.ex.id));
+      return (
+        <PlatesScreen
+          change={change}
+          forNames={(block?.exs ?? [row.ex]).filter((e) => !r.mine.some((m) => m.exerciseId === e.id)).map(nameOf)}
+          collar={collar}
+          onCollar={() => patchSession(session.id, { collarCheckedAt: Date.now() })}
+          onGo={() => setPlatesSeen([...platesSeen, row.ex.id])}
+          saver={saver}
+          top={top}
+        />
+      );
+    }
+  }
 
   if (row.setNo === 1 && !row.drop && !session.guided?.includes(row.ex.id) && !r.mine.some((m) => m.exerciseId === row.ex.id)) {
     return (

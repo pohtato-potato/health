@@ -194,3 +194,7 @@ html.contrast .lv-check, html.contrast .lv-ghost { border-color: var(--text); }
 .lv-link { align-self: flex-start; min-height: 44px; font-size: 15px; color: var(--blue-soft); text-align: left; }
 .lv-note { width: 100%; min-height: 80px; border-radius: 14px; padding: 10px 12px; font: inherit; font-size: 16px; color: var(--text); background: color-mix(in srgb, var(--lv-b) 70%, transparent); border: 1px solid color-mix(in srgb, var(--text) 25%, transparent); resize: none; }
 .lv-adapt { font-size: 14px; text-align: center; color: var(--lv-accent); }
+.lv-plates { display: flex; align-items: center; gap: 14px; font-family: var(--serif); font-size: 56px; font-weight: 300; }
+.lv-plates .arrow { font-size: 36px; color: #ffc29b; }
+.lv-collar { min-height: 72px; padding: 14px; }
+.lv-collar .grow { display: flex; flex-direction: column; gap: 2px; }

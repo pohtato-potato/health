@@ -68,3 +68,26 @@ describe('a note from the rest screen', () => {
   it('shows the note kept', () => expect(rest('Elbow ached on set 3')).toContain('Note: Elbow ached on set 3'));
   it('offers one when there is none', () => expect(rest()).toContain('+ Note on this exercise'));
 });
+
+import { PlatesScreen } from '../src/screens/live/PlatesScreen';
+
+describe('the plate change', () => {
+  const plates = (p: Partial<Parameters<typeof PlatesScreen>[0]> = {}) =>
+    renderToStaticMarkup(<PlatesScreen change={{ from: 10, to: 5 }} forNames={['Skull crusher', 'Floor fly']} collar={false} onCollar={noop} onGo={noop} saver={false} {...p} />);
+  it('shows the change and who it is for', () => {
+    const h = plates();
+    expect(h).toMatch(/10 kg[\s\S]*→[\s\S]*5 kg/);
+    expect(h).toContain('For skull crusher and floor fly.');
+  });
+  it('lets you go straight on without a collar check', () => expect(plates()).not.toMatch(/<button[^>]*disabled/));
+  it('holds Ready until the collars are ticked', () => {
+    const h = plates({ collar: true });
+    expect(h).toContain('Collars tight on both handles');
+    expect(h).toMatch(/<button[^>]*disabled[^>]*>Check the collars first/);
+  });
+  it('can be only the collar check, with no change', () => {
+    const h = plates({ change: undefined, collar: true });
+    expect(h).not.toContain('Plates change');
+    expect(h).toContain('Collars tight');
+  });
+});
