@@ -1,6 +1,6 @@
 # Walk scoping decisions
 
-Date: 21 Oct 2026 · Branch: `scope/walk` · Status: scoping done; debloat being built on `debloat/walk`
+Date: 21 Oct 2026 · Branch: `scope/walk` · Status: scoping done; debloat built on `debloat/walk` (not merged)
 
 Scoping for the Walk tab (`#/walk`). No visual design here: design happens later, outside this repo. **The repo is public:** personal values stay out.
 

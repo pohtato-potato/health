@@ -1,6 +1,6 @@
 # Walk debloat: what goes and what changes
 
-Date: 21 Oct 2026 · Branch: `scope/walk` · Status: agreed list, not yet built
+Date: 21 Oct 2026 · Branch: `scope/walk` · Status: built on `debloat/walk`, not merged
 
 The owner's decisions from the Walk pinboard and the debloat questions (`docs/superpowers/decisions/2026-10-21-walk-scoping.md`), turned into one list of removals and changes. The debloat **removes and rearranges**. It adds no new look; the visual redesign comes later. **This repo is public:** no personal values here.
 
