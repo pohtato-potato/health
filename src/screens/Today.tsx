@@ -4,17 +4,19 @@ import { fmtDuration, fmtInt, fmtTime } from '../domain/format';
 import { findSession } from '../domain/plan';
 import { sleepMinutes, stepsGoal } from '../domain/rings';
 import { pinnedLine, voiceLine, plainFlagLine, type Moment } from '../domain/voice';
-import { addEntries, bump, deleteEntry, setSteps } from '../db/actions';
+import { bump, setSteps } from '../db/actions';
 import { useKonami } from '../ui/useKonami';
 import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useSessions, useSettings, useToday } from '../db/hooks';
 import { prefOn } from '../domain/types';
 import { voiceFor } from '../domain/voice';
-import { mealForTime, portionFor } from '../domain/foods';
 import { kmFromSteps, positionAt } from '../domain/walk';
 import { landmarkFor } from '../walk/art/landmarks';
 import { walkCaption } from '../domain/walkCaption';
 import { WalkTop } from './today/WalkTop';
 import { RingsNumbers } from './today/RingsNumbers';
+import { MomentCard } from './today/MomentCard';
+import { useGapAdd } from './today/useGapAdd';
+import { momentFor } from '../domain/todayMoment';
 import { TodayLine } from './today/TodayLine';
 import { glanceLine } from '../domain/glance';
 import { logMinutes } from '../domain/todayMoment';
@@ -22,7 +24,7 @@ import { WalkFull } from './today/WalkFull';
 import { placeFor } from '../domain/places';
 import { proteinGap } from '../domain/proteinGap';
 import { WalkScene } from '../walk/WalkScene';
-import { go } from '../router';
+import { go, openSheet } from '../router';
 import { Icon } from '../ui/Icon';
 import { Rings } from '../ui/Rings';
 import { useToast } from '../ui/Toasts';
@@ -70,6 +72,7 @@ export function Today() {
 
   const day = useMemo(() => days?.find((d) => d.date === today), [days, today]);
   const [walkOpen, setWalkOpen] = useState(false);
+  const gapAdd = useGapAdd(today, foods);
 
   if (!settings || !days || !entries || !sessions || !sets || active === undefined || !foods || !weekEntries || !monthEntries) {
     return <div className="page" />;
@@ -120,18 +123,7 @@ export function Today() {
   const lineKind: 'glance' | 'voice' | 'flag' = flag ? 'flag' : voiceNow ? 'voice' : 'glance';
   const lineText = flag ? line : voiceNow ? lineForTheDay(today, moment, line) : glanceLine({ minutes: logMinutes(Date.now()), closedRings: rings.closed, dayClosed: !!day?.foodDone, sessionTonight, nextSession: day?.foodDone && up ? sessionName : undefined, morningDone: !!day?.morning });
   const gap = proteinGap({ protein: totals.protein, proteinTarget: targets.proteinG, kcal: totals.kcal, kcalMax: targets.kcalMax }, foods, monthEntries, Date.now());
-  const addGap = async () => {
-    const at = Date.now();
-    const meal = mealForTime();
-    const byId = new Map(foods.map((f) => [f.id, f]));
-    const added = await addEntries(
-      gap.picks.map((p) => {
-        const f = byId.get(p.foodId)!;
-        return { date: today, meal, at, kind: 'food' as const, foodId: f.id, name: f.name, amount: p.amount, portion: portionFor(f, p.amount), kcal: p.kcal, protein: p.proteinG };
-      }),
-    );
-    toast({ text: `Added ${added.map((e) => e.name).join(' and ')}`, sub: `+${Math.round(gap.picks.reduce((n, p) => n + p.proteinG, 0))} g protein`, action: { label: 'Undo', run: () => added.forEach((e) => void deleteEntry(e.id)) } });
-  };
+  const addGap = () => void gapAdd(gap.picks);
   const ready = forecastData(settings, today, days, monthEntries.filter((e) => e.date >= addDays(today, -2)), sessions, sets).readiness;
   const dayN = daysBetween(journeyStartOf(settings, days), today) + 1;
   const pos = positionAt(walkKm);
@@ -172,6 +164,20 @@ export function Today() {
         onLogFood={() => go('/food')}
         onSaveSteps={(n) => void setSteps(today, n)}
         showCopyHint={logMinutes(Date.now()) >= 19 * 60}
+      />
+
+      <MomentCard
+        kind={momentFor({ minutes: logMinutes(Date.now()), status: day?.status, morningDone: !!day?.morning, perfect: rings.perfect, dayClosed: !!day?.foodDone, proteinGapG: gap.gapG, stepsLeft: Math.max(0, stepsLeft) })}
+        data={{
+          closedRings: rings.closed,
+          proteinGapG: gap.gapG,
+          gapFoods: gap.picks.map((p) => p.name).join(' and '),
+          addLabel: `${gap.picks.length === 1 ? 'Add it' : gap.picks.length === 2 ? 'Add both' : 'Add them'} · ${Math.round(gap.picks.reduce((n, p) => n + p.proteinG, 0))} g`,
+          stepsLeft: Math.max(0, stepsLeft),
+          laps: loop ? fmtInt(Math.ceil(Math.max(stepsLeft, 0) / loop)) : undefined,
+          easedTo: totals.eased ? stepsGoal(targets, true) : undefined,
+        }}
+        actions={{ logMorning: () => openSheet('morning'), closeDay: () => go('/close'), addGap, typeSteps: () => openSheet('steps') }}
       />
 
       <NextUpCard settings={settings} up={up} active={active} trainedToday={trainedToday} weeks={weeks} />

@@ -52,3 +52,12 @@
 .td-ringmore { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 15px; color: var(--quiet); }
 .td-stepin { display: flex; gap: 8px; }
 .td-stepin input { width: 128px; min-height: 44px; font: inherit; font-size: 18px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--hairline); background: var(--surface); color: var(--text); }
+
+/* The moment card: the one lit card on the page. */
+.td-moment { display: flex; flex-direction: column; gap: 8px; padding: 20px 18px 18px; border-radius: 22px; border: 1px solid color-mix(in srgb, var(--text) 22%, transparent); background: linear-gradient(160deg, color-mix(in srgb, var(--raised) 80%, var(--lavender) 12%), var(--surface)); box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.6); }
+.td-moment.gold { border-color: color-mix(in srgb, var(--gold) 70%, transparent); background: linear-gradient(160deg, color-mix(in srgb, var(--gold) 22%, var(--surface)), var(--surface)); }
+.td-moment-title { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 26px; line-height: 1.15; }
+.td-moment-sub { margin: 0; font-size: 16px; line-height: 1.45; color: color-mix(in srgb, var(--text) 88%, transparent); }
+.td-moment-acts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.td-moment-btn { flex: 1 1 auto; min-height: 54px; }
+.td-moment-btn.gold { background: var(--gold); border-color: var(--gold); color: var(--ink); }
