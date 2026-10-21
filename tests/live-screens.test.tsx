@@ -81,3 +81,33 @@ describe('the check screen', () => {
     expect(h).toMatch(/class="lv [^"]*st-burn/);
   });
 });
+
+import { RestLive } from '../src/screens/live/RestLive';
+import { justTags, restoreCounter } from '../src/domain/liveSet';
+
+describe('rest', () => {
+  const rest = (p: Partial<Parameters<typeof RestLive>[0]> = {}) =>
+    renderToStaticMarkup(<RestLive endsAt={NOW + 45_000} total={90} now={NOW} from="burn" just={['record']} next={{ label: 'Set 3', kg: 10, aim: '10–15', tempo: false }} onMore={noop} onReady={noop} saver={false} rings={['#111111', '#222222', '#333333']} {...p} />);
+  it('tags the set just done', () => {
+    expect(justTags({ mark: '!!', burnAt: 9, checks: { a: 'ok', b: 'ok', c: 'slip' } })).toEqual(['record', 'burn from 10', '2 went well', '1 slipped']);
+    expect(justTags({})).toEqual([]);
+  });
+  it('fades from the set colour as it runs down', () => {
+    const h = rest();
+    expect(h).toContain('--fade:0.5');
+    expect(h).toMatch(/class="lv [^"]*st-rest[^"]*from-burn/);
+    expect(h).toContain('0:45');
+  });
+  it('is black and still in battery saver, with the next set readable', () => {
+    const h = rest({ saver: true });
+    expect(h).not.toContain('blob');
+    expect(h).toContain('Set 3');
+  });
+});
+
+describe('a counter saved on the session', () => {
+  const saved = { key: 'curl:2:both', taps: [1, 2, 3], burnAt: 2, startedAt: 1 };
+  it('comes back for the same row', () => expect(restoreCounter(saved, 'curl:2:both')).toEqual(saved));
+  it('starts fresh for another row', () => expect(restoreCounter(saved, 'curl:3:both')).toEqual({ key: 'curl:3:both', taps: [] }));
+  it('starts fresh with nothing saved', () => expect(restoreCounter(null, 'curl:3:both')).toEqual({ key: 'curl:3:both', taps: [] }));
+});

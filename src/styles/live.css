@@ -118,6 +118,7 @@
 .lv-tempo .beat.on { background: var(--blue-soft); color: var(--ink); font-weight: 700; }
 .lv-tempo-word { font-size: 14px; margin-left: 4px; min-width: 76px; }
 .lv-check-head { display: flex; align-items: center; gap: 14px; margin-top: 6px; }
+.lv.st-rest { --lv-from: #24426b; }
 .lv.from-build { --lv-from: #262c58; }
 .lv.from-in { --lv-from: #1f4f45; }
 .lv.from-burn { --lv-from: #74381f; }
@@ -126,7 +127,7 @@
 .lv-rest-ring { position: relative; align-self: center; width: 250px; height: 250px; margin-top: 8px; }
 .lv-rest-ring svg { display: block; }
 .lv-rest-ring .track { fill: none; stroke: color-mix(in srgb, var(--text) 12%, transparent); stroke-width: 12; }
-.lv-rest-ring .fill { fill: none; stroke: var(--ring3); stroke-width: 12; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+.lv-rest-ring .fill { fill: none; stroke: var(--ring1); stroke-width: 12; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
 .lv-rest-ring-in { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .lv-rest-ring-in b { font-family: var(--serif); font-size: 76px; font-weight: 300; line-height: 1; }
 .lv.saver { background: #000; }
@@ -162,3 +163,5 @@ html.contrast .lv-check, html.contrast .lv-ghost { border-color: var(--text); }
   .lv-ripple { display: none; }
   .lv-dim { transition: none; }
 }
+.lv-chipbtn { min-height: 44px; padding: 0 14px; border-radius: 999px; font-size: 15px; color: var(--text); background: color-mix(in srgb, var(--lv-b) 50%, transparent); border: 1px solid color-mix(in srgb, var(--text) 22%, transparent); }
+.lv-card-h { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, var(--text) 70%, transparent); }

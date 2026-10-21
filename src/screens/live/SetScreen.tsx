@@ -44,7 +44,14 @@ export function SetScreen(p: Props) {
   const still = p.saver || (typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches);
   const perSide = row.side !== 'both';
 
-  const act = (a: CounterAction) => p.onCounter(counter(c, a));
+  // Fast taps land before the next render: count from the latest value, not this render's.
+  const latest = useRef(c);
+  latest.current = c;
+  const act = (a: CounterAction) => {
+    const n = counter(latest.current, a);
+    latest.current = n;
+    p.onCounter(n);
+  };
   const ripple = (e: PointerEvent<HTMLElement>, cls: string) => {
     if (still) return;
     const r = e.currentTarget.getBoundingClientRect();
@@ -65,11 +72,11 @@ export function SetScreen(p: Props) {
     if (!e.isPrimary) return;
     window.clearTimeout(hold.current);
     if (held.current) return;
-    if (p.timed && c.startedAt !== undefined) return;
-    const n = reps + 1;
+    if (p.timed && latest.current.startedAt !== undefined) return;
+    const n = latest.current.taps.length + 1;
     act({ t: 'tap', at: Date.now() });
     if (p.buzz) vibrate(p.bar !== undefined && n === p.bar + 1 ? [40, 30, 40, 30, 80] : 12);
-    ripple(e, setState({ reps: n, burnAt: c.burnAt, bottom: p.bottom, bar: p.bar }));
+    ripple(e, setState({ reps: n, burnAt: latest.current.burnAt, bottom: p.bottom, bar: p.bar }));
   };
   const cancel = () => window.clearTimeout(hold.current);
 
@@ -172,11 +179,10 @@ export function SetScreen(p: Props) {
           Set done · {p.timed ? mmss(reps) : reps}
         </Primary>
       </div>
-      {reps === 0 && (
-        <button type="button" className="lv-skip" onClick={p.onSkip}>
-          Skip this set
-        </button>
-      )}
+      {/* Kept in place after the first rep, so the buttons above never move. */}
+      <button type="button" className="lv-skip" onClick={p.onSkip} disabled={reps > 0} style={reps > 0 ? { visibility: 'hidden' } : undefined}>
+        Skip this set
+      </button>
     </LiveFrame>
   );
 }

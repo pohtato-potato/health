@@ -66,3 +66,16 @@ export function repsSlowing(taps: number[]): boolean {
 export function burnNudge(ex: Pick<ExerciseDef, 'isolation'>, prev: Pick<SetEntry, 'rir'> | undefined): boolean {
   return !!ex.isolation && (prev?.rir ?? 0) >= 2;
 }
+
+/** The set just done, as tags for the rest screen: "record", "burn from 10", "2 went well", "1 slipped". */
+export function justTags(s: Pick<SetEntry, 'mark' | 'burnAt' | 'checks'>): string[] {
+  const marks = Object.values(s.checks ?? {});
+  const ok = marks.filter((m) => m === 'ok').length;
+  const slip = marks.length - ok;
+  return [s.mark === '!!' && 'record', s.burnAt !== undefined && `burn from ${s.burnAt + 1}`, ok > 0 && `${ok} went well`, slip > 0 && `${slip} slipped`].filter((t): t is string => !!t);
+}
+
+/** The counter kept on the session, when it is for this row; else a fresh one. */
+export function restoreCounter(saved: LiveCounter | null | undefined, key: string): LiveCounter {
+  return saved?.key === key ? saved : { key, taps: [] };
+}

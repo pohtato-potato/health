@@ -4,6 +4,7 @@ import { chipLoads, fmtKg } from '../domain/loads';
 import { findLogged, SetTable } from './session/SetTable';
 import { HeavierMoment } from './session/HeavierMoment';
 import { useRunner } from './session/useRunner';
+import { LiveSession } from './live/LiveSession';
 import { cueFor } from '../domain/quality';
 import {
   allExercises,
@@ -96,6 +97,7 @@ const valueOf = valueOfSet;
 
 function Runner({ session, settings, plan, allSets }: { session: TrainingSession; settings: Settings; plan: PlanDef; allSets: SetEntry[] }) {
   const r = useRunner(session, settings, plan, allSets);
+  if (session.view !== 'list') return <LiveSession r={r} session={session} settings={settings} />;
   const { toast, now, exs, groups, mine, history, statuses, extra, setExtra, complete, gi, setGi, editing, setEditing, draft, setDraft, rest, restHidden, setRestHidden, saver, watch, setWatch, swapFor, setSwapFor, coach, setCoach, group, rows, current, activeKey, extendRest, stopRest, defaults, kgEditable, save, skip, undoSkip, remove, toggleTempo, finish, def, firstIdx, restLeft, nextGroup, groupDone, tired, offerFor, answer } = r;
 
   return (
@@ -111,9 +113,14 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
           </div>
           <div className="t15 tn">{clock(now - session.startedAt)}</div>
         </div>
-        <button type="button" style={{ height: 44, padding: '0 6px', fontSize: 15, fontWeight: 600 }} onClick={finish}>
-          Finish
-        </button>
+        <span className="row" style={{ gap: 4 }}>
+          <button type="button" className="chip sm" onClick={() => patchSession(session.id, { view: 'live' })}>
+            Live
+          </button>
+          <button type="button" style={{ height: 44, padding: '0 6px', fontSize: 15, fontWeight: 600 }} onClick={finish}>
+            Finish
+          </button>
+        </span>
       </div>
 
       <div className="segs" role="tablist" aria-label="Exercises">

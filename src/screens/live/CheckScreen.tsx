@@ -20,6 +20,8 @@ interface Props {
   prev?: { checks?: Marks; rir?: number };
   onSave: (v: { checks: Marks; rir?: number }) => void;
   saver: boolean;
+  /** What was lifted: "reps at 10 kg · left". */
+  detail?: string;
   top?: ReactNode;
 }
 
@@ -49,8 +51,15 @@ export function CheckScreen(p: Props) {
         <span className={`lv-count num tn ${state}`} style={{ fontSize: 64 }}>
           {p.unit === 'seconds' ? mmss(p.reps) : p.reps}
         </span>
-        <span className="lv-word" style={{ textAlign: 'left', fontSize: 18 }}>
-          {word}
+        <span className="col">
+          {p.detail && (
+            <span className="lv-name" style={{ fontSize: 24 }}>
+              {p.detail}
+            </span>
+          )}
+          <span className="lv-word" style={{ textAlign: 'left', fontSize: 18 }}>
+            {word}
+          </span>
         </span>
       </div>
       {p.checks.length > 0 && (
