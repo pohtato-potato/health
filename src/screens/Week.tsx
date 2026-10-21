@@ -12,7 +12,7 @@ import { back, go, useRoute } from '../router';
 import { Icon } from '../ui/Icon';
 import { useToast } from '../ui/Toasts';
 import { targetsFor, weeksFor } from '../state/derived';
-import { usualWake } from './TodayNight';
+import { usualWake } from '../domain/wake';
 import { basisLabel } from '../domain/logged';
 
 function useWeekData() {

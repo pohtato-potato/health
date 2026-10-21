@@ -43,8 +43,7 @@
   border-width: 2px;
 }
 
-:root.contrast,
-:root.contrast.night {
+:root.contrast {
   --text: #ffffff;
   --quiet: #e2e0e6;
   --dim: #cfcdd4;

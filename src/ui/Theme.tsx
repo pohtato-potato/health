@@ -17,15 +17,15 @@ export function useUnlockedIds(): Set<string> | undefined {
 }
 
 /** Puts today's theme on the page. Night mode wins after 11 pm: dim beats festive at bedtime. */
-export function useThemeClass(settings: Settings | undefined, today: DayKey, night: boolean) {
+export function useThemeClass(settings: Settings | undefined, today: DayKey) {
   const unlocked = useUnlockedIds();
   const theme: ThemeId = settings && unlocked ? themeFor(settings, today, unlocked) : 'dusk';
   useEffect(() => {
     const root = document.documentElement;
-    for (const t of THEMES) root.classList.toggle(`theme-${t.id}`, !night && t.id === theme && t.id !== 'dusk');
-    const bar = night ? '#09080b' : themeById(theme)?.bar ?? '#0d0f14';
+    for (const t of THEMES) root.classList.toggle(`theme-${t.id}`, t.id === theme && t.id !== 'dusk');
+    const bar = themeById(theme)?.bar ?? '#0d0f14';
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bar);
-  }, [theme, night]);
+  }, [theme]);
   return theme;
 }
 

@@ -165,7 +165,7 @@ The app is lit by where you are on the walk and the hour. Everything sits on a d
 
 Numbers and titles speak in a light, optical-size serif (Fraunces); everything you operate speaks in a quiet sans (DM Sans); clocks, wheels and receipts speak in a mono (DM Mono). The serif is the voice of the data, which is why counts are set at weight 300 with lining figures and line-height 1.
 
-The world has a second register for celebration: full-screen moments, story cards, the monthly film, a paper receipt, postcards from the walk and a split-flap departures board. These step outside the card grammar on purpose, but they draw from the same inks and the same serif. After 11 pm the whole palette dims and warms; theme days (festivals, sky, nerdy and personal dates) repaint the ground and accents for one day.
+The world has a second register for celebration: full-screen moments, story cards, the monthly film, a paper receipt, postcards from the walk and a split-flap departures board. These step outside the card grammar on purpose, but they draw from the same inks and the same serif. Theme days (festivals, sky, nerdy and personal dates) repaint the ground and accents for one day.
 
 **Key Characteristics:**
 - Deep indigo night ground with tonal layering and hairline borders; shadows only on things that float.
@@ -211,7 +211,6 @@ Soft, dusty inks on deep indigo: nothing saturated, nothing pure white, every ac
 
 **The Earned Gold Rule.** Gold marks something the owner did: a record, a moment, a milestone, a seasonal day. It is never decoration on an ordinary card.
 
-**The Night Dims Rule.** After 11 pm the night palette replaces the ground and accents with dimmer, warmer values, the tab bar drops to 60% opacity, and night overrides any theme day.
 
 ## Typography
 

@@ -43,28 +43,6 @@
   color-scheme: dark;
 }
 
-/* After 11 pm: dimmer, warmer, quieter. */
-:root.night {
-  --ink: #09080b;
-  --deep: #050406;
-  --tabbar: #0b0a0e;
-  --surface: #121016;
-  --raised: #17151c;
-  --hairline: #221e26;
-  --divider: #1a171e;
-  --track: #1f1c24;
-  --btn-border: #2c2831;
-  --text: #d8cfc3;
-  --quiet: #8e857d;
-  --dim: #7a726b;
-  --voice: #b8aea3;
-  --apricot: #c99173;
-  --lavender: #9d90cc;
-  --sage: #7fae99;
-  --blue: #8e95c9;
-  --pearl: #b2bfc9;
-}
-
 *,
 *::before,
 *::after {
@@ -980,12 +958,6 @@ textarea.field {
   text-align: center;
   animation: fade 0.3s ease-out;
   overflow-y: auto;
-}
-:root.night .moment {
-  background: #09080b;
-}
-:root.night .tabbar {
-  opacity: 0.6;
 }
 .moment-body {
   flex: 1;

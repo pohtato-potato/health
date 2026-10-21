@@ -146,18 +146,13 @@ export function App() {
   const settings = useSettings();
   const route = useRoute();
   const today = useToday();
-  const night = false;
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('night', night);
-  }, [night]);
   const largeText = settings ? prefOn(settings.prefs, 'largeText') : false;
   const contrast = settings ? prefOn(settings.prefs, 'highContrast') : false;
   useEffect(() => {
     document.documentElement.classList.toggle('large-text', largeText);
     document.documentElement.classList.toggle('contrast', contrast);
   }, [largeText, contrast]);
-  useThemeClass(settings, today, night);
+  useThemeClass(settings, today);
 
   if (!settings) return null;
   if (!settings.setupDone) return <Setup />;

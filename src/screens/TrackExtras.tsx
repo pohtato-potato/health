@@ -4,7 +4,7 @@ import { fmt1, fmtClock, fmtDayMonth, fmtDayShort, fmtDuration, fmtInt, fmtLitre
 import { WEEKDAYS, WEEKDAY_NAMES, bedtimeFor, drinkNights, morningAfter, raceLastWeek, sleepPayoff, sleepWindows, sources, strengthScores, tshirtVsLast, weekdayPattern, type Strength } from '../domain/insights';
 import type { CheckIn, Day, FoodEntry, Measurement, SetEntry, Settings, TrainingSession } from '../domain/types';
 import { flagEvents, targetsFor } from '../state/derived';
-import { usualWake } from './TodayNight';
+import { usualWake } from '../domain/wake';
 import { Spark } from '../ui/Charts';
 import { Icon } from '../ui/Icon';
 import { go, openSheet } from '../router';
