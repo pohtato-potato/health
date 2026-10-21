@@ -157,4 +157,4 @@ Answered on the third pinboard. The owner's notes are paraphrased.
 ## Open questions (round 4)
 
 - The journal: keep it, change it or remove it, now that the owner has its description.
-- Smaller maybes for the design pass: tomorrow's report on Today, small stops in the scene and on the map, map targets and labels.
+- Smaller maybes for the design pass: the weekly report on Today, small stops in the scene and on the map, map targets and labels.
