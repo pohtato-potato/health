@@ -14,6 +14,8 @@ import { landmarkFor } from '../walk/art/landmarks';
 import { walkCaption } from '../domain/walkCaption';
 import { WalkTop } from './today/WalkTop';
 import { RingsNumbers } from './today/RingsNumbers';
+import { DrawerHandle, TodayDrawer } from './today/TodayDrawer';
+import { proteinState } from '../domain/proteinState';
 import { ChecklistChips, MealTiles, UsualChips, mealTotals } from './today/LogBelow';
 import { LogSearch } from '../sheets/LogSearch';
 import { sameAsYesterday, usualFoods } from '../domain/usual';
@@ -31,7 +33,6 @@ import { placeFor } from '../domain/places';
 import { proteinGap } from '../domain/proteinGap';
 import { WalkScene } from '../walk/WalkScene';
 import { go, openSheet } from '../router';
-import { Icon } from '../ui/Icon';
 import { Rings } from '../ui/Rings';
 import { useToast } from '../ui/Toasts';
 import {
@@ -45,7 +46,7 @@ import {
 import { Banners } from './Banners';
 import '../styles/today.css';
 import { forecastData } from '../state/forecastData';
-import { heldBackBy, readinessInk, readinessText, readyWord } from '../domain/readiness';
+import { readyWord } from '../domain/readiness';
 import { SeasonStrip, useUnlockedIds } from '../ui/Theme';
 import { hasReward } from '../domain/rewards';
 import { NextUpCard } from './NextUpCard';
@@ -81,6 +82,7 @@ export function Today() {
 
   const day = useMemo(() => days?.find((d) => d.date === today), [days, today]);
   const [walkOpen, setWalkOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const gapAdd = useGapAdd(today, foods);
 
   if (!settings || !days || !entries || !sessions || !sets || active === undefined || !foods || !weekEntries || !monthEntries) {
@@ -233,56 +235,20 @@ export function Today() {
         )}
       </section>
 
-      <button type="button" className="card ready-card" onClick={() => go('/readiness')}>
-        <span className="col" style={{ alignItems: 'center', minWidth: 64 }}>
-          <span className="serif tn" style={{ fontSize: 34, lineHeight: 1, color: ready.known ? readinessInk(ready.score) : 'var(--quiet)' }}>
-            {readinessText(ready)}
-          </span>
-          <span className="t12 q">{ready.known ? 'ready' : 'log sleep'}</span>
-        </span>
-        <span className="col gap4 grow">
-          {ready.known ? (
-            // A low score leads with what is holding it back.
-            (heldBackBy(ready).length ? [...heldBackBy(ready), ...ready.parts.filter((p) => !heldBackBy(ready).includes(p)).sort((x, y) => Math.abs(y.delta) - Math.abs(x.delta))] : [...ready.parts].sort((x, y) => Math.abs(y.delta) - Math.abs(x.delta)))
-              .slice(0, 3)
-              .map((pt) => (
-                <span key={pt.key} className="row t13">
-                  <span>{pt.label}</span>
-                  <span className="tn" style={{ color: pt.delta > 0 ? 'var(--sage)' : 'var(--rose)' }}>
-                    {pt.delta > 0 ? '+' : '−'}
-                    {Math.abs(pt.delta)}
-                  </span>
-                </span>
-              ))
-          ) : (
-            <span className="t13 q lh">Not enough data yet. The morning log's sleep makes this a real score.</span>
-          )}
-        </span>
-      </button>
-
-      {gap.mode === 'gap' && gap.picks.length > 0 && (
-        <div className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <span className="col gap2 grow">
-            <span className="t15">
-              <span className="tn" style={{ color: 'var(--protein)' }}>{gap.gapG} g</span> protein to go
-            </span>
-            <span className="t13 q lh">{gap.picks.map((p) => p.name).join(' and ')}</span>
-          </span>
-          <button type="button" className="btn sm" onClick={addGap}>
-            + {gap.picks.length === 1 ? 'Add it' : gap.picks.length === 2 ? 'Add both' : 'Add them'}
-          </button>
-        </div>
-      )}
-
-      <button type="button" className={`card${gap.mode === 'close' ? ' gold' : ''}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }} onClick={() => go('/close')}>
-        <Icon name="check" size={22} color={gap.mode === 'close' ? 'var(--gold)' : 'var(--quiet)'} />
-        <span className="col gap2 grow" style={{ textAlign: 'left' }}>
-          <span className="t16">{day?.foodDone ? 'Day closed' : 'Close the day'}</span>
-          <span className="t13 q">{day?.foodDone ? 'Tap to change anything' : gap.mode === 'close' ? "It's late. Check meals, checklist and steps, then mark it complete." : 'Meals, checklist and steps on one screen'}</span>
-        </span>
-        <Icon name="right" size={16} stroke={1.8} color="var(--dim)" />
-      </button>
     </div>
+    <DrawerHandle ready={ready.known ? ready.score : undefined} protein={proteinState({ gapG: gap.gapG, closed: rings.protein.closed, dayClosed: !!day?.foodDone })} closeLabel={day?.foodDone ? 'Day closed' : 'Close the day'} onOpen={() => setDrawerOpen(true)} />
+    {drawerOpen && (
+      <TodayDrawer
+        voice={flag ? line : lineForTheDay(today, moment, line)}
+        readiness={{ score: ready.known ? ready.score : undefined, reason: readyWord(ready) }}
+        protein={{ text: proteinState({ gapG: gap.gapG, closed: rings.protein.closed, dayClosed: !!day?.foodDone }), foods: gap.picks.map((p) => p.name).join(' and ') }}
+        dayClosed={!!day?.foodDone}
+        onReadiness={() => go('/readiness')}
+        onAddGap={addGap}
+        onCloseDay={() => go('/close')}
+        onClose={() => setDrawerOpen(false)}
+      />
+    )}
     </>
   );
 }
