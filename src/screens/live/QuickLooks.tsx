@@ -1,8 +1,20 @@
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { BlockList, type Blocks } from './BeforeScreen';
 import { timeOfDay } from './Frame';
 
 function LookSheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  const close = useRef<HTMLButtonElement>(null);
+  // Focus moves into the sheet and back out; Escape closes it.
+  useEffect(() => {
+    const before = document.activeElement as HTMLElement | null;
+    close.current?.focus();
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      before?.focus?.();
+    };
+  }, [onClose]);
   return (
     <div className="lv-sheet" role="dialog" aria-modal="true" aria-label={title} onClick={onClose}>
       <div className="lv-sheet-in" onClick={(e) => e.stopPropagation()}>
@@ -10,7 +22,7 @@ function LookSheet({ title, onClose, children }: { title: string; onClose: () =>
           <h2 className="lv-name" style={{ fontSize: 26 }}>
             {title}
           </h2>
-          <button type="button" className="lv-chipbtn" onClick={onClose}>
+          <button ref={close} type="button" className="lv-chipbtn" onClick={onClose}>
             Close
           </button>
         </div>

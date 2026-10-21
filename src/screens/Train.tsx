@@ -20,7 +20,7 @@ import { TRIP_SESSION_ID } from '../domain/trip';
 import { markSetsSkipped, patchSettings } from '../db/actions';
 import { batteryMode } from '../domain/rest';
 import { loadBlocks, plateChanges, usualLength } from '../domain/sessionEdges';
-import { formFocus, fourWeeksAgo, heroFor, monthSoFar, tonight, trainGlow, volumeLine, weekVolume } from '../domain/trainView';
+import { filmDue, formFocus, fourWeeksAgo, heroFor, monthSoFar, tonight, trainGlow, volumeLine, weekVolume } from '../domain/trainView';
 import { useBatteryLevel } from '../ui/RestScreen';
 import { Aurora } from '../ui/live/Aurora';
 import { TonightCard, UpNextCard } from './train/Cards';
@@ -194,7 +194,7 @@ export function Train() {
           .map(({ ex, card, back }) => ({ key: ex.id, name: ex.name, pose: POSES[poseFor(ex)], tier: card.tier, next: card.next, seed: ex.id, back }))}
       />
 
-      <MonthCard month={monthName} next={`1 ${nextMonth}`} m={month} film={Number(today.slice(8)) <= 3} onFilm={() => go('/film')} />
+      <MonthCard month={monthName} next={`1 ${nextMonth}`} m={month} film={filmDue(sessions, today)} onFilm={() => go('/film')} />
 
       <RecentCard
         rows={[...done]

@@ -167,3 +167,11 @@ export function trainGlow(day: { records: number; checks?: number; formAvg?: num
   if ((day.checks ?? 0) >= GOOD_CHECKS || (day.formAvg ?? 0) >= GOOD_FORM) return 'in';
   return 'calm';
 }
+
+/** Last month's film is worth a link on the first three days of a month, when there was training last month. */
+export function filmDue(sessions: TrainingSession[], today: DayKey): boolean {
+  if (Number(today.slice(8)) > 3) return false;
+  const [y, m] = today.split('-').map(Number);
+  const last = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`;
+  return done(sessions).some((s) => s.date.startsWith(last));
+}

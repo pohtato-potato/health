@@ -136,3 +136,13 @@ describe('the glow at its edges', () => {
   it('an average of 4 is good form', () => expect(trainGlow({ records: 0, formAvg: 4 })).toBe('in'));
   it('one record with good form is green', () => expect(trainGlow({ records: 1, checks: 0.9 })).toBe('in'));
 });
+
+import { filmDue } from '../src/domain/trainView';
+describe('last month’s film link', () => {
+  it('shows on the first three days after a month with training', () => {
+    expect(filmDue([sess('2026-10-14')], '2026-11-02')).toBe(true);
+    expect(filmDue([sess('2026-10-14')], '2026-11-04')).toBe(false);
+  });
+  it('not after a month without a session', () => expect(filmDue([sess('2026-09-14')], '2026-11-02')).toBe(false));
+  it('reaches back across a new year', () => expect(filmDue([sess('2026-12-30')], '2027-01-01')).toBe(true));
+});

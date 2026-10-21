@@ -145,6 +145,8 @@ export function useRunner(session: TrainingSession, settings: Settings, plan: Pl
   };
   const extendRest = (sec: number) => {
     if (!rest) return;
+    // The reason named the old length; after +30 s it would be wrong.
+    if (session.restWhy) void patchSession(session.id, { restWhy: undefined });
     const left = Math.max(0, (rest.endsAt - Date.now()) / 1000) + sec;
     cancelDing.current?.();
     window.clearTimeout(buzzTimer.current);

@@ -6,6 +6,8 @@ import { RINGS } from '../../domain/liveLook';
 import { batteryMode } from '../../domain/rest';
 import { sessionQuality } from '../../domain/sessionQuality';
 import { withTrip } from '../../domain/trip';
+import { findSession } from '../../domain/plan';
+import { usualLength } from '../../domain/sessionEdges';
 import { go, useRoute } from '../../router';
 import { useBatteryLevel } from '../../ui/RestScreen';
 import { useLiveTheme } from '../../ui/live/useLiveTheme';
@@ -38,6 +40,8 @@ export function Replay() {
     );
   }
   const plan = withTrip(settings.plan);
+  // Its usual length from the sessions before it, as the finale said on the night.
+  const usual = usualLength(sessions.filter((s) => s.startedAt < session.startedAt), sets, session.session, findSession(plan, session.session)?.minutes ?? 60);
   const mine = withSkips.filter((s) => s.sessionId === id);
   const kept = sets.filter((s) => s.sessionId === id);
   const data = {
@@ -48,6 +52,7 @@ export function Replay() {
       pages: recordLines(kept).length ? recordPages(kept, sets, plan, settings, session.date) : [],
       plan,
       quality: session.quality ?? sessionQuality(mine),
+      usualMin: usual.fromHistory ? usual.min : undefined,
     }),
     ...finaleExtras(session, session.context ?? [], sessions, sets, plan),
   };

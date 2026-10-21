@@ -220,7 +220,7 @@ html.contrast .lv-check, html.contrast .lv-ghost { border-color: var(--text); }
 .lv-steps i.on { background: var(--text); }
 .lv-flags { display: flex; flex-wrap: wrap; gap: 8px; }
 .lv-flags button { min-height: 52px; padding: 0 18px; border-radius: 999px; font-size: 17px; color: var(--text); border: 1px solid color-mix(in srgb, var(--text) 28%, transparent); }
-.lv-flags button.on { background: var(--rose); color: var(--ink); border-color: var(--rose); }
+.lv-flags button.on { background: var(--rose); color: var(--ink); border-color: var(--rose); font-weight: 600; }
 .lv-recap-rings { position: relative; align-self: center; width: 280px; height: 280px; margin-top: 10px; }
 .lv-recap-rings svg { display: block; }
 .lv-recap-in { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
@@ -237,7 +237,7 @@ html.contrast .lv-check, html.contrast .lv-ghost { border-color: var(--text); }
 .lv-legend .t:before { background: var(--ring2); }
 .lv-legend .c:before { background: var(--ring3); }
 .lv-recs { display: flex; flex-direction: column; gap: 12px; }
-.lv-rec { padding: 16px; border-radius: 22px; border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent); background: color-mix(in srgb, var(--gold) 9%, transparent); display: flex; flex-direction: column; gap: 4px; }
+.lv-rec { padding: 16px; border-radius: 22px; border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent); display: flex; flex-direction: column; gap: 4px; background: linear-gradient(135deg, color-mix(in srgb, var(--gold) 26%, transparent), color-mix(in srgb, #ff8a3d 14%, transparent)); }
 .lv-rec .unit { font-family: var(--sans); font-size: 18px; text-shadow: none; color: var(--gold); }
 .lv-hourbar { display: flex; height: 18px; border-radius: 9px; overflow: hidden; }
 .lv-hourbar i { display: block; height: 100%; }
@@ -256,12 +256,10 @@ html.contrast .lv-check, html.contrast .lv-ghost { border-color: var(--text); }
 .lv.fs-time { --lv-a: #24426b; --lv-b: #0a1222; --lv-accent: #c3d6f2; }
 .lv.fs-form { --lv-a: #1f4f45; --lv-b: #0b1a19; --lv-accent: #bfe8d4; }
 .lv.fs-recap { --lv-a: #3a2f6e; --lv-b: #0f0c1f; --lv-accent: #d7c9ff; }
-.lv-rec { background: linear-gradient(135deg, color-mix(in srgb, var(--gold) 26%, transparent), color-mix(in srgb, #ff8a3d 14%, transparent)); border-color: color-mix(in srgb, var(--gold) 70%, transparent); box-shadow: 0 0 34px color-mix(in srgb, var(--gold) 22%, transparent); }
 .lv-rec + .lv-rec { background: linear-gradient(135deg, color-mix(in srgb, #ff8a3d 22%, transparent), color-mix(in srgb, var(--gold) 14%, transparent)); }
 .lv-trackrow { display: flex; align-items: center; gap: 12px; min-height: 58px; font-size: 16px; border-bottom: 1px solid color-mix(in srgb, var(--text) 10%, transparent); }
 .lv-trackrow .art { width: 42px; height: 42px; flex: none; border-radius: 10px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); }
 .fs-music .lv-h1 { background: linear-gradient(90deg, #ff9fd0, #b7a6f0, #7fd6ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.lv-flags button.on { font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { .lv .ring-fill { animation: none; stroke-dashoffset: var(--off); } }
 .lv.saver .ring-fill { animation: none; stroke-dashoffset: var(--off); }
 
@@ -294,37 +292,29 @@ html.contrast .lv-check, html.contrast .lv-ghost { border-color: var(--text); }
 .lv-tr-stats b { font-family: var(--serif); font-size: 34px; font-weight: 300; }
 .lv-tr-stats small { font-size: 13px; color: color-mix(in srgb, var(--text) 72%, transparent); }
 .lv-tr-recent .grow { display: flex; flex-direction: column; padding: 6px 0; }
-.lv-tr-plan { text-align: left; color: var(--text); }
 .lv-tr-plan-name { font-family: var(--serif); font-size: 22px; }
 .lv-tab .lv-row .num { width: auto; white-space: nowrap; }
 .lv-tab .lv-tr-cardhead { flex-wrap: wrap; }
 .lv-tr-plan-list { max-height: 210px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px; scrollbar-width: thin; }
-.lv-tr-body { display: flex; gap: 12px; align-items: center; }
-.lv-tr-body-fig { width: 52%; flex: none; }
+.lv-tr-body { display: flex; flex-direction: column; align-items: stretch; gap: 12px; }
+.lv-tr-body-fig { width: 100%; max-width: 300px; align-self: center; flex: none; }
 .lv-tr-body-fig .bodymap { width: 100%; height: auto; display: block; }
-.lv-tr-body-list { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.lv-tr-body-row { display: flex; align-items: baseline; gap: 4px; font-size: 15px; min-height: 30px; }
+.lv-tr-body-list { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; min-width: 0; }
+.lv-tr-body-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px; font-size: 15px; min-height: 30px; white-space: normal; }
 .lv-tr-body-row b { font-family: var(--serif); font-weight: 400; font-size: 19px; }
 .lv-tr-mark { margin-left: 6px; font-size: 12px; padding: 0 6px; border-radius: 6px; }
 .lv-tr-body-row.ok .lv-tr-mark { color: #9fe8c8; }
-.lv-tr-body-row.low .lv-tr-mark { color: #ffb39b; border: 1px dashed #ff9f80; }
 .lv-tr-body-row.high .lv-tr-mark { color: #9fd3f5; border: 1px solid #7fc4f0; }
-.lv-tr-body { flex-direction: column; align-items: stretch; }
-.lv-tr-body-fig { width: 100%; max-width: 300px; align-self: center; }
-.lv-tr-body-list { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; }
-.lv-tr-body-row { white-space: nowrap; }
 .lv-tr-body-row .grow { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .lv-tr-legend { display: flex; gap: 14px; justify-content: center; font-size: 13px; color: color-mix(in srgb, var(--text) 75%, transparent); }
 .lv-tr-legend span:before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
 .lv-tr-legend .ok:before { background: #6fe0b0; }
-.lv-tr-legend .low:before { background: #ff9f80; }
 .lv-tr-legend .high:before { background: #7fc4f0; }
 .lv-tr-legend .low:before { background: #f5ea6a; }
 .lv-tr-body-row.low .lv-tr-mark { color: #f5ea6a; border: 1px dashed #f5ea6a; }
 
 /* Words that stand in for colour stay readable under the magnifier */
 .lv-tr-mark, .lv-tr-legend, .lv-tr-stats small, .lv-card-h, .lv-tag { font-size: 14px; }
-.lv-tr-body-row { white-space: normal; flex-wrap: wrap; }
 .lv-tr-body-row .grow { overflow: visible; text-overflow: clip; }
 
 /* Exercise cards: the constellation of the exercise's own pose; the tier changes the drawing */
@@ -363,3 +353,7 @@ html.contrast .lv-check, html.contrast .lv-ghost { border-color: var(--text); }
 html.contrast .lv-card-ex { background: #000; border: 2px solid currentColor; box-shadow: none; }
 html.contrast .lv-card-ex-text { background: #000; }
 html.contrast .lv-card-ex-next, html.contrast .lv-card-ex-hint { color: var(--text); text-shadow: none; }
+
+/* High contrast reaches the finale: every page on black, the music heading in plain text */
+html.contrast .lv[class*='fs-'] { --lv-a: #000; --lv-b: #000; --lv-accent: var(--text); }
+html.contrast .fs-music .lv-h1 { background: none; -webkit-text-fill-color: currentColor; color: var(--text); }
