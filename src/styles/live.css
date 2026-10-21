@@ -213,3 +213,54 @@ html.contrast .lv-check, html.contrast .lv-ghost { border-color: var(--text); }
 .lv-sets-head { font-size: 14px; color: color-mix(in srgb, var(--text) 75%, transparent); padding: 8px 0 4px; }
 .lv-sets-row { min-height: 50px; font-size: 18px; border-bottom: 1px solid color-mix(in srgb, var(--text) 10%, transparent); }
 .lv-sets-row b { font-weight: 500; }
+
+/* Finale: each page tints the aurora */
+.lv-steps { display: flex; gap: 6px; margin-top: 18px; }
+.lv-steps i { flex: 1; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--text) 18%, transparent); }
+.lv-steps i.on { background: var(--text); }
+.lv-flags { display: flex; flex-wrap: wrap; gap: 8px; }
+.lv-flags button { min-height: 52px; padding: 0 18px; border-radius: 999px; font-size: 17px; color: var(--text); border: 1px solid color-mix(in srgb, var(--text) 28%, transparent); }
+.lv-flags button.on { background: var(--rose); color: var(--ink); border-color: var(--rose); }
+.lv-recap-rings { position: relative; align-self: center; width: 280px; height: 280px; margin-top: 10px; }
+.lv-recap-rings svg { display: block; }
+.lv-recap-in { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.lv-recap-in b { font-family: var(--serif); font-size: 64px; font-weight: 300; line-height: 1; }
+.lv .ring-track { fill: none; stroke: color-mix(in srgb, var(--text) 12%, transparent); }
+.lv .ring-fill { fill: none; stroke-linecap: round; stroke-dashoffset: var(--c); animation: lv-ring 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.lv .ring-fill.r1 { stroke: var(--ring1); }
+.lv .ring-fill.r2 { stroke: var(--ring2); }
+.lv .ring-fill.r3 { stroke: var(--ring3); }
+@keyframes lv-ring { to { stroke-dashoffset: var(--off); } }
+.lv-legend { display: flex; flex-direction: column; gap: 6px; font-size: 16px; }
+.lv-legend span:before { content: ''; display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 10px; vertical-align: -1px; }
+.lv-legend .s:before { background: var(--ring1); }
+.lv-legend .t:before { background: var(--ring2); }
+.lv-legend .c:before { background: var(--ring3); }
+.lv-recs { display: flex; flex-direction: column; gap: 12px; }
+.lv-rec { padding: 16px; border-radius: 22px; border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent); background: color-mix(in srgb, var(--gold) 9%, transparent); display: flex; flex-direction: column; gap: 4px; }
+.lv-rec .unit { font-family: var(--sans); font-size: 18px; text-shadow: none; color: var(--gold); }
+.lv-hourbar { display: flex; height: 18px; border-radius: 9px; overflow: hidden; }
+.lv-hourbar i { display: block; height: 100%; }
+.lv-hourbar .h-lift { background: var(--ring2); }
+.lv-hourbar .h-rest { background: var(--blue-soft); }
+.lv-hourbar .h-between { background: color-mix(in srgb, var(--text) 30%, transparent); }
+.lv-hour-rows { display: flex; flex-direction: column; gap: 8px; font-size: 17px; }
+.lv-hour-rows div { display: flex; align-items: center; gap: 10px; }
+.lv-hour-rows b { margin-left: auto; font-family: var(--serif); font-weight: 400; font-size: 20px; }
+.lv .hdot { flex: none; display: inline-block; width: 12px; height: 12px; border-radius: 50%; }
+.lv .hdot.h-lift { background: var(--ring2); }
+.lv .hdot.h-rest { background: var(--blue-soft); }
+.lv .hdot.h-between { background: color-mix(in srgb, var(--text) 30%, transparent); }
+.lv.fs-records, .lv.fs-best { --lv-a: #7a5a1c; --lv-b: #1d1407; --lv-accent: #f6cf72; }
+.lv.fs-music { --lv-a: #6a2a6e; --lv-b: #160a1c; --lv-accent: #ff9fd0; }
+.lv.fs-time { --lv-a: #24426b; --lv-b: #0a1222; --lv-accent: #c3d6f2; }
+.lv.fs-form { --lv-a: #1f4f45; --lv-b: #0b1a19; --lv-accent: #bfe8d4; }
+.lv.fs-recap { --lv-a: #3a2f6e; --lv-b: #0f0c1f; --lv-accent: #d7c9ff; }
+.lv-rec { background: linear-gradient(135deg, color-mix(in srgb, var(--gold) 26%, transparent), color-mix(in srgb, #ff8a3d 14%, transparent)); border-color: color-mix(in srgb, var(--gold) 70%, transparent); box-shadow: 0 0 34px color-mix(in srgb, var(--gold) 22%, transparent); }
+.lv-rec + .lv-rec { background: linear-gradient(135deg, color-mix(in srgb, #ff8a3d 22%, transparent), color-mix(in srgb, var(--gold) 14%, transparent)); }
+.lv-trackrow { display: flex; align-items: center; gap: 12px; min-height: 58px; font-size: 16px; border-bottom: 1px solid color-mix(in srgb, var(--text) 10%, transparent); }
+.lv-trackrow .art { width: 42px; height: 42px; flex: none; border-radius: 10px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); }
+.fs-music .lv-h1 { background: linear-gradient(90deg, #ff9fd0, #b7a6f0, #7fd6ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lv-flags button.on { font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .lv .ring-fill { animation: none; stroke-dashoffset: var(--off); } }
+.lv.saver .ring-fill { animation: none; stroke-dashoffset: var(--off); }

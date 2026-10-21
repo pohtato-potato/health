@@ -98,3 +98,37 @@ export function trackArt(name: string): string {
   const b = (a + 60 + (Math.abs(h >> 8) % 120)) % 360;
   return `linear-gradient(135deg, hsl(${a} 75% 62%), hsl(${b} 70% 45%))`;
 }
+
+export type FinalePage = 'flags' | 'records' | 'music' | 'time' | 'form' | 'recap' | 'best';
+
+export interface FinaleData {
+  name: string;
+  pages: RecordPage[];
+  /** The song each record was set to, by exercise name. */
+  recordSongs: Record<string, string>;
+  songs: { name: string; record: boolean }[];
+  topArtist?: string;
+  hour: ReturnType<typeof hourSplit>;
+  /** This session's usual length, to compare tonight with. */
+  usualMin?: number;
+  form: FormReport;
+  /** The old 1–5 average in words, for sessions logged before checks. */
+  formWord?: string;
+  rings: ReturnType<typeof recapRings>;
+  quality: number;
+  best?: RecordPage;
+}
+
+/** The finale's pages in order; one with nothing to say is left out. */
+export function pagesFor(d: FinaleData): FinalePage[] {
+  const all: [FinalePage, boolean][] = [
+    ['flags', true],
+    ['records', d.pages.length > 0],
+    ['music', d.songs.length > 0],
+    ['time', true],
+    ['form', d.form.rows.length > 0 || !!d.formWord],
+    ['recap', true],
+    ['best', !!d.best],
+  ];
+  return all.filter(([, on]) => on).map(([p]) => p);
+}
