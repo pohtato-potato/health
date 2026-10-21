@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { addDays, weekStart } from '../domain/dates';
 import { fmtDayMonth, fmtInt, fmtLitres, fmtTime } from '../domain/format';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -9,24 +8,11 @@ import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween
 import { go, replaceSheet } from '../router';
 import { Icon, type IconName } from '../ui/Icon';
 import { Sheet } from '../ui/Sheet';
+import { LogSearch } from './LogSearch';
 import { DateChip, useLogDate } from '../ui/DateChip';
 import { checklistSlots, dayRings, freeMealsThisWeek, nextUp } from '../state/derived';
 import { prefOn } from '../domain/types';
 import { StatusRow } from '../ui/StatusRow';
-
-/** Words that open a log directly from the search box. */
-const ACTIONS: { words: string[]; label: string; icon: IconName; color: string; open: () => void }[] = [
-  { words: ['weight', 'kg', 'weigh', 'sleep', 'morning'], label: 'Morning log', icon: 'sun', color: 'var(--gold)', open: () => replaceSheet('morning') },
-  { words: ['step', 'walk'], label: 'Steps', icon: 'steps', color: 'var(--steps)', open: () => replaceSheet('steps') },
-  { words: ['waist', 'tape', 'inch'], label: 'Waist', icon: 'tape', color: 'var(--pearl)', open: () => replaceSheet('waist') },
-  { words: ['drink', 'beer', 'wine', 'whisky', 'alcohol'], label: 'Drinks', icon: 'drink', color: 'var(--gold)', open: () => replaceSheet('drink') },
-  { words: ['night out', 'party', 'friends'], label: 'Night out', icon: 'night', color: 'var(--gold)', open: () => replaceSheet('nightout') },
-  { words: ['free', 'cheat', 'treat'], label: 'Free meal', icon: 'free', color: 'var(--kcal)', open: () => replaceSheet('free') },
-  { words: ['pill', 'medicine', 'creatine', 'drops', 'tablet', 'checklist'], label: 'Checklist', icon: 'pill', color: 'var(--pearl)', open: () => replaceSheet('checklist') },
-  { words: ['photo', 'check-in', 'checkin'], label: 'Check-in', icon: 'camera', color: 'var(--pearl)', open: () => go('/checkin') },
-  { words: ['sick', 'ill', 'injured', 'travel', 'status', 'break'], label: 'Status', icon: 'calendar', color: 'var(--gold)', open: () => replaceSheet('more') },
-  { words: ['close', 'done', 'day'], label: 'Close the day', icon: 'check', color: 'var(--gold)', open: () => go('/close') },
-];
 
 /** The + sheet (s2): six drawn tiles tinted by their metric, More, and one search box for anything. */
 export function LogSheet() {
@@ -39,7 +25,6 @@ export function LogSheet() {
   const sets = useAllSets();
   const active = useActiveSession();
   const foods = useFoods();
-  const [q, setQ] = useState('');
 
   if (!settings || !days || !entries || !sessions || !sets || active === undefined || !foods) return <Sheet title="Log">{null}</Sheet>;
 
@@ -61,10 +46,6 @@ export function LogSheet() {
       <span>{sub}</span>
     </button>
   );
-
-  const query = q.trim().toLowerCase();
-  const actions = query ? ACTIONS.filter((a) => a.words.some((w) => w.startsWith(query) || query.includes(w)) || a.label.toLowerCase().includes(query)) : [];
-  const foodHits = query ? foods.filter((f) => !f.archived && f.name.toLowerCase().includes(query)).slice(0, 5) : [];
 
   return (
     <Sheet title="Log">
@@ -89,37 +70,7 @@ export function LogSheet() {
         </span>
         <Icon name="right" size={18} stroke={1.8} color="var(--quiet)" />
       </button>
-      <label className="log-search">
-        <Icon name="search" size={18} color="var(--quiet)" />
-        <input className="field" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Log anything: “chai”, “waist”…" aria-label="Log anything" />
-      </label>
-      {(actions.length > 0 || foodHits.length > 0) && (
-        <div className="list">
-          {actions.map((a) => (
-            <button key={a.label} type="button" className="li" onClick={a.open}>
-              <span className="row" style={{ gap: 10 }}>
-                <Icon name={a.icon} size={18} color={a.color} />
-                <span>{a.label}</span>
-              </span>
-              <Icon name="right" size={16} color="var(--dim)" />
-            </button>
-          ))}
-          {foodHits.map((f) => (
-            <button key={f.id} type="button" className="li" onClick={() => replaceSheet('addfood', { ...d, food: f.id })}>
-              <span className="row" style={{ gap: 10 }}>
-                <Icon name="food" size={18} color="var(--kcal)" />
-                <span>{f.name}</span>
-              </span>
-              <span className="t12 q tn">{fmtInt(f.kcal)} kcal</span>
-            </button>
-          ))}
-        </div>
-      )}
-      {query && actions.length === 0 && foodHits.length === 0 && (
-        <button type="button" className="link t14" onClick={() => replaceSheet('quick', d)}>
-          Nothing called “{q.trim()}” yet. Quick-add its calories instead
-        </button>
-      )}
+      <LogSearch foods={foods} onAction={(a) => (a.sheet ? replaceSheet(a.sheet) : go(a.route!))} onFood={(f) => replaceSheet('addfood', { ...d, food: f.id })} onQuick={() => replaceSheet('quick', d)} />
     </Sheet>
   );
 }

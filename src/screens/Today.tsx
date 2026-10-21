@@ -4,7 +4,7 @@ import { fmtDuration, fmtInt, fmtTime } from '../domain/format';
 import { findSession } from '../domain/plan';
 import { sleepMinutes, stepsGoal } from '../domain/rings';
 import { pinnedLine, voiceLine, plainFlagLine, type Moment } from '../domain/voice';
-import { bump, setSteps } from '../db/actions';
+import { addEntries, bump, deleteEntry, setSteps, setTick } from '../db/actions';
 import { useKonami } from '../ui/useKonami';
 import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useSessions, useSettings, useToday } from '../db/hooks';
 import { prefOn } from '../domain/types';
@@ -14,6 +14,12 @@ import { landmarkFor } from '../walk/art/landmarks';
 import { walkCaption } from '../domain/walkCaption';
 import { WalkTop } from './today/WalkTop';
 import { RingsNumbers } from './today/RingsNumbers';
+import { ChecklistChips, MealTiles, UsualChips, mealTotals } from './today/LogBelow';
+import { LogSearch } from '../sheets/LogSearch';
+import { sameAsYesterday, usualFoods } from '../domain/usual';
+import { mealForTime, portionFor, valuesFor } from '../domain/foods';
+import { checklistSlots } from '../state/derived';
+import type { Meal } from '../domain/types';
 import { MomentCard } from './today/MomentCard';
 import { useGapAdd } from './today/useGapAdd';
 import { momentFor } from '../domain/todayMoment';
@@ -136,6 +142,24 @@ export function Today() {
   const caption = walkCaption({ date: today, place: here?.name, status: day?.status, near: pos.from.name, dayN, kmToNext: pos.to ? Math.max(0, pos.to.km - walkKm) : 0, landmark: landmarkFor(ahead.name)?.label ?? ahead.name });
   const festive = prefOn(settings.prefs, 'seasonal') ? (seasonalThemeOn(today, settings.birthday) as Festive | undefined) : undefined;
   const scene = <WalkScene km={walkKm} dayN={dayN} caption={false} festive={festive} />;
+  const mealNow = mealForTime();
+  const usual = usualFoods(monthEntries, foods, mealNow, today);
+  const addUsual = async (id: string) => {
+    const u = usual.find((x) => x.food.id === id);
+    if (!u) return;
+    const v = valuesFor(u.food, u.amount);
+    const added = await addEntries([{ date: today, meal: mealNow, at: Date.now(), kind: 'food', foodId: u.food.id, name: u.food.name, amount: u.amount, portion: portionFor(u.food, u.amount), kcal: v.kcal, protein: v.protein }]);
+    toast({ text: `Added ${u.food.name}`, sub: `${portionFor(u.food, u.amount)} · your usual. Open the meal to change it.`, action: { label: 'Undo', run: () => added.forEach((e) => void deleteEntry(e.id)) } });
+  };
+  const perMeal = mealTotals(entries);
+  const MEALS: Meal[] = ['breakfast', 'lunch', 'snacks', 'dinner'];
+  const repeat = async (m: Meal) => {
+    const copies = sameAsYesterday(monthEntries, m, today, Date.now());
+    if (!copies.length) return;
+    const added = await addEntries(copies);
+    toast({ text: `${m.charAt(0).toUpperCase() + m.slice(1)}: same as yesterday`, sub: `${added.length} item${added.length === 1 ? '' : 's'} added`, action: { label: 'Undo', run: () => added.forEach((e) => void deleteEntry(e.id)) } });
+  };
+  const slots = checklistSlots(settings, today);
   return (
     <>
     {walkOpen && <WalkFull scene={<WalkScene km={walkKm} dayN={dayN} caption={false} hero festive={festive} />} caption={caption} settings={settings} today={today} day={day} onClose={() => setWalkOpen(false)} />}
@@ -189,6 +213,25 @@ export function Today() {
       ) : (
         <NextUpCard settings={settings} up={up} active={active} trainedToday={trainedToday} weeks={weeks} ready={readyWord(ready)} />
       )}
+
+      <section className="td-log" data-section="log" aria-label="Log">
+        {usual.length > 0 && (
+          <>
+            <h2 className="td-h">Your usual {mealNow}</h2>
+            <UsualChips items={usual.map((u) => ({ id: u.food.id, name: u.food.name, portion: portionFor(u.food, u.amount) }))} onAdd={(id) => void addUsual(id)} />
+          </>
+        )}
+        <LogSearch foods={foods} onAction={(a) => (a.sheet ? openSheet(a.sheet) : go(a.route!))} onFood={(f) => openSheet('addfood', { food: f.id })} onQuick={() => openSheet('quick')} />
+        <h2 className="td-h">Meals today</h2>
+        <MealTiles meals={MEALS.map((m) => ({ meal: m, kcal: perMeal[m]?.kcal, protein: perMeal[m]?.protein, canRepeat: sameAsYesterday(monthEntries, m, today, 0).length > 0 }))} onOpen={(m) => go('/food', { meal: m })} onRepeat={(m) => void repeat(m)} />
+        {slots.length > 0 && (
+          <>
+            <h2 className="td-h">Checklist</h2>
+            <p className="td-hint">Press and hold to tick.</p>
+            <ChecklistChips items={slots.map((x) => ({ key: x.key, name: slots.filter((y) => y.itemId === x.itemId).length > 1 ? `${x.name} · ${x.slot}` : x.name, on: !!day?.ticks?.[x.key] }))} onToggle={(key, on) => void setTick(today, key, on)} />
+          </>
+        )}
+      </section>
 
       <button type="button" className="card ready-card" onClick={() => go('/readiness')}>
         <span className="col" style={{ alignItems: 'center', minWidth: 64 }}>
