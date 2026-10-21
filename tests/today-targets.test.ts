@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-const css = ['app.css', 'components.css'].map((f) => readFileSync(new URL(`../src/styles/${f}`, import.meta.url), 'utf8')).join('\n');
+const css = ['app.css', 'components.css', 'today.css'].map((f) => readFileSync(new URL(`../src/styles/${f}`, import.meta.url), 'utf8')).join('\n');
 
 /** The body of the first rule for this exact selector. */
 function rule(selector: string): string | undefined {
@@ -23,14 +23,14 @@ function hitOf(selector: string): number | undefined {
 }
 
 describe('Pill Rule: everything tappable on Today has a 44 px tap area at the standard text size', () => {
-  for (const sel of ['.place-chip', '.ring-row', '.btn.sm', '.chip.sm', '.chip', '.btn'])
+  for (const sel of ['.td-num', '.td-banner-act', '.td-banner-x', '.btn.sm', '.chip.sm', '.chip', '.btn'])
     it(`${sel} has a tap area of at least 44 px`, () => {
       expect(hitOf(sel)).toBeGreaterThanOrEqual(44);
     });
 });
 
 describe('Bordered small controls keep their look; only the tap area grows', () => {
-  for (const [sel, px] of [['.place-chip', 34], ['.btn.sm', 40], ['.chip.sm', 36]] as const)
+  for (const [sel, px] of [['.btn.sm', 40], ['.chip.sm', 36]] as const)
     it(`${sel} still looks ${px} px tall`, () => {
       expect(heightOf(sel)).toBe(px);
     });

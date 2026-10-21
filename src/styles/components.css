@@ -1227,55 +1227,7 @@
   color: var(--text);
 }
 
-/* Today (s1): ring rows, the place chip, the readiness card. */
-.ring-row {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  min-height: 44px;
-  width: 100%;
-  text-align: left;
-}
-/* At 14 px the target gets its own line under the value, so nothing wraps mid-number or runs past the card. */
-.ring-row {
-  flex-wrap: wrap;
-}
-.ring-row b,
-.ring-row .right {
-  white-space: nowrap;
-}
-.ring-row .right {
-  flex-basis: 100%;
-  text-align: left;
-  padding-left: 16px;
-}
-.ring-row i {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex: none;
-  align-self: center;
-}
-.ring-row b {
-  font-size: 19px;
-  font-weight: 700;
-}
-.place-chip {
-  min-height: 34px;
-  position: relative;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid var(--hairline);
-  background: var(--surface);
-  font-size: 13px;
-  font-weight: 600;
-}
-/* The tap area reaches 44 px; the chip keeps its 34 px look. */
-.place-chip::after {
-  content: '';
-  position: absolute;
-  inset: -5px 0;
-}
+/* Today (s1): the readiness card. */
 .ready-card {
   flex-direction: row;
   align-items: center;

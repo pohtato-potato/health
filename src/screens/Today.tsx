@@ -4,7 +4,7 @@ import { fmtDuration, fmtInt, fmtTime } from '../domain/format';
 import { findSession } from '../domain/plan';
 import { sleepMinutes, stepsGoal } from '../domain/rings';
 import { pinnedLine, voiceLine, plainFlagLine, type Moment } from '../domain/voice';
-import { addEntries, bump, deleteEntry } from '../db/actions';
+import { addEntries, bump, deleteEntry, setSteps } from '../db/actions';
 import { useKonami } from '../ui/useKonami';
 import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useSessions, useSettings, useToday } from '../db/hooks';
 import { prefOn } from '../domain/types';
@@ -14,14 +14,15 @@ import { kmFromSteps, positionAt } from '../domain/walk';
 import { landmarkFor } from '../walk/art/landmarks';
 import { walkCaption } from '../domain/walkCaption';
 import { WalkTop } from './today/WalkTop';
+import { RingsNumbers } from './today/RingsNumbers';
 import { TodayLine } from './today/TodayLine';
 import { glanceLine } from '../domain/glance';
 import { logMinutes } from '../domain/todayMoment';
 import { WalkFull } from './today/WalkFull';
 import { placeFor } from '../domain/places';
-import { proteinGap, stepTopUp } from '../domain/proteinGap';
+import { proteinGap } from '../domain/proteinGap';
 import { WalkScene } from '../walk/WalkScene';
-import { go, openSheet } from '../router';
+import { go } from '../router';
 import { Icon } from '../ui/Icon';
 import { Rings } from '../ui/Rings';
 import { useToast } from '../ui/Toasts';
@@ -118,7 +119,6 @@ export function Today() {
   const sessionTonight = up && !active && !trainedToday.length && weeks.thisWeek < weeks.perWeek ? sessionName : undefined;
   const lineKind: 'glance' | 'voice' | 'flag' = flag ? 'flag' : voiceNow ? 'voice' : 'glance';
   const lineText = flag ? line : voiceNow ? lineForTheDay(today, moment, line) : glanceLine({ minutes: logMinutes(Date.now()), closedRings: rings.closed, dayClosed: !!day?.foodDone, sessionTonight, nextSession: day?.foodDone && up ? sessionName : undefined, morningDone: !!day?.morning });
-  const topUp = stepTopUp({ steps: totals.steps, goal: stepsGoal(targets, totals.eased), eased: !!totals.eased }, Date.now());
   const gap = proteinGap({ protein: totals.protein, proteinTarget: targets.proteinG, kcal: totals.kcal, kcalMax: targets.kcalMax }, foods, monthEntries, Date.now());
   const addGap = async () => {
     const at = Date.now();
@@ -133,22 +133,6 @@ export function Today() {
     toast({ text: `Added ${added.map((e) => e.name).join(' and ')}`, sub: `+${Math.round(gap.picks.reduce((n, p) => n + p.proteinG, 0))} g protein`, action: { label: 'Undo', run: () => added.forEach((e) => void deleteEntry(e.id)) } });
   };
   const ready = forecastData(settings, today, days, monthEntries.filter((e) => e.date >= addDays(today, -2)), sessions, sets).readiness;
-  // As in v1: the calorie and protein rings open meal logging, steps opens steps logging.
-  const ringRow = (dot: string, value: string, unit: string, right: string, open: () => void) => (
-    <button
-      type="button"
-      className="ring-row"
-      onClick={(e) => {
-        e.stopPropagation();
-        open();
-      }}
-    >
-      <i style={{ background: dot }} />
-      <b className="serif tn">{value}</b>
-      <span className="t13 q">{unit}</span>
-      <span className="t14 q grow right tn">{right}</span>
-    </button>
-  );
   const dayN = daysBetween(journeyStartOf(settings, days), today) + 1;
   const pos = positionAt(walkKm);
   const ahead = pos.to ?? pos.from;
@@ -169,26 +153,26 @@ export function Today() {
 
       <Banners />
 
-      <div className="card rings-card" style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-        <div role="button" tabIndex={0} aria-label="Log food" onClick={() => go('/food')} onKeyDown={(e) => e.key === 'Enter' && go('/food')} onPointerDown={konami.onPointerDown} onPointerUp={konami.onPointerUp} onClickCapture={konami.onClickCapture} style={konami.style}>
-          {themeDay ? (
-            <ThemedRings style={themeDay.ring} progress={[rings.kcal.progress, rings.protein.progress, rings.steps.progress]} label={`Rings for ${themeDay.name}: ${rings.closed} of 3 closed`} center={`${rings.closed}/3`} />
-          ) : (
-            <Rings
-              progress={[rings.kcal.progress, rings.protein.progress, rings.steps.progress]}
-              label={`Rings: ${rings.closed} of 3 closed`}
-              gold={!!unlocked && hasReward(unlocked, 'Gold rings') && prefOn(settings.prefs, 'goldRings')}
-              center={`${rings.closed}/3`}
-            />
-          )}
-        </div>
-        <div className="grow col gap6">
-          {ringRow('var(--kcal)', fmtInt(totals.kcal), 'kcal', `${fmtInt(targets.kcalMin)}–${fmtInt(targets.kcalMax)}`, () => go('/food'))}
-          {ringRow('var(--protein)', `${Math.round(totals.protein)} g`, 'protein', `of ${targets.proteinG}`, () => go('/food'))}
-          {ringRow('var(--steps)', day?.steps !== undefined ? fmtInt(totals.steps) : '—', 'steps', `${totals.eased ? 'eased ' : 'of '}${fmtInt(stepsGoal(targets, totals.eased))}`, () => openSheet('steps'))}
-          {topUp && <div className="t12 sage">{topUp}</div>}
-        </div>
-      </div>
+      <RingsNumbers
+        rows={[
+          { key: 'kcal', name: 'Calories', value: fmtInt(totals.kcal), unit: 'kcal', target: `${fmtInt(targets.kcalMin)}–${fmtInt(targets.kcalMax)} kcal`, ink: 'var(--kcal)', known: true },
+          { key: 'protein', name: 'Protein', value: String(Math.round(totals.protein)), unit: 'g', target: `of ${targets.proteinG} g`, ink: 'var(--protein)', known: true },
+          { key: 'steps', name: 'Steps', value: day?.steps !== undefined ? fmtInt(totals.steps) : '—', unit: 'steps', target: `${totals.eased ? 'eased to ' : 'of '}${fmtInt(stepsGoal(targets, totals.eased))}`, ink: 'var(--steps)', known: day?.steps !== undefined },
+        ]}
+        closed={rings.closed}
+        rings={
+          <div className="td-ringfig" onPointerDown={konami.onPointerDown} onPointerUp={konami.onPointerUp} onClickCapture={konami.onClickCapture} style={konami.style}>
+            {themeDay ? (
+              <ThemedRings style={themeDay.ring} progress={[rings.kcal.progress, rings.protein.progress, rings.steps.progress]} label={`Rings for ${themeDay.name}: ${rings.closed} of 3 closed`} center={`${rings.closed}/3`} />
+            ) : (
+              <Rings progress={[rings.kcal.progress, rings.protein.progress, rings.steps.progress]} label={`Rings: ${rings.closed} of 3 closed`} gold={!!unlocked && hasReward(unlocked, 'Gold rings') && prefOn(settings.prefs, 'goldRings')} center={`${rings.closed}/3`} />
+            )}
+          </div>
+        }
+        onLogFood={() => go('/food')}
+        onSaveSteps={(n) => void setSteps(today, n)}
+        showCopyHint={logMinutes(Date.now()) >= 19 * 60}
+      />
 
       <NextUpCard settings={settings} up={up} active={active} trainedToday={trainedToday} weeks={weeks} />
 

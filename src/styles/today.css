@@ -40,3 +40,15 @@
 .td-why { margin: 0; display: flex; gap: 8px; align-items: flex-start; font-size: 15px; line-height: 1.4; color: var(--text); }
 .td-why svg { flex: none; margin-top: 3px; color: var(--apricot); }
 .td-why b { font-weight: 600; }
+
+/* Rings: the drawing, and beside it only the numbers, each in its ring's ink with a tiny unit. */
+.td-rings { display: flex; flex-direction: column; gap: 10px; }
+.td-rings-row { display: flex; align-items: center; gap: 22px; }
+.td-ringfig { flex: none; }
+.td-nums { display: flex; flex-direction: column; min-width: 0; }
+.td-num { display: flex; align-items: baseline; gap: 6px; min-height: 50px; padding: 0; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
+.td-num b { font-family: var(--serif); font-weight: 400; font-size: 34px; line-height: 1; white-space: nowrap; }
+.td-num > span { font-size: 14px; color: var(--quiet); }
+.td-ringmore { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 15px; color: var(--quiet); }
+.td-stepin { display: flex; gap: 8px; }
+.td-stepin input { width: 128px; min-height: 44px; font: inherit; font-size: 18px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--hairline); background: var(--surface); color: var(--text); }
