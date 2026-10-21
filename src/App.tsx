@@ -70,6 +70,7 @@ const CharacterPage = page(() => import('./screens/Character'), 'CharacterPage')
 const PhysioPage = page(() => import('./screens/Physio'), 'PhysioPage');
 const RevealPage = page(() => import('./screens/Reveal'), 'RevealPage');
 const SessionView = page(() => import('./screens/SessionView'), 'SessionView');
+const Replay = page(() => import('./screens/live/Replay'), 'Replay');
 const SettingsScreen = page(() => import('./screens/Settings'), 'SettingsScreen');
 const ReceiptPage = page(() => import('./screens/Week'), 'ReceiptPage');
 const WeekRecap = page(() => import('./screens/Week'), 'WeekRecap');
@@ -121,6 +122,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/session': { el: () => <SessionScreen /> },
   '/session/done': { el: () => <SessionDone /> },
   '/session/view': { el: () => <SessionView /> },
+  '/session/replay': { el: () => <Replay /> },
   '/achievements': { el: () => <AchievementsPage /> },
   '/readiness': { el: () => <ReadinessPage /> },
   '/checkin': { el: () => <CheckInScreen /> },

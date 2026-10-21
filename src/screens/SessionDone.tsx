@@ -166,15 +166,7 @@ function LiveDone({ session, plan, days, sets, withSkips, sessions, settings }: 
     } finally {
       window.clearTimeout(timer);
     }
-    // Reps against the last session of this name, a fair match first; and what was moved.
-    const same = doneSessions(sessions).filter((s) => s.session === session.session && s.id !== session.id);
-    const fair = [...same].reverse().find((s) => comparable(s.context ?? [], ctx));
-    const prev = fair ?? same[same.length - 1];
-    const stats = sessionStats(mine, plan);
-    const extra = {
-      compare: vsLastTime(stats.reps, prev ? sessionStats(sets.filter((s) => s.sessionId === prev.id), plan).reps : undefined, !!fair, def?.name ?? 'time'),
-      moved: stats.reps ? movedLine(stats) : undefined,
-    };
+    const extra = finaleExtras(session, ctx, sessions, sets, plan);
     try {
       const usual = usualLength(sessions.filter((s) => s.id !== session.id), sets, session.session, def?.minutes ?? 60);
       setData({ ...finaleData({ session: ended, mine: withSkipped, songs, pages: records.length ? recordPages(mine, sets, plan, settings, session.date) : [], plan, quality, usualMin: usual.fromHistory ? usual.min : undefined }), ...extra });
@@ -211,4 +203,16 @@ function LiveDone({ session, plan, days, sets, withSkips, sessions, settings }: 
       rings={RINGS[theme]}
     />
   );
+}
+
+/** Reps against the last session of this name before it (a fair match first), and what was moved. */
+export function finaleExtras(session: TrainingSession, ctx: string[], sessions: TrainingSession[], sets: SetEntry[], plan: PlanDef): { compare?: string; moved?: string } {
+  const same = doneSessions(sessions).filter((s) => s.session === session.session && s.id !== session.id && s.startedAt < session.startedAt);
+  const fair = [...same].reverse().find((s) => comparable(s.context ?? [], ctx));
+  const prev = fair ?? same[same.length - 1];
+  const stats = sessionStats(sets.filter((s) => s.sessionId === session.id), plan);
+  return {
+    compare: vsLastTime(stats.reps, prev ? sessionStats(sets.filter((s) => s.sessionId === prev.id), plan).reps : undefined, !!fair, findSession(plan, session.session)?.name ?? 'time'),
+    moved: stats.reps ? movedLine(stats) : undefined,
+  };
 }
