@@ -89,6 +89,12 @@ export interface ExerciseDef {
   checks?: FormCheck[];
   /** v3: single-joint work, where the session nudges you through the burn. */
   isolation?: boolean;
+  /** v3: the coach's default setup (chair, bench, grip). */
+  setup?: string;
+  /** v3: the weight passes over the face: collars are checked first. */
+  overFace?: boolean;
+  /** v3: why the lead side goes first. */
+  leadWhy?: string;
 }
 
 export interface FormCheck {

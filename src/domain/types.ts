@@ -279,6 +279,8 @@ export interface Settings {
   reviewDay?: number;
   /** Records count clean reps only (default on). */
   formRecordsClean?: boolean;
+  /** v3: personal setups per exercise, dated, so a change starts a new version. */
+  setups?: Record<string, { from: DayKey; text: string }[]>;
   /** Steps per room turn, for farmer carries. */
   turnSteps?: number;
   /** The learned maintenance estimate, refreshed as data comes in. */
@@ -434,6 +436,18 @@ export interface TrainingSession {
   view?: 'live' | 'list';
   /** v3: the set being counted right now. */
   liveSet?: LiveCounter | null;
+  /** v3: "Legs sore, 1–5?" before a session with leg work. At 4–5 leg work drops to one set. */
+  legSoreness?: 1 | 2 | 3 | 4 | 5;
+  /** v3: the Before screen was passed. */
+  beforeDone?: boolean;
+  /** v3: exercises whose guide was shown tonight. */
+  guided?: string[];
+  /** v3: when "Collars tight" was ticked, before the first over-the-face exercise. */
+  collarCheckedAt?: number;
+  /** v3: a note per exercise, for next time and the coach. */
+  exNotes?: Record<string, string>;
+  /** v3: why the rest running now is the length it is. */
+  restWhy?: string;
 }
 
 export interface SetEntry {
