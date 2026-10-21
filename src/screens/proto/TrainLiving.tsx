@@ -5,7 +5,7 @@ import { BodyHeat } from '../../ui/BodyMap';
 import type { MuscleId } from '../../domain/types';
 
 /**
- * Design prototype (sample numbers from Sanyam's own October log; nothing is read or saved):
+ * Design prototype (made-up sample numbers; nothing is read or saved):
  * the Train tab in the same living-colour style as the session. Two states: before tonight's
  * session, and after it.
  */
