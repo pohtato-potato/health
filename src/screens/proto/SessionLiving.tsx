@@ -994,21 +994,21 @@ function Finale() {
           </div>
           <h1 className="lc-h1">88 min</h1>
           <div className="lc-hourbar" aria-hidden="true">
-            <i className="lift" style={{ width: '38%' }} />
-            <i className="rest" style={{ width: '40%' }} />
-            <i className="between" style={{ width: '22%' }} />
+            <i className="h-lift" style={{ width: '38%' }} />
+            <i className="h-rest" style={{ width: '40%' }} />
+            <i className="h-between" style={{ width: '22%' }} />
           </div>
           <div className="lc-hour-rows">
             <div>
-              <span className="dot lift" />
+              <span className="hdot h-lift" />
               Lifting<b className="num tn">33 min</b>
             </div>
             <div>
-              <span className="dot rest" />
+              <span className="hdot h-rest" />
               Resting<b className="num tn">35 min</b>
             </div>
             <div>
-              <span className="dot between" />
+              <span className="hdot h-between" />
               Between rest and lifting<b className="num tn">20 min</b>
             </div>
           </div>
