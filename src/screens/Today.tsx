@@ -136,7 +136,7 @@ export function Today() {
       <i style={{ background: dot }} />
       <b className="serif tn">{value}</b>
       <span className="t13 q">{unit}</span>
-      <span className="t12 q grow right tn">{right}</span>
+      <span className="t14 q grow right tn">{right}</span>
     </button>
   );
   return (
