@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { addDays, logHour, weekStart } from '../domain/dates';
-import { fmtDuration, fmtInt } from '../domain/format';
+import { fmtDuration, fmtInt, fmtTime } from '../domain/format';
 import { findSession } from '../domain/plan';
 import { sleepMinutes, stepsGoal } from '../domain/rings';
 import { pinnedLine, voiceLine, plainFlagLine, type Moment } from '../domain/voice';
@@ -14,6 +14,9 @@ import { kmFromSteps, positionAt } from '../domain/walk';
 import { landmarkFor } from '../walk/art/landmarks';
 import { walkCaption } from '../domain/walkCaption';
 import { WalkTop } from './today/WalkTop';
+import { TodayLine } from './today/TodayLine';
+import { glanceLine } from '../domain/glance';
+import { logMinutes } from '../domain/todayMoment';
 import { WalkFull } from './today/WalkFull';
 import { placeFor } from '../domain/places';
 import { proteinGap, stepTopUp } from '../domain/proteinGap';
@@ -110,6 +113,11 @@ export function Today() {
 
   const walkKm = kmFromSteps(days.reduce((n, d) => n + (d.steps ?? 0), 0));
   const themeDay = themeDayOn(today, regionAt(walkKm), { birthday: settings.birthday });
+  // The voice speaks only at moments; otherwise the plain glance line.
+  const voiceNow = moment === 'perfect' || moment === 'proteinClosed';
+  const sessionTonight = up && !active && !trainedToday.length && weeks.thisWeek < weeks.perWeek ? sessionName : undefined;
+  const lineKind: 'glance' | 'voice' | 'flag' = flag ? 'flag' : voiceNow ? 'voice' : 'glance';
+  const lineText = flag ? line : voiceNow ? lineForTheDay(today, moment, line) : glanceLine({ minutes: logMinutes(Date.now()), closedRings: rings.closed, dayClosed: !!day?.foodDone, sessionTonight, nextSession: day?.foodDone && up ? sessionName : undefined, morningDone: !!day?.morning });
   const topUp = stepTopUp({ steps: totals.steps, goal: stepsGoal(targets, totals.eased), eased: !!totals.eased }, Date.now());
   const gap = proteinGap({ protein: totals.protein, proteinTarget: targets.proteinG, kcal: totals.kcal, kcalMax: targets.kcalMax }, foods, monthEntries, Date.now());
   const addGap = async () => {
@@ -155,16 +163,7 @@ export function Today() {
       <h1 className="sr-only">Today</h1>
       <WalkTop caption={caption} scene={scene} onOpen={() => setWalkOpen(true)} />
 
-      <div className="voice" style={flag ? { fontStyle: 'normal', fontFamily: 'var(--sans)', fontSize: 15, color: 'var(--apricot)' } : undefined}>
-        {flag ? line : lineForTheDay(today, moment, line)}
-      </div>
-
-      {themeDay && (
-        <div className="card">
-          <div className="lbl gold">Why today · {themeDay.name}</div>
-          <div className="t14 lh">{themeDay.why}</div>
-        </div>
-      )}
+      <TodayLine text={lineText} kind={lineKind} gold={moment === 'perfect'} clock={fmtTime(Date.now())} why={themeDay ? { name: themeDay.name, text: themeDay.why } : undefined} />
 
       <SeasonStrip settings={settings} today={today} />
 

@@ -29,3 +29,14 @@
 .td-h3 { margin: 14px 0 2px; font-family: var(--serif); font-weight: 400; font-size: 20px; }
 .td-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .td-walkfull-back { margin-top: 18px; }
+
+/* The line: the day's headline set large on the page; the voice in italic at moments; a joint flag in plain words. */
+.td-line-wrap { display: flex; flex-direction: column; gap: 8px; }
+.td-line { margin: 0; font-family: var(--serif); font-size: 26px; line-height: 1.2; text-wrap: balance; }
+.td-line-voice { font-style: italic; color: var(--voice, var(--text)); }
+.td-line-voice.gold { color: var(--gold); }
+.td-line-flag { font-family: var(--sans); font-size: 17px; color: var(--apricot); }
+.td-clock { font-family: var(--sans); font-style: normal; font-size: 14px; color: var(--quiet); white-space: nowrap; }
+.td-why { margin: 0; display: flex; gap: 8px; align-items: flex-start; font-size: 15px; line-height: 1.4; color: var(--text); }
+.td-why svg { flex: none; margin-top: 3px; color: var(--apricot); }
+.td-why b { font-weight: 600; }
