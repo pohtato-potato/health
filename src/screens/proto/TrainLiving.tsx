@@ -238,7 +238,7 @@ function BodyCard() {
   for (const m of MUSCLES)
     for (const id of m.ids) {
       heat[id] = m.sets < m.lo ? 0.55 : 0.85;
-      tint[id] = m.sets < m.lo ? '#ff9f80' : m.sets > m.hi ? '#7fc4f0' : '#6fe0b0';
+      tint[id] = m.sets < m.lo ? '#f5ea6a' : m.sets > m.hi ? '#ff5c5c' : '#6fe0b0';
     }
   return (
     <div className="lc-card">
@@ -248,7 +248,7 @@ function BodyCard() {
       </div>
       <div className="tr-body">
         <span className="tr-body-fig">
-          <BodyHeat heat={heat} tint={tint} label="Hard sets this week, front and back: green on target, coral low, blue high" />
+          <BodyHeat heat={heat} tint={tint} label="Hard sets this week, front and back: green on target, yellow low, red high" />
         </span>
         <span className="tr-legend">
           <span className="ok">on target</span>
