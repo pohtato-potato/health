@@ -97,7 +97,7 @@ export function SettingsScreen() {
     lastfm: settings.lastfm?.key ? `connected · ${settings.lastfm.users.length} user${settings.lastfm.users.length === 1 ? '' : 's'}` : 'not connected',
     storage: pwa.persisted ? 'protected' : 'not protected yet',
     feel: `${prefOn(p, 'largeText') ? 'larger text' : 'standard text'}${prefOn(p, 'highContrast') ? ' · high contrast' : ''} · battery saver ${p.batterySaver ? 'on' : 'automatic below 30%'}`,
-    home: `ticker ${prefOn(p, 'ticker') ? 'on' : 'off'}`,
+    home: 'shortcuts',
     privacy: `photos ${prefOn(p, 'blurPhotos') ? 'blurred' : 'shown'}${prefOn(p, 'lockPhotos') && settings.photoKey ? ' · locked' : ''}`,
   };
 
@@ -470,7 +470,6 @@ export function SettingsScreen() {
         <SwitchRow title="High contrast" sub="Quiet text and borders close to full brightness" checked={prefOn(p, 'highContrast')} onChange={(v) => setPref('highContrast', v)} />
         <SwitchRow title="Big dials for every set" sub="Reps on a dial and loads as chips, no small fields to aim at" checked={prefOn(p, 'bigSetControls')} onChange={(v) => setPref('bigSetControls', v)} />
         <LinkRow title="Voice" value={settings.voice === 'comm' ? 'Commentator' : settings.voice.charAt(0).toUpperCase() + settings.voice.slice(1)} onClick={() => back('/you')} />
-        <SwitchRow title="News ticker on Today" checked={prefOn(p, 'ticker')} onChange={(v) => setPref('ticker', v)} />
         <SwitchRow title="Shake for a stat" sub="Shake the phone anywhere in the app" checked={prefOn(p, 'shake')} onChange={(v) => setPref('shake', v)} />
         <LinkRow title="Theme" value={themeById(settings.theme)?.name ?? 'Dusk'} onClick={() => setEditor('theme')} />
       </Group>
@@ -481,7 +480,7 @@ export function SettingsScreen() {
         <SwitchRow title="Quiet in public" sub="No confetti or buzz from 10 pm to 7 am, or while a session runs in the background" checked={prefOn(p, 'quietPublic')} onChange={(v) => setPref('quietPublic', v)} />
       </Group>
 
-      <Group id="home" title="Home screen and ticker">
+      <Group id="home" title="Home screen">
         <div className="li" style={{ minHeight: 64 }}>
           <span className="s">
             <span>Shortcuts</span>

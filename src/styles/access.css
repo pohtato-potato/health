@@ -42,9 +42,6 @@
   border-radius: 22px;
   border-width: 2px;
 }
-:root.large-text .chip.sm {
-  min-height: 44px;
-}
 
 :root.contrast,
 :root.contrast.night {

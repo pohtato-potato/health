@@ -890,11 +890,11 @@ export function fmtProgress(p: [number, number]): string {
 
 /**
  * Retired in v2: the morning log is no longer timed, identical step counts are usually a
- * copied number, water is no longer tracked, and the Passport is gone. Kept so old unlocks
- * still resolve.
+ * copied number, water is no longer tracked, and the Passport is gone. The ticker is gone too,
+ * and with it Rickrolled and Clickbait. Kept so old unlocks still resolve.
  */
 export const RETIRED_ACHIEVEMENTS: string[] = [
-  ...['World record', 'Glitch in the Matrix', 'Speedrunner', 'Pi day', 'Voice of reason'].map(slug),
+  ...['World record', 'Glitch in the Matrix', 'Speedrunner', 'Pi day', 'Voice of reason', 'Rickrolled', 'Clickbait'].map(slug),
   ...ACHIEVEMENTS.filter((a) => a.cat === 'water' || (typeof a.desc === 'string' && /passport/i.test(a.desc))).map((a) => a.id),
 ];
 

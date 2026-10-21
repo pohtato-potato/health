@@ -163,7 +163,7 @@ components:
 
 The app is lit by where you are on the walk and the hour. Everything sits on a deep indigo night ground built from three tonal layers (ink, surface, raised) separated by one-pixel hairlines, not by shadow. On that ground, colour appears only where it carries meaning: a small set of soft metric inks for the things being tracked, gold kept for records and moments, and a faint tint on whichever tab is open. The layout is one calm phone column, dense with numbers but never loud.
 
-Numbers and titles speak in a light, optical-size serif (Fraunces); everything you operate speaks in a quiet sans (DM Sans); clocks, wheels, receipts and the ticker speak in a mono (DM Mono). The serif is the voice of the data, which is why counts are set at weight 300 with lining figures and line-height 1.
+Numbers and titles speak in a light, optical-size serif (Fraunces); everything you operate speaks in a quiet sans (DM Sans); clocks, wheels and receipts speak in a mono (DM Mono). The serif is the voice of the data, which is why counts are set at weight 300 with lining figures and line-height 1.
 
 The world has a second register for celebration: full-screen moments, story cards, the monthly film, a paper receipt, postcards from the walk and a split-flap departures board. These step outside the card grammar on purpose, but they draw from the same inks and the same serif. After 11 pm the whole palette dims and warms; theme days (festivals, sky, nerdy and personal dates) repaint the ground and accents for one day.
 
@@ -180,7 +180,7 @@ The world has a second register for celebration: full-screen moments, story card
 Soft, dusty inks on deep indigo: nothing saturated, nothing pure white, every accent tied to a meaning.
 
 ### Primary
-- **Dusk Gold** (gold): records, personal bests, moments, the seasonal strip, ticker bullets, the dial needle and the focus ring of custom instruments. Its washed pair, **Ember Cellar** (gold-bg) with **Old Brass** (gold-border), forms gold cards, cues, notices and the drop target in Close the day.
+- **Dusk Gold** (gold): records, personal bests, moments, the seasonal strip, the dial needle and the focus ring of custom instruments. Its washed pair, **Ember Cellar** (gold-bg) with **Old Brass** (gold-border), forms gold cards, cues, notices and the drop target in Close the day.
 
 ### Secondary
 - **Apricot Ember** (apricot): energy and calories; also the Today tab tint.
@@ -196,7 +196,7 @@ Soft, dusty inks on deep indigo: nothing saturated, nothing pure white, every ac
 
 ### Neutral
 - **Night Ink** (ink): page ground, field wells, the segmented-control trough.
-- **Deep Night** (deep): full-bleed overlays and the scanner well; **Tab Night** (tabbar) carries the tab bar and the ticker.
+- **Deep Night** (deep): full-bleed overlays and the scanner well; **Tab Night** (tabbar) carries the tab bar.
 - **Indigo Surface** (surface): cards, lists, sheets.
 - **Raised Indigo** (raised): tiles in the log sheet, toasts, the rest pill, the resume pill.
 - **Hairline** (hairline) and **Divider** (divider): one-pixel card edges and list separators.
@@ -228,7 +228,7 @@ Soft, dusty inks on deep indigo: nothing saturated, nothing pure white, every ac
 - **Voice** (Fraunces italic 300, 17px, 1.4, voice colour): the personality line, one per surface at most.
 - **Body** (DM Sans 400, 15px, 1.4; 1.5 for longer prose): everything else. Steps of 11 to 17px are used for secondary lines, with 13 and 14px the most common small sizes.
 - **Label** (DM Sans 400, 12px, 0.14em tracking, uppercase, quiet): names the data or group directly beneath it: list group headers, field names, card titles like "Stats" or a meal name. An 11px small step exists.
-- **Mono** (DM Mono 400, 12 to 18px, tabular figures): the ticker, wheel pickers, the receipt, boarding passes, the plan editor's order numbers, the rep ladder.
+- **Mono** (DM Mono 400, 12 to 18px, tabular figures): wheel pickers, the receipt, boarding passes, the plan editor's order numbers, the rep ladder.
 
 ### Named Rules
 **The Serif Counts Rule.** Any number the owner reads as a result is set in Fraunces at weight 300 with lining figures. Numbers being entered or ticking by (fields, wheels, timers in the rest pill) use tabular figures.
@@ -255,12 +255,12 @@ Depth is tonal. Resting surfaces are flat: ink, then surface, then raised, each 
 
 ## Shapes
 
-Soft and round. Controls are full pills whose radius is half their height (48px buttons at 24px, 44px chips at 22px, 40px small buttons at 20px, the 56px rest pill at 28px). Containers step down as they nest: cards 22px, lists 20px, small cards and wheels 18px, tiles, fields and list rows 16px, notices 14px, checkboxes 8 to 9px, bars 3 to 4px. Sheets round only their top corners (28px). The walk band clips its scene with a 26px bottom curve, or 24px all round when it sits inside a page. Paper objects are nearly square (4 to 6px), and the receipt tears with a zigzag mask; the postcard tilts by -0.6 degrees. Status dots are circles.
+Soft and round. Controls are full pills whose radius is half their height (48px buttons at 24px, 44px chips at 22px, 40px small buttons at 20px, 36px small chips at 18px, the 56px rest pill at 28px). Anything drawn smaller than 44px gets an invisible tap area that reaches 44px, so the look stays and the aim is easy. Containers step down as they nest: cards 22px, lists 20px, small cards and wheels 18px, tiles, fields and list rows 16px, notices 14px, checkboxes 8 to 9px, bars 3 to 4px. Sheets round only their top corners (28px). The walk band clips its scene with a 26px bottom curve, or 24px all round when it sits inside a page. Paper objects are nearly square (4 to 6px), and the receipt tears with a zigzag mask; the postcard tilts by -0.6 degrees. Status dots are circles.
 
 ## Components
 
 ### Buttons
-- **Shape:** full pill (24px on 48px height; 26px on the 52px large size; 20px on the 40px small size).
+- **Shape:** full pill (24px on 48px height; 26px on the 52px large size; 20px on the 40px small size, whose tap area reaches 44px).
 - **Primary:** moon-text fill with night-ink label, 15px weight 600, 20px side padding.
 - **Ghost:** transparent with a button-edge border, text colour, weight 400.
 - **Danger:** transparent, brick text on a dark rose border, weight 400.
@@ -268,7 +268,7 @@ Soft and round. Controls are full pills whose radius is half their height (48px 
 - **Round:** 48px (or 40px) circle with a button-edge border; the selected state fills with moon text.
 
 ### Chips
-- **Style:** 44px pill (36px small), button-edge border, 14px text.
+- **Style:** 44px pill (36px small, with a 44px tap area), button-edge border, 14px text.
 - **State:** selected fills with moon text and night-ink label at weight 600. Tool chips mark "on" with a blue border and soft blue text. Form chips take their form-scale ink when selected.
 
 ### Cards / Containers
@@ -286,7 +286,6 @@ Soft and round. Controls are full pills whose radius is half their height (48px 
 
 ### Navigation
 - **Tab bar:** fixed, 76px plus safe area, five columns with a centre plus button (52px moon-text circle). Labels are 11px in dim; the active tab takes its own tint (Today apricot, Train gold, Walk sage, You lavender) with a 4px dot beneath.
-- **Ticker:** a 32px mono strip at the top, quiet text with small gold squares between items, scrolling slowly.
 - **Back link:** quiet text with a chevron, 44px tall.
 
 ### Sheets

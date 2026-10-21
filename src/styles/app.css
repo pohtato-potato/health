@@ -2,7 +2,6 @@
 :root {
   --ink: #0d0f14;
   --deep: #07080b;
-  --ticker: #090a0e;
   --tabbar: #0f1117;
   --surface: #151821;
   --raised: #1c2029;
@@ -48,7 +47,6 @@
 :root.night {
   --ink: #09080b;
   --deep: #050406;
-  --ticker: #070608;
   --tabbar: #0b0a0e;
   --surface: #121016;
   --raised: #17151c;
@@ -392,6 +390,13 @@ button.card:active {
   border-radius: 20px;
   font-size: 14px;
   padding: 0 14px;
+  position: relative;
+}
+/* The tap area reaches 44 px; the button keeps its 40 px look. */
+.btn.sm::after {
+  content: '';
+  position: absolute;
+  inset: -2px 0;
 }
 .btn.block {
   width: 100%;
@@ -474,6 +479,13 @@ button.card:active {
   height: 36px;
   padding: 0 12px;
   font-size: 13px;
+  position: relative;
+}
+/* The tap area reaches 44 px; the chip keeps its 36 px look. */
+.chip.sm::after {
+  content: '';
+  position: absolute;
+  inset: -4px 0;
 }
 .tool {
   height: 40px;
@@ -747,7 +759,7 @@ textarea.field {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: 14px;
   color: var(--dim);
 }
 .tabbar .on {
@@ -1071,7 +1083,6 @@ textarea.field {
   .ping,
   .glow,
   .tw,
-  .tick,
   .jig,
   .resume .dot {
     animation: none;
@@ -1163,50 +1174,6 @@ textarea.field {
   90% {
     transform: rotate(-6deg);
   }
-}
-
-/* News ticker */
-.ticker {
-  height: calc(32px + var(--safe-top));
-  padding-top: var(--safe-top);
-  overflow: hidden;
-  background: var(--ticker);
-  border-bottom: 1px solid var(--divider);
-  display: flex;
-  align-items: center;
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--quiet);
-  cursor: pointer;
-}
-.tick {
-  display: inline-flex;
-  white-space: nowrap;
-  padding-left: 22px;
-  animation: tick 170s linear infinite;
-}
-.tick span {
-  padding-right: 44px;
-}
-.tick span::before {
-  content: '';
-  display: inline-block;
-  width: 5px;
-  height: 5px;
-  background: var(--gold);
-  margin-right: 10px;
-  vertical-align: middle;
-}
-@keyframes tick {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-.page.after-ticker {
-  padding-top: 18px;
 }
 
 /* Today */
@@ -1657,7 +1624,6 @@ textarea.field {
 :root.theme-diwali {
   --ink: #120d0b;
   --deep: #0a0706;
-  --ticker: #0e0a08;
   --tabbar: #161009;
   --surface: #1b1512;
   --raised: #231b16;

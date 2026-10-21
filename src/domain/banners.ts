@@ -42,3 +42,16 @@ export function pickBanner<T extends BannerCandidate>(candidates: T[], usage: Pi
   const near = m >= h - BEFORE_MIN && m <= h + AFTER_MIN;
   return [...candidates].filter((c) => c.anytime || near).sort((a, b) => b.priority - a.priority)[0];
 }
+
+/** Until 14:00 the morning log asks for itself at any hour, above the other nudges. */
+const MORNING_UNTIL_MIN = 14 * 60;
+
+/**
+ * The morning log banner, by logging minutes (1 am is 25:00). After 14:00 it stays as a plain
+ * reminder until the log is done, since the whole day is often logged after 9 pm, but it drops
+ * below the backup and weekly nudges.
+ */
+export function morningLogBanner(done: boolean, minutes: number): { text: string; priority: number } | undefined {
+  if (done) return undefined;
+  return minutes < MORNING_UNTIL_MIN ? { text: "Morning log: weight, sleep and yesterday's steps.", priority: 7 } : { text: 'Morning log still open.', priority: 5 };
+}
