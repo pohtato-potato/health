@@ -1236,6 +1236,19 @@
   width: 100%;
   text-align: left;
 }
+/* At 14 px the target gets its own line under the value, so nothing wraps mid-number or runs past the card. */
+.ring-row {
+  flex-wrap: wrap;
+}
+.ring-row b,
+.ring-row .right {
+  white-space: nowrap;
+}
+.ring-row .right {
+  flex-basis: 100%;
+  text-align: left;
+  padding-left: 16px;
+}
 .ring-row i {
   width: 8px;
   height: 8px;
