@@ -2,7 +2,7 @@ import type { DayKey } from './dates';
 import { lowerFirst } from './format';
 import { fmtKg, isBigJump, nextLoad } from './loads';
 import { bandLevel, bottomOfRange, exerciseName, realSets, sinceReset, topOfRange, valueOfSet, type ExerciseDef, type PlanState, type TriggerDef } from './plan';
-import { FORM_LABELS } from './quality';
+import { FORM_LABELS, formScore } from './quality';
 import type { Equipment, SetEntry } from './types';
 
 export type AdviceKind = 'form-first' | 'heavier' | 'tempo-first' | 'needs-plates' | 'maxed' | 'variant' | 'add-load' | 'band';
@@ -230,7 +230,7 @@ export function triggerMet(t: TriggerDef, sets: SetEntry[]): boolean {
  */
 export function formGate(sets: SetEntry[]): boolean {
   const working = realSets(sets).filter((s) => !s.drop);
-  return working.length > 0 && working.every((s) => (s.form === undefined || s.form >= 4) && (s.rir === undefined || s.rir >= 1));
+  return working.length > 0 && working.every((s) => (formScore(s) === undefined || formScore(s)! >= 4) && (s.rir === undefined || s.rir >= 1));
 }
 
 export interface HeavierOffer {
@@ -247,7 +247,7 @@ export function heavierOffer(st: ExerciseStatus): HeavierOffer | undefined {
   if (!formGate(st.last.sets)) return undefined;
   const working = realSets(st.last.sets).filter((s) => !s.drop);
   const reps = working.map((s) => valueOfSet(s) ?? 0);
-  const forms = working.map((s) => s.form).filter((f) => f !== undefined);
+  const forms = working.map((s) => formScore(s)).filter((f) => f !== undefined);
   const rirs = working.map((s) => s.rir).filter((r) => r !== undefined);
   const lines = [`Last time: ${reps.join(', ')}${st.loadKg !== null ? ` at ${fmtKg(st.loadKg)} kg` : ''}, every set at the top.`];
   if (forms.length) {
