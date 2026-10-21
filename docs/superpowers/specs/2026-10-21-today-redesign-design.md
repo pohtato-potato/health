@@ -319,3 +319,14 @@ Each part ships on its own, with a plan, test-first rules, a browser check and a
 5. Wearing an earned theme lasts one day. Should it be sticky until changed, like ring styles?
 6. The dex opens on the sky (assumed, since this question wasn't answered): confirm.
 7. The fixes PR: merge it now, before part 1?
+
+## Decided after review (21 Oct)
+
+The owner approved the spec and all seven open questions as proposed:
+1. The odds stand (about 2–3 medium-rare visitors and one rare guest a month), with the 45-day pity rule.
+2. Visitors per night by sleep length: 1, 2 or 3.
+3. Growth at 4 and 10 visits; the medium-rare legend at the 5th visit.
+4. Close the day takes the moment card from 21:00; the protein gap from 19:00.
+5. A worn theme lasts one day.
+6. The dex opens on the sky.
+7. The fixes PR merges now, before part 1.
