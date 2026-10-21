@@ -45,3 +45,39 @@ describe('the set screen', () => {
     expect(html({ nudge: true, c: counted(1) })).not.toContain('Go through the burn');
   });
 });
+
+import { CheckScreen } from '../src/screens/live/CheckScreen';
+
+describe('the check screen', () => {
+  const checks = [
+    { id: 'tuck', text: 'Elbows tucked', kind: 'do' as const },
+    { id: 'swing', text: 'No swing', kind: 'avoid' as const },
+    { id: 'slow', text: 'Slow lowering', kind: 'do' as const },
+  ];
+  const check = (p: Partial<Parameters<typeof CheckScreen>[0]> = {}) =>
+    renderToStaticMarkup(<CheckScreen reps={11} unit="reps" state="burn" checks={checks} onSave={noop} saver={false} {...p} />);
+  it('says "Same as last set" while the answers match the last set', () => {
+    expect(check({ prev: { checks: { tuck: 'ok' }, rir: 1 } })).toContain('Same as last set');
+    expect(check()).toContain('>Save<');
+  });
+  it('shows a check that went well in words, not colour alone', () => {
+    const h = check({ prev: { checks: { tuck: 'ok' } } });
+    expect(h).toContain('went well');
+    expect(h).toMatch(/class="lv-check ok"/);
+    expect(h).toContain('aria-label="Elbows tucked: went well"');
+  });
+  it('has one button per check', () => {
+    expect(check().match(/class="lv-check[ "]/g)).toHaveLength(3);
+  });
+  it('leaves the list out when the plan has no checks', () => {
+    const h = check({ checks: [] });
+    expect(h).not.toMatch(/class="lv-check[ "]/);
+    expect(h).toContain('Left in the tank');
+  });
+  it('keeps the set colour', () => expect(check()).toMatch(/class="lv [^"]*st-burn/));
+  it('a slipped check takes back a record, in words', () => {
+    const h = check({ state: 'record', bar: 10, clean: true, unrecord: 'burn', prev: { checks: { tuck: 'slip' } } });
+    expect(h).toContain('not a record · 1 check slipped');
+    expect(h).toMatch(/class="lv [^"]*st-burn/);
+  });
+});
