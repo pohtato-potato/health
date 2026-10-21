@@ -74,3 +74,35 @@ describe('the back of a card', () => {
     expect(b.records).toBe(1);
   });
 });
+
+describe('card review fixes', () => {
+  it('an open-ended exercise never promises Mastery', () => {
+    const open = ex({ open: true, reps: undefined, perSide: false });
+    const c = cardFor(open, [...session(1, [{ checks: ok }]), ...session(2, [{ checks: ok }])]);
+    expect(c.tier).toBe('Even');
+    expect(c.next).toBe('A record at a new load, for Plated');
+    const unloaded = cardFor(open, [...session(1, [{ checks: ok, loadKg: null }]), ...session(2, [{ checks: ok, loadKg: null }])]);
+    expect(unloaded.next).toBe('Mastery needs a top to the range');
+  });
+  it('without checks, Mastery says what it needs', () => {
+    const side = ex({ perSide: true, checks: undefined });
+    const c = cardFor(side, session(1, [{ side: 'L' }, { side: 'R', setNo: 1 }]));
+    expect(c.tier).toBe('Even');
+    expect(cardFor(side, [...session(1, [{ side: 'L' }, { side: 'R', setNo: 1 }]), ...session(2, [{ loadKg: 12.5, mark: '!!', side: 'L' }])]).next).toBe('Mastery needs form checks from the coach');
+  });
+  it('even per side needs every set on both sides', () => {
+    const side = ex({ perSide: true });
+    expect(cardFor(side, session(1, [{ side: 'L', checks: ok }, { side: 'R', setNo: 1, checks: ok }, { side: 'L', setNo: 2, checks: ok }])).tier).toBe('Clean');
+  });
+  it('clean needs every check ticked well, not just one', () => {
+    expect(cardFor(ex(), session(1, [{ checks: { a: 'ok' } }])).tier).toBe('First light');
+  });
+  it('mastered at the heaviest load that made a run', () => {
+    const run = (kg: number) => Array.from({ length: 10 }, () => ({ reps: 15, checks: ok, loadKg: kg }));
+    const sets = [...session(1, run(10)), ...session(2, [{ checks: slip }]), ...session(3, run(12.5))];
+    expect(cardFor(ex(), sets).next).toBe('Mastered at 12.5 kg');
+  });
+  it('the back lists different best sets', () => {
+    expect(cardBack(session(1, [{ reps: 12 }, { reps: 12 }, { reps: 12 }, { reps: 10 }])).best).toEqual(['10 kg × 12', '10 kg × 10']);
+  });
+});

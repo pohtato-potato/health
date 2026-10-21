@@ -130,3 +130,9 @@ describe('the glow behind Train', () => {
     expect(trainGlow(undefined)).toBe('calm');
   });
 });
+
+describe('the glow at its edges', () => {
+  it('80% of checks is good form', () => expect(trainGlow({ records: 0, checks: 0.8 })).toBe('in'));
+  it('an average of 4 is good form', () => expect(trainGlow({ records: 0, formAvg: 4 })).toBe('in'));
+  it('one record with good form is green', () => expect(trainGlow({ records: 1, checks: 0.9 })).toBe('in'));
+});

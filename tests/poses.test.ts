@@ -3,7 +3,7 @@ import { POSES, poseFor } from '../src/domain/poses';
 import { DEFAULT_PLAN } from '../src/domain/defaultPlan';
 import { allExercises } from '../src/domain/plan';
 
-/** The exercises in the current plan, by id and name only. */
+/** A 29-exercise plan, by id and name only. */
 const CURRENT = [
   ['split-squat', 'Split squat'], ['single-leg-bridge', 'Single-leg glute bridge'], ['ohp', 'Seated overhead press'], ['lateral-raise', 'Lateral raise'],
   ['floor-press', 'Floor press'], ['overhead-ext', 'Overhead triceps extension'], ['row', 'One-arm dumbbell row'], ['pullover', 'Pullover'],
@@ -30,7 +30,7 @@ describe('poses', () => {
       }
     });
   }
-  it('every exercise in the current plan has its own pose', () => {
+  it('every exercise in a 29-exercise plan has its own pose', () => {
     for (const [id, name] of CURRENT) expect(poseFor({ id, name }), id).not.toBe('stand');
   });
   it('every exercise in the built-in plan has its own pose', () => {
@@ -38,6 +38,15 @@ describe('poses', () => {
   });
   it('an unknown exercise falls back to its movement, then to standing', () => {
     expect(poseFor({ id: 'x', name: 'Bulgarian thing' })).toBe('stand');
-    expect(POSES[poseFor({ id: 'x', name: 'Mystery squat' })]).toBeDefined();
+    expect(poseFor({ id: 'x', name: 'Pull-up' })).toBe('row');
+    expect(poseFor({ id: 'x', name: 'Step-up' })).toBe('squat');
+  });
+});
+
+describe('pose review fixes', () => {
+  it('the rowing arm joins the shoulder', () => expect(POSES.row.lines).toContainEqual([1, 4]));
+  it('names match whole words', () => {
+    expect(poseFor({ id: 'x', name: 'Narrow-grip push-up' })).toBe('push-up');
+    expect(poseFor({ id: 'x', name: 'Ball throw' })).not.toBe('row');
   });
 });

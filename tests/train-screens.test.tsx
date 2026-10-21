@@ -120,5 +120,11 @@ describe('exercise cards', () => {
     expect(h).toContain('12.5 kg × 9');
     expect(h).toContain('3 records');
   });
-  it('says how to flip', () => expect(card('Clean')).toContain('aria-label="Romanian deadlift card, Clean. Tap for its best sets."'));
+  it('reads its whole face, with Next', () => {
+    const h = card('Clean');
+    expect(h).not.toMatch(/<button[^>]*aria-label/);
+    expect(h).toContain('Next: Two clean sessions running, for Even');
+    expect(h).toContain('Tap for best sets');
+  });
+  it('the strength line is decoration to a screen reader', () => expect(card('Plated', 'rdl', true)).toMatch(/class="lv-card-ex-spark" aria-hidden="true"/));
 });

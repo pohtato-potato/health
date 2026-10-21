@@ -42,7 +42,7 @@ const DEFS = {
   // seated, elbow pointing up, the weight behind the head
   'overhead-extension': { stars: [[44, 30], [48, 44], [54, 14], [38, 30], [50, 80], [70, 82], [70, 112]], lines: [[0, 1], [1, 2], [2, 3], [1, 4], [4, 5], [5, 6]] },
   // bent over a bench, one hand braced, the other rowing to the hip
-  row: { stars: [[24, 44], [34, 50], [36, 70], [36, 88], [52, 48], [56, 66], [70, 50], [72, 80], [72, 110], [84, 76]], lines: [[0, 1], [1, 2], [2, 3], [1, 6], [4, 5], [6, 7], [7, 8], [6, 9]], pair: [[2, 5]] },
+  row: { stars: [[24, 44], [34, 50], [36, 70], [36, 88], [52, 48], [56, 66], [70, 50], [72, 80], [72, 110], [84, 76]], lines: [[0, 1], [1, 2], [2, 3], [1, 4], [1, 6], [4, 5], [6, 7], [7, 8], [6, 9]], pair: [[2, 5]] },
   // lying, arms reaching back over the head
   pullover: { stars: [[34, 98], [44, 96], [26, 90], [12, 86], [70, 96], [82, 80], [92, 98]], lines: [[0, 1], [1, 2], [2, 3], [1, 4], [4, 5], [5, 6]] },
   // face down along a bench, arms out to the side
@@ -96,11 +96,11 @@ const BY_NAME: [RegExp, PoseId][] = [
   [/fly/i, 'fly'],
   [/extension/i, 'overhead-extension'],
   [/pullover/i, 'pullover'],
-  [/row/i, 'row'],
+  [/\brows?\b/i, 'row'],
   [/wrist curl/i, 'wrist-curl'],
   [/curl/i, 'curl'],
   [/push-?up/i, 'push-up'],
-  [/press/i, 'floor-press'],
+  [/\bpress\b/i, 'floor-press'],
   [/calf/i, 'calf-raise'],
   [/carry|walk/i, 'carry'],
   [/dead bug/i, 'dead-bug'],

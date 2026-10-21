@@ -73,6 +73,13 @@ export function Train() {
     .sort((x, y) => y.at - x.at)
     .filter((x) => !seen.has(x.exerciseId) && seen.add(x.exerciseId))
     .slice(0, 3);
+  // Each exercise's sets, gathered once for the cards.
+  const setsByEx = new Map<string, SetEntry[]>();
+  for (const s of realSets(sets)) {
+    const list = setsByEx.get(s.exerciseId);
+    if (list) list.push(s);
+    else setsByEx.set(s.exerciseId, [s]);
+  }
   const fmtSet = (s: SetEntry) => `${s.loadKg !== null ? `${fmtKg(s.loadKg)} kg × ` : ''}${valueOfSet(s) ?? 0}${s.seconds !== undefined && s.reps === undefined ? ' s' : ''}`;
 
   return (
@@ -179,7 +186,7 @@ export function Train() {
       <CardsRow
         cards={[...new Map(allExercises(plan).map((e) => [e.id, e])).values()]
           .map((ex) => {
-            const mine = realSets(sets).filter((s) => s.exerciseId === ex.id);
+            const mine = setsByEx.get(ex.id) ?? [];
             return { ex, card: cardFor(ex, mine), back: cardBack(mine) };
           })
           .filter((c) => c.card.logged)

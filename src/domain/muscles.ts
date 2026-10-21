@@ -50,7 +50,7 @@ const BY_NAME: [RegExp, Muscles][] = [
   [/rear delt|face pull|y-raise|reverse fly/i, m(['rear-delts', 'upper-back'])],
   [/overhead|shoulder press|\bohp\b/i, m(['front-delts', 'triceps'])],
   [/press|push-?up|fly/i, m(['chest', 'triceps'], ['front-delts'])],
-  [/row|pull-?down|pull-?up|chin/i, m(['lats', 'upper-back'], ['biceps'])],
+  [/\brows?\b|pull-?down|pull-?up|\bchin/i, m(['lats', 'upper-back'], ['biceps'])],
   [/pullover/i, m(['lats', 'chest'])],
   [/skull|tricep|dip|kickback/i, m(['triceps'])],
   [/hammer|curl/i, m(['biceps'], ['forearms'])],

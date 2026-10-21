@@ -16,7 +16,7 @@ function Spark({ values }: { values: number[] }) {
   const hi = Math.max(...values);
   const pts = values.map((v, i) => `${(i / (values.length - 1)) * 100},${36 - ((v - lo) / (hi - lo || 1)) * 32}`).join(' ');
   return (
-    <svg viewBox="0 0 100 40" className="lv-card-ex-spark" aria-label="Strength by session, rising to the right">
+    <svg viewBox="0 0 100 40" className="lv-card-ex-spark" aria-hidden="true">
       <polyline points={pts} fill="none" stroke="currentColor" strokeWidth="2" vectorEffect="non-scaling-stroke" />
     </svg>
   );
@@ -42,11 +42,11 @@ export function ExerciseCard(p: Props) {
   const cls = `lv-card-ex t-${p.tier.toLowerCase().replace(' ', '-')}`;
   if (flipped)
     return (
-      <button type="button" className={`${cls} back`} aria-label={`${p.name}: best sets. Tap for the card.`} onClick={() => setFlipped(false)}>
+      <button type="button" className={`${cls} back`} onClick={() => setFlipped(false)}>
         <span className="lv-card-ex-name">{p.name}</span>
         <span className="lv-card-h">Best sets</span>
-        {p.back.best.map((b) => (
-          <span key={b} className="lv-small num tn">
+        {p.back.best.map((b, i) => (
+          <span key={i} className="lv-small num tn">
             {b}
           </span>
         ))}
@@ -54,10 +54,11 @@ export function ExerciseCard(p: Props) {
         <span className="lv-small">
           {p.back.records} record{p.back.records === 1 ? '' : 's'}
         </span>
+        <span className="lv-card-ex-hint">Tap for the card</span>
       </button>
     );
   return (
-    <button type="button" className={cls} aria-label={`${p.name} card, ${p.tier}. Tap for its best sets.`} onClick={() => setFlipped(true)}>
+    <button type="button" className={cls} onClick={() => setFlipped(true)}>
       <svg viewBox="0 0 100 130" className="lv-card-ex-sky" aria-hidden="true">
         <defs>
           <radialGradient id={`${id}-glow`}>
@@ -83,9 +84,12 @@ export function ExerciseCard(p: Props) {
           </g>
         ))}
       </svg>
-      <span className="lv-card-ex-tier">{p.tier}</span>
-      <span className="lv-card-ex-name">{p.name}</span>
-      <span className="lv-card-ex-next">{p.next}</span>
+      <span className="lv-card-ex-text">
+        <span className="lv-card-ex-tier">{p.tier}</span>
+        <span className="lv-card-ex-name">{p.name}</span>
+        <span className="lv-card-ex-next">Next: {p.next}</span>
+        <span className="lv-card-ex-hint">Tap for best sets</span>
+      </span>
     </button>
   );
 }
