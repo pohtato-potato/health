@@ -1,6 +1,6 @@
 # Walk scoping decisions
 
-Date: 21 Oct 2026 · Branch: `scope/walk` · Status: debloat agreed and written up; round 2 sent as a pinboard
+Date: 21 Oct 2026 · Branch: `scope/walk` · Status: round 2 answered; round 3 sent as a pinboard
 
 Scoping for the Walk tab (`#/walk`). No visual design here: design happens later, outside this repo. **The repo is public:** personal values stay out.
 
@@ -93,27 +93,39 @@ Quest rewards that arrive (no quest has ever been noticed, so no point); the for
 19. Stride becomes a setting. The owner's eighth answer, "add as setting", is read as the stride question, because a setting fits it and not the journal question.
 20. The forecast's track record is removed with the forecast.
 
-## Open questions (round 2)
+## Round 2 verdicts (21 Oct 2026)
 
-Sent as a second private pinboard (66 possible answers in ten lanes, verdicts kept outside the repo). The questions it covers:
+All 66 answered on the second pinboard. The owner's notes are paraphrased.
 
+- **More routes:** pinned another country, a themed route, short walks from a list, and every route moving with the same steps. Dropped a route through personal places, choosing where each day's steps go, and walking India again. "After India, another country begins" is a maybe. New idea from the notes: **opt-in challenges** running alongside the main walk, perhaps two side routes at once, and not only in India.
+- **Small stops:** pinned all six kinds (rivers, state borders, food, forts and temples, wildlife, strange true facts; "can have multiple, I love stuff like this"). Pinned both "every two or three days" and "about once a week". Dropped small postcards; one line on the Walk page is a maybe.
+- **Named stretches:** pinned both a week and two weeks, and a small moment at the end of each. Tomorrow's line: pinned on Walk, maybe on Today, dropped at Close the day.
+- **Status and places:** pinned a kind line on status days and a count of place types per stretch. The resting walker, travel notes, place marks on the trail and office-only marks are maybes.
+- **Arrivals:** full screen for every city and for every state line. Playing at Close the day is dropped; playing at the next open is a maybe.
+- **Chapter film:** the trail drawing and the steps and days. Postcards, people and the best day are dropped.
+- **Passport and places:** a stamp for every city and every state, not small stops. The passport replaces the postcard strip. States and cities filled in on the main map, and a separate "places I've been" page.
+- **Evenings and themes:** at Close the day the walker moves the day's kilometres and the next stop is named. Festivals, sky events and personal dates all reach the walk scene.
+- **Reports and Wrapped:** a weekly report from the road, not cut to two or three sentences; "only when something happened" is a maybe. Wrapped yearly or on reveal day are maybes; at chapter ends is dropped; training, food and sleep are dropped from it, so Wrapped is about the walk.
+- **Journal:** keep three lines and remove are both maybes.
+- **Stride:** typed in as a length. Height and the home loop are dropped.
 
-1. Several routes at once: what would a second route be? Another country, a themed route in India (a river, the coast, forts), short routes you pick from a list, or a route through places that matter to you? Would every route move with the same steps, or would you choose where each day's steps go?
-2. When the India walk is finished, years from now, what should happen next?
-3. Something every few days: which small stops would you look forward to? Rivers, state borders, food stops, forts and temples, wildlife, or one strange true fact per place? How often: every two or three days, or about weekly?
-4. Should those small stops come as a postcard (a short fact and a small scene), as one line on the Walk page, or both?
-5. Named stretches of road: about how long should a stretch be (a week, two weeks)? Should each one end with a small moment?
-6. What tomorrow's steps would reach: where do you want to see it? On the Walk tab, on Today, at Close the day, or more than one?
-7. A walk that waits kindly: on sick, injured, travel and break days your steps still count. What should the walk say or show on those days?
-8. Office days on the map: what should tell them apart? A mark on the trail, a count per stretch, or something else? Should home, office, travel and out days all be marked?
-9. Full-screen arrival: for every city, or only the bigger ones? Should it play the next time you open the app, or when you close the day?
-10. Crossing a state line: a full-screen moment like a city, or something smaller?
-11. A chapter's film: what must it include? The trail drawing across India, the postcards, the people you met, your steps, your best walking day?
-12. The passport of stamps: a stamp per city, per state, per small stop, or a mix? Should the passport replace the postcard strip on the map?
-13. Closing the day walks you on: is the walker moving the day's kilometres and the next stop named enough, or should something else happen?
-14. Themes on the road: which should reach the walk scene? Festivals, sky events (meteor showers, eclipses), your personal dates, or all of them?
-15. You pinned Finch's adventure report but dropped the daily diary page. What would make a report from the road worth reading? Weekly instead of daily, much shorter, only when something happened?
-16. Been-style places filled in: on the main map itself, or on its own page? States only, or cities too?
-17. Health Wrapped: when should it come (once a year on a set date, reveal day, the end of a chapter), and what besides the walk belongs in it?
-18. The journal: keep the last three days as plain lines on the Walk page, or remove it?
-19. The stride setting: type in a length, work it out from your height, or measure it by walking a known distance? (The app already knows the steps in your home loop; it would also need the loop's length.)
+## Decisions from round 2
+
+21. Every route moves with the same steps; there is no choosing where steps go.
+22. More routes are wanted: another country, a themed route, and short walks from a list, run as opt-in challenges beside the main walk.
+23. Small stops come in all six kinds.
+24. Small stops are not postcards.
+25. Named stretches each end with a small moment.
+26. Tomorrow's line appears on the Walk tab, not at Close the day.
+27. Status days get a kind line; each stretch counts its home, office, travel and out days.
+28. Every city and every state line gets a full-screen arrival. It does not play at Close the day.
+29. A chapter's film shows the trail drawing and the steps and days.
+30. The passport has a stamp for every city and state and replaces the postcard strip. States and cities are filled in on the map, and a "places I've been" page is added.
+31. At Close the day the walker moves the day's kilometres and the next stop is named.
+32. Festivals, sky events and personal dates all reach the walk scene.
+33. A weekly report from the road. Wrapped, when it comes, is about the walk only.
+34. Stride is typed in as a length in Settings (default 0.74 m).
+
+## Open questions (round 3)
+
+Sent as a third private pinboard. It covers: how challenges work (how many at once, length, where from, how they end); the mix of stop frequency and stretch length, since both options were pinned; how a small stop shows if not as a postcard; when a full-screen arrival plays; where and how long the weekly report is; when Wrapped comes; the journal; after India; and the remaining status and place maybes.

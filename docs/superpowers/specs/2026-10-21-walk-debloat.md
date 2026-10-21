@@ -30,7 +30,7 @@ The owner's decisions from the Walk pinboard and the debloat questions (`docs/su
 4. **One status line.** It shows the km to the next stop. It names a person met when there is one today.
 5. **People met on the road stay**, shown on the page itself on the days you meet someone, not only inside the pulled-up journal.
 6. **One page per city.** The postcard carries what the arrival card had: the scene at the hour, the fact, eat, hear, the landmark on the way in, and the next stop. Map dots and the city chips open it.
-7. **Stride as a setting.** Settings gets a stride length (default 0.74 m), used by the one kilometre function. The map says in one line how steps become kilometres. Changing it changes the whole walk at once, so the setting says that before saving.
+7. **Stride as a setting.** Settings gets a stride length typed in metres (default 0.74 m), used by the one kilometre function. The map says in one line how steps become kilometres. Changing it changes the whole walk at once, so the setting says that before saving.
 8. **Departures stays as it is.**
 
 ## Not touched in the debloat
