@@ -12,7 +12,7 @@ const CURRENT = [
   ['incline-pushup', 'Incline push-up'], ['lean-lateral', 'Lean-away lateral raise'], ['skull-crusher', 'Skull crusher'], ['floor-fly', 'Floor fly'],
   ['calf-raise', 'Single-leg calf raise'], ['plank', 'Forearm plank'], ['seal-row', 'Chest-supported row'], ['seated-lateral', 'Seated lateral raise'],
   ['face-pull', 'Band face pull'], ['concentration-curl', 'Concentration curl'], ['close-grip-press', 'Close-grip floor press'], ['farmer-carry', 'Farmer carry'],
-  ['dead-bug', 'Dead bug'],
+  ['dead-bug', 'Dead bug'], ['bent-row', 'Bent-over row'], ['rear-delt-1arm', 'One-arm rear delt fly'],
 ] as const;
 
 describe('poses', () => {

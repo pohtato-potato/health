@@ -404,6 +404,8 @@ export interface TrainingSession {
   date: DayKey;
   session: string;
   planName: string;
+  /** v3: the plan version the session was done under. */
+  planVersion?: string;
   startedAt: number;
   endedAt?: number;
   status: 'active' | 'done';

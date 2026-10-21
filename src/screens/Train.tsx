@@ -214,7 +214,7 @@ export function Train() {
         onOpen={(id) => go('/session/view', { id })}
       />
 
-      <PlanCard name={plan.name} sessions={plan.sessions.map((x) => x.id)} since={plan.from} warmup={plan.warmup} rules={plan.rules ?? []} onOpen={() => go('/plan')} />
+      <PlanCard name={plan.name} version={plan.planVersion} sessions={plan.sessions.map((x) => x.id)} since={plan.from} warmup={plan.warmup} rules={plan.rules ?? []} onOpen={() => go('/plan')} />
     </div>
   );
 }

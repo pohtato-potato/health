@@ -77,6 +77,7 @@ export function SessionScreen() {
     void startSession({
       session: sessionId,
       planName: plan.name,
+      planVersion: plan.planVersion,
       exercises: exs.map((e) => e.id),
       short,
       swaps: swaps.map(({ from, to, reason }) => ({ from, to, reason })),

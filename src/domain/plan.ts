@@ -158,6 +158,8 @@ export interface PlanDef {
   triggers?: TriggerDef[];
   /** What to expect and when, e.g. "the slow stretch". */
   phases?: { from: string; to: string; title: string; text: string }[];
+  /** v3: the coach's version of this plan, e.g. "1.2"; sessions record it. */
+  planVersion?: string;
   /** v3: hard sets per muscle group per week, [low, high], e.g. { Legs: [10, 16] }. */
   weeklyTargets?: Record<string, [number, number]>;
 }

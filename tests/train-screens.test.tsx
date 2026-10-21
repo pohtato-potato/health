@@ -128,3 +128,9 @@ describe('exercise cards', () => {
   });
   it('the strength line is decoration to a screen reader', () => expect(card('Plated', 'rdl', true)).toMatch(/class="lv-card-ex-spark" aria-hidden="true"/));
 });
+
+describe('the plan version', () => {
+  it('shows on the plan card', () => {
+    expect(renderToStaticMarkup(<PlanCard name="Home 4-way" version="1.2" sessions={['A', 'B']} since="2026-10-20" rules={[]} onOpen={noop} />)).toContain('A · B · version 1.2 · since 20 Oct');
+  });
+});

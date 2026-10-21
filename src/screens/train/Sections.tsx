@@ -171,7 +171,7 @@ export function RecentCard({ rows, onOpen }: { rows: { id: string; title: string
 }
 
 /** The plan: name, sessions and since when; warm-up and rules folded below. */
-export function PlanCard({ name, sessions, since, warmup, rules, onOpen }: { name: string; sessions: string[]; since: DayKey; warmup?: string; rules: { title: string; text: string }[]; onOpen: () => void }) {
+export function PlanCard({ name, version, sessions, since, warmup, rules, onOpen }: { name: string; version?: string; sessions: string[]; since: DayKey; warmup?: string; rules: { title: string; text: string }[]; onOpen: () => void }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="lv-card">
@@ -179,7 +179,8 @@ export function PlanCard({ name, sessions, since, warmup, rules, onOpen }: { nam
         <span className="lv-card-h">The plan</span>
         <span className="lv-tr-plan-name">{name}</span>
         <span className="lv-small">
-          {sessions.join(' · ')} · since {fmtDayMonth(since)} ›
+          {sessions.join(' · ')}
+          {version ? ` · version ${version}` : ''} · since {fmtDayMonth(since)} ›
         </span>
       </button>
       {(warmup || rules.length > 0) && (
