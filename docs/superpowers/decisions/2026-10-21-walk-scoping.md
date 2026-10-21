@@ -1,6 +1,6 @@
 # Walk scoping decisions
 
-Date: 21 Oct 2026 · Branch: `scope/walk` · Status: round 1 sent, awaiting answers
+Date: 21 Oct 2026 · Branch: `scope/walk` · Status: pinboard answered; round 1 questions folded into the debloat round
 
 Scoping for the Walk tab (`#/walk`). No visual design here: design happens later, outside this repo. **The repo is public:** personal values stay out.
 
@@ -39,14 +39,50 @@ From the owner's brief and the standing rules, not yet from answers:
 16. Should postcards also go to Logbook's shelf?
 17. Is there anything about the walk you love and are afraid a leaner version would lose?
 
-## Answers
+## Pinboard verdicts (21 Oct 2026)
 
-Not yet received.
+71 of 72 pins answered. The owner's notes are paraphrased.
+
+### Pinned
+
+- **Fixes:** one kilometre figure everywhere; no postcard from beyond a closed pass; a detour never sends you backwards; training never stops the walk; say how steps become kilometres (the owner has been thinking about stride for a while).
+- **Cuts:** one page per city; the four sub-tabs become one scroll; one line under the title, not six; fewer mechanics on the walk ("a major goal here is to debloat"); move the Journey hub off the Walk tab; remove what's never shown ("very bloated currently").
+- **Story:** something every few days; what tomorrow's steps would reach; named stretches of road; a walk that waits kindly (sick, injured, travel, a break); office days on the map.
+- **Arrivals:** a full-screen arrival; crossing a state line; a chapter ends with a film; the landmark rises on approach (loved).
+- **Souvenirs:** a passport of stamps.
+- **Links:** closing the day walks you on; themes on the road.
+- **Later list:** skip Samsung Health import; Health Wrapped with the walk at its heart.
+- **References:** The Conqueror (postcards along the route), World Walking (many short walks to choose from), Finch (an adventure report), Been (places filled in on a map), Atlas Obscura (one strange true fact per place).
+
+### Maybe
+
+Journal, camps and people on the same road; grade the forecast you were shown; map targets and labels; people who come back (no person has ever been seen); drop souvenirs altogether; Today's scene opens the walk; Polarsteps (animated map replay), Walkr, Duolingo (chests between stops), Strava (heatmap), Apple Fitness (animated awards), Google Maps Timeline, Spotify Wrapped.
+
+### Dropped
+
+Quest rewards that arrive (no quest has ever been noticed, so no point); the forecast (never seen once, so it can go); the day as a travel diary page; the road's weather from sleep; postcards to Logbook's shelf; early and late arrivals; souvenirs as detailed objects, with stories, for moments, or as a room; what training builds, made visible; farmer carries as loaded steps; Logbook sees where you were; Samsung import by file or screenshot; Alto's Odyssey, Pokémon GO, Flighty, Zombies Run!, Pikmin Bloom, Animal Crossing, Journey, Geocaching, Monument Valley, Forest, Slow Roads.
+
+### No verdict, with notes
+
+- **Departures:** keep as is; it is liked because it gathers everything in one place.
+- **A route that fits the year:** no need. The app is for the long term, well past the goal date. Open to several walking routes running side by side, or similar ideas, to brainstorm.
 
 ## Decisions
 
-None yet beyond the settled list above.
+1. The next step is a **debloat** of the Walk tab, done before more scoping rounds. It removes and rearranges; the visual redesign comes later.
+2. One kilometre figure for the walk, used on every screen.
+3. Training never stops the walker, and nothing sends the walker backwards.
+4. The arrival card and postcard become one page per city.
+5. The Walk tab is one scroll, with one status line under the title.
+6. The Journey hub leaves the Walk tab. Departures stays as it is.
+7. The chapter forecast is removed.
+8. Code nothing shows is removed.
+9. The souvenir shelf as drawn goes; a passport of stamps is the direction for later.
+10. No Samsung Health import.
+11. The route stays as long as it is. Several routes at once is an idea for a later round.
 
 ## Open questions
 
-All of round 1, and the pinboard verdicts.
+- Which mechanics stay (sent to the owner as the debloat questions).
+- Where code changes live and whether that branch may be pushed.
+- For later rounds: parallel routes, something every few days, named stretches, the passport, full-screen arrivals, Wrapped.
