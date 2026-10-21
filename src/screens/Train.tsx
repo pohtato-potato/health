@@ -1,6 +1,7 @@
 import { addDays, daysBetween } from '../domain/dates';
 import { fmtDayMonth, fmtInt, weekdayName } from '../domain/format';
 import { fmtKg } from '../domain/loads';
+import { fmtSet } from '../domain/setText';
 import { allExercises, buildSession, extraSessions, findSession, realSets, valueOfSet } from '../domain/plan';
 import { cardBack, cardFor, TIERS } from '../domain/cards';
 import { POSES, poseFor } from '../domain/poses';
@@ -80,7 +81,6 @@ export function Train() {
     if (list) list.push(s);
     else setsByEx.set(s.exerciseId, [s]);
   }
-  const fmtSet = (s: SetEntry) => `${s.loadKg !== null ? `${fmtKg(s.loadKg)} kg × ` : ''}${valueOfSet(s) ?? 0}${s.seconds !== undefined && s.reps === undefined ? ' s' : ''}`;
 
   return (
     <div className={`page lv lv-tab st-${trainGlow(tn && { records: tn.records.length, checks: tn.checks, formAvg: tn.formAvg })}${saver ? ' saver' : ''}`}>

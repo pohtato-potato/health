@@ -184,3 +184,25 @@ export function readinessText(r: { score: number; known: boolean }): string {
 export function readinessInk(score: number): string {
   return score < 60 ? 'var(--rose)' : score < 75 ? 'var(--gold)' : 'var(--sage)';
 }
+
+const HELD_NOUN: Record<ReadinessKey, string> = {
+  sleep: 'sleep',
+  rested: 'rest',
+  office: 'the office day',
+  stomach: 'your stomach',
+  soreness: 'soreness',
+  flags: 'a joint flag',
+  energy: 'energy',
+  effort: 'last effort',
+  restDays: 'rest days',
+  stepsYesterday: "yesterday's steps",
+  timeOfDay: 'the hour',
+};
+
+/** Readiness as a word for Next up: the band, and what held it back most. Undefined until there's enough data. */
+export function readyWord(r: { score: number; known: boolean; parts: ReadinessReason[] }): string | undefined {
+  if (!r.known) return undefined;
+  const band = bandFor(r.score).label;
+  const worst = heldBackBy(r)[0];
+  return worst ? `${band} · ${HELD_NOUN[worst.key as ReadinessKey] ?? worst.label.toLowerCase()} held it back` : band;
+}

@@ -39,10 +39,13 @@ import {
 import { Banners } from './Banners';
 import '../styles/today.css';
 import { forecastData } from '../state/forecastData';
-import { heldBackBy, readinessInk, readinessText } from '../domain/readiness';
+import { heldBackBy, readinessInk, readinessText, readyWord } from '../domain/readiness';
 import { SeasonStrip, useUnlockedIds } from '../ui/Theme';
 import { hasReward } from '../domain/rewards';
 import { NextUpCard } from './NextUpCard';
+import { RecordsStrip } from './today/NextStrip';
+import { tonight } from '../domain/trainView';
+import { fmtSet } from '../domain/setText';
 import { regionAt } from '../domain/regions';
 import { themeDayOn } from '../domain/calendar';
 import { ThemedRings } from '../ui/rings/ThemedRings';
@@ -118,7 +121,8 @@ export function Today() {
   const walkKm = kmFromSteps(days.reduce((n, d) => n + (d.steps ?? 0), 0));
   const themeDay = themeDayOn(today, regionAt(walkKm), { birthday: settings.birthday });
   // The voice speaks only at moments; otherwise the plain glance line.
-  const voiceNow = moment === 'perfect' || moment === 'proteinClosed';
+  const recordsTonight = tonight(sessions, sets, today)?.records ?? [];
+  const voiceNow = moment === 'perfect' || moment === 'proteinClosed' || (moment === 'trained' && recordsTonight.length > 0);
   const sessionTonight = up && !active && !trainedToday.length && weeks.thisWeek < weeks.perWeek ? sessionName : undefined;
   const lineKind: 'glance' | 'voice' | 'flag' = flag ? 'flag' : voiceNow ? 'voice' : 'glance';
   const lineText = flag ? line : voiceNow ? lineForTheDay(today, moment, line) : glanceLine({ minutes: logMinutes(Date.now()), closedRings: rings.closed, dayClosed: !!day?.foodDone, sessionTonight, nextSession: day?.foodDone && up ? sessionName : undefined, morningDone: !!day?.morning });
@@ -180,7 +184,11 @@ export function Today() {
         actions={{ logMorning: () => openSheet('morning'), closeDay: () => go('/close'), addGap, typeSteps: () => openSheet('steps') }}
       />
 
-      <NextUpCard settings={settings} up={up} active={active} trainedToday={trainedToday} weeks={weeks} />
+      {recordsTonight.length ? (
+        <RecordsStrip records={recordsTonight.map((r) => `${r.exercise} ${fmtSet(r)}`)} onFinale={() => go('/train', { state: 'after' })} />
+      ) : (
+        <NextUpCard settings={settings} up={up} active={active} trainedToday={trainedToday} weeks={weeks} ready={readyWord(ready)} />
+      )}
 
       <button type="button" className="card ready-card" onClick={() => go('/readiness')}>
         <span className="col" style={{ alignItems: 'center', minWidth: 64 }}>

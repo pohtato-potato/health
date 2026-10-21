@@ -1,10 +1,10 @@
 import { doneTodayLine, loggedLater, unfinishedInSession } from '../domain/trainingChecks';
-import { lowerFirst, weekdayName } from '../domain/format';
 import { findSession } from '../domain/plan';
 import type { Settings, TrainingSession } from '../domain/types';
-import { useAllSets, useNow } from '../db/hooks';
+import { useAllSets, useNow, useSessions } from '../db/hooks';
 import { go } from '../router';
-import { recordShot } from '../domain/strengthForecast';
+import { usualLength } from '../domain/sessionEdges';
+import { NextStrip } from './today/NextStrip';
 import type { NextUp } from '../state/derived';
 import { logHour } from '../domain/dates';
 
@@ -14,51 +14,30 @@ export function NextUpCard({
   active,
   trainedToday,
   weeks,
+  ready,
 }: {
   settings: Settings;
   up: NextUp | undefined;
   active: TrainingSession | null;
   trainedToday: TrainingSession[];
   weeks: { thisWeek: number; perWeek: number };
+  /** Readiness as a word, e.g. "Steady · sleep held it back". */
+  ready?: string;
 }) {
   const plan = settings.plan;
   const sets = useAllSets();
+  const sessions = useSessions();
   const now = useNow(active ? 1000 : 60_000);
 
+  const week = { done: Math.min(weeks.thisWeek, weeks.perWeek), of: weeks.perWeek };
   if (active) {
     const def = plan ? findSession(plan, active.session) : undefined;
     const n = sets?.filter((s) => s.sessionId === active.id && !s.drop).length ?? 0;
-    return (
-      <div className="card" style={{ gap: 14 }}>
-        <div className="row">
-          <div className="lbl sage">In progress</div>
-          <div className="t13 q tn">{clock(now - active.startedAt)}</div>
-        </div>
-        <div className="col gap4">
-          <div className="sf" style={{ fontSize: 26 }}>
-            {def?.name ?? `Session ${active.session}`}
-          </div>
-          <div className="t14 q">
-            {n} set{n === 1 ? '' : 's'} logged{active.short ? ' · short session' : ''}
-          </div>
-        </div>
-        <button type="button" className="btn block" onClick={() => go('/session')}>
-          Resume session
-        </button>
-      </div>
-    );
+    return <NextStrip title={`${def?.name ?? `Session ${active.session}`} · in progress`} sub={`${clock(now - active.startedAt)} · ${n} set${n === 1 ? '' : 's'} logged${active.short ? ' · short session' : ''}`} week={week} action={{ label: 'Resume', run: () => go('/session') }} onOpen={() => go('/session')} />;
   }
 
   if (!plan || !up) {
-    return (
-      <div className="card" style={{ gap: 12 }}>
-        <div className="lbl">Training</div>
-        <div className="t15 lh">No training plan yet. Add one from Settings, and Train will run it: the A/B rotation, loads and every rule.</div>
-        <button type="button" className="btn ghost" onClick={() => go('/settings', { at: 'training' })}>
-          Add a plan
-        </button>
-      </div>
-    );
+    return <NextStrip title="No plan yet" sub="Add one in Settings and Train runs it: the rotation, loads and every rule." action={{ label: 'Add a plan', run: () => go('/settings', { at: 'training' }) }} onOpen={() => go('/settings', { at: 'training' })} />;
   }
 
   const def = findSession(plan, up.sessionId);
@@ -75,52 +54,22 @@ export function NextUpCard({
       short: s.short,
       unfinished: sets ? unfinishedInSession(s.id, sets, settings.keptSets) : 0,
     });
-    return (
-      <button type="button" className="card" onClick={() => (done.clean ? go('/session/view', { id: s.id }) : go('/train'))}>
-        <div className="row">
-          <div className={`lbl${done.clean ? ' sage' : ''}`}>{done.clean ? 'Done today' : 'Saved today'}</div>
-          <div className="t13 q">
-            {Math.min(weeks.thisWeek, weeks.perWeek)} of {weeks.perWeek} this week
-          </div>
-        </div>
-        <div className="sf" style={{ fontSize: 24 }}>
-          {sd?.name ?? `Session ${s.session}`}
-        </div>
-        <div className="t14 q">
-          {done.text}. Next time: {def?.name ?? up.sessionId}.
-        </div>
-      </button>
-    );
+    return <NextStrip title={sd?.name ?? `Session ${s.session}`} sub={`${done.text}. Next time: ${def?.name ?? up.sessionId}.`} week={week} onOpen={() => (done.clean ? go('/session/view', { id: s.id }) : go('/train'))} />;
   }
 
-  const ready = up.exercises.filter((e) => e.status.advice && e.status.advice.kind !== 'maxed');
-  const shots = up.exercises.map((e) => recordShot({ id: e.id, name: e.status.name }, sets ?? [])).filter((x): x is string => !!x);
+  const readyN = up.exercises.filter((e) => e.status.advice && e.status.advice.kind !== 'maxed').length;
   const met = weeks.thisWeek >= weeks.perWeek;
-  const last = up.lastDone;
-
-  const first = up.exercises[0]?.status.name;
+  const usual = sets && sessions ? usualLength(sessions, sets, up.sessionId, def?.minutes ?? 60) : { min: def?.minutes ?? 60, fromHistory: false };
+  const evening = logHour(Date.now()) >= 15;
   return (
-    <button type="button" className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 12, textAlign: 'left' }} onClick={() => go('/train')}>
-      <span className="col gap4 grow">
-        <span className="serif" style={{ fontSize: 19, fontWeight: 600 }}>
-          {def?.name ?? `Session ${up.sessionId}`} {met ? 'if you feel fresh' : logHour(Date.now()) >= 15 ? 'tonight' : 'today'}
-        </span>
-        <span className="t13 q">
-          {def?.minutes ?? 60} min{first ? ` · ${lowerFirst(first)} first` : ''}
-          {up.swaps.length ? ` · ${up.swaps.length} swap${up.swaps.length === 1 ? '' : 's'} for a flag` : ''}
-        </span>
-        {last && (
-          <span className="t12 q">
-            Last: {last.session}, {weekdayName(last.date)}
-          </span>
-        )}
-      </span>
-      {(shots.length > 0 || ready.length > 0) && (
-        <span className="t13 gold right" style={{ maxWidth: 130, lineHeight: 1.3 }}>
-          {shots.length ? shots[0].charAt(0).toUpperCase() + shots[0].slice(1) : `${ready.length} ready to go heavier`}
-        </span>
-      )}
-    </button>
+    <NextStrip
+      title={`${def?.name ?? `Session ${up.sessionId}`} ${met ? 'if you feel fresh' : evening ? 'tonight' : 'today'}`}
+      sub={`${usual.fromHistory ? 'Usually' : 'About'} ${usual.min} min${readyN ? ` · ${readyN} ready to go heavier` : ''}${up.swaps.length ? ` · ${up.swaps.length} swap${up.swaps.length === 1 ? '' : 's'} for a flag` : ''}`}
+      ready={ready}
+      week={week}
+      action={evening ? { label: 'Start', run: () => go('/session', { start: up.sessionId }) } : undefined}
+      onOpen={() => go('/train')}
+    />
   );
 }
 
