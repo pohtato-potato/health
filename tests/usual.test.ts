@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { addDays } from '../src/domain/dates';
 import type { Food, FoodEntry, Meal } from '../src/domain/types';
-import { usualFoods, usualPortion } from '../src/domain/usual';
+import { sameAsYesterday, usualFoods, usualPortion } from '../src/domain/usual';
 
 const today = '2026-10-21';
 const food = (id: string, defaultAmount = 100, archived = false): Food => ({ id, name: `Test food ${id}`, unit: 'g', per: 100, defaultAmount, kcal: 100, protein: 10, archived }) as unknown as Food;
@@ -55,5 +55,29 @@ describe('usualFoods', () => {
     const foods = [food('a')];
     const e = [entry('a', 'lunch', 1, 200), entry('a', 'lunch', 2, 200), entry('a', 'lunch', 3, 300)];
     expect(usualFoods(e, foods, 'lunch', today)).toEqual([{ food: foods[0], amount: 200 }]);
+  });
+});
+
+describe('sameAsYesterday', () => {
+  const at = Date.parse('2026-10-21T13:00:00Z');
+  it("copies yesterday's entries at that meal with today's date and the given time", () => {
+    const e = [entry('a', 'lunch', 1, 120), entry('b', 'lunch', 1, 2)];
+    const out = sameAsYesterday(e, 'lunch', today, at);
+    expect(out).toHaveLength(2);
+    expect(out.every((x) => x.date === today && x.at === at)).toBe(true);
+    expect(out.map((x) => [x.foodId, x.amount, x.kcal, x.protein])).toEqual([['a', 120, 100, 10], ['b', 2, 100, 10]]);
+    expect(out.some((x) => 'id' in x)).toBe(false);
+  });
+  it("returns [] when yesterday's meal is empty", () => {
+    expect(sameAsYesterday([entry('a', 'dinner', 1, 100)], 'lunch', today, at)).toEqual([]);
+  });
+  it('never copies other meals', () => {
+    const out = sameAsYesterday([entry('a', 'lunch', 1, 100), entry('b', 'dinner', 1, 100)], 'lunch', today, at);
+    expect(out.map((x) => x.foodId)).toEqual(['a']);
+  });
+  it('uses the log day: at 00:30 "today" is the evening before, so it copies from the day before that', () => {
+    // At 00:30 on 22 Oct the log day is still 21 Oct; "yesterday" is 20 Oct, not 21 Oct.
+    const e = [entry('a', 'dinner', 1, 100), entry('b', 'dinner', 0, 100)];
+    expect(sameAsYesterday(e, 'dinner', today, at).map((x) => x.foodId)).toEqual(['a']);
   });
 });

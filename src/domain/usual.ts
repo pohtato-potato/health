@@ -1,5 +1,5 @@
-import { addDays } from './dates';
-import type { DayKey, Food, FoodEntry, Meal } from './types';
+import { addDays, type DayKey } from './dates';
+import type { Food, FoodEntry, Meal } from './types';
 
 const WINDOW_DAYS = 60;
 const MIN_AT_MEAL = 3;
@@ -41,4 +41,12 @@ export function usualFoods(entries: FoodEntry[], foods: Food[], meal: Meal, toda
       const food = byId.get(id)!;
       return { food, amount: usualPortion(entries, food, meal, today) };
     });
+}
+
+/** Yesterday's entries at a meal, copied to today at the given time. `today` is the log day, so after midnight it is still the evening before. */
+export function sameAsYesterday(entries: FoodEntry[], meal: Meal, today: DayKey, at: number): Omit<FoodEntry, 'id'>[] {
+  const yesterday = addDays(today, -1);
+  return entries
+    .filter((e) => e.date === yesterday && e.meal === meal)
+    .map(({ id: _id, ...rest }) => ({ ...rest, date: today, at }));
 }
