@@ -49,9 +49,9 @@ Built for exactly one life: Indian food in katoris and pieces, home dumbbells, o
 5. Learn him openly: adaptive models with published methods, visible working and a track record.
 
 ## Accessibility & Inclusion
-The owner has about 40% vision loss and poor depth perception. Design for that first, not as an option:
+The owner has about 40% vision loss and poor depth perception, and reads the phone with the **Android magnifier**. Design for how he actually reads, and ask him before changing sizes:
 
-- **Type.** Larger text is on by default: small labels start at 13–14 px and body text at 16 px. Don't add anything smaller than the large-text floor.
+- **Type.** Don't simply make everything bigger: with the magnifier on, oversized type means more panning and slows him down. Keep the app's standard type scale as the default; "Larger text" (Settings › Feel) is an option, off by default. What helps is clear hierarchy, steady positions (things stay where he expects them, so the magnifier finds them), and strong contrast.
 - **Contrast.** WCAG AA is the minimum. A high-contrast option (Settings › Feel) brings quiet and dim text close to full brightness; new colours must stay legible with it on.
 - **Aim.** Anything tapped mid-set must be reachable without fine aim: 44 px targets at the least, set fields and the done dot bigger with larger text, and an option to enter every set with the big dial and chips.
 - **Depth.** Don't rely on shadows, blur or overlap to show what is on top or tappable; use borders, position and labels.
