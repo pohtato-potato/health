@@ -38,7 +38,7 @@
 
 **Files:**
 - Modify: `src/domain/types.ts` (`SetEntry`, `TrainingSession`)
-- Modify: `src/domain/plan.ts` (`ExerciseDef`)
+- Modify: `src/domain/plan.ts` (`ExerciseDef`), `src/domain/defaultPlan.ts:42` (farmer carry: `measure: 'seconds', seconds: [60, 90]`, note "Walk tall, shoulders down."; drop `steps`)
 - Create: `src/domain/checks.ts`
 - Test: `tests/live-checks.test.ts`
 
@@ -49,19 +49,18 @@
   - `SetEntry` gains `startedAt?: number`, `endedAt?: number`, `burnAt?: number` (the reps counted when the burn was marked) and `checks?: Record<string, CheckMark>`
   - `TrainingSession` gains `view?: 'live' | 'list'` and `liveSet?: LiveCounter | null`, with `interface LiveCounter { key: string; taps: number[]; burnAt?: number; startedAt?: number }` defined here in `types.ts`
   - `ExerciseDef` gains `checks?: FormCheck[]` and `isolation?: boolean`
-  - `checksFor(ex: Pick<ExerciseDef, 'checks' | 'guide'>): FormCheck[]`
+  - `checksFor(ex: Pick<ExerciseDef, 'checks'>): FormCheck[]`: `ex.checks?.slice(0, 6) ?? []`. No stand-in from `guide.faults`: the coach writes the checks.
   - `cycleCheck(m: CheckMark | undefined): CheckMark | undefined`
   - `slipCount(s: Pick<SetEntry, 'checks'>): number`
   - `okCount(s: Pick<SetEntry, 'checks'>): number`
 
 - [ ] **Step 1: Write the failing tests** in `tests/live-checks.test.ts`:
-  - `checksFor` returns `ex.checks` when present.
-  - Without `checks`, it maps `guide.faults` to `{ id: slug(text), text, kind: 'avoid' }`. It keeps at most 6, and the ids are stable across calls: `checksFor(ex)[0].id === checksFor(ex)[0].id`.
-  - With neither, it returns `[]`.
+  - `checksFor` returns `ex.checks` when present, at most 6, and `[]` without them (even when `guide.faults` exist).
+  - The built-in plan's farmer carry is `measure: 'seconds'` with `seconds: [60, 90]`.
   - `cycleCheck`: `undefined → 'ok' → 'slip' → undefined`.
   - `slipCount({ checks: { a: 'ok', b: 'slip', c: 'slip' } }) === 2`, and `okCount` of the same is `1`. Both return `0` for `{}`.
 - [ ] **Step 2: Run** `npx vitest run tests/live-checks.test.ts`. Expected: FAIL, module not found.
-- [ ] **Step 3: Add the fields and implement `src/domain/checks.ts`.** The slug is the text lower-cased, with non-alphanumerics turned into `-`, trimmed, and cut to 40 characters. Write JSDoc on each new field in the style of `types.ts`.
+- [ ] **Step 3: Add the fields, implement `src/domain/checks.ts`, and switch the farmer carry to seconds.** Write JSDoc on each new field in the style of `types.ts`.
 - [ ] **Step 4: Run** the test, then `npm run typecheck`. Expected: PASS, no type errors.
 - [ ] **Step 5: Commit** with the message `feat(train): set timer, burn and form-check fields`.
 
@@ -289,7 +288,7 @@ How taps and holds work:
 
 What the screen shows:
 - **Header:** the count and the state word, in the set's colour class.
-- **Checks:** one 56 px row each. The row shows ✓ with the words "went well" (green), or ✕ with "slipped" (red), or nothing when the check is unset.
+- **Checks:** one 56 px row each. With no checks in the plan, this part is left out and only "Left in the tank" shows. The row shows ✓ with the words "went well" (green), or ✕ with "slipped" (red), or nothing when the check is unset.
 - **Left in the tank:** the chips `0`, `1`, `2`, `3+`.
 
 Behaviour:
@@ -328,7 +327,7 @@ How it works:
 - **Ready:** calls `r.stopRest()`.
 - **Header:** a minimise chevron, the session name and clock, a `List` chip (`patchSession({ view: 'list' })`) and Finish. Below it, a strip of numbered group buttons that calls `r.setGi`.
 - **Fallbacks:**
-  - A row whose `measureOf(ex) === 'steps'` renders the list view for that group, with the line "Steps are logged in the list".
+  - Carries are timed like holds. Only an old imported plan could still count steps: such a row renders the list view for that group, with the line "Steps are logged in the list".
   - `HeavierMoment` shows above the set screen when `r.offerFor` matches the current exercise.
   - When every row is logged, the view shows "Finish session".
 - **Session.tsx:** render `LiveSession` when `session.view !== 'list'`, else the list. The list header gains a `Live` chip that sets `view: 'live'`.

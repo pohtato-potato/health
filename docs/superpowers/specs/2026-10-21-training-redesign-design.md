@@ -163,7 +163,7 @@ Below, in both states:
 2. **This week on your body:** front and back figures coloured by hard sets against the plan's target per muscle group. Green is on target, yellow low, blue high, with a legend and each count against its range. One plain line names the biggest gap. This needs an optional per-region colour on `BodyHeat` (built in the prototype).
 3. **Records:** the latest three, gold. "All" opens the records wall.
 4. **Your cards** (see below), one row, swipeable.
-5. **This month so far:** sessions, records, the usual session length, and the most improved exercise. The full **monthly report** opens on the 1st.
+5. **This month so far:** sessions, records, the usual session length, and the most improved exercise. The full **monthly report** opens on the 1st as a full-screen story, like the finale.
 6. **Recent sessions:** date, length (or "logged later"), sets and records.
 7. **The plan:** name, sessions, version and date, then history and the warm-up.
 
@@ -209,7 +209,7 @@ Import warns when a superset mixes loads, when an exercise has no guide or check
 |---|---|
 | `SetEntry` | `startedAt`, `endedAt` (the set timer); `burnAt` (rep number); `checks: Record<checkId, 'ok' \| 'slip'>`; `sideOrder`; `setupVersion`; `warmup?: true` |
 | `TrainingSession` | `legSoreness`; `plateChanges`; `collarCheckedAt`; `notes` per exercise; time split (`liftMs`, `restMs`, `betweenMs`) |
-| `Settings` | `setups: { [exerciseId]: { from: DayKey; text: string }[] }`; `planHistory: { at; version; plan }[]` (replaces the 7-day undo); `cardTiers` (derived, cached) |
+| `Settings` | `setups: { [exerciseId]: { from: DayKey; text: string }[] }`; `planHistory: { at; version; plan }[]`, the last 10 versions (replaces the 7-day undo); `cardTiers` (derived, cached) |
 
 The 1–5 `form` field stays readable in old sets and is no longer written. Records count a set when no check slipped (the clean-reps rule, re-based on checks).
 
@@ -254,9 +254,10 @@ Each part ships on its own and keeps `npm test` and `npm run build` passing.
 - A design check at phone size of every screen in Dusk and one other theme, in battery saver, with reduced motion, and with high contrast on.
 - One real session on the phone before each part is merged.
 
-## Open questions for the owner
+## Decided after review (21 Oct)
 
-1. **Card tiers:** do the rules in the table feel right, especially Mastery (10 sets running, every check, at the top of the range)?
-2. **Adaptive rest:** is ±15 s per step, capped at +45 s and −20 s, the right size of change?
-3. **Monthly report:** a page on Train on the 1st, or a full-screen story like the finale?
-4. **Plan history:** keep every plan version forever, or the last 10?
+1. The card tiers and the adaptive-rest steps stand as written.
+2. The monthly report is a full-screen story.
+3. Plan history keeps the last 10 versions.
+4. Carries are timed in seconds, not counted in steps. The built-in starter plan changes to match.
+5. Form checks come only from the plan file. The coach drafts them for every exercise (request in the shared Training folder). An exercise without checks shows only "left in the tank".
