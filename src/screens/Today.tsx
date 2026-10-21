@@ -4,7 +4,7 @@ import { fmtDayShort, fmtDuration, fmtInt } from '../domain/format';
 import { findSession } from '../domain/plan';
 import { sleepMinutes, stepsGoal } from '../domain/rings';
 import { type Day, type Settings } from '../domain/types';
-import { pinnedLine, voiceLine, plainFlagLine, type Moment } from '../domain/voice';
+import { pinnedLine, voiceLine, plainFlagLine, plainLine, type Moment } from '../domain/voice';
 import { addEntries, bump, changePlace, deleteEntry } from '../db/actions';
 import { useKonami } from '../ui/useKonami';
 import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useMeasurements, useSessions, useSettings, useToday } from '../db/hooks';
@@ -101,15 +101,17 @@ export function Today() {
   else if (up && !active && weeks.thisWeek < weeks.perWeek) moment = 'session';
   else if (up && weeks.thisWeek >= weeks.perWeek) moment = 'rest';
 
-  const line = flag
-    ? plainFlagLine(flag.flag.group, swapSentence(settings.plan, flag.flag.swap))
-    : voiceLine(voiceFor(settings.voice, prefOn(settings.prefs, 'shuffleVoices'), today), moment, today, {
-        session: sessionName,
-        steps: fmtInt(Math.max(stepsLeft, 0)),
-        laps: loop ? fmtInt(Math.ceil(Math.max(stepsLeft, 0) / loop)) : 'a few',
-        sleep: sleepMin !== undefined ? fmtDuration(sleepMin) : '',
-        protein: `${Math.round(totals.protein)} g`,
-      });
+  // A joint flag, then a sick, injured or break day, outrank every moment: plain speech, no jokes.
+  const plain = plainLine({ status: day?.status, flag: flag ? plainFlagLine(flag.flag.group, swapSentence(settings.plan, flag.flag.swap)) : undefined });
+  const line =
+    plain ??
+    voiceLine(voiceFor(settings.voice, prefOn(settings.prefs, 'shuffleVoices'), today), moment, today, {
+      session: sessionName,
+      steps: fmtInt(Math.max(stepsLeft, 0)),
+      laps: loop ? fmtInt(Math.ceil(Math.max(stepsLeft, 0) / loop)) : 'a few',
+      sleep: sleepMin !== undefined ? fmtDuration(sleepMin) : '',
+      protein: `${Math.round(totals.protein)} g`,
+    });
 
   const walkKm = kmFromSteps(days.reduce((n, d) => n + (d.steps ?? 0), 0));
   const themeDay = themeDayOn(today, regionAt(walkKm), { birthday: settings.birthday });
@@ -158,8 +160,8 @@ export function Today() {
 
       <WalkScene km={walkKm} dayN={daysBetween(journeyStartOf(settings, days), today) + 1} festive={prefOn(settings.prefs, 'seasonal') ? seasonalThemeOn(today, settings.birthday) as Festive | undefined : undefined} />
 
-      <div className="voice" style={flag ? { fontStyle: 'normal', fontFamily: 'var(--sans)', fontSize: 15, color: 'var(--apricot)' } : undefined}>
-        {flag ? line : lineForTheDay(today, moment, line)}
+      <div className="voice" style={flag ? { fontStyle: 'normal', fontFamily: 'var(--sans)', fontSize: 15, color: 'var(--apricot)' } : plain ? { fontStyle: 'normal', fontFamily: 'var(--sans)', fontSize: 15 } : undefined}>
+        {plain ?? lineForTheDay(today, moment, line)}
       </div>
 
       {themeDay && (
