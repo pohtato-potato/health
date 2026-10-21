@@ -1,5 +1,9 @@
 import { useState, type ReactNode } from 'react';
-import { morningLogBanner, pickBanner, type BannerCandidate } from '../domain/banners';
+import { BANNER_PRIORITY, morningLogBanner, notDismissed, pickBanner, type BannerCandidate } from '../domain/banners';
+import { occasionDue, occasionOn } from '../domain/occasions';
+import { fmtInt } from '../domain/format';
+import { maintenanceFor } from '../sheets/Occasion';
+import { TodayBanner, type BannerAction } from './today/TodayBanner';
 import { saveBackup } from '../db/backup';
 import { useAllDays, useAllEntries, useSettings } from '../db/hooks';
 import { applyUpdate, promptInstall, usePwa } from '../pwa';
@@ -18,7 +22,18 @@ import { targetsFor } from '../state/derived';
 import { patchSettings, setTargets } from '../db/actions';
 import { doseSchedule, nextDose } from '../domain/medicines';
 
-/** One quiet banner on Today: a new version, a backup nudge, the week, a check-in, installing. Never notifications. */
+const DISMISSED_KEY = 'health.banner.dismissed';
+function readDismissed(): { date: string; ids: string[] } | null {
+  try {
+    return JSON.parse(localStorage.getItem(DISMISSED_KEY) ?? 'null');
+  } catch {
+    return null;
+  }
+}
+
+type Banner = BannerCandidate & { icon: ReactNode; title: string; sub?: string; actions: BannerAction[] };
+
+/** One quiet banner on Today, always in the same slot: a new version, a dose, the morning log, a backup, the week, a check-in, an occasion, installing. Never notifications. */
 export function Banners() {
   const pwa = usePwa();
   const settings = useSettings();
@@ -30,6 +45,7 @@ export function Banners() {
   const toast = useToast();
   const usage = useLiveQuery(() => db.usage.where('at').above(Date.now() - 14 * 86_400_000).toArray(), []);
   const [busy, setBusy] = useState(false);
+  const [dismissed, setDismissed] = useState(readDismissed);
   if (!settings || !days || !checkins || recapNote === undefined || !usage) return null;
   const recapReady = !recapNote?.recapSeenAt && weekday(dayKey()) <= 2 && days.some((d) => d.date >= lastWeek && d.date <= addDays(lastWeek, 6));
   const today = dayKey();
@@ -54,183 +70,81 @@ export function Banners() {
     }
   };
 
-  const candidates: (BannerCandidate & { el: ReactNode })[] = [];
-  if (pwa.needRefresh)
-    candidates.push({
-      id: 'update',
-      priority: 10,
-      anytime: true,
-      el: (
-        <>
-          <Icon name="upload" size={20} color="var(--sage)" />
-          <span className="grow">A new version of Health is ready.</span>
-          <button type="button" className="btn sm" onClick={() => applyUpdate()}>
-            Reload
-          </button>
-        </>
-      ),
-    });
-  if (nudge)
-    candidates.push({
-      id: 'backup',
-      priority: 6,
-      el: (
-        <>
-          <Icon name="save" size={20} color="var(--gold)" />
-          <span className="grow">{last ? `No backup for ${daysSince} days.` : 'No backup yet.'} One tap keeps your data safe.</span>
-          <button type="button" className="btn sm" onClick={backup} disabled={busy}>
-            Back up
-          </button>
-        </>
-      ),
-    });
-  if (recapReady)
-    candidates.push({
-      id: 'recap',
-      priority: 5,
-      el: (
-        <>
-          <Icon name="calendar" size={20} color="var(--gold)" />
-          <span className="grow">
-            Your week, {fmtDayMonth(lastWeek)}–{fmtDayMonth(addDays(lastWeek, 6))}, is ready. The receipt is printed.
-          </span>
-          <button type="button" className="btn sm" onClick={() => go('/week')}>
-            Open
-          </button>
-        </>
-      ),
-    });
+  const candidates: Banner[] = [];
   const todayDay = days.find((d) => d.date === today);
+  if (pwa.needRefresh)
+    candidates.push({ id: 'update', priority: BANNER_PRIORITY.update, anytime: true, icon: <Icon name="upload" size={20} color="var(--sage)" />, title: 'A new version of Health is ready.', actions: [{ label: 'Reload', run: () => applyUpdate() }] });
+
+  const dose = nextDose(Date.now(), doseSchedule(settings.checklist.filter((i) => i.med), today, settings, todayDay), todayDay?.ticks, todayDay?.missed);
+  if (dose && dose.at - Date.now() <= 2 * 3_600_000) {
+    const mins = Math.round((dose.at - Date.now()) / 60_000);
+    const when = mins > 0 ? `in ${mins >= 60 ? `${Math.floor(mins / 60)} h ` : ''}${mins % 60} min` : mins === 0 ? 'now' : `${-mins} min ago`;
+    candidates.push({ id: 'next-dose', priority: BANNER_PRIORITY.dose, anytime: true, icon: <Icon name="pill" size={20} color="var(--sage)" />, title: `${dose.name} at ${fmtTime(dose.at)}`, sub: when, actions: [{ label: 'Tick', run: () => openSheet('checklist') }] });
+  }
+
   const morning = morningLogBanner(!!todayDay?.morning, logMinutes(Date.now()));
   if (morning)
-    candidates.push({
-      id: 'morning-log',
-      priority: morning.priority,
-      anytime: true,
-      el: (
-        <>
-          <Icon name="sun" size={20} color="var(--gold)" />
-          <span className="grow">{morning.text}</span>
-          <button type="button" className="btn sm" onClick={() => openSheet('morning')}>
-            Log
-          </button>
-        </>
-      ),
-    });
-  if (checkinDue)
-    candidates.push({
-      id: 'checkin',
-      priority: 4,
-      el: (
-        <>
-          <Icon name="camera" size={20} color="var(--pearl)" />
-          <span className="grow">{lastCheck ? 'Your monthly check-in is due.' : 'Time for your first check-in: photos and a tape measure.'}</span>
-          <button type="button" className="btn sm" onClick={() => go('/checkin')}>
-            Start
-          </button>
-        </>
-      ),
-    });
-  if (pwa.canInstall && !pwa.installed)
-    candidates.push({
-      id: 'install',
-      priority: 1,
-      el: (
-        <>
-          <Icon name="phone" size={20} color="var(--pearl)" />
-          <span className="grow">Install Health on your home screen so it opens full-screen.</span>
-          <button type="button" className="btn sm" onClick={() => promptInstall()}>
-            Install
-          </button>
-        </>
-      ),
-    });
+    candidates.push({ id: 'morning-log', priority: morning.priority, anytime: true, icon: <Icon name="sun" size={20} color="var(--gold)" />, title: morning.text, sub: 'Weight and sleep, then the night’s visitors', actions: [{ label: 'Log', run: () => openSheet('morning') }] });
+
+  if (nudge)
+    candidates.push({ id: 'backup', priority: BANNER_PRIORITY.backup, icon: <Icon name="save" size={20} color="var(--quiet)" />, title: last ? `No backup for ${daysSince} days.` : 'No backup yet.', sub: 'One tap keeps your data safe.', actions: [{ label: 'Back up', run: backup, disabled: busy }] });
+  const weekdayNow = logWeekdaySun(Date.now());
+  const lastFull = settings.backup.lastFull;
+  if (weekdayNow === 0 && (!lastFull || Date.now() - lastFull > 6 * 86_400_000) && !nudge)
+    candidates.push({ id: 'backup-sunday', priority: BANNER_PRIORITY.backup, icon: <Icon name="save" size={20} color="var(--quiet)" />, title: 'Sunday: time for the weekly full backup.', sub: 'Photos included.', actions: [{ label: 'Back up', run: () => go('/settings', { at: 'backup' }) }] });
 
   const model = entries ? modelFor(settings, days, entries, today) : undefined;
   const checkIn = model ? weeklyCheckIn(model, targetsFor(settings, today), settings.maintenanceSeen) : undefined;
   if (checkIn && model?.kcal !== undefined)
     candidates.push({
       id: 'maintenance',
-      priority: 7,
-      el: (
-        <>
-          <Icon name="trend" size={20} color="var(--kcal)" />
-          <span className="grow">{checkIn.text}</span>
-          <span className="col gap4">
-            <button type="button" className="btn sm" onClick={() => patchSettings({ maintenanceSeen: model.kcal })}>
-              Keep
-            </button>
-            {checkIn.proposal && (
-              <button
-                type="button"
-                className="btn ghost sm"
-                onClick={async () => {
-                  await setTargets({ ...targetsFor(settings, today), ...checkIn.proposal });
-                  await patchSettings({ maintenanceSeen: model.kcal });
-                  toast({ text: 'Calorie range moved with maintenance', sub: `${checkIn.proposal!.kcalMin}–${checkIn.proposal!.kcalMax} kcal` });
-                }}
-              >
-                Adjust
-              </button>
-            )}
-          </span>
-        </>
-      ),
+      priority: BANNER_PRIORITY.maintenance,
+      icon: <Icon name="trend" size={20} color="var(--kcal)" />,
+      title: checkIn.text,
+      actions: [
+        { label: 'Keep', run: () => void patchSettings({ maintenanceSeen: model.kcal }) },
+        ...(checkIn.proposal
+          ? [{
+              label: 'Adjust',
+              ghost: true,
+              run: async () => {
+                await setTargets({ ...targetsFor(settings, today), ...checkIn.proposal });
+                await patchSettings({ maintenanceSeen: model.kcal });
+                toast({ text: 'Calorie range moved with maintenance', sub: `${checkIn.proposal!.kcalMin}–${checkIn.proposal!.kcalMax} kcal` });
+              },
+            }]
+          : []),
+      ],
     });
 
-  const dose = nextDose(Date.now(), doseSchedule(settings.checklist.filter((i) => i.med), today, settings, todayDay), todayDay?.ticks, todayDay?.missed);
-  if (dose && dose.at - Date.now() <= 2 * 3_600_000) {
-    const mins = Math.round((dose.at - Date.now()) / 60_000);
-    const when = mins > 0 ? `in ${mins >= 60 ? `${Math.floor(mins / 60)} h ` : ''}${mins % 60} min` : mins === 0 ? 'now' : `${-mins} min ago`;
-    candidates.push({
-      id: 'next-dose',
-      priority: 8,
-      anytime: true,
-      el: (
-        <>
-          <Icon name="pill" size={20} color="var(--sage)" />
-          <span className="grow">
-            {dose.name} at {fmtTime(dose.at)} · {when}
-          </span>
-          <button type="button" className="btn sm" onClick={() => openSheet('checklist')}>
-            Tick
-          </button>
-        </>
-      ),
-    });
-  }
-  const weekdayNow = logWeekdaySun(Date.now());
+  if (checkinDue)
+    candidates.push({ id: 'checkin', priority: BANNER_PRIORITY.checkin, icon: <Icon name="camera" size={20} color="var(--pearl)" />, title: lastCheck ? 'Your monthly check-in is due.' : 'Time for your first check-in.', sub: lastCheck ? undefined : 'Photos and a tape measure.', actions: [{ label: 'Start', run: () => go('/checkin') }] });
+  if (recapReady)
+    candidates.push({ id: 'recap', priority: BANNER_PRIORITY.recap, icon: <Icon name="calendar" size={20} color="var(--pearl)" />, title: `Your week, ${fmtDayMonth(lastWeek)}–${fmtDayMonth(addDays(lastWeek, 6))}, is ready.`, sub: 'The receipt is printed.', actions: [{ label: 'Open', run: () => go('/week') }] });
   if (settings.reviewDay !== undefined && weekdayNow === settings.reviewDay)
-    candidates.push({
-      id: 'review-day',
-      priority: 3,
-      el: (
-        <>
-          <Icon name="save" size={20} color="var(--protein)" />
-          <span className="grow">Review day. Export the audit pack and ask Claude what to change.</span>
-          <button type="button" className="btn sm" onClick={() => go('/settings', { at: 'data' })}>
-            Open
-          </button>
-        </>
-      ),
-    });
-  const lastFull = settings.backup.lastFull;
-  if (weekdayNow === 0 && (!lastFull || Date.now() - lastFull > 6 * 86_400_000) && !nudge)
-    candidates.push({
-      id: 'backup-sunday',
-      priority: 6,
-      el: (
-        <>
-          <Icon name="save" size={20} color="var(--gold)" />
-          <span className="grow">Sunday: time for the weekly full backup, photos included.</span>
-          <button type="button" className="btn sm" onClick={() => go('/settings', { at: 'backup' })}>
-            Back up
-          </button>
-        </>
-      ),
-    });
+    candidates.push({ id: 'review-day', priority: BANNER_PRIORITY.review, icon: <Icon name="save" size={20} color="var(--protein)" />, title: 'Review day.', sub: 'Export the audit pack and ask Claude what to change.', actions: [{ label: 'Open', run: () => go('/settings', { at: 'data' }) }] });
 
-  // One banner at a time, near the hour you usually log.
-  const shown = pickBanner(candidates, usage, Date.now());
-  return shown ? <div className="banner">{shown.el}</div> : null;
+  const current = occasionOn(settings, today);
+  const fest = occasionDue(settings, today);
+  if (current)
+    candidates.push({ id: 'occasion-on', priority: BANNER_PRIORITY.occasion, anytime: true, icon: <Icon name="calendar" size={20} color="var(--pearl)" />, title: `${current.name} mode`, sub: `Calories up to ${fmtInt(maintenanceFor(settings, today))}. Streaks paused through ${fmtDayMonth(current.to)}.`, actions: [{ label: 'Change', run: () => openSheet('occasion') }] });
+  else if (fest)
+    candidates.push({ id: 'occasion', priority: BANNER_PRIORITY.occasion, icon: <Icon name="calendar" size={20} color="var(--pearl)" />, title: fest.inDays <= 0 ? `${fest.name} is here` : `${fest.name} in ${fest.inDays} day${fest.inDays === 1 ? '' : 's'}`, sub: 'Occasion mode holds the rings steady for it.', actions: [{ label: 'Set up', run: () => openSheet('occasion', { kind: 'festival', name: fest.name, from: fest.from > today ? fest.from : today, to: fest.to }) }] });
+
+  if (pwa.canInstall && !pwa.installed)
+    candidates.push({ id: 'install', priority: BANNER_PRIORITY.install, icon: <Icon name="phone" size={20} color="var(--pearl)" />, title: 'Install Health on your home screen.', sub: 'It opens full-screen.', actions: [{ label: 'Install', run: () => promptInstall() }] });
+
+  // One banner at a time, near the hour you usually log; a dismissed one stays away for the day.
+  const shown = pickBanner(notDismissed(candidates, dismissed, today), usage, Date.now());
+  if (!shown) return null;
+  const dismiss = () => {
+    const next = { date: today, ids: [...(dismissed?.date === today ? dismissed.ids : []), shown.id] };
+    setDismissed(next);
+    try {
+      localStorage.setItem(DISMISSED_KEY, JSON.stringify(next));
+    } catch {
+      /* storage can be unavailable; the dismissal lasts until reload */
+    }
+  };
+  return <TodayBanner icon={shown.icon} title={shown.title} sub={shown.sub} actions={shown.actions} onDismiss={dismiss} />;
 }

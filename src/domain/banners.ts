@@ -1,3 +1,4 @@
+import type { DayKey } from './dates';
 import type { UsageEvent } from './types';
 
 export interface BannerCandidate {
@@ -43,15 +44,34 @@ export function pickBanner<T extends BannerCandidate>(candidates: T[], usage: Pi
   return [...candidates].filter((c) => c.anytime || near).sort((a, b) => b.priority - a.priority)[0];
 }
 
-/** Until 14:00 the morning log asks for itself at any hour, above the other nudges. */
-const MORNING_UNTIL_MIN = 14 * 60;
+/** One banner at a time; higher shows first. The morning log, backup, check-in and occasion follow the spec's order; the others sit around them. */
+export const BANNER_PRIORITY = {
+  update: 100,
+  dose: 95,
+  morningLog: 90,
+  backup: 80,
+  maintenance: 75,
+  checkin: 70,
+  recap: 60,
+  review: 55,
+  occasion: 50,
+  install: 40,
+} as const;
+
+/** Before 14:00 the moment card asks for the morning log; after it, the banner keeps a plain reminder. */
+const MORNING_FROM_MIN = 14 * 60;
 
 /**
- * The morning log banner, by logging minutes (1 am is 25:00). After 14:00 it stays as a plain
- * reminder until the log is done, since the whole day is often logged after 9 pm, but it drops
- * below the backup and weekly nudges.
+ * The morning log banner, by logging minutes (1 am is 25:00). From 14:00 it stays as a plain reminder
+ * until the log is done, since the whole day is often logged after 9 pm.
  */
 export function morningLogBanner(done: boolean, minutes: number): { text: string; priority: number } | undefined {
-  if (done) return undefined;
-  return minutes < MORNING_UNTIL_MIN ? { text: "Morning log: weight, sleep and yesterday's steps.", priority: 7 } : { text: 'Morning log still open.', priority: 5 };
+  if (done || minutes < MORNING_FROM_MIN) return undefined;
+  return { text: 'Morning log still open.', priority: BANNER_PRIORITY.morningLog };
+}
+
+/** Banners dismissed today stay away until the log day ends. */
+export function notDismissed<T extends BannerCandidate>(c: T[], dismissed: { date: DayKey; ids: string[] } | null, today: DayKey): T[] {
+  if (!dismissed || dismissed.date !== today) return c;
+  return c.filter((x) => !dismissed.ids.includes(x.id));
 }

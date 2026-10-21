@@ -1,0 +1,12 @@
+/* Today: a varied page in the Train world. Only the moment card is a card; everything else sits on the page in its own form. */
+
+/* The banner slot: one line between two hairlines, always in the same place. */
+.td-banner { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline); }
+.td-banner-icon { flex: none; display: grid; place-items: center; }
+.td-banner-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.td-banner-text b { font-size: 16px; font-weight: 600; }
+.td-banner-text span { font-size: 14px; color: var(--quiet); }
+.td-banner-acts { flex: none; display: flex; gap: 8px; }
+.td-banner-act { min-height: 44px; padding: 0 16px; border-radius: 22px; border: 1px solid var(--button-edge, var(--hairline)); background: none; color: var(--text); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+.td-banner-act.ghost { font-weight: 400; color: var(--quiet); }
+.td-banner-x { flex: none; width: 44px; height: 44px; margin-right: -10px; display: grid; place-items: center; border: 0; background: none; color: var(--quiet); cursor: pointer; }

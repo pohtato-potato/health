@@ -1,4 +1,5 @@
-import { addDays, dayRange, weekStart, type DayKey } from './dates';
+import { addDays, dayRange, daysBetween, weekStart, type DayKey } from './dates';
+import { festivalOn, nextFestival } from './festivals';
 import { stepsGoal, targetsOn } from './rings';
 import { stepStreak, trainingWeeks, type StepStreak, type TrainingWeeks } from './streaks';
 import { placeFor } from './places';
@@ -102,4 +103,14 @@ export function heldSteady(o: Pick<Occasion, 'from' | 'to'>, trend: { date: DayK
   const a1 = at(after);
   if (a0 === undefined || a1 === undefined) return undefined;
   return { change: Math.round((a1 - a0) * 10) / 10 };
+}
+
+const OCCASION_AHEAD_DAYS = 21;
+
+/** A festival within 21 days that no occasion covers yet: the occasion banner offers to set one up. */
+export function occasionDue(settings: Pick<Settings, 'occasions'>, today: DayKey): { name: string; from: DayKey; to: DayKey; inDays: number } | undefined {
+  const f = festivalOn(today) ?? nextFestival(today);
+  if (!f || f.from > addDays(today, OCCASION_AHEAD_DAYS)) return undefined;
+  if ((settings.occasions ?? []).some((o) => o.from <= f.to && o.to >= f.from)) return undefined;
+  return { name: f.name, from: f.from, to: f.to, inDays: Math.max(0, daysBetween(today, f.from)) };
 }

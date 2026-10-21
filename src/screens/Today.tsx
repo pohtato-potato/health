@@ -28,9 +28,9 @@ import {
   weeksFor,
 } from '../state/derived';
 import { Banners } from './Banners';
+import '../styles/today.css';
 import { forecastData } from '../state/forecastData';
 import { heldBackBy, readinessInk, readinessText } from '../domain/readiness';
-import { OccasionCard } from '../sheets/Occasion';
 import { SeasonStrip, useUnlockedIds } from '../ui/Theme';
 import { hasReward } from '../domain/rewards';
 import { NextUpCard } from './NextUpCard';
@@ -229,8 +229,6 @@ export function Today() {
           </button>
         </div>
       )}
-
-      <OccasionCard settings={settings} today={today} />
 
       <button type="button" className={`card${gap.mode === 'close' ? ' gold' : ''}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }} onClick={() => go('/close')}>
         <Icon name="check" size={22} color={gap.mode === 'close' ? 'var(--gold)' : 'var(--quiet)'} />
