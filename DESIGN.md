@@ -302,6 +302,17 @@ A 56px raised pill docked at the bottom during a session: a blue wash fills left
 ### Walk Band
 A 250px illustrated scene of the current stop, layered far to near in the region's four inks and lit by the part of the day (dawn, day, dusk, night), with the place name in 28px serif over a soft text shadow.
 
+### Today
+- **Varied blocks, not a stack of cards:** only the moment card is a card. The walk, the line, the rings and Next up sit straight on the page, each in its own form.
+- **Walk on Today:** the walk band runs edge to edge and melts into the page; the date, place and status sit in its caption on a dark band (`rgba(8,10,22,.66)`). Tapping it opens the full walk with the place and status pickers.
+- **Banner slot:** one banner at a time, a line between two hairlines with a 44px action and a 44px dismiss that lasts the log day.
+- **The line:** the day's headline in 26px serif, the time trailing it in 14px; the voice in italic only at moments, gold on a perfect day.
+- **Rings:** the drawing, and beside it only the numbers (34px serif in each ring's ink) with a 14px unit. The target and its action appear on tap.
+- **Moment card:** the one lit card (22px radius, soft offset shadow); gold border and button on a perfect day.
+- **Next up strip:** between two hairlines like a departures row; a record night turns it into the gold records strip.
+- **Logging below the fold:** usual-food chips, Log anything, meal tiles (kcal on one line, protein on its own), press-and-hold checklist chips.
+- **Drawer handle:** a pill above the tab bar showing readiness, protein and Close the day; it opens the drawer.
+
 ### Moments and Stories
 Full-screen celebrations on deep night with a centred serif title (36 to 44px), a quiet detail line, one voice line, and a large primary button. Backdrops (bloom, rays, bursts, rings, confetti) use the metric inks and gold. Stories and the monthly film use progress bars of 3px segments and tap zones to advance.
 

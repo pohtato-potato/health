@@ -14,6 +14,7 @@ import { landmarkFor } from '../walk/art/landmarks';
 import { walkCaption } from '../domain/walkCaption';
 import { WalkTop } from './today/WalkTop';
 import { RingsNumbers } from './today/RingsNumbers';
+import { TodayLayout } from './today/TodayLayout';
 import { DrawerHandle, TodayDrawer } from './today/TodayDrawer';
 import { proteinState } from '../domain/proteinState';
 import { ChecklistChips, MealTiles, UsualChips, mealTotals } from './today/LogBelow';
@@ -163,19 +164,30 @@ export function Today() {
   };
   const slots = checklistSlots(settings, today);
   return (
-    <>
-    {walkOpen && <WalkFull scene={<WalkScene km={walkKm} dayN={dayN} caption={false} hero festive={festive} />} caption={caption} settings={settings} today={today} day={day} onClose={() => setWalkOpen(false)} />}
-    <div className="page td-page">
-      <h1 className="sr-only">Today</h1>
-      <WalkTop caption={caption} scene={scene} onOpen={() => setWalkOpen(true)} />
-
-      <TodayLine text={lineText} kind={lineKind} gold={moment === 'perfect'} clock={fmtTime(Date.now())} why={themeDay ? { name: themeDay.name, text: themeDay.why } : undefined} />
-
-      <SeasonStrip settings={settings} today={today} />
-
-      <Banners />
-
-      <RingsNumbers
+    <TodayLayout
+      overlays={
+        <>
+          {walkOpen && <WalkFull scene={<WalkScene km={walkKm} dayN={dayN} caption={false} hero festive={festive} />} caption={caption} settings={settings} today={today} day={day} onClose={() => setWalkOpen(false)} />}
+          {drawerOpen && (
+      <TodayDrawer
+        voice={flag ? line : lineForTheDay(today, moment, line)}
+        readiness={{ score: ready.known ? ready.score : undefined, reason: readyWord(ready) }}
+        protein={{ text: proteinState({ gapG: gap.gapG, closed: rings.protein.closed, dayClosed: !!day?.foodDone }), foods: gap.picks.map((p) => p.name).join(' and ') }}
+        dayClosed={!!day?.foodDone}
+        onReadiness={() => go('/readiness')}
+        onAddGap={addGap}
+        onCloseDay={() => go('/close')}
+        onClose={() => setDrawerOpen(false)}
+      />
+    )}
+        </>
+      }
+      walk={<WalkTop caption={caption} scene={scene} onOpen={() => setWalkOpen(true)} />}
+      banner={<Banners />}
+      line={<TodayLine text={lineText} kind={lineKind} gold={moment === 'perfect'} clock={fmtTime(Date.now())} why={themeDay ? { name: themeDay.name, text: themeDay.why } : undefined} />}
+      season={<SeasonStrip settings={settings} today={today} />}
+      rings={
+        <RingsNumbers
         rows={[
           { key: 'kcal', name: 'Calories', value: fmtInt(totals.kcal), unit: 'kcal', target: `${fmtInt(targets.kcalMin)}–${fmtInt(targets.kcalMax)} kcal`, ink: 'var(--kcal)', known: true },
           { key: 'protein', name: 'Protein', value: String(Math.round(totals.protein)), unit: 'g', target: `of ${targets.proteinG} g`, ink: 'var(--protein)', known: true },
@@ -195,8 +207,9 @@ export function Today() {
         onSaveSteps={(n) => void setSteps(today, n)}
         showCopyHint={logMinutes(Date.now()) >= 19 * 60}
       />
-
-      <MomentCard
+      }
+      moment={
+        <MomentCard
         kind={momentFor({ minutes: logMinutes(Date.now()), status: day?.status, morningDone: !!day?.morning, perfect: rings.perfect, dayClosed: !!day?.foodDone, proteinGapG: gap.gapG, stepsLeft: Math.max(0, stepsLeft) })}
         data={{
           closedRings: rings.closed,
@@ -209,14 +222,14 @@ export function Today() {
         }}
         actions={{ logMorning: () => openSheet('morning'), closeDay: () => go('/close'), addGap, typeSteps: () => openSheet('steps') }}
       />
-
-      {recordsTonight.length ? (
+      }
+      next={recordsTonight.length ? (
         <RecordsStrip records={recordsTonight.map((r) => `${r.exercise} ${fmtSet(r)}`)} onFinale={() => go('/train', { state: 'after' })} />
       ) : (
         <NextUpCard settings={settings} up={up} active={active} trainedToday={trainedToday} weeks={weeks} ready={readyWord(ready)} />
       )}
-
-      <section className="td-log" data-section="log" aria-label="Log">
+      log={
+        <section className="td-log" data-section="log" aria-label="Log">
         {usual.length > 0 && (
           <>
             <h2 className="td-h">Your usual {mealNow}</h2>
@@ -234,25 +247,11 @@ export function Today() {
           </>
         )}
       </section>
-
-    </div>
-    <DrawerHandle ready={ready.known ? ready.score : undefined} protein={proteinState({ gapG: gap.gapG, closed: rings.protein.closed, dayClosed: !!day?.foodDone })} closeLabel={day?.foodDone ? 'Day closed' : 'Close the day'} onOpen={() => setDrawerOpen(true)} />
-    {drawerOpen && (
-      <TodayDrawer
-        voice={flag ? line : lineForTheDay(today, moment, line)}
-        readiness={{ score: ready.known ? ready.score : undefined, reason: readyWord(ready) }}
-        protein={{ text: proteinState({ gapG: gap.gapG, closed: rings.protein.closed, dayClosed: !!day?.foodDone }), foods: gap.picks.map((p) => p.name).join(' and ') }}
-        dayClosed={!!day?.foodDone}
-        onReadiness={() => go('/readiness')}
-        onAddGap={addGap}
-        onCloseDay={() => go('/close')}
-        onClose={() => setDrawerOpen(false)}
-      />
-    )}
-    </>
+      }
+      handle={<DrawerHandle ready={ready.known ? ready.score : undefined} protein={proteinState({ gapG: gap.gapG, closed: rings.protein.closed, dayClosed: !!day?.foodDone })} closeLabel={day?.foodDone ? 'Day closed' : 'Close the day'} onOpen={() => setDrawerOpen(true)} />}
+    />
   );
 }
-
 
 function lineForTheDay(today: string, moment: string, line: string): string {
   const key = 'health.line';
