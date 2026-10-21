@@ -237,7 +237,7 @@ function BodyCard() {
   const tint: Partial<Record<MuscleId, string>> = {};
   for (const m of MUSCLES)
     for (const id of m.ids) {
-      heat[id] = m.sets < m.lo ? 0.55 : 0.85;
+      heat[id] = 0.9;
       tint[id] = m.sets < m.lo ? '#f5ea6a' : m.sets > m.hi ? '#ff5c5c' : '#6fe0b0';
     }
   return (
