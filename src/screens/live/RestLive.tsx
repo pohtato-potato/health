@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import type { SetState } from '../../domain/liveSet';
 import { LiveFrame, mmss, Primary } from './Frame';
 
@@ -14,6 +14,11 @@ interface Props {
   onReady: () => void;
   saver: boolean;
   rings: [string, string, string];
+  /** The note kept on the exercise just done, for next time and the coach. */
+  note?: string;
+  onNote?: (text: string) => void;
+  /** Why the rest is this long. */
+  why?: string;
   top?: ReactNode;
 }
 
@@ -21,6 +26,7 @@ const tagClass = (t: string) => (t === 'record' ? 'gold' : t.startsWith('burn') 
 
 /** Rest: the time in a ring that empties while the background fades from the set's colour to blue. */
 export function RestLive(p: Props) {
+  const [noting, setNoting] = useState(false);
   const left = Math.max(0, Math.ceil((p.endsAt - p.now) / 1000));
   const fade = p.total ? Math.min(1, Math.max(0, 1 - left / p.total)) : 1;
   const R = 118;
@@ -94,6 +100,25 @@ export function RestLive(p: Props) {
           {p.next.cue && <div className="lv-cue">{p.next.cue}</div>}
         </div>
       )}
+      {p.why && <div className="lv-adapt">{p.why}</div>}
+      {p.onNote &&
+        (noting ? (
+          <textarea
+            className="lv-note"
+            aria-label="Note on this exercise"
+            placeholder="For next time and the coach…"
+            defaultValue={p.note}
+            autoFocus
+            onBlur={(e) => {
+              p.onNote!(e.target.value.trim());
+              setNoting(false);
+            }}
+          />
+        ) : (
+          <button type="button" className="lv-link" onClick={() => setNoting(true)}>
+            {p.note ? `Note: ${p.note}` : '+ Note on this exercise'}
+          </button>
+        ))}
       {foot}
     </LiveFrame>
   );

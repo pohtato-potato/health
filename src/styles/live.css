@@ -187,3 +187,10 @@ html.contrast .lv-check, html.contrast .lv-ghost { border-color: var(--text); }
 .lv-row { display: flex; align-items: center; gap: 12px; min-height: 44px; font-size: 16px; border-bottom: 1px solid color-mix(in srgb, var(--text) 10%, transparent); }
 .lv-row .grow { flex: 1; }
 .lv-plates-line { margin: 8px 0 2px; padding: 6px 10px; border-radius: 10px; font-size: 14px; text-align: center; color: #ffc29b; background: color-mix(in srgb, var(--apricot) 14%, transparent); border: 1px dashed color-mix(in srgb, var(--apricot) 45%, transparent); }
+.lv-pill.tempo { border-color: var(--blue-soft); color: var(--blue-soft); }
+.lv-guide { display: flex; flex-direction: column; gap: 10px; font-size: 17px; line-height: 1.5; }
+.lv-guide b { display: block; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, var(--text) 70%, transparent); font-weight: 500; }
+.lv-guide .stop b { color: var(--rose); }
+.lv-link { align-self: flex-start; min-height: 44px; font-size: 15px; color: var(--blue-soft); text-align: left; }
+.lv-note { width: 100%; min-height: 80px; border-radius: 14px; padding: 10px 12px; font: inherit; font-size: 16px; color: var(--text); background: color-mix(in srgb, var(--lv-b) 70%, transparent); border: 1px solid color-mix(in srgb, var(--text) 25%, transparent); resize: none; }
+.lv-adapt { font-size: 14px; text-align: center; color: var(--lv-accent); }

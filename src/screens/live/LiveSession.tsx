@@ -4,12 +4,13 @@ import { RINGS } from '../../domain/liveLook';
 import { burnNudge, justTags, restoreCounter, seconds, setState } from '../../domain/liveSet';
 import { newLoad, recordBar } from '../../domain/marks';
 import { bottomOfRange, measureOf, sidesFor, valueOfSet, type ExerciseDef, type PlanDef } from '../../domain/plan';
-import { loadBlocks, plateChanges, usualLength } from '../../domain/sessionEdges';
+import { addSetup, loadBlocks, plateChanges, setupOn, usualLength } from '../../domain/sessionEdges';
+import { dayKey } from '../../domain/dates';
 import { movementKind } from '../../domain/trainingChecks';
 import { useSessions } from '../../db/hooks';
 import { historyFor } from '../../domain/progression';
 import type { LiveCounter, SetEntry, Settings, TrainingSession } from '../../domain/types';
-import { patchSession } from '../../db/actions';
+import { patchSession, patchSettings } from '../../db/actions';
 import { go } from '../../router';
 import { Icon } from '../../ui/Icon';
 import { useLiveTheme } from '../../ui/live/useLiveTheme';
@@ -19,6 +20,7 @@ import { findLogged, type Row } from '../session/SetTable';
 import type { useRunner } from '../session/useRunner';
 import { BeforeScreen } from './BeforeScreen';
 import { CheckScreen } from './CheckScreen';
+import { GuideScreen } from './GuideScreen';
 import { LiveFrame, Primary } from './Frame';
 import { RestLive } from './RestLive';
 import { SetScreen } from './SetScreen';
@@ -175,6 +177,9 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
               }
             : null
         }
+        note={lastDone ? session.exNotes?.[lastDone.exerciseId] : undefined}
+        onNote={lastDone ? (text) => patchSession(session.id, { exNotes: { ...session.exNotes, [lastDone.exerciseId]: text } }) : undefined}
+        why={session.restWhy}
         onMore={() => r.extendRest(30)}
         onReady={() => {
           r.stopRest();
@@ -214,6 +219,24 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
 
   const prev = prevOf(row);
   const lead = leadOf(row.ex);
+
+  if (row.setNo === 1 && !row.drop && !session.guided?.includes(row.ex.id) && !r.mine.some((m) => m.exerciseId === row.ex.id)) {
+    return (
+      <GuideScreen
+        ex={row.ex}
+        name={nameOf(row.ex)}
+        kg={r.defaults(row).kg}
+        lead={lead}
+        tempo={!!session.tempo?.[row.ex.id]}
+        setup={setupOn(settings, row.ex, session.date)}
+        onSetup={(text) => patchSettings((s) => ({ setups: addSetup(s.setups, row.ex.id, dayKey(), text) }))}
+        checks={checksFor(row.ex)}
+        onGo={() => patchSession(session.id, { guided: [...(session.guided ?? []), row.ex.id] })}
+        saver={saver}
+        top={top}
+      />
+    );
+  }
   const offer = r.offerFor?.ex.id === row.ex.id ? r.offerFor.offer : undefined;
   return (
     <>

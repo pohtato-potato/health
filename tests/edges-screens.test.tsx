@@ -33,3 +33,38 @@ describe('before the session', () => {
     expect(before()).toContain('one plate change');
   });
 });
+
+import { GuideScreen } from '../src/screens/live/GuideScreen';
+import { RestLive } from '../src/screens/live/RestLive';
+import type { ExerciseDef } from '../src/domain/plan';
+
+const row: ExerciseDef = { id: 'lean-lateral', order: '4', name: 'Lean-away lateral raise', sets: 3, reps: [12, 20], load: 'pair', perSide: true, lead: 'L', leadWhy: 'the smaller left side leads', guide: { setup: 'Hold the door frame.', movement: 'Raise to shoulder height.', breathing: '', faults: [], feel: 'Side of the shoulder.', stop: '', progress: '' } };
+const guide = (p: Partial<Parameters<typeof GuideScreen>[0]> = {}) =>
+  renderToStaticMarkup(<GuideScreen ex={row} name={row.name} kg={5} lead="L" tempo={false} setup={{ text: 'Door frame, left hand', from: '2026-10-21' }} onSetup={noop} checks={[]} onGo={noop} saver={false} {...p} />);
+
+describe('the guide before the first set', () => {
+  it('names the lead side and why', () => {
+    const h = guide();
+    expect(h).toContain('LEFT FIRST');
+    expect(h).toContain('the smaller left side leads');
+  });
+  it('shows only the guide sections that exist', () => {
+    const h = guide();
+    expect(h).toContain('Raise to shoulder height.');
+    expect(h).not.toContain('>Stop<');
+  });
+  it('shows the setup and since when', () => expect(guide()).toContain('Your setup · from 21 Oct'));
+  it('offers to add a setup when there is none', () => expect(guide({ setup: undefined })).toContain('Add my setup'));
+  it('lists the checks only when the plan has them', () => {
+    expect(guide()).not.toContain('check after each set');
+    expect(guide({ checks: [{ id: 'a', text: 'Lead with the elbow', kind: 'do' }] })).toContain('Lead with the elbow');
+  });
+  it('says the tempo when it is on', () => expect(guide({ tempo: true })).toContain('Tempo: lower 3 s, lift 1 s'));
+});
+
+describe('a note from the rest screen', () => {
+  const rest = (note?: string) =>
+    renderToStaticMarkup(<RestLive endsAt={60_000} total={90} now={0} from="in" just={[]} next={null} onMore={noop} onReady={noop} saver={false} rings={['#111111', '#222222', '#333333']} note={note} onNote={noop} />);
+  it('shows the note kept', () => expect(rest('Elbow ached on set 3')).toContain('Note: Elbow ached on set 3'));
+  it('offers one when there is none', () => expect(rest()).toContain('+ Note on this exercise'));
+});
