@@ -388,8 +388,8 @@ button.card:active {
   font-weight: 400;
 }
 .btn.sm {
-  height: 40px;
-  border-radius: 20px;
+  height: 44px;
+  border-radius: 22px;
   font-size: 14px;
   padding: 0 14px;
 }
@@ -471,7 +471,7 @@ button.card:active {
   font-weight: 600;
 }
 .chip.sm {
-  height: 36px;
+  height: 44px;
   padding: 0 12px;
   font-size: 13px;
 }

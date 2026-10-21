@@ -1232,7 +1232,7 @@
   display: flex;
   align-items: baseline;
   gap: 6px;
-  min-height: 32px;
+  min-height: 44px;
   width: 100%;
   text-align: left;
 }
@@ -1248,7 +1248,7 @@
   font-weight: 700;
 }
 .place-chip {
-  min-height: 34px;
+  min-height: 44px;
   padding: 0 12px;
   border-radius: 999px;
   border: 1px solid var(--hairline);
