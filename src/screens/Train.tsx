@@ -1,27 +1,27 @@
-import { useState } from 'react';
 import { addDays, daysBetween } from '../domain/dates';
 import { fmtDayMonth, fmtInt, weekdayName } from '../domain/format';
 import { fmtKg } from '../domain/loads';
-import { extraSessions, findSession, realSets, valueOfSet } from '../domain/plan';
+import { extraSessions, findExercise, findSession, realSets, valueOfSet } from '../domain/plan';
 import { removeExercise } from '../domain/planEdit';
 import { loggedLater, neglectedExercises, suspiciousSets } from '../domain/trainingChecks';
 import { askConfirm } from '../ui/Confirm';
-import { recordShot } from '../domain/strengthForecast';
-import { songAt } from '../sources/lastfm';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db/db';
 import type { SetEntry, Settings, TrainingSession } from '../domain/types';
 import { useActiveSession, useAllDays, useAllSets, useSessions, useSettings, useToday } from '../db/hooks';
 import { go, openSheet } from '../router';
-import { Icon } from '../ui/Icon';
 import { doneSessions, nextUp, triggersMet, weeksFor } from '../state/derived';
 import { NextUpCard } from './NextUpCard';
 import { sessionStats } from './SessionDone';
-import { MuscleCard } from './MuscleMap';
 import { deloadCase } from '../domain/deload';
 import { placeFor } from '../domain/places';
 import { TRIP_SESSION_ID } from '../domain/trip';
 import { markSetsSkipped, patchSettings } from '../db/actions';
+import { batteryMode } from '../domain/rest';
+import { loadBlocks, plateChanges, usualLength } from '../domain/sessionEdges';
+import { formFocus, fourWeeksAgo, monthSoFar, tonight, volumeLine, weekVolume } from '../domain/trainView';
+import { useBatteryLevel } from '../ui/RestScreen';
+import { Aurora } from '../ui/live/Aurora';
+import { TonightCard, UpNextCard } from './train/Cards';
+import { BodyCard, FourWeeksCard, MonthCard, PlanCard, RecentCard, RecordsCard } from './train/Sections';
 
 export function Train() {
   const settings = useSettings();
@@ -30,7 +30,7 @@ export function Train() {
   const sets = useAllSets();
   const days = useAllDays();
   const active = useActiveSession();
-  const [showRules, setShowRules] = useState(false);
+  const level = useBatteryLevel();
   if (!settings || !sessions || !sets || !days || active === undefined) return <div className="page" />;
 
   const plan = settings.plan;
@@ -43,6 +43,7 @@ export function Train() {
     );
   }
 
+  const saver = batteryMode(level, !!settings.prefs.batterySaver);
   const up = nextUp(settings, sessions, sets, days);
   const weeks = weeksFor(settings, sessions, today, days);
   const done = doneSessions(sessions);
@@ -52,111 +53,108 @@ export function Train() {
   const lighterOn = !!settings.lighterWeek && today >= settings.lighterWeek.from && today <= settings.lighterWeek.to;
   const todayDay = days.find((d) => d.date === today);
   const isTripDay = placeFor(todayDay, settings).kind === 'trip' || todayDay?.status === 'travelling';
+  const tn = active ? undefined : tonight(sessions, sets, today);
+  const next = up ? findSession(plan, up.sessionId) : undefined;
+  const nameOf = (id: string) => findSession(plan, id)?.name ?? `Session ${id}`;
+  const focusId = tn?.session.session ?? up?.sessionId;
+  const four = focusId ? fourWeeksAgo(sessions, sets, focusId, today) : undefined;
+  const volume = weekVolume(sets, plan, today);
+  const month = monthSoFar(sessions, sets, today);
+  const d = new Date(`${today}T12:00:00`);
+  const monthName = d.toLocaleString('en-IN', { month: 'long' });
+  const nextMonth = new Date(d.getFullYear(), d.getMonth() + 1, 1).toLocaleString('en-IN', { month: 'short' });
+  const seen = new Set<string>();
+  const allRecords = realSets(sets).filter((x) => x.mark === '!!');
+  const recs = [...allRecords]
+    .sort((x, y) => y.at - x.at)
+    .filter((x) => !seen.has(x.exerciseId) && seen.add(x.exerciseId))
+    .slice(0, 3);
+  const fmtSet = (s: SetEntry) => `${s.loadKg !== null ? `${fmtKg(s.loadKg)} kg × ` : ''}${valueOfSet(s) ?? 0}${s.seconds !== undefined && s.reps === undefined ? ' s' : ''}`;
 
   return (
-    <div className="page">
-      <div className="row base">
-        <h1 className="h1">Train</h1>
-        <span className="row" style={{ gap: 6 }} aria-label={`${Math.min(weeks.thisWeek, weeks.perWeek)} of ${weeks.perWeek} sessions this week`}>
+    <div className={`page lv lv-tab ${tn?.records.length ? 'st-record' : 'st-calm'}${saver ? ' saver' : ''}`}>
+      <Aurora still={saver} />
+      <div className="lv-tr-head">
+        <h1 className="lv-h1">Train</h1>
+        <div className="lv-tr-week" aria-label={`${Math.min(weeks.thisWeek, weeks.perWeek)} of ${weeks.perWeek} sessions this week`}>
           {Array.from({ length: weeks.perWeek }, (_, i) => (
-            <i key={i} className={`wk-dot${i < weeks.thisWeek ? ' on' : ''}`} />
+            <i key={i} className={i < weeks.thisWeek ? 'on' : ''} />
           ))}
-          <span className="t13 q" style={{ marginLeft: 4 }}>
-            {Math.min(weeks.thisWeek, weeks.perWeek)} of {weeks.perWeek}
+          <span>
+            {Math.min(weeks.thisWeek, weeks.perWeek)} of {weeks.perWeek} this week
           </span>
-        </span>
+        </div>
       </div>
 
       {triggers.map((t) => (
-        <div key={t.id} className="card gold">
-          <div className="lbl gold">{t.title}</div>
-          <div className="t15 lh">{t.message}</div>
+        <div key={t.id} className="lv-card gold">
+          <div className="lv-kicker gold">{t.title}</div>
+          <div className="lv-small">{t.message}</div>
         </div>
       ))}
 
-      {active || trainedToday.length || !up ? (
+      {active || (!tn && (trainedToday.length || !up)) ? (
         <NextUpCard settings={settings} up={up} active={active} trainedToday={trainedToday} weeks={weeks} />
+      ) : tn ? (
+        <TonightCard
+          name={nameOf(tn.session.session)}
+          records={tn.records.map((r) => `${r.exercise} ${fmtSet(r)}`)}
+          mins={tn.mins}
+          sets={tn.sets}
+          liftMin={tn.liftMin}
+          quality={tn.quality}
+          checks={tn.checks}
+          next={up ? `Next is ${nameOf(up.sessionId)}.` : undefined}
+          onReplay={() => go('/session/replay', { id: tn.session.id })}
+        />
       ) : (
+        up &&
         (() => {
-          const next = findSession(plan, up.sessionId);
-          const names = up.exercises.map((e) => e.status.name);
-          const shot = up.exercises.map((e) => recordShot({ id: e.id, name: e.status.name }, sets)).find((x): x is string => !!x);
-          const heavier = up.exercises.filter((e) => e.status.advice && e.status.advice.kind !== 'maxed').length;
+          const exs = up.exercises.map((e) => findExercise(plan, e.id)).filter((e): e is NonNullable<typeof e> => !!e);
+          const kgOf = (ex: { id: string }) => up.exercises.find((e) => e.id === ex.id)?.status.loadKg ?? null;
+          const blocks = loadBlocks(exs, kgOf);
           return (
-            <div className="card" style={{ gap: 12 }}>
-              <div className="row top">
-                <span className="col gap2">
-                  <span className="serif" style={{ fontSize: 24, fontWeight: 600 }}>
-                    {next?.name ?? `Session ${up.sessionId}`}
-                  </span>
-                  <span className="t13 q">
-                    {next?.focus} · {names.length} exercises
-                  </span>
-                </span>
-                {(shot || heavier > 0) && (
-                  <span className="t13 gold right" style={{ maxWidth: 120, lineHeight: 1.3 }}>
-                    {shot ? shot.charAt(0).toUpperCase() + shot.slice(1) : `${heavier} ready to go heavier`}
-                  </span>
-                )}
-              </div>
-              <div className="row wrap" style={{ gap: 6, justifyContent: 'flex-start' }}>
-                {names.slice(0, 3).map((n) => (
-                  <span key={n} className="chip sm static">
-                    {n}
-                  </span>
-                ))}
-                {names.length > 3 && <span className="chip sm static q">+{names.length - 3}</span>}
-              </div>
-              {up.swaps.length > 0 && <div className="t13 apri lh">{up.swaps.length} swapped out for a joint flag.</div>}
-              <div className="row" style={{ gap: 8 }}>
-                <button type="button" className="btn grow" onClick={() => go('/session', { start: up.sessionId })}>
-                  Start · {next?.minutes ?? 60} min
-                </button>
-                <button type="button" className="btn ghost" onClick={() => openSheet('short', { session: up.sessionId })}>
-                  <Icon name="clock" size={16} /> 30 min
-                </button>
-              </div>
-              {(isTripDay || extraSessions(plan).length > 0) && (
-                <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
-                  {isTripDay && (
-                    <button type="button" className="chip sm" onClick={() => go('/session', { start: TRIP_SESSION_ID })}>
-                      Trip workout instead
-                    </button>
-                  )}
-                  {extraSessions(plan).map((x) => (
-                    <button key={x.id} type="button" className="chip sm" onClick={() => go('/session', { start: x.id })}>
-                      {x.name} tonight
-                    </button>
-                  ))}
-                </div>
-              )}
-              {extraSessions(plan).length > 0 && <div className="t12 q lh">An extra session counts toward the week; {next?.name ?? `Session ${up.sessionId}`} stays next.</div>}
-            </div>
+            <UpNextCard
+              name={next?.name ?? `Session ${up.sessionId}`}
+              usual={usualLength(sessions, sets, up.sessionId, next?.minutes ?? 60)}
+              changes={plateChanges(blocks)}
+              heavier={up.exercises.filter((e) => e.status.advice && e.status.advice.kind !== 'maxed').length}
+              focus={formFocus(sets, plan, up.sessionId)}
+              blocks={blocks.map((b) => ({ kg: b.kg, items: b.exs.map((ex) => ({ name: up.exercises.find((e) => e.id === ex.id)?.status.name ?? ex.name, light: false })) }))}
+              swaps={up.swaps.length}
+              onStart={() => go('/session', { start: up.sessionId })}
+              onShort={() => openSheet('short', { session: up.sessionId })}
+              chips={[
+                ...(isTripDay ? [{ label: 'Trip workout instead', onClick: () => go('/session', { start: TRIP_SESSION_ID }) }] : []),
+                ...extraSessions(plan).map((x) => ({ label: `${x.name} tonight`, onClick: () => go('/session', { start: x.id }) })),
+              ]}
+              note={extraSessions(plan).length ? `An extra session counts toward the week; ${next?.name ?? `Session ${up.sessionId}`} stays next.` : undefined}
+            />
           );
         })()
       )}
 
       {lighterOn ? (
-        <div className="card">
-          <div className="lbl blue">Lighter week</div>
-          <div className="t15 lh">One set fewer per exercise, same weights, until {fmtDayMonth(settings.lighterWeek!.to)}.</div>
+        <div className="lv-card">
+          <div className="lv-card-h">Lighter week</div>
+          <div className="lv-small">One set fewer per exercise, same weights, until {fmtDayMonth(settings.lighterWeek!.to)}.</div>
         </div>
       ) : (
         lighter.due &&
         (!settings.lighterDismissed || daysBetween(settings.lighterDismissed, today) >= 7) && (
-          <div className="card">
-            <div className="lbl blue">A lighter week?</div>
+          <div className="lv-card">
+            <div className="lv-card-h">A lighter week?</div>
             {lighter.evidence.map((e) => (
-              <div key={e} className="t14 lh">
+              <div key={e} className="lv-small">
                 {e}
               </div>
             ))}
-            <div className="t13 q lh">Fewer sets at the same weights for a week. Your call.</div>
-            <div className="row" style={{ gap: 10 }}>
-              <button type="button" className="btn ghost grow" onClick={() => patchSettings({ lighterDismissed: today })}>
+            <div className="lv-small">Fewer sets at the same weights for a week. Your call.</div>
+            <div className="lv-actions">
+              <button type="button" className="lv-ghost" onClick={() => patchSettings({ lighterDismissed: today })}>
                 Not now
               </button>
-              <button type="button" className="btn grow" onClick={() => patchSettings({ lighterWeek: { from: today, to: addDays(today, 6) } })}>
+              <button type="button" className="lv-primary" onClick={() => patchSettings({ lighterWeek: { from: today, to: addDays(today, 6) } })}>
                 Take it
               </button>
             </div>
@@ -166,71 +164,33 @@ export function Train() {
 
       <TidyCards settings={settings} sessions={sessions} sets={sets} />
 
-      <MuscleCard sets={sets} plan={plan} today={today} />
+      {four && focusId && <FourWeeksCard name={nameOf(focusId)} then={four.then} rows={four.rows} />}
 
-      <RecordsCard sets={sets} />
+      <BodyCard rows={volume} line={volumeLine(volume)} onOpen={() => go('/muscles')} />
 
-      <button type="button" className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }} onClick={() => go('/plan')}>
-        <span className="col gap2 grow" style={{ textAlign: 'left' }}>
-          <span className="t16">The plan</span>
-          <span className="t13 q">
-            {plan.name} · {plan.sessions.map((x) => `${x.id}: ${x.exercises.length} exercises`).join(' · ')}
-          </span>
-        </span>
-        <Icon name="right" size={16} stroke={1.8} color="var(--dim)" />
-      </button>
+      <RecordsCard total={allRecords.length} rows={recs.map((r) => ({ what: fmtSet(r), name: r.exercise, when: r.date === today ? 'tonight' : fmtDayMonth(r.date) }))} onAll={() => go('/records')} />
 
-      {(plan.warmup || plan.rules?.length) && (
-        <div className="card" style={{ gap: 10 }}>
-          <button type="button" className="row" onClick={() => setShowRules(!showRules)} aria-expanded={showRules}>
-            <span className="lbl">Warm-up and rules</span>
-            <Icon name={showRules ? 'up' : 'down'} size={16} stroke={1.8} color="var(--dim)" />
-          </button>
-          {showRules && (
-            <div className="col gap10 t14 lh">
-              {plan.warmup && (
-                <div>
-                  <b style={{ fontWeight: 500 }}>Warm-up.</b> <span className="q">{plan.warmup}</span>
-                </div>
-              )}
-              {plan.rules?.map((r) => (
-                <div key={r.title}>
-                  <b style={{ fontWeight: 500 }}>{r.title}.</b> <span className="q">{r.text}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      <MonthCard month={monthName} next={`1 ${nextMonth}`} m={month} film={Number(today.slice(8)) <= 3} onFilm={() => go('/film')} />
 
-      {done.length > 0 && (
-        <div className="card" style={{ gap: 0, paddingBottom: 8 }}>
-          <div className="lbl" style={{ paddingBottom: 6 }}>
-            Recent sessions
-          </div>
-          {[...done]
-            .reverse()
-            .slice(0, 6)
-            .map((s) => {
-              const mine = sets.filter((x) => x.sessionId === s.id);
-              const st = sessionStats(mine, plan);
-              const mins = Math.round(((s.endedAt ?? s.startedAt) - s.startedAt) / 60000);
-              const later = loggedLater(mine);
-              return (
-                <button key={s.id} type="button" className="sess" onClick={() => go('/session/view', { id: s.id })}>
-                  <span className="col gap2 t15">
-                    {weekdayName(s.date)} · {findSession(plan, s.session)?.name ?? s.session}
-                    <span className="t12 q">
-                      {later ? 'logged later' : `${mins} min`} · {st.sets} set{st.sets === 1 ? '' : 's'}{st.kg ? ` · ${fmtInt(st.kg)} kg moved` : ''}
-                      {s.short ? ' · short' : ''}
-                    </span>
-                  </span>
-                  <span className={`t12 ${st.records ? 'gold' : 'q'}`}>{st.records ? `${st.records} record${st.records === 1 ? '' : 's'} ›` : '›'}</span>
-                </button>
-              );
-            })}
-        </div>
-      )}
+      <RecentCard
+        rows={[...done]
+          .reverse()
+          .slice(0, 6)
+          .map((s) => {
+            const mine = sets.filter((x) => x.sessionId === s.id);
+            const st = sessionStats(mine, plan);
+            const mins = Math.round(((s.endedAt ?? s.startedAt) - s.startedAt) / 60000);
+            return {
+              id: s.id,
+              title: `${weekdayName(s.date)} · ${nameOf(s.session)}`,
+              sub: `${loggedLater(mine) ? 'logged later' : `${mins} min`} · ${st.sets} set${st.sets === 1 ? '' : 's'}${st.kg ? ` · ${fmtInt(st.kg)} kg moved` : ''}${s.short ? ' · short' : ''}`,
+              records: st.records,
+            };
+          })}
+        onOpen={(id) => go('/session/view', { id })}
+      />
+
+      <PlanCard name={plan.name} sessions={plan.sessions.map((x) => x.id)} since={plan.from} warmup={plan.warmup} rules={plan.rules ?? []} onOpen={() => go('/plan')} />
     </div>
   );
 }
@@ -246,7 +206,7 @@ function TidyCards({ settings, sessions, sets }: { settings: Settings; sessions:
   return (
     <>
       {odd.length > 0 && (
-        <div className="card" style={{ gap: 8 }}>
+        <div className="lv-card">
           <div className="lbl">Sets that look unfinished</div>
           <div className="t14 lh">
             {odd.length} saved set{odd.length === 1 ? '' : 's'} look{odd.length === 1 ? 's' : ''} like a placeholder: 1 rep with no weight, or under a third of the sets around {odd.length === 1 ? 'it' : 'them'}. They count toward records and volume until skipped.
@@ -271,7 +231,7 @@ function TidyCards({ settings, sessions, sets }: { settings: Settings; sessions:
       {left.map((n) => {
         const flagged = plan.flags.some((f) => f.swap && (f.swap.from === n.exerciseId || f.swap.to === n.exerciseId));
         return (
-          <div key={n.exerciseId} className="card" style={{ gap: 8 }}>
+          <div key={n.exerciseId} className="lv-card">
             <div className="lbl">Always skipped</div>
             <div className="t15 lh">
               {n.name} was left out of the last {n.missed} {findSession(plan, n.sessionId)?.name ?? n.sessionId} sessions. Move it, swap it, or drop it from the plan?
@@ -300,44 +260,5 @@ function TidyCards({ settings, sessions, sets }: { settings: Settings; sessions:
         );
       })}
     </>
-  );
-}
-
-const MEDAL_INK = ['var(--gold)', '#c9ccd6', '#d39a6a'];
-
-/** Records (s7): the three latest, as gold, silver and bronze, and the song the newest was set to. */
-function RecordsCard({ sets }: { sets: SetEntry[] }) {
-  const songs = useLiveQuery(() => db.songs.toArray(), []) ?? [];
-  const seen = new Set<string>();
-  const recs = realSets(sets)
-    .filter((x) => x.mark === '!!')
-    .sort((x, y) => y.at - x.at)
-    .filter((x) => !seen.has(x.exerciseId) && seen.add(x.exerciseId))
-    .slice(0, 3);
-  if (!recs.length) return null;
-  const song = songAt(recs[0].at, songs);
-  return (
-    <div className="card" style={{ gap: 12 }}>
-      <div className="row base">
-        <span className="lbl">Records</span>
-        <button type="button" className="link t13" style={{ minHeight: 32 }} onClick={() => go('/records')}>
-          All ›
-        </button>
-      </div>
-      <div className="grid3">
-        {recs.map((r, i) => (
-          <span key={r.id} className="rec-medal" style={{ ['--medal' as string]: MEDAL_INK[i] }}>
-            <b className="serif tn">{r.reps ?? r.seconds ?? r.steps}</b>
-            <span className="t12">{r.exercise}</span>
-            <span className="t12 q">{r.loadKg ? `${fmtKg(r.loadKg)} kg` : 'bodyweight'}</span>
-          </span>
-        ))}
-      </div>
-      {song && (
-        <div className="t13 q lh">
-          {recs[0].exercise} {recs[0].reps}, set to <span style={{ color: 'var(--text)' }}>{song.track}</span>
-        </div>
-      )}
-    </div>
   );
 }
