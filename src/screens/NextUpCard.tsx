@@ -1,5 +1,5 @@
-import { loggedLater } from '../domain/trainingChecks';
-import { fmtInt, lowerFirst, weekdayName } from '../domain/format';
+import { doneTodayLine, loggedLater, unfinishedInSession } from '../domain/trainingChecks';
+import { lowerFirst, weekdayName } from '../domain/format';
 import { findSession } from '../domain/plan';
 import type { Settings, TrainingSession } from '../domain/types';
 import { useAllSets, useNow } from '../db/hooks';
@@ -67,10 +67,18 @@ export function NextUpCard({
     const sd = findSession(plan, s.session);
     const n = sets?.filter((x) => x.sessionId === s.id && !x.drop).length ?? 0;
     const mins = Math.round(((s.endedAt ?? s.startedAt) - s.startedAt) / 60000);
+    // The same unfinished-sets check as Train, so Today never calls a placeholder session a clean finish.
+    const done = doneTodayLine({
+      mins,
+      later: !!sets && loggedLater(sets.filter((x) => x.sessionId === s.id)),
+      sets: n,
+      short: s.short,
+      unfinished: sets ? unfinishedInSession(s.id, sets, settings.keptSets) : 0,
+    });
     return (
-      <button type="button" className="card" onClick={() => go('/session/view', { id: s.id })}>
+      <button type="button" className="card" onClick={() => (done.clean ? go('/session/view', { id: s.id }) : go('/train'))}>
         <div className="row">
-          <div className="lbl sage">Done today</div>
+          <div className={`lbl${done.clean ? ' sage' : ''}`}>{done.clean ? 'Done today' : 'Saved today'}</div>
           <div className="t13 q">
             {Math.min(weeks.thisWeek, weeks.perWeek)} of {weeks.perWeek} this week
           </div>
@@ -79,7 +87,7 @@ export function NextUpCard({
           {sd?.name ?? `Session ${s.session}`}
         </div>
         <div className="t14 q">
-          {sets && loggedLater(sets.filter((x) => x.sessionId === s.id)) ? 'Logged later' : `${mins} min`} · {fmtInt(n)} set{n === 1 ? '' : 's'}{s.short ? ' · short' : ''}. Next time: {def?.name ?? up.sessionId}.
+          {done.text}. Next time: {def?.name ?? up.sessionId}.
         </div>
       </button>
     );

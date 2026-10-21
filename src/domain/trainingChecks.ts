@@ -49,6 +49,20 @@ export function suspiciousSets(sets: SetEntry[], kept: string[] = []): SetEntry[
   return out.sort((a, b) => a.at - b.at);
 }
 
+/** How many of one session's sets Train would flag as unfinished: the same check, so both tabs agree. */
+export function unfinishedInSession(sessionId: string, sets: SetEntry[], kept: string[] = []): number {
+  return suspiciousSets(sets, kept).filter((s) => s.sessionId === sessionId).length;
+}
+
+/**
+ * The line under a session done today. A clean finish shows its length and sets; unfinished sets
+ * replace that with a plain pointer to Train, so the session never reads as a clean finish.
+ */
+export function doneTodayLine(p: { mins: number; later: boolean; sets: number; short: boolean; unfinished: number }): { clean: boolean; text: string } {
+  if (p.unfinished > 0) return { clean: false, text: `${p.unfinished} set${p.unfinished === 1 ? ' looks' : 's look'} unfinished · check on Train` };
+  return { clean: true, text: `${p.later ? 'Logged later' : `${p.mins} min`} · ${p.sets} set${p.sets === 1 ? '' : 's'}${p.short ? ' · short' : ''}` };
+}
+
 export interface Neglected {
   exerciseId: string;
   name: string;
