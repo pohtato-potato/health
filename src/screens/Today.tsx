@@ -1,17 +1,20 @@
 import { useMemo, useState } from 'react';
 import { addDays, logHour, weekStart } from '../domain/dates';
-import { fmtDayShort, fmtDuration, fmtInt } from '../domain/format';
+import { fmtDuration, fmtInt } from '../domain/format';
 import { findSession } from '../domain/plan';
 import { sleepMinutes, stepsGoal } from '../domain/rings';
-import { type Day, type Settings } from '../domain/types';
 import { pinnedLine, voiceLine, plainFlagLine, type Moment } from '../domain/voice';
-import { addEntries, bump, changePlace, deleteEntry } from '../db/actions';
+import { addEntries, bump, deleteEntry } from '../db/actions';
 import { useKonami } from '../ui/useKonami';
 import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useSessions, useSettings, useToday } from '../db/hooks';
 import { prefOn } from '../domain/types';
 import { voiceFor } from '../domain/voice';
 import { mealForTime, portionFor } from '../domain/foods';
-import { kmFromSteps } from '../domain/walk';
+import { kmFromSteps, positionAt } from '../domain/walk';
+import { landmarkFor } from '../walk/art/landmarks';
+import { walkCaption } from '../domain/walkCaption';
+import { WalkTop } from './today/WalkTop';
+import { WalkFull } from './today/WalkFull';
 import { placeFor } from '../domain/places';
 import { proteinGap, stepTopUp } from '../domain/proteinGap';
 import { WalkScene } from '../walk/WalkScene';
@@ -39,8 +42,6 @@ import { themeDayOn } from '../domain/calendar';
 import { ThemedRings } from '../ui/rings/ThemedRings';
 import { daysBetween } from '../domain/dates';
 import { journeyStart as journeyStartOf } from './Journey';
-import { PlaceIcon } from '../ui/PlaceIcon';
-import { STATUSES, StatusRow } from '../ui/StatusRow';
 import { seasonalThemeOn } from '../domain/themes';
 import type { Festive } from '../walk/art/festive';
 
@@ -64,6 +65,7 @@ export function Today() {
   });
 
   const day = useMemo(() => days?.find((d) => d.date === today), [days, today]);
+  const [walkOpen, setWalkOpen] = useState(false);
 
   if (!settings || !days || !entries || !sessions || !sets || active === undefined || !foods || !weekEntries || !monthEntries) {
     return <div className="page" />;
@@ -139,17 +141,19 @@ export function Today() {
       <span className="t14 q grow right tn">{right}</span>
     </button>
   );
+  const dayN = daysBetween(journeyStartOf(settings, days), today) + 1;
+  const pos = positionAt(walkKm);
+  const ahead = pos.to ?? pos.from;
+  const here = settings.places?.length ? placeFor(day, settings, Date.now()) : undefined;
+  const caption = walkCaption({ date: today, place: here?.name, status: day?.status, near: pos.from.name, dayN, kmToNext: pos.to ? Math.max(0, pos.to.km - walkKm) : 0, landmark: landmarkFor(ahead.name)?.label ?? ahead.name });
+  const festive = prefOn(settings.prefs, 'seasonal') ? (seasonalThemeOn(today, settings.birthday) as Festive | undefined) : undefined;
+  const scene = <WalkScene km={walkKm} dayN={dayN} caption={false} festive={festive} />;
   return (
     <>
-    <div className="page">
-      <div className="row base">
-        <h1 className="t14" style={{ margin: 0, fontWeight: 600 }}>
-          {fmtDayShort(today)}
-        </h1>
-        <PlaceChip settings={settings} today={today} day={day} />
-      </div>
-
-      <WalkScene km={walkKm} dayN={daysBetween(journeyStartOf(settings, days), today) + 1} festive={prefOn(settings.prefs, 'seasonal') ? seasonalThemeOn(today, settings.birthday) as Festive | undefined : undefined} />
+    {walkOpen && <WalkFull scene={<WalkScene km={walkKm} dayN={dayN} caption={false} hero festive={festive} />} caption={caption} settings={settings} today={today} day={day} onClose={() => setWalkOpen(false)} />}
+    <div className="page td-page">
+      <h1 className="sr-only">Today</h1>
+      <WalkTop caption={caption} scene={scene} onOpen={() => setWalkOpen(true)} />
 
       <div className="voice" style={flag ? { fontStyle: 'normal', fontFamily: 'var(--sans)', fontSize: 15, color: 'var(--apricot)' } : undefined}>
         {flag ? line : lineForTheDay(today, moment, line)}
@@ -257,42 +261,3 @@ function lineForTheDay(today: string, moment: string, line: string): string {
   return line;
 }
 
-/** "Office · change": where today is, with a tap to change it. Later in the day it records a move. */
-function PlaceChip({ settings, today, day }: { settings: Settings; today: string; day: Day | undefined }) {
-  const [open, setOpen] = useState(false);
-  const places = settings.places?.length ? settings.places : [];
-  const here = placeFor(day, settings, Date.now());
-  if (!places.length) return null;
-  const status = day?.status;
-  return (
-    <div className="col gap8" style={{ alignItems: 'flex-end' }}>
-      <button type="button" className="place-chip" aria-expanded={open} onClick={() => setOpen(!open)}>
-        <PlaceIcon place={here} size={14} /> {here.name}
-        {status ? ` · ${STATUSES.find((x) => x.id === status)?.label.toLowerCase()}` : ''} · <span className="q">change</span>
-      </button>
-      {open && (
-        <div className="panel col gap8" style={{ alignSelf: 'stretch' }}>
-          <span className="lbl">Where now</span>
-          <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
-            {places.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                className={`chip sm${p.id === here.id ? ' on' : ''}`}
-                aria-pressed={p.id === here.id}
-                onClick={() => {
-                  setOpen(false);
-                  if (p.id !== here.id) void changePlace(today, p.id);
-                }}
-              >
-                <PlaceIcon place={p} size={14} /> {p.name}
-              </button>
-            ))}
-          </div>
-          <span className="lbl">Status</span>
-          <StatusRow today={today} current={status} />
-        </div>
-      )}
-    </div>
-  );
-}

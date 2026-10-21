@@ -10,3 +10,22 @@
 .td-banner-act { min-height: 44px; padding: 0 16px; border-radius: 22px; border: 1px solid var(--button-edge, var(--hairline)); background: none; color: var(--text); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
 .td-banner-act.ghost { font-weight: 400; color: var(--quiet); }
 .td-banner-x { flex: none; width: 44px; height: 44px; margin-right: -10px; display: grid; place-items: center; border: 0; background: none; color: var(--quiet); cursor: pointer; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* The walk: edge to edge through the page padding, melting into the page below; the caption on a dark band. */
+.td-walk { position: relative; display: block; width: auto; margin: calc(-18px - var(--safe-top)) -22px 0; padding: 0; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; }
+.td-walk .band { height: calc(236px + var(--safe-top)); border-radius: 0; -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 70%, transparent 100%); mask-image: linear-gradient(to bottom, #000 0, #000 70%, transparent 100%); }
+.td-walk-cap { position: absolute; left: 16px; bottom: 14px; display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border-radius: 14px; background: rgba(8, 10, 22, 0.66); }
+.td-walk-line { font-size: 14px; font-weight: 600; color: var(--quiet); }
+.td-walk-near { font-family: var(--serif); font-size: 28px; line-height: 1.1; }
+.td-walk-next { margin: 0; font-size: 15px; }
+
+/* The full walk. */
+.td-walkfull { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; background: var(--ink); overflow-y: auto; }
+.td-walkfull-scene .band { height: calc(340px + var(--safe-top)); border-radius: 0 0 26px 26px; }
+.td-walkfull-body { display: flex; flex-direction: column; gap: 10px; padding: 18px 22px calc(28px + var(--safe-bottom)); }
+.td-walkfull-title { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 32px; line-height: 1.1; }
+.td-h3 { margin: 14px 0 2px; font-family: var(--serif); font-weight: 400; font-size: 20px; }
+.td-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.td-walkfull-back { margin-top: 18px; }
