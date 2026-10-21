@@ -79,7 +79,7 @@ export function weekVolume(sets: SetEntry[], plan: PlanDef, today: DayKey): Volu
 /** The biggest gap in words: "Legs are 5 sets short of 10 this week." */
 export function volumeLine(rows: VolumeRow[]): string | undefined {
   const low = rows.filter((r) => r.state === 'low').sort((a, b) => b.lo - b.sets - (a.lo - a.sets))[0];
-  return low && `${low.name} are ${low.lo - low.sets} set${low.lo - low.sets === 1 ? '' : 's'} short of ${low.lo} this week.`;
+  return low && `${low.name}: ${low.lo - low.sets} set${low.lo - low.sets === 1 ? '' : 's'} short of ${low.lo} this week.`;
 }
 
 /** This calendar month: sessions, records, the usual length, and the exercise that improved most. */
@@ -95,9 +95,15 @@ export function monthSoFar(sessions: TrainingSession[], sets: SetEntry[], today:
   for (const id of new Set(mine.map((s) => s.exerciseId))) {
     const ex = mine.filter((s) => s.exerciseId === id);
     const first = runs.find((r) => ex.some((s) => s.sessionId === r.id))!;
-    const start = Math.max(...ex.filter((s) => s.sessionId === first.id).map((s) => valueOfSet(s) ?? 0));
-    const best = Math.max(...ex.map((s) => valueOfSet(s) ?? 0));
-    const pct = start > 0 ? Math.round(((best - start) / start) * 100) : 0;
+    const start = bestOf(ex.filter((s) => s.sessionId === first.id));
+    const best = bestOf(ex);
+    // At the same weight, reps (or seconds) decide; across weights, an estimated one-rep max does.
+    const value = (s: SetEntry) => valueOfSet(s) ?? 0;
+    const e1rm = (s: SetEntry) => (s.loadKg ? s.loadKg * (1 + value(s) / 30) : value(s));
+    const same = start.loadKg === best.loadKg;
+    const from = same ? value(start) : e1rm(start);
+    const to = same ? value(best) : e1rm(best);
+    const pct = from > 0 ? Math.round(((to - from) / from) * 100) : 0;
     if (pct >= 10 && (!improved || pct > improved.pct)) improved = { name: ex[0].exercise, pct };
   }
   if (improved) out.improved = improved;
@@ -105,7 +111,7 @@ export function monthSoFar(sessions: TrainingSession[], sets: SetEntry[], today:
 }
 
 /** The latest session done today, summed up for the card after it. */
-export function tonight(sessions: TrainingSession[], sets: SetEntry[], today: DayKey): { session: TrainingSession; records: SetEntry[]; mins: number; sets: number; liftMin?: number; quality?: number; checks?: number } | undefined {
+export function tonight(sessions: TrainingSession[], sets: SetEntry[], today: DayKey): { session: TrainingSession; records: SetEntry[]; mins: number; later: boolean; sets: number; liftMin?: number; quality?: number; checks?: number } | undefined {
   const session = done(sessions)
     .filter((s) => s.date === today)
     .pop();
@@ -117,6 +123,7 @@ export function tonight(sessions: TrainingSession[], sets: SetEntry[], today: Da
     session,
     records: mine.filter((s) => s.mark === '!!'),
     mins: Math.round(((session.endedAt ?? session.startedAt) - session.startedAt) / 60_000),
+    later: loggedLater(sets.filter((s) => s.sessionId === session.id)),
     sets: mine.length,
     ...(timed ? { liftMin: Math.round(hourSplit(session, mine).lift / 60_000) } : {}),
     ...(session.quality !== undefined ? { quality: session.quality } : {}),
@@ -137,4 +144,11 @@ export function formFocus(sets: SetEntry[], plan: PlanDef, sessionId: string): s
     }
   }
   return [...slips.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+}
+
+/** The card at the top of Train: resume a session, tonight's, up next, or the plain next-up card. */
+export function heroFor(h: { active: boolean; tonight: boolean; trainedToday: boolean; up: boolean }): 'resume' | 'tonight' | 'upnext' | 'nextup' {
+  if (h.active) return 'resume';
+  if (h.tonight) return 'tonight';
+  return h.up && !h.trainedToday ? 'upnext' : 'nextup';
 }

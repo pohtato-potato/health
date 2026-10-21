@@ -38,6 +38,8 @@ const LABEL: Record<string, string> = { Shoulders: 'Delts' };
 
 /** This week on the body: front and back, coloured by hard sets against the plan, with each count in words. */
 export function BodyCard({ rows, line, onOpen }: { rows: VolumeRow[]; line?: string; onOpen: () => void }) {
+  // Nothing to colour before the week's first hard set.
+  if (!rows.some((r) => r.sets > 0)) return null;
   const heat: Partial<Record<MuscleId, number>> = {};
   const tint: Partial<Record<MuscleId, string>> = {};
   for (const r of rows)
@@ -46,11 +48,14 @@ export function BodyCard({ rows, line, onOpen }: { rows: VolumeRow[]; line?: str
       tint[m] = TINT[r.state];
     }
   return (
-    <button type="button" className="lv-card lv-tr-plan" onClick={onOpen}>
+    <div className="lv-card">
       <div className="lv-tr-cardhead">
         <span className="lv-card-h">This week on your body</span>
-        <span className="lv-small">hard sets against the plan</span>
+        <button type="button" className="lv-link" onClick={onOpen}>
+          Muscle map ›
+        </button>
       </div>
+      <span className="lv-small">Hard sets against the plan's target for each group.</span>
       <div className="lv-tr-body">
         <span className="lv-tr-body-fig">
           <BodyHeat heat={heat} tint={tint} label="Hard sets this week, front and back: green on target, yellow low, blue high" />
@@ -74,7 +79,7 @@ export function BodyCard({ rows, line, onOpen }: { rows: VolumeRow[]; line?: str
         </span>
       </div>
       {line && <p className="lv-small">{line}</p>}
-    </button>
+    </div>
   );
 }
 

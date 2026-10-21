@@ -82,3 +82,18 @@ describe('the sections', () => {
     expect(h).toContain('Warm-up and rules');
   });
 });
+
+describe('train review fixes', () => {
+  it('the body card waits for the first hard set', () => {
+    expect(BodyCard({ rows: [{ name: 'Legs', sets: 0, lo: 10, hi: 16, state: 'low' }], onOpen: noop })).toBeNull();
+  });
+  it('the body card is a card with a link, not one big button', () => {
+    const h = renderToStaticMarkup(<BodyCard rows={[{ name: 'Legs', sets: 5, lo: 10, hi: 16, state: 'low' }]} onOpen={noop} />);
+    expect(h).toMatch(/^<div class="lv-card"/);
+    expect(h).toContain('Muscle map ›');
+  });
+  it('tonight says logged later instead of a length', () => {
+    const h = renderToStaticMarkup(<TonightCard name="Session C" records={[]} mins={2} sets={20} later onReplay={noop} />);
+    expect(h).toContain('logged later · 20 sets');
+  });
+});

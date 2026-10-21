@@ -283,7 +283,6 @@ html.contrast .lv-check, html.contrast .lv-ghost { border-color: var(--text); }
 .lv-tr-hero-title { font-family: var(--serif); font-size: 44px; line-height: 1; }
 .lv-tr-hero-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .lv-tr-hero-chips .lv-tag { margin-left: 0; font-size: 14px; padding: 4px 9px; }
-.lv-tr-tonight { border-color: color-mix(in srgb, var(--gold) 55%, transparent); box-shadow: 0 0 40px color-mix(in srgb, var(--gold) 16%, transparent); }
 .lv-tr-cardhead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .lv-tr-arrow { color: color-mix(in srgb, var(--text) 50%, transparent); padding: 0 6px; }
 .lv-tr-up { color: #6fe0b0; }
@@ -300,14 +299,6 @@ html.contrast .lv-check, html.contrast .lv-ghost { border-color: var(--text); }
 .lv-tab .lv-row .num { width: auto; white-space: nowrap; }
 .lv-tab .lv-tr-cardhead { flex-wrap: wrap; }
 .lv-tr-plan-list { max-height: 210px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px; scrollbar-width: thin; }
-.lv-tr-block { border-left: 4px solid; border-radius: 12px; padding: 4px 10px 6px; background: color-mix(in srgb, var(--lv-b) 50%, transparent); }
-.lv-tr-block.b10 { border-color: #6fe0b0; }
-.lv-tr-block.b5 { border-color: #ff9f80; }
-.lv-tr-change { font-size: 13px; color: #ffc29b; padding: 4px 0 2px; letter-spacing: 0.02em; }
-.lv-tr-block.b10 .lv-tr-change { color: #9fe8c8; }
-.lv-tr-plan-row { display: flex; align-items: baseline; gap: 10px; min-height: 36px; font-size: 15px; border-bottom: 1px solid color-mix(in srgb, var(--text) 8%, transparent); padding: 4px 0; }
-.lv-tr-plan-row:last-child { border-bottom: 0; }
-.lv-tr-plan-id { width: 22px; color: color-mix(in srgb, var(--text) 60%, transparent); }
 .lv-tr-body { display: flex; gap: 12px; align-items: center; }
 .lv-tr-body-fig { width: 52%; flex: none; }
 .lv-tr-body-fig .bodymap { width: 100%; height: auto; display: block; }
@@ -330,3 +321,8 @@ html.contrast .lv-check, html.contrast .lv-ghost { border-color: var(--text); }
 .lv-tr-legend .high:before { background: #7fc4f0; }
 .lv-tr-legend .low:before { background: #f5ea6a; }
 .lv-tr-body-row.low .lv-tr-mark { color: #f5ea6a; border: 1px dashed #f5ea6a; }
+
+/* Words that stand in for colour stay readable under the magnifier */
+.lv-tr-mark, .lv-tr-legend, .lv-tr-stats small, .lv-card-h, .lv-tag { font-size: 14px; }
+.lv-tr-body-row { white-space: normal; flex-wrap: wrap; }
+.lv-tr-body-row .grow { overflow: visible; text-overflow: clip; }

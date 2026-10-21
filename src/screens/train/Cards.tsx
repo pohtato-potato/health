@@ -64,6 +64,8 @@ interface TonightProps {
   name: string;
   records: string[];
   mins: number;
+  /** Entered after the fact: its length means nothing. */
+  later?: boolean;
   sets: number;
   liftMin?: number;
   quality?: number;
@@ -80,7 +82,7 @@ export function TonightCard(p: TonightProps) {
       <span className={`lv-kicker${gold ? ' gold' : ''}`}>Tonight · {p.name}</span>
       <span className={`lv-tr-hero-title${gold ? ' goldtxt' : ''}`}>{gold ? `${p.records.length} record${p.records.length === 1 ? '' : 's'}` : `${p.name} done`}</span>
       <span className="lv-small">
-        {p.mins} min · {p.sets} sets
+        {p.later ? 'logged later' : `${p.mins} min`} · {p.sets} sets
         {p.liftMin !== undefined && (
           <>
             {' '}

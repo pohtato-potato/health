@@ -1,7 +1,7 @@
 import { addDays, daysBetween } from '../domain/dates';
 import { fmtDayMonth, fmtInt, weekdayName } from '../domain/format';
 import { fmtKg } from '../domain/loads';
-import { extraSessions, findExercise, findSession, realSets, valueOfSet } from '../domain/plan';
+import { buildSession, extraSessions, findSession, realSets, valueOfSet } from '../domain/plan';
 import { removeExercise } from '../domain/planEdit';
 import { loggedLater, neglectedExercises, suspiciousSets } from '../domain/trainingChecks';
 import { askConfirm } from '../ui/Confirm';
@@ -17,7 +17,7 @@ import { TRIP_SESSION_ID } from '../domain/trip';
 import { markSetsSkipped, patchSettings } from '../db/actions';
 import { batteryMode } from '../domain/rest';
 import { loadBlocks, plateChanges, usualLength } from '../domain/sessionEdges';
-import { formFocus, fourWeeksAgo, monthSoFar, tonight, volumeLine, weekVolume } from '../domain/trainView';
+import { formFocus, fourWeeksAgo, heroFor, monthSoFar, tonight, volumeLine, weekVolume } from '../domain/trainView';
 import { useBatteryLevel } from '../ui/RestScreen';
 import { Aurora } from '../ui/live/Aurora';
 import { TonightCard, UpNextCard } from './train/Cards';
@@ -55,6 +55,7 @@ export function Train() {
   const isTripDay = placeFor(todayDay, settings).kind === 'trip' || todayDay?.status === 'travelling';
   const tn = active ? undefined : tonight(sessions, sets, today);
   const next = up ? findSession(plan, up.sessionId) : undefined;
+  const hero = heroFor({ active: !!active, tonight: !!tn, trainedToday: trainedToday.length > 0, up: !!up });
   const nameOf = (id: string) => findSession(plan, id)?.name ?? `Session ${id}`;
   const focusId = tn?.session.session ?? up?.sessionId;
   const four = focusId ? fourWeeksAgo(sessions, sets, focusId, today) : undefined;
@@ -93,13 +94,14 @@ export function Train() {
         </div>
       ))}
 
-      {active || (!tn && (trainedToday.length || !up)) ? (
+      {hero === 'resume' || hero === 'nextup' ? (
         <NextUpCard settings={settings} up={up} active={active} trainedToday={trainedToday} weeks={weeks} />
-      ) : tn ? (
+      ) : hero === 'tonight' && tn ? (
         <TonightCard
           name={nameOf(tn.session.session)}
           records={tn.records.map((r) => `${r.exercise} ${fmtSet(r)}`)}
           mins={tn.mins}
+          later={tn.later}
           sets={tn.sets}
           liftMin={tn.liftMin}
           quality={tn.quality}
@@ -110,7 +112,8 @@ export function Train() {
       ) : (
         up &&
         (() => {
-          const exs = up.exercises.map((e) => findExercise(plan, e.id)).filter((e): e is NonNullable<typeof e> => !!e);
+          // As the session will build it, swaps in their slots.
+          const exs = buildSession(plan, up.sessionId, { swaps: up.swaps });
           const kgOf = (ex: { id: string }) => up.exercises.find((e) => e.id === ex.id)?.status.loadKg ?? null;
           const blocks = loadBlocks(exs, kgOf);
           return (

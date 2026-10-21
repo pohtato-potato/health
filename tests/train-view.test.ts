@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formFocus, fourWeeksAgo, monthSoFar, tonight, volumeLine, weekVolume } from '../src/domain/trainView';
+import { formFocus, fourWeeksAgo, heroFor, monthSoFar, tonight, volumeLine, weekVolume } from '../src/domain/trainView';
 import type { PlanDef } from '../src/domain/plan';
 import type { SetEntry, TrainingSession } from '../src/domain/types';
 
@@ -54,7 +54,7 @@ describe('this week on your body', () => {
     expect(weekVolume(sets, own, '2026-10-21').find((g) => g.name === 'Legs')?.state).toBe('ok');
   });
   it('names the biggest gap', () => {
-    expect(volumeLine(weekVolume(sets, plan, '2026-10-21'))).toBe('Shoulders are 10 sets short of 10 this week.');
+    expect(volumeLine(weekVolume(sets, plan, '2026-10-21'))).toBe('Shoulders: 10 sets short of 10 this week.');
     expect(volumeLine([{ name: 'Legs', sets: 12, lo: 10, hi: 16, state: 'ok' }])).toBeUndefined();
   });
 });
@@ -95,3 +95,25 @@ describe('form focus', () => {
   it('is none without slips', () => expect(formFocus([], plan, 'C')).toBeUndefined());
 });
 void DAY;
+
+describe('review fixes', () => {
+  it('most improved counts the weight, not only the reps', () => {
+    const a = sess('2026-10-03');
+    const b = sess('2026-10-14');
+    const heavier = [...spread(a, [{ exerciseId: 'curl', exercise: 'Curl', loadKg: 10, reps: 12 }]), ...spread(b, [{ exerciseId: 'curl', exercise: 'Curl', loadKg: 12.5, reps: 10 }])];
+    expect(monthSoFar([a, b], heavier, '2026-10-21').improved?.name).toBe('Curl');
+    const lighter = [...spread(a, [{ exerciseId: 'curl', exercise: 'Curl', loadKg: 10, reps: 10 }]), ...spread(b, [{ exerciseId: 'curl', exercise: 'Curl', loadKg: 5, reps: 14 }])];
+    expect(monthSoFar([a, b], lighter, '2026-10-21').improved).toBeUndefined();
+  });
+  it('tonight says when a session was logged later', () => {
+    const s = sess('2026-10-21');
+    const later = Array.from({ length: 6 }, (_, i) => set(s, { at: s.startedAt + i * 1000 }));
+    expect(tonight([s], later, '2026-10-21')?.later).toBe(true);
+  });
+  it('the card at the top', () => {
+    expect(heroFor({ active: true, tonight: false, trainedToday: false, up: true })).toBe('resume');
+    expect(heroFor({ active: false, tonight: true, trainedToday: true, up: true })).toBe('tonight');
+    expect(heroFor({ active: false, tonight: false, trainedToday: false, up: true })).toBe('upnext');
+    expect(heroFor({ active: false, tonight: false, trainedToday: false, up: false })).toBe('nextup');
+  });
+});
