@@ -91,3 +91,35 @@ describe('the plate change', () => {
     expect(h).toContain('Collars tight');
   });
 });
+
+import { RecordScreen } from '../src/screens/live/RecordScreen';
+import { SessionLook, SetsLook } from '../src/screens/live/QuickLooks';
+
+describe('the record moment', () => {
+  const rec = (p: Partial<Parameters<typeof RecordScreen>[0]> = {}) =>
+    renderToStaticMarkup(<RecordScreen name="Romanian deadlift" kg={10} value="19" was={{ value: 18, date: '2026-10-03' }} onGo={noop} saver={false} {...p} />);
+  it('names the old best and when', () => expect(rec()).toContain('Your best was 18, on 3 Oct.'));
+  it('is gold', () => expect(rec()).toMatch(/class="lv [^"]*st-record/));
+  it('names the song when known', () => expect(rec({ song: 'Midnight City · M83' })).toContain('Midnight City · M83'));
+  it('is still in battery saver', () => {
+    const h = rec({ saver: true });
+    expect(h).not.toContain('blob');
+    expect(h).not.toContain('lv-dust');
+  });
+});
+
+describe('quick looks', () => {
+  it('sets: tonight against last time, with tags and the note', () => {
+    const h = renderToStaticMarkup(<SetsLook name="Curl" rows={[{ label: 'Set 1', tonight: '12', last: '11', tags: ['burn from 10'] }, { label: 'Set 2', last: '10', tags: [] }]} note="Elbow ached" onClose={noop} />);
+    expect(h).toMatch(/Set 1[\s\S]*12[\s\S]*11/);
+    expect(h).toContain('burn from 10');
+    expect(h).toContain('Elbow ached');
+  });
+  it('session: blocks with plate changes, length, and the list and finish', () => {
+    const h = renderToStaticMarkup(<SessionLook blocks={[{ kg: 10, items: [{ name: 'Curl', light: false }] }, { kg: 5, items: [{ name: 'Fly', light: false }] }]} usual={{ min: 92, fromHistory: true }} startedAt={0} onList={noop} onFinish={noop} onClose={noop} />);
+    expect(h).toContain('Plates change · 10 → 5 kg');
+    expect(h).toContain('usually <b>92 min</b>');
+    expect(h).toContain('Open the set list');
+    expect(h).toContain('Finish session');
+  });
+});

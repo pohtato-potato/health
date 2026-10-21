@@ -92,3 +92,9 @@ export function plateChanges(blocks: LoadBlock[]): number {
 export function plateChange(prevKg: number | null | undefined, kg: number | null): { from: number; to: number } | undefined {
   return prevKg == null || kg === null || prevKg === kg ? undefined : { from: prevKg, to: kg };
 }
+
+/** What follows a saved set: a record's moment comes first; then a rest after the round, or straight on. */
+export function afterSave(mark: string | undefined, after: 'rest' | 'glide' | 'none'): 'record' | 'rest' | 'next' {
+  if (mark === '!!') return 'record';
+  return after === 'rest' ? 'rest' : 'next';
+}

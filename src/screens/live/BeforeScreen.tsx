@@ -71,28 +71,39 @@ export function BeforeScreen(p: Props) {
 
       <div className="lv-card">
         <div className="lv-card-h">Tonight, in load blocks</div>
-        {p.blocks.map((b, i) => (
-          <div key={i}>
-            {i > 0 && b.kg !== null && p.blocks[i - 1].kg !== null && (
-              <div className="lv-plates-line">
-                Plates change · {p.blocks[i - 1].kg} → {b.kg} kg
-              </div>
-            )}
-            {b.items.map((it) => (
-              <div key={it.name} className="lv-row">
-                <span className="grow">
-                  {it.name}
-                  {it.light && <span className="lv-tag burn">1 set</span>}
-                </span>
-                <span className="q">{fmt(b.kg)}</span>
-              </div>
-            ))}
-          </div>
-        ))}
+        <BlockList blocks={p.blocks} />
       </div>
       <div style={{ flex: 'none', paddingBottom: 8 }}>
         <Primary onClick={p.onStart}>Start</Primary>
       </div>
     </LiveFrame>
+  );
+}
+
+export type Blocks = Props['blocks'];
+
+/** Tonight's exercises in load blocks, with a line where the plates change. */
+export function BlockList({ blocks }: { blocks: Blocks }) {
+  return (
+    <>
+      {blocks.map((b, i) => (
+        <div key={i}>
+          {i > 0 && b.kg !== null && blocks[i - 1].kg !== null && (
+            <div className="lv-plates-line">
+              Plates change · {blocks[i - 1].kg} → {b.kg} kg
+            </div>
+          )}
+          {b.items.map((it) => (
+            <div key={it.name} className="lv-row">
+              <span className="grow">
+                {it.name}
+                {it.light && <span className="lv-tag burn">1 set</span>}
+              </span>
+              <span className="q">{fmt(b.kg)}</span>
+            </div>
+          ))}
+        </div>
+      ))}
+    </>
   );
 }

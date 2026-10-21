@@ -90,3 +90,13 @@ describe('a plate change', () => {
     expect(plateChange(5, 5)).toBeUndefined();
   });
 });
+
+import { afterSave } from '../src/domain/sessionEdges';
+describe('after a set is saved', () => {
+  it('a record gets its moment first', () => expect(afterSave('!!', 'none')).toBe('record'));
+  it('else rest after a round, or on to the next set', () => {
+    expect(afterSave('!', 'rest')).toBe('rest');
+    expect(afterSave(undefined, 'glide')).toBe('next');
+    expect(afterSave('=', 'none')).toBe('next');
+  });
+});

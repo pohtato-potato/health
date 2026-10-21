@@ -4,7 +4,7 @@ import { RINGS } from '../../domain/liveLook';
 import { burnNudge, justTags, restoreCounter, seconds, setState } from '../../domain/liveSet';
 import { newLoad, recordBar } from '../../domain/marks';
 import { bottomOfRange, measureOf, sidesFor, valueOfSet, type ExerciseDef, type PlanDef } from '../../domain/plan';
-import { addSetup, loadBlocks, plateChange, plateChanges, setupOn, usualLength } from '../../domain/sessionEdges';
+import { addSetup, afterSave, loadBlocks, plateChange, plateChanges, setupOn, usualLength } from '../../domain/sessionEdges';
 import { dayKey } from '../../domain/dates';
 import { movementKind } from '../../domain/trainingChecks';
 import { useSessions } from '../../db/hooks';
@@ -20,6 +20,10 @@ import { findLogged, type Row } from '../session/SetTable';
 import type { useRunner } from '../session/useRunner';
 import { BeforeScreen } from './BeforeScreen';
 import { CheckScreen } from './CheckScreen';
+import { RecordScreen } from './RecordScreen';
+import { SessionLook, SetsLook } from './QuickLooks';
+import { fetchRecent, songAt } from '../../sources/lastfm';
+import { mmss } from './Frame';
 import { GuideScreen } from './GuideScreen';
 import { PlatesScreen } from './PlatesScreen';
 import { LiveFrame, Primary } from './Frame';
@@ -60,6 +64,28 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
   const firstAt = (x: Row) => newLoad({ side: x.side, loadKg: r.defaults(x).kg }, priorOf(x));
   const [saving, setSaving] = useState(false);
   const [platesSeen, setPlatesSeen] = useState<string[]>([]);
+  const [look, setLook] = useState<null | 'sets' | 'session'>(null);
+  const [record, setRecord] = useState<{ name: string; kg: number | null; value: string; was?: { value: number; date: string } } | null>(null);
+  const [song, setSong] = useState<string | undefined>();
+  useEffect(() => {
+    if (!record) return setSong(undefined);
+    let live = true;
+    // Best effort: what was playing, if Last.fm is set up and online.
+    void fetchRecent(settings, session.startedAt, Date.now()).then((plays) => {
+      const s = songAt(Date.now(), plays);
+      if (live && s) setSong(`${s.track} · ${s.artist}`);
+    });
+    return () => {
+      live = false;
+    };
+  }, [record, settings, session.startedAt]);
+
+  const firstRow = (ex: ExerciseDef): Row => ({ ex, setNo: 1, side: sidesFor(ex, session.firstSide?.[ex.id])[0], drop: false, key: `${ex.id}:first` });
+  const blocks = loadBlocks(r.exs, (ex) => r.defaults(firstRow(ex)).kg);
+  const usual = usualLength(sessions ?? [], [...r.history, ...r.mine], session.session, r.def?.minutes ?? 60);
+  const sore = (session.legSoreness ?? 0) >= 4;
+  const blockItems = blocks.map((b) => ({ kg: b.kg, items: b.exs.map((ex) => ({ name: nameOf(ex), light: sore && movementKind(ex) === 'legs' })) }));
+  const lookEx = row?.ex ?? r.group[0];
 
   const top = (
     <>
@@ -72,11 +98,11 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
           <b className="num tn">{clock(r.now - session.startedAt)}</b>
         </span>
         <span className="row" style={{ gap: 6 }}>
-          <button type="button" className="lv-chipbtn" onClick={() => patchSession(session.id, { view: 'list' })}>
-            List
+          <button type="button" className="lv-chipbtn" onClick={() => setLook('sets')}>
+            Sets
           </button>
-          <button type="button" className="lv-chipbtn" onClick={r.finish}>
-            Finish
+          <button type="button" className="lv-chipbtn" onClick={() => setLook('session')}>
+            Session
           </button>
         </span>
       </header>
@@ -88,22 +114,43 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
           </button>
         ))}
       </nav>
+      {look === 'session' && (
+        <SessionLook
+          blocks={blockItems}
+          usual={usual}
+          startedAt={session.startedAt}
+          onList={() => patchSession(session.id, { view: 'list' })}
+          onFinish={() => (setLook(null), r.finish())}
+          onClose={() => setLook(null)}
+        />
+      )}
+      {look === 'sets' && lookEx && (
+        <SetsLook
+          name={nameOf(lookEx)}
+          rows={r.rows
+            .filter((x) => x.ex.id === lookEx.id)
+            .map((x) => {
+              const done = findLogged(r.mine, x);
+              const last = r.statuses.get(x.ex.id)?.last?.sets.find((s) => s.setNo === x.setNo && s.side === x.side && !!s.drop === x.drop);
+              const v = (s?: SetEntry) => (s && !s.skipped ? (x.ex.seconds ? mmss(valueOfSet(s) ?? 0) : String(valueOfSet(s) ?? '')) : undefined);
+              return { label: `Set ${x.setNo}${x.drop ? ' drop' : ''}${sideWord(x.side)}`, tonight: done?.skipped ? 'skipped' : v(done), last: v(last), tags: done ? justTags(done) : [] };
+            })}
+          note={session.exNotes?.[lookEx.id]}
+          onClose={() => setLook(null)}
+        />
+      )}
     </>
   );
 
   const saver = r.saver;
-  const firstRow = (ex: ExerciseDef): Row => ({ ex, setNo: 1, side: sidesFor(ex, session.firstSide?.[ex.id])[0], drop: false, key: `${ex.id}:first` });
-  const blocks = loadBlocks(r.exs, (ex) => r.defaults(firstRow(ex)).kg);
-  const usual = usualLength(sessions ?? [], [...r.history, ...r.mine], session.session, r.def?.minutes ?? 60);
 
   if (!session.beforeDone && !r.mine.length) {
-    const sore = (session.legSoreness ?? 0) >= 4;
     return (
       <BeforeScreen
         name={r.def?.name ?? `Session ${session.session}`}
         usual={usual}
         startedAt={session.startedAt}
-        blocks={blocks.map((b) => ({ kg: b.kg, items: b.exs.map((ex) => ({ name: nameOf(ex), light: sore && movementKind(ex) === 'legs' })) }))}
+        blocks={blockItems}
         changes={plateChanges(blocks)}
         legs={r.exs.some((ex) => movementKind(ex) === 'legs')}
         soreness={session.legSoreness}
@@ -115,6 +162,8 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
       />
     );
   }
+
+  if (record) return <RecordScreen {...record} song={song} onGo={() => setRecord(null)} saver={saver} />;
 
   if (pending) {
     const x = pending.row;
@@ -144,7 +193,13 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
           setSaving(true);
           try {
             const res = await r.save(x, { val, startedAt: pending.c.startedAt, endedAt: pending.endedAt, burnAt: pending.c.burnAt, checks, rir });
-            if (res !== 'invalid') setPending(null);
+            if (res === 'invalid') return;
+            setPending(null);
+            if (afterSave(res, 'none') === 'record') {
+              const kg = r.defaults(x).kg;
+              const best = firstAt(x) ? undefined : priorOf(x).filter((s) => s.side === x.side && !s.drop && !s.skipped && (s.loadKg ?? 0) >= (kg ?? 0)).sort((a, b) => (valueOfSet(b) ?? 0) - (valueOfSet(a) ?? 0))[0];
+              setRecord({ name: nameOf(x.ex), kg, value: timed ? mmss(val) : String(val), was: best ? { value: valueOfSet(best) ?? 0, date: best.date } : undefined });
+            }
           } finally {
             setSaving(false);
           }

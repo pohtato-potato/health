@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db, HealthDB, setDatabase } from '../src/db/db';
-import { fetchSessionTracks, parseRecent, songAt, topWorkoutArtists } from '../src/sources/lastfm';
+import { fetchRecent, fetchSessionTracks, parseRecent, songAt, topWorkoutArtists } from '../src/sources/lastfm';
 import type { Settings, SongRecord, TrainingSession } from '../src/domain/types';
 
 let n = 0;
@@ -29,6 +29,13 @@ describe('Last.fm', () => {
       { artist: 'Daft Punk', track: 'Harder, Better, Faster, Stronger', at: 1791850000000 },
     ]);
     expect(parseRecent({})).toEqual([]);
+  });
+
+  it('reads what is playing mid-session without caching it, so the finale still gets every track', async () => {
+    const ok = (async () => new Response(JSON.stringify(body))) as typeof fetch;
+    expect(await fetchRecent(settings, session.startedAt, Date.now(), ok)).toHaveLength(2);
+    expect(await db.songs.count()).toBe(0);
+    expect(await fetchRecent({}, session.startedAt, Date.now(), ok)).toEqual([]);
   });
 
   it('caches a session’s tracks, and retries after being offline', async () => {
