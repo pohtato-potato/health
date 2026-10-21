@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { pickBanner, type BannerCandidate } from '../domain/banners';
+import { morningLogBanner, pickBanner, type BannerCandidate } from '../domain/banners';
 import { saveBackup } from '../db/backup';
 import { useAllDays, useAllEntries, useSettings } from '../db/hooks';
 import { applyUpdate, promptInstall, usePwa } from '../pwa';
@@ -101,15 +101,16 @@ export function Banners() {
       ),
     });
   const todayDay = days.find((d) => d.date === today);
-  if (!todayDay?.morning && logMinutes(Date.now()) < 14 * 60)
+  const morning = morningLogBanner(!!todayDay?.morning, logMinutes(Date.now()));
+  if (morning)
     candidates.push({
       id: 'morning-log',
-      priority: 7,
+      priority: morning.priority,
       anytime: true,
       el: (
         <>
           <Icon name="sun" size={20} color="var(--gold)" />
-          <span className="grow">Morning log: weight, sleep and yesterday's steps.</span>
+          <span className="grow">{morning.text}</span>
           <button type="button" className="btn sm" onClick={() => openSheet('morning')}>
             Log
           </button>
