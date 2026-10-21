@@ -1,4 +1,4 @@
-import type { Status, VoiceId } from './types';
+import type { VoiceId } from './types';
 
 export interface VoiceDef {
   id: VoiceId;
@@ -192,22 +192,6 @@ function hash(s: string): number {
 /** When a joint is flagged, every voice switches to plain speech. */
 export function plainFlagLine(what: string, change?: string): string {
   return change ? `${what} flagged. ${change}` : `${what} flagged. Take it easy, and see a physio if it keeps up.`;
-}
-
-/** On a sick, injured or break day the voice drops the jokes and speaks plainly, like a joint flag. */
-const STATUS_LINES: Partial<Record<Status, string>> = {
-  sick: 'Sick day. Rest, drink water, and log only what is easy. Calories ease to maintenance until you are better.',
-  injured: 'Injured. Go gently, and log only what is easy. Calories ease to maintenance while it heals.',
-  break: 'A break. Calories ease to maintenance, and nothing here needs doing today.',
-};
-
-export function plainStatusLine(status: Status | undefined): string | undefined {
-  return status ? STATUS_LINES[status] : undefined;
-}
-
-/** Plain speech outranks every moment: a joint flag first, then a sick, injured or break day. */
-export function plainLine(p: { status?: Status; flag?: string }): string | undefined {
-  return p.flag ?? plainStatusLine(p.status);
 }
 
 /**
