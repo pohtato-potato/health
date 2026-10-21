@@ -1248,13 +1248,20 @@
   font-weight: 700;
 }
 .place-chip {
-  min-height: 44px;
+  min-height: 34px;
+  position: relative;
   padding: 0 12px;
   border-radius: 999px;
   border: 1px solid var(--hairline);
   background: var(--surface);
   font-size: 13px;
   font-weight: 600;
+}
+/* The tap area reaches 44 px; the chip keeps its 34 px look. */
+.place-chip::after {
+  content: '';
+  position: absolute;
+  inset: -5px 0;
 }
 .ready-card {
   flex-direction: row;

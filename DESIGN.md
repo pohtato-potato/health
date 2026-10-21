@@ -255,12 +255,12 @@ Depth is tonal. Resting surfaces are flat: ink, then surface, then raised, each 
 
 ## Shapes
 
-Soft and round. Controls are full pills whose radius is half their height (48px buttons at 24px, 44px chips and small buttons at 22px, the 56px rest pill at 28px). Containers step down as they nest: cards 22px, lists 20px, small cards and wheels 18px, tiles, fields and list rows 16px, notices 14px, checkboxes 8 to 9px, bars 3 to 4px. Sheets round only their top corners (28px). The walk band clips its scene with a 26px bottom curve, or 24px all round when it sits inside a page. Paper objects are nearly square (4 to 6px), and the receipt tears with a zigzag mask; the postcard tilts by -0.6 degrees. Status dots are circles.
+Soft and round. Controls are full pills whose radius is half their height (48px buttons at 24px, 44px chips at 22px, 40px small buttons at 20px, 36px small chips at 18px, the 56px rest pill at 28px). Anything drawn smaller than 44px gets an invisible tap area that reaches 44px, so the look stays and the aim is easy. Containers step down as they nest: cards 22px, lists 20px, small cards and wheels 18px, tiles, fields and list rows 16px, notices 14px, checkboxes 8 to 9px, bars 3 to 4px. Sheets round only their top corners (28px). The walk band clips its scene with a 26px bottom curve, or 24px all round when it sits inside a page. Paper objects are nearly square (4 to 6px), and the receipt tears with a zigzag mask; the postcard tilts by -0.6 degrees. Status dots are circles.
 
 ## Components
 
 ### Buttons
-- **Shape:** full pill (24px on 48px height; 26px on the 52px large size; 22px on the 44px small size, which keeps 44px and only tightens the padding and type).
+- **Shape:** full pill (24px on 48px height; 26px on the 52px large size; 20px on the 40px small size, whose tap area reaches 44px).
 - **Primary:** moon-text fill with night-ink label, 15px weight 600, 20px side padding.
 - **Ghost:** transparent with a button-edge border, text colour, weight 400.
 - **Danger:** transparent, brick text on a dark rose border, weight 400.
@@ -268,7 +268,7 @@ Soft and round. Controls are full pills whose radius is half their height (48px 
 - **Round:** 48px (or 40px) circle with a button-edge border; the selected state fills with moon text.
 
 ### Chips
-- **Style:** 44px pill, button-edge border, 14px text. The small chip keeps the 44px height and only tightens padding and type (13px).
+- **Style:** 44px pill (36px small, with a 44px tap area), button-edge border, 14px text.
 - **State:** selected fills with moon text and night-ink label at weight 600. Tool chips mark "on" with a blue border and soft blue text. Form chips take their form-scale ink when selected.
 
 ### Cards / Containers
