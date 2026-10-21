@@ -233,6 +233,13 @@ export function LiveFinale(p: Props) {
             )}
             {d.rings.checks !== undefined && <span className="c">{pct(d.rings.checks)} of form checks went well</span>}
           </div>
+          {(d.compare || d.moved) && (
+            <p className="lv-small">
+              {d.compare}
+              {d.compare && d.moved ? ' ' : ''}
+              {d.moved}
+            </p>
+          )}
           <p className="lv-small">
             {d.quality >= 85 ? 'A properly good session.' : d.quality >= 65 ? 'Solid work.' : 'It counts. The next one builds on it.'} Quality counts form, effort against the 1–2 reps-left target, and sets completed.
           </p>

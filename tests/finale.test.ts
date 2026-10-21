@@ -102,3 +102,14 @@ describe('review fixes', () => {
     expect(formReport([set({ checks: { gone: 'slip', flat: 'ok' } })], checksOf).rows).toEqual([{ text: 'Back stayed flat', ok: 1, of: 1 }]);
   });
 });
+
+import { movedLine, vsLastTime } from '../src/domain/finale';
+describe('the lines brought back', () => {
+  it('reps against last time', () => {
+    expect(vsLastTime(120, 112, true, 'Session C')).toBe('8 more reps than last Session C.');
+    expect(vsLastTime(100, 112, false, 'Session C')).toBe('12 fewer reps than last Session C (different conditions).');
+    expect(vsLastTime(112, 112, true, 'Session C')).toBe('Same reps as last Session C.');
+    expect(vsLastTime(112, undefined, true, 'Session C')).toBeUndefined();
+  });
+  it('reps and kg moved', () => expect(movedLine({ reps: 1240, kg: 3400 })).toBe('1,240 reps · 3,400 kg moved'));
+});

@@ -106,3 +106,11 @@ describe('finale review fixes', () => {
     expect(h).not.toContain('sets in range');
   });
 });
+
+describe('reps against last time on the recap', () => {
+  it('shows both lines', () => {
+    const h = at(5, { ...full, compare: '8 more reps than last Session C.', moved: '1,240 reps · 3,400 kg moved' });
+    expect(h).toContain('8 more reps than last Session C.');
+    expect(h).toContain('1,240 reps · 3,400 kg moved');
+  });
+});

@@ -10,13 +10,13 @@ import { discardSession, finishSession } from '../db/actions';
 import { useActiveSession, useAllDays, useAllSets, useAllSetsWithSkips, useSessions, useSettings } from '../db/hooks';
 import { go } from '../router';
 import { useToast } from '../ui/Toasts';
-import { swapSentence } from '../state/derived';
+import { doneSessions, swapSentence } from '../state/derived';
 import { type RecordPage } from '../ui/Moments';
 import { sessionQuality } from '../domain/sessionQuality';
 import { askConfirm } from '../ui/Confirm';
 import { withTrip } from '../domain/trip';
-import { contextOf } from '../domain/context';
-import type { FinaleData } from '../domain/finale';
+import { comparable, contextOf } from '../domain/context';
+import { movedLine, vsLastTime, type FinaleData } from '../domain/finale';
 import { RINGS } from '../domain/liveLook';
 import { batteryMode } from '../domain/rest';
 import { usualLength } from '../domain/sessionEdges';
@@ -166,9 +166,18 @@ function LiveDone({ session, plan, days, sets, withSkips, sessions, settings }: 
     } finally {
       window.clearTimeout(timer);
     }
+    // Reps against the last session of this name, a fair match first; and what was moved.
+    const same = doneSessions(sessions).filter((s) => s.session === session.session && s.id !== session.id);
+    const fair = [...same].reverse().find((s) => comparable(s.context ?? [], ctx));
+    const prev = fair ?? same[same.length - 1];
+    const stats = sessionStats(mine, plan);
+    const extra = {
+      compare: vsLastTime(stats.reps, prev ? sessionStats(sets.filter((s) => s.sessionId === prev.id), plan).reps : undefined, !!fair, def?.name ?? 'time'),
+      moved: stats.reps ? movedLine(stats) : undefined,
+    };
     try {
       const usual = usualLength(sessions.filter((s) => s.id !== session.id), sets, session.session, def?.minutes ?? 60);
-      setData(finaleData({ session: ended, mine: withSkipped, songs, pages: records.length ? recordPages(mine, sets, plan, settings, session.date) : [], plan, quality, usualMin: usual.fromHistory ? usual.min : undefined }));
+      setData({ ...finaleData({ session: ended, mine: withSkipped, songs, pages: records.length ? recordPages(mine, sets, plan, settings, session.date) : [], plan, quality, usualMin: usual.fromHistory ? usual.min : undefined }), ...extra });
     } catch {
       setData(finaleData({ session: ended, mine: withSkipped, songs: [], pages: [], plan, quality }));
     }

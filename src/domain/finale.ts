@@ -1,4 +1,4 @@
-import { lowerFirst } from './format';
+import { fmtInt, lowerFirst } from './format';
 import { hourBreakdown } from './muscles';
 import { bottomOfRange, valueOfSet, type ExerciseDef, type FormCheck } from './plan';
 import type { SetEntry, TrainingSession } from './types';
@@ -128,6 +128,9 @@ export interface FinaleData {
   rings: ReturnType<typeof recapRings>;
   quality: number;
   best?: RecordPage;
+  /** Reps against last time, and reps and kg moved. */
+  compare?: string;
+  moved?: string;
 }
 
 /** The finale's pages in order; one with nothing to say is left out. */
@@ -143,3 +146,14 @@ export function pagesFor(d: FinaleData): FinalePage[] {
   ];
   return all.filter(([, on]) => on).map(([p]) => p);
 }
+
+/** Tonight's reps against the last session of the same name; "different conditions" when it wasn't a fair match. */
+export function vsLastTime(reps: number, prevReps: number | undefined, likeForLike: boolean, name: string): string | undefined {
+  if (prevReps === undefined) return undefined;
+  const diff = reps - prevReps;
+  if (diff === 0) return `Same reps as last ${name}.`;
+  return `${Math.abs(diff)} ${diff > 0 ? 'more' : 'fewer'} reps than last ${name}${likeForLike ? '' : ' (different conditions)'}.`;
+}
+
+/** "1,240 reps · 3,400 kg moved". */
+export const movedLine = (s: { reps: number; kg: number }) => `${fmtInt(s.reps)} reps · ${fmtInt(s.kg)} kg moved`;
