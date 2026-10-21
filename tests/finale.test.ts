@@ -84,3 +84,21 @@ describe('track tiles', () => {
     expect(trackArt('A')).toMatch(/^linear-gradient\(/);
   });
 });
+
+describe('review fixes', () => {
+  const session = { startedAt: 0, endedAt: 300 * S, restLog: [{ from: 60 * S, to: 150 * S, kind: 'rest' as const }] };
+  it('a session mixing timed and untimed sets uses the old split', () => {
+    const h = hourSplit(session, [set({ startedAt: 0, endedAt: 60 * S }), set({})]);
+    expect(h.lift).toBe(210 * S);
+    expect(h.between).toBe(0);
+  });
+  it('says seconds for timed per-side sets', () => {
+    const r = formReport([set({ side: 'L', reps: undefined, seconds: 30, exercise: 'Carry' }), set({ side: 'R', reps: undefined, seconds: 25, exercise: 'Carry' })], checksOf);
+    expect(r.sides).toBe('Biggest gap: carry set 1, left 30 s, right 25 s.');
+    const close = formReport([set({ side: 'L', reps: undefined, seconds: 30 }), set({ side: 'R', reps: undefined, seconds: 30 })], checksOf);
+    expect(close.sides).toBe('Left and right were within a second on every per-side hold.');
+  });
+  it('leaves out checks no longer in the plan', () => {
+    expect(formReport([set({ checks: { gone: 'slip', flat: 'ok' } })], checksOf).rows).toEqual([{ text: 'Back stayed flat', ok: 1, of: 1 }]);
+  });
+});

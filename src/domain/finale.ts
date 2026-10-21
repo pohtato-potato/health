@@ -14,8 +14,10 @@ export function hourSplit(
   sets: Pick<SetEntry, 'startedAt' | 'endedAt' | 'skipped'>[],
 ): { total: number; lift: number; rest: number; between: number; longestRest: number } {
   const old = hourBreakdown(session);
-  const timed = sets.filter((s) => !s.skipped && s.startedAt !== undefined && s.endedAt !== undefined);
-  if (!timed.length) return { ...old, between: 0 };
+  const done = sets.filter((s) => !s.skipped);
+  const timed = done.filter((s) => s.startedAt !== undefined && s.endedAt !== undefined);
+  // Timers only tell the whole story when every set had one: a set logged in the list has none.
+  if (!timed.length || timed.length < done.length) return { ...old, between: 0 };
   const lift = timed.reduce((n, s) => n + Math.max(0, s.endedAt! - s.startedAt!), 0);
   return { total: old.total, lift, rest: old.rest, between: Math.max(0, old.total - lift - old.rest), longestRest: old.longestRest };
 }
@@ -37,7 +39,9 @@ export function formReport(sets: SetEntry[], checksOf: (exId: string) => FormChe
   for (const s of done) {
     const texts = new Map(checksOf(s.exerciseId).map((c) => [c.id, c.text]));
     for (const [id, mark] of Object.entries(s.checks ?? {})) {
-      const text = texts.get(id) ?? id;
+      // A check no longer in the plan has no words to show.
+      const text = texts.get(id);
+      if (!text) continue;
       const t = tally.get(text) ?? { ok: 0, slip: 0 };
       t[mark === 'ok' ? 'ok' : 'slip']++;
       tally.set(text, t);
@@ -62,7 +66,14 @@ export function formReport(sets: SetEntry[], checksOf: (exId: string) => FormChe
   if (both.length) {
     const gap = (p: { L: SetEntry; R: SetEntry }) => Math.abs((valueOfSet(p.L) ?? 0) - (valueOfSet(p.R) ?? 0));
     const widest = [...both].sort((a, b) => gap(b) - gap(a))[0];
-    out.sides = gap(widest) <= 1 ? 'Left and right were within one rep on every per-side set.' : `Biggest gap: ${lowerFirst(widest.L.exercise)} set ${widest.L.setNo}, left ${valueOfSet(widest.L)}, right ${valueOfSet(widest.R)}.`;
+    const held = both.every((p) => p.L.reps === undefined && p.L.seconds !== undefined);
+    const unit = (s: SetEntry) => (s.reps === undefined && s.seconds !== undefined ? ' s' : '');
+    out.sides =
+      gap(widest) <= 1
+        ? held
+          ? 'Left and right were within a second on every per-side hold.'
+          : 'Left and right were within one rep on every per-side set.'
+        : `Biggest gap: ${lowerFirst(widest.L.exercise)} set ${widest.L.setNo}, left ${valueOfSet(widest.L)}${unit(widest.L)}, right ${valueOfSet(widest.R)}${unit(widest.R)}.`;
   }
   return out;
 }

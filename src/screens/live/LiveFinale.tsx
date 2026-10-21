@@ -7,6 +7,8 @@ interface Props {
   onStep: (n: number) => void;
   data: FinaleData;
   flags: { id: string; label: string }[];
+  /** What ticking a flag does: a swap next session, a question in the morning. */
+  flagNotes?: string[];
   picked: string[];
   onPick: (ids: string[]) => void;
   note: string;
@@ -51,11 +53,14 @@ export function LiveFinale(p: Props) {
 
   return (
     <LiveFrame state={state} saver={p.saver} className={`fs-${TINT[page]}`} style={style} scroll>
-      <div className="lv-steps" aria-label={`Page ${p.step + 1} of ${pages.length}`}>
-        {pages.map((x, i) => (
-          <i key={x} className={i <= p.step ? 'on' : ''} />
-        ))}
-      </div>
+      {/* No dots on the flags page: the page count is only known once the session is saved. */}
+      {page !== 'flags' && (
+        <div className="lv-steps" role="img" aria-label={`Page ${p.step + 1} of ${pages.length}`}>
+          {pages.map((x, i) => (
+            <i key={x} className={i <= p.step ? 'on' : ''} />
+          ))}
+        </div>
+      )}
 
       {page === 'flags' && (
         <>
@@ -68,7 +73,7 @@ export function LiveFinale(p: Props) {
               {p.flags.map((f) => {
                 const on = p.picked.includes(f.id);
                 return (
-                  <button key={f.id} type="button" className={on ? 'on' : ''} aria-pressed={on} onClick={() => p.onPick(on ? p.picked.filter((x) => x !== f.id) : [...p.picked, f.id])}>
+                  <button key={f.id} type="button" className={on ? 'on' : ''} aria-pressed={on} disabled={p.saving} onClick={() => p.onPick(on ? p.picked.filter((x) => x !== f.id) : [...p.picked, f.id])}>
                     {on ? '✓ ' : ''}
                     {f.label}
                   </button>
@@ -76,15 +81,18 @@ export function LiveFinale(p: Props) {
               })}
             </div>
           )}
-          <textarea className="lv-note" aria-label="A note on tonight" placeholder="A note on tonight, for you and the coach…" value={p.note} onChange={(e) => p.onNote(e.target.value)} />
-          <div className="row" style={{ gap: 16, justifyContent: 'center' }}>
-            <button type="button" className="lv-link" onClick={p.onBack}>
-              Back to the session
-            </button>
-            <button type="button" className="lv-link" style={{ color: 'var(--rose)' }} onClick={p.onDiscard}>
-              Discard
-            </button>
-          </div>
+          {p.flagNotes && p.flagNotes.length > 0 && <p className="lv-small">{p.flagNotes.join(' ')}</p>}
+          <textarea className="lv-note" aria-label="A note on tonight" placeholder="A note on tonight, for you and the coach…" value={p.note} disabled={p.saving} onChange={(e) => p.onNote(e.target.value)} />
+          {!p.saving && (
+            <div className="row" style={{ gap: 16, justifyContent: 'center' }}>
+              <button type="button" className="lv-link" onClick={p.onBack}>
+                Back to the session
+              </button>
+              <button type="button" className="lv-link" style={{ color: 'var(--rose)' }} onClick={p.onDiscard}>
+                Discard
+              </button>
+            </div>
+          )}
         </>
       )}
 
@@ -206,7 +214,7 @@ export function LiveFinale(p: Props) {
           <div className="lv-recap-rings">
             <svg viewBox="0 0 300 300" width="280" height="280" aria-hidden="true">
               <Arc r={132} frac={d.rings.exercises[1] ? d.rings.exercises[0] / d.rings.exercises[1] : 0} cls="r1" />
-              <Arc r={108} frac={d.rings.inRange[1] ? d.rings.inRange[0] / d.rings.inRange[1] : 0} cls="r2" delay={0.25} />
+              {d.rings.inRange[1] > 0 && <Arc r={108} frac={d.rings.inRange[0] / d.rings.inRange[1]} cls="r2" delay={0.25} />}
               {d.rings.checks !== undefined && <Arc r={84} frac={d.rings.checks} cls="r3" delay={0.5} />}
             </svg>
             <div className="lv-recap-in">
@@ -218,9 +226,11 @@ export function LiveFinale(p: Props) {
             <span className="s">
               {d.rings.exercises[0]} of {d.rings.exercises[1]} exercises
             </span>
-            <span className="t">
-              {d.rings.inRange[0]} of {d.rings.inRange[1]} sets in range
-            </span>
+            {d.rings.inRange[1] > 0 && (
+              <span className="t">
+                {d.rings.inRange[0]} of {d.rings.inRange[1]} sets in range
+              </span>
+            )}
             {d.rings.checks !== undefined && <span className="c">{pct(d.rings.checks)} of form checks went well</span>}
           </div>
           <p className="lv-small">
@@ -241,6 +251,7 @@ export function LiveFinale(p: Props) {
           <div className="lv-kicker gold">Tonight's best</div>
           <div className="lv-bloom num tn" style={{ fontSize: 120 }}>
             {d.best.big}
+            <span className="unit">{d.best.bigLabel.toLowerCase()}</span>
           </div>
           <div className="lv-bloom-sub">{d.best.name}</div>
           <div className="lv-small" style={{ textAlign: 'center' }}>
@@ -258,7 +269,7 @@ export function LiveFinale(p: Props) {
       <div style={{ marginTop: 'auto', flex: 'none', paddingBottom: 8 }}>
         {page === 'flags' ? (
           <Primary disabled={p.saving} onClick={p.onSave}>
-            Save · {p.picked.length ? `Flag ${p.flags.filter((f) => p.picked.includes(f.id)).map((f) => f.label.toLowerCase()).join(', ')}` : 'Nothing to flag'}
+            {p.saving ? 'Saving…' : `Save · ${p.picked.length ? `Flag ${p.flags.filter((f) => p.picked.includes(f.id)).map((f) => f.label.toLowerCase()).join(', ')}` : 'Nothing to flag'}`}
           </Primary>
         ) : last ? (
           <Primary tone={page === 'best' ? 'gold' : undefined} onClick={p.onDone}>

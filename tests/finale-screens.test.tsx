@@ -90,3 +90,19 @@ describe('the finale pages', () => {
     expect(at(1, empty)).toContain('88 min');
   });
 });
+
+describe('finale review fixes', () => {
+  it('locks the flags page while saving', () => {
+    const h = at(0, full, { saving: true });
+    expect(h).toContain('Saving…');
+    expect(h).toMatch(/<button[^>]*aria-pressed="false"[^>]*disabled/);
+    expect(h).not.toContain('Discard');
+  });
+  it('shows no page dots before saving, so nothing jumps', () => expect(at(0)).not.toContain('lv-steps'));
+  it('says what a flag will do before it is ticked', () => expect(at(0, full, { flagNotes: ['A knee tick swaps squats for bridges in your next Session B.'] })).toContain('A knee tick swaps squats'));
+  it('gives tonight’s best its unit', () => expect(at(6)).toMatch(/>19<span class="unit">reps<\/span>/));
+  it('leaves out the in-range ring with no ranges', () => {
+    const h = at(5, { ...full, rings: { exercises: [2, 2], inRange: [0, 0] } });
+    expect(h).not.toContain('sets in range');
+  });
+});

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { addDays, daysBetween } from '../domain/dates';
-import { fmtDayMonth, weekdayName } from '../domain/format';
+import { fmtDayMonth, lowerFirst, weekdayName } from '../domain/format';
 import { fmtKg } from '../domain/loads';
 import { findExercise, findSession, type PlanDef } from '../domain/plan';
 import { exerciseStatus } from '../domain/progression';
@@ -131,6 +131,18 @@ function LiveDone({ session, plan, days, sets, withSkips, sessions, settings }: 
   const def = findSession(plan, session.session);
   const records = recordLines(mine);
   const sessionFlags = plan.flags.filter((f) => f.when === 'session');
+  // What a tick does, said before it's ticked: a swap next session, a question tomorrow morning.
+  const exIds = new Set(mine.map((s) => s.exerciseId));
+  const flagNotes = [
+    ...new Set(
+      sessionFlags
+        .filter((f) => f.swap)
+        .map((f) => `A ${f.group.toLowerCase()} tick swaps ${lowerFirst(findExercise(plan, f.swap!.from)?.name ?? f.swap!.from)} for ${lowerFirst(findExercise(plan, f.swap!.to)?.name ?? f.swap!.to)} in your next ${findSession(plan, f.swap!.session)?.name ?? 'session'}.`),
+    ),
+    ...plan.flags
+      .filter((f) => f.when === 'morning' && f.after?.some((id) => exIds.has(id)))
+      .map((f) => `Tomorrow's morning log asks: ${f.question ?? f.label}`),
+  ];
 
   const save = async () => {
     // One save, however many taps.
@@ -143,10 +155,23 @@ function LiveDone({ session, plan, days, sets, withSkips, sessions, settings }: 
     const raised = plan.flags.filter((f) => picked.includes(f.id));
     if (raised.length) toast({ kicker: `${raised[0].group} flagged`, text: swapSentence(plan, raised[0].swap) ?? 'Noted in your joint log.', sub: raised[0].advice, ms: 7000 });
     const ended = { ...session, endedAt: Date.now(), flags: picked };
-    // The soundtrack, if Last.fm is set up and online; never holds the finale up for long.
-    const songs = await Promise.race([fetchSessionTracks(ended, settings), new Promise<SongRecord[]>((r) => setTimeout(() => r([]), 4000))]);
-    const usual = usualLength(sessions.filter((s) => s.id !== session.id), sets, session.session, def?.minutes ?? 60);
-    setData(finaleData({ session: ended, mine: withSkipped, songs, pages: records.length ? recordPages(mine, sets, plan, settings, session.date) : [], plan, quality, usualMin: usual.fromHistory ? usual.min : undefined }));
+    // The session is saved: whatever fails from here, the finale still opens.
+    let songs: SongRecord[] = [];
+    let timer: number | undefined;
+    try {
+      // The soundtrack, if Last.fm is set up and online; never holds the finale up for long.
+      songs = await Promise.race([fetchSessionTracks(ended, settings), new Promise<SongRecord[]>((r) => (timer = window.setTimeout(() => r([]), 4000)))]);
+    } catch {
+      songs = [];
+    } finally {
+      window.clearTimeout(timer);
+    }
+    try {
+      const usual = usualLength(sessions.filter((s) => s.id !== session.id), sets, session.session, def?.minutes ?? 60);
+      setData(finaleData({ session: ended, mine: withSkipped, songs, pages: records.length ? recordPages(mine, sets, plan, settings, session.date) : [], plan, quality, usualMin: usual.fromHistory ? usual.min : undefined }));
+    } catch {
+      setData(finaleData({ session: ended, mine: withSkipped, songs: [], pages: [], plan, quality }));
+    }
     setStep(1);
   };
 
@@ -163,6 +188,7 @@ function LiveDone({ session, plan, days, sets, withSkips, sessions, settings }: 
       onStep={setStep}
       data={data ?? empty}
       flags={sessionFlags.map((f) => ({ id: f.id, label: f.label }))}
+      flagNotes={flagNotes}
       picked={picked}
       onPick={setPicked}
       note={note}
