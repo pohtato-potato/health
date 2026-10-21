@@ -17,6 +17,7 @@ The owner's decisions from the Walk pinboard and the debloat questions (`docs/su
 | **"You've walked Delhi to Mumbai"** | `distanceInTerms` in `src/walk/journal.ts`; its uses in `WalkTab.tsx` and `src/domain/film.ts` | Removed from the film too, as the owner chose "remove" over "keep in the film" |
 | **The chapter forecast and its track record** | `walkForecast` in `src/walk/cards.ts`; the saved `walk:` forecasts and `recordLine` use in `WalkTab.tsx`; the forecast in the journal foot, the Route sub-tab and the map's chapter card; the chapter mark on the Journey clock rim (`chapterEndOn`) | Departures keeps its own ETAs. Old `walk:` rows in `db.forecasts` are left alone |
 | **The souvenir shelf** | `SouvenirShelf` in `WalkExtras.tsx`, `src/walk/SouvenirArt.tsx`, the shapes in `src/walk/souvenirs.ts`, the Souvenirs sub-tab, "Keep" on the city page | The souvenir names may come back in the passport; keep `SOUVENIRS` data until that round decides |
+| **The journal** | `journal`, `landLine` and the land words in `src/walk/journal.ts` and `src/walk/regions.ts`; the pull-up sheet in `WalkTab.tsx` | Never used. People met move onto the page |
 | **The four sub-tabs** | the `Seg` and `extraTabs` prop in `WalkTab.tsx` | Replaced by one scroll (see Changed) |
 | **The Journey hub link on Walk** | the "Overview" row in the Route sub-tab | The hub stays reachable from You ("Journey clock") |
 | **The second page per city** | `src/screens/ArrivalCard.tsx` and its route `#/arrival` | Merged into the postcard (see Changed). Old `#/arrival?city=` links redirect to `#/postcard?c=` |
@@ -26,7 +27,7 @@ The owner's decisions from the Walk pinboard and the debloat questions (`docs/su
 
 1. **One kilometre figure.** A single function gives the walk's distance from the step total, and every screen uses it: the Walk tab, Today's band, the map, postcards, arrival toasts and chapter moments, km milestones, Departures, Day closed, the Ticker, You, the film, Wrapped, shake stats, achievements, the workbook export and the Logbook day card. With quests and the pass lock gone, it is the plain step total in kilometres. This fixes the mismatches listed in the inventory (postcards from beyond a closed pass, journal places, two forecasts).
 2. **Passes as places.** Banihal, Zoji La and Fotu La stay on the route as named points with their heights, reached by steps like any other place.
-3. **One scroll.** The Walk tab reads top to bottom: the scene and title; one status line; the last few journal days with any person met; then links to the map and Departures.
+3. **One scroll.** The Walk tab reads top to bottom: the scene and title; one status line; the latest person met; then links to the map, Departures and the cities reached.
 4. **One status line.** It shows the km to the next stop. It names a person met when there is one today.
 5. **People met on the road stay**, shown on the page itself on the days you meet someone, not only inside the pulled-up journal.
 6. **One page per city.** The postcard carries what the arrival card had: the scene at the hour, the fact, eat, hear, the landmark on the way in, and the next stop. Map dots and the city chips open it.
@@ -39,5 +40,4 @@ The scene art and landmarks, the route itself, the postcard text, Departures, th
 
 ## Still open
 
-- **The journal:** the owner's numbered answers skipped this question (keep three plain lines, or remove). The plan above keeps a short journal; confirm in round 2.
 - **Map targets and labels** at 44 px and readable sizes: a maybe, for the redesign.

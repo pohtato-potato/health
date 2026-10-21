@@ -1,6 +1,6 @@
 # Walk scoping decisions
 
-Date: 21 Oct 2026 · Branch: `scope/walk` · Status: round 3 answered; only the journal is open
+Date: 21 Oct 2026 · Branch: `scope/walk` · Status: scoping done; debloat being built on `debloat/walk`
 
 Scoping for the Walk tab (`#/walk`). No visual design here: design happens later, outside this repo. **The repo is public:** personal values stay out.
 
@@ -154,7 +154,10 @@ Answered on the third pinboard. The owner's notes are paraphrased.
 45. When India is finished, the owner picks a new country as the main walk.
 46. On sick, injured and break days the walker rests at camp; travel days say so. Tomorrow's line appears on the Walk tab and on Today.
 
-## Open questions (round 4)
+## Round 4 (21 Oct 2026)
 
-- The journal: keep it, change it or remove it, now that the owner has its description.
+47. The journal is removed: never used, never seen. Other ways to show the same information may come up later.
+
+## Open questions
+
 - Smaller maybes for the design pass: the weekly report on Today, small stops in the scene and on the map, map targets and labels.
