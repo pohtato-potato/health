@@ -135,8 +135,7 @@ export interface Prefs {
   nightMode: boolean;
   buzz: boolean;
   confirmSteps: boolean;
-  /** Added after launch, so older saves may not have them: read through prefOn(). */
-  ticker?: boolean;
+  /** Added after launch, so older saves may not have them: read through prefOn(). Old saves may also carry retired keys (ticker); they are ignored. */
   shake?: boolean;
   shuffleVoices?: boolean;
   seasonal?: boolean;
@@ -171,7 +170,6 @@ const PREF_DEFAULTS: Required<Prefs> = {
   nightMode: true,
   buzz: true,
   confirmSteps: true,
-  ticker: false,
   shake: true,
   shuffleVoices: false,
   seasonal: true,
@@ -606,7 +604,7 @@ export interface TrackValue {
   at: number;
 }
 
-/** Counts things you do in the app that leave no other trace, like tapping the ticker. */
+/** Counts things you do in the app that leave no other trace, like a shake for a stat. */
 export interface Counter {
   id: string;
   n: number;

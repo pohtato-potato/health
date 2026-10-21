@@ -7,10 +7,7 @@ import { type Day, type Settings } from '../domain/types';
 import { pinnedLine, voiceLine, plainFlagLine, plainLine, type Moment } from '../domain/voice';
 import { addEntries, bump, changePlace, deleteEntry } from '../db/actions';
 import { useKonami } from '../ui/useKonami';
-import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useMeasurements, useSessions, useSettings, useToday } from '../db/hooks';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db/db';
-import { Ticker, tickerContext } from '../ui/Ticker';
+import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useSessions, useSettings, useToday } from '../db/hooks';
 import { prefOn } from '../domain/types';
 import { voiceFor } from '../domain/voice';
 import { mealForTime, portionFor } from '../domain/foods';
@@ -61,8 +58,6 @@ export function Today() {
   const weekEntries = useEntriesBetween(ws, addDays(ws, 6));
   const monthEntries = useEntriesBetween(addDays(today, -60), today);
   const toast = useToast();
-  const measurements = useMeasurements();
-  const unlockedCount = useLiveQuery(() => db.achievements.count(), []);
   const konami = useKonami(() => {
     void bump('konami');
     toast({ kicker: '↑ ↑ ↓ ↓ ← → ← →', text: 'Konami code accepted.', sub: 'Thirty lives not included. The Retro theme is yours.', tone: 'lavender' });
@@ -70,7 +65,7 @@ export function Today() {
 
   const day = useMemo(() => days?.find((d) => d.date === today), [days, today]);
 
-  if (!settings || !days || !entries || !sessions || !sets || active === undefined || !foods || !weekEntries || !monthEntries || !measurements) {
+  if (!settings || !days || !entries || !sessions || !sets || active === undefined || !foods || !weekEntries || !monthEntries) {
     return <div className="page" />;
   }
 
@@ -129,7 +124,6 @@ export function Today() {
     );
     toast({ text: `Added ${added.map((e) => e.name).join(' and ')}`, sub: `+${Math.round(gap.picks.reduce((n, p) => n + p.proteinG, 0))} g protein`, action: { label: 'Undo', run: () => added.forEach((e) => void deleteEntry(e.id)) } });
   };
-  const ticker = prefOn(settings.prefs, 'ticker');
   const ready = forecastData(settings, today, days, monthEntries.filter((e) => e.date >= addDays(today, -2)), sessions, sets).readiness;
   // As in v1: the calorie and protein rings open meal logging, steps opens steps logging.
   const ringRow = (dot: string, value: string, unit: string, right: string, open: () => void) => (
@@ -149,8 +143,7 @@ export function Today() {
   );
   return (
     <>
-    {ticker && <Ticker ctx={tickerContext(settings, today, days, monthEntries, sessions, sets, measurements, unlockedCount ?? 0)} />}
-    <div className={`page${ticker ? ' after-ticker' : ''}`}>
+    <div className="page">
       <div className="row base">
         <h1 className="t14" style={{ margin: 0, fontWeight: 600 }}>
           {fmtDayShort(today)}
