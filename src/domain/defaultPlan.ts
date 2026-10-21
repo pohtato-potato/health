@@ -39,7 +39,7 @@ export const DEFAULT_PLAN: PlanDef = upgradePlan({
         { id: 'rear-delt', order: '4b', name: 'Rear delt fly', sets: 3, reps: [12, 15], load: 'pair', startKg: 5, restSec: 75 },
         { id: 'curl', order: '5a', name: 'Curl', sets: 3, reps: [10, 15], load: 'pair', startKg: 5, tempo: true, note: 'Strict, 3-second lowering.' },
         { id: 'wrist-curl', order: '5b', name: 'Wrist curl', sets: 2, reps: [20, 30], load: 'pair', startKg: 5, restSec: 75, tiredHands: true },
-        { id: 'farmer-carry', order: '6', name: 'Farmer carry', sets: 2, measure: 'steps', steps: [60, 90], load: 'pair', startKg: 10, restSec: 90, tiredHands: true, note: 'Walk tall, shoulders down. Count steps, or turns of the room.' },
+        { id: 'farmer-carry', order: '6', name: 'Farmer carry', sets: 2, measure: 'seconds', seconds: [60, 90], load: 'pair', startKg: 10, restSec: 90, tiredHands: true, note: 'Walk tall, shoulders down.' },
       ],
     },
     {

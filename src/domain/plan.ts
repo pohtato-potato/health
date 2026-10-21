@@ -85,6 +85,17 @@ export interface ExerciseDef {
   resetLoad?: boolean;
   /** Set on import (ms): sets logged before this don't set the load or the progression. History and records keep them. */
   loadFrom?: number;
+  /** v3: 3–6 form points, ticked after each set. Written by the coach. */
+  checks?: FormCheck[];
+  /** v3: single-joint work, where the session nudges you through the burn. */
+  isolation?: boolean;
+}
+
+export interface FormCheck {
+  /** Stays the same across plan versions, so the export can track it. */
+  id: string;
+  text: string;
+  kind: 'do' | 'avoid';
 }
 
 export interface SessionDef {

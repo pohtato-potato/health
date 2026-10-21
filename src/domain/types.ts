@@ -430,6 +430,10 @@ export interface TrainingSession {
   tiredHands?: boolean;
   /** v2: part of a lighter week, one set fewer per exercise. */
   lighter?: boolean;
+  /** v3: the live screens, or the set list. Live unless switched. */
+  view?: 'live' | 'list';
+  /** v3: the set being counted right now. */
+  liveSet?: LiveCounter | null;
 }
 
 export interface SetEntry {
@@ -464,6 +468,25 @@ export interface SetEntry {
   /** Carries measured in steps. */
   steps?: number;
   firstSide?: 'L' | 'R';
+  /** v3: the set timer, from the first tap to Set done (ms since epoch). */
+  startedAt?: number;
+  endedAt?: number;
+  /** v3: the reps counted when the burn was marked; reps after it are past the burn. */
+  burnAt?: number;
+  /** v3: each form check from the plan: went well or slipped. Replaces the 1–5 form score. */
+  checks?: Record<string, CheckMark>;
+}
+
+export type CheckMark = 'ok' | 'slip';
+
+/** A set being counted on the live screen, kept on the session so leaving doesn't lose it. */
+export interface LiveCounter {
+  /** The row it counts. */
+  key: string;
+  taps: number[];
+  burnAt?: number;
+  /** The first tap. */
+  startedAt?: number;
 }
 
 export type Mark = '!!' | '!' | '=';
