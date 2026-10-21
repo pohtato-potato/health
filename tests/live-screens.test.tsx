@@ -11,7 +11,7 @@ const row: Row = { ex, setNo: 2, side: 'both', drop: false, key: 'curl:2:both' }
 const counted = (n: number, burnAt?: number): LiveCounter => ({ key: row.key, taps: Array.from({ length: n }, (_, i) => NOW - (n - i) * 3000), burnAt, startedAt: n ? NOW - n * 3000 : undefined });
 const noop = () => {};
 const base = { row, name: 'Curl', kg: 10, aim: '10–15', bottom: 10, bar: 12, tempo: false, timed: false, nudge: false, onCounter: noop, onDone: noop, onSkip: noop, saver: false, theme: 'dusk' as const, buzz: false, now: NOW };
-const html = (p: Partial<typeof base> & { c: LiveCounter; leadSide?: 'L' | 'R' }) => renderToStaticMarkup(<SetScreen {...base} {...p} />);
+const html = (p: Partial<typeof base> & { c: LiveCounter; leadSide?: 'L' | 'R'; firstAtLoad?: boolean }) => renderToStaticMarkup(<SetScreen {...base} {...p} />);
 
 describe('the set screen', () => {
   it('shows the burn in words, and in colour', () => {
@@ -40,9 +40,17 @@ describe('the set screen', () => {
   it('draws no aurora in battery saver', () => {
     expect(html({ saver: true, c: counted(3) })).not.toContain('blob');
   });
+  it('shows no best at a new load', () => {
+    const h = html({ c: counted(10), bar: 9, firstAtLoad: true });
+    expect(h).not.toContain('best');
+    expect(h).toContain('new record · first time at this load');
+  });
+  it('keeps the nudge space after the first rep, so the count stays put', () => {
+    expect(html({ nudge: true, c: counted(1) })).toContain('lv-nudge');
+  });
   it('nudges through the burn before the first rep', () => {
     expect(html({ nudge: true, c: counted(0) })).toContain('Last set ended with 2+ left. Go through the burn this time.');
-    expect(html({ nudge: true, c: counted(1) })).not.toContain('Go through the burn');
+    expect(html({ nudge: true, c: counted(1) })).toMatch(/class="lv-nudge"[^>]*visibility:hidden/);
   });
 });
 

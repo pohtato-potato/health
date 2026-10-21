@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { checksFor } from '../../domain/checks';
 import { RINGS } from '../../domain/liveLook';
 import { burnNudge, justTags, restoreCounter, seconds, setState } from '../../domain/liveSet';
-import { recordBar } from '../../domain/marks';
+import { newLoad, recordBar } from '../../domain/marks';
 import { bottomOfRange, measureOf, sidesFor, valueOfSet, type ExerciseDef } from '../../domain/plan';
 import { historyFor } from '../../domain/progression';
 import type { LiveCounter, SetEntry, Settings, TrainingSession } from '../../domain/types';
@@ -47,10 +47,10 @@ export function LiveSession({ r, session, settings }: { r: Runner; session: Trai
     const done = r.mine.filter((s) => s.exerciseId === x.ex.id && !s.skipped && !s.drop).sort((a, b) => b.at - a.at);
     return done.find((s) => s.side === x.side) ?? done[0];
   };
-  const barOf = (x: Row) => {
-    const before = [...r.history, ...r.mine.filter((s) => s.id !== findLogged(r.mine, x)?.id)];
-    return recordBar({ side: x.side, loadKg: r.defaults(x).kg, drop: x.drop }, historyFor(x.ex, settings.planState, before), bottomOfRange(x.ex) ?? 1, { clean: settings.formRecordsClean !== false });
-  };
+  const priorOf = (x: Row) => historyFor(x.ex, settings.planState, [...r.history, ...r.mine.filter((s) => s.id !== findLogged(r.mine, x)?.id)]);
+  const barOf = (x: Row) => recordBar({ side: x.side, loadKg: r.defaults(x).kg, drop: x.drop }, priorOf(x), bottomOfRange(x.ex) ?? 1, { clean: settings.formRecordsClean !== false });
+  const firstAt = (x: Row) => newLoad({ side: x.side, loadKg: r.defaults(x).kg }, priorOf(x));
+  const [saving, setSaving] = useState(false);
 
   const top = (
     <>
@@ -73,8 +73,9 @@ export function LiveSession({ r, session, settings }: { r: Runner; session: Trai
       </header>
       <nav className="lv-strip" aria-label="Exercises">
         {r.groups.map((g, i) => (
-          <button key={g[0].id} type="button" className={i === r.gi ? 'cur' : r.complete(i) ? 'done' : ''} aria-label={g.map(nameOf).join(' + ')} aria-current={i === r.gi} onClick={() => (setPending(null), r.setGi(i))}>
+          <button key={g[0].id} type="button" className={i === r.gi ? 'cur' : r.complete(i) ? 'done' : ''} aria-label={`${g.map(nameOf).join(' + ')}${r.complete(i) ? ', done' : ''}`} aria-current={i === r.gi} onClick={() => (setPending(null), r.setGi(i))}>
             {i + 1}
+            {r.complete(i) && i !== r.gi ? ' ✓' : ''}
           </button>
         ))}
       </nav>
@@ -103,9 +104,18 @@ export function LiveSession({ r, session, settings }: { r: Runner; session: Trai
         saver={saver}
         detail={`${timed ? 'held' : 'reps'}${r.defaults(x).kg !== null ? ` at ${r.defaults(x).kg} kg` : ''}${sideWord(x.side)}`}
         top={top}
+        saving={saving}
+        firstAtLoad={firstAt(x)}
         onSave={async ({ checks, rir }) => {
-          const res = await r.save(x, { val, startedAt: pending.c.startedAt, endedAt: pending.endedAt, burnAt: pending.c.burnAt, checks, rir });
-          if (res !== 'invalid') setPending(null);
+          // One save per set: a second tap while this one is writing does nothing.
+          if (saving) return;
+          setSaving(true);
+          try {
+            const res = await r.save(x, { val, startedAt: pending.c.startedAt, endedAt: pending.endedAt, burnAt: pending.c.burnAt, checks, rir });
+            if (res !== 'invalid') setPending(null);
+          } finally {
+            setSaving(false);
+          }
         }}
       />
     );
@@ -186,6 +196,7 @@ export function LiveSession({ r, session, settings }: { r: Runner; session: Trai
         aim={aimOf(row.ex)}
         bottom={bottomOfRange(row.ex)}
         bar={barOf(row)}
+        firstAtLoad={firstAt(row)}
         tempo={!!session.tempo?.[row.ex.id]}
         timed={measureOf(row.ex) === 'seconds'}
         nudge={burnNudge(row.ex, prev) && (row.side === 'both' || row.side === lead)}

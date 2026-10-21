@@ -40,10 +40,38 @@ export function setState(p: { reps: number; burnAt?: number; bottom?: number; ba
 
 const WORDS: Record<SetState | 'rest', string> = { build: 'building', in: 'in range', burn: 'in the burn', record: 'new record', rest: 'rest' };
 
-/** The state in words, so colour never says it alone. */
-export function stateWord(s: SetState | 'rest', bar?: number): string {
+/** The state in words, so colour never says it alone. `firstAtLoad`: no set was ever done at this load. */
+export function stateWord(s: SetState | 'rest', bar?: number, firstAtLoad?: boolean): string {
   if (s !== 'record' || bar === undefined) return WORDS[s];
-  return bar === 0 ? 'new record · first time at this load' : `new record · best was ${bar}`;
+  return firstAtLoad || bar === 0 ? 'new record · first time at this load' : `new record · best was ${bar}`;
+}
+
+/** Where a press on the tap area is: a quick press is a rep, a long one the burn; a second finger or a scroll is neither. */
+export interface Press {
+  down: boolean;
+  /** A second finger landed, or the browser took the touch: this press counts for nothing. */
+  void: boolean;
+  held: boolean;
+  timed: boolean;
+}
+export type PressEvent = { t: 'down'; primary: boolean; timed?: boolean } | { t: 'up'; primary: boolean } | { t: 'cancel' } | { t: 'held' };
+export const IDLE_PRESS: Press = { down: false, void: false, held: false, timed: false };
+
+/** `arm` starts the hold timer, `disarm` stops it; `tap` and `hold` are what the press meant. */
+export function press(s: Press, e: PressEvent): { s: Press; out?: 'arm' | 'disarm' | 'tap' | 'hold' } {
+  switch (e.t) {
+    case 'down':
+      if (!e.primary) return { s: { ...s, void: true }, out: 'disarm' };
+      return { s: { down: true, void: false, held: false, timed: !!e.timed }, out: 'arm' };
+    case 'held':
+      if (!s.down || s.void || s.timed) return { s };
+      return { s: { ...s, held: true }, out: 'hold' };
+    case 'up':
+      if (!e.primary) return { s };
+      return { s: IDLE_PRESS, out: s.down && !s.void && !s.held ? 'tap' : 'disarm' };
+    case 'cancel':
+      return { s: { ...s, void: true }, out: 'disarm' };
+  }
 }
 
 /** Each tap is the top of a rep: lower for `downSec`, lift for `upSec`, then wait for the next tap. */

@@ -5,7 +5,7 @@ import { addDays } from '../../domain/dates';
 import { fmt1, fmtDayMonth, fmtDayShort } from '../../domain/format';
 import { allExercises, realSets } from '../../domain/plan';
 import { exerciseStatus, hitTop, ladder } from '../../domain/progression';
-import { FAULTS } from '../../domain/quality';
+import { FAULTS, formScore } from '../../domain/quality';
 import { formTrend, liftLine } from '../../domain/trackStats';
 import { go } from '../../router';
 import { songAt } from '../../sources/lastfm';
@@ -46,7 +46,7 @@ export function TrainingTrack({ data }: { data: TrackData }) {
           if (!mine.length) return undefined;
           const lad = ladder(ex, data.sets);
           const recent = [...new Set(mine.map((s) => s.sessionId))].slice(-3);
-          const forms = mine.filter((s) => recent.includes(s.sessionId) && s.form).map((s) => s.form!);
+          const forms = mine.filter((s) => recent.includes(s.sessionId)).map(formScore).filter((f) => f !== undefined);
           const formAvg = forms.length ? forms.reduce((a, b) => a + b, 0) / forms.length : undefined;
           const st = exerciseStatus(ex, settings.planState, settings.equipment, data.sets, settings.plan!.bigJump);
           return { ex, lad, ready: hitTop(ex, data.sets), formAvg, st };

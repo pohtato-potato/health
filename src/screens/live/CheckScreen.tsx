@@ -20,6 +20,10 @@ interface Props {
   prev?: { checks?: Marks; rir?: number };
   onSave: (v: { checks: Marks; rir?: number }) => void;
   saver: boolean;
+  /** Heavier than ever before: no best to name. */
+  firstAtLoad?: boolean;
+  /** A save is being written: the button waits. */
+  saving?: boolean;
   /** What was lifted: "reps at 10 kg · left". */
   detail?: string;
   top?: ReactNode;
@@ -34,7 +38,7 @@ export function CheckScreen(p: Props) {
   const slips = slipCount({ checks: marks });
   const lost = p.state === 'record' && !!p.clean && slips > 0;
   const state = lost ? p.unrecord ?? 'in' : p.state;
-  const word = lost ? `not a record · ${slips} check${slips === 1 ? '' : 's'} slipped` : stateWord(state, p.bar);
+  const word = lost ? `not a record · ${slips} check${slips === 1 ? '' : 's'} slipped` : stateWord(state, p.bar, p.firstAtLoad);
   const unchanged = !!p.prev && same(marks, p.prev.checks) && rir === p.prev.rir;
   const tap = (id: string) =>
     setMarks((m) => {
@@ -92,7 +96,7 @@ export function CheckScreen(p: Props) {
         </div>
       </div>
       <div style={{ marginTop: 'auto' }}>
-        <Primary onClick={() => p.onSave({ checks: marks, rir })}>{unchanged ? 'Same as last set' : 'Save'}</Primary>
+        <Primary disabled={p.saving} onClick={() => p.onSave({ checks: marks, rir })}>{unchanged ? 'Same as last set' : 'Save'}</Primary>
       </div>
     </LiveFrame>
   );

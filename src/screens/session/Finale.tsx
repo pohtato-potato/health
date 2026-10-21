@@ -1,5 +1,5 @@
 import { hourBreakdown } from '../../domain/muscles';
-import { cleanOf, FAULTS, FORM_LABELS, topFault } from '../../domain/quality';
+import { cleanOf, FAULTS, FORM_LABELS, formScore, topFault } from '../../domain/quality';
 import type { SetEntry, SongRecord, TrainingSession } from '../../domain/types';
 import { songAt, topWorkoutArtists } from '../../sources/lastfm';
 import { Story, type StoryCard } from '../../ui/Story';
@@ -87,9 +87,9 @@ export function Finale({ session, mine, pages, quality, songs = [], onClose }: {
     });
   }
 
-  const rated = done.filter((s) => s.form !== undefined);
+  const rated = done.map(formScore).filter((f) => f !== undefined);
   if (rated.length) {
-    const avg = Math.round(rated.reduce((n, s) => n + s.form!, 0) / rated.length);
+    const avg = Math.round(rated.reduce((n, f) => n + f, 0) / rated.length);
     const reps = done.reduce((n, s) => n + (s.reps ?? 0), 0);
     const clean = done.reduce((n, s) => n + (s.reps !== undefined ? cleanOf(s) : 0), 0);
     const fault = topFault(done);

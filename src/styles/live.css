@@ -145,7 +145,6 @@
 .lv.st-build { --lv-a: #262c58; --lv-b: #0c0e1d; }
 .lv-pill { font-size: 14px; padding: 5px 11px; border-radius: 999px; background: color-mix(in srgb, var(--lv-b) 45%, transparent); border: 1px solid color-mix(in srgb, var(--text) 20%, transparent); }
 .lv-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
-.lv-strip button.done { color: color-mix(in srgb, var(--text) 45%, transparent); }
 .lv-skip { align-self: center; min-height: 44px; font-size: 15px; color: color-mix(in srgb, var(--text) 75%, transparent); text-decoration: underline; }
 
 /* Battery saver: true black, nothing moving, text in readable grey */
@@ -165,3 +164,12 @@ html.contrast .lv-check, html.contrast .lv-ghost { border-color: var(--text); }
 }
 .lv-chipbtn { min-height: 44px; padding: 0 14px; border-radius: 999px; font-size: 15px; color: var(--text); background: color-mix(in srgb, var(--lv-b) 50%, transparent); border: 1px solid color-mix(in srgb, var(--text) 22%, transparent); }
 .lv-card-h { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, var(--text) 70%, transparent); }
+.lv-hint { min-height: 2.9em; }
+.lv-strip button { min-height: 44px; }
+.lv-strip button.done { color: color-mix(in srgb, var(--text) 80%, transparent); }
+
+/* Check rows: a bordered row with a box, so an unmarked check still reads as something to tap */
+.lv-check { display: flex; align-items: center; gap: 12px; padding: 0 14px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--text) 30%, transparent); background: color-mix(in srgb, var(--lv-b) 45%, transparent); text-align: left; color: var(--text); }
+.lv-check .grow { flex: 1; }
+.lv-check .box { width: 28px; height: 28px; flex: none; border-radius: 8px; border: 2px solid color-mix(in srgb, var(--text) 45%, transparent); display: grid; place-items: center; color: var(--ink); font-weight: 700; }
+.lv-check.ok .box { background: var(--sage); border-color: var(--sage); }

@@ -1,7 +1,7 @@
 import { useRef, useState, type PointerEvent, type ReactNode } from 'react';
 import { buzz as vibrate } from '../../audio';
 import { RIPPLE } from '../../domain/liveLook';
-import { counter, HOLD_MS, repsSlowing, seconds, setState, stateWord, tapTempo, type CounterAction } from '../../domain/liveSet';
+import { counter, HOLD_MS, IDLE_PRESS, press, repsSlowing, seconds, setState, stateWord, tapTempo, type CounterAction, type PressEvent } from '../../domain/liveSet';
 import type { ThemeId } from '../../domain/themes';
 import type { LiveCounter } from '../../domain/types';
 import type { Row } from '../session/SetTable';
@@ -16,6 +16,8 @@ interface Props {
   bottom?: number;
   /** The value a record has to beat; none before the first time. */
   bar?: number;
+  /** Heavier than ever before: no best to show. */
+  firstAtLoad?: boolean;
   tempo: boolean;
   timed: boolean;
   nudge: boolean;
@@ -36,7 +38,8 @@ export function SetScreen(p: Props) {
   const { c, row } = p;
   const [ripples, setRipples] = useState<{ id: number; x: number; y: number; cls: string }[]>([]);
   const hold = useRef<number | undefined>(undefined);
-  const held = useRef(false);
+  const gesture = useRef(IDLE_PRESS);
+  const at = useRef({ x: 0, y: 0 });
   const reps = p.timed ? seconds(c, p.now) : c.taps.length;
   const state = setState({ reps, burnAt: c.burnAt, bottom: p.bottom, bar: p.bar });
   const last = c.taps[c.taps.length - 1];
@@ -52,33 +55,46 @@ export function SetScreen(p: Props) {
     latest.current = n;
     p.onCounter(n);
   };
-  const ripple = (e: PointerEvent<HTMLElement>, cls: string) => {
+  // The ripple's spot is read at the press: the event is gone by the time a hold fires.
+  const ripple = (cls: string) => {
     if (still) return;
-    const r = e.currentTarget.getBoundingClientRect();
-    setRipples((rs) => [...rs.slice(-5), { id: Date.now() + Math.random(), x: e.clientX - r.left, y: e.clientY - r.top, cls }]);
+    setRipples((rs) => [...rs.slice(-5), { id: Date.now() + Math.random(), x: at.current.x, y: at.current.y, cls }]);
   };
-  const down = (e: PointerEvent<HTMLElement>) => {
-    if (!e.isPrimary) return;
-    held.current = false;
-    window.clearTimeout(hold.current);
-    hold.current = window.setTimeout(() => {
-      held.current = true;
-      act({ t: 'hold', at: Date.now() });
-      if (p.buzz) vibrate([30, 40, 30]);
-      ripple(e, 'burn');
-    }, HOLD_MS);
+  const onHold = () => {
+    act({ t: 'hold', at: Date.now() });
+    if (p.buzz) vibrate([30, 40, 30]);
+    ripple('burn');
   };
-  const up = (e: PointerEvent<HTMLElement>) => {
-    if (!e.isPrimary) return;
-    window.clearTimeout(hold.current);
-    if (held.current) return;
+  const onTap = () => {
     if (p.timed && latest.current.startedAt !== undefined) return;
     const n = latest.current.taps.length + 1;
     act({ t: 'tap', at: Date.now() });
     if (p.buzz) vibrate(p.bar !== undefined && n === p.bar + 1 ? [40, 30, 40, 30, 80] : 12);
-    ripple(e, setState({ reps: n, burnAt: latest.current.burnAt, bottom: p.bottom, bar: p.bar }));
+    ripple(setState({ reps: n, burnAt: latest.current.burnAt, bottom: p.bottom, bar: p.bar }));
   };
-  const cancel = () => window.clearTimeout(hold.current);
+  /** One step of the press: a quick press is a rep, a long one the burn, a second finger or a scroll neither. */
+  const step = (ev: PressEvent) => {
+    const { s, out } = press(gesture.current, ev);
+    gesture.current = s;
+    if (out === 'arm') {
+      window.clearTimeout(hold.current);
+      hold.current = window.setTimeout(() => step({ t: 'held' }), HOLD_MS);
+    } else if (out === 'disarm') window.clearTimeout(hold.current);
+    else if (out === 'hold') onHold();
+    else if (out === 'tap') {
+      window.clearTimeout(hold.current);
+      onTap();
+    }
+  };
+  const down = (e: PointerEvent<HTMLElement>) => {
+    if (e.isPrimary) {
+      const r = e.currentTarget.getBoundingClientRect();
+      at.current = { x: e.clientX - r.left, y: e.clientY - r.top };
+    }
+    step({ t: 'down', primary: e.isPrimary, timed: p.timed });
+  };
+  const up = (e: PointerEvent<HTMLElement>) => step({ t: 'up', primary: e.isPrimary });
+  const cancel = () => step({ t: 'cancel' });
 
   const hint = p.timed
     ? c.startedAt === undefined
@@ -107,7 +123,12 @@ export function SetScreen(p: Props) {
             </span>
           )}
         </div>
-        {p.nudge && reps === 0 && <div className="lv-nudge">Last set ended with 2+ left. Go through the burn this time.</div>}
+        {/* Kept in place after the first rep, so the count never moves under the magnifier. */}
+        {p.nudge && (
+          <div className="lv-nudge" aria-hidden={reps > 0} style={reps > 0 ? { visibility: 'hidden' } : undefined}>
+            Last set ended with 2+ left. Go through the burn this time.
+          </div>
+        )}
       </div>
       <div
         className="lv-tap"
@@ -143,11 +164,11 @@ export function SetScreen(p: Props) {
           )}
           <div className={`lv-count num tn ${state}`}>{p.timed ? mmss(reps) : reps}</div>
         </div>
-        <div className="lv-word">{stateWord(state, p.bar)}</div>
+        <div className="lv-word">{stateWord(state, p.bar, p.firstAtLoad)}</div>
         {p.aim && (
           <div className="lv-aim">
             aim <b>{p.aim}</b>
-            {p.bar ? (
+            {p.bar && !p.firstAtLoad ? (
               <>
                 {' '}
                 · best <b>{p.bar}</b>

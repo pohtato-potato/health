@@ -17,10 +17,16 @@ export interface SetLike {
 
 const load = (s: Pick<SetLike, 'loadKg'>) => s.loadKg ?? 0;
 
-/** What a set counts for records. With `clean`, clean reps, and nothing when a form check slipped. */
+/** What a set counts for records: with `clean`, its clean reps. */
 function valueFor(s: SetLike, clean?: boolean): number {
-  if (clean && s.reps !== undefined) return slipCount(s) > 0 ? 0 : s.cleanReps ?? s.reps;
+  if (clean && s.reps !== undefined) return s.cleanReps ?? s.reps;
   return s.reps ?? s.seconds ?? s.steps ?? 0;
+}
+
+/** Heavier than every earlier set on this side: a first time at this load, with no best to show. */
+export function newLoad(set: Pick<SetLike, 'side' | 'loadKg'>, prior: SetEntry[]): boolean {
+  const earlier = prior.filter((p) => !p.drop && !p.skipped && p.side === set.side);
+  return earlier.length > 0 && load(set) > Math.max(...earlier.map(load));
 }
 
 /**
@@ -48,10 +54,11 @@ export function recordBar(set: Pick<SetLike, 'side' | 'loadKg' | 'drop'>, prior:
 export function markFor(set: SetLike, prior: SetEntry[], lastSets: SetEntry[], minValue = 1, opts: { clean?: boolean } = {}): Mark | undefined {
   const bar = recordBar(set, prior, minValue, opts);
   if (bar === undefined) return undefined;
+  // With `clean`, a set where a form check slipped can't be a record; it still counts against last time.
   const value = (s: SetLike) => valueFor(s, opts.clean);
   const v = value(set);
+  if (v > bar && !(opts.clean && slipCount(set) > 0)) return '!!';
   const kg = load(set);
-  if (v > bar) return '!!';
 
   const last = lastSets.find((p) => !p.drop && !p.skipped && p.setNo === set.setNo && p.side === set.side);
   if (!last) return undefined;
