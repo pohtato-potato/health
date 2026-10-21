@@ -20,12 +20,12 @@ describe('plan v2', () => {
     expect(upgradePlan(v2)).toEqual(v2);
   });
 
-  it('the default plan is v2: no dead bug, a Y-raise instead of the band face pull, carries in steps', () => {
+  it('the default plan is v2: no dead bug, a Y-raise instead of the band face pull, carries timed', () => {
     const all = DEFAULT_PLAN.sessions.flatMap((s) => s.exercises);
     expect(DEFAULT_PLAN.version).toBe(2);
     expect(all.some((e) => e.id === 'dead-bug')).toBe(false);
     expect(all.find((e) => e.id === 'y-raise')?.load).toBe('pair');
-    expect(all.find((e) => e.id === 'farmer-carry')?.measure).toBe('steps');
+    expect(all.find((e) => e.id === 'farmer-carry')?.measure).toBe('seconds');
     expect(all.find((e) => e.id === 'farmer-carry')?.tiredHands).toBe(true);
   });
 

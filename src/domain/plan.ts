@@ -85,6 +85,23 @@ export interface ExerciseDef {
   resetLoad?: boolean;
   /** Set on import (ms): sets logged before this don't set the load or the progression. History and records keep them. */
   loadFrom?: number;
+  /** v3: 3–6 form points, ticked after each set. Written by the coach. */
+  checks?: FormCheck[];
+  /** v3: single-joint work, where the session nudges you through the burn. */
+  isolation?: boolean;
+  /** v3: the coach's default setup (chair, bench, grip). */
+  setup?: string;
+  /** v3: the weight passes over the face: collars are checked first. */
+  overFace?: boolean;
+  /** v3: why the lead side goes first. */
+  leadWhy?: string;
+}
+
+export interface FormCheck {
+  /** Stays the same across plan versions, so the export can track it. */
+  id: string;
+  text: string;
+  kind: 'do' | 'avoid';
 }
 
 export interface SessionDef {
@@ -141,6 +158,10 @@ export interface PlanDef {
   triggers?: TriggerDef[];
   /** What to expect and when, e.g. "the slow stretch". */
   phases?: { from: string; to: string; title: string; text: string }[];
+  /** v3: the coach's version of this plan, e.g. "1.2"; sessions record it. */
+  planVersion?: string;
+  /** v3: hard sets per muscle group per week, [low, high], e.g. { Legs: [10, 16] }. */
+  weeklyTargets?: Record<string, [number, number]>;
 }
 
 export type PlanState = { variants: Record<string, number>; band: Record<string, number> };

@@ -227,30 +227,36 @@ export function SetTable({
                 ) : null}
                 {measure === 'reps' && !r.drop && (
                   <>
-                    <div className="chiprow" role="radiogroup" aria-label="Form">
-                      {FORM_LABELS.map((word, i) => {
-                        const f = (i + 1) as 1 | 2 | 3 | 4 | 5;
-                        const on = draft.form === f;
-                        return (
-                          <button key={word} type="button" role="radio" aria-checked={on} className={`chip sm formchip${on ? ' on' : ''}`} style={on ? { background: `var(--f${f})`, borderColor: `var(--f${f})` } : { color: `var(--f${f})` }} onClick={() => setDraft({ ...draft, form: on ? undefined : f })}>
-                            {f} {word}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {draft.form !== undefined && draft.form < 5 && (
-                      <div className="row" style={{ gap: 10, justifyContent: 'flex-start' }}>
-                        <span className="t13 q">Clean reps before it slipped</span>
-                        <input
-                          className="field sm"
-                          style={{ width: 64 }}
-                          inputMode="numeric"
-                          aria-label="Clean reps"
-                          placeholder={String(valNow ?? '')}
-                          value={draft.clean ?? ''}
-                          onChange={(e) => setDraft({ ...draft, clean: e.target.value ? Number(e.target.value.replace(/[^\d]/g, '')) : undefined })}
-                        />
-                      </div>
+                    {logged?.checks ? (
+                      <div className="t13 q">Form is set by the checks ticked after this set.</div>
+                    ) : (
+                      <>
+                        <div className="chiprow" role="radiogroup" aria-label="Form">
+                          {FORM_LABELS.map((word, i) => {
+                            const f = (i + 1) as 1 | 2 | 3 | 4 | 5;
+                            const on = draft.form === f;
+                            return (
+                              <button key={word} type="button" role="radio" aria-checked={on} className={`chip sm formchip${on ? ' on' : ''}`} style={on ? { background: `var(--f${f})`, borderColor: `var(--f${f})` } : { color: `var(--f${f})` }} onClick={() => setDraft({ ...draft, form: on ? undefined : f })}>
+                                {f} {word}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {draft.form !== undefined && draft.form < 5 && (
+                          <div className="row" style={{ gap: 10, justifyContent: 'flex-start' }}>
+                            <span className="t13 q">Clean reps before it slipped</span>
+                            <input
+                              className="field sm"
+                              style={{ width: 64 }}
+                              inputMode="numeric"
+                              aria-label="Clean reps"
+                              placeholder={String(valNow ?? '')}
+                              value={draft.clean ?? ''}
+                              onChange={(e) => setDraft({ ...draft, clean: e.target.value ? Number(e.target.value.replace(/[^\d]/g, '')) : undefined })}
+                            />
+                          </div>
+                        )}
+                      </>
                     )}
                     <div className="chiprow" role="radiogroup" aria-label="Reps in reserve">
                       <span className="t13 q" style={{ alignSelf: 'center', flexShrink: 0 }}>

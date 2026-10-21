@@ -1,4 +1,5 @@
 import type { ExerciseDef } from './plan';
+import { okCount, slipCount } from './checks';
 import type { SetEntry } from './types';
 
 /** Form, 1 to 5. */
@@ -14,6 +15,19 @@ export const FAULTS = [
   { id: 'lost-balance', name: 'Lost balance', cue: 'Slow down and plant your feet. A hand on the wall is fine.' },
 ] as const;
 export type FaultId = (typeof FAULTS)[number]['id'];
+
+/** Form, 1 to 5: the old score where there is one, else the share of form checks that went well. */
+export function formScore(s: Pick<SetEntry, 'form' | 'checks'>): 1 | 2 | 3 | 4 | 5 | undefined {
+  if (s.form !== undefined) return s.form;
+  const ok = okCount(s);
+  const all = ok + slipCount(s);
+  return all ? ((1 + Math.round((4 * ok) / all)) as 1 | 2 | 3 | 4 | 5) : undefined;
+}
+
+/** Textbook: scored 5, or every form check went well. */
+export function isTextbook(s: Pick<SetEntry, 'form' | 'checks'>): boolean {
+  return s.form === 5 || (s.form === undefined && okCount(s) > 0 && slipCount(s) === 0);
+}
 
 /** Reps that were clean before form slipped; all of them when not said. */
 export function cleanOf(s: Pick<SetEntry, 'reps' | 'cleanReps'>): number {

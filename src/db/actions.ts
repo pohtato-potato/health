@@ -276,6 +276,7 @@ export async function activeSession(): Promise<TrainingSession | undefined> {
 export async function startSession(opts: {
   session: string;
   planName: string;
+  planVersion?: string;
   exercises: string[];
   short: boolean;
   swaps: Swap[];
@@ -291,6 +292,7 @@ export async function startSession(opts: {
     date: dayKey(),
     session: opts.session,
     planName: opts.planName,
+    ...(opts.planVersion ? { planVersion: opts.planVersion } : {}),
     startedAt: Date.now(),
     status: 'active',
     short: opts.short,

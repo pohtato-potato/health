@@ -279,6 +279,8 @@ export interface Settings {
   reviewDay?: number;
   /** Records count clean reps only (default on). */
   formRecordsClean?: boolean;
+  /** v3: personal setups per exercise, dated, so a change starts a new version. */
+  setups?: Record<string, { from: DayKey; text: string }[]>;
   /** Steps per room turn, for farmer carries. */
   turnSteps?: number;
   /** The learned maintenance estimate, refreshed as data comes in. */
@@ -402,6 +404,8 @@ export interface TrainingSession {
   date: DayKey;
   session: string;
   planName: string;
+  /** v3: the plan version the session was done under. */
+  planVersion?: string;
   startedAt: number;
   endedAt?: number;
   status: 'active' | 'done';
@@ -430,6 +434,24 @@ export interface TrainingSession {
   tiredHands?: boolean;
   /** v2: part of a lighter week, one set fewer per exercise. */
   lighter?: boolean;
+  /** v3: the live screens, or the set list. Live unless switched. */
+  view?: 'live' | 'list';
+  /** v3: the set being counted right now. */
+  liveSet?: LiveCounter | null;
+  /** v3: "Legs sore, 1–5?" before a session with leg work. At 4–5 leg work drops to one set. */
+  legSoreness?: 1 | 2 | 3 | 4 | 5;
+  /** v3: the Before screen was passed. */
+  beforeDone?: boolean;
+  /** v3: exercises whose guide was shown tonight. */
+  guided?: string[];
+  /** v3: when "Collars tight" was ticked, before the first over-the-face exercise. */
+  collarCheckedAt?: number;
+  /** v3: a note per exercise, for next time and the coach. */
+  exNotes?: Record<string, string>;
+  /** v3: exercises whose plate change or collar check was passed tonight. */
+  platesSeen?: string[];
+  /** v3: why the rest running now is the length it is. */
+  restWhy?: string;
 }
 
 export interface SetEntry {
@@ -464,6 +486,25 @@ export interface SetEntry {
   /** Carries measured in steps. */
   steps?: number;
   firstSide?: 'L' | 'R';
+  /** v3: the set timer, from the first tap to Set done (ms since epoch). */
+  startedAt?: number;
+  endedAt?: number;
+  /** v3: the reps counted when the burn was marked; reps after it are past the burn. */
+  burnAt?: number;
+  /** v3: each form check from the plan: went well or slipped. Replaces the 1–5 form score. */
+  checks?: Record<string, CheckMark>;
+}
+
+export type CheckMark = 'ok' | 'slip';
+
+/** A set being counted on the live screen, kept on the session so leaving doesn't lose it. */
+export interface LiveCounter {
+  /** The row it counts. */
+  key: string;
+  taps: number[];
+  burnAt?: number;
+  /** The first tap. */
+  startedAt?: number;
 }
 
 export type Mark = '!!' | '!' | '=';

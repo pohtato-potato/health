@@ -50,7 +50,7 @@ const BY_NAME: [RegExp, Muscles][] = [
   [/rear delt|face pull|y-raise|reverse fly/i, m(['rear-delts', 'upper-back'])],
   [/overhead|shoulder press|\bohp\b/i, m(['front-delts', 'triceps'])],
   [/press|push-?up|fly/i, m(['chest', 'triceps'], ['front-delts'])],
-  [/row|pull-?down|pull-?up|chin/i, m(['lats', 'upper-back'], ['biceps'])],
+  [/\brows?\b|pull-?down|pull-?up|\bchin/i, m(['lats', 'upper-back'], ['biceps'])],
   [/pullover/i, m(['lats', 'chest'])],
   [/skull|tricep|dip|kickback/i, m(['triceps'])],
   [/hammer|curl/i, m(['biceps'], ['forearms'])],
@@ -101,3 +101,13 @@ export function hourBreakdown(s: Pick<TrainingSession, 'startedAt' | 'endedAt' |
   const sum = (kind: 'lift' | 'rest') => spans.filter((x) => x.kind === kind).reduce((n, x) => n + (x.to - x.from), 0);
   return { total: end - s.startedAt, lift: sum('lift'), rest: sum('rest'), longestRest: Math.max(0, ...spans.filter((x) => x.kind === 'rest').map((x) => x.to - x.from)) };
 }
+
+/** Muscle groups, as Train and the muscle map show them. */
+export const GROUPS: { name: string; muscles: MuscleId[] }[] = [
+  { name: 'Delts', muscles: ['front-delts', 'side-delts', 'rear-delts'] },
+  { name: 'Back', muscles: ['upper-back', 'lats'] },
+  { name: 'Chest', muscles: ['chest'] },
+  { name: 'Arms', muscles: ['biceps', 'triceps', 'forearms'] },
+  { name: 'Legs', muscles: ['quads', 'hamstrings', 'glutes', 'calves'] },
+  { name: 'Core', muscles: ['abs'] },
+];

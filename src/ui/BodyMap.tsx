@@ -52,7 +52,7 @@ function Outline() {
 /** Regions stand in for a few muscles each when showing training heat. */
 const ALSO: Partial<Record<MuscleId, MuscleId[]>> = { 'front-delts': ['side-delts', 'rear-delts'] };
 
-function Figure({ regions, value, onTap, label, dx, heat }: { regions: Region[]; value: Soreness; onTap?: (id: MuscleId) => void; label: string; dx: number; heat?: Partial<Record<MuscleId, number>> }) {
+function Figure({ regions, value, onTap, label, dx, heat, tint }: { regions: Region[]; value: Soreness; onTap?: (id: MuscleId) => void; label: string; dx: number; heat?: Partial<Record<MuscleId, number>>; tint?: Partial<Record<MuscleId, string>> }) {
   return (
     <g transform={`translate(${dx} 0)`}>
       <Outline />
@@ -60,13 +60,14 @@ function Figure({ regions, value, onTap, label, dx, heat }: { regions: Region[];
         const lvl = value[r.id] ?? 0;
         if (heat) {
           const h = Math.max(heat[r.id] ?? 0, ...(ALSO[r.id] ?? []).map((x) => heat[x] ?? 0));
+          const fill = tint?.[r.id] ?? (ALSO[r.id] ?? []).map((x) => tint?.[x]).find(Boolean) ?? 'var(--gold)';
           return (
             <g key={r.id}>
               {r.shapes.map((sh, i) =>
                 sh.kind === 'ellipse' ? (
-                  <ellipse key={i} cx={sh.cx} cy={sh.cy} rx={sh.rx} ry={sh.ry} fill="var(--gold)" fillOpacity={0.06 + h * 0.8} stroke="var(--btn-border)" strokeWidth="1" />
+                  <ellipse key={i} cx={sh.cx} cy={sh.cy} rx={sh.rx} ry={sh.ry} fill={fill} fillOpacity={0.06 + h * 0.8} stroke="var(--btn-border)" strokeWidth="1" />
                 ) : (
-                  <rect key={i} x={sh.x} y={sh.y} width={sh.w} height={sh.h} rx={sh.r} fill="var(--gold)" fillOpacity={0.06 + h * 0.8} stroke="var(--btn-border)" strokeWidth="1" />
+                  <rect key={i} x={sh.x} y={sh.y} width={sh.w} height={sh.h} rx={sh.r} fill={fill} fillOpacity={0.06 + h * 0.8} stroke="var(--btn-border)" strokeWidth="1" />
                 ),
               )}
             </g>
@@ -123,17 +124,18 @@ export function BodyMap({ value, onChange }: { value: Soreness; onChange: (v: So
 }
 
 /** The same figure, showing this week's training: brighter where more hard sets landed (0 to 1). */
-export function BodyHeat({ heat, label, side }: { heat: Partial<Record<MuscleId, number>>; label: string; side?: 'front' | 'back' }) {
+/** `tint` colours regions by meaning (on target, low, high); without it the figure lights in gold as before. */
+export function BodyHeat({ heat, label, side, tint }: { heat: Partial<Record<MuscleId, number>>; label: string; side?: 'front' | 'back'; tint?: Partial<Record<MuscleId, string>> }) {
   if (side)
     return (
       <svg viewBox="0 0 132 252" className="bodymap one" role="img" aria-label={label}>
-        <Figure regions={side === 'front' ? FRONT : BACK} value={{}} heat={heat} label={side === 'front' ? 'Front' : 'Back'} dx={6} />
+        <Figure regions={side === 'front' ? FRONT : BACK} value={{}} heat={heat} tint={tint} label={side === 'front' ? 'Front' : 'Back'} dx={6} />
       </svg>
     );
   return (
     <svg viewBox="0 0 260 252" className="bodymap" role="img" aria-label={label}>
-      <Figure regions={FRONT} value={{}} heat={heat} label="Front" dx={6} />
-      <Figure regions={BACK} value={{}} heat={heat} label="Back" dx={134} />
+      <Figure regions={FRONT} value={{}} heat={heat} tint={tint} label="Front" dx={6} />
+      <Figure regions={BACK} value={{}} heat={heat} tint={tint} label="Back" dx={134} />
     </svg>
   );
 }

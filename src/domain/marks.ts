@@ -1,4 +1,5 @@
-import type { Mark, SetEntry, Side } from './types';
+import { slipCount } from './checks';
+import type { CheckMark, Mark, SetEntry, Side } from './types';
 
 export interface SetLike {
   setNo: number;
@@ -11,9 +12,46 @@ export interface SetLike {
   steps?: number;
   cleanReps?: number;
   challenges?: string[];
+  checks?: Record<string, CheckMark>;
 }
 
-const load = (s: SetLike) => s.loadKg ?? 0;
+const load = (s: Pick<SetLike, 'loadKg'>) => s.loadKg ?? 0;
+
+/** What a set counts for records: with `clean`, its clean reps. */
+function valueFor(s: SetLike, clean?: boolean): number {
+  if (clean && s.reps !== undefined) return s.cleanReps ?? s.reps;
+  return s.reps ?? s.seconds ?? s.steps ?? 0;
+}
+
+/** The set that holds the record a new set has to beat: the best at this load or heavier, counted as records are. */
+export function recordHolder(set: Pick<SetLike, 'side' | 'loadKg'>, prior: SetEntry[], opts: { clean?: boolean } = {}): SetEntry | undefined {
+  const kg = load(set);
+  return prior
+    .filter((p) => !p.drop && !p.skipped && p.side === set.side && load(p) >= kg)
+    .sort((a, b) => valueFor(b, opts.clean) - valueFor(a, opts.clean))[0];
+}
+
+/** What a set counts for records, as shown. */
+export const recordValue = (s: SetLike, clean?: boolean) => valueFor(s, clean);
+
+/** Heavier than every earlier set on this side: a first time at this load, with no best to show. */
+export function newLoad(set: Pick<SetLike, 'side' | 'loadKg'>, prior: SetEntry[]): boolean {
+  const earlier = prior.filter((p) => !p.drop && !p.skipped && p.side === set.side);
+  return earlier.length > 0 && load(set) > Math.max(...earlier.map(load));
+}
+
+/**
+ * What a set has to beat to be a record: the best at this load or heavier, on this side.
+ * At a load heavier than ever, anything from `minValue` counts. None before the first time.
+ */
+export function recordBar(set: Pick<SetLike, 'side' | 'loadKg' | 'drop'>, prior: SetEntry[], minValue = 1, opts: { clean?: boolean } = {}): number | undefined {
+  if (set.drop) return undefined;
+  const earlier = prior.filter((p) => !p.drop && !p.skipped && p.side === set.side);
+  if (!earlier.length) return undefined;
+  const kg = load(set);
+  if (kg > Math.max(...earlier.map(load))) return minValue - 1;
+  return Math.max(...earlier.filter((p) => load(p) >= kg).map((p) => valueFor(p, opts.clean)));
+}
 
 /**
  * Chess-style marks for a set.
@@ -25,17 +63,13 @@ const load = (s: SetLike) => s.loadKg ?? 0;
  * count clean reps, so 13 clean beats 15 with 9 clean.
  */
 export function markFor(set: SetLike, prior: SetEntry[], lastSets: SetEntry[], minValue = 1, opts: { clean?: boolean } = {}): Mark | undefined {
-  if (set.drop) return undefined;
-  const earlier = prior.filter((p) => !p.drop && !p.skipped && p.side === set.side);
-  if (!earlier.length) return undefined;
-  const value = (s: SetLike) => (opts.clean && s.reps !== undefined ? s.cleanReps ?? s.reps : s.reps ?? s.seconds ?? s.steps ?? 0);
-
+  const bar = recordBar(set, prior, minValue, opts);
+  if (bar === undefined) return undefined;
+  // With `clean`, a set where a form check slipped can't be a record; it still counts against last time.
+  const value = (s: SetLike) => valueFor(s, opts.clean);
   const v = value(set);
+  if (v > bar && !(opts.clean && slipCount(set) > 0)) return '!!';
   const kg = load(set);
-  const maxLoad = Math.max(...earlier.map(load));
-  if (kg > maxLoad && v >= minValue) return '!!';
-  const atOrAbove = earlier.filter((p) => load(p) >= kg);
-  if (atOrAbove.length && v > Math.max(...atOrAbove.map(value))) return '!!';
 
   const last = lastSets.find((p) => !p.drop && !p.skipped && p.setNo === set.setNo && p.side === set.side);
   if (!last) return undefined;

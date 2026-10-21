@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { addDays, daysBetween } from '../domain/dates';
-import { fmtDayLong, fmtDayMonth, fmtInt, lowerFirst, weekdayName } from '../domain/format';
+import { fmtDayMonth, lowerFirst, weekdayName } from '../domain/format';
 import { fmtKg } from '../domain/loads';
 import { findExercise, findSession, type PlanDef } from '../domain/plan';
 import { exerciseStatus } from '../domain/progression';
@@ -11,13 +11,19 @@ import { useActiveSession, useAllDays, useAllSets, useAllSetsWithSkips, useSessi
 import { go } from '../router';
 import { useToast } from '../ui/Toasts';
 import { doneSessions, swapSentence } from '../state/derived';
-import { Confetti } from '../ui/Confetti';
 import { type RecordPage } from '../ui/Moments';
-import { Finale } from './session/Finale';
 import { sessionQuality } from '../domain/sessionQuality';
 import { askConfirm } from '../ui/Confirm';
 import { withTrip } from '../domain/trip';
 import { comparable, contextOf } from '../domain/context';
+import { movedLine, vsLastTime, type FinaleData } from '../domain/finale';
+import { RINGS } from '../domain/liveLook';
+import { batteryMode } from '../domain/rest';
+import { usualLength } from '../domain/sessionEdges';
+import { useBatteryLevel } from '../ui/RestScreen';
+import { useLiveTheme } from '../ui/live/useLiveTheme';
+import { LiveFinale } from './live/LiveFinale';
+import { finaleData } from './live/finaleData';
 
 export function SessionDone() {
   const settings = useSettings();
@@ -26,10 +32,14 @@ export function SessionDone() {
   const withSkips = useAllSetsWithSkips();
   const days = useAllDays();
   const sessions = useSessions();
-  const [finale, setFinale] = useState<{ session: TrainingSession; mine: SetEntry[]; pages: RecordPage[]; quality: number; songs: SongRecord[] } | null>(null);
-  if (finale) return <Finale {...finale} onClose={() => go('/train', undefined, { replace: true })} />;
+  // Saving ends the session; the finale keeps showing it after that.
+  const [kept, setKept] = useState<TrainingSession | null>(null);
+  useEffect(() => {
+    if (active) setKept(active);
+  }, [active]);
+  const session = active ?? kept;
   if (!settings || active === undefined || !sets || !sessions || !withSkips) return <div className="page bare" />;
-  if (!active || !settings.plan) {
+  if (!session || !settings.plan) {
     return (
       <div className="page bare">
         <div className="t15 q">No session in progress.</div>
@@ -39,7 +49,7 @@ export function SessionDone() {
       </div>
     );
   }
-  return <DoneForm session={active} plan={withTrip(settings.plan)} days={days ?? []} sets={sets} withSkips={withSkips} sessions={sessions} settings={settings} onFinale={setFinale} />;
+  return <LiveDone key={session.id} session={session} plan={withTrip(settings.plan)} days={days ?? []} sets={sets} withSkips={withSkips} sessions={sessions} settings={settings} />;
 }
 
 export interface RecordLine {
@@ -107,49 +117,63 @@ export function sessionStats(mine: SetEntry[], plan?: PlanDef) {
   return { sets: working.length, reps, kg: Math.round(kg), records: new Set(mine.filter((s) => s.mark === '!!').map((s) => s.exerciseId)).size };
 }
 
-function DoneForm({ session, plan, days, sets, withSkips, sessions, settings, onFinale }: { session: TrainingSession; plan: PlanDef; days: Day[]; sets: SetEntry[]; withSkips: SetEntry[]; sessions: TrainingSession[]; settings: Settings; onFinale: (f: { session: TrainingSession; mine: SetEntry[]; pages: RecordPage[]; quality: number; songs: SongRecord[] }) => void }) {
+/** The end of a session: flags and a note, then the finale's pages. */
+function LiveDone({ session, plan, days, sets, withSkips, sessions, settings }: { session: TrainingSession; plan: PlanDef; days: Day[]; sets: SetEntry[]; withSkips: SetEntry[]; sessions: TrainingSession[]; settings: Settings }) {
   const toast = useToast();
-  const [flags, setFlags] = useState<string[]>(session.flags ?? []);
-  const [notes, setNotes] = useState(session.notes ?? '');
+  const theme = useLiveTheme(settings);
+  const saver = batteryMode(useBatteryLevel(), !!settings.prefs.batterySaver);
+  const [step, setStep] = useState(0);
+  const [picked, setPicked] = useState<string[]>(session.flags ?? []);
+  const [note, setNote] = useState(session.notes ?? '');
   const [saving, setSaving] = useState(false);
+  const [data, setData] = useState<FinaleData | null>(null);
   const mine = sets.filter((s) => s.sessionId === session.id);
   const def = findSession(plan, session.session);
-  const stats = sessionStats(mine, plan);
   const records = recordLines(mine);
-  const ctx = contextOf(session, days.find((d) => d.date === session.date), days.find((d) => d.date === addDays(session.date, -1)), settings);
-  const same = doneSessions(sessions).filter((s) => s.session === session.session && s.id !== session.id);
-  const fair = [...same].reverse().find((s) => comparable(s.context ?? [], ctx));
-  const prev = fair ?? same.pop();
-  const likeForLike = !!fair;
-  const prevReps = prev ? sessionStats(sets.filter((s) => s.sessionId === prev.id), plan).reps : undefined;
-  const mins = Math.max(1, Math.round((Date.now() - session.startedAt) / 60000));
   const sessionFlags = plan.flags.filter((f) => f.when === 'session');
+  // What a tick does, said before it's ticked: a swap next session, a question tomorrow morning.
   const exIds = new Set(mine.map((s) => s.exerciseId));
-  const morning = plan.flags.filter((f) => f.when === 'morning' && f.after?.some((id) => exIds.has(id)));
-  const swapNotes = Array.from(
-    new Set(
+  const flagNotes = [
+    ...new Set(
       sessionFlags
         .filter((f) => f.swap)
-        .map((f) => {
-          const from = lowerFirst(findExercise(plan, f.swap!.from)?.name ?? f.swap!.from);
-          const to = lowerFirst(findExercise(plan, f.swap!.to)?.name ?? f.swap!.to);
-          return `A ${f.group.toLowerCase()} tick swaps ${from}s for ${to}s in your next ${findSession(plan, f.swap!.session)?.name ?? 'session'}.`;
-        }),
+        .map((f) => `A ${f.group.toLowerCase()} tick swaps ${lowerFirst(findExercise(plan, f.swap!.from)?.name ?? f.swap!.from)} for ${lowerFirst(findExercise(plan, f.swap!.to)?.name ?? f.swap!.to)} in your next ${findSession(plan, f.swap!.session)?.name ?? 'session'}.`),
     ),
-  );
+    ...plan.flags
+      .filter((f) => f.when === 'morning' && f.after?.some((id) => exIds.has(id)))
+      .map((f) => `Tomorrow's morning log asks: ${f.question ?? f.label}`),
+  ];
 
   const save = async () => {
+    // One save, however many taps.
+    if (saving || data) return;
     setSaving(true);
+    const ctx = contextOf(session, days.find((d) => d.date === session.date), days.find((d) => d.date === addDays(session.date, -1)), settings);
     const withSkipped = withSkips.filter((s) => s.sessionId === session.id);
     const quality = sessionQuality(withSkipped);
-    await finishSession(session.id, flags, notes, quality, ctx);
-    const raised = plan.flags.filter((f) => flags.includes(f.id));
+    await finishSession(session.id, picked, note, quality, ctx);
+    const raised = plan.flags.filter((f) => picked.includes(f.id));
     if (raised.length) toast({ kicker: `${raised[0].group} flagged`, text: swapSentence(plan, raised[0].swap) ?? 'Noted in your joint log.', sub: raised[0].advice, ms: 7000 });
-    else if (!records.length) toast({ text: `${def?.name ?? 'Session'} saved · ${stats.sets} set${stats.sets === 1 ? '' : 's'}` });
-    const ended = { ...session, endedAt: Date.now() };
-    // The soundtrack, if Last.fm is set up and online; never holds the finale up for long.
-    const songs = await Promise.race([fetchSessionTracks(ended, settings), new Promise<SongRecord[]>((r) => setTimeout(() => r([]), 4000))]);
-    onFinale({ session: ended, mine: withSkipped, pages: records.length ? recordPages(mine, sets, plan, settings, session.date) : [], quality, songs });
+    const ended = { ...session, endedAt: Date.now(), flags: picked };
+    // The session is saved: whatever fails from here, the finale still opens.
+    let songs: SongRecord[] = [];
+    let timer: number | undefined;
+    try {
+      // The soundtrack, if Last.fm is set up and online; never holds the finale up for long.
+      songs = await Promise.race([fetchSessionTracks(ended, settings), new Promise<SongRecord[]>((r) => (timer = window.setTimeout(() => r([]), 4000)))]);
+    } catch {
+      songs = [];
+    } finally {
+      window.clearTimeout(timer);
+    }
+    const extra = finaleExtras(session, ctx, sessions, sets, plan);
+    try {
+      const usual = usualLength(sessions.filter((s) => s.id !== session.id), sets, session.session, def?.minutes ?? 60);
+      setData({ ...finaleData({ session: ended, mine: withSkipped, songs, pages: records.length ? recordPages(mine, sets, plan, settings, session.date) : [], plan, quality, usualMin: usual.fromHistory ? usual.min : undefined }), ...extra });
+    } catch {
+      setData(finaleData({ session: ended, mine: withSkipped, songs: [], pages: [], plan, quality }));
+    }
+    setStep(1);
   };
 
   const discard = async () => {
@@ -158,79 +182,37 @@ function DoneForm({ session, plan, days, sets, withSkips, sessions, settings, on
     go('/train', undefined, { replace: true });
   };
 
-  const diff = prevReps !== undefined ? stats.reps - prevReps : undefined;
-
+  const empty: FinaleData = { name: def?.name ?? `Session ${session.session}`, pages: [], recordSongs: {}, songs: [], hour: { total: 0, lift: 0, rest: 0, between: 0, longestRest: 0 }, form: { rows: [] }, rings: { exercises: [0, 0], inRange: [0, 0] }, quality: 0 };
   return (
-    <div className="page bare" style={{ paddingTop: 'calc(28px + var(--safe-top))' }}>
-      <div className="col gap6">
-        <div className="lbl">
-          {def?.name ?? `Session ${session.session}`} · {fmtDayLong(session.date)}
-        </div>
-        <h1 className="h1" style={{ fontSize: 34 }}>
-          Session complete
-        </h1>
-        <div className="t14 q tn">
-          {mins} min · {stats.sets} set{stats.sets === 1 ? '' : 's'}
-          {diff !== undefined && diff !== 0 ? ` · ${Math.abs(diff)} ${diff > 0 ? 'more' : 'fewer'} reps than last ${def?.name ?? 'time'}${likeForLike ? '' : ' (different conditions)'}` : ''}
-          {diff === 0 ? ` · same reps as last ${def?.name ?? 'time'}` : ''}
-        </div>
-      </div>
-
-      {records.length > 0 && (
-        <div className="card gold" style={{ gap: 12, position: 'relative', overflow: 'hidden' }}>
-          <Confetti palette={['var(--gold)', '#f0d79e', '#c9a85a']} count={14} height={70} />
-          <div className="lbl gold">
-            {records.length} new record{records.length === 1 ? '' : 's'}
-          </div>
-          {records.map((r, i) => (
-            <div key={r.name} className="col gap12">
-              {i > 0 && <div className="gold-rule" />}
-              <div className="row base">
-                <div className="t16">{r.name}</div>
-                <div className="t14 gold-text right">{r.text}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {sessionFlags.length > 0 && (
-        <div className="card" style={{ gap: 4, paddingBottom: 12 }}>
-          <div className="sf" style={{ fontSize: 21, paddingBottom: 6 }}>
-            How did your joints feel?
-          </div>
-          {sessionFlags.map((f, i) => (
-            <label key={f.id} className="row" style={{ justifyContent: 'flex-start', gap: 14, minHeight: 50, borderBottom: i < sessionFlags.length - 1 ? '1px solid var(--divider)' : 0 }}>
-              <input type="checkbox" className="cb" checked={flags.includes(f.id)} onChange={(e) => setFlags(e.target.checked ? [...flags, f.id] : flags.filter((x) => x !== f.id))} />
-              <span className="t15">{f.label}</span>
-            </label>
-          ))}
-          {(swapNotes.length > 0 || morning.length > 0) && (
-            <div className="t13 q lh" style={{ paddingTop: 6 }}>
-              {swapNotes.join(' ')}
-              {morning.length ? ` Tomorrow's morning log asks about ${morning.map((m) => (m.question ?? m.label).replace(/\?$/, '').toLowerCase()).join(' and ')}.` : ''}
-            </div>
-          )}
-        </div>
-      )}
-
-      <label className="flabel">
-        <span className="lbl">Notes</span>
-        <textarea className="field" rows={2} placeholder="Anything else? Optional" value={notes} onChange={(e) => setNotes(e.target.value)} />
-      </label>
-
-      <button type="button" className="btn lg block" disabled={saving} onClick={save}>
-        Save session
-      </button>
-      <div className="row" style={{ justifyContent: 'center', gap: 24 }}>
-        <button type="button" className="link" onClick={() => go('/session', undefined, { replace: true })}>
-          Back to the session
-        </button>
-        <button type="button" className="link" style={{ color: '#e38a7c' }} onClick={discard}>
-          Discard
-        </button>
-      </div>
-      <div className="t12 d center">{fmtInt(stats.reps)} reps · {fmtInt(stats.kg)} kg moved</div>
-    </div>
+    <LiveFinale
+      step={step}
+      onStep={setStep}
+      data={data ?? empty}
+      flags={sessionFlags.map((f) => ({ id: f.id, label: f.label }))}
+      flagNotes={flagNotes}
+      picked={picked}
+      onPick={setPicked}
+      note={note}
+      onNote={setNote}
+      onSave={save}
+      saving={saving}
+      onBack={() => go('/session', undefined, { replace: true })}
+      onDiscard={discard}
+      onDone={() => go('/train', undefined, { replace: true })}
+      saver={saver}
+      rings={RINGS[theme]}
+    />
   );
+}
+
+/** Reps against the last session of this name before it (a fair match first), and what was moved. */
+export function finaleExtras(session: TrainingSession, ctx: string[], sessions: TrainingSession[], sets: SetEntry[], plan: PlanDef): { compare?: string; moved?: string } {
+  const same = doneSessions(sessions).filter((s) => s.session === session.session && s.id !== session.id && s.startedAt < session.startedAt);
+  const fair = [...same].reverse().find((s) => comparable(s.context ?? [], ctx));
+  const prev = fair ?? same[same.length - 1];
+  const stats = sessionStats(sets.filter((s) => s.sessionId === session.id), plan);
+  return {
+    compare: vsLastTime(stats.reps, prev ? sessionStats(sets.filter((s) => s.sessionId === prev.id), plan).reps : undefined, !!fair, findSession(plan, session.session)?.name ?? 'time'),
+    moved: stats.reps ? movedLine(stats) : undefined,
+  };
 }

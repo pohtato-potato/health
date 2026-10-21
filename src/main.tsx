@@ -7,6 +7,8 @@ import './styles/app.css';
 import './styles/tokens.css';
 import './styles/components.css';
 import './styles/access.css';
+import './styles/living.css';
+import './styles/live.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';

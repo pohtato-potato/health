@@ -21,6 +21,18 @@ export function parseRecent(v: unknown): { artist: string; track: string; at: nu
     .map((t) => ({ artist: artistOf(t), track: t.name!, at: Number(t.date!.uts) * 1000 }));
 }
 
+/** What played between two moments, straight from Last.fm, kept nowhere: for the record moment mid-session. */
+export async function fetchRecent(settings: Pick<Settings, 'lastfm'>, from: number, to: number, fetchFn: typeof fetch = fetch): Promise<{ artist: string; track: string; at: number }[]> {
+  const lf = settings.lastfm;
+  if (!lf?.key || !lf.users.length) return [];
+  try {
+    const res = await fetchFn(recentUrl(lf.users[0], lf.key, Math.floor(from / 1000), Math.ceil(to / 1000)));
+    return res.ok ? parseRecent(await res.json()) : [];
+  } catch {
+    return [];
+  }
+}
+
 /**
  * The session's soundtrack, cached in the songs table once fetched. Offline or failing, it
  * returns nothing and caches nothing, so the next open tries again.

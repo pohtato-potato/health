@@ -1,3 +1,4 @@
+import { formScore } from '../domain/quality';
 import { useState } from 'react';
 import { addDays, dayRange, weekStart, type DayKey } from '../domain/dates';
 import { fmtDayMonth } from '../domain/format';
@@ -46,8 +47,8 @@ export function Heatmap({ settings, today, days, entries, sessions, sets }: { se
       case 'readiness':
         return { v: done.find((s) => s.date === d)?.readiness };
       case 'form': {
-        const rated = real.filter((x) => x.date === d && x.form !== undefined);
-        return { v: rated.length ? rated.reduce((n, x) => n + x.form!, 0) / rated.length : undefined };
+        const rated = real.filter((x) => x.date === d).map(formScore).filter((f) => f !== undefined);
+        return { v: rated.length ? rated.reduce((n, f) => n + f, 0) / rated.length : undefined };
       }
     }
   };
