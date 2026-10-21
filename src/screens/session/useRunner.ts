@@ -35,6 +35,7 @@ import { db } from '../../db/db';
 import { useMoments } from '../../ui/Moments';
 import { detectFirsts } from '../../domain/firsts';
 import { liveFields, restAfter, rowsFor, type LiveInput } from './rows';
+import { legSets } from '../../domain/sessionEdges';
 
 const valueOf = valueOfSet;
 
@@ -48,8 +49,9 @@ export function useRunner(session: TrainingSession, settings: Settings, plan: Pl
       session.exercises
         .map((id) => findExercise(plan, id))
         .filter((e): e is ExerciseDef => !!e)
-        .map((e) => (session.lighter ? { ...e, sets: Math.max(1, e.sets - 1) } : e)),
-    [session.exercises, plan, session.lighter],
+        .map((e) => (session.lighter ? { ...e, sets: Math.max(1, e.sets - 1) } : e))
+        .map((e) => ({ ...e, sets: Math.min(e.sets, legSets(e, session.legSoreness)) })),
+    [session.exercises, plan, session.lighter, session.legSoreness],
   );
   const groups = useMemo(() => groupExercises(exs), [exs]);
   const mine = useMemo(() => allSets.filter((s) => s.sessionId === session.id), [allSets, session.id]);

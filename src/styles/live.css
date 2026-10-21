@@ -173,3 +173,17 @@ html.contrast .lv-check, html.contrast .lv-ghost { border-color: var(--text); }
 .lv-check .grow { flex: 1; }
 .lv-check .box { width: 28px; height: 28px; flex: none; border-radius: 8px; border: 2px solid color-mix(in srgb, var(--text) 45%, transparent); display: grid; place-items: center; color: var(--ink); font-weight: 700; }
 .lv-check.ok .box { background: var(--sage); border-color: var(--sage); }
+
+/* Before, guide, plates */
+.lv-kicker { font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, var(--text) 70%, transparent); }
+.lv-h1 { font-family: var(--serif); font-weight: 400; font-size: 38px; line-height: 1.05; margin: 0; text-wrap: balance; }
+.lv-scale { display: flex; gap: 8px; }
+.lv-scale button { flex: 1; min-height: 48px; border-radius: 14px; font-size: 18px; border: 1px solid color-mix(in srgb, var(--text) 22%, transparent); color: var(--text); }
+.lv-scale button.on { background: var(--text); color: var(--ink); }
+.lv-tick { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 14px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--text) 22%, transparent); background: color-mix(in srgb, var(--lv-b) 45%, transparent); font-size: 16px; text-align: left; color: var(--text); }
+.lv-tick .box { width: 28px; height: 28px; flex: none; border-radius: 8px; border: 2px solid color-mix(in srgb, var(--text) 45%, transparent); display: grid; place-items: center; color: var(--ink); font-weight: 700; }
+.lv-tick.on .box { background: var(--sage); border-color: var(--sage); }
+.lv-tick.on { border-color: color-mix(in srgb, var(--sage) 45%, transparent); }
+.lv-row { display: flex; align-items: center; gap: 12px; min-height: 44px; font-size: 16px; border-bottom: 1px solid color-mix(in srgb, var(--text) 10%, transparent); }
+.lv-row .grow { flex: 1; }
+.lv-plates-line { margin: 8px 0 2px; padding: 6px 10px; border-radius: 10px; font-size: 14px; text-align: center; color: #ffc29b; background: color-mix(in srgb, var(--apricot) 14%, transparent); border: 1px dashed color-mix(in srgb, var(--apricot) 45%, transparent); }

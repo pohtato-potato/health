@@ -3,7 +3,10 @@ import { checksFor } from '../../domain/checks';
 import { RINGS } from '../../domain/liveLook';
 import { burnNudge, justTags, restoreCounter, seconds, setState } from '../../domain/liveSet';
 import { newLoad, recordBar } from '../../domain/marks';
-import { bottomOfRange, measureOf, sidesFor, valueOfSet, type ExerciseDef } from '../../domain/plan';
+import { bottomOfRange, measureOf, sidesFor, valueOfSet, type ExerciseDef, type PlanDef } from '../../domain/plan';
+import { loadBlocks, plateChanges, usualLength } from '../../domain/sessionEdges';
+import { movementKind } from '../../domain/trainingChecks';
+import { useSessions } from '../../db/hooks';
 import { historyFor } from '../../domain/progression';
 import type { LiveCounter, SetEntry, Settings, TrainingSession } from '../../domain/types';
 import { patchSession } from '../../db/actions';
@@ -14,6 +17,7 @@ import { clock } from '../NextUpCard';
 import { HeavierMoment } from '../session/HeavierMoment';
 import { findLogged, type Row } from '../session/SetTable';
 import type { useRunner } from '../session/useRunner';
+import { BeforeScreen } from './BeforeScreen';
 import { CheckScreen } from './CheckScreen';
 import { LiveFrame, Primary } from './Frame';
 import { RestLive } from './RestLive';
@@ -27,8 +31,9 @@ const aimOf = (ex: ExerciseDef) => (ex.seconds ? `${span(ex.seconds)} s` : ex.re
 const sideWord = (s: Row['side']) => (s === 'L' ? ' · left' : s === 'R' ? ' · right' : '');
 
 /** The session as full screens: count the set, check it, rest, and on to the next. */
-export function LiveSession({ r, session, settings }: { r: Runner; session: TrainingSession; settings: Settings }) {
+export function LiveSession({ r, session, settings, plan }: { r: Runner; session: TrainingSession; settings: Settings; plan: PlanDef }) {
   const theme = useLiveTheme(settings);
+  const sessions = useSessions();
   const row = r.current;
   const [c, setC] = useState<LiveCounter>(() => restoreCounter(session.liveSet, row?.key ?? ''));
   const [pending, setPending] = useState<{ row: Row; c: LiveCounter; endedAt: number } | null>(null);
@@ -83,6 +88,29 @@ export function LiveSession({ r, session, settings }: { r: Runner; session: Trai
   );
 
   const saver = r.saver;
+  const firstRow = (ex: ExerciseDef): Row => ({ ex, setNo: 1, side: sidesFor(ex, session.firstSide?.[ex.id])[0], drop: false, key: `${ex.id}:first` });
+  const blocks = loadBlocks(r.exs, (ex) => r.defaults(firstRow(ex)).kg);
+  const usual = usualLength(sessions ?? [], [...r.history, ...r.mine], session.session, r.def?.minutes ?? 60);
+
+  if (!session.beforeDone && !r.mine.length) {
+    const sore = (session.legSoreness ?? 0) >= 4;
+    return (
+      <BeforeScreen
+        name={r.def?.name ?? `Session ${session.session}`}
+        usual={usual}
+        startedAt={session.startedAt}
+        blocks={blocks.map((b) => ({ kg: b.kg, items: b.exs.map((ex) => ({ name: nameOf(ex), light: sore && movementKind(ex) === 'legs' })) }))}
+        changes={plateChanges(blocks)}
+        legs={r.exs.some((ex) => movementKind(ex) === 'legs')}
+        soreness={session.legSoreness}
+        onSoreness={(n) => patchSession(session.id, { legSoreness: n })}
+        warmup={plan.warmup}
+        onStart={() => patchSession(session.id, { beforeDone: true })}
+        saver={saver}
+        top={top}
+      />
+    );
+  }
 
   if (pending) {
     const x = pending.row;

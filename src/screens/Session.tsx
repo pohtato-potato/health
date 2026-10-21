@@ -97,7 +97,7 @@ const valueOf = valueOfSet;
 
 function Runner({ session, settings, plan, allSets }: { session: TrainingSession; settings: Settings; plan: PlanDef; allSets: SetEntry[] }) {
   const r = useRunner(session, settings, plan, allSets);
-  if (session.view !== 'list') return <LiveSession r={r} session={session} settings={settings} />;
+  if (session.view !== 'list') return <LiveSession r={r} session={session} settings={settings} plan={plan} />;
   const { toast, now, exs, groups, mine, history, statuses, extra, setExtra, complete, gi, setGi, editing, setEditing, draft, setDraft, rest, restHidden, setRestHidden, saver, watch, setWatch, swapFor, setSwapFor, coach, setCoach, group, rows, current, activeKey, extendRest, stopRest, defaults, kgEditable, save, skip, undoSkip, remove, toggleTempo, finish, def, firstIdx, restLeft, nextGroup, groupDone, tired, offerFor, answer } = r;
 
   return (
