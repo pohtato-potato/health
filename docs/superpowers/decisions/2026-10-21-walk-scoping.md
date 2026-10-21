@@ -1,6 +1,6 @@
 # Walk scoping decisions
 
-Date: 21 Oct 2026 · Branch: `scope/walk` · Status: pinboard answered; round 1 questions folded into the debloat round
+Date: 21 Oct 2026 · Branch: `scope/walk` · Status: debloat agreed and written up; round 2 of scoping sent
 
 Scoping for the Walk tab (`#/walk`). No visual design here: design happens later, outside this repo. **The repo is public:** personal values stay out.
 
@@ -69,7 +69,7 @@ Quest rewards that arrive (no quest has ever been noticed, so no point); the for
 
 ## Decisions
 
-1. The next step is a **debloat** of the Walk tab, done before more scoping rounds. It removes and rearranges; the visual redesign comes later.
+1. The Walk tab gets a **debloat** that removes and rearranges; the visual redesign comes later. The full list is `docs/superpowers/specs/2026-10-21-walk-debloat.md`. It is written up now and built later.
 2. One kilometre figure for the walk, used on every screen.
 3. Training never stops the walker, and nothing sends the walker backwards.
 4. The arrival card and postcard become one page per city.
@@ -81,8 +81,36 @@ Quest rewards that arrive (no quest has ever been noticed, so no point); the for
 10. No Samsung Health import.
 11. The route stays as long as it is. Several routes at once is an idea for a later round.
 
-## Open questions
+## Debloat answers (21 Oct 2026)
 
-- Which mechanics stay (sent to the owner as the debloat questions).
-- Where code changes live and whether that branch may be pushed.
-- For later rounds: parallel routes, something every few days, named stretches, the passport, full-screen arrivals, Wrapped.
+12. Side quests are removed.
+13. The strength lock on the passes is removed; the passes stay as named places.
+14. Things built by training are removed.
+15. The farmer-carry gold trail is removed.
+16. Lanterns for doses are removed.
+17. The "a month ago" ghost walker and the "you've walked Delhi to Mumbai" line are removed, including from the film.
+18. People met on the road stay, shown on the Walk page on the days you meet someone.
+19. Stride becomes a setting. The owner's eighth answer, "add as setting", is read as the stride question, because a setting fits it and not the journal question.
+20. The forecast's track record is removed with the forecast.
+
+## Open questions (round 2)
+
+1. Several routes at once: what would a second route be? Another country, a themed route in India (a river, the coast, forts), short routes you pick from a list, or a route through places that matter to you? Would every route move with the same steps, or would you choose where each day's steps go?
+2. When the India walk is finished, years from now, what should happen next?
+3. Something every few days: which small stops would you look forward to? Rivers, state borders, food stops, forts and temples, wildlife, or one strange true fact per place? How often: every two or three days, or about weekly?
+4. Should those small stops come as a postcard (a short fact and a small scene), as one line on the Walk page, or both?
+5. Named stretches of road: about how long should a stretch be (a week, two weeks)? Should each one end with a small moment?
+6. What tomorrow's steps would reach: where do you want to see it? On the Walk tab, on Today, at Close the day, or more than one?
+7. A walk that waits kindly: on sick, injured, travel and break days your steps still count. What should the walk say or show on those days?
+8. Office days on the map: what should tell them apart? A mark on the trail, a count per stretch, or something else? Should home, office, travel and out days all be marked?
+9. Full-screen arrival: for every city, or only the bigger ones? Should it play the next time you open the app, or when you close the day?
+10. Crossing a state line: a full-screen moment like a city, or something smaller?
+11. A chapter's film: what must it include? The trail drawing across India, the postcards, the people you met, your steps, your best walking day?
+12. The passport of stamps: a stamp per city, per state, per small stop, or a mix? Should the passport replace the postcard strip on the map?
+13. Closing the day walks you on: is the walker moving the day's kilometres and the next stop named enough, or should something else happen?
+14. Themes on the road: which should reach the walk scene? Festivals, sky events (meteor showers, eclipses), your personal dates, or all of them?
+15. You pinned Finch's adventure report but dropped the daily diary page. What would make a report from the road worth reading? Weekly instead of daily, much shorter, only when something happened?
+16. Been-style places filled in: on the main map itself, or on its own page? States only, or cities too?
+17. Health Wrapped: when should it come (once a year on a set date, reveal day, the end of a chapter), and what besides the walk belongs in it?
+18. The journal: keep the last three days as plain lines on the Walk page, or remove it?
+19. The stride setting: type in a length, work it out from your height, or measure it by walking a known distance? (The app already knows the steps in your home loop; it would also need the loop's length.)
