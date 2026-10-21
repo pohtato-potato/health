@@ -326,3 +326,29 @@ html.contrast .lv-check, html.contrast .lv-ghost { border-color: var(--text); }
 .lv-tr-mark, .lv-tr-legend, .lv-tr-stats small, .lv-card-h, .lv-tag { font-size: 14px; }
 .lv-tr-body-row { white-space: normal; flex-wrap: wrap; }
 .lv-tr-body-row .grow { overflow: visible; text-overflow: clip; }
+
+/* Exercise cards: the constellation of the exercise's own pose; the tier changes the drawing */
+.lv-cards-row { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 4px; }
+.lv-card-ex { flex: none; scroll-snap-align: start; position: relative; overflow: hidden; width: 156px; height: 250px; padding: 10px; border-radius: 18px; display: flex; flex-direction: column; justify-content: flex-end; gap: 3px; text-align: left; color: #b7a6f0; background: radial-gradient(circle at 50% 35%, #1b1d3e, #0b0c1c 80%); border: 1.5px solid color-mix(in srgb, currentColor 45%, transparent); }
+.lv-card-ex::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 46%; background: linear-gradient(to top, rgba(0, 0, 0, 0.6), transparent); pointer-events: none; }
+.lv-card-ex > span, .lv-card-ex > svg.lv-card-ex-spark { position: relative; z-index: 1; }
+.lv-card-ex-sky { position: absolute; left: 0; right: 0; top: 8px; width: 100%; height: 58%; }
+.lv-card-ex .dust { fill: #ffffff; opacity: 0.35; }
+.lv-card-ex .limb { stroke: currentColor; stroke-width: 0.9; opacity: 0.85; }
+.lv-card-ex .pair { stroke: currentColor; stroke-width: 0.6; stroke-dasharray: 2 2; opacity: 0.7; }
+.lv-card-ex .star { fill: #ffffff; }
+.lv-card-ex .halo { opacity: 0.75; }
+.lv-card-ex .guil { opacity: 0.55; }
+.lv-card-ex-tier { align-self: flex-start; font-size: 14px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; background: color-mix(in srgb, currentColor 22%, #000); color: currentColor; }
+.lv-card-ex-name { font-family: var(--serif); font-size: 18px; line-height: 1.15; color: var(--text); text-shadow: 0 1px 6px #000; }
+.lv-card-ex-next { font-size: 14px; line-height: 1.3; color: color-mix(in srgb, var(--text) 85%, transparent); text-shadow: 0 1px 6px #000; }
+.lv-card-ex.t-first-light { color: #8e8ba6; }
+.lv-card-ex.t-first-light .star { fill: #c9c6d6; opacity: 0.7; }
+.lv-card-ex.t-clean { color: #6fe0b0; }
+.lv-card-ex.t-even { color: #7fc4f0; }
+.lv-card-ex.t-plated { color: #d9e2ec; background: radial-gradient(circle at 50% 35%, #2a2f3e, #0e1016 80%); border-color: #c9d2dc; }
+.lv-card-ex.t-mastery { color: #f6cf72; background: radial-gradient(circle at 50% 35%, #3a2c10, #120d05 80%); border: 0; box-shadow: 0 0 26px color-mix(in srgb, var(--gold) 35%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--gold) 60%, transparent); }
+.lv-card-ex.t-mastery .star { fill: #fff3cf; }
+.lv-card-ex.back { justify-content: flex-start; gap: 6px; }
+.lv-card-ex.back::after { display: none; }
+.lv-card-ex-spark { width: 100%; height: 40px; color: currentColor; }

@@ -97,3 +97,28 @@ describe('train review fixes', () => {
     expect(h).toContain('logged later · 20 sets');
   });
 });
+
+import { ExerciseCard } from '../src/screens/train/ExerciseCard';
+import { POSES } from '../src/domain/poses';
+
+describe('exercise cards', () => {
+  const back = { best: ['12.5 kg × 9', '10 kg × 14'], curve: [14, 15, 16.2], records: 3 };
+  const card = (tier: 'First light' | 'Clean' | 'Even' | 'Plated' | 'Mastery', seed = 'rdl', initialBack = false) =>
+    renderToStaticMarkup(<ExerciseCard name="Romanian deadlift" pose={POSES.hinge} tier={tier} next="Two clean sessions running, for Even" seed={seed} back={back} initialBack={initialBack} />);
+  it('names the tier in words', () => expect(card('Clean')).toContain('>Clean<'));
+  it('is gold only at Mastery', () => {
+    expect(card('Mastery')).toContain('t-mastery');
+    expect(card('Plated')).not.toContain('mastery');
+  });
+  it('keeps each card’s patterns its own', () => {
+    const ids = (h: string) => [...h.matchAll(/id="([^"]+)"/g)].map((m) => m[1]);
+    expect(ids(card('Plated', 'rdl'))).not.toEqual(ids(card('Plated', 'curl')));
+  });
+  it('shows the best sets and records on the back', () => {
+    const h = card('Plated', 'rdl', true);
+    expect(h).toContain('Best sets');
+    expect(h).toContain('12.5 kg × 9');
+    expect(h).toContain('3 records');
+  });
+  it('says how to flip', () => expect(card('Clean')).toContain('aria-label="Romanian deadlift card, Clean. Tap for its best sets."'));
+});

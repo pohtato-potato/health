@@ -1,7 +1,10 @@
 import { addDays, daysBetween } from '../domain/dates';
 import { fmtDayMonth, fmtInt, weekdayName } from '../domain/format';
 import { fmtKg } from '../domain/loads';
-import { buildSession, extraSessions, findSession, realSets, valueOfSet } from '../domain/plan';
+import { allExercises, buildSession, extraSessions, findSession, realSets, valueOfSet } from '../domain/plan';
+import { cardBack, cardFor, TIERS } from '../domain/cards';
+import { POSES, poseFor } from '../domain/poses';
+import { CardsRow } from './train/ExerciseCard';
 import { removeExercise } from '../domain/planEdit';
 import { loggedLater, neglectedExercises, suspiciousSets } from '../domain/trainingChecks';
 import { askConfirm } from '../ui/Confirm';
@@ -172,6 +175,17 @@ export function Train() {
       <BodyCard rows={volume} line={volumeLine(volume)} onOpen={() => go('/muscles')} />
 
       <RecordsCard total={allRecords.length} rows={recs.map((r) => ({ what: fmtSet(r), name: r.exercise, when: r.date === today ? 'tonight' : fmtDayMonth(r.date) }))} onAll={() => go('/records')} />
+
+      <CardsRow
+        cards={[...new Map(allExercises(plan).map((e) => [e.id, e])).values()]
+          .map((ex) => {
+            const mine = realSets(sets).filter((s) => s.exerciseId === ex.id);
+            return { ex, card: cardFor(ex, mine), back: cardBack(mine) };
+          })
+          .filter((c) => c.card.logged)
+          .sort((a, b) => TIERS.indexOf(b.card.tier) - TIERS.indexOf(a.card.tier) || a.ex.name.localeCompare(b.ex.name))
+          .map(({ ex, card, back }) => ({ key: ex.id, name: ex.name, pose: POSES[poseFor(ex)], tier: card.tier, next: card.next, seed: ex.id, back }))}
+      />
 
       <MonthCard month={monthName} next={`1 ${nextMonth}`} m={month} film={Number(today.slice(8)) <= 3} onFilm={() => go('/film')} />
 
