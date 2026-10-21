@@ -9,14 +9,8 @@ import { BodyHeat } from '../ui/BodyMap';
 import { Icon } from '../ui/Icon';
 
 /** Muscle groups as the Train card shows them. */
-export const GROUPS: { name: string; muscles: MuscleId[] }[] = [
-  { name: 'Delts', muscles: ['front-delts', 'side-delts', 'rear-delts'] },
-  { name: 'Back', muscles: ['upper-back', 'lats'] },
-  { name: 'Chest', muscles: ['chest'] },
-  { name: 'Arms', muscles: ['biceps', 'triceps', 'forearms'] },
-  { name: 'Legs', muscles: ['quads', 'hamstrings', 'glutes', 'calves'] },
-  { name: 'Core', muscles: ['abs'] },
-];
+export { GROUPS } from '../domain/muscles';
+import { GROUPS } from '../domain/muscles';
 
 const NAMES: Record<MuscleId, string> = {
   chest: 'Chest',
