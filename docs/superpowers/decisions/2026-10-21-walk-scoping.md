@@ -1,6 +1,6 @@
 # Walk scoping decisions
 
-Date: 21 Oct 2026 · Branch: `scope/walk` · Status: debloat agreed and written up; round 2 of scoping sent
+Date: 21 Oct 2026 · Branch: `scope/walk` · Status: debloat agreed and written up; round 2 sent as a pinboard
 
 Scoping for the Walk tab (`#/walk`). No visual design here: design happens later, outside this repo. **The repo is public:** personal values stay out.
 
@@ -94,6 +94,9 @@ Quest rewards that arrive (no quest has ever been noticed, so no point); the for
 20. The forecast's track record is removed with the forecast.
 
 ## Open questions (round 2)
+
+Sent as a second private pinboard (66 possible answers in ten lanes, verdicts kept outside the repo). The questions it covers:
+
 
 1. Several routes at once: what would a second route be? Another country, a themed route in India (a river, the coast, forts), short routes you pick from a list, or a route through places that matter to you? Would every route move with the same steps, or would you choose where each day's steps go?
 2. When the India walk is finished, years from now, what should happen next?
