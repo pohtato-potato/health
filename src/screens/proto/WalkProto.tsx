@@ -114,8 +114,8 @@ function RouteArt({ id, frac, kind = 'band', label, names = true }: { id: string
           <line key={`h${t}`} x1={x - pad} y1={y - pad + (h + pad * 2) * t} x2={x + w + pad} y2={y - pad + (h + pad * 2) * t} vectorEffect="non-scaling-stroke" />
         ))}
       </g>
-      <path className="wp-ra-land" d={region.outline} vectorEffect="non-scaling-stroke" />
       {region.extra && <path className="wp-ra-ridge" d={region.extra} vectorEffect="non-scaling-stroke" />}
+      <path className="wp-ra-land" d={region.outline} vectorEffect="non-scaling-stroke" />
       <path className="wp-ra-ahead" d={d} vectorEffect="non-scaling-stroke" />
       <path className="wp-ra-walked" d={d} pathLength={1} style={{ strokeDasharray: `${frac} 1`, ['--f' as string]: frac }} vectorEffect="non-scaling-stroke" />
       {kind !== 'thumb' &&
