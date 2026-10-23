@@ -5,10 +5,11 @@ import topScene from './walk-art/top-ravines.svg?raw';
 import stripArt from './walk-art/strip-stretch.svg?raw';
 import mapArt from './walk-art/map-stretch.svg?raw';
 import visaDandi from './walk-art/visa-dandi.svg?raw';
-import { CHAMBAL_FACTS, DANDI, EXPEDITIONS, EXPEDITION_KM, KIND_NAMES, KM_A_DAY, RECORD_NAMES, SHELF, WALKING, type RouteKind, type ShelfRoute } from './walkSample';
+import { CHAMBAL_FACTS, EXPEDITIONS, EXPEDITION_KM, KIND_NAMES, KM_A_DAY, RECORD_NAMES, SHELF, WALKING, type RouteKind, type ShelfRoute } from './walkSample';
 import { RouteArt, byId, fmt, inkOf } from './walkArt';
-import { CardLook, HeroLook, LOOKS, ShelfLook, type Look } from './walkLooks';
-import { ExpeditionPage } from './walkExpedition';
+import { CardLook, LOOKS, ShelfLook, type Look } from './walkLooks';
+import { RoutePage } from './walkRoutePage';
+import { NewsBanner } from './walkBanner';
 import { Arrival } from './walkArrival';
 import { PassportBook } from './walkPassport';
 import { IndiaMap } from './walkIndiaMap';
@@ -19,7 +20,7 @@ import { IndiaMap } from './walkIndiaMap';
  * One motion idea runs through it: the trail draws itself.
  */
 
-type Screen = 'walk' | 'shelf' | 'dandi' | 'harold' | 'join' | 'expedition' | 'passport' | 'stop' | 'map' | 'arrival';
+type Screen = 'walk' | 'shelf' | 'dandi' | 'harold' | 'join' | 'expedition' | 'route' | 'passport' | 'stop' | 'map' | 'arrival';
 
 const SCREENS: [Screen, string][] = [
   ['walk', 'Walk'],
@@ -28,6 +29,7 @@ const SCREENS: [Screen, string][] = [
   ['harold', 'Harold Fry'],
   ['join', 'Joining'],
   ['expedition', 'Expedition'],
+  ['route', 'Any route'],
   ['passport', 'Passport'],
   ['stop', 'Small stop'],
   ['map', 'Map'],
@@ -70,13 +72,20 @@ export function WalkProto() {
     setTake((t) => t + 1);
   };
 
+  // An arrival's state is "City:beat", so any city on the walk can be shown at any beat.
+  const [arrCity, arrBeatS] = screen === 'arrival' ? (state || 'Gwalior:1').split(':') : ['Gwalior', '1'];
+  const arrBeat = Number(arrBeatS || 1);
   const states: Partial<Record<Screen, [string, string][]>> = {
-    walk: [['', 'A walking day'], ['banner', 'Expedition news'], ['rest', 'Resting']],
+    walk: [['', 'A walking day'], ['banner', 'Expedition news'], ['news3', 'Challenge news'], ['news2', 'Two at once'], ['rest', 'Resting']],
     harold: [['', 'Story paused'], ['story', 'With the story']],
     map: [['', 'This stretch'], ['india', 'All of India']],
-    arrival: [['', '1 · Approach'], ['2', '2 · Footprints'], ['3', '3 · Zoom out'], ['4', '4 · Race'], ['5', '5 · Stamp']],
+    route: SHELF.map((r) => [r.id, r.name] as [string, string]),
+    arrival: [
+      ...(['Approach', 'Footprints', 'Zoom out', 'Race', 'Stamp'].map((b, i) => [`${arrCity}:${i + 1}`, `${i + 1} · ${b}`]) as [string, string][]),
+      ...(['Agra', 'Gwalior', 'Bhopal', 'Nagpur', 'Hyderabad', 'Kanyakumari', 'Kolkata', 'Varanasi', 'Leh'].map((c) => [`${c}:${arrBeat}`, c]) as [string, string][]),
+    ],
   };
-  const tint = screen === 'expedition' ? 'tint-silk' : screen === 'harold' ? 'tint-green' : screen === 'dandi' || screen === 'join' ? 'tint-sea' : screen === 'arrival' && state === '5' ? 'tint-gold' : '';
+  const tint = screen === 'expedition' ? 'tint-silk' : screen === 'harold' ? 'tint-green' : screen === 'dandi' || screen === 'join' ? 'tint-sea' : screen === 'arrival' && arrBeat === 5 ? 'tint-gold' : '';
 
   return (
     <div className={`wp ${tint}`}>
@@ -110,14 +119,17 @@ export function WalkProto() {
       <div key={`${screen}-${state}-${take}`} className="wp-screen">
         {screen === 'walk' && <WalkPage state={state} show={show} />}
         {screen === 'shelf' && <Shelf show={show} />}
-        {screen === 'dandi' && <DandiPage show={show} />}
-        {screen === 'harold' && <HaroldPage paused={state !== 'story'} show={show} />}
+        {screen === 'dandi' && <RoutePage id="dandi" look={look} onBack={() => show('walk')} />}
+        {screen === 'harold' && <RoutePage id="harold" look={look} paused={state !== 'story'} onStory={(story) => show('harold', story ? 'story' : undefined)} onBack={() => show('walk')} />}
+        {screen === 'route' && <RoutePage id={SHELF.some((r) => r.id === state) ? state : 'tokaido'} look={look} onBack={() => show('shelf')} />}
         {screen === 'join' && <JoinMoment show={show} />}
-        {screen === 'expedition' && <ExpeditionPage look={look} onBack={() => show('walk')} />}
-        {screen === 'passport' && <PassportBook onBack={() => show('walk')} onReplay={() => show('arrival')} />}
+        {screen === 'expedition' && <RoutePage id="xuanzang" look={look} onBack={() => show('walk')} />}
+        {screen === 'passport' && <PassportBook onBack={() => show('walk')} onReplay={() => show('arrival', 'Agra:1')} />}
         {screen === 'stop' && <StopMoment show={show} />}
         {screen === 'map' && <MapPage india={state === 'india'} show={show} />}
-        {screen === 'arrival' && <Arrival beat={Number(state || 1)} onNext={() => (Number(state || 1) >= 5 ? show('passport') : show('arrival', String(Number(state || 1) + 1)))} />}
+        {screen === 'arrival' && (
+          <Arrival city={arrCity} beat={arrBeat} onNext={() => (arrBeat >= 5 ? show('passport') : show('arrival', `${arrCity}:${arrBeat + 1}`))} />
+        )}
       </div>
     </div>
   );
@@ -143,7 +155,6 @@ function Back({ to, label, show }: { to: Screen; label: string; show: Show }) {
 
 function WalkPage({ state, show }: { state: string; show: Show }) {
   const look = useLook();
-  const [news, setNews] = useState(true);
   const resting = state === 'rest';
   return (
     <main className="wp-page">
@@ -158,19 +169,19 @@ function WalkPage({ state, show }: { state: string; show: Show }) {
         </div>
       </div>
       <div className="wp-col">
-        {state === 'banner' && news && (
-          <div className="wp-banner rise" role="status" style={inkOf('xuanzang')}>
-            <span className="grow">
-              <b>Expedition news.</b> Xuanzang has reached the court of Turfan.
-            </span>
-            <button type="button" className="wp-banner-act" onClick={() => show('expedition')}>
-              Read
-            </button>
-            <button type="button" className="wp-banner-x" aria-label="Dismiss" onClick={() => setNews(false)}>
-              <Icon name="close" size={18} stroke={1.8} />
-            </button>
-          </div>
+        {state === 'banner' && (
+          <NewsBanner news={[{ id: 'xuanzang', kind: 'Expedition', what: 'Xuanzang has reached the court of Turfan, and its king will not let him leave.', frac: 0.26 }]} onOpen={(id) => show(id === 'xuanzang' ? 'expedition' : 'route', id)} />
         )}
+        {state === 'news2' && (
+          <NewsBanner
+            news={[
+              { id: 'xuanzang', kind: 'Expedition', what: 'Xuanzang has reached the court of Turfan.', frac: 0.26 },
+              { id: 'dandi', kind: 'Challenge', what: 'Halt 8 stamped: across the Mahi at Kareli.', frac: 0.3 },
+            ]}
+            onOpen={(id) => show(id === 'xuanzang' ? 'expedition' : id === 'dandi' ? 'dandi' : 'route', id)}
+          />
+        )}
+        {state === 'news3' && <NewsBanner news={[{ id: 'dandi', kind: 'Challenge', what: 'Halt 8 stamped: across the Mahi at Kareli.', frac: 0.3 }]} onOpen={() => show('dandi')} />}
         <div className="rise">
           <h1 className="wp-title">Bandit Country</h1>
           <p className="wp-sub">Agra to Gwalior · day 3 of about 12</p>
@@ -294,183 +305,13 @@ function Shelf({ show }: { show: Show }) {
               <button type="button" className="wp-primary" onClick={() => show('join')}>
                 {open.km > EXPEDITION_KM ? 'Start this expedition' : 'Join this walk'}
               </button>
-              <button type="button" className="wp-ghost" onClick={() => setOpen(null)}>
-                Not now
+              <button type="button" className="wp-ghost" onClick={() => show('route', open.id)}>
+                See its page
               </button>
             </div>
           </div>
         </div>
       )}
-    </main>
-  );
-}
-
-/* ---------- a history challenge ---------- */
-
-function DandiPage({ show }: { show: Show }) {
-  const w = WALKING[0];
-  const r = byId('dandi');
-  const [open, setOpen] = useState(false);
-  const [deeper, setDeeper] = useState(false);
-  return (
-    <main className="wp-page" style={inkOf('dandi')}>
-      <div className="wp-col">
-        <Back to="walk" label="Walk" show={show} />
-      </div>
-      <HeroLook look={useLook()} c={w} title={r.name} sub={`Sabarmati to Dandi · 1930 · ${RECORD_NAMES[r.record]}`} />
-      <div className="wp-col">
-        <p className="wp-big rise">
-          <span className="wp-count">{fmt(w.km)}</span>
-          <small>of {fmt(r.km)} km · your day {w.day} · {w.stretch}</small>
-        </p>
-
-        <section className="wp-dispatch rise">
-          <span className="wp-label">Today on the road</span>
-          <p className="wp-voice">The marchers cross the Mahi and stop at Kareli.</p>
-          <div className={`wp-unfold ${open ? 'open' : ''}`}>
-            <div>
-              {DANDI.page.map((p) => (
-                <p key={p} className="wp-para">
-                  {p}
-                </p>
-              ))}
-            </div>
-          </div>
-          <div className="wp-actions">
-            <button type="button" className="wp-ghost" onClick={() => setOpen(!open)} aria-expanded={open}>
-              {open ? 'Less' : 'Read the day'}
-            </button>
-            <button type="button" className="wp-ghost" onClick={() => setDeeper(true)}>
-              Go deeper
-            </button>
-          </div>
-        </section>
-
-        <ThenAndYou />
-
-        <section className="wp-group rise">
-          <h2 className="wp-h2">The halts</h2>
-          <ol className="wp-halts">
-            {DANDI.halts.map((h, i) => (
-              <li key={h.n} className={h.done ? 'done' : h.here ? 'here' : ''} style={{ animationDelay: `${300 + i * 50}ms` }}>
-                <span className="wp-halt-stamp" aria-hidden="true">
-                  {h.n}
-                </span>
-                <span className="grow">{h.name}</span>
-                <span className="st">{h.done ? 'Stamped' : h.here ? "You're here" : ''}</span>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <div className="wp-actions">
-          <button type="button" className="wp-ghost">Add a target date</button>
-          <button type="button" className="wp-ghost">Put it down</button>
-        </div>
-      </div>
-
-      {deeper && (
-        <div className="wp-sheet" role="dialog" aria-label="Go deeper" onClick={() => setDeeper(false)}>
-          <div className="wp-sheet-in ink" onClick={(e) => e.stopPropagation()}>
-            <span className="wp-label">Go deeper</span>
-            <h2 className="wp-title">Why salt</h2>
-            <p className="wp-para">{DANDI.deeper}</p>
-            <button type="button" className="wp-primary" onClick={() => setDeeper(false)}>
-              Back to the road
-            </button>
-          </div>
-        </div>
-      )}
-    </main>
-  );
-}
-
-/** You and the 1930 marchers on one day-line: who reached Kareli when. */
-function ThenAndYou() {
-  const days = 24;
-  const at = (d: number) => `${(d / days) * 100}%`;
-  return (
-    <section className="wp-then rise" aria-label="Then and you: the marchers reached Kareli on day 8, you on day 12">
-      <span className="wp-label">Then and you · reaching Kareli</span>
-      <div className="wp-then-line">
-        <i className="track" />
-        <span className="mark them" style={{ left: at(8) }}>
-          <i />
-          <b>Day 8</b>
-          <small>1930</small>
-        </span>
-        <span className="mark you" style={{ left: at(12) }}>
-          <i />
-          <b>Day 12</b>
-          <small>You</small>
-        </span>
-      </div>
-      <p className="wp-quiet">The march took 24 days in all. From its daily record.</p>
-    </section>
-  );
-}
-
-/* ---------- a book route ---------- */
-
-function HaroldPage({ paused, show }: { paused: boolean; show: Show }) {
-  const w = WALKING[1];
-  const r = byId('harold');
-  return (
-    <main className="wp-page" style={inkOf('harold')}>
-      <div className="wp-col">
-        <Back to="walk" label="Walk" show={show} />
-      </div>
-      <HeroLook look={useLook()} c={w} title={r.name} sub={`The Unlikely Pilgrimage of Harold Fry · ${r.book!.by} · 2012`} />
-      <div className="wp-col">
-        <p className="wp-big rise">
-          <span className="wp-count">{fmt(w.km)}</span>
-          <small>of {fmt(r.km)} km · Kingsbridge to Berwick-upon-Tweed</small>
-        </p>
-        <div className="wp-chips" role="group" aria-label="Story or places">
-          <button type="button" className={!paused ? 'on' : ''} onClick={() => show('harold', 'story')}>
-            With the story
-          </button>
-          <button type="button" className={paused ? 'on' : ''} onClick={() => show('harold')}>
-            Places only
-          </button>
-        </div>
-        {paused ? (
-          <section className="wp-dispatch bookmark rise">
-            <span className="wp-ribbon big" aria-hidden="true" />
-            <span className="wp-label">Bookmarked · your day 18</span>
-            <p className="wp-voice">The story waits here while you read on in the book.</p>
-            <p className="wp-para">Until you come back, the walk shows places only.</p>
-            <div className="wp-actions">
-              <button type="button" className="wp-primary" onClick={() => show('harold', 'story')}>
-                Resume the story
-              </button>
-              <button type="button" className="wp-ghost">Catch me up first</button>
-            </div>
-          </section>
-        ) : (
-          <section className="wp-dispatch rise">
-            <span className="wp-label">Today in the story · day 21</span>
-            <p className="wp-voice">[The day's story, in our own words, would sit here.]</p>
-            <div className="wp-actions">
-              <button type="button" className="wp-ghost" onClick={() => show('harold')}>
-                Pause the story here
-              </button>
-            </div>
-          </section>
-        )}
-        <section className="wp-dispatch quiet rise">
-          <span className="wp-label">Places today · {w.stretch}</span>
-          <p className="wp-para">The road leaves Devon behind for the farms and levels of Somerset.</p>
-        </section>
-        <section className="wp-dispatch quiet rise">
-          <span className="wp-label">About the book</span>
-          <p className="wp-para">{r.book!.synopsis}</p>
-          <details className="wp-about">
-            <summary>Full synopsis · spoilers</summary>
-            <p className="wp-para">Opens behind this warning, and freely once you finish the walk.</p>
-          </details>
-        </section>
-      </div>
     </main>
   );
 }
