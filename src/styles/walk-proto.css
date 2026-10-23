@@ -498,3 +498,62 @@ html.contrast .wp-field { opacity: 0.45; }
 }
 @keyframes wp-sweep { from { background-position: 120% 0; } to { background-position: -40% 0; } }
 @keyframes wp-slam-c { 0% { opacity: 0; transform: translateY(-50%) scale(1.9) rotate(-14deg); } 60% { opacity: 1; transform: translateY(-50%) scale(0.95) rotate(-6deg); } 100% { transform: translateY(-50%) scale(1) rotate(-6deg); } }
+
+/* ---------- the passport: a booklet you swipe ---------- */
+.wp-book { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 6px 30px 18px; scroll-padding: 0 30px; scrollbar-width: none; perspective: 900px; }
+.wp-pg { position: relative; flex: none; width: 300px; min-height: 390px; scroll-snap-align: center; display: flex; flex-direction: column; gap: 12px; padding: 18px 18px 18px 26px; border-radius: 6px 14px 14px 6px; color: #2a2620; background: linear-gradient(160deg, #f2ebde, #e3d9c7); box-shadow: 0 24px 50px -18px rgba(0, 0, 0, 0.85); overflow: hidden; }
+.wp-pg::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 16px; background: linear-gradient(90deg, rgba(60, 40, 20, 0.22), transparent); }
+.wp-pg::after { content: ''; position: absolute; inset: 10px 10px 10px 18px; border: 1px solid rgba(42, 38, 32, 0.22); border-radius: 4px 10px 10px 4px; pointer-events: none; }
+.wp-pg.ut::after { border: 3px double rgba(42, 38, 32, 0.35); }
+.wp-pg-shape { position: absolute; inset: 70px 20px 40px 30px; width: calc(100% - 50px); height: calc(100% - 110px); opacity: 0.5; }
+.wp-pg-shape path { fill: rgba(138, 127, 108, 0.1); stroke: #8a7f6c; stroke-width: 1.2; stroke-dasharray: 3 3; }
+.wp-pg-head { position: relative; display: flex; flex-direction: column; }
+.wp-pg-head b { font-family: var(--serif); font-weight: 400; font-size: 26px; line-height: 1.1; }
+.wp-pg-head small { font-size: 14px; color: #5a564e; }
+.wp-pg-body { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+.wp-pp-entry { display: flex; flex-direction: column; align-items: center; padding: 10px 22px; border-radius: 50%; border: 2px solid color-mix(in srgb, #2f6a5a 85%, transparent); color: #2f6a5a; transform: rotate(-7deg); text-align: center; }
+.wp-pp-entry.ut { border-radius: 10px; border-style: double; border-width: 4px; color: #3b4f8a; border-color: #3b4f8a; }
+.wp-pp-entry small { font-family: var(--mono); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
+.wp-pp-entry b { font-family: var(--serif); font-weight: 600; font-size: 18px; }
+.wp-pg-stamp { width: 160px; transform: rotate(4deg); filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.25)); }
+.wp-pg-stamp svg, .wp-pg-visa svg { display: block; width: 100%; height: auto; }
+.wp-pg-note { margin: 0; font-size: 15px; line-height: 1.4; text-align: center; color: #3a362f; }
+.wp-pg-replay { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid rgba(42, 38, 32, 0.35); color: #2a2620; font-size: 15px; }
+@media (prefers-reduced-motion: no-preference) { .wp-pp-entry, .wp-pg-stamp { animation: wp-slam 0.55s cubic-bezier(0.3, 1.4, 0.5, 1) 0.3s both; } }
+
+.wp-pg.cover { justify-content: flex-end; color: var(--pearl); background: radial-gradient(120% 80% at 50% 30%, #23305e, #121735 75%); }
+.wp-pg.cover::before { background: linear-gradient(90deg, rgba(0, 0, 0, 0.45), transparent); }
+.wp-pg.cover::after { border-color: color-mix(in srgb, var(--pearl) 25%, transparent); }
+.wp-cover-india { position: absolute; inset: 40px 40px 140px; width: calc(100% - 80px); height: calc(100% - 180px); }
+.wp-cover-india path { fill: color-mix(in srgb, var(--pearl) 8%, transparent); stroke: color-mix(in srgb, var(--pearl) 70%, transparent); stroke-width: 1.4; }
+.wp-cover-text { position: relative; display: flex; flex-direction: column; gap: 4px; text-align: center; padding-bottom: 8px; }
+.wp-cover-text small { font-size: 14px; letter-spacing: 0.14em; text-transform: uppercase; }
+.wp-cover-text b { font-family: var(--serif); font-weight: 400; font-size: 26px; line-height: 1.15; color: var(--text); }
+
+.wp-pg.visas { gap: 14px; }
+.wp-pg-visa { width: 210px; align-self: center; transform: rotate(-4deg); }
+.wp-visa-slip { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1.5px dashed rgba(42, 38, 32, 0.4); border-radius: 10px; }
+.wp-visa-slip b { font-family: var(--serif); font-weight: 400; font-size: 18px; }
+.wp-visa-slip small { font-size: 14px; color: #5a564e; }
+.wp-visa-slip.exp { border-style: solid; border-color: #9a7a3a; }
+
+.wp-been-map { width: 100%; height: 230px; }
+.wp-been-map path { fill: transparent; stroke: rgba(42, 38, 32, 0.35); stroke-width: 0.8; }
+.wp-been-map path.land { fill: rgba(138, 127, 108, 0.12); stroke: #6a604f; stroke-width: 1.2; }
+.wp-been-map path.on { fill: #2f6a5a; stroke: #2f6a5a; }
+.wp-been-num { display: flex; align-items: baseline; gap: 10px; }
+.wp-been-num b { font-family: var(--serif); font-weight: 300; font-size: 54px; line-height: 1; color: #2f6a5a; }
+.wp-been-num small { font-size: 15px; line-height: 1.35; }
+
+.wp-pg.next { justify-content: center; align-items: center; text-align: center; gap: 8px; background: linear-gradient(160deg, rgba(242, 235, 222, 0.22), rgba(227, 217, 199, 0.12)); color: var(--text); box-shadow: none; border: 1.5px dashed var(--wp-edge); }
+.wp-pg.next::before, .wp-pg.next::after { display: none; }
+.wp-next-q { font-family: var(--serif); font-size: 64px; line-height: 1; opacity: 0.6; }
+.wp-pg.next b { font-family: var(--serif); font-weight: 400; font-size: 24px; }
+.wp-pg.next small { font-size: 15px; line-height: 1.4; color: color-mix(in srgb, var(--text) 82%, transparent); }
+
+.wp-book-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.wp-book-nav .wp-ghost { width: 52px; padding: 0; }
+.wp-book-nav .wp-ghost:disabled { opacity: 0.35; }
+.wp-book-dots { display: flex; gap: 6px; }
+.wp-book-dots i { width: 8px; height: 8px; border-radius: 50%; background: color-mix(in srgb, var(--text) 28%, transparent); transition: width 0.25s var(--ease); }
+.wp-book-dots i.on { width: 24px; border-radius: 4px; background: var(--pearl); }

@@ -4,14 +4,13 @@ import { Icon } from '../../ui/Icon';
 import topScene from './walk-art/top-ravines.svg?raw';
 import stripArt from './walk-art/strip-stretch.svg?raw';
 import mapArt from './walk-art/map-stretch.svg?raw';
-import stampAgra from './walk-art/stamp-agra.svg?raw';
-import stampGwalior from './walk-art/stamp-gwalior.svg?raw';
 import visaDandi from './walk-art/visa-dandi.svg?raw';
 import { CHAMBAL_FACTS, DANDI, EXPEDITIONS, EXPEDITION_KM, KIND_NAMES, KM_A_DAY, RECORD_NAMES, SHELF, WALKING, type RouteKind, type ShelfRoute } from './walkSample';
 import { RouteArt, byId, fmt, inkOf } from './walkArt';
 import { CardLook, HeroLook, LOOKS, ShelfLook, type Look } from './walkLooks';
 import { ExpeditionPage } from './walkExpedition';
 import { Arrival } from './walkArrival';
+import { PassportBook } from './walkPassport';
 
 /**
  * Design prototype (sample numbers and draft text; nothing is read or saved): the redesigned Walk tab,
@@ -113,7 +112,7 @@ export function WalkProto() {
         {screen === 'harold' && <HaroldPage paused={state !== 'story'} show={show} />}
         {screen === 'join' && <JoinMoment show={show} />}
         {screen === 'expedition' && <ExpeditionPage look={look} onBack={() => show('walk')} />}
-        {screen === 'passport' && <Passport show={show} />}
+        {screen === 'passport' && <PassportBook onBack={() => show('walk')} onReplay={() => show('arrival')} />}
         {screen === 'stop' && <StopMoment show={show} />}
         {screen === 'map' && <MapPage show={show} />}
         {screen === 'arrival' && <Arrival beat={Number(state || 1)} onNext={() => (Number(state || 1) >= 5 ? show('passport') : show('arrival', String(Number(state || 1) + 1)))} />}
@@ -502,67 +501,6 @@ function JoinMoment({ show }: { show: Show }) {
           Start walking
         </button>
         <button type="button" className="wp-ghost">Add a target date</button>
-      </div>
-    </main>
-  );
-}
-
-/* ---------- passport ---------- */
-
-function Passport({ show }: { show: Show }) {
-  const [tab, setTab] = useState<'pages' | 'visas'>('pages');
-  return (
-    <main className="wp-page">
-      <div className="wp-col">
-        <Back to="walk" label="Walk" show={show} />
-        <div className="rise">
-          <h1 className="wp-title big">Passport</h1>
-          <p className="wp-sub">3 of 28 states · 1 of 8 union territories · 2 of 46 cities</p>
-        </div>
-        <div className="wp-chips" role="group" aria-label="Passport section">
-          <button type="button" className={tab === 'pages' ? 'on' : ''} onClick={() => setTab('pages')}>
-            Pages
-          </button>
-          <button type="button" className={tab === 'visas' ? 'on' : ''} onClick={() => setTab('visas')}>
-            Visas
-          </button>
-        </div>
-        {tab === 'pages' ? (
-          <section key="pages" className="wp-pp rise">
-            <div className="wp-pp-head">
-              <span className="wp-pp-title">Uttar Pradesh</span>
-              <span className="wp-quiet">State · entered 12 days ago</span>
-            </div>
-            <div className="wp-pp-stamps">
-              <Art svg={stampAgra} className="wp-pp-stamp" />
-            </div>
-            <p className="wp-para">Kept: a box of petha from Agra.</p>
-            <div className="wp-actions">
-              <button type="button" className="wp-ghost">Haryana</button>
-              <button type="button" className="wp-ghost" onClick={() => show('arrival')}>
-                Replay Agra
-              </button>
-            </div>
-          </section>
-        ) : (
-          <section key="visas" className="wp-pp rise">
-            <div className="wp-pp-head">
-              <span className="wp-pp-title">Visas</span>
-              <span className="wp-quiet">2 challenges · 1 expedition</span>
-            </div>
-            <div className="wp-pp-stamps">
-              <Art svg={visaDandi} className="wp-pp-stamp" />
-            </div>
-            <p className="wp-para">The Dandi March · joined 12 days ago · stamped "Completed" at Dandi.</p>
-          </section>
-        )}
-        <section className="wp-dispatch quiet">
-          <span className="wp-label">Next page</span>
-          <p className="wp-para">Your next state appears here once you cross into it.</p>
-          <div className="wp-pp-ghost" aria-hidden="true">
-            <Art svg={stampGwalior} />
-          </div>
-        </section>
       </div>
     </main>
   );
