@@ -1,5 +1,6 @@
 import { TrainProto } from './screens/proto/TrainLiving';
 import { SessionProto } from './screens/proto/SessionLiving';
+import { WalkProto } from './screens/proto/WalkProto';
 import { prefOn } from './domain/types';
 import { Suspense, lazy, useEffect, type ComponentType, type ReactNode } from 'react';
 import { findSession } from './domain/plan';
@@ -140,6 +141,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/reveal': { el: () => <RevealPage /> },
   '/proto/session': { el: () => <SessionProto /> },
   '/proto/train': { el: () => <TrainProto /> },
+  '/proto/walk': { el: () => <WalkProto /> },
 };
 
 export function App() {
@@ -154,6 +156,8 @@ export function App() {
   }, [largeText, contrast]);
   useThemeClass(settings, today);
 
+  // Design prototypes use sample data only, so they open without setup (handy on a fresh phone).
+  if (route.path.startsWith('/proto/') && PAGES[route.path]) return PAGES[route.path].el();
   if (!settings) return null;
   if (!settings.setupDone) return <Setup />;
 
