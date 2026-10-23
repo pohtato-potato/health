@@ -24,8 +24,8 @@ describe('WalkTop', () => {
   it('renders the three caption lines', () => {
     for (const l of ['Wed 21 Oct · Home', 'Near Test Town', 'Day 31 · 16 km to Test Fort']) expect(html).toContain(l);
   });
-  it('is one button labelled for the walk, place and status, in the walk slot', () => {
-    expect(html).toMatch(/<button[^>]*aria-label="[^"]*Open the walk, place and status"/);
+  it('is one button labelled as the way to the Walk tab, in the walk slot', () => {
+    expect(html).toContain('aria-label="Wed 21 Oct · Home. Near Test Town. Day 31 · 16 km to Test Fort. Open the Walk tab"');
     expect(html).toContain('data-section="walk"');
   });
 });

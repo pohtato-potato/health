@@ -1,10 +1,12 @@
 import { addDays } from '../domain/dates';
 import { fmtDayMonth, fmtInt } from '../domain/format';
 import { chapterAt, kmFromSteps, positionAt } from '../domain/walk';
-import { useAllDays, useToday } from '../db/hooks';
+import { changePlace } from '../db/actions';
+import { useAllDays, useDay, useSettings, useToday } from '../db/hooks';
 import { go } from '../router';
 import { Icon } from '../ui/Icon';
 import { WalkScene } from '../walk/WalkScene';
+import { PlaceStatusRow } from './walk/PlaceStatusRow';
 import { reachedCards } from '../walk/cards';
 import { passAhead } from '../walk/passes';
 import { peopleMet } from '../walk/people';
@@ -13,7 +15,9 @@ import { peopleMet } from '../walk/people';
 export function WalkTab() {
   const today = useToday();
   const days = useAllDays();
-  if (!days) return <div className="page" />;
+  const settings = useSettings();
+  const day = useDay(today);
+  if (!days || !settings) return <div className="page" />;
   const km = kmFromSteps(days.reduce((n, d) => n + (d.steps ?? 0), 0));
   const pos = positionAt(km);
   const chapter = chapterAt(km);
@@ -34,6 +38,7 @@ export function WalkTab() {
           </span>
         </div>
       </div>
+      <PlaceStatusRow settings={settings} today={today} day={day ?? undefined} onPlace={(id) => void changePlace(today, id)} />
       {next && <div className="t15">{next}</div>}
       {!days.some((d) => d.steps !== undefined) && <div className="t14 q lh">Log today's steps and you'll set off from Delhi.</div>}
       {met && (

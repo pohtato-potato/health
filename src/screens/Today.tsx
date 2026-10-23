@@ -30,7 +30,6 @@ import { tickFor } from '../domain/checklist';
 import { TodayLine } from './today/TodayLine';
 import { glanceLine } from '../domain/glance';
 import { logMinutes } from '../domain/todayMoment';
-import { WalkFull } from './today/WalkFull';
 import { placeFor } from '../domain/places';
 import { proteinGap } from '../domain/proteinGap';
 import { WalkScene } from '../walk/WalkScene';
@@ -83,7 +82,6 @@ export function Today() {
   });
 
   const day = useMemo(() => days?.find((d) => d.date === today), [days, today]);
-  const [walkOpen, setWalkOpen] = useState(false);
   // The clock, the line and the moment card follow the time: re-render each minute and when the app comes back.
   const nowMs = useNow(60_000);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -170,7 +168,6 @@ export function Today() {
     <TodayLayout
       overlays={
         <>
-          {walkOpen && <WalkFull scene={<WalkScene km={walkKm} dayN={dayN} caption={false} hero festive={festive} />} caption={caption} settings={settings} today={today} day={day} onClose={() => setWalkOpen(false)} />}
           {drawerOpen && (
       <TodayDrawer
         voice={flag ? line : lineForTheDay(today, moment, line)}
@@ -185,7 +182,7 @@ export function Today() {
     )}
         </>
       }
-      walk={<WalkTop caption={caption} scene={scene} onOpen={() => setWalkOpen(true)} />}
+      walk={<WalkTop caption={caption} scene={scene} onOpen={() => go('/walk')} />}
       banner={<Banners />}
       line={<TodayLine text={lineText} kind={lineKind} gold={moment === 'perfect'} clock={fmtTime(nowMs)} why={themeDay ? { name: themeDay.name, text: themeDay.why } : undefined} />}
       season={<SeasonStrip settings={settings} today={today} />}

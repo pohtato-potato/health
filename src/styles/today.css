@@ -21,14 +21,8 @@
 .td-walk-near { font-family: var(--serif); font-size: 28px; line-height: 1.1; }
 .td-walk-next { margin: 0; font-size: 15px; }
 
-/* The full walk. */
-.td-walkfull { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; background: var(--ink); overflow-y: auto; }
-.td-walkfull-scene .band { height: calc(340px + var(--safe-top)); border-radius: 0 0 26px 26px; }
-.td-walkfull-body { display: flex; flex-direction: column; gap: 10px; padding: 18px 22px calc(28px + var(--safe-bottom)); }
-.td-walkfull-title { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 32px; line-height: 1.1; }
 .td-h3 { margin: 14px 0 2px; font-family: var(--serif); font-weight: 400; font-size: 20px; }
 .td-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.td-walkfull-back { margin-top: 18px; }
 
 /* The line: the day's headline set large on the page; the voice in italic at moments; a joint flag in plain words. */
 .td-line-wrap { display: flex; flex-direction: column; gap: 8px; }
