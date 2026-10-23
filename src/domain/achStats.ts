@@ -18,7 +18,7 @@ import type {
   WeekNote,
   Win,
 } from './types';
-import { arrivals, kmFromSteps, statesReached } from './walk';
+import { arrivals, kmFromSteps, statesReached, setStride } from './walk';
 
 export interface DayStat {
   date: DayKey;
@@ -84,6 +84,8 @@ export interface AchStats extends Omit<AchInput, 'counters' | 'unlocked' | 'sess
 }
 
 export function buildStats(i: AchInput): AchStats {
+  // Distances use the stride in these settings, even before the app-wide setting has caught up.
+  setStride(i.settings.strideM);
   const done = i.sessions.filter((s) => s.status === 'done').sort((a, b) => a.startedAt - b.startedAt);
   const doneIds = new Set(done.map((s) => s.id));
   const sets = i.sets.filter((s) => doneIds.has(s.sessionId)).sort((a, b) => a.at - b.at);

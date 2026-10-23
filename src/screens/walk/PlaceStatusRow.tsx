@@ -4,10 +4,14 @@ import type { Day, Settings } from '../../domain/types';
 import { PlaceIcon } from '../../ui/PlaceIcon';
 import { StatusRow } from '../../ui/StatusRow';
 
-/** Where you are today and any status, picked under the walk's title. Moved here from Today's full-screen walk. */
-export function PlaceStatusRow({ settings, today, day, onPlace }: { settings: Settings; today: DayKey; day: Day | undefined; onPlace: (id: string) => void }) {
+/**
+ * Where you are today and any status, picked under the walk's title. Moved here from Today's full-screen walk.
+ * `day` is undefined while it loads (nothing shows, so a tap can't act on a wrong selection) and null when none is saved.
+ */
+export function PlaceStatusRow({ settings, today, day, onPlace }: { settings: Settings; today: DayKey; day: Day | undefined | null; onPlace: (id: string) => void }) {
+  if (day === undefined) return null;
   const places = settings.places ?? [];
-  const here = placeFor(day, settings, Date.now());
+  const here = placeFor(day ?? undefined, settings, Date.now());
   return (
     <div className="walk-place-status">
       {places.length > 0 && (

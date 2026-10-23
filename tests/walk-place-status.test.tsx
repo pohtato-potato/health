@@ -18,7 +18,7 @@ describe('the place and status row on the Walk tab', () => {
   });
 
   it('shows the status row with no places set', () => {
-    const html = renderToStaticMarkup(<PlaceStatusRow settings={withPlaces([])} today="2026-10-21" day={undefined} onPlace={() => {}} />);
+    const html = renderToStaticMarkup(<PlaceStatusRow settings={withPlaces([])} today="2026-10-21" day={null} onPlace={() => {}} />);
     expect(html).not.toContain('Where now');
     expect(html).toContain('Status');
   });

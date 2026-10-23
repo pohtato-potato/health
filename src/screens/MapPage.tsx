@@ -355,7 +355,7 @@ export function MapPage() {
           It took {fmtInt(Math.round(totalSteps / settings.loopSteps))} laps of your home loop to get this far.
         </div>
       ) : null}
-      <div className="t12 d center lh">Each step counts as {strideM().toFixed(2)} m (you can change it in Settings). Distances follow the highways, roughly. Islands are reached by sea.</div>
+      <div className="t14 d center lh">Each step counts as {strideM().toFixed(2)} m (you can change it in Settings). Distances follow the highways, roughly. Islands are reached by sea.</div>
     </div>
   );
 }

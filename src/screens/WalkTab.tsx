@@ -33,12 +33,12 @@ export function WalkTab() {
         <WalkScene km={km} caption={false} hero />
         <div className="walk-title">
           <h1 className="h1">{pos.done ? 'Leh, the end of the road' : `Near ${pos.from.name}`}</h1>
-          <span className="t13 tn">
+          <span className="t14 tn">
             {fmtInt(Math.round(km))} km · Chapter {chapter.n}
           </span>
         </div>
       </div>
-      <PlaceStatusRow settings={settings} today={today} day={day ?? undefined} onPlace={(id) => void changePlace(today, id)} />
+      <PlaceStatusRow settings={settings} today={today} day={day} onPlace={(id) => void changePlace(today, id)} />
       {next && <div className="t15">{next}</div>}
       {!days.some((d) => d.steps !== undefined) && <div className="t14 q lh">Log today's steps and you'll set off from Delhi.</div>}
       {met && (
