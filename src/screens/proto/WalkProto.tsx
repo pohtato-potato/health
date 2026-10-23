@@ -11,6 +11,7 @@ import { CardLook, HeroLook, LOOKS, ShelfLook, type Look } from './walkLooks';
 import { ExpeditionPage } from './walkExpedition';
 import { Arrival } from './walkArrival';
 import { PassportBook } from './walkPassport';
+import { IndiaMap } from './walkIndiaMap';
 
 /**
  * Design prototype (sample numbers and draft text; nothing is read or saved): the redesigned Walk tab,
@@ -72,6 +73,7 @@ export function WalkProto() {
   const states: Partial<Record<Screen, [string, string][]>> = {
     walk: [['', 'A walking day'], ['banner', 'Expedition news'], ['rest', 'Resting']],
     harold: [['', 'Story paused'], ['story', 'With the story']],
+    map: [['', 'This stretch'], ['india', 'All of India']],
     arrival: [['', '1 · Approach'], ['2', '2 · Footprints'], ['3', '3 · Zoom out'], ['4', '4 · Race'], ['5', '5 · Stamp']],
   };
   const tint = screen === 'expedition' ? 'tint-silk' : screen === 'harold' ? 'tint-green' : screen === 'dandi' || screen === 'join' ? 'tint-sea' : screen === 'arrival' && state === '5' ? 'tint-gold' : '';
@@ -114,7 +116,7 @@ export function WalkProto() {
         {screen === 'expedition' && <ExpeditionPage look={look} onBack={() => show('walk')} />}
         {screen === 'passport' && <PassportBook onBack={() => show('walk')} onReplay={() => show('arrival')} />}
         {screen === 'stop' && <StopMoment show={show} />}
-        {screen === 'map' && <MapPage show={show} />}
+        {screen === 'map' && <MapPage india={state === 'india'} show={show} />}
         {screen === 'arrival' && <Arrival beat={Number(state || 1)} onNext={() => (Number(state || 1) >= 5 ? show('passport') : show('arrival', String(Number(state || 1) + 1)))} />}
       </div>
     </div>
@@ -590,25 +592,25 @@ function RiverMark() {
 
 /* ---------- map ---------- */
 
-function MapPage({ show }: { show: Show }) {
-  const [zoom, setZoom] = useState('Stretch');
+function MapPage({ india, show }: { india: boolean; show: Show }) {
   return (
     <main className="wp-page">
       <div className="wp-col">
         <Back to="walk" label="Walk" show={show} />
         <div className="rise">
-          <h1 className="wp-title">Bandit Country</h1>
-          <p className="wp-sub">Agra to Gwalior · 8 of 120 km</p>
+          <h1 className="wp-title">{india ? 'India' : 'Bandit Country'}</h1>
+          <p className="wp-sub">{india ? 'Chapter 1 · 241 of 2,870 km · 3 of 36 states and territories' : 'Agra to Gwalior · 8 of 120 km'}</p>
         </div>
       </div>
-      <Art svg={mapArt} className="wp-map" />
+      {india ? <IndiaMap /> : <Art svg={mapArt} className="wp-map" />}
       <div className="wp-col">
         <div className="wp-chips" role="group" aria-label="How far out">
-          {['Stretch', 'Chapter', 'India'].map((z) => (
-            <button key={z} type="button" className={zoom === z ? 'on' : ''} onClick={() => setZoom(z)}>
-              {z}
-            </button>
-          ))}
+          <button type="button" className={!india ? 'on' : ''} onClick={() => show('map')}>
+            This stretch
+          </button>
+          <button type="button" className={india ? 'on' : ''} onClick={() => show('map', 'india')}>
+            All of India
+          </button>
         </div>
         <button type="button" className="wp-ghost wp-fly">
           <Icon name="play" size={18} stroke={1.8} />
