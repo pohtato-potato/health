@@ -1,0 +1,18 @@
+<svg viewBox="0 0 170 190" width="170" height="190" role="img" aria-label="Engraved passport stamp of Agra, the Taj Mahal in line">
+<defs><pattern id="aHat" width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="3" stroke="#2a2620" stroke-width=".9"/></pattern></defs>
+<rect x="3" y="3" width="164" height="184" rx="6" fill="#eee8dc"/>
+<rect x="10" y="10" width="150" height="170" rx="4" fill="none" stroke="#2a2620" stroke-width="1.3" stroke-dasharray="1.2 2.6"/>
+<text x="85" y="32" text-anchor="middle" font-family="DM Mono" font-size="13" letter-spacing="2" fill="#2a2620">ARRIVED</text>
+<g stroke="#2a2620" stroke-width="1.2" fill="none" stroke-linejoin="round">
+<path d="M30 128 H140 M36 128 V122 H134 V128"/>
+<rect x="60" y="92" width="50" height="30"/>
+<path d="M78 122 V104 Q85 96 92 104 V122"/>
+<path d="M66 92 Q66 70 85 58 Q104 70 104 92 Z"/><path d="M85 58 V50"/><circle cx="85" cy="48" r="1.6"/>
+<path d="M85 58 Q100 70 104 92 L92 92 Q92 72 85 58 Z" fill="url(#aHat)" stroke="none"/>
+<path d="M61 92 q4 -8 8 0 M101 92 q4 -8 8 0"/>
+<path d="M40 122 V80 M44 122 V80 M39 80 h6 M38 84 h8 M38 100 h8"/><path d="M39 80 q3 -6 6 0"/>
+<path d="M126 122 V80 M130 122 V80 M125 80 h6 M124 84 h8 M124 100 h8"/><path d="M125 80 q3 -6 6 0"/>
+</g>
+<text x="85" y="152" text-anchor="middle" font-family="Fraunces Variable, Georgia, serif" font-size="22" fill="#2a2620">AGRA</text>
+<text x="85" y="170" text-anchor="middle" font-family="DM Mono" font-size="13" fill="#2a2620">UTTAR PRADESH</text>
+</svg>

@@ -1,0 +1,7 @@
+<svg viewBox="0 0 200 150" width="200" height="150" role="img" aria-label="A visa stamp: The Dandi March, joined">
+<path d="M100 4 L192 30 V120 L100 146 L8 120 V30 Z" fill="#eee8dc"/>
+<path d="M100 12 L184 36 V114 L100 138 L16 114 V36 Z" fill="none" stroke="#2a2620" stroke-width="1.4"/>
+<text x="100" y="44" text-anchor="middle" font-family="DM Mono" font-size="13" letter-spacing="2" fill="#2a2620">VISA · JOINED</text>
+<g stroke="#2a2620" stroke-width="1.4" fill="none" stroke-linecap="round"><circle cx="126" cy="62" r="7"/><path d="M50 82 C62 76 74 88 86 82 S110 76 122 82 S146 88 152 82"/><path d="M50 90 C62 84 74 96 86 90 S110 84 122 90 S146 96 152 90"/><path d="M64 74 h28 l-4 4 h-20 z"/></g>
+<text x="100" y="116" text-anchor="middle" font-family="Fraunces Variable, Georgia, serif" font-size="15" fill="#2a2620">THE DANDI MARCH</text>
+</svg>
