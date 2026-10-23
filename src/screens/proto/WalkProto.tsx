@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { go, useRoute } from '../../router';
 import { Icon } from '../../ui/Icon';
 import { INDIA_OUTLINE } from '../../domain/walk';
@@ -10,7 +10,8 @@ import stampAgra from './walk-art/stamp-agra.svg?raw';
 import stampGwalior from './walk-art/stamp-gwalior.svg?raw';
 import visaDandi from './walk-art/visa-dandi.svg?raw';
 import { CHAMBAL_FACTS, DANDI, EXPEDITIONS, EXPEDITION_KM, KIND_NAMES, KM_A_DAY, RECORD_NAMES, SHELF, WALKING, XUANZANG, type RouteKind, type ShelfRoute } from './walkSample';
-import { REGIONS, ROUTE_ART } from './walkRoutes';
+import { RouteArt, byId, fmt, inkOf } from './walkArt';
+import { CardLook, HeroLook, LOOKS, ShelfLook, type Look } from './walkLooks';
 
 /**
  * Design prototype (sample numbers and draft text; nothing is read or saved): the redesigned Walk tab,
@@ -33,9 +34,6 @@ const SCREENS: [Screen, string][] = [
   ['arrival', 'Arrival'],
 ];
 
-const byId = (id: string) => SHELF.find((r) => r.id === id)!;
-const fmt = (n: number) => n.toLocaleString('en-IN');
-const inkOf = (id: string) => ({ '--ink': ROUTE_ART[id]?.ink ?? '#c9dcea' }) as CSSProperties;
 
 /** "about 6 weeks" at the sample pace. */
 export function timeAtPace(km: number): string {
@@ -61,90 +59,14 @@ function Field() {
   );
 }
 
-/** The point a fraction of the way along a polyline. */
-function along(line: [number, number][], frac: number): [number, number] {
-  const seg = line.slice(1).map((p, i) => Math.hypot(p[0] - line[i][0], p[1] - line[i][1]));
-  let left = seg.reduce((a, b) => a + b, 0) * Math.max(0, Math.min(1, frac));
-  for (let i = 0; i < seg.length; i++) {
-    if (left <= seg[i]) {
-      const t = seg[i] ? left / seg[i] : 0;
-      return [line[i][0] + (line[i + 1][0] - line[i][0]) * t, line[i][1] + (line[i + 1][1] - line[i][1]) * t];
-    }
-    left -= seg[i];
-  }
-  return line[line.length - 1];
-}
-
-/**
- * A route drawn on a faint outline of its land: the road ahead dashed, the part walked inked in the route's
- * own colour (it draws itself on arrival), and a breathing dot where you are.
- */
-function RouteArt({ id, frac, kind = 'band', label, names = true }: { id: string; frac: number; kind?: 'band' | 'thumb' | 'hero'; label?: string; names?: boolean }) {
-  const art = ROUTE_ART[id];
-  const region = REGIONS[art.region];
-  // Frame the route itself: its bounding box, with room around it for the land and the names, stretched to the
-  // shape of the box it is drawn in (thumb 168×132, band 324×150, hero 324×230), so every route fills its card.
-  const [pw, ph] = kind === 'thumb' ? [168, 132] : kind === 'band' ? [324, 150] : [324, 230];
-  const xs = art.line.map((p) => p[0]);
-  const ys = art.line.map((p) => p[1]);
-  const [bx0, bx1, by0, by1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
-  const span = Math.max(bx1 - bx0, by1 - by0, region.box[2] * 0.04);
-  let w = bx1 - bx0 + span * (kind === 'thumb' ? 0.7 : 1.1);
-  let h = by1 - by0 + span * (kind === 'thumb' ? 0.7 : 0.6);
-  if (w / h < pw / ph) w = h * (pw / ph);
-  else h = w / (pw / ph);
-  const x = (bx0 + bx1) / 2 - w / 2;
-  const y = (by0 + by1) / 2 - h / 2;
-  const pad = 0;
-  const vb = `${x} ${y} ${w} ${h}`;
-  const d = 'M' + art.line.map((p) => p.join(' ')).join(' L');
-  const [ux, uy] = along(art.line, frac);
-  const [ex, ey] = art.line[art.line.length - 1];
-  const [sx, sy] = art.line[0];
-  // Screen size of one unit, so dots stay about 5 px and names stay 15 px whatever the region's scale.
-  const unit = pw / w;
-  const r = 5 / unit;
-  return (
-    <svg className={`wp-ra ${kind}`} viewBox={vb} preserveAspectRatio="xMidYMid slice" role="img" aria-label={label ?? `${byId(id).name}: ${Math.round(frac * 100)}% walked`}>
-      <g className="wp-ra-grid" aria-hidden="true">
-        {[0.25, 0.5, 0.75].map((t) => (
-          <line key={`v${t}`} x1={x - pad + (w + pad * 2) * t} y1={y - pad} x2={x - pad + (w + pad * 2) * t} y2={y + h + pad} vectorEffect="non-scaling-stroke" />
-        ))}
-        {[0.33, 0.66].map((t) => (
-          <line key={`h${t}`} x1={x - pad} y1={y - pad + (h + pad * 2) * t} x2={x + w + pad} y2={y - pad + (h + pad * 2) * t} vectorEffect="non-scaling-stroke" />
-        ))}
-      </g>
-      {region.extra && <path className="wp-ra-ridge" d={region.extra} vectorEffect="non-scaling-stroke" />}
-      <path className="wp-ra-land" d={region.outline} vectorEffect="non-scaling-stroke" />
-      <path className="wp-ra-ahead" d={d} vectorEffect="non-scaling-stroke" />
-      <path className="wp-ra-walked" d={d} pathLength={1} style={{ strokeDasharray: `${frac} 1`, ['--f' as string]: frac }} vectorEffect="non-scaling-stroke" />
-      {kind !== 'thumb' &&
-        art.line.slice(1, -1).map(([px, py], k) => <circle key={k} className="wp-ra-stop" cx={px} cy={py} r={r * 0.32} />)}
-      <circle className="wp-ra-start" cx={sx} cy={sy} r={r * 0.7} />
-      <circle className="wp-ra-end" cx={ex} cy={ey} r={r * 0.85} vectorEffect="non-scaling-stroke" />
-      <circle className="wp-ra-halo" cx={ux} cy={uy} r={r * 1.6} />
-      <circle className="wp-ra-you" cx={ux} cy={uy} r={r} />
-      {kind !== 'thumb' && names && (
-        <g className="wp-ra-names" style={{ fontSize: 15 / unit }}>
-          <text x={sx + r * 1.6} y={sy - r * 0.8}>
-            {art.ends[0]}
-          </text>
-          <text x={ex + r * 1.6} y={ey + r * 2.4}>
-            {art.ends[1]}
-          </text>
-        </g>
-      )}
-    </svg>
-  );
-}
-
 export function WalkProto() {
   const { params } = useRoute();
   const screen = (params.get('screen') as Screen | null) ?? 'walk';
   const state = params.get('state') ?? '';
   const [take, setTake] = useState(0);
-  const show = (s: Screen, st?: string) => {
-    go('/proto/walk', { screen: s, state: st }, { replace: true });
+  const look = (params.get('look') as Look | null) ?? 'poster';
+  const show = (s: Screen, st?: string, lk: Look = look) => {
+    go('/proto/walk', { screen: s, state: st, look: lk }, { replace: true });
     setTake((t) => t + 1);
   };
 
@@ -176,6 +98,13 @@ export function WalkProto() {
             Replay motion
           </button>
         </div>
+        <div className="wp-dev-row" aria-label="Look">
+          {LOOKS.map(([lk, label]) => (
+            <button key={lk} type="button" className={lk === look ? 'on' : ''} onClick={() => show(screen, state || undefined, lk)}>
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
       <div key={`${screen}-${state}-${take}`} className="wp-screen">
         {screen === 'walk' && <WalkPage state={state} show={show} />}
@@ -195,6 +124,11 @@ export function WalkProto() {
 
 type Show = (s: Screen, st?: string) => void;
 
+/** The look being compared, from the address, so it survives moving between screens. */
+function useLook(): Look {
+  return (useRoute().params.get('look') as Look | null) ?? 'poster';
+}
+
 function Back({ to, label, show }: { to: Screen; label: string; show: Show }) {
   return (
     <button type="button" className="wp-back" onClick={() => show(to)}>
@@ -207,6 +141,7 @@ function Back({ to, label, show }: { to: Screen; label: string; show: Show }) {
 /* ---------- the Walk tab ---------- */
 
 function WalkPage({ state, show }: { state: string; show: Show }) {
+  const look = useLook();
   const [news, setNews] = useState(true);
   const resting = state === 'rest';
   return (
@@ -264,7 +199,7 @@ function WalkPage({ state, show }: { state: string; show: Show }) {
         <h2 className="wp-h2">Challenges</h2>
         <div className="wp-rc-list">
           {WALKING.map((w, i) => (
-            <ChallengeCard key={w.id} w={w} i={i} onOpen={() => show(w.id === 'dandi' ? 'dandi' : 'harold')} />
+            <CardLook key={w.id} look={look} c={w} delay={120 + i * 90} onOpen={() => show(w.id === 'dandi' ? 'dandi' : 'harold')} />
           ))}
         </div>
 
@@ -315,34 +250,10 @@ function WalkPage({ state, show }: { state: string; show: Show }) {
   );
 }
 
-/** A challenge in the app's collectible style: the route on its land in a band, the words on a panel below. */
-function ChallengeCard({ w, i, onOpen }: { w: (typeof WALKING)[number]; i: number; onOpen: () => void }) {
-  const r = byId(w.id);
-  return (
-    <button type="button" className={`wp-rc rise ${r.book ? 'book' : ''}`} style={{ ...inkOf(w.id), animationDelay: `${120 + i * 90}ms` }} onClick={onOpen}>
-      <span className="wp-rc-band">
-        <RouteArt id={w.id} frac={w.km / r.km} />
-        <span className="wp-era-stamp" aria-hidden="true">
-          {r.era}
-        </span>
-        {r.book && <span className="wp-ribbon" aria-hidden="true" />}
-      </span>
-      <span className="wp-rc-panel">
-        <span className="wp-rc-name">{r.name}</span>
-        <span className="wp-rc-nums">
-          <b>{fmt(w.km)}</b>
-          <span>of {fmt(r.km)} km · {w.stretch}</span>
-        </span>
-        <span className="wp-rc-line">{w.line}</span>
-        {w.target && <span className="wp-rc-target">{w.target}</span>}
-      </span>
-    </button>
-  );
-}
-
 /* ---------- choosing a walk ---------- */
 
 function Shelf({ show }: { show: Show }) {
+  const look = useLook();
   const [open, setOpen] = useState<ShelfRoute | null>(null);
   const kinds = Object.keys(KIND_NAMES) as RouteKind[];
   return (
@@ -359,22 +270,7 @@ function Shelf({ show }: { show: Show }) {
           <h2 className="wp-h2 wp-col">{KIND_NAMES[k]}</h2>
           <div className="wp-cards" role="list">
             {SHELF.filter((r) => r.kind === k).map((r, i) => (
-              <button key={r.id} type="button" role="listitem" className="wp-sc rise" style={{ ...inkOf(r.id), animationDelay: `${ki * 80 + i * 60}ms` }} onClick={() => setOpen(r)}>
-                <span className="wp-sc-art">
-                  <RouteArt id={r.id} frac={0} kind="thumb" label={`${r.name} on its map`} />
-                </span>
-                <span className="wp-sc-text">
-                  <span className="wp-sc-name">{r.name}</span>
-                  <span className="wp-sc-meta">
-                    {fmt(r.km)} km · {timeAtPace(r.km)}
-                  </span>
-                  <span className="wp-sc-era">
-                    {r.era}
-                    {r.km > EXPEDITION_KM ? ' · Expedition' : ''}
-                    {r.book ? ' · Book' : ''}
-                  </span>
-                </span>
-              </button>
+              <ShelfLook key={r.id} look={look} id={r.id} time={timeAtPace(r.km)} delay={ki * 80 + i * 60} onOpen={() => setOpen(r)} />
             ))}
           </div>
         </section>
@@ -410,18 +306,6 @@ function Shelf({ show }: { show: Show }) {
 
 /* ---------- a history challenge ---------- */
 
-function RouteHero({ id, frac, title, sub }: { id: string; frac: number; title: string; sub: string }) {
-  return (
-    <header className="wp-hero" style={inkOf(id)}>
-      <RouteArt id={id} frac={frac} kind="hero" />
-      <div className="wp-hero-text">
-        <h1 className="wp-title big">{title}</h1>
-        <p className="wp-sub">{sub}</p>
-      </div>
-    </header>
-  );
-}
-
 function DandiPage({ show }: { show: Show }) {
   const w = WALKING[0];
   const r = byId('dandi');
@@ -432,7 +316,7 @@ function DandiPage({ show }: { show: Show }) {
       <div className="wp-col">
         <Back to="walk" label="Walk" show={show} />
       </div>
-      <RouteHero id="dandi" frac={w.km / r.km} title={r.name} sub={`Sabarmati to Dandi · 1930 · ${RECORD_NAMES[r.record]}`} />
+      <HeroLook look={useLook()} c={w} title={r.name} sub={`Sabarmati to Dandi · 1930 · ${RECORD_NAMES[r.record]}`} />
       <div className="wp-col">
         <p className="wp-big rise">
           <span className="wp-count">{fmt(w.km)}</span>
@@ -535,7 +419,7 @@ function HaroldPage({ paused, show }: { paused: boolean; show: Show }) {
       <div className="wp-col">
         <Back to="walk" label="Walk" show={show} />
       </div>
-      <RouteHero id="harold" frac={w.km / r.km} title={r.name} sub={`The Unlikely Pilgrimage of Harold Fry · ${r.book!.by} · 2012`} />
+      <HeroLook look={useLook()} c={w} title={r.name} sub={`The Unlikely Pilgrimage of Harold Fry · ${r.book!.by} · 2012`} />
       <div className="wp-col">
         <p className="wp-big rise">
           <span className="wp-count">{fmt(w.km)}</span>
@@ -633,7 +517,7 @@ function ExpeditionPage({ show }: { show: Show }) {
       <div className="wp-col">
         <Back to="walk" label="Walk" show={show} />
       </div>
-      <RouteHero id="xuanzang" frac={e.km / r.km} title={r.name} sub={`Chang'an to Nalanda and home · 629–645 · ${RECORD_NAMES[r.record]}`} />
+      <HeroLook look={useLook()} c={{ id: 'xuanzang', km: e.km, day: 41, stretch: XUANZANG.stretch, line: XUANZANG.line }} title={r.name} sub={`Chang'an to Nalanda and home · 629–645 · ${RECORD_NAMES[r.record]}`} />
       <div className="wp-col">
         <p className="wp-big rise">
           <span className="wp-count">{fmt(e.km)}</span>
