@@ -57,7 +57,7 @@ function Visa({ id }: { id: string }) {
         <rect x="4" y="4" width="222" height="142" rx="8" fill="#eee8dc" />
         <rect x="12" y="12" width="206" height="126" rx="4" fill="none" stroke="#2a2620" strokeWidth="1.4" />
         <line x1="12" y1="40" x2="218" y2="40" stroke="#2a2620" strokeWidth="0.8" />
-        <text x="24" y="31" fontFamily="DM Mono" fontSize="13" letterSpacing="2" fill="#2a2620">
+        <text x="24" y="31" fontFamily="DM Mono" fontSize="13" letterSpacing="1" textLength="182" lengthAdjust="spacing" fill="#2a2620">
           BOOK ROUTE · ADMITTED
         </text>
         <g transform="translate(24 54) scale(1.7)" className="wp-visa-mark">
