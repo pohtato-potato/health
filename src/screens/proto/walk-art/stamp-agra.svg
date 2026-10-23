@@ -13,6 +13,6 @@
 <path d="M40 122 V80 M44 122 V80 M39 80 h6 M38 84 h8 M38 100 h8"/><path d="M39 80 q3 -6 6 0"/>
 <path d="M126 122 V80 M130 122 V80 M125 80 h6 M124 84 h8 M124 100 h8"/><path d="M125 80 q3 -6 6 0"/>
 </g>
-<text x="85" y="152" text-anchor="middle" font-family="Fraunces Variable, Georgia, serif" font-size="22" fill="#2a2620">AGRA</text>
-<text x="85" y="170" text-anchor="middle" font-family="DM Mono" font-size="13" fill="#2a2620">UTTAR PRADESH</text>
+<text x="85" y="150" text-anchor="middle" font-family="Fraunces Variable, Georgia, serif" font-size="21" fill="#2a2620">AGRA</text>
+<text x="85" y="171" text-anchor="middle" font-family="DM Mono" font-size="13" fill="#2a2620">UTTAR PRADESH</text>
 </svg>
