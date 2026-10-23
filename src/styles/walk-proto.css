@@ -320,7 +320,7 @@ html.contrast .wp-field { opacity: 0.45; }
 .wp-tk-perf::after { right: -12px; }
 .wp-tk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }
 .wp-tk-grid span { display: flex; flex-direction: column; }
-.wp-tk-grid small { font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: #5a564e; }
+.wp-tk-grid small { font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; color: #5a564e; }
 .wp-tk-grid b { font-family: var(--serif); font-weight: 600; font-size: 20px; }
 .wp-tk-line { font-size: 15px; line-height: 1.4; color: #2a2620; }
 .wp-tk-bars { display: block; width: 100%; height: 30px; fill: #2a2620; }
@@ -513,7 +513,7 @@ html.contrast .wp-field { opacity: 0.45; }
 .wp-pg-body { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
 .wp-pp-entry { display: flex; flex-direction: column; align-items: center; padding: 10px 22px; border-radius: 50%; border: 2px solid color-mix(in srgb, #2f6a5a 85%, transparent); color: #2f6a5a; transform: rotate(-7deg); text-align: center; }
 .wp-pp-entry.ut { border-radius: 10px; border-style: double; border-width: 4px; color: #3b4f8a; border-color: #3b4f8a; }
-.wp-pp-entry small { font-family: var(--mono); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
+.wp-pp-entry small { font-family: var(--mono); font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; }
 .wp-pp-entry b { font-family: var(--serif); font-weight: 600; font-size: 18px; }
 .wp-pg-stamp { width: 160px; transform: rotate(4deg); filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.25)); }
 .wp-pg-stamp svg, .wp-pg-visa svg { display: block; width: 100%; height: auto; }
