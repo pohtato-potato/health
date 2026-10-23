@@ -1,7 +1,6 @@
 import type { Day, SetEntry, SongRecord, TrainingSession } from './types';
 import { fmtInt } from './format';
 import { kmFromSteps } from './walk';
-import { distanceInTerms } from '../walk/journal';
 import { weekStart } from './dates';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -39,13 +38,12 @@ export function monthlyFilm(
   const records = d.sets.filter((s) => inMonth(s.date) && s.mark === '!!').length;
   const name = MONTHS[Number(month.slice(5, 7)) - 1];
   const km = kmFromSteps(steps);
-  const terms = distanceInTerms(km);
   return {
     title: top ?? name,
     heading: top ? `${name}, scored by ${top}` : name,
     month: name,
     slides: [
-      { big: fmtInt(km), small: `kilometres walked.${terms ? ` ${terms.replace('You’ve walked', 'That’s')}` : ''}`, tone: 'sage' },
+      { big: fmtInt(km), small: 'kilometres walked.', tone: 'sage' },
       { big: fmtInt(sessions.length), small: `session${sessions.length === 1 ? '' : 's'} finished`, tone: 'lavender' },
       { big: fmtInt(records), small: `record${records === 1 ? '' : 's'} set`, tone: 'gold' },
       { big: fmtInt(best), small: 'steps on your best day', tone: 'apricot' },

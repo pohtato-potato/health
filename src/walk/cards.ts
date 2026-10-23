@@ -1,7 +1,4 @@
-import { addDays, type DayKey } from '../domain/dates';
-import { ALL_STOPS, CITIES, POSTCARDS, STRIDE_M, chapterAt, positionAt, type Stop } from '../domain/walk';
-import { souvenirFor } from './souvenirs';
-import { stateAt } from './regions';
+import { ALL_STOPS, POSTCARDS, type Stop } from '../domain/walk';
 import { landmarkFor } from './art/landmarks';
 
 /** What to eat and what you'll hear at each stop. Written in-house; kept plain and specific. */
@@ -54,14 +51,13 @@ const LOCAL: Record<string, { eat: string; hear: string }> = {
   Leh: { eat: 'Skyu, a pasta stew, and butter tea', hear: 'Ladakhi' },
 };
 
-export interface ArrivalCard {
+export interface CityCard {
   city: string;
   stopNo: number;
   stops: number;
   fact: string;
   eat: string;
   hear: string;
-  keep?: string;
   land: string;
   next?: { name: string; km: number };
 }
@@ -71,8 +67,8 @@ const firstStops = () => {
   return ALL_STOPS.filter((s) => !seen.has(s.name) && seen.add(s.name));
 };
 
-/** A city's card: a real fact, the food, the language, the land, the souvenir and the next stop. */
-export function cardFor(city: string): ArrivalCard | undefined {
+/** A city's details for its postcard: a real fact, the food, the language, the land and the next stop. */
+export function cardFor(city: string): CityCard | undefined {
   const stops = firstStops();
   const i = stops.findIndex((s) => s.name === city);
   const local = LOCAL[city];
@@ -88,31 +84,15 @@ export function cardFor(city: string): ArrivalCard | undefined {
     fact,
     eat: local.eat,
     hear: local.hear,
-    keep: souvenirFor(stateAt(stop.km))?.name,
     land: lm ? `The way in passes ${lm.label}.` : '',
     next: next ? { name: next.name, km: Math.round(next.km - stop.km) } : undefined,
   };
 }
 
 /** Cards for every stop already reached, so nothing is missed. */
-export function reachedCards(km: number): ArrivalCard[] {
+export function reachedCards(km: number): CityCard[] {
   return firstStops()
     .filter((s: Stop) => s.km <= km)
     .map((s) => cardFor(s.name))
-    .filter((c): c is ArrivalCard => !!c);
-}
-
-export const CARD_CITIES = CITIES;
-
-/**
- * "Kanyakumari around 14 Feb": the end of the current chapter at the two-week average,
- * with a range from a 20 % slower or faster pace.
- */
-export function walkForecast(km: number, stepsPerDay: number | undefined, today: DayKey): { name: string; date: DayKey; range: [DayKey, DayKey] } | undefined {
-  if (!stepsPerDay || stepsPerDay <= 0) return undefined;
-  const chapter = chapterAt(km);
-  const left = Math.max(0, chapter.end - km);
-  const perDay = (stepsPerDay * STRIDE_M) / 1000;
-  const days = Math.ceil(left / perDay);
-  return { name: positionAt(chapter.end).from.name, date: addDays(today, days), range: [addDays(today, Math.ceil(left / (perDay * 1.2))), addDays(today, Math.ceil(left / (perDay * 0.8)))] };
+    .filter((c): c is CityCard => !!c);
 }

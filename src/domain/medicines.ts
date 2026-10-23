@@ -5,7 +5,7 @@ import type { ChecklistItem, Day, MedRewards, Settings } from './types';
 /** On time means ticked within an hour either side of the planned time. */
 export const ON_TIME_MIN = 60;
 
-export const DEFAULT_MED_REWARDS: MedRewards = { lantern: true, keptWeek: true, perfectDay: false, keptCount: true };
+export const DEFAULT_MED_REWARDS: MedRewards = { keptWeek: true, perfectDay: false, keptCount: true };
 
 export function onTime(tick: number, planned: number): boolean {
   return Math.abs(tick - planned) <= ON_TIME_MIN * 60_000;
@@ -121,11 +121,6 @@ export function allOnTime(items: ChecklistItem[], day: DayLike, settings: Pick<S
   if (!meds.length) return false;
   const s = dayDoses(meds, day, settings, Infinity);
   return s.planned > 0 && s.onTime === s.planned;
-}
-
-/** A lantern at that night's camp: the reward is on and every dose was on time. */
-export function lanternOn(settings: Pick<Settings, 'places' | 'checklist' | 'medRewards'>, day: DayLike | undefined): boolean {
-  return !!day && (settings.medRewards ?? DEFAULT_MED_REWARDS).lantern && allOnTime(settings.checklist, day, settings);
 }
 
 /** With the perfect-day reward on, a perfect day also needs every dose on time. */

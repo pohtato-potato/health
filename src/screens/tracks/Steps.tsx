@@ -3,7 +3,7 @@ import { fmtDayShort, fmtInt } from '../../domain/format';
 import { bestWeekday, eveningTopUps, placeSplit, todayAndChange, usualRange } from '../../domain/trackStats';
 import { openSheet } from '../../router';
 import { stepStreakFor, targetsFor } from '../../state/derived';
-import { loadedSteps } from '../../walk/journal';
+import { loadedSteps } from '../../walk/lines';
 import { StepsExtras } from '../TrackExtras';
 import { dayLabel, kindOn, placeMarkOn, spanDays, type Span, type TrackData } from './data';
 import { changeText, HeroChart, TrackShell } from './Template';

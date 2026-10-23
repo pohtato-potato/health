@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { cardFor, reachedCards, walkForecast } from '../src/walk/cards';
+import { cardFor, reachedCards } from '../src/walk/cards';
 import { CITIES, TOTAL_KM } from '../src/domain/walk';
 
-describe('arrival cards', () => {
+describe('city pages', () => {
   it('every stop has a complete card', () => {
     for (const c of CITIES) {
       const card = cardFor(c);
@@ -11,7 +11,6 @@ describe('arrival cards', () => {
       expect(card!.eat.length, c).toBeGreaterThan(3);
       expect(card!.hear.length, c).toBeGreaterThan(3);
       expect(card!.land.length, c).toBeGreaterThan(5);
-      expect(card!.keep, c).toBeTruthy();
     }
     expect(cardFor('Leh')!.next).toBeUndefined();
     expect(cardFor('Delhi')!.next).toEqual({ name: 'Agra', km: 230 });
@@ -23,10 +22,4 @@ describe('arrival cards', () => {
     expect(reachedCards(TOTAL_KM + 1).length).toBe(9);
   });
 
-  it('walk forecast with a range, nothing without a pace', () => {
-    const f = walkForecast(400, 10000, '2026-10-13')!;
-    expect(f.name).toBe('Kanyakumari');
-    expect(f.range[0] <= f.date && f.date <= f.range[1]).toBe(true);
-    expect(walkForecast(400, undefined, '2026-10-13')).toBeUndefined();
-  });
 });

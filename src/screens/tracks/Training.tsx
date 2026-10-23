@@ -10,7 +10,7 @@ import { formTrend, liftLine } from '../../domain/trackStats';
 import { go } from '../../router';
 import { songAt } from '../../sources/lastfm';
 import { doneSessions } from '../../state/derived';
-import { strengthIndex } from '../../walk/passes';
+import { strengthIndex } from '../../domain/strength';
 import { StrengthCard } from '../TrackExtras';
 import { spanDays, type TrackData } from './data';
 import { HeroChart, TrackShell } from './Template';

@@ -95,7 +95,6 @@ export interface Experiment {
 
 /** What an on-time dose can earn; each switchable. */
 export interface MedRewards {
-  lantern: boolean;
   keptWeek: boolean;
   perfectDay: boolean;
   keptCount: boolean;
@@ -233,6 +232,8 @@ export interface Settings {
   homes: Home[];
   equipment: Equipment;
   loopSteps?: number;
+  /** Metres per step for the walk; 0.74 when not set. */
+  strideM?: number;
   prefs: Prefs;
   backup: { lastQuick?: number; lastFull?: number; lastFullBytes?: number; nudgeDays: number };
   plan?: PlanDef;

@@ -17,7 +17,7 @@ import { targetsFor } from '../state/derived';
 import { sri } from '../domain/sleepRegularity';
 import { formTrend } from '../domain/trackStats';
 import { kmFromSteps } from '../domain/walk';
-import { loadedSteps } from '../walk/journal';
+import { loadedSteps } from '../walk/lines';
 
 /** The worn title's name, if any. */
 export function wornTitle(settings: Settings, unlocked: Set<string>, level: number): string | undefined {

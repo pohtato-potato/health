@@ -1,46 +1,31 @@
 import { describe, expect, it } from 'vitest';
-import { buildFor, meetBuilt, nightCamp, structuresFrom } from '../src/walk/camps';
-import { effectiveKm, PASSES, passOpen, strengthIndex } from '../src/walk/passes';
+import { PASSES, passAhead } from '../src/walk/passes';
+import { strengthIndex } from '../src/domain/strength';
 import { SOUVENIRS, souvenirFor } from '../src/walk/souvenirs';
-import { detourKm, questCost, questOffer } from '../src/walk/quests';
-import { ALL_STATES, TOTAL_KM } from '../src/domain/walk';
-import type { Day, SetEntry, TrainingSession } from '../src/domain/types';
+import { ALL_STATES, kmFromSteps, positionAt, setStride, strideM } from '../src/domain/walk';
+import type { SetEntry } from '../src/domain/types';
 
-describe('camps and trail building', () => {
-  it('bigger sessions and records build bigger things, named after the session', () => {
-    expect(buildFor({ session: 'B', date: '2026-10-10' }, 40, false).kind).toBe('lamp post');
-    expect(buildFor({ session: 'B', date: '2026-10-10' }, 92, false).kind).toBe('rest house');
-    expect(buildFor({ session: 'B', date: '2026-10-10' }, 70, true).kind).toBe('shelter');
-    expect(buildFor({ session: 'B', date: '2026-10-10' }, 92, false).name).toBe('Rest house · Session B · 10 Oct');
-  });
-
-  it('later chapter meets earlier structure at same km', () => {
-    const days = [{ date: '2026-10-10', steps: 2000 }] as Day[];
-    const sessions = [{ id: 's', date: '2026-10-10', session: 'B', status: 'done', quality: 92 }] as TrainingSession[];
-    const built = structuresFrom(days, sessions, new Set());
-    expect(built).toHaveLength(1);
-    expect(built[0].km).toBeLessThan(5);
-    const delhiAgain = TOTAL_KM + 3840;
-    expect(meetBuilt(delhiAgain, built).map((b) => b.name)).toEqual(['Rest house · Session B · 10 Oct']);
-    expect(meetBuilt(built[0].km + 1, built)).toEqual([]);
-  });
-
-  it('night camps are pictures, never penalties', () => {
-    expect(nightCamp(450, 90)).toBe('starry');
-    expect(nightCamp(420, 60)).toBe('calm');
-    expect(nightCamp(300, 90)).toBe('rainy');
-    expect(nightCamp(undefined, undefined)).toBe('calm');
+describe('passes are places on the road', () => {
+  it('names the next pass when it comes before the next stop, and never holds the walk back', () => {
+    const p = PASSES[0];
+    const next = positionAt(p.km - 10).to!.km;
+    expect(passAhead(p.km - 10, next)?.id).toBe(p.id);
+    expect(passAhead(p.km + 1, positionAt(p.km + 1).to?.km)?.id).not.toBe(p.id);
+    expect(passAhead(500, positionAt(500).to!.km)).toBeUndefined();
+    expect(positionAt(p.km + 100).km).toBe(p.km + 100);
   });
 });
 
-describe('passes', () => {
-  it('pass gated by strength index', () => {
-    const p = PASSES[0];
-    expect(passOpen(p, p.need - 1)).toBe(false);
-    expect(passOpen(p, p.need)).toBe(true);
-    expect(effectiveKm(p.km + 100, p.need - 1)).toBe(p.km);
-    expect(effectiveKm(p.km + 100, p.need)).toBe(p.km + 100);
-    expect(effectiveKm(500, 0)).toBe(500);
+describe('stride', () => {
+  it('uses the setting for every distance, and 0.74 m when unset or out of range', () => {
+    expect(kmFromSteps(10000)).toBeCloseTo(7.4);
+    setStride(0.8);
+    expect(strideM()).toBe(0.8);
+    expect(kmFromSteps(10000)).toBeCloseTo(8);
+    setStride(5);
+    expect(strideM()).toBe(0.74);
+    setStride(undefined);
+    expect(kmFromSteps(10000)).toBeCloseTo(7.4);
   });
 });
 
@@ -54,23 +39,8 @@ describe('strength index', () => {
 });
 
 describe('souvenirs', () => {
-  it('every state and territory gives one', () => {
+  it('every state and territory still has one named, for the passport round', () => {
     for (const s of new Set(ALL_STATES.map((x) => x.name))) expect(souvenirFor(s), s).toBeTruthy();
     expect(Object.keys(SOUVENIRS).length).toBeGreaterThanOrEqual(36);
-  });
-});
-
-describe('side quests', () => {
-  it('quest only for above-average weeks', () => {
-    expect(questOffer(12000, 10000, 600, new Set())).toBeTruthy();
-    expect(questOffer(9000, 10000, 600, new Set())).toBeUndefined();
-    const q = questOffer(12000, 10000, 600, new Set())!;
-    expect(questCost(q)).toBeGreaterThan(0);
-    expect(questOffer(12000, 10000, 600, new Set([q.id]))?.id).not.toBe(q.id);
-  });
-
-  it('detours taken cost route kilometres; declined ones cost nothing', () => {
-    expect(detourKm([{ id: 'quest:sanchi', data: { taken: true } }, { id: 'quest:hampi', data: { taken: false } }])).toBe(92);
-    expect(detourKm([])).toBe(0);
   });
 });

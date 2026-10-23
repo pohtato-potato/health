@@ -28,11 +28,3 @@ describe("Today's line", () => {
   });
 });
 
-describe('walk journal day numbers', () => {
-  it('counts from the journey start, the same as Today', async () => {
-    const { journal } = await import('../src/walk/journal');
-    const days = [{ date: '2026-09-29', steps: 9000 }, { date: '2026-09-30', steps: 9000 }];
-    expect(journal(days, [], '2026-09-30', new Map(), '2026-09-27')[0].head).toMatch(/^Day 4 ·/);
-    expect(journal(days, [], '2026-09-30')[0].head).toMatch(/^Day 2 ·/);
-  });
-});

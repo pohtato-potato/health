@@ -787,22 +787,6 @@
   background: var(--text);
 }
 
-/* Walk: the souvenir shelf */
-.shelf {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-.niche {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 12px 14px;
-  min-height: 64px;
-  border-radius: 14px;
-  background: linear-gradient(180deg, var(--raised), var(--surface));
-  border: 1px solid var(--gold-border);
-}
 .map-zoom {
   position: absolute;
   right: 8px;
@@ -819,68 +803,6 @@
   border: 1px solid var(--btn-border);
   color: var(--text);
   font-size: 18px;
-}
-.pull-handle {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 0 10px;
-  touch-action: none;
-  background: none;
-  border: 0;
-  width: 100%;
-}
-.pull-handle i {
-  width: 40px;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--btn-border);
-}
-.pull-sheet.up {
-  position: fixed;
-  top: 72px;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(100%, 480px);
-  z-index: 45;
-  overflow-y: auto;
-  background: var(--surface);
-  border-radius: 22px 22px 0 0;
-  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.45);
-  padding-bottom: calc(24px + env(safe-area-inset-bottom));
-}
-@media (prefers-reduced-motion: no-preference) {
-  .pull-sheet.up {
-    animation: pull-up 0.24s ease-out;
-  }
-}
-@keyframes pull-up {
-  from {
-    transform: translate(-50%, 40%);
-    opacity: 0.6;
-  }
-}
-.met-line {
-  color: var(--text);
-}
-.met-line b {
-  color: var(--rose);
-  font-weight: 600;
-}
-.niche-art {
-  height: 38px;
-  display: flex;
-  align-items: flex-end;
-}
-.niche.waiting .niche-art {
-  display: none;
-}
-.niche.waiting {
-  background: transparent;
-  border: 1px dashed var(--btn-border);
-  color: var(--dim);
 }
 
 /* Arrival flyover */
