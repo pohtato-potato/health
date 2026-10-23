@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { ALL_STATES, ALL_STOPS } from '../../domain/walk';
+import { ALL_STATES, ALL_STOPS, strideM } from '../../domain/walk';
 import { Scene } from '../../walk/art/scene';
 import fortScene from './walk-art/gwalior-fort.svg?raw';
 import stampAgra from './walk-art/stamp-agra.svg?raw';
@@ -24,7 +24,6 @@ const ART: Record<string, { scene?: string; stamp?: string }> = {
   Agra: { stamp: stampAgra },
 };
 
-const STRIDE_M = 0.74;
 
 /**
  * The real map's coordinates for any stop: an affine fit from the app's old map board (x, y on every stop) to the
@@ -93,7 +92,7 @@ export function arrivalFor(name: string): ArrivalCity {
     name: stop.name,
     km: stop.km,
     day: Math.max(1, Math.round(stop.km / KM_A_DAY)),
-    steps: Math.round((stop.km * 1000) / STRIDE_M),
+    steps: Math.round((stop.km * 1000) / strideM()),
     state: st?.name ?? 'Delhi',
     ut: !!st?.ut,
     n: stops.findIndex((s) => s.name === stop.name) + 1,

@@ -1,6 +1,6 @@
 import { addDays, dayRange, weekday, weekStart, type DayKey } from './dates';
 import { sleepMinutes } from './rings';
-import { STRIDE_M } from './walk';
+import { kmFromSteps } from './walk';
 import type { CheckIn, Day, FoodEntry, SetEntry } from './types';
 
 /** What the track pages say beyond the chart. Pure functions, so they're easy to test. */
@@ -31,7 +31,7 @@ export function weekdayPattern(steps: Map<DayKey, number>, today: DayKey, weeks 
  * per kilometre, with the stride the walk map uses.
  */
 export function walkingKcal(steps: number, weightKg?: number): number {
-  return Math.round(0.5 * (weightKg ?? 75) * ((steps * STRIDE_M) / 1000));
+  return Math.round(0.5 * (weightKg ?? 75) * kmFromSteps(steps));
 }
 
 /**

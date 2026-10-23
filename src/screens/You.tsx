@@ -3,7 +3,7 @@ import { benchmarkProgress } from '../domain/benchmark';
 import { addDays, daysBetween, dayKey } from '../domain/dates';
 import { fmtDayMonth, fmtDayMonthFrom, fmtInt } from '../domain/format';
 import { lastFullWeek } from '../domain/weekly';
-import { chapterAt, kmFromSteps, positionAt, STRIDE_M } from '../domain/walk';
+import { chapterAt, kmFromSteps, positionAt, strideM } from '../domain/walk';
 import { whatIf } from '../domain/whatIf';
 import { lastMonth } from '../domain/film';
 import { useAllDays, useAllSets, useEntriesBetween, useMeasurements, useSessions, useSettings, useToday } from '../db/hooks';
@@ -134,7 +134,7 @@ function WhatIfCard({ days, measurements, heightCm, today }: { days: ReturnType<
   const recent = days.filter((d) => d.date >= addDays(today, -14) && d.date < today && d.steps !== undefined);
   const perDay = recent.length ? recent.reduce((n, d) => n + d.steps!, 0) / recent.length : 8000;
   const b = heightCm ? benchmarkProgress(measurements, heightCm, today) : undefined;
-  const base = { kmSoFar: km, kmToGo: Math.max(0, chapter.end - km), stepsPerDay: perDay, strideM: STRIDE_M, whtr: b?.current ?? 0, whtrPerDay: b?.slope ?? 0, goal: b?.goal ?? 0.5 };
+  const base = { kmSoFar: km, kmToGo: Math.max(0, chapter.end - km), stepsPerDay: perDay, strideM: strideM(), whtr: b?.current ?? 0, whtrPerDay: b?.slope ?? 0, goal: b?.goal ?? 0.5 };
   const now = whatIf(base, {});
   const then = whatIf(base, { stepsPerDay: steps, sessionsPerWeek: sessionsDelta });
   const end = positionAt(chapter.end).from.name;
