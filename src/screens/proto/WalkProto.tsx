@@ -1,9 +1,7 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { go, useRoute } from '../../router';
 import { Icon } from '../../ui/Icon';
-import { INDIA_OUTLINE } from '../../domain/walk';
 import topScene from './walk-art/top-ravines.svg?raw';
-import fortScene from './walk-art/gwalior-fort.svg?raw';
 import stripArt from './walk-art/strip-stretch.svg?raw';
 import mapArt from './walk-art/map-stretch.svg?raw';
 import stampAgra from './walk-art/stamp-agra.svg?raw';
@@ -13,6 +11,7 @@ import { CHAMBAL_FACTS, DANDI, EXPEDITIONS, EXPEDITION_KM, KIND_NAMES, KM_A_DAY,
 import { RouteArt, byId, fmt, inkOf } from './walkArt';
 import { CardLook, HeroLook, LOOKS, ShelfLook, type Look } from './walkLooks';
 import { ExpeditionPage } from './walkExpedition';
+import { Arrival } from './walkArrival';
 
 /**
  * Design prototype (sample numbers and draft text; nothing is read or saved): the redesigned Walk tab,
@@ -74,9 +73,9 @@ export function WalkProto() {
   const states: Partial<Record<Screen, [string, string][]>> = {
     walk: [['', 'A walking day'], ['banner', 'Expedition news'], ['rest', 'Resting']],
     harold: [['', 'Story paused'], ['story', 'With the story']],
-    arrival: [['', '1 · Arrive'], ['2', '2 · Zoom out'], ['3', '3 · Other speeds'], ['4', '4 · Stamp']],
+    arrival: [['', '1 · Approach'], ['2', '2 · Footprints'], ['3', '3 · Zoom out'], ['4', '4 · Race'], ['5', '5 · Stamp']],
   };
-  const tint = screen === 'expedition' ? 'tint-silk' : screen === 'harold' ? 'tint-green' : screen === 'dandi' || screen === 'join' ? 'tint-sea' : screen === 'arrival' && state === '4' ? 'tint-gold' : '';
+  const tint = screen === 'expedition' ? 'tint-silk' : screen === 'harold' ? 'tint-green' : screen === 'dandi' || screen === 'join' ? 'tint-sea' : screen === 'arrival' && state === '5' ? 'tint-gold' : '';
 
   return (
     <div className={`wp ${tint}`}>
@@ -117,7 +116,7 @@ export function WalkProto() {
         {screen === 'passport' && <Passport show={show} />}
         {screen === 'stop' && <StopMoment show={show} />}
         {screen === 'map' && <MapPage show={show} />}
-        {screen === 'arrival' && <Arrival beat={Number(state || 1)} show={show} />}
+        {screen === 'arrival' && <Arrival beat={Number(state || 1)} onNext={() => (Number(state || 1) >= 5 ? show('passport') : show('arrival', String(Number(state || 1) + 1)))} />}
       </div>
     </div>
   );
@@ -679,118 +678,5 @@ function MapPage({ show }: { show: Show }) {
         </button>
       </div>
     </main>
-  );
-}
-
-/* ---------- a city arrival, in four beats ---------- */
-
-/** Counts up to a number once, unless motion is reduced. */
-function useCount(to: number, ms = 1400) {
-  const [n, setN] = useState(0);
-  useEffect(() => {
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setN(to);
-      return;
-    }
-    let raf = 0;
-    const t0 = performance.now();
-    const tick = (t: number) => {
-      const p = Math.min(1, (t - t0) / ms);
-      setN(Math.round(to * (1 - Math.pow(1 - p, 4))));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [to, ms]);
-  return n;
-}
-
-function Arrival({ beat, show }: { beat: number; show: Show }) {
-  const next = () => (beat >= 4 ? show('passport') : show('arrival', String(beat + 1)));
-  let body: ReactNode;
-  if (beat === 1) {
-    body = (
-      <>
-        <Art svg={fortScene} className="melt2 wp-arrive-art" />
-        <div className="wp-col center">
-          <h1 className="wp-arrive-name" aria-label="Gwalior">
-            {'Gwalior'.split('').map((c, i) => (
-              <span key={i} aria-hidden="true" style={{ animationDelay: `${500 + i * 70}ms` }}>
-                {c}
-              </span>
-            ))}
-          </h1>
-          <i className="wp-arrive-rule" aria-hidden="true" />
-          <p className="wp-para center late2">Day 36 · 350 km from Delhi · [height] m above the sea</p>
-        </div>
-      </>
-    );
-  } else if (beat === 2) {
-    body = <ZoomOut />;
-  } else if (beat === 3) {
-    body = <Speeds />;
-  } else {
-    body = (
-      <div className="wp-col center">
-        <div className="wp-join-stamp gold">
-          <span className="wp-join-ring" aria-hidden="true" />
-          <Art svg={stampGwalior} className="wp-stamp-land" />
-        </div>
-        <h1 className="wp-title big late1">Stamped</h1>
-        <p className="wp-para center late2">Gwalior · Madhya Pradesh · stamp 3 of 46</p>
-      </div>
-    );
-  }
-  return (
-    <main className="wp-moment arrival" onClick={next}>
-      {body}
-      <p className="wp-quiet center late3">Tap to go on</p>
-    </main>
-  );
-}
-
-function ZoomOut() {
-  const km = useCount(350, 1800);
-  const trail = 'M98.6 98.9 L106.1 113.2 L107.7 122.8';
-  return (
-    <div className="wp-col center">
-      <svg className="wp-zoom" viewBox="0 0 300 322" role="img" aria-label="India, with your trail from Delhi through Agra to Gwalior">
-        <g className="wp-zoom-cam" style={{ transformOrigin: '107.7px 122.8px' }}>
-          <path d={INDIA_OUTLINE} className="wp-zoom-land" vectorEffect="non-scaling-stroke" />
-          <path d={trail} className="wp-zoom-trail" pathLength={1} vectorEffect="non-scaling-stroke" />
-          <circle cx="98.6" cy="98.9" r="2.4" className="wp-zoom-dot" />
-          <circle cx="106.1" cy="113.2" r="2.4" className="wp-zoom-dot" />
-          <circle cx="107.7" cy="122.8" r="3.4" className="wp-zoom-here" />
-        </g>
-      </svg>
-      <p className="wp-big center">
-        <span className="wp-count">{km}</span>
-        <small>km from Delhi, every one of them your own steps</small>
-      </p>
-    </div>
-  );
-}
-
-function Speeds() {
-  const rows: [string, string, number][] = [
-    ['You, on foot', '36 days', 1],
-    ['A Mughal army on the march', '[from the record]', 0.62],
-    ['A bar-headed goose, flying', '[an afternoon]', 0.22],
-    ['The Gatimaan Express', 'about 3 hours', 0.12],
-  ];
-  return (
-    <div className="wp-col">
-      <h1 className="wp-title big rise">Delhi to Gwalior, 350 km</h1>
-      <ul className="wp-speeds">
-        {rows.map(([who, t, f], i) => (
-          <li key={who} style={{ animationDelay: `${200 + i * 160}ms` }}>
-            <span className="who">{who}</span>
-            <b>{t}</b>
-            <i className="bar" style={{ ['--f' as string]: f, animationDelay: `${300 + i * 160}ms` }} />
-          </li>
-        ))}
-      </ul>
-      <p className="wp-quiet late3">Bracketed lines are placeholders: each comparison gets a checked source.</p>
-    </div>
   );
 }

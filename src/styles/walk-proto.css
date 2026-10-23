@@ -417,3 +417,84 @@ html.contrast .wp-field { opacity: 0.45; }
 .wp-chron li::before { content: ''; position: absolute; left: -19px; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: var(--wp-b); border: 2px solid var(--ink); }
 .wp-chron .when { font-size: 14px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); }
 .wp-chron .what { font-family: var(--serif); font-size: 18px; line-height: 1.35; }
+
+/* ---------- arrival, in five beats ---------- */
+.wp-arr { position: relative; min-height: calc(100dvh - 96px); display: flex; flex-direction: column; cursor: pointer; overflow: hidden; }
+.wp-arr-tap { position: absolute; left: 0; right: 0; bottom: calc(var(--safe-bottom) + 14px); margin: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 14px; color: color-mix(in srgb, var(--text) 75%, transparent); }
+.wp-arr-dots { display: flex; gap: 6px; }
+.wp-arr-dots i { width: 8px; height: 8px; border-radius: 50%; background: color-mix(in srgb, var(--text) 25%, transparent); }
+.wp-arr-dots i.done { background: color-mix(in srgb, var(--gold) 60%, transparent); }
+.wp-arr-dots i.on { width: 24px; border-radius: 4px; background: var(--gold); }
+.wp-arr-col { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 16px; padding-bottom: 70px; }
+.wp-arr-col.pad { padding: 0 20px 90px; }
+.wp-arr-over { padding: 0 22px; display: flex; flex-direction: column; gap: 8px; text-align: center; align-items: center; }
+.wp-arr-title { margin: 0; font-family: var(--serif); font-weight: 300; font-size: 32px; line-height: 1.1; text-wrap: balance; }
+.wp-arr-sub { margin: 0; font-size: 16px; line-height: 1.45; color: color-mix(in srgb, var(--text) 85%, transparent); max-width: 34ch; }
+.wp-arr-big { margin: 0; font-family: var(--serif); font-weight: 300; font-size: 64px; line-height: 1; font-variant-numeric: tabular-nums lining-nums; color: var(--gold); text-shadow: 0 0 30px color-mix(in srgb, var(--gold) 40%, transparent); }
+
+/* 1 the approach */
+.wp-arr-full { position: absolute; inset: 0; }
+.wp-arr-scene { position: absolute; left: 0; right: 0; bottom: 0; height: 64%; }
+.wp-arr-scene svg { display: block; width: 100%; height: 100%; }
+.wp-arr-scene { -webkit-mask-image: linear-gradient(transparent, #000 18%, #000 80%, transparent); mask-image: linear-gradient(transparent, #000 18%, #000 80%, transparent); }
+.wp-arr-sweep { position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, color-mix(in srgb, var(--gold) 38%, transparent) 50%, transparent 65%); background-size: 260% 100%; background-position: 120% 0; mix-blend-mode: screen; pointer-events: none; }
+.wp-arr-head { position: absolute; left: 0; right: 0; top: 7%; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 0 20px; }
+.wp-arr-kick { font-size: 15px; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--text) 90%, transparent); text-shadow: 0 1px 12px #000; }
+.wp-arr-name { margin: 0; font-family: var(--serif); font-weight: 300; font-size: 72px; line-height: 1; text-shadow: 0 2px 24px rgba(0, 0, 0, 0.6); }
+.wp-arr-name span { display: inline-block; }
+.wp-arr-rule { width: 160px; height: 2px; background: var(--gold); box-shadow: 0 0 14px color-mix(in srgb, var(--gold) 80%, transparent); }
+.wp-arr-head .wp-arr-sub { text-shadow: 0 1px 12px #000; }
+
+/* 2 footprints */
+.wp-prints { position: absolute; inset: 0 0 60px; width: 100%; height: calc(100% - 60px); fill: color-mix(in srgb, var(--sage) 70%, transparent); }
+.wp-arr.b2 .wp-arr-over { position: relative; z-index: 1; padding: 18px 22px; margin: 0 16px; border-radius: 22px; background: rgba(8, 10, 22, 0.7); }
+
+/* 3 zoom out */
+.wp-zoom-near { fill: color-mix(in srgb, var(--text) 4%, transparent); stroke: color-mix(in srgb, var(--text) 14%, transparent); stroke-width: 0.6; }
+.wp-zoom-state { fill: transparent; stroke: color-mix(in srgb, var(--pearl) 30%, transparent); stroke-width: 0.6; }
+.wp-zoom-state.on { fill: color-mix(in srgb, var(--sage) 22%, transparent); stroke: color-mix(in srgb, var(--sage) 60%, transparent); }
+.wp-zoom-ahead { fill: none; stroke: color-mix(in srgb, var(--text) 55%, transparent); stroke-width: 1.4; stroke-dasharray: 3 4; }
+.wp-arr-over.low { margin-top: -10px; }
+
+/* 4 the race */
+.wp-race { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 18px; }
+.wp-race li { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: baseline; }
+.wp-race .who { font-size: 16px; }
+.wp-race b { font-family: var(--serif); font-weight: 400; font-size: 18px; text-align: right; }
+.wp-race .lane { grid-column: 1 / -1; position: relative; height: 14px; border-radius: 7px; background: color-mix(in srgb, var(--text) 10%, transparent); }
+.wp-race .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; border-radius: 7px; transform-origin: left; transform: scaleX(var(--f)); background: linear-gradient(90deg, color-mix(in srgb, var(--pearl) 30%, transparent), color-mix(in srgb, var(--pearl) 70%, transparent)); }
+.wp-race li.you .fill { background: linear-gradient(90deg, color-mix(in srgb, var(--sage) 30%, transparent), var(--sage)); }
+.wp-race .runner { position: absolute; top: 50%; left: calc(var(--f) * 100%); width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--pearl); box-shadow: 0 0 10px color-mix(in srgb, var(--pearl) 70%, transparent); }
+.wp-race li.you .runner { background: var(--sage); box-shadow: 0 0 14px color-mix(in srgb, var(--sage) 80%, transparent); }
+@keyframes wp-run { from { left: 0; } }
+
+/* 5 the stamp */
+.wp-arr-page { position: relative; align-self: center; width: 280px; height: 300px; border-radius: 10px; padding: 16px; background: linear-gradient(160deg, #efe8da, #e2d8c6); color: #2a2620; box-shadow: 0 24px 50px -16px rgba(0, 0, 0, 0.8); }
+.wp-arr-page::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 18px; border-radius: 10px 0 0 10px; background: linear-gradient(90deg, rgba(0, 0, 0, 0.18), transparent); }
+.wp-arr-page-head { display: flex; flex-direction: column; }
+.wp-arr-page-head b { font-family: var(--serif); font-weight: 400; font-size: 24px; }
+.wp-arr-page-head small { font-size: 14px; color: #5a564e; }
+.wp-arr-state { position: absolute; inset: 70px 20px 20px; width: calc(100% - 40px); height: calc(100% - 90px); }
+.wp-arr-state path { fill: none; stroke: #8a7f6c; stroke-width: 1.2; stroke-dasharray: 3 3; }
+.wp-arr-stamp { position: absolute; left: 50%; top: 56%; width: 150px; margin-left: -75px; transform: translateY(-50%) rotate(-6deg); filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.3)); }
+.wp-arr-stamp svg { display: block; width: 100%; height: auto; }
+.wp-arr-ring { position: absolute; left: 50%; top: 56%; width: 180px; height: 180px; margin: -90px 0 0 -90px; border-radius: 50%; border: 2px solid var(--gold); opacity: 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .wp-arr-scene svg { animation: wp-kenburns 7s ease-out both; transform-origin: 70% 45%; }
+  .wp-arr-sweep { animation: wp-sweep 2.6s ease-in-out 0.4s both; }
+  .wp-arr-kick { animation: wp-rise 0.7s var(--ease) 0.3s both; }
+  .wp-arr-name span { animation: wp-letter 0.9s var(--ease) both; }
+  .wp-arr-rule { animation: wp-rule 0.9s var(--ease) 1.4s both; }
+  .wp-arr-head .wp-arr-sub { animation: wp-rise 0.7s var(--ease) 1.6s both; }
+  .wp-prints g { animation: wp-fade 0.5s ease both; }
+  .wp-arr.b2 .wp-arr-over { animation: wp-rise 0.7s var(--ease) 0.2s both; }
+  .wp-race .runner { animation: wp-run var(--d) cubic-bezier(0.45, 0, 0.2, 1) 0.4s both; }
+  .wp-race .fill { animation: wp-bar var(--d) cubic-bezier(0.45, 0, 0.2, 1) 0.4s both; }
+  .wp-race li { animation: wp-rise 0.5s var(--ease) both; }
+  .wp-arr-stamp { animation: wp-slam-c 0.62s cubic-bezier(0.3, 1.4, 0.5, 1) 0.5s both; }
+  .wp-arr-ring { animation: wp-ring 0.9s var(--ease) 0.92s both; }
+  .wp-arr-state path { animation: wp-fade 1s ease 0.2s both; }
+}
+@keyframes wp-sweep { from { background-position: 120% 0; } to { background-position: -40% 0; } }
+@keyframes wp-slam-c { 0% { opacity: 0; transform: translateY(-50%) scale(1.9) rotate(-14deg); } 60% { opacity: 1; transform: translateY(-50%) scale(0.95) rotate(-6deg); } 100% { transform: translateY(-50%) scale(1) rotate(-6deg); } }
