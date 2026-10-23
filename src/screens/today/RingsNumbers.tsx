@@ -1,5 +1,12 @@
 import { useState, type ReactNode } from 'react';
 
+/** The steps box: a whole number of 0 or more; empty or anything else saves nothing. */
+export function parseSteps(input: string): number | undefined {
+  const t = input.trim();
+  if (!/^\d+$/.test(t)) return undefined;
+  return Number(t);
+}
+
 export type RingRow = { key: 'kcal' | 'protein' | 'steps'; name: string; value: string; unit: string; target: string; ink: string; known: boolean };
 
 /**
@@ -31,9 +38,9 @@ export function RingsNumbers({ rows, rings, closed, onLogFood, onSaveSteps, show
               className="td-stepin"
               onSubmit={(e) => {
                 e.preventDefault();
-                const n = Number(steps);
-                if (Number.isFinite(n) && n >= 0) {
-                  onSaveSteps(Math.round(n));
+                const n = parseSteps(steps);
+                if (n !== undefined) {
+                  onSaveSteps(n);
                   setShown(null);
                 }
               }}

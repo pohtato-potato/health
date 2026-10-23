@@ -81,7 +81,13 @@ export function useNow(ms = 1000): number {
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), ms);
-    return () => window.clearInterval(id);
+    // A phone app resumes from the background without a fresh interval tick: catch up as soon as it's visible.
+    const back = () => document.visibilityState === 'visible' && setNow(Date.now());
+    document.addEventListener('visibilitychange', back);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', back);
+    };
   }, [ms]);
   return now;
 }

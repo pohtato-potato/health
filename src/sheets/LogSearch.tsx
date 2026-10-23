@@ -5,16 +5,16 @@ import { Icon, type IconName } from '../ui/Icon';
 
 /** Words that open a log directly from the search box: a sheet to open, or a page to go to. */
 export const LOG_ACTIONS: { words: string[]; label: string; icon: IconName; color: string; sheet?: string; route?: string }[] = [
-  { words: ['weight', 'kg', 'weigh', 'sleep', 'morning'], label: 'Morning log', icon: 'sun', color: 'var(--gold)', sheet: 'morning' },
+  { words: ['weight', 'kg', 'weigh', 'sleep', 'morning'], label: 'Morning log', icon: 'sun', color: 'var(--apricot)', sheet: 'morning' },
   { words: ['step', 'walk'], label: 'Steps', icon: 'steps', color: 'var(--steps)', sheet: 'steps' },
   { words: ['waist', 'tape', 'inch'], label: 'Waist', icon: 'tape', color: 'var(--pearl)', sheet: 'waist' },
-  { words: ['drink', 'beer', 'wine', 'whisky', 'alcohol'], label: 'Drinks', icon: 'drink', color: 'var(--gold)', sheet: 'drink' },
-  { words: ['night out', 'party', 'friends'], label: 'Night out', icon: 'night', color: 'var(--gold)', sheet: 'nightout' },
+  { words: ['drink', 'beer', 'wine', 'whisky', 'alcohol'], label: 'Drinks', icon: 'drink', color: 'var(--apricot)', sheet: 'drink' },
+  { words: ['night out', 'party', 'friends'], label: 'Night out', icon: 'night', color: 'var(--apricot)', sheet: 'nightout' },
   { words: ['free', 'cheat', 'treat'], label: 'Free meal', icon: 'free', color: 'var(--kcal)', sheet: 'free' },
   { words: ['pill', 'medicine', 'creatine', 'drops', 'tablet', 'checklist'], label: 'Checklist', icon: 'pill', color: 'var(--pearl)', sheet: 'checklist' },
   { words: ['photo', 'check-in', 'checkin'], label: 'Check-in', icon: 'camera', color: 'var(--pearl)', route: '/checkin' },
-  { words: ['sick', 'ill', 'injured', 'travel', 'status', 'break'], label: 'Status', icon: 'calendar', color: 'var(--gold)', sheet: 'more' },
-  { words: ['close', 'done', 'day'], label: 'Close the day', icon: 'check', color: 'var(--gold)', route: '/close' },
+  { words: ['sick', 'ill', 'injured', 'travel', 'status', 'break'], label: 'Status', icon: 'calendar', color: 'var(--apricot)', sheet: 'more' },
+  { words: ['close', 'done', 'day'], label: 'Close the day', icon: 'check', color: 'var(--apricot)', route: '/close' },
 ];
 
 /** What a query matches: actions by their words, and up to five foods by name (never archived ones). */
@@ -54,7 +54,7 @@ export function LogSearch({ foods, onAction, onFood, onQuick }: { foods: Food[];
                 <Icon name="food" size={18} color="var(--kcal)" />
                 <span>{f.name}</span>
               </span>
-              <span className="t12 q tn">{fmtInt(f.kcal)} kcal</span>
+              <span className="t14 q tn">{fmtInt(f.kcal)} kcal</span>
             </button>
           ))}
         </div>

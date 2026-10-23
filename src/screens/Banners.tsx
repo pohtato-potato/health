@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from 'react';
-import { BANNER_PRIORITY, morningLogBanner, notDismissed, pickBanner, type BannerCandidate } from '../domain/banners';
+import { useRef, useState, type ReactNode } from 'react';
+import { BANNER_PRIORITY, doseBannerId, holdBanner, morningLogBanner, notDismissed, pickBanner, type BannerCandidate } from '../domain/banners';
 import { occasionDue, occasionOn } from '../domain/occasions';
 import { fmtInt } from '../domain/format';
 import { maintenanceFor } from '../sheets/Occasion';
@@ -46,6 +46,8 @@ export function Banners() {
   const usage = useLiveQuery(() => db.usage.where('at').above(Date.now() - 14 * 86_400_000).toArray(), []);
   const [busy, setBusy] = useState(false);
   const [dismissed, setDismissed] = useState(readDismissed);
+  // The banner chosen on load is held until the next load, so the page never moves while you read.
+  const held = useRef<string | null | undefined>(undefined);
   if (!settings || !days || !checkins || recapNote === undefined || !usage) return null;
   const recapReady = !recapNote?.recapSeenAt && weekday(dayKey()) <= 2 && days.some((d) => d.date >= lastWeek && d.date <= addDays(lastWeek, 6));
   const today = dayKey();
@@ -79,12 +81,12 @@ export function Banners() {
   if (dose && dose.at - Date.now() <= 2 * 3_600_000) {
     const mins = Math.round((dose.at - Date.now()) / 60_000);
     const when = mins > 0 ? `in ${mins >= 60 ? `${Math.floor(mins / 60)} h ` : ''}${mins % 60} min` : mins === 0 ? 'now' : `${-mins} min ago`;
-    candidates.push({ id: 'next-dose', priority: BANNER_PRIORITY.dose, anytime: true, icon: <Icon name="pill" size={20} color="var(--sage)" />, title: `${dose.name} at ${fmtTime(dose.at)}`, sub: when, actions: [{ label: 'Tick', run: () => openSheet('checklist') }] });
+    candidates.push({ id: doseBannerId(dose), priority: BANNER_PRIORITY.dose, anytime: true, icon: <Icon name="pill" size={20} color="var(--sage)" />, title: `${dose.name} at ${fmtTime(dose.at)}`, sub: when, actions: [{ label: 'Tick', run: () => openSheet('checklist') }] });
   }
 
   const morning = morningLogBanner(!!todayDay?.morning, logMinutes(Date.now()));
   if (morning)
-    candidates.push({ id: 'morning-log', priority: morning.priority, anytime: true, icon: <Icon name="sun" size={20} color="var(--gold)" />, title: morning.text, sub: 'Weight and sleep, then the night’s visitors', actions: [{ label: 'Log', run: () => openSheet('morning') }] });
+    candidates.push({ id: 'morning-log', priority: morning.priority, anytime: true, icon: <Icon name="sun" size={20} color="var(--apricot)" />, title: morning.text, sub: 'Weight and sleep, then the night’s visitors', actions: [{ label: 'Log', run: () => openSheet('morning') }] });
 
   if (nudge)
     candidates.push({ id: 'backup', priority: BANNER_PRIORITY.backup, icon: <Icon name="save" size={20} color="var(--quiet)" />, title: last ? `No backup for ${daysSince} days.` : 'No backup yet.', sub: 'One tap keeps your data safe.', actions: [{ label: 'Back up', run: backup, disabled: busy }] });
@@ -135,7 +137,9 @@ export function Banners() {
     candidates.push({ id: 'install', priority: BANNER_PRIORITY.install, icon: <Icon name="phone" size={20} color="var(--pearl)" />, title: 'Install Health on your home screen.', sub: 'It opens full-screen.', actions: [{ label: 'Install', run: () => promptInstall() }] });
 
   // One banner at a time, near the hour you usually log; a dismissed one stays away for the day.
-  const shown = pickBanner(notDismissed(candidates, dismissed, today), usage, Date.now());
+  const open = notDismissed(candidates, dismissed, today);
+  const shown = holdBanner(held.current, pickBanner(open, usage, Date.now()), open);
+  if (held.current === undefined) held.current = shown?.id ?? null;
   if (!shown) return null;
   const dismiss = () => {
     const next = { date: today, ids: [...(dismissed?.date === today ? dismissed.ids : []), shown.id] };

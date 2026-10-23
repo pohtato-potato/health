@@ -75,3 +75,18 @@ export function notDismissed<T extends BannerCandidate>(c: T[], dismissed: { dat
   if (!dismissed || dismissed.date !== today) return c;
   return c.filter((x) => !dismissed.ids.includes(x.id));
 }
+
+/** A dose banner names its dose, so dismissing the morning dose never hides the evening one. */
+export function doseBannerId(dose: { key: string }): string {
+  return `next-dose:${dose.key}`;
+}
+
+/**
+ * The banner slot holds what it showed on load: `held` is that banner's id (null when nothing showed, undefined before
+ * the first decision). A banner that becomes due later waits for the next load; one dismissed or acted on leaves the slot empty.
+ */
+export function holdBanner<T extends BannerCandidate>(held: string | null | undefined, pick: T | undefined, all: T[]): T | undefined {
+  if (held === undefined) return pick;
+  if (held === null) return undefined;
+  return all.find((c) => c.id === held);
+}

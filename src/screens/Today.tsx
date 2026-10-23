@@ -6,7 +6,7 @@ import { sleepMinutes, stepsGoal } from '../domain/rings';
 import { pinnedLine, voiceLine, plainFlagLine, type Moment } from '../domain/voice';
 import { addEntries, bump, deleteEntry, setSteps, setTick } from '../db/actions';
 import { useKonami } from '../ui/useKonami';
-import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useSessions, useSettings, useToday } from '../db/hooks';
+import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useSessions, useNow, useSettings, useToday } from '../db/hooks';
 import { prefOn } from '../domain/types';
 import { voiceFor } from '../domain/voice';
 import { kmFromSteps, positionAt } from '../domain/walk';
@@ -26,6 +26,7 @@ import type { Meal } from '../domain/types';
 import { MomentCard } from './today/MomentCard';
 import { useGapAdd } from './today/useGapAdd';
 import { momentFor } from '../domain/todayMoment';
+import { tickFor } from '../domain/checklist';
 import { TodayLine } from './today/TodayLine';
 import { glanceLine } from '../domain/glance';
 import { logMinutes } from '../domain/todayMoment';
@@ -83,6 +84,8 @@ export function Today() {
 
   const day = useMemo(() => days?.find((d) => d.date === today), [days, today]);
   const [walkOpen, setWalkOpen] = useState(false);
+  // The clock, the line and the moment card follow the time: re-render each minute and when the app comes back.
+  const nowMs = useNow(60_000);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const gapAdd = useGapAdd(today, foods);
 
@@ -134,7 +137,7 @@ export function Today() {
   const voiceNow = moment === 'perfect' || moment === 'proteinClosed' || (moment === 'trained' && recordsTonight.length > 0);
   const sessionTonight = up && !active && !trainedToday.length && weeks.thisWeek < weeks.perWeek ? sessionName : undefined;
   const lineKind: 'glance' | 'voice' | 'flag' = flag ? 'flag' : voiceNow ? 'voice' : 'glance';
-  const lineText = flag ? line : voiceNow ? lineForTheDay(today, moment, line) : glanceLine({ minutes: logMinutes(Date.now()), closedRings: rings.closed, dayClosed: !!day?.foodDone, sessionTonight, nextSession: day?.foodDone && up ? sessionName : undefined, morningDone: !!day?.morning });
+  const lineText = flag ? line : voiceNow ? lineForTheDay(today, moment, line) : glanceLine({ minutes: logMinutes(nowMs), closedRings: rings.closed, dayClosed: !!day?.foodDone, sessionTonight, nextSession: day?.foodDone && up ? sessionName : undefined, morningDone: !!day?.morning });
   const gap = proteinGap({ protein: totals.protein, proteinTarget: targets.proteinG, kcal: totals.kcal, kcalMax: targets.kcalMax }, foods, monthEntries, Date.now());
   const addGap = () => void gapAdd(gap.picks);
   const ready = forecastData(settings, today, days, monthEntries.filter((e) => e.date >= addDays(today, -2)), sessions, sets).readiness;
@@ -184,7 +187,7 @@ export function Today() {
       }
       walk={<WalkTop caption={caption} scene={scene} onOpen={() => setWalkOpen(true)} />}
       banner={<Banners />}
-      line={<TodayLine text={lineText} kind={lineKind} gold={moment === 'perfect'} clock={fmtTime(Date.now())} why={themeDay ? { name: themeDay.name, text: themeDay.why } : undefined} />}
+      line={<TodayLine text={lineText} kind={lineKind} gold={moment === 'perfect'} clock={fmtTime(nowMs)} why={themeDay ? { name: themeDay.name, text: themeDay.why } : undefined} />}
       season={<SeasonStrip settings={settings} today={today} />}
       rings={
         <RingsNumbers
@@ -205,12 +208,12 @@ export function Today() {
         }
         onLogFood={() => go('/food')}
         onSaveSteps={(n) => void setSteps(today, n)}
-        showCopyHint={logMinutes(Date.now()) >= 19 * 60}
+        showCopyHint={logMinutes(nowMs) >= 19 * 60}
       />
       }
       moment={
         <MomentCard
-        kind={momentFor({ minutes: logMinutes(Date.now()), status: day?.status, morningDone: !!day?.morning, perfect: rings.perfect, dayClosed: !!day?.foodDone, proteinGapG: gap.gapG, stepsLeft: Math.max(0, stepsLeft) })}
+        kind={momentFor({ minutes: logMinutes(nowMs), status: day?.status, morningDone: !!day?.morning, perfect: rings.perfect, dayClosed: !!day?.foodDone, proteinGapG: gap.gapG, stepsLeft: Math.max(0, stepsLeft), stepsKnown: day?.steps !== undefined })}
         data={{
           closedRings: rings.closed,
           proteinGapG: gap.gapG,
@@ -224,7 +227,7 @@ export function Today() {
       />
       }
       next={recordsTonight.length ? (
-        <RecordsStrip records={recordsTonight.map((r) => `${r.exercise} ${fmtSet(r)}`)} onFinale={() => go('/train', { state: 'after' })} />
+        <RecordsStrip records={recordsTonight.map((r) => `${r.exercise} ${fmtSet(r)}`)} onFinale={() => { const tn = tonight(sessions, sets, today); if (tn) go('/session/replay', { id: tn.session.id }); }} />
       ) : (
         <NextUpCard settings={settings} up={up} active={active} trainedToday={trainedToday} weeks={weeks} ready={readyWord(ready)} />
       )}
@@ -243,7 +246,7 @@ export function Today() {
           <>
             <h2 className="td-h">Checklist</h2>
             <p className="td-hint">Press and hold to tick.</p>
-            <ChecklistChips items={slots.map((x) => ({ key: x.key, name: slots.filter((y) => y.itemId === x.itemId).length > 1 ? `${x.name} · ${x.slot}` : x.name, on: !!day?.ticks?.[x.key] }))} onToggle={(key, on) => void setTick(today, key, on)} />
+            <ChecklistChips items={slots.map((x) => ({ key: x.key, name: slots.filter((y) => y.itemId === x.itemId).length > 1 ? `${x.name} · ${x.slot}` : x.name, on: !!day?.ticks?.[x.key] }))} onToggle={(key, on) => { const slot = slots.find((y) => y.key === key)?.slot ?? 'Daily'; const t = tickFor(today, slot, settings, day, on, Date.now()); void setTick(today, key, on, t.at, t.recordedLate); }} />
           </>
         )}
       </section>

@@ -13,7 +13,7 @@ import type { SetEntry, Settings, TrainingSession } from '../domain/types';
 import { useActiveSession, useAllDays, useAllSets, useSessions, useSettings, useToday } from '../db/hooks';
 import { go, openSheet } from '../router';
 import { doneSessions, nextUp, triggersMet, weeksFor } from '../state/derived';
-import { NextUpCard } from './NextUpCard';
+import { TrainNextUp } from './train/TrainNextUp';
 import { sessionStats } from './SessionDone';
 import { deloadCase } from '../domain/deload';
 import { placeFor } from '../domain/places';
@@ -42,7 +42,7 @@ export function Train() {
     return (
       <div className="page">
         <h1 className="h1">Train</h1>
-        <NextUpCard settings={settings} up={undefined} active={null} trainedToday={[]} weeks={{ thisWeek: 0, perWeek: 4 }} />
+        <TrainNextUp settings={settings} up={undefined} active={null} trainedToday={[]} weeks={{ thisWeek: 0, perWeek: 4 }} />
       </div>
     );
   }
@@ -105,7 +105,7 @@ export function Train() {
       ))}
 
       {hero === 'resume' || hero === 'nextup' ? (
-        <NextUpCard settings={settings} up={up} active={active} trainedToday={trainedToday} weeks={weeks} />
+        <TrainNextUp settings={settings} up={up} active={active} trainedToday={trainedToday} weeks={weeks} />
       ) : hero === 'tonight' && tn ? (
         <TonightCard
           name={nameOf(tn.session.session)}

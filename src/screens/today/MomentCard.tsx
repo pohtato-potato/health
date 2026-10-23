@@ -57,6 +57,8 @@ export function MomentCard({ kind, data, actions }: { kind: MomentKind; data: Mo
       return card(`${data.proteinGapG} g protein to go`, data.gapFoods, add);
     case 'steps':
       return card(`${fmtInt(data.stepsLeft)} steps to go`, data.laps ? `About ${data.laps} laps of the loop.` : '', <button type="button" className="btn ghost td-moment-btn" onClick={actions.typeSteps}>Type steps</button>);
+    case 'stepsMissing':
+      return card('Steps not logged yet', 'Copy today’s total from Samsung Health when you can.', <button type="button" className="btn ghost td-moment-btn" onClick={actions.typeSteps}>Type steps</button>);
     case 'glance':
       return null;
   }

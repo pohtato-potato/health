@@ -1,7 +1,7 @@
 import type { Status } from './types';
 
 /** What the one lit card on Today shows. */
-export type MomentKind = 'rest' | 'closed' | 'morning' | 'perfect' | 'close' | 'protein' | 'steps' | 'glance';
+export type MomentKind = 'rest' | 'closed' | 'morning' | 'perfect' | 'close' | 'protein' | 'steps' | 'stepsMissing' | 'glance';
 
 export interface MomentInput {
   /** Log-day minutes: 00:30 is 1470, because until 04:00 it is still the evening before. */
@@ -12,6 +12,8 @@ export interface MomentInput {
   dayClosed: boolean;
   proteinGapG: number;
   stepsLeft: number;
+  /** False when steps aren't logged yet: then the card asks for them instead of stating a deficit. Defaults to true. */
+  stepsKnown?: boolean;
 }
 
 const H = 60;
@@ -33,6 +35,7 @@ export function momentFor(i: MomentInput): MomentKind {
   if (i.perfect && m >= 19 * H) return 'perfect';
   if (m >= 21 * H) return 'close';
   if (m >= 19 * H && i.proteinGapG > 0) return 'protein';
+  if (m >= 11 * H && m < 19 * H && i.stepsKnown === false) return 'stepsMissing';
   if (m >= 11 * H && m < 19 * H && i.stepsLeft > 0) return 'steps';
   return 'glance';
 }

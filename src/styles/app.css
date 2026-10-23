@@ -209,6 +209,9 @@ button:disabled {
 .gold {
   color: var(--gold);
 }
+.apricot {
+  color: var(--apricot);
+}
 .center {
   text-align: center;
 }

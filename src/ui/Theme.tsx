@@ -54,10 +54,10 @@ export function SeasonStrip({ settings, today }: { settings: Settings; today: Da
           ))}
         </svg>
         <div className="col gap2">
-          <span className="sf gold" style={{ fontSize: 20 }}>
+          <span className="sf apricot" style={{ fontSize: 20 }}>
             {fest?.day === today ? 'Happy Diwali' : 'Diwali week'}
           </span>
-          <span className="t12 q">Enjoy the sweets. Occasion mode keeps the streaks safe.</span>
+          <span className="t14 q">Enjoy the sweets. Occasion mode keeps the streaks safe.</span>
         </div>
       </div>
     );
@@ -76,7 +76,7 @@ export function SeasonStrip({ settings, today }: { settings: Settings; today: Da
           <span className="sf" style={{ fontSize: 20, color: '#ff7aa8' }}>
             Holi hai!
           </span>
-          <span className="t12 q">Colours on. Go and play.</span>
+          <span className="t14 q">Colours on. Go and play.</span>
         </div>
       </div>
     );
@@ -86,10 +86,10 @@ export function SeasonStrip({ settings, today }: { settings: Settings; today: Da
       <Confetti palette={['#f7c96b', '#d6a8ff', '#ff9c8a', '#8fc9b0']} count={16} height={80} width={360} seed={today.length * 13} />
       <Icon name="win" size={26} color="#f7c96b" />
       <div className="col gap2" style={{ position: 'relative' }}>
-        <span className="sf" style={{ fontSize: 20, color: '#f7c96b' }}>
+        <span className="sf" style={{ fontSize: 20, color: 'var(--apricot)' }}>
           Happy birthday{settings.name ? `, ${settings.name}` : ''}
         </span>
-        <span className="t12 q">Your day. Nothing to close, nothing to hit.</span>
+        <span className="t14 q">Your day. Nothing to close, nothing to hit.</span>
       </div>
     </div>
   );

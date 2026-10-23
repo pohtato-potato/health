@@ -43,10 +43,11 @@ export function usualFoods(entries: FoodEntry[], foods: Food[], meal: Meal, toda
     });
 }
 
-/** Yesterday's entries at a meal, copied to today at the given time. `today` is the log day, so after midnight it is still the evening before. */
+/** Yesterday's entries at a meal (never a free meal), copied to today at the given time. `today` is the log day, so after midnight it is still the evening before. */
 export function sameAsYesterday(entries: FoodEntry[], meal: Meal, today: DayKey, at: number): Omit<FoodEntry, 'id'>[] {
   const yesterday = addDays(today, -1);
   return entries
-    .filter((e) => e.date === yesterday && e.meal === meal)
-    .map(({ id: _id, ...rest }) => ({ ...rest, date: today, at }));
+    .filter((e) => e.date === yesterday && e.meal === meal && e.kind !== 'free')
+    // eatenAt is left out, so the copy is planned from today's place and meal rather than claiming yesterday's time.
+    .map(({ id: _id, eatenAt: _eaten, ...rest }) => ({ ...rest, date: today, at }));
 }
