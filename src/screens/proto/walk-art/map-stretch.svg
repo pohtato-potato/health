@@ -1,15 +1,15 @@
-<svg viewBox="0 0 360 452" role="img" aria-label="Map: Agra in Uttar Pradesh, Dholpur in Rajasthan, the Chambal river as the border, Morena and Gwalior in Madhya Pradesh">
+<svg class="wp-map-svg" viewBox="0 0 360 452" role="img" aria-label="Map: Agra in Uttar Pradesh, Dholpur in Rajasthan, the Chambal river as the border, Morena and Gwalior in Madhya Pradesh">
             <defs>
               <radialGradient id="m2glow"><stop offset="0" stop-color="#f2c46d" stop-opacity=".85"/><stop offset=".4" stop-color="#f2c46d" stop-opacity=".25"/><stop offset="1" stop-color="#f2c46d" stop-opacity="0"/></radialGradient>
               <pattern id="m2hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(38)"><line x1="0" y1="0" x2="0" y2="5" stroke="#c9dcea" stroke-width=".7" opacity=".22"/></pattern>
               <pattern id="m2hill" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(-30)"><line x1="0" y1="0" x2="0" y2="4" stroke="#c9dcea" stroke-width=".6" opacity=".25"/></pattern>
               <filter id="m2soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.8"/></filter>
             </defs>
-            <rect width="360" height="452" fill="#05081f" opacity=".72"/>
+            
             <!-- Rajasthan tinted lightly, between the border line and the Chambal -->
             <path d="M0 126 C80 134 150 120 230 136 S330 142 360 138 L360 244 C300 232 240 258 180 250 S60 236 0 246 Z" fill="#c9dcea" opacity=".035"/>
             <!-- graticule -->
-            <g stroke="#2a2f55" stroke-width=".8"><line x1="0" y1="150" x2="360" y2="150"/><line x1="0" y1="330" x2="360" y2="330"/><line x1="118" y1="0" x2="118" y2="452"/><line x1="268" y1="0" x2="268" y2="452"/></g>
+            <g stroke="#c9dcea" stroke-opacity=".12" stroke-width=".8"><line x1="0" y1="150" x2="360" y2="150"/><line x1="0" y1="330" x2="360" y2="330"/><line x1="118" y1="0" x2="118" y2="452"/><line x1="268" y1="0" x2="268" y2="452"/></g>
             <g font-family="DM Mono" font-size="13" fill="#8e8ba6"><text x="122" y="446">78° E</text><text x="272" y="446">78° 30′</text><text x="6" y="145">27° N</text><text x="6" y="325">26° 30′</text></g>
             <!-- ravine hatching either side of the Chambal -->
             <path d="M0 214 C60 202 120 226 180 216 S300 196 360 206 L360 270 C300 262 230 286 170 278 S60 258 0 268 Z" fill="url(#m2hatch)"/>
@@ -54,7 +54,7 @@
             <text x="164" y="58" text-anchor="end" font-family="Fraunces Variable, Georgia, serif" font-size="22" fill="#f2c46d">Agra</text>
             <text x="164" y="76" text-anchor="end" font-family="DM Sans Variable, system-ui, sans-serif" font-size="14" fill="#d9c79b">reached 3 days ago</text>
             <!-- you -->
-            <circle class="pulse" cx="175" cy="85" r="8" fill="none" stroke="#8fc9b0" stroke-width="2"/>
+            <circle class="wp-pulse" cx="175" cy="85" r="8" fill="none" stroke="#8fc9b0" stroke-width="2"/>
             <circle cx="175" cy="85" r="6" fill="#8fc9b0"/>
             <text x="188" y="90" font-family="DM Sans Variable, system-ui, sans-serif" font-weight="700" font-size="14" fill="#8fc9b0">You</text>
             <!-- Gwalior -->
