@@ -64,7 +64,7 @@ export const WALKING = [
 ];
 
 /** The expeditions: the first is Xuanzang's road, the second slot is empty in the sample. */
-export const EXPEDITIONS = [{ id: 'xuanzang', km: 412, place: 'the Kingdom of Turfan', news: 'Reached the court of Turfan' }];
+export const EXPEDITIONS = [{ id: 'xuanzang', km: 2610, place: 'the Kingdom of Turfan', news: 'Reached the court of Turfan' }];
 
 export const DANDI = {
   halts: [

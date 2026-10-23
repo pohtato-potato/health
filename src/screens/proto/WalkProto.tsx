@@ -9,9 +9,10 @@ import mapArt from './walk-art/map-stretch.svg?raw';
 import stampAgra from './walk-art/stamp-agra.svg?raw';
 import stampGwalior from './walk-art/stamp-gwalior.svg?raw';
 import visaDandi from './walk-art/visa-dandi.svg?raw';
-import { CHAMBAL_FACTS, DANDI, EXPEDITIONS, EXPEDITION_KM, KIND_NAMES, KM_A_DAY, RECORD_NAMES, SHELF, WALKING, XUANZANG, type RouteKind, type ShelfRoute } from './walkSample';
+import { CHAMBAL_FACTS, DANDI, EXPEDITIONS, EXPEDITION_KM, KIND_NAMES, KM_A_DAY, RECORD_NAMES, SHELF, WALKING, type RouteKind, type ShelfRoute } from './walkSample';
 import { RouteArt, byId, fmt, inkOf } from './walkArt';
 import { CardLook, HeroLook, LOOKS, ShelfLook, type Look } from './walkLooks';
+import { ExpeditionPage } from './walkExpedition';
 
 /**
  * Design prototype (sample numbers and draft text; nothing is read or saved): the redesigned Walk tab,
@@ -112,7 +113,7 @@ export function WalkProto() {
         {screen === 'dandi' && <DandiPage show={show} />}
         {screen === 'harold' && <HaroldPage paused={state !== 'story'} show={show} />}
         {screen === 'join' && <JoinMoment show={show} />}
-        {screen === 'expedition' && <ExpeditionPage show={show} />}
+        {screen === 'expedition' && <ExpeditionPage look={look} onBack={() => show('walk')} />}
         {screen === 'passport' && <Passport show={show} />}
         {screen === 'stop' && <StopMoment show={show} />}
         {screen === 'map' && <MapPage show={show} />}
@@ -502,47 +503,6 @@ function JoinMoment({ show }: { show: Show }) {
           Start walking
         </button>
         <button type="button" className="wp-ghost">Add a target date</button>
-      </div>
-    </main>
-  );
-}
-
-/* ---------- an expedition ---------- */
-
-function ExpeditionPage({ show }: { show: Show }) {
-  const e = EXPEDITIONS[0];
-  const r = byId('xuanzang');
-  return (
-    <main className="wp-page" style={inkOf('xuanzang')}>
-      <div className="wp-col">
-        <Back to="walk" label="Walk" show={show} />
-      </div>
-      <HeroLook look={useLook()} c={{ id: 'xuanzang', km: e.km, day: 41, stretch: XUANZANG.stretch, line: XUANZANG.line }} title={r.name} sub={`Chang'an to Nalanda and home · 629–645 · ${RECORD_NAMES[r.record]}`} />
-      <div className="wp-col">
-        <p className="wp-big rise">
-          <span className="wp-count">{fmt(e.km)}</span>
-          <small>of about {fmt(r.km)} km · in {e.place}</small>
-        </p>
-        <section className="wp-dispatch rise">
-          <span className="wp-label">On the road · {XUANZANG.stretch}</span>
-          <p className="wp-voice">{XUANZANG.line}</p>
-          {XUANZANG.page.map((p) => (
-            <p key={p} className="wp-para">
-              {p}
-            </p>
-          ))}
-          <div className="wp-actions">
-            <button type="button" className="wp-ghost">Go deeper</button>
-          </div>
-        </section>
-        <section className="wp-dispatch quiet rise">
-          <span className="wp-label">Story layer</span>
-          <p className="wp-para">Journey to the West, the novel that turned this road into legend, can run beside the history. It's off.</p>
-          <button type="button" className="wp-ghost">Turn it on</button>
-        </section>
-        <div className="wp-actions">
-          <button type="button" className="wp-ghost">Put it down</button>
-        </div>
       </div>
     </main>
   );

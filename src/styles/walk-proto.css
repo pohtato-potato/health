@@ -377,3 +377,43 @@ html.contrast .wp-field { opacity: 0.45; }
 .wp-sc-da b { font-family: var(--serif); font-weight: 300; font-size: 46px; line-height: 0.95; color: var(--ink); font-variant-numeric: lining-nums; }
 .wp-sc-da small { font-size: 14px; color: color-mix(in srgb, var(--text) 78%, transparent); }
 .wp-sc-da i { display: block; height: 6px; border-radius: 3px; background: var(--ink); }
+
+/* ---------- the expedition: grand and long ---------- */
+.wp-xm-wrap { display: flex; flex-direction: column; gap: 6px; }
+.wp-xm { display: block; width: 100%; height: auto; -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.wp-xm .wp-ra-land { stroke-width: 1; }
+.wp-xm-out { fill: none; stroke: color-mix(in srgb, var(--text) 60%, transparent); stroke-width: 1.6; stroke-dasharray: 4 5; stroke-linecap: round; }
+.wp-xm-home { fill: none; stroke: color-mix(in srgb, var(--ink) 70%, transparent); stroke-width: 1.6; stroke-dasharray: 1 5; stroke-linecap: round; }
+.wp-xm-place { fill: var(--wp-b); stroke: var(--text); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.wp-xm-name { font-family: var(--serif); font-size: 12px; fill: var(--text); paint-order: stroke; stroke: #0b0c1c; stroke-width: 2.4px; stroke-linejoin: round; }
+.wp-xm-key { flex-direction: row; gap: 18px; font-size: 14px; color: color-mix(in srgb, var(--text) 82%, transparent); }
+.wp-xm-key span { display: inline-flex; align-items: center; gap: 8px; }
+.wp-xm-key i { width: 28px; height: 0; border-top: 2px dashed color-mix(in srgb, var(--text) 60%, transparent); }
+.wp-xm-key i.home { border-top: 2px dotted var(--ink); }
+
+.wp-odo { margin: 0; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 3px; }
+.wp-odo .digit { display: inline-grid; place-items: center; min-width: 40px; height: 62px; padding: 0 2px; border-radius: 10px; font-family: var(--serif); font-weight: 300; font-size: 50px; line-height: 1; font-variant-numeric: tabular-nums lining-nums; color: var(--ink); background: linear-gradient(#141734, #0b0c1c 50%, #141734); border: 1px solid color-mix(in srgb, var(--ink) 35%, transparent); box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--text) 8%, transparent); }
+.wp-odo .sep { font-family: var(--serif); font-size: 40px; color: color-mix(in srgb, var(--ink) 60%, transparent); padding: 0 1px 6px; }
+.wp-odo small { flex-basis: 100%; margin-top: 6px; font-size: 15px; color: color-mix(in srgb, var(--text) 82%, transparent); }
+
+.wp-years { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 22px; background: var(--wp-glass); border: 1px solid var(--wp-edge); }
+.wp-yr { display: grid; grid-template-columns: 1fr; gap: 6px; }
+.wp-yr .who { font-family: var(--serif); font-size: 19px; }
+.wp-yr i { display: block; height: 12px; border-radius: 6px; transform-origin: left; transform: scaleX(var(--f)); background: linear-gradient(90deg, var(--ink), color-mix(in srgb, var(--ink) 35%, transparent)); }
+.wp-yr.you i { background: linear-gradient(90deg, var(--sage), color-mix(in srgb, var(--sage) 35%, transparent)); }
+.wp-yr .note { font-size: 14px; color: color-mix(in srgb, var(--text) 80%, transparent); }
+@media (prefers-reduced-motion: no-preference) { .wp-yr i { animation: wp-bar 1.4s var(--ease) 0.4s both; } }
+
+.wp-seals { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 22px; background: linear-gradient(160deg, color-mix(in srgb, var(--ink) 12%, var(--wp-b)), var(--wp-glass)); border: 1px solid color-mix(in srgb, var(--ink) 35%, transparent); }
+.wp-seal-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.wp-seal { aspect-ratio: 1; min-height: 44px; display: grid; place-items: center; border-radius: 50%; font-family: var(--serif); font-size: 15px; color: color-mix(in srgb, var(--text) 55%, transparent); border: 1.5px dashed color-mix(in srgb, var(--text) 30%, transparent); }
+.wp-seal.on { border: 0; background: radial-gradient(circle at 40% 35%, color-mix(in srgb, var(--ink) 85%, #fff), color-mix(in srgb, var(--ink) 70%, #3a2410)); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45), inset 0 0 0 3px rgba(255, 220, 200, 0.18); transform: rotate(-8deg); }
+.wp-seal.on svg { width: 70%; height: 70%; fill: none; stroke: #2a1d10; stroke-width: 2; stroke-linecap: round; }
+@media (prefers-reduced-motion: no-preference) { .wp-seal.on { animation: wp-slam 0.55s cubic-bezier(0.3, 1.4, 0.5, 1) 0.6s both; } }
+
+.wp-chron ol { list-style: none; margin: 8px 0 0; padding: 0 0 0 18px; position: relative; display: flex; flex-direction: column; gap: 16px; }
+.wp-chron ol::before { content: ''; position: absolute; left: 4px; top: 6px; bottom: 6px; width: 2px; background: linear-gradient(var(--ink), color-mix(in srgb, var(--ink) 10%, transparent)); }
+.wp-chron li { position: relative; display: flex; flex-direction: column; gap: 4px; }
+.wp-chron li::before { content: ''; position: absolute; left: -19px; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: var(--wp-b); border: 2px solid var(--ink); }
+.wp-chron .when { font-size: 14px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); }
+.wp-chron .what { font-family: var(--serif); font-size: 18px; line-height: 1.35; }
