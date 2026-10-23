@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Icon } from '../../ui/Icon';
 import { along, byId, fmt, inkOf } from './walkArt';
 import { contentFor, type Mark } from './walkContent';
-import { HeroLook, type CardData, type Look } from './walkLooks';
+import type { CardData } from './walkLooks';
 import { REGIONS, ROUTE_ART } from './walkRoutes';
 import { EXPEDITIONS, EXPEDITION_KM, KM_A_DAY, RECORD_NAMES, WALKING } from './walkSample';
 
@@ -45,7 +45,7 @@ function useCount(to: number, ms = 1600) {
 }
 
 /** The whole road on its land: framed to the route, places named, the road out and home drawn apart if it turns. */
-function RouteMap({ id, frac }: { id: string; frac: number }) {
+export function RouteMap({ id, frac }: { id: string; frac: number }) {
   const art = ROUTE_ART[id];
   const region = REGIONS[art.region];
   const c = contentFor(id);
@@ -98,6 +98,15 @@ function RouteMap({ id, frac }: { id: string; frac: number }) {
 
 /** The small drawn marks a route's collection is made of: one shape per kind of road. */
 export function MarkShape({ mark }: { mark: Mark }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      {markPath(mark)}
+    </svg>
+  );
+}
+
+/** A mark's drawing alone, on a 24-unit grid, for placing inside another drawing. */
+export function markPath(mark: Mark): ReactNode {
   const p: Record<Mark, ReactNode> = {
     seal: <path d="M12 2 a10 10 0 1 0 0.01 0 M7 8 h10 M8 12 h8 M7 16 h10 M12 5 v14" />,
     crystal: <path d="M12 2 L19 9 L12 22 L5 9 Z M5 9 h14 M12 2 v20" />,
@@ -115,11 +124,7 @@ export function MarkShape({ mark }: { mark: Mark }) {
     chapter: <path d="M5 4 h10 l4 4 v12 H5 Z M15 4 v4 h4 M8 12 h8 M8 15 h8 M8 18 h5" />,
     stone: <path d="M6 22 V9 a6 6 0 0 1 12 0 V22 Z M6 11 h12" />,
   };
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      {p[mark]}
-    </svg>
-  );
+  return p[mark];
 }
 
 function Signature({ id, done }: { id: string; done: number }) {
@@ -192,7 +197,7 @@ function ThenLine({ t }: { t: NonNullable<ReturnType<typeof contentFor>['then']>
   );
 }
 
-export function RoutePage({ id, look, onBack, paused, onStory }: { id: string; look: Look; onBack: () => void; paused?: boolean; onStory?: (story: boolean) => void }) {
+export function RoutePage({ id, onBack, paused, onStory }: { id: string; onBack: () => void; paused?: boolean; onStory?: (story: boolean) => void }) {
   const r = byId(id);
   const c = contentFor(id);
   const p = progressFor(id);
@@ -212,7 +217,16 @@ export function RoutePage({ id, look, onBack, paused, onStory }: { id: string; l
           Walk
         </button>
       </div>
-      <HeroLook look={look} c={p} title={r.name} sub={`${art.ends[0]} to ${art.ends[1]} · ${r.era} · ${RECORD_NAMES[r.record]}`} />
+      <header className="wp-col wp-route-head rise">
+        <span className="wp-route-kind">
+          <MarkShape mark={c.signature.mark} />
+          {expedition ? 'Expedition' : r.book ? 'Book route' : 'Challenge'} · {r.era}
+        </span>
+        <h1 className="wp-title big">{r.name}</h1>
+        <p className="wp-sub">
+          {art.ends[0]} to {art.ends[1]} · {RECORD_NAMES[r.record]}
+        </p>
+      </header>
 
       <section className="wp-xm-wrap rise" aria-label="The whole road">
         <RouteMap id={id} frac={frac} />

@@ -4,11 +4,11 @@ import { Icon } from '../../ui/Icon';
 import topScene from './walk-art/top-ravines.svg?raw';
 import stripArt from './walk-art/strip-stretch.svg?raw';
 import mapArt from './walk-art/map-stretch.svg?raw';
-import visaDandi from './walk-art/visa-dandi.svg?raw';
 import { CHAMBAL_FACTS, EXPEDITIONS, EXPEDITION_KM, KIND_NAMES, KM_A_DAY, RECORD_NAMES, SHELF, WALKING, type RouteKind, type ShelfRoute } from './walkSample';
 import { RouteArt, byId, fmt, inkOf } from './walkArt';
-import { CardLook, LOOKS, ShelfLook, type Look } from './walkLooks';
+import { ChallengeCard, ShelfCard } from './walkLooks';
 import { RoutePage } from './walkRoutePage';
+import { JoinMoment } from './walkJoin';
 import { NewsBanner } from './walkBanner';
 import { Arrival } from './walkArrival';
 import { PassportBook } from './walkPassport';
@@ -66,9 +66,8 @@ export function WalkProto() {
   const screen = (params.get('screen') as Screen | null) ?? 'walk';
   const state = params.get('state') ?? '';
   const [take, setTake] = useState(0);
-  const look = (params.get('look') as Look | null) ?? 'poster';
-  const show = (s: Screen, st?: string, lk: Look = look) => {
-    go('/proto/walk', { screen: s, state: st, look: lk }, { replace: true });
+  const show = (s: Screen, st?: string) => {
+    go('/proto/walk', { screen: s, state: st }, { replace: true });
     setTake((t) => t + 1);
   };
 
@@ -80,12 +79,13 @@ export function WalkProto() {
     harold: [['', 'Story paused'], ['story', 'With the story']],
     map: [['', 'This stretch'], ['india', 'All of India']],
     route: SHELF.map((r) => [r.id, r.name] as [string, string]),
+    join: SHELF.map((r) => [r.id, r.name] as [string, string]),
     arrival: [
       ...(['Approach', 'Footprints', 'Zoom out', 'Race', 'Stamp'].map((b, i) => [`${arrCity}:${i + 1}`, `${i + 1} · ${b}`]) as [string, string][]),
       ...(['Agra', 'Gwalior', 'Bhopal', 'Nagpur', 'Hyderabad', 'Kanyakumari', 'Kolkata', 'Varanasi', 'Leh'].map((c) => [`${c}:${arrBeat}`, c]) as [string, string][]),
     ],
   };
-  const tint = screen === 'expedition' ? 'tint-silk' : screen === 'harold' ? 'tint-green' : screen === 'dandi' || screen === 'join' ? 'tint-sea' : screen === 'arrival' && arrBeat === 5 ? 'tint-gold' : '';
+  const tint = screen === 'expedition' ? 'tint-silk' : screen === 'harold' ? 'tint-green' : screen === 'dandi' ? 'tint-sea' : screen === 'arrival' && arrBeat === 5 ? 'tint-gold' : '';
 
   return (
     <div className={`wp ${tint}`}>
@@ -108,22 +108,15 @@ export function WalkProto() {
             Replay motion
           </button>
         </div>
-        <div className="wp-dev-row" aria-label="Look">
-          {LOOKS.map(([lk, label]) => (
-            <button key={lk} type="button" className={lk === look ? 'on' : ''} onClick={() => show(screen, state || undefined, lk)}>
-              {label}
-            </button>
-          ))}
-        </div>
       </div>
       <div key={`${screen}-${state}-${take}`} className="wp-screen">
         {screen === 'walk' && <WalkPage state={state} show={show} />}
         {screen === 'shelf' && <Shelf show={show} />}
-        {screen === 'dandi' && <RoutePage id="dandi" look={look} onBack={() => show('walk')} />}
-        {screen === 'harold' && <RoutePage id="harold" look={look} paused={state !== 'story'} onStory={(story) => show('harold', story ? 'story' : undefined)} onBack={() => show('walk')} />}
-        {screen === 'route' && <RoutePage id={SHELF.some((r) => r.id === state) ? state : 'tokaido'} look={look} onBack={() => show('shelf')} />}
-        {screen === 'join' && <JoinMoment show={show} />}
-        {screen === 'expedition' && <RoutePage id="xuanzang" look={look} onBack={() => show('walk')} />}
+        {screen === 'dandi' && <RoutePage id="dandi" onBack={() => show('walk')} />}
+        {screen === 'harold' && <RoutePage id="harold" paused={state !== 'story'} onStory={(story) => show('harold', story ? 'story' : undefined)} onBack={() => show('walk')} />}
+        {screen === 'route' && <RoutePage id={SHELF.some((r) => r.id === state) ? state : 'tokaido'} onBack={() => show('shelf')} />}
+        {screen === 'join' && <JoinMoment id={SHELF.some((r) => r.id === state) ? state : 'dandi'} onStart={() => show(state === 'harold' ? 'harold' : state === 'xuanzang' ? 'expedition' : state && state !== 'dandi' ? 'route' : 'dandi', state && !['harold', 'xuanzang', 'dandi'].includes(state) ? state : undefined)} />}
+        {screen === 'expedition' && <RoutePage id="xuanzang" onBack={() => show('walk')} />}
         {screen === 'passport' && <PassportBook onBack={() => show('walk')} onReplay={() => show('arrival', 'Agra:1')} />}
         {screen === 'stop' && <StopMoment show={show} />}
         {screen === 'map' && <MapPage india={state === 'india'} show={show} />}
@@ -137,10 +130,6 @@ export function WalkProto() {
 
 type Show = (s: Screen, st?: string) => void;
 
-/** The look being compared, from the address, so it survives moving between screens. */
-function useLook(): Look {
-  return (useRoute().params.get('look') as Look | null) ?? 'poster';
-}
 
 function Back({ to, label, show }: { to: Screen; label: string; show: Show }) {
   return (
@@ -154,7 +143,6 @@ function Back({ to, label, show }: { to: Screen; label: string; show: Show }) {
 /* ---------- the Walk tab ---------- */
 
 function WalkPage({ state, show }: { state: string; show: Show }) {
-  const look = useLook();
   const resting = state === 'rest';
   return (
     <main className="wp-page">
@@ -211,7 +199,7 @@ function WalkPage({ state, show }: { state: string; show: Show }) {
         <h2 className="wp-h2">Challenges</h2>
         <div className="wp-rc-list">
           {WALKING.map((w, i) => (
-            <CardLook key={w.id} look={look} c={w} delay={120 + i * 90} onOpen={() => show(w.id === 'dandi' ? 'dandi' : 'harold')} />
+            <ChallengeCard key={w.id} c={w} delay={120 + i * 90} onOpen={() => show(w.id === 'dandi' ? 'dandi' : 'harold')} />
           ))}
         </div>
 
@@ -265,7 +253,6 @@ function WalkPage({ state, show }: { state: string; show: Show }) {
 /* ---------- choosing a walk ---------- */
 
 function Shelf({ show }: { show: Show }) {
-  const look = useLook();
   const [open, setOpen] = useState<ShelfRoute | null>(null);
   const kinds = Object.keys(KIND_NAMES) as RouteKind[];
   return (
@@ -282,7 +269,7 @@ function Shelf({ show }: { show: Show }) {
           <h2 className="wp-h2 wp-col">{KIND_NAMES[k]}</h2>
           <div className="wp-cards" role="list">
             {SHELF.filter((r) => r.kind === k).map((r, i) => (
-              <ShelfLook key={r.id} look={look} id={r.id} time={timeAtPace(r.km)} delay={ki * 80 + i * 60} onOpen={() => setOpen(r)} />
+              <ShelfCard key={r.id} id={r.id} time={timeAtPace(r.km)} delay={ki * 80 + i * 60} onOpen={() => setOpen(r)} />
             ))}
           </div>
         </section>
@@ -302,7 +289,7 @@ function Shelf({ show }: { show: Show }) {
               </p>
             )}
             <div className="wp-actions">
-              <button type="button" className="wp-primary" onClick={() => show('join')}>
+              <button type="button" className="wp-primary" onClick={() => show('join', open.id)}>
                 {open.km > EXPEDITION_KM ? 'Start this expedition' : 'Join this walk'}
               </button>
               <button type="button" className="wp-ghost" onClick={() => show('route', open.id)}>
@@ -312,39 +299,6 @@ function Shelf({ show }: { show: Show }) {
           </div>
         </div>
       )}
-    </main>
-  );
-}
-
-/* ---------- joining: the visa stamps down and the route inks itself in ---------- */
-
-function JoinMoment({ show }: { show: Show }) {
-  const r = byId('dandi');
-  return (
-    <main className="wp-moment join" style={inkOf('dandi')}>
-      <div className="wp-join-map" aria-hidden="true">
-        <RouteArt id="dandi" frac={1} kind="hero" names={false} label="The route, inking itself in" />
-      </div>
-      <div className="wp-join-stamp">
-        <span className="wp-join-ring" aria-hidden="true" />
-        <span className="wp-join-ring r2" aria-hidden="true" />
-        <Art svg={visaDandi} className="wp-visa" />
-        <span className="wp-dust" aria-hidden="true">
-          {Array.from({ length: 10 }, (_, i) => (
-            <i key={i} style={{ ['--a' as string]: `${i * 36}deg` }} />
-          ))}
-        </span>
-      </div>
-      <h1 className="wp-moment-title late1">You've joined the Dandi March</h1>
-      <p className="wp-para center late2">
-        {fmt(r.km)} km, Sabarmati to Dandi. Your steps count from today: {timeAtPace(r.km)} at your pace, with no deadline.
-      </p>
-      <div className="wp-moment-btns late3">
-        <button type="button" className="wp-primary" onClick={() => show('dandi')}>
-          Start walking
-        </button>
-        <button type="button" className="wp-ghost">Add a target date</button>
-      </div>
     </main>
   );
 }
