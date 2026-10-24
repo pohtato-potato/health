@@ -12,8 +12,7 @@ export const STOPS: SmallStop[] = [
     facts: [
       'For about thirty kilometres the highway crosses a corner of Rajasthan: Dholpur district, between Uttar Pradesh and Madhya Pradesh.',
       'Dholpur was a state ruled by a Jat family, the Bamraulias, from 1805 until it joined the Indian Union in 1949.',
-      'Its red sandstone is in Rashtrapati Bhavan and the Red Forts of Delhi and Agra.',
-      'A narrow-gauge railway was built to carry that stone out of the ravines towards Delhi.',
+      'Its sandstone is in Rashtrapati Bhavan and, by many accounts, in the Red Forts of Delhi and Agra.',
     ],
     sources: [W('Wikipedia: Dholpur state', 'https://en.wikipedia.org/wiki/Dholpur_state'), W('RajRAS: Dholpur district', 'https://rajras.in/ras/pre/rajasthan/districts/dholpur/')],
   },
@@ -37,12 +36,12 @@ export const STOPS: SmallStop[] = [
     name: 'Gharials of the Chambal',
     facts: [
       'The gharial is a crocodile with a long, thin snout made for catching fish. It is critically endangered.',
-      'The Chambal holds the largest wild population left; one 2008 estimate put it at about half the world’s.',
+      'The Chambal holds the largest wild population left: about half the world’s, by an IUCN estimate of 2008.',
       'Adult males grow a bulb on the tip of the snout, called a ghara after the clay pot it looks like.',
-      'Counts have swung over the decades, from a few hundred to over a thousand, as surveys and the river changed.',
+      'Counts have risen from about a hundred in 1974 to around two thousand in recent surveys.',
     ],
     creature: 'gharial',
-    sources: [W('Wikipedia: Gharial', 'https://en.wikipedia.org/wiki/Gharial'), W('Ministry of Environment of Japan: Asia Parks paper on the sanctuary (Banerjee)', 'https://www.env.go.jp/nature/asia-parks/pdf/wg2/APC_WG6-13_Sujoy%20Banerjee.pdf')],
+    sources: [W('Wikipedia: Gharial', 'https://en.wikipedia.org/wiki/Gharial'), W('The Better India: Chambal gharial count, 2025', 'https://thebetterindia.com/web-stories/chambal-sanctuary-gharial-count-2025-up-wildlife-conservation-success'), W('Ministry of Environment of Japan: Asia Parks paper on the sanctuary (Banerjee)', 'https://www.env.go.jp/nature/asia-parks/pdf/wg2/APC_WG6-13_Sujoy%20Banerjee.pdf')],
   },
   {
     id: 'morena-gajak',
@@ -64,10 +63,10 @@ export const STOPS: SmallStop[] = [
     facts: [
       'Off the road, in the ravines near Morena, about 200 small sandstone temples stand in one complex, built under the Gurjara-Pratiharas, roughly 1,200 years ago.',
       'Most had fallen into heaps of stone, probably brought down by an earthquake centuries ago.',
-      'The archaeologist K. K. Muhammed rebuilt them piece by piece, after persuading the dacoit gang that used the site to stay away. Accounts date the work to the 1990s or the 2000s.',
+      'From the mid-2000s the archaeologist K. K. Muhammed rebuilt them piece by piece, after persuading the dacoit gang that used the site to stay away.',
       'Accounts differ on how many were restored: about 60 or about 80.',
     ],
-    sources: [W('Wikipedia: K. K. Muhammed', 'https://en.wikipedia.org/wiki/K._K._Muhammed'), W('Outlook Traveller: How one archaeologist brought Bateshwar back to life', 'https://www.outlooktraveller.com/amp/story/destinations/india/from-our-latest-issue-how-one-archaeologist-brought-bateshwar-back-to-life')],
+    sources: [W('Wikipedia: K. K. Muhammed', 'https://en.wikipedia.org/wiki/K._K._Muhammed'), W('Storytrails: Bateshwar', 'https://storytrails.in/places/bateshwar-restoration-of-the-largest-temple-ruins/'), W('Outlook Traveller: How one archaeologist brought Bateshwar back to life', 'https://www.outlooktraveller.com/amp/story/destinations/india/from-our-latest-issue-how-one-archaeologist-brought-bateshwar-back-to-life')],
   },
   {
     id: 'gwalior-zero',
@@ -88,11 +87,11 @@ export const STOPS: SmallStop[] = [
     name: 'Cheetahs on the loose',
     facts: [
       'In 2023 cheetahs brought from Namibia to Kuno National Park kept walking out of it, into Shivpuri district.',
-      'A male called Oban was found near the village of Jaurai, and later carried back to Kuno.',
-      'Another, Pawan, crossed Madhav National Park, killed a calf and a goat, and was tranquillised twice.',
+      'A male called Oban, renamed Pawan that April, walked out twice: once to the village of Jaurai, once across Madhav National Park.',
+      'He killed a calf and a goat on the way, and both times was tranquillised and carried back.',
       'Officials said the cats were exploring their new home and there was nothing to worry about.',
     ],
-    sources: [W('The Hitavada: Cheetah Oban sneaks out of Kuno for second time', 'https://thehitavada.com/Encyc/2023/4/17/Cheetah-Oban-sneaks-out-of-Kuno-for-second-time-.html'), W('The Hitavada: Cheetah Pawan rescued from Shivpuri for second time', 'https://www.thehitavada.com/Encyc/2023/4/24/Cheetah-Pawan-rescued-from-Shivpuri-for-second-time.html'), W('Outlook: Cheetahs exploring habitat, nothing to worry', 'https://www.outlookindia.com/national/cheetahs-exploring-habitat-nothing-to-worry-project-tiger-head-on-straying-incident-in-madhya-pradesh-news-276655')],
+    sources: [W('WION: Namibia’s Oban, who became Kuno’s Pawan', 'https://www.wionews.com/india-news/namibias-oban-who-became-kunos-breezy-pawan-found-dead-753974'), W('The Hitavada: Cheetah Oban sneaks out of Kuno for second time', 'https://thehitavada.com/Encyc/2023/4/17/Cheetah-Oban-sneaks-out-of-Kuno-for-second-time-.html'), W('The Hitavada: Cheetah Pawan rescued from Shivpuri for second time', 'https://www.thehitavada.com/Encyc/2023/4/24/Cheetah-Pawan-rescued-from-Shivpuri-for-second-time.html'), W('Outlook: Cheetahs exploring habitat, nothing to worry', 'https://www.outlookindia.com/national/cheetahs-exploring-habitat-nothing-to-worry-project-tiger-head-on-straying-incident-in-madhya-pradesh-news-276655')],
   },
   {
     id: 'madhav-tigers',
@@ -127,13 +126,13 @@ export const STOPS: SmallStop[] = [
     km: 505,
     name: 'Karera’s missing birds',
     facts: [
-      'East of Shivpuri lies Karera, made a sanctuary in 1981 to save about fifteen great Indian bustards.',
-      'Their numbers rose to about forty, then fell. None has been seen since the early 1990s.',
+      'East of Shivpuri lies Karera, made a sanctuary in 1981 to save a handful of great Indian bustards, five or six by one account.',
+      'They grew to at least fourteen, then fell. None has been seen since the early 1990s.',
       'Most of the sanctuary was private farmland, and the villagers inside could not sell it.',
-      'In 2010 the national wildlife board agreed to remove its protection.',
+      'In 2010 the national wildlife board agreed to remove its protection; the change still needs the Supreme Court’s consent.',
     ],
     creature: 'bustard',
-    sources: [W('Wikipedia: Karera Wildlife Sanctuary', 'https://en.wikipedia.org/wiki/Karera_Wildlife_Sanctuary'), W('101Reporters: Farmers troubled by a bird that no longer exists', 'https://101reporters.com/article/environment/Farmers_in_Madhya_Pradesh_wildlife_sanctuary_troubled_by_a_bird_that_no_longer_exists')],
+    sources: [W('Wikipedia: Karera Wildlife Sanctuary', 'https://en.wikipedia.org/wiki/Karera_Wildlife_Sanctuary'), W('Governance Now: Karera sanctuary set to close', 'https://www.governancenow.com/gov-next/green-gov/karera-sanctuary-set-close-golden-bird-visits-no-more'), W('101Reporters: Farmers troubled by a bird that no longer exists', 'https://101reporters.com/article/environment/Farmers_in_Madhya_Pradesh_wildlife_sanctuary_troubled_by_a_bird_that_no_longer_exists')],
   },
   {
     id: 'bajrangarh',
@@ -181,8 +180,8 @@ export const STOPS: SmallStop[] = [
     name: 'The Parbati’s country',
     facts: [
       'This is the Parbati’s land: the river rises in the Vindhyas in Sehore district and runs north through Rajgarh and Guna.',
-      'It flows for about 436 km and joins the Chambal in Rajasthan.',
-      'It is the third-largest of the Chambal’s tributaries in Madhya Pradesh and Rajasthan.',
+      'It flows for about 436 km and joins the Chambal near Palin, in Rajasthan’s Sawai Madhopur district.',
+      'It is one of the Chambal’s three main tributaries, with the Banas and the Kali Sindh.',
     ],
     sources: [W('Wikipedia: Parbati River (Madhya Pradesh)', 'https://en.wikipedia.org/wiki/Parbati_River_(Madhya_Pradesh)')],
   },
@@ -193,10 +192,10 @@ export const STOPS: SmallStop[] = [
     name: 'Narsinghgarh',
     facts: [
       'Narsinghgarh’s fort was built in 1681 by Paras Ram, a Rajput chieftain, and is among the largest in Madhya Pradesh.',
-      'In the early 1950s the director Mehboob Khan shot much of Aan here, with Dilip Kumar: one of the first Indian films made in Technicolor.',
+      'In the early 1950s the director Mehboob Khan shot much of Aan here, with Dilip Kumar: one of the first Indian films released in Technicolor.',
       'He called the place the Kashmir of Malwa, and the name stuck.',
     ],
-    sources: [W('MP Tourism: Narsinghgarh fort', 'https://www.mptourism.com/narsinghgarh-fort-and-deogarh-fort.html'), W('Wikipedia: Narsinghgarh, Madhya Pradesh', 'https://en.wikipedia.org/wiki/Narsinghgarh,_Madhya_Pradesh')],
+    sources: [W('MP Tourism: Narsinghgarh fort', 'https://www.mptourism.com/narsinghgarh-fort-and-deogarh-fort.html'), W('Technicolor: Jhansi Ki Rani, India’s first Technicolor film', 'https://technicolor.com/news/revisiting-jhansi-ki-rani-indias-first-technicolor-film'), W('Wikipedia: Narsinghgarh, Madhya Pradesh', 'https://en.wikipedia.org/wiki/Narsinghgarh,_Madhya_Pradesh')],
   },
   {
     id: 'bhojtal',

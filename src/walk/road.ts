@@ -26,3 +26,15 @@ export function stretchesEnded(stepsByDay: Map<DayKey, number>, stretches: Stret
   const ended = new Set(crossings(stepsByDay, stretches.map((s) => ({ name: s.id, km: s.toKm }))).map((c) => c.name));
   return stretches.filter((s) => ended.has(s.id));
 }
+
+/**
+ * Which stretch's end to show now, and which ends to mark seen. The latest unseen end shows, and every ended
+ * stretch is marked seen the moment it does, so however the sheet is left (a button, Back, another tab) it never
+ * comes back, and a long gap never queues several.
+ */
+export function stretchEndToShow(stepsByDay: Map<DayKey, number>, stretches: Stretch[], seen: Set<string>): { show?: Stretch; next?: Stretch; markSeen: string[] } {
+  const ended = stretchesEnded(stepsByDay, stretches);
+  const show = ended.filter((s) => !seen.has(`walk-stretch:${s.id}`)).at(-1);
+  if (!show) return { markSeen: [] };
+  return { show, next: stretches[stretches.indexOf(show) + 1], markSeen: ended.map((s) => `walk-stretch:${s.id}`) };
+}

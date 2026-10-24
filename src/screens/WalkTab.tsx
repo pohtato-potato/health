@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { addDays, daysBetween } from '../domain/dates';
 import { fmtDayMonth, fmtInt } from '../domain/format';
 import { batteryMode } from '../domain/rest';
@@ -18,7 +18,8 @@ import { kindOf, routeById } from '../walk/catalogue';
 import { reachedCards } from '../walk/cards';
 import { STOPS, STRETCHES } from '../walk/content';
 import { arrivedToday, auroraFor, nearestPlace, statusLines, stoneFor, stopLine, timeAtPace, tomorrowLine, usualAndBig, whereLine, whereNow } from '../walk/page';
-import { stopToday, stretchAt, stretchDay, stretchesEnded } from '../walk/road';
+import { stopToday, stretchAt, stretchDay, stretchEndToShow } from '../walk/road';
+import type { Stretch } from '../walk/content/types';
 import { Sheet } from '../ui/Sheet';
 import { StretchEndView } from './walk/StretchEndView';
 import { peopleMet } from '../walk/people';
@@ -40,7 +41,14 @@ export function WalkTab() {
   const runs = useLiveQuery(() => db.routes.toArray(), []);
   const level = useBatteryLevel();
   const seenStretches = useLiveQuery(async () => new Set((await db.seen.where('id').startsWith('walk-stretch:').toArray()).map((s) => s.id)), []);
-  const [closed, setClosed] = useState<string>();
+  const [showing, setShowing] = useState<{ done: Stretch; next?: Stretch }>();
+  const end = days && seenStretches ? stretchEndToShow(stepsByDay(days), STRETCHES, seenStretches) : undefined;
+  useEffect(() => {
+    if (!end?.show) return;
+    setShowing({ done: end.show, next: end.next });
+    void db.seen.bulkPut(end.markSeen.map((id) => ({ id, at: Date.now() })));
+    // Only a newly ended stretch matters here.
+  }, [end?.show?.id]);
   if (!days || !settings) return <div className="page" />;
 
   const steps = stepsByDay(days);
@@ -59,15 +67,6 @@ export function WalkTab() {
   const stop = stopToday(steps, today, STOPS);
   const lines = statusLines({ arrival: arrivedToday(steps, today), stop: stop && stopLine(stop), person: met?.who, status: day?.status, near });
   const stretch = stretchAt(km, STRETCHES);
-  // A stretch's end shows once, on the next open: the latest ended stretch not yet seen.
-  const ended = seenStretches ? stretchesEnded(steps, STRETCHES).filter((s) => !seenStretches.has(`walk-stretch:${s.id}`)).at(-1) : undefined;
-  const endNow = ended && ended.id !== closed ? ended : undefined;
-  const closeEnd = () => {
-    if (!endNow) return;
-    setClosed(endNow.id);
-    // Every ended stretch up to this one counts as seen, so a long gap doesn't queue several sheets.
-    void db.seen.bulkPut(stretchesEnded(steps, STRETCHES).map((s) => ({ id: `walk-stretch:${s.id}`, at: Date.now() })));
-  };
   const tomorrow = tomorrowLine(km, usualKm, bigKm);
   const cards = reachedCards(km);
 
@@ -130,17 +129,16 @@ export function WalkTab() {
         )}
         <WalkDoors onGo={(path) => go(path)} />
       </div>
-      {endNow && (
-        <Sheet onClose={closeEnd}>
+      {showing && (
+        <Sheet onClose={() => setShowing(undefined)}>
           <StretchEndView
-            done={endNow}
-            next={STRETCHES[STRETCHES.indexOf(endNow) + 1]}
+            done={showing.done}
+            next={showing.next}
             onRead={() => {
-              const next = STRETCHES[STRETCHES.indexOf(endNow) + 1];
-              closeEnd();
-              if (next) go('/stretch', { id: next.id });
+              setShowing(undefined);
+              if (showing.next) go('/stretch', { id: showing.next.id });
             }}
-            onClose={closeEnd}
+            onClose={() => setShowing(undefined)}
           />
         </Sheet>
       )}

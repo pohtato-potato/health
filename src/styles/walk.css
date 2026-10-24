@@ -94,7 +94,8 @@
 .walk-para { margin: 0; font-size: 16px; line-height: 1.55; }
 .walk-deeper { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 16px; background: color-mix(in srgb, #0c0e1d 55%, transparent); border: 1px solid color-mix(in srgb, var(--text) 16%, transparent); }
 .walk-sources ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.4; color: color-mix(in srgb, var(--text) 80%, transparent); }
-.walk-sources a { color: inherit; }
+.walk-sources a { color: inherit; display: inline-flex; align-items: center; min-height: 44px; }
+.walk-sources ul { gap: 0; }
 .walk-ghost { min-height: 48px; padding: 0 18px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--text) 30%, transparent); color: var(--text); font-size: 15px; align-self: flex-start; }
 .walk-primary { min-height: 52px; padding: 0 22px; border-radius: 999px; background: var(--text); color: #0e1020; font-weight: 600; font-size: 16px; }
 .walk-stop, .walk-stretch, .walk-end { display: flex; flex-direction: column; gap: 14px; }

@@ -36,7 +36,7 @@ export function StopView({ stop, onBack }: { stop: SmallStop; onBack: () => void
         {STOP_WORDS[stop.kind]} · small stop
       </span>
       <h1 className="walk-title big">{stop.name}</h1>
-      <StopFacts facts={stop.facts} />
+      <StopFacts key={stop.id} facts={stop.facts} />
       <button type="button" className="walk-ghost" onClick={onBack}>
         Back to the walk
       </button>

@@ -16,15 +16,17 @@ export const STRETCHES: Stretch[] = [
     page: [
       'South of Agra the road leaves the flat Yamuna plain and drops into the Chambal ravines: a maze of gullies cut into soft alluvium by the river and the monsoon, ground that is hard to farm, hard to police and easy to hide in.',
       'For most of the twentieth century these ravines were known for their baaghi, men who took to the ravines after a land dispute, a feud or a police case, and lived by raids and ransom. Some were remembered locally as rebels against unfair landlords; to the villages they robbed they were simply dangerous. Both memories are true of different people at different times.',
-      'Twice, large groups gave up their arms in public. In April 1972 dozens of dacoits, Mohar Singh and Madho Singh among them, surrendered in batches at the Gandhi Seva Ashram in Joura, near Morena, before Jayaprakash Narayan, who insisted the surrenders mean nothing without land and rehabilitation. Reports of the day give different counts.',
-      'Before Morena the road crosses about thirty kilometres of Dholpur district, a corner of Rajasthan. Dholpur was a Jat-ruled state from 1805 until it joined the Indian Union in 1949, and its red sandstone built much of Delhi. Then comes the Chambal itself, the border with Madhya Pradesh, and the river sanctuary that keeps much of the world’s gharials.',
+      'Twice, large groups gave up their arms in public. In April 1972 about 85 dacoits, led by Mohar Singh, Madho Singh and others, surrendered in batches at the Gandhi Seva Ashram in Joura, near Morena, before Jayaprakash Narayan, who asked that none be hanged and argued that surrender alone would not end dacoity.',
+      'Before Morena the road crosses about thirty kilometres of Dholpur district, a corner of Rajasthan. Dholpur was a Jat-ruled state from 1805 until it joined the Indian Union in 1949, and its sandstone is in Rashtrapati Bhavan. Then comes the Chambal itself, the border with Madhya Pradesh, and the river sanctuary that keeps much of the world’s gharials.',
     ],
     deeper: {
       title: 'Why the ravines made outlaws',
       text: 'Many accounts tie Chambal dacoity to land more than to the land’s shape: small, contested holdings, caste hierarchies enforced by force, slow courts, and a border where three states’ police met and none fully reached. The ravines made hiding possible; disputes made men need to hide. Surrender campaigns (Vinoba Bhave’s, then Jayaprakash Narayan’s in 1972) offered amnesty from hanging and a path back, and Narayan himself warned that surrender alone would not end it without land and a living for the men who came back.',
     },
     sources: [
-      W('Indian Liberals archive: press reports of the Chambal surrenders, April 1972', 'https://indianliberals.in/primary-works/6053-chambal-cheers-as-dacoits-surrender-15-04-1972/'),
+      W('Indian Liberals archive: Chambal cheers as dacoits surrender (14 April 1972)', 'https://indianliberals.in/primary-works/6053-chambal-cheers-as-dacoits-surrender-15-04-1972/'),
+      W('Indian Liberals archive: J. P. tells dacoits they won’t be hanged (Hindustan Times, 16 April 1972)', 'https://indianliberals.in/primary-works/6050-jp-tells-dacoits-they-wont-be-hanged-the-hindustan-times-16-04-1972/'),
+      W('Indian Liberals archive: J. P. explains the aim of the mission (11 April 1972)', 'https://indianliberals.in/primary-works/6032-j-p-explain-aim-of-mission-11-04-1972/'),
       W('Wikipedia: Dholpur state', 'https://en.wikipedia.org/wiki/Dholpur_state'),
       W('Wikipedia: Chambal River', 'https://en.wikipedia.org/wiki/Chambal_River'),
       W('RajRAS: Dholpur district', 'https://rajras.in/ras/pre/rajasthan/districts/dholpur/'),
@@ -58,7 +60,7 @@ export const STRETCHES: Stretch[] = [
     page: [
       'Shivpuri was the Scindias’ summer capital, a town of lakes and forest where the family built marble memorials to its rulers. The forest around it is now Madhav National Park.',
       'Tigers had gone from Madhav. In 2023 a reintroduction began, and in March 2025 the park was declared India’s 58th tiger reserve. Nearby, cheetahs brought from Namibia to Kuno National Park wandered into Shivpuri’s villages in 2023 and had to be carried back; officials called it exploring.',
-      'Not every conservation story here worked. The Karera sanctuary, set up in 1981 for the great Indian bustard, lost its birds by the 1990s, while the villagers inside it still could not sell their land. In 2010 the national wildlife board agreed to remove its protection: a sanctuary for a bird that had left.',
+      'Not every conservation story here worked. The Karera sanctuary, set up in 1981 for the great Indian bustard, lost its birds by the 1990s, while the villagers inside it still could not sell their land. In 2010 the national wildlife board agreed to remove its protection, though the change still needs the Supreme Court’s consent: a sanctuary for a bird that had left.',
       'These are the arguments of Indian conservation in one district: who pays for wild land, who decides, and whether moving animals in is restoration or a show.',
     ],
     sources: [
@@ -75,7 +77,7 @@ export const STRETCHES: Stretch[] = [
     fromKm: 565,
     toKm: 655,
     page: [
-      'Around Guna the land was held for centuries by Khichi Chauhan Rajputs, the clan of Prithviraj Chauhan. They moved here from Gugor, which kept falling to neighbouring Hada rulers, and built a new seat at Raghogarh in the 1670s (sources give 1673 and 1677).',
+      'Around Guna the land was held for centuries by Khichi Chauhan Rajputs, a branch of the Chauhans, the clan of Prithviraj Chauhan. They moved here from Gugor, which kept falling to neighbouring Hada rulers, and built a new seat at Raghogarh in the 1670s (sources give 1673 and 1677).',
       'This was border country between powers: Rajput houses, the Mughals, then the Marathas. In the late 1700s Mahadji Scindia’s raids broke Raghogarh’s fortunes, and in 1816 a Scindia army under its European general, Jean Baptiste, took and wrecked the fort at Bajrangarh outside Guna.',
       'The old families did not vanish with the princely states. Raghogarh’s ruling family entered electoral politics after independence and has held office in Madhya Pradesh for decades, one example of how Indian princely houses turned into political ones.',
     ],
@@ -94,7 +96,7 @@ export const STRETCHES: Stretch[] = [
     page: [
       'Past Biaora the road climbs onto the Malwa plateau: black soil, wide fields of soybean and wheat, and low flat-topped hills. Malwa has its own food (dal bafla), its own dialect and a long history as a kingdom of its own.',
       'Its most remembered king is Raja Bhoj of the Paramara dynasty, who ruled in the early 1000s and is credited, by tradition, with the great lake at Bhopal. Tradition also makes him a scholar and builder; how much of that is history and how much later praise, historians still argue.',
-      'Bhopal itself was founded as a state in the early 1700s by Dost Mohammad Khan, an Afghan soldier. From 1819 to 1926 it was ruled by four women in turn, the Begums of Bhopal, who governed through wars and the British Raj and put money into schools and, under the last of them, the education of girls.',
+      'Bhopal itself was founded as a state in the early 1700s by Dost Mohammad Khan, an Afghan soldier. For most of 1819 to 1926 it was ruled by four women in turn, the Begums of Bhopal, who governed through wars and the British Raj and put money into schools and, under the last of them, the education of girls.',
       'The road arrives at the city of lakes, which in 1984 also became the site of the world’s worst industrial disaster. The arrival tells that story plainly.',
     ],
     sources: [
