@@ -40,7 +40,7 @@ export const meerut: RouteDef = {
       ],
       deeper: {
         title: 'The cartridges',
-        text: 'The new Enfield rifle used paper cartridges greased to load easily, and soldiers tore them open with their teeth. Rumours spread that the grease was cow fat, which Hindus would not touch, or pig fat, which Muslims would not. The Company changed the drill and let sepoys grease their own, but it was too late to be believed. Historians now stress that what mattered was the belief, set among older grievances: low pay, new rules for service overseas, annexations like Awadh’s in 1856, and a sense that the Company meant to change the sepoys’ way of life. The historian Kim Wagner argues there is little evidence that many greased cartridges were ever issued.',
+        text: 'The new Enfield rifle used paper cartridges greased to load easily, and soldiers tore them open with their teeth. Rumours spread that the grease was cow fat, which Hindus would not touch, or pig fat, which Muslims would not. The Company changed the drill and let sepoys grease their own, but it was too late to be believed. Historians now stress that what mattered was the belief. It fell among older grievances: low pay, new rules for service overseas, and annexations like Awadh’s in 1856. Many sepoys also sensed that the Company meant to change their way of life. The historian Kim Wagner argues there is little evidence that many greased cartridges were ever issued.',
       },
     },
     {
@@ -94,7 +94,7 @@ export const meerut: RouteDef = {
       line: 'Under the emperor’s windows, the riders call on him to lead them.',
       page: [
         'They gathered beneath Bahadur Shah’s windows and called on him to lead them. At first he did nothing. Through the day, British officials and families, Indian Christians and others were killed in the city.',
-        'That afternoon the nine British officers holding the Delhi magazine blew it up rather than let it be taken; six of them survived. The next day the emperor held court and accepted the rebels’ allegiance. Most accounts say he was pressed into it.',
+        'That afternoon the nine British ordnance men holding the Delhi magazine blew it up rather than let it be taken. Accounts differ, but about four of them got out alive. The next day the emperor held court and accepted the rebels’ allegiance. Most accounts say he was pressed into it.',
       ],
       deeper: {
         title: 'How one night became 1857',
@@ -108,7 +108,7 @@ export const meerut: RouteDef = {
     { when: 'Evening, 10 May', place: 'Meerut', text: 'The garrison rises and frees them.' },
     { when: 'Night, 10–11 May', place: 'The Delhi road', text: 'The rebels ride for Delhi.' },
     { when: 'Early 11 May', place: 'Delhi', text: 'They call on Bahadur Shah Zafar to lead them.' },
-    { when: '11 May', place: 'Delhi', text: 'The magazine is blown up by its British officers.' },
+    { when: '11 May', place: 'Delhi', text: 'The magazine is blown up by its British defenders.' },
     { when: '12 May', place: 'Delhi', text: 'The emperor accepts the rebels’ allegiance.' },
   ],
   sources: [

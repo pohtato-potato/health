@@ -31,7 +31,7 @@ export const dandi: RouteDef = {
   id: 'dandi',
   name: 'The Dandi March',
   era: '1930',
-  hook: '78 marchers walk to the sea to break the salt law with a handful of salt.',
+  hook: 'Gandhi and 78 marchers walk to the sea to break the salt law with a handful of salt.',
   group: 'india',
   km: 387,
   record: 'dated',
@@ -49,14 +49,14 @@ export const dandi: RouteDef = {
     {
       km: 0,
       title: 'The ashram road',
-      line: 'Before dawn, 78 marchers leave the ashram on the Sabarmati.',
+      line: 'Before dawn, Gandhi and 78 marchers leave the ashram on the Sabarmati.',
       page: [
         'On 12 March 1930 Gandhi left Sabarmati Ashram, outside Ahmedabad, with 78 companions. He chose them from the ashram’s own residents, trained to his discipline; most were in their twenties.',
         'Their aim was the sea at Dandi, about 387 km south, where they would make salt and so break the law that taxed it.',
       ],
       deeper: {
         title: 'Why salt',
-        text: 'British India taxed salt and made it a crime to make or sell it outside the government’s monopoly. The tax was small, but everyone paid it, the poorest most of all in proportion to what they had, and salt was something anyone could make from the sea with a pan and the sun. That made it a law anyone could break, in public and without violence. Many in the Congress leadership doubted it at first. Some thought it too trivial; Vallabhbhai Patel argued for a refusal to pay land revenue instead. Gandhi held to salt because it joined the poorest villager to the national cause.',
+        text: 'British India taxed salt and made it a crime to make or sell it outside the government’s monopoly. The tax was small, but everyone paid it, and the poorest paid most for what they had. Salt was also something anyone could make from the sea with a pan and the sun. That made it a law anyone could break, in public and without violence. Many in the Congress leadership doubted it at first. Some thought it too trivial; Vallabhbhai Patel argued for a refusal to pay land revenue instead. Gandhi held to salt because it joined the poorest villager to the national cause.',
       },
     },
     {
@@ -130,7 +130,7 @@ export const dandi: RouteDef = {
       ],
       deeper: {
         title: 'What it won, and what it didn’t',
-        text: 'On 21 May, at the Dharasana salt works, about 2,500 marchers led by Sarojini Naidu walked up to the police lines and were beaten down, row after row, without fighting back. The American reporter Webb Miller’s account ran in newspapers around the world. The campaign won no quick concession: the salt tax stayed, and there was no self-rule. In March 1931 the Gandhi–Irwin Pact ended it in exchange for the release of prisoners and talks in London that achieved little. But the march changed how the world, and many Indians, saw British rule, and historians still weigh it as a turning point in the movement rather than a victory in itself.',
+        text: 'On 21 May, at the Dharasana salt works, about 2,500 marchers led by Sarojini Naidu walked up to the police lines and were beaten down, row after row, without fighting back. The American reporter Webb Miller’s account ran in newspapers around the world. The campaign won little quickly: the salt tax stayed, and there was no self-rule. In March 1931 the Gandhi–Irwin Pact ended it. Prisoners were released, coastal villagers could make salt for their own use, and talks in London followed that achieved little. But the march changed how the world, and many Indians, saw British rule, and historians still weigh it as a turning point in the movement rather than a victory in itself.',
       },
     },
   ],

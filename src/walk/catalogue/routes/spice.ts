@@ -79,7 +79,7 @@ export const spice: RouteDef = {
       title: 'Kappad',
       line: 'Kappad beach, where Vasco da Gama is said to have landed in 1498.',
       page: [
-        'A stone at Kappad marks the traditional landing of Vasco da Gama on 20 May 1498, the first European to reach India by sailing round Africa.',
+        'Vasco da Gama’s fleet reached this coast on 20 May 1498, the first to sail from Europe to India round Africa. A stone at Kappad marks where, by tradition, he landed; some historians think he only anchored here.',
         'He had been guided across the Arabian Sea from East Africa by a local pilot. The trade he came for was already old and busy.',
       ],
     },
@@ -145,7 +145,7 @@ export const spice: RouteDef = {
   chronicle: [
     { when: '2nd century', place: 'Muziris', text: 'A papyrus records a rich cargo shipped from Muziris to Egypt.' },
     { when: '1340s', place: 'Kozhikode', text: 'Ibn Battuta visits.' },
-    { when: '20 May 1498', place: 'Kappad', text: 'Vasco da Gama lands, by the usual account.' },
+    { when: '20 May 1498', place: 'Kappad', text: 'Da Gama’s fleet arrives off Kappad.' },
     { when: '1502', place: 'Kozhikode', text: 'Da Gama returns, burns a pilgrim ship and bombards the city.' },
     { when: '1503', place: 'Kochi', text: 'The Portuguese build Fort Manuel.' },
     { when: '1505', place: 'Kannur', text: 'St Angelo Fort is built.' },

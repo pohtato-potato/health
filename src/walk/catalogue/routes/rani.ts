@@ -47,7 +47,7 @@ export const rani: RouteDef = {
       title: 'The fort wall',
       line: 'Jhansi falls, and that night the Rani rides out of the fort.',
       page: [
-        'Hugh Rose’s Central India Field Force besieged Jhansi from 22 March 1858. Early on 3 April his columns stormed the south wall, and by sunset they held the town. About 3,000 people were killed.',
+        'Hugh Rose’s Central India Field Force besieged Jhansi from about 22 March 1858. Early on 3 April his columns stormed the south wall, and by sunset they held the town. Thousands were killed, by some counts about 5,000, many of them townspeople.',
         'That night the Rani left the fort with about 300 soldiers, her adopted son Damodar Rao tied at her waist.',
         'How she got out is told three ways: a leap on horseback from the wall, which is tradition; a horse smuggled to the fort; or a gap Rose left in his lines on purpose.',
       ],
@@ -90,7 +90,7 @@ export const rani: RouteDef = {
       ],
       deeper: {
         title: 'Mutiny, rebellion, or war of independence?',
-        text: 'British writers called 1857 the Mutiny, a revolt of soldiers. In 1909 V. D. Savarkar called it India’s First War of Independence, and the name stuck in India. Many historians now prefer “the rebellion” or “the uprising”: it began among sepoys, spread to peasants, landholders and dispossessed rulers like the Rani, and meant different things in different places, from restoring old kingdoms to settling local scores. Its violence ran both ways, and the British reprisals were on a far larger scale.',
+        text: 'British writers called 1857 the Mutiny, a revolt of soldiers. In 1909 V. D. Savarkar called it India’s First War of Independence, and the name stuck in India. Many historians now prefer “the rebellion” or “the uprising”. It began among sepoys and spread to peasants, landholders and dispossessed rulers like the Rani. It meant different things in different places, from restoring old kingdoms to settling local scores. Its violence ran both ways, and the British reprisals were on a far larger scale.',
       },
     },
     {
@@ -126,8 +126,8 @@ export const rani: RouteDef = {
     {
       km: 481,
       title: 'Gohad',
-      line: 'Near Gwalior, and Scindia’s army comes out to meet them.',
-      page: ['On 1 June Scindia’s army met the rebels outside Gwalior, and most of it went over to them. Scindia fled to the British at Agra.'],
+      line: 'Closing on Gwalior, and Scindia’s army comes out to meet them.',
+      page: ['From Gohad the rebels closed on Gwalior. On 1 June Scindia’s army met them at Bahadurpur, near Morar, and most of it went over to them. Scindia fled to the British at Agra.'],
     },
     {
       km: 523,
@@ -144,12 +144,12 @@ export const rani: RouteDef = {
       line: 'Her last battle, a few kilometres from Gwalior.',
       page: [
         'On 17 June British cavalry charged the rebels at Kotah-ki-Serai, near Gwalior. The Rani was killed in the fighting. Some records give 18 June. How exactly she died is not known; every account agrees she died fighting.',
-        'Her followers are thought to have cremated her body. Rose took Gwalior on 19 June, and later wrote of her as the most dangerous of the rebel leaders.',
+        'Her followers are thought to have cremated her body. Rose took Gwalior on 19 June, and in his report called her the bravest and most capable of the rebel leaders.',
         'Tatya Tope fought on for months before he was betrayed, captured and hanged at Shivpuri in April 1859.',
       ],
       deeper: {
         title: 'The Rani and her legend',
-        text: 'Few records of the Rani in her own words survive, and much of what is told of her comes later. In the independence movement she became a symbol: Subhadra Kumari Chauhan’s Hindi poem Jhansi ki Rani is still learned in schools, and in 1943 Subhas Chandra Bose named the Indian National Army’s women’s regiment after her. Historians separate the record (her letters protesting the annexation, the campaign’s dates, British accounts of her courage) from the legend (the leap from the wall, the names of her horses). The record is remarkable enough on its own.',
+        text: 'Few records of the Rani in her own words survive, and much of what is told of her comes later. In the independence movement she became a symbol. Subhadra Kumari Chauhan’s Hindi poem Jhansi ki Rani is still learned in schools, and in 1943 Subhas Chandra Bose named the Indian National Army’s women’s regiment after her. Historians separate the record (her letters protesting the annexation, the campaign’s dates, British accounts of her courage) from the legend (the leap from the wall, the names of her horses). The record is remarkable enough on its own.',
       },
     },
   ],

@@ -56,7 +56,7 @@ export const kos: RouteDef = {
       ],
       deeper: {
         title: 'How long is a kos?',
-        text: 'A kos was a measure of distance, but never a fixed one. Along these roads the minars stand roughly 3.2 km apart, a quarter of the older yojana, yet studies of different stretches have measured anything from under 2 km to over 4 km. Like the mile before it was standardised, it was as much a measure of a day’s walking as of ground.',
+        text: 'A kos was a measure of distance, but never a fixed one. Along these roads the minars stand roughly 3.2 km apart, a quarter of the older yojana, yet studies of different stretches have measured anything from about 3 km to over 4 km. Like the mile before it was standardised, it was as much a measure of a day’s walking as of ground.',
       },
     },
     {
@@ -68,7 +68,7 @@ export const kos: RouteDef = {
     {
       km: 99,
       title: 'Into the plain',
-      line: 'Up the Yamuna plain, a pillar every half hour of walking.',
+      line: 'Up the Yamuna plain, a pillar every forty minutes of walking.',
       page: ['At an easy pace a kos is about 40 minutes’ walk. A traveller could count the minars to know how far was left to the next sarai.'],
     },
     {
@@ -129,10 +129,10 @@ export const kos: RouteDef = {
     {
       km: 489,
       title: 'Sirhind',
-      line: 'Sirhind, a Mughal city remembered for 1704 and 1710.',
+      line: 'Sirhind, a Mughal city remembered for 1705 and 1710.',
       page: [
-        'Sirhind was a rich Mughal city on the road. In 1704 its governor, Wazir Khan, had the two youngest sons of Guru Gobind Singh put to death.',
-        'In May 1710 Banda Singh Bahadur’s army defeated and killed Wazir Khan at Chappar Chiri, about 20 km away, then took and sacked the city.',
+        'Sirhind was a rich Mughal city on the road. In December 1705, or 1704 by some accounts, its governor, Wazir Khan, had the two youngest sons of Guru Gobind Singh put to death.',
+        'In May 1710 Banda Singh Bahadur’s army defeated and killed Wazir Khan at Chappar Chiri, about 20 km away, then took and sacked the city. Accounts differ on how many of its people were killed: Mughal chroniclers describe a massacre, Sikh tradition a reckoning with Wazir Khan’s rule.',
       ],
     },
     {
@@ -155,7 +155,7 @@ export const kos: RouteDef = {
       km: 657,
       title: 'The Beas country',
       line: 'Past Sultanpur Lodhi and Goindwal, by the Beas.',
-      page: ['The road crossed the Beas near Goindwal. Here, as in all the Punjab, the minars that survive stand in fields and village lanes; a 2026 study mapped eight in Tarn Taran district alone.'],
+      page: ['The road crossed the Beas near Goindwal. Here, as in all the Punjab, the minars that survive stand in fields and village lanes; a recent survey mapped eight in Tarn Taran district alone.'],
     },
     {
       km: 698,

@@ -41,7 +41,7 @@ export const shivaji: RouteDef = {
       title: 'The audience',
       line: 'At Aurangzeb’s court, Shivaji is made to stand among lesser nobles, and walks out.',
       page: [
-        'In June 1665, besieged at Purandar, Shivaji had made terms with the Mughal general Jai Singh: he gave up 23 forts, kept 12, and agreed to come to the emperor’s court.',
+        'In June 1665, with his fort of Purandar under siege, Shivaji had made terms with the Mughal general Jai Singh: he gave up 23 forts, kept 12, and agreed to come to the emperor’s court.',
         'He reached Agra in May 1666. At the audience on 12 May he was placed among nobles of a rank he thought beneath him, men he had beaten in the field. He protested and left the hall.',
         'He was put under guard in a house in the city, in the custody of Jai Singh’s son, Ram Singh.',
       ],
@@ -110,8 +110,8 @@ export const shivaji: RouteDef = {
     {
       km: 727,
       title: 'Indore',
-      line: 'Indore, then a small town; a century later, a Maratha capital.',
-      page: ['In 1666 Indore was a modest market town. Within a century the Marathas had pushed north across Malwa, and their generals, the Holkars, made it their own.'],
+      line: 'Indore, then a small town; within a century, a Maratha stronghold.',
+      page: ['In 1666 Indore was a modest market town. Within a century the Marathas had pushed north across Malwa, and their generals, the Holkars, held it from 1733.'],
     },
     {
       km: 815,
@@ -129,7 +129,7 @@ export const shivaji: RouteDef = {
       km: 1070,
       title: 'The Ajanta hills',
       line: 'Up through the Ajanta hills, onto the Deccan plateau.',
-      page: ['The road climbs from the Tapti valley through the Ajanta range. In its cliffs lie the painted caves of Ajanta, cut between about the 2nd century BCE and the 5th century CE, forgotten by the outside world until a British officer came across them while hunting in 1819.'],
+      page: ['The road climbs from the Tapti valley through the Ajanta range. In its cliffs lie the painted caves of Ajanta, cut between about the 2nd century BCE and the 5th century CE. They were forgotten by the outside world until a British officer came across them while hunting in 1819.'],
     },
     {
       km: 1166,

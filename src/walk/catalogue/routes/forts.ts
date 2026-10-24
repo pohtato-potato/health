@@ -35,7 +35,7 @@ export const forts: RouteDef = {
     mark: 'milecastle',
     marks: [
       { km: 1, name: 'Shivneri: born, 1630' },
-      { km: 146, name: 'Torna: the first fort, 1646' },
+      { km: 146, name: 'Torna: the first fort, about 1646' },
       { km: 155, name: 'Rajgad: the first capital' },
       { km: 256, name: 'Pratapgad: Afzal Khan, 1659' },
       { km: 347, name: 'Purandar: the treaty, 1665' },
@@ -57,10 +57,10 @@ export const forts: RouteDef = {
       km: 50,
       title: 'Three empires',
       line: 'Down from the hills: a land fought over by three powers.',
-      page: ['The western Deccan of Shivaji’s boyhood lay between the Mughal Empire to the north and the sultanates of Bijapur and Golconda to the south and east, with the Portuguese and the Siddis of Janjira on the coast.'],
+      page: ['The western Deccan of Shivaji’s boyhood lay between the Mughal Empire to the north and the sultanates of Bijapur and Golconda to the south and east. On the coast were the Portuguese and the Siddis of Janjira.'],
       deeper: {
         title: 'A state between empires',
-        text: 'Shivaji began as the son of a Bijapur general, managing his father’s estate around Pune. He built a kingdom by playing the great powers against each other: taking forts from Bijapur while Bijapur was weak, raiding the Mughals, making terms when he had to and breaking them when he could. Historians argue over how to read him. Maharashtra’s politics have made him a regional and a Hindu hero; others stress how much his state borrowed from the sultanates around it, its administration, its Persian terms, the Muslim officers in his service. Both are part of the record.',
+        text: 'Shivaji began as the son of a Bijapur general, managing his father’s estate around Pune. He built a kingdom by playing the great powers against each other. He took forts from Bijapur while Bijapur was weak, raided the Mughals, and made terms when he had to and broke them when he could. Historians argue over how to read him. Maharashtra’s politics have made him a regional and a Hindu hero; others stress how much his state borrowed from the sultanates around it, its administration, its Persian terms, the Muslim officers in his service. Both are part of the record.',
       },
     },
     {
@@ -73,7 +73,7 @@ export const forts: RouteDef = {
       km: 146,
       title: 'The boy’s first fort',
       line: 'Torna, the fort he took as a teenager.',
-      page: ['In 1646, or 1645 by some accounts, the teenage Shivaji took Torna from Bijapur’s garrison. By tradition he found treasure buried there and spent it on building the next fort along the ridge.'],
+      page: ['Around 1646 (accounts range from 1645 to 1647), the teenage Shivaji took Torna from Bijapur’s garrison. By tradition he found treasure buried there and spent it on building the next fort along the ridge.'],
     },
     {
       km: 155,
@@ -140,13 +140,13 @@ export const forts: RouteDef = {
       ],
       deeper: {
         title: 'Why a coronation',
-        text: 'By 1674 Shivaji ruled a real state, but in law he was still a rebel against Bijapur and the Mughals. A coronation by the rites of the old Hindu kings made him a sovereign in his own right, able to make treaties as an equal and to stand above the other Maratha families, some of whom ranked themselves above his own. Gaga Bhatt supplied a genealogy linking his family to the Sisodia Rajputs. Historians read the crowning as a claim of legitimacy as much as of faith.',
+        text: 'By 1674 Shivaji ruled a real state, but in law he was still a rebel against Bijapur and the Mughals. A coronation by the rites of the old Hindu kings made him a sovereign in his own right, able to make treaties as an equal. It also set him above the other Maratha families, some of whom ranked themselves above his own. Gaga Bhatt supplied a genealogy linking his family to the Sisodia Rajputs. Historians read the crowning as a claim of legitimacy as much as of faith.',
       },
     },
   ],
   chronicle: [
     { when: '19 February 1630', place: 'Shivneri', text: 'Born, by the date Maharashtra keeps.' },
-    { when: '1646', place: 'Torna', text: 'Takes his first fort; some accounts say 1645.' },
+    { when: 'About 1646', place: 'Torna', text: 'Takes his first fort; some accounts say 1645 or 1647.' },
     { when: '10 November 1659', place: 'Pratapgad', text: 'Kills Afzal Khan.' },
     { when: '11 June 1665', place: 'Purandar', text: 'Makes terms with Jai Singh.' },
     { when: 'February 1670', place: 'Sinhagad', text: 'Tanaji Malusare takes the fort and dies.' },

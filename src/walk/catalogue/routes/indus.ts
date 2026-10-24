@@ -8,7 +8,7 @@ export const indus: RouteDef = {
   id: 'indus',
   name: 'The Indus cities',
   era: 'c. 2600–1900 BCE',
-  hook: 'Planned cities with reservoirs, a dockyard and a script nobody has read.',
+  hook: 'Planned cities with reservoirs, what may be a dockyard, and a script nobody has read.',
   group: 'india',
   km: 451,
   record: 'none',
@@ -60,7 +60,7 @@ export const indus: RouteDef = {
     {
       km: 43,
       title: 'The signboard',
-      line: 'Ten signs, each the height of a hand span, by the city gate.',
+      line: 'Ten signs, each about 37 cm high, by the city gate.',
       page: [
         'In a room by Dholavira’s northern gate, archaeologists found ten large signs made of gypsum, each about 37 cm high, that once seem to have hung on a board about 3 m long.',
         'It may have named the city or its ruler. Nobody can read it.',
@@ -101,7 +101,7 @@ export const indus: RouteDef = {
       km: 280,
       title: 'Weights and measures',
       line: 'From Kutch to the Indus, the same weights.',
-      page: ['Indus cubic weights of chert follow the same system across hundreds of kilometres, from Kutch to Punjab. Dholavira alone has yielded more than 600.'],
+      page: ['Indus cubic weights of chert follow the same system across hundreds of kilometres, from Kutch to Punjab. Dholavira alone has yielded nearly 1,000.'],
     },
     {
       km: 316,

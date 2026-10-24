@@ -68,7 +68,7 @@ export const deccan: RouteDef = {
       ],
       deeper: {
         title: 'Newcomers and Deccanis',
-        text: 'The Bahmani and later courts were split between two factions. The afaqis, newcomers from Persia, Central Asia and the Arab lands, brought trade, learning and often Shia Islam; the Deccanis were Muslims settled in the Deccan for generations, often allied with African-born nobles, the Habshis. Their rivalry ran through every court, sometimes as massacres. The sultanates themselves fought each other, made marriages and broke alliances, and joined Vijayanagara against each other as often as against it: a balance of power, a century before Europe gave the idea its name.',
+        text: 'The Bahmani and later courts were split between two factions. The afaqis, newcomers from Persia, Central Asia and the Arab lands, brought trade, learning and often Shia Islam; the Deccanis were Muslims settled in the Deccan for generations, often allied with African-born nobles, the Habshis. Their rivalry ran through every court, sometimes as massacres. The sultanates themselves fought each other, made marriages and broke alliances, and joined Vijayanagara against each other as often as against it: a balance of power, long before the phrase was common in Europe.',
       },
     },
     {
@@ -111,7 +111,7 @@ export const deccan: RouteDef = {
       ],
       deeper: {
         title: 'Why Talikota was decisive',
-        text: 'Vijayanagara had lost battles before and recovered. This time its capital lay open behind its army, and the victors took it apart. Historians give several reasons for the defeat: the sultans’ artillery and mounted archers, the capture of Rama Raya in the middle of the battle, and, by some accounts, two Muslim commanders in his own army who changed sides. Older histories told it as a war of faiths; most historians now see politics first. Rama Raya had meddled in the sultanates’ wars for years, and Vijayanagara and the sultanates had fought side by side as often as against each other.',
+        text: 'Vijayanagara had lost battles before and recovered. This time its capital lay open behind its army, and the victors took it apart. Historians give several reasons for the defeat. The sultans had better artillery and mounted archers, and Rama Raya was captured in the middle of the battle. By some accounts, two Muslim commanders in his own army changed sides. Older histories told it as a war of faiths; most historians now see politics first. Rama Raya had meddled in the sultanates’ wars for years, and Vijayanagara and the sultanates had fought side by side as often as against each other.',
       },
     },
     {
