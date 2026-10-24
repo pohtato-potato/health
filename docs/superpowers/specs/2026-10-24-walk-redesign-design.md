@@ -54,7 +54,7 @@ One scroll, no sub-tabs. Tapping Today's walk opens this tab (Today's full-scree
 
 - **Stretches.** One to two weeks long (about 100 km at the default pace), each ending where the land changes. Naming starts from Agra. Each has a storybook name, the plain route, and a long page: history, politics, people and land, written for a political-science reader, from every side. A stretch's end is a half-screen sheet on the next open.
 - **Chapters step back.** They show only on the map and at a chapter's end (the chapter film).
-- **Small stops.** Six kinds, each with a word and a mark: River, Border, Food, Fort and palace, Wildlife, Strange but true. They follow the land, but never more than about three days apart. Each has three to five facts, shown one at a time ("1 of 4"), and appears as a status line on the day you reach it. A wildlife stop shows its creature (Today's Warli-star drawing) if you've found it, or a blank star outline if not.
+- **Small stops.** Six kinds, each with a word and a mark: River, Border, Food, Forts and temples, Wildlife, Strange but true. They follow the land, but never more than about three days apart. Each has three to five facts, shown one at a time ("1 of 4"), and appears as a status line on the day you reach it. A wildlife stop shows its creature (Today's Warli-star drawing) if you've found it, or a blank star outline if not.
 - **People met** on the road appear as a status line on the days you meet them.
 - **Height above sea level** shows on every arrival, as on Indian railway station boards.
 - **Writing.** All of chapter 1's stretches and small stops are written, with sources, before their part ships.
