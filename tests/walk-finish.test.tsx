@@ -31,7 +31,8 @@ describe('a moment that waited', () => {
   it('becomes a banner item in words', () => {
     expect(laterItem('walk-later:2026-03-02:/arrive?c=Agra&ch=1')).toMatchObject({ what: 'You reached Agra', open: '/arrive?c=Agra&ch=1', kind: 'walk' });
     expect(laterItem('walk-later:2026-03-02:/arrive?s=Rajasthan')?.what).toBe('You walked into Rajasthan');
-    expect(laterItem('walk-later:2026-03-02:/finish?id=dandi')).toMatchObject({ what: 'You finished The Dandi March', routeId: 'dandi' });
+    expect(laterItem('walk-later:2026-03-02:/finish?id=dandi')).toMatchObject({ what: 'You finished The Dandi March', routeId: 'dandi', open: '/finish?id=dandi' });
+    expect(laterItem('walk-later:2026-03-02:/arrive?c=Kanyakumari&ch=1&end=1')?.what).toBe('You reached Kanyakumari: chapter 1 is done');
     expect(laterItem('walk-news:dandi:10')).toBeUndefined();
   });
 });

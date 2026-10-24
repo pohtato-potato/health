@@ -83,8 +83,9 @@ export function laterItem(id: string): NewsItem | undefined {
   const q = new URLSearchParams(path.split('?')[1] ?? '');
   if (path.startsWith('/finish')) {
     const def = routeById(q.get('id') ?? '');
-    return def ? { key: id, what: `You finished ${def.name}`, open: `/route?id=${def.id}`, routeId: def.id, kind: kindOf(def) } : undefined;
+    return def ? { key: id, what: `You finished ${def.name}`, open: path, routeId: def.id, kind: kindOf(def) } : undefined;
   }
+  if (q.get('c') && q.get('end')) return { key: id, what: `You reached ${q.get('c')}: chapter ${q.get('ch')} is done`, open: path, kind: 'walk' };
   if (q.get('c')) return { key: id, what: `You reached ${q.get('c')}`, open: path, kind: 'walk' };
   if (q.get('s')) return { key: id, what: `You walked into ${q.get('s')}`, open: path, kind: 'walk' };
   return undefined;

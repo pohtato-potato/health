@@ -6,7 +6,8 @@ import { CHAPTERS, arrivals, chapterAt, kmFromSteps } from '../domain/walk';
 import { arrivalToPlay, canPlayArrivalAt, stateLineToPlay } from '../walk/arrivals';
 import { routeById } from '../walk/catalogue';
 import { planWalkMoments, type MomentCandidate } from '../walk/moments';
-import { routeKm } from '../walk/runs';
+import { finishedOn, routeKm } from '../walk/runs';
+import { markRouteDone } from '../db/walkRoutes';
 import { bump } from '../db/actions';
 import { db } from '../db/db';
 import { useAllDays, useAllSets, useEntriesBetween, useMeasurements, useSessions, useSettings, useToday } from '../db/hooks';
@@ -63,7 +64,10 @@ export function CelebrationWatcher() {
   const seen = useLiveQuery(async () => new Set((await db.seen.toArray()).map((x) => x.id)), []);
   const runs = useLiveQuery(() => db.routes.toArray(), []);
   // A moment that waited on another page plays when you come back to Today or the Walk tab.
-  const path = useRoute().path;
+  const route = useRoute();
+  const path = route.path;
+  // …and when a sheet closes over Today or the Walk tab.
+  const sheet = route.params.get('sheet');
   const queued = useRef(new Set<string>());
 
   useEffect(() => {
@@ -205,11 +209,17 @@ export function CelebrationWatcher() {
       const candidates: MomentCandidate[] = [];
       for (const run of runs) {
         const def = routeById(run.id);
-        if (def && (run.doneOn || routeKm(run, def, steps) >= def.km) && !seenNow.has(`walk-finish:${def.id}`)) candidates.push({ kind: 'finish', key: `walk-finish:${def.id}`, path: `/finish?id=${def.id}` });
+        if (!def || !(run.doneOn || routeKm(run, def, steps) >= def.km)) continue;
+        // Written as soon as it's seen, whether its moment plays or waits, so a later stride never unfinishes it.
+        if (!run.doneOn) void markRouteDone(def.id, finishedOn(run, def, steps) ?? today);
+        if (!seenNow.has(`walk-finish:${def.id}`)) candidates.push({ kind: 'finish', key: `walk-finish:${def.id}`, path: `/finish?id=${def.id}` });
       }
       if (play.city) {
         const a = arrivals(steps).find((x) => x.name === play.city!.name && x.chapter === play.city!.chapter)!;
         const ended = CHAPTERS.find((c) => c.end === a.km);
+        // A chapter's end counts towards its achievements whether its moment plays or waits.
+        if (ended?.n === 2) void bump('quad-done');
+        if (ended?.n === 3) void bump('states-36');
         candidates.push({ kind: 'arrival', key: play.city.key, path: `/arrive?c=${encodeURIComponent(a.name)}&ch=${a.chapter}${ended ? '&end=1' : ''}` });
         // A state line crossed in the same save is stamped quietly; the city's arrival shows the state.
         if (line.key) mark(line.key);
@@ -226,8 +236,6 @@ export function CelebrationWatcher() {
           'Round the Golden Quadrilateral and back to Chennai: Kolkata, Delhi and Mumbai along the way. Chapter 2 is done.',
           'Every state and every territory of India, the islands included. The whole map is yours.',
         ][ended.n - 1];
-        if (ended.n === 2) void bump('quad-done');
-        if (ended.n === 3) void bump('states-36');
         show({ kind: 'milestone', key: `chapter:${ended.n}`, value: fmtInt(a.km), unit: 'km', title: `${a.name}.`, text, voice: 'postcard' });
       } else if (openPath) go(openPath, Object.fromEntries(q));
     }
@@ -265,7 +273,7 @@ export function CelebrationWatcher() {
     if ((settings.medRewards ?? DEFAULT_MED_REWARDS).keptWeek && today <= addDays(ws, 2) && keptWeek(settings.checklist, days, settings, lastWs)) {
       push({ kind: 'golden', key: `keptweek:${lastWs}`, kicker: 'A kept week', place: `Week of ${fmtDayMonth(lastWs)}`, title: 'Every dose on time', text: 'Seven days, and every dose within the hour. That is the quiet kind of discipline.' });
     }
-  }, [settings, days, week, sessions, sets, measurements, seen, runs, path, today, ws, show, toast]);
+  }, [settings, days, week, sessions, sets, measurements, seen, runs, path, sheet, today, ws, show, toast]);
 
   return null;
 }

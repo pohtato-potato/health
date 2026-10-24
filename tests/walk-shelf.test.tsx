@@ -21,18 +21,11 @@ describe('the visa', () => {
       expect(px).toBeGreaterThanOrEqual(20);
       expect(px).toBeLessThanOrEqual(40);
       expect(html).toMatch(/class="walk-visa-mark"><path d="M/);
-      for (const m of html.matchAll(/font-size="(\d+)"/g)) expect(Number(m[1])).toBeGreaterThanOrEqual(14);
+      for (const m of html.matchAll(/font-size="(\d+)"/g)) expect(Number(m[1]) * (VISA_PX / viewW)).toBeGreaterThanOrEqual(14);
     });
 
   it('names the expedition on its rim', () => {
     expect(renderToStaticMarkup(<Visa def={byId('xuanzang')} />)).toContain('EXPEDITION VISA');
-  });
-
-  it('fits the longest name by shrinking, never cutting it', () => {
-    const longest = [...CATALOGUE].sort((a, b) => b.name.length - a.name.length)[0];
-    const html = renderToStaticMarkup(<Visa def={longest} />);
-    expect(html).toContain(`>${longest.name.toUpperCase().replace(/'/g, '&#x27;')}</text>`);
-    expect(html).toMatch(/textLength="\d+"/);
   });
 
   it('carries a gold exit stamp once finished', () => {
@@ -86,3 +79,18 @@ describe('the shelf', () => {
     });
   });
 });
+
+describe('long names on the visa', () => {
+  // Serif capitals run about 0.67 of their size wide.
+  const widthOf = (text: string, size: number) => text.length * size * 0.67;
+  for (const def of CATALOGUE)
+    it(`writes ${def.name} on at most two lines, squeezed no more than 15%`, () => {
+      const html = renderToStaticMarkup(<Visa def={def} />);
+      const lines = [...html.matchAll(/<text[^>]*class="walk-visa-name"[^>]*font-size="(\d+)"(?:[^>]*textLength="(\d+)")?[^>]*>([^<]+)<\/text>/g)];
+      expect(lines.length).toBeGreaterThanOrEqual(1);
+      expect(lines.length).toBeLessThanOrEqual(2);
+      expect(lines.map((l) => l[3]).join(' ').replace(/&#x27;/g, "'")).toBe(def.name.toUpperCase());
+      for (const [, size, fitTo, text] of lines) if (fitTo) expect(Number(fitTo) / widthOf(text.replace(/&#x27;/g, "'"), Number(size))).toBeGreaterThanOrEqual(0.85);
+    });
+});
+

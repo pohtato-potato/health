@@ -57,6 +57,7 @@ describe('walking a route, saved', () => {
     'refuses to rejoin a finished route',
     inCatalogue(async () => {
       await joinRoute('a', '2026-01-01');
+      await db.days.put({ date: '2026-01-10', steps: 200000 } as never);
       await markRouteDone('a', '2026-01-20');
       expect(await joinRoute('a', '2026-02-01')).toBe('finished');
       expect((await db.routes.get('a'))!.doneOn).toBe('2026-01-20');
@@ -108,6 +109,18 @@ describe('walking a route, saved', () => {
       expect((await db.routes.get('a'))!.story).toBe('story');
       await setRouteStory('missing', 'places');
       expect(await db.routes.get('missing')).toBeUndefined();
+    }),
+  );
+
+  it(
+    'never marks a route done that has not reached its length',
+    inCatalogue(async () => {
+      await joinRoute('a', '2026-01-01');
+      await markRouteDone('a', '2026-01-02');
+      expect((await db.routes.get('a'))!.doneOn).toBeUndefined();
+      await db.days.put({ date: '2026-01-01', steps: 200000 } as never);
+      await markRouteDone('a', '2026-01-02');
+      expect((await db.routes.get('a'))!.doneOn).toBe('2026-01-02');
     }),
   );
 });

@@ -72,10 +72,15 @@ export function pickRouteUp(id: string, today: DayKey): Promise<'picked up' | 'n
   });
 }
 
-/** Mark a route finished, on the day its finish moment was shown. */
-export async function markRouteDone(id: string, day: DayKey): Promise<void> {
-  const run = await db.routes.get(id);
-  if (run && !run.doneOn) await db.routes.put({ ...run, doneOn: day });
+/** Mark a route finished on a day, once it has really reached its length. Says whether it's finished. */
+export async function markRouteDone(id: string, day: DayKey): Promise<boolean> {
+  const [run, days] = await Promise.all([db.routes.get(id), db.days.toArray()]);
+  const def = routeById(id);
+  if (!run || !def) return false;
+  if (run.doneOn) return true;
+  if (routeKm(run, def, stepsByDay(days)) < def.km) return false;
+  await db.routes.put({ ...run, doneOn: day });
+  return true;
 }
 
 export async function setRouteTarget(id: string, day: DayKey | undefined): Promise<void> {

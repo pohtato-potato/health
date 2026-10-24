@@ -9,7 +9,7 @@ export const xuanzang: RouteDef = {
   id: 'xuanzang',
   name: "Xuanzang's road",
   era: '629–645',
-  hook: "A scholar slips a travel ban and walks to India's greatest university, and home.",
+  hook: "A scholar slips a travel ban and walks to India's most famous centre of learning, and home.",
   group: 'world',
   km: 17000,
   record: 'place',
@@ -64,7 +64,7 @@ export const xuanzang: RouteDef = {
   turn: 9420,
   signature: {
     title: 'The kingdoms of the Records',
-    note: 'His Great Tang Records describe some 110 kingdoms and lands. Twenty-four of them lie on your road; each one you reach goes in your book.',
+    note: 'His Great Tang Records describe more than a hundred kingdoms and lands he passed through. Twenty-four of them lie on your road; each one you reach goes in your book.',
     mark: 'seal',
     marks: [
       { km: 2490, name: 'Gaochang' },
@@ -139,8 +139,8 @@ export const xuanzang: RouteDef = {
     {
       km: 3680,
       title: 'The ice mountains',
-      line: 'Over the Tian Shan in snow, and many of the party do not survive.',
-      page: ['He crossed the Tian Shan by a glacier pass he called the Ice Mountain. His biography says many of his companions died of cold.', 'Which pass it was is still argued over: the Bedel pass is the usual answer, but some think the route ran further east.'],
+      line: 'Over the Tian Shan in snow, and not all of the party survive.',
+      page: ['He crossed the Tian Shan by a glacier pass he called the Ice Mountain. By his biography, three or four in ten of his companions died of hunger and cold.', 'Which pass it was is still argued over: the Bedel pass is the usual answer, but some think the route ran further east.'],
     },
     {
       km: 4060,
@@ -196,7 +196,7 @@ export const xuanzang: RouteDef = {
       line: 'Through the places where the Buddha lived, many of them already ruins.',
       page: [
         'He walked through the sites of the Buddha’s life: Sravasti, Kushinagar, the deer park outside Varanasi, Vaishali. He recorded what stood at each, and how far each lay from the last.',
-        'Twelve centuries later, after his Records were translated into French in 1853, Alexander Cunningham used them as a field guide to find and identify many of these sites, among them Sravasti, Vaishali and Nalanda.',
+        'Twelve centuries later, after Stanislas Julien translated his biography and then his Records into French in the 1850s, Alexander Cunningham used them as a field guide to find and identify many of these sites, among them Sravasti, Vaishali and Nalanda.',
       ],
       deeper: {
         title: 'A monk’s book as an archaeologist’s map',
@@ -206,7 +206,7 @@ export const xuanzang: RouteDef = {
     {
       km: 9420,
       title: 'Nalanda',
-      line: 'Nalanda at last, the greatest university of its age.',
+      line: 'Nalanda at last, the great monastery-university of Magadha.',
       page: [
         'At Nalanda, in Magadha, he studied under its aged head, Silabhadra, the leading teacher of the school of thought he had come for.',
         'Sources give his stay there as anything from two to five years. He also travelled widely in India, as far south as the Pallava country, before he turned for home.',
@@ -276,6 +276,7 @@ export const xuanzang: RouteDef = {
     { title: 'Facts and Details: Xuanzang in India', url: 'https://factsanddetails.com/china/cat2/4sub8/entry-5453.html' },
     { title: 'Harappa.com: Buddhist sites and Cunningham', url: 'https://www.harappa.com/photo-archaeology/buddhist-sites.html' },
     { title: 'Wikipedia: Tang campaign against Karakhoja', url: 'https://en.wikipedia.org/wiki/Tang_campaign_against_Karakhoja' },
+    { title: 'Wikipedia: Nalanda mahavihara', url: 'https://en.wikipedia.org/wiki/Nalanda_mahavihara' },
     { title: 'Wikipedia: Bedel Pass', url: 'https://en.wikipedia.org/wiki/Bedel_Pass' },
     { title: 'Wikipedia: Buddhas of Bamiyan', url: 'https://en.wikipedia.org/wiki/Buddhas_of_Bamiyan' },
   ],
