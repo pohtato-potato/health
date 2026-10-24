@@ -13,7 +13,7 @@ import { useAllDays, useAllSets, useEntriesBetween, useMeasurements, useSessions
 import { goldenMoments } from '../domain/golden';
 import { useMoments, type MomentData } from '../ui/Moments';
 import { useToast } from '../ui/Toasts';
-import { go } from '../router';
+import { go, useRoute } from '../router';
 import { checklistSlots, dayRings, stepStreakFor, targetsFor, weeksFor } from './derived';
 import { DEFAULT_MED_REWARDS, keptWeek } from '../domain/medicines';
 
@@ -62,6 +62,8 @@ export function CelebrationWatcher() {
   const measurements = useMeasurements();
   const seen = useLiveQuery(async () => new Set((await db.seen.toArray()).map((x) => x.id)), []);
   const runs = useLiveQuery(() => db.routes.toArray(), []);
+  // A moment that waited on another page plays when you come back to Today or the Walk tab.
+  const path = useRoute().path;
   const queued = useRef(new Set<string>());
 
   useEffect(() => {
@@ -214,7 +216,7 @@ export function CelebrationWatcher() {
       } else if (line.state && line.key) candidates.push({ kind: 'state', key: line.key, path: `/arrive?s=${encodeURIComponent(line.state)}` });
       const plan = planWalkMoments(candidates, seenNow, today);
       plan.seen.forEach(mark);
-      const [path, query = ''] = (plan.open ?? '').split('?');
+      const [openPath, query = ''] = (plan.open ?? '').split('?');
       const q = new URLSearchParams(query);
       if (q.get('end')) {
         const a = arrivals(steps).find((x) => x.name === q.get('c') && x.chapter === Number(q.get('ch')))!;
@@ -227,7 +229,7 @@ export function CelebrationWatcher() {
         if (ended.n === 2) void bump('quad-done');
         if (ended.n === 3) void bump('states-36');
         show({ kind: 'milestone', key: `chapter:${ended.n}`, value: fmtInt(a.km), unit: 'km', title: `${a.name}.`, text, voice: 'postcard' });
-      } else if (path) go(path, Object.fromEntries(q));
+      } else if (openPath) go(openPath, Object.fromEntries(q));
     }
 
     // Reveal day: once, on the goal date or the first open after it.
@@ -263,7 +265,7 @@ export function CelebrationWatcher() {
     if ((settings.medRewards ?? DEFAULT_MED_REWARDS).keptWeek && today <= addDays(ws, 2) && keptWeek(settings.checklist, days, settings, lastWs)) {
       push({ kind: 'golden', key: `keptweek:${lastWs}`, kicker: 'A kept week', place: `Week of ${fmtDayMonth(lastWs)}`, title: 'Every dose on time', text: 'Seven days, and every dose within the hour. That is the quiet kind of discipline.' });
     }
-  }, [settings, days, week, sessions, sets, measurements, seen, runs, today, ws, show, toast]);
+  }, [settings, days, week, sessions, sets, measurements, seen, runs, path, today, ws, show, toast]);
 
   return null;
 }

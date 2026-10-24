@@ -75,3 +75,26 @@ describe('the route page', () => {
     expect(renderToStaticMarkup(<NotOnShelf onShelf={none} />)).toContain('This route isn’t on the shelf');
   });
 });
+
+describe('the route map’s names', async () => {
+  const { RouteMap } = await import('../src/walk/ui/RouteMap');
+  it('keeps names from piling up: the ends and the turn always, others where there’s room', () => {
+    const html = renderToStaticMarkup(<RouteMap id="xuanzang" km={0} width={328} />);
+    const names = [...html.matchAll(/class="walk-map-name"[^>]*>([^<]+)</g)].map((m) => m[1]);
+    const labelled = byId('xuanzang').places.filter((p) => p.label).length;
+    expect(names).toEqual(expect.arrayContaining(['Chang&#x27;an', 'Nalanda']));
+    expect(names.length).toBeLessThan(labelled);
+    expect(html.match(/class="walk-map-place"/g)?.length).toBe(labelled);
+  });
+});
+
+describe('the places list', () => {
+  it('shows the places around you, with the rest a tap away', () => {
+    const html = view(byId('xuanzang'), run('xuanzang'), 5200);
+    const shown = html.match(/<ol class="walk-halts">([\s\S]*?)<\/ol>/)![1].match(/<li/g)!.length;
+    expect(shown).toBeLessThanOrEqual(9);
+    expect(html).toContain(`>Show all ${byId('xuanzang').places.length} places<`);
+    expect(html).toContain('>Samarkand<');
+    expect(html).toContain('Next · ');
+  });
+});

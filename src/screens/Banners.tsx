@@ -51,7 +51,7 @@ export function Banners() {
   const [dismissed, setDismissed] = useState(readDismissed);
   // The banner chosen on load is held until the next load, so the page never moves while you read.
   const held = useRef<string | null | undefined>(undefined);
-  if (!settings || !days || !checkins || recapNote === undefined || !usage) return null;
+  if (!settings || !days || !checkins || recapNote === undefined || !usage || !news) return null;
   const recapReady = !recapNote?.recapSeenAt && weekday(dayKey()) <= 2 && days.some((d) => d.date >= lastWeek && d.date <= addDays(lastWeek, 6));
   const today = dayKey();
   const lastCheck = checkins.map((c) => c.date).sort().pop();

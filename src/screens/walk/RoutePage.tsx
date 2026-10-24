@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { daysBetween, type DayKey } from '../../domain/dates';
 import type { RouteRun } from '../../domain/types';
+import { Icon } from '../../ui/Icon';
 import { RECORD_NAMES, kindOf, type RouteDef } from '../../walk/catalogue';
 import { timeAtPace } from '../../walk/page';
 import { finishedOn, runState } from '../../walk/runs';
@@ -75,6 +76,7 @@ export function RoutePageView(p: {
   const { def, run, km } = p;
   const [deeper, setDeeper] = useState(false);
   const [spoil, setSpoil] = useState(false);
+  const [allPlaces, setAllPlaces] = useState(false);
   const kind = kindOf(def);
   const state = run ? runState(run, def, km) : undefined;
   const finished = state === 'finished';
@@ -94,6 +96,7 @@ export function RoutePageView(p: {
   return (
     <main className={`page walk3 walk-route${kind === 'expedition' ? ' exp' : ''}`} style={inkStyle(def.id)}>
       <button type="button" className="backlink" onClick={p.onBack}>
+        <Icon name="left" size={20} stroke={1.8} />
         Walk
       </button>
       <header className="walk-head">
@@ -216,6 +219,8 @@ export function RoutePageView(p: {
         <ol className="walk-halts">
           {def.places.map((x, i) => {
             const next = def.places.findIndex((y) => y.km > km);
+            const from = Math.max(0, (next < 0 ? def.places.length : next) - 3);
+            if (!allPlaces && def.places.length > 9 && (i < from || i >= from + 9)) return null;
             return (
               <li key={`${x.name}-${i}`} className={x.km <= km ? 'done' : i === next ? 'here' : ''}>
                 <span className="grow">{x.name}</span>
@@ -224,6 +229,11 @@ export function RoutePageView(p: {
             );
           })}
         </ol>
+        {def.places.length > 9 && (
+          <button type="button" className="walk-ghost" aria-expanded={allPlaces} onClick={() => setAllPlaces(!allPlaces)}>
+            {allPlaces ? 'Show the places near you' : `Show all ${def.places.length} places`}
+          </button>
+        )}
       </section>
 
       {def.chronicle && def.chronicle.length > 0 && (
@@ -232,7 +242,7 @@ export function RoutePageView(p: {
           <ol className="walk-chron">
             {def.chronicle.map((e) => (
               <li key={e.when + e.place}>
-                <span className="walk-kind">
+                <span className="walk-chron-when">
                   {e.when} · {e.place}
                 </span>
                 <span className="walk-para">{e.text}</span>
