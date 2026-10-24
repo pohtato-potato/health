@@ -1,0 +1,51 @@
+import type { RouteDef } from './types';
+import { dandi } from './routes/dandi';
+import { meerut } from './routes/meerut';
+import { kos } from './routes/kos';
+import { deccan } from './routes/deccan';
+import { shivaji } from './routes/shivaji';
+import { hadrian } from './routes/hadrian';
+import { tokaido } from './routes/tokaido';
+import { hannibal } from './routes/hannibal';
+import { sigeric } from './routes/sigeric';
+import { harold } from './routes/harold';
+import { piku } from './routes/piku';
+import { frodo } from './routes/frodo';
+import { rann } from './routes/rann';
+import { xuanzang } from './routes/xuanzang';
+import { gt } from './routes/gt';
+
+export * from './types';
+
+/** Every route, in shelf order. */
+const ALL: RouteDef[] = [dandi, meerut, kos, deccan, shivaji, hadrian, tokaido, hannibal, sigeric, harold, piku, frodo, rann, xuanzang, gt];
+
+let catalogue = ALL;
+
+/** Every route, in shelf order (read through this, so tests can swap in their own). */
+export const CATALOGUE: RouteDef[] = ALL;
+
+export function routeById(id: string): RouteDef | undefined {
+  return catalogue.find((r) => r.id === id);
+}
+
+/** The routes you can join: only those whose writing is done. */
+export function shelfRoutes(): RouteDef[] {
+  return catalogue.filter((r) => r.ready);
+}
+
+/** Up to 1,500 km is a challenge; longer routes are expeditions. */
+export function kindOf(def: Pick<RouteDef, 'km'>): 'challenge' | 'expedition' {
+  return def.km > 1500 ? 'expedition' : 'challenge';
+}
+
+/** Tests only: run `fn` with these routes in place of the catalogue. */
+export function withCatalogue<T>(defs: RouteDef[], fn: () => T): T {
+  const before = catalogue;
+  catalogue = defs;
+  try {
+    return fn();
+  } finally {
+    catalogue = before;
+  }
+}
