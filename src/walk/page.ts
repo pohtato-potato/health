@@ -1,7 +1,8 @@
 import type { DayKey } from '../domain/dates';
 import { fmtInt } from '../domain/format';
-import type { Day } from '../domain/types';
-import { kmFromSteps, positionAt } from '../domain/walk';
+import type { Day, Status } from '../domain/types';
+import { ALL_STOPS, crossings, kmFromSteps, positionAt } from '../domain/walk';
+import { inksFor, mix, type RegionId } from '../ui/light';
 import { HINDI } from './hindi';
 
 /** Within this many km of a place, you're near it. */
@@ -71,3 +72,46 @@ export function stoneFor(km: number): { name: string; hindi: string; km: number 
   return { name: pos.to.name, hindi: HINDI[pos.to.name] ?? pos.to.name, km: Math.ceil(pos.to.km - km) };
 }
 
+
+export interface StatusLine {
+  kind: 'arrival' | 'stop' | 'person' | 'rest';
+  text: string;
+}
+
+/** A rest or travel day, in kind words; nothing for an occasion or an ordinary day. */
+export function restLine(status: Status | undefined, near: string): string | undefined {
+  if (status === 'sick' || status === 'injured') return `Resting at camp outside ${near}. The road waits.`;
+  if (status === 'break') return `A day off at camp outside ${near}. The road waits.`;
+  if (status === 'travelling') return 'Travelling today. The road keeps your steps as usual.';
+  return undefined;
+}
+
+/** Up to three short lines under the title, each kind at most once: an arrival, a small stop, a person met, a rest day. */
+export function statusLines(i: { arrival?: string; stop?: string; person?: { name: string; who: string; line: string }; status?: Status; near: string }): StatusLine[] {
+  const out: StatusLine[] = [];
+  if (i.arrival) out.push({ kind: 'arrival', text: `Arrived in ${i.arrival} today.` });
+  if (i.stop) out.push({ kind: 'stop', text: i.stop });
+  if (i.person) out.push({ kind: 'person', text: `Met ${i.person.name}, ${i.person.who}. ${i.person.line}` });
+  const rest = restLine(i.status, i.near);
+  if (rest) out.push({ kind: 'rest', text: rest });
+  return out.slice(0, 3);
+}
+
+/** The last city first reached on this day, if any. */
+export function arrivedToday(stepsByDay: Map<DayKey, number>, today: DayKey): string | undefined {
+  const seen = new Set<string>();
+  const firsts = crossings(stepsByDay, ALL_STOPS).filter((s) => !seen.has(s.name) && seen.add(s.name));
+  return firsts.filter((s) => s.date === today).at(-1)?.name;
+}
+
+/** The night ground the aurora sits on. */
+const GROUND = '#0c0e1d';
+
+/**
+ * The aurora's colours for a region: its land ink sunk deep into the night. The accent glow stays the app's own
+ * (some regions' lightest inks are sandy golds, and gold is for what you earned).
+ */
+export function auroraFor(region: RegionId): { '--lv-a': string; '--lv-b': string } {
+  const [, land] = inksFor(region);
+  return { '--lv-a': mix(land, GROUND, 0.7), '--lv-b': mix(land, GROUND, 0.92) };
+}
