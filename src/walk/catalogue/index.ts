@@ -2,6 +2,7 @@ import type { RouteDef } from './types';
 import { dandi } from './routes/dandi';
 import { meerut } from './routes/meerut';
 import { kos } from './routes/kos';
+import { rani } from './routes/rani';
 import { deccan } from './routes/deccan';
 import { shivaji } from './routes/shivaji';
 import { hadrian } from './routes/hadrian';
@@ -18,7 +19,7 @@ import { gt } from './routes/gt';
 export * from './types';
 
 /** Every route, in shelf order. */
-const ALL: RouteDef[] = [dandi, meerut, kos, deccan, shivaji, hadrian, tokaido, hannibal, sigeric, harold, piku, frodo, rann, xuanzang, gt];
+const ALL: RouteDef[] = [shivaji, dandi, kos, rani, meerut, deccan, hadrian, tokaido, hannibal, sigeric, harold, piku, frodo, rann, xuanzang, gt];
 
 let catalogue = ALL;
 

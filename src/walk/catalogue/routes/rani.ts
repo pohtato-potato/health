@@ -1,0 +1,180 @@
+import type { RouteDef } from '../types';
+
+/**
+ * The Rani's last campaign, April to June 1858: out of besieged Jhansi to Kalpi, to the battle at Konch and back,
+ * across to Gwalior, and her death at Kotah-ki-Serai. Dated at its key points, estimated between them.
+ */
+export const rani: RouteDef = {
+  id: 'rani',
+  name: 'The Rani’s last campaign',
+  era: '1858',
+  hook: 'Out of besieged Jhansi on horseback, to Kalpi, to Gwalior, and her last battle.',
+  group: 'india',
+  km: 534,
+  record: 'dated',
+  region: 'india',
+  ink: '#d98aa8',
+  places: [
+    { name: 'Jhansi', km: 0, at: 0, label: true },
+    { name: 'Bhander', km: 44, at: 1 },
+    { name: 'Kalpi', km: 174, at: 2, label: true },
+    { name: 'Konch', km: 246, at: 3, label: true },
+    { name: 'Kalpi again', km: 319, at: 4 },
+    { name: 'Jalaun', km: 366, at: 5 },
+    { name: 'Gohad', km: 481, at: 6 },
+    { name: 'Gwalior', km: 523, at: 7, label: true },
+    { name: 'Kotah-ki-Serai', km: 534, at: 8 },
+  ],
+  signature: {
+    title: 'Battles and camps',
+    note: 'The places where the campaign camped or fought, each with its date.',
+    mark: 'shield',
+    marks: [
+      { km: 1, name: 'The fort wall, night of 3–4 April' },
+      { km: 44, name: 'Bhander, on the ride' },
+      { km: 174, name: 'Kalpi, 5 April' },
+      { km: 246, name: 'Konch, 7 May' },
+      { km: 319, name: 'Kalpi, 22 May' },
+      { km: 366, name: 'Jalaun' },
+      { km: 523, name: 'Gwalior, 1 June' },
+      { km: 534, name: 'Kotah-ki-Serai, 17 June' },
+    ],
+  },
+  then: { who: 'The Rani', totalDays: 75, places: [{ name: 'Kalpi', theirDay: 2 }, { name: 'Konch', theirDay: 34 }, { name: 'Gwalior', theirDay: 59 }, { name: 'Kotah-ki-Serai', theirDay: 75 }], source: 'Dated from the British and Indian records of the 1858 campaign; the days between are estimated.' },
+  pages: [
+    {
+      km: 0,
+      title: 'The fort wall',
+      line: 'Jhansi falls, and that night the Rani rides out of the fort.',
+      page: [
+        'Hugh Rose’s Central India Field Force besieged Jhansi from 22 March 1858. Early on 3 April his columns stormed the south wall, and by sunset they held the town. About 3,000 people were killed.',
+        'That night the Rani left the fort with about 300 soldiers, her adopted son Damodar Rao tied at her waist.',
+        'How she got out is told three ways: a leap on horseback from the wall, which is tradition; a horse smuggled to the fort; or a gap Rose left in his lines on purpose.',
+      ],
+    },
+    {
+      km: 44,
+      title: 'The night ride',
+      line: 'East through the night towards Kalpi, more than 160 km away.',
+      page: ['She rode for Kalpi, a rebel base on the Yamuna, about 164 km from Jhansi by the British record, and reached it around midnight on 5 April.'],
+    },
+    {
+      km: 110,
+      title: 'The lapse',
+      line: 'How Jhansi came to be taken from her in the first place.',
+      page: [
+        'Her husband, Gangadhar Rao, the raja of Jhansi, died on 21 November 1853, having adopted a young relative, Damodar Rao, as his heir.',
+        'The East India Company refused to recognise the adoption. Under Lord Dalhousie’s doctrine of lapse, Jhansi was annexed in 1854, and the Rani was given a pension of 5,000 rupees a month.',
+      ],
+      deeper: {
+        title: 'The doctrine of lapse',
+        text: 'Dalhousie’s rule was that a dependent Indian state whose ruler died without a natural heir passed to the Company, whatever the ruler’s own wishes. Adoption, long accepted in Hindu law and in the custom of these courts, was not enough. Satara, Nagpur and Jhansi were taken this way. To the Company it was tidy administration and more revenue; to the princes and their people it was a broken promise. Historians count it among the grievances that turned 1857 from a mutiny of soldiers into a wider rising.',
+      },
+    },
+    {
+      km: 174,
+      title: 'Kalpi',
+      line: 'At Kalpi the rebel armies gather, and Tatya Tope takes command.',
+      page: [
+        'At Kalpi the Rani joined Tatya Tope and Rao Sahib, nephew of the deposed Peshwa. By late April about 10,000 rebels were gathered there, with Tatya Tope in command.',
+        'Her father, Moropant Tambe, was captured near Jhansi and executed on 20 April.',
+      ],
+    },
+    {
+      km: 210,
+      title: 'Jhansi, 1857',
+      line: 'Looking back: what happened at Jhansi the summer before.',
+      page: [
+        'In June 1857 Jhansi’s garrison rose. On 8 June the British who had surrendered were led out to Jokhan Bagh and almost all of them killed, women and children among them.',
+        'Whether the Rani had any part in it is disputed: some accounts blame her, others say she had no control over the soldiers, and the British inquiry reached no clear finding. Afterwards she took charge of Jhansi and ruled it.',
+      ],
+      deeper: {
+        title: 'Mutiny, rebellion, or war of independence?',
+        text: 'British writers called 1857 the Mutiny, a revolt of soldiers. In 1909 V. D. Savarkar called it India’s First War of Independence, and the name stuck in India. Many historians now prefer “the rebellion” or “the uprising”: it began among sepoys, spread to peasants, landholders and dispossessed rulers like the Rani, and meant different things in different places, from restoring old kingdoms to settling local scores. Its violence ran both ways, and the British reprisals were on a far larger scale.',
+      },
+    },
+    {
+      km: 246,
+      title: 'Konch',
+      line: 'At Konch the rebels march out to stop Rose, and are beaten.',
+      page: ['On 7 May Rose defeated the rebel army under Tatya Tope and the Rani at Konch, on the road from Jhansi to Kalpi. The survivors fell back on Kalpi.'],
+    },
+    {
+      km: 280,
+      title: 'The hot weather',
+      line: 'May on the Bundelkhand plain, the hottest month of the year.',
+      page: ['The campaign was fought through the hot weather, when the plains of Bundelkhand are among the hottest places in India. Both armies marched and fought in it.'],
+    },
+    {
+      km: 319,
+      title: 'Kalpi falls',
+      line: 'Rose takes Kalpi, and the rebels slip away by night.',
+      page: ['On 22 May Rose attacked Kalpi and defeated the rebels again. They left that night, not to scatter, but to try something bolder.'],
+    },
+    {
+      km: 366,
+      title: 'Towards Gwalior',
+      line: 'West, towards the richest prize in central India.',
+      page: ['The plan was to take Gwalior, whose ruler, Jayajirao Scindia, had stayed loyal to the British. His army and his great fort would give the rebels a new base.'],
+    },
+    {
+      km: 420,
+      title: 'The gamble',
+      line: 'A rebel army marches on the Maharaja’s capital.',
+      page: ['It was a gamble. If Scindia’s troops fought for him, the rebels were finished; if they changed sides, the rebels would hold one of the strongest forts in India.'],
+    },
+    {
+      km: 481,
+      title: 'Gohad',
+      line: 'Near Gwalior, and Scindia’s army comes out to meet them.',
+      page: ['On 1 June Scindia’s army met the rebels outside Gwalior, and most of it went over to them. Scindia fled to the British at Agra.'],
+    },
+    {
+      km: 523,
+      title: 'Gwalior',
+      line: 'Gwalior is theirs, its fort and its treasury.',
+      page: [
+        'The rebels took the city, the fort and the treasury. On 3 June Rao Sahib held a durbar and was proclaimed the Peshwa’s representative. The Rani stayed away; by the accounts she urged them to prepare for Rose instead.',
+        'Rose marched on Gwalior and reached it on 16 June.',
+      ],
+    },
+    {
+      km: 534,
+      title: 'Kotah-ki-Serai',
+      line: 'Her last battle, a few kilometres from Gwalior.',
+      page: [
+        'On 17 June British cavalry charged the rebels at Kotah-ki-Serai, near Gwalior. The Rani was killed in the fighting. Some records give 18 June. How exactly she died is not known; every account agrees she died fighting.',
+        'Her followers are thought to have cremated her body. Rose took Gwalior on 19 June, and later wrote of her as the most dangerous of the rebel leaders.',
+        'Tatya Tope fought on for months before he was betrayed, captured and hanged at Shivpuri in April 1859.',
+      ],
+      deeper: {
+        title: 'The Rani and her legend',
+        text: 'Few records of the Rani in her own words survive, and much of what is told of her comes later. In the independence movement she became a symbol: Subhadra Kumari Chauhan’s Hindi poem Jhansi ki Rani is still learned in schools, and in 1943 Subhas Chandra Bose named the Indian National Army’s women’s regiment after her. Historians separate the record (her letters protesting the annexation, the campaign’s dates, British accounts of her courage) from the legend (the leap from the wall, the names of her horses). The record is remarkable enough on its own.',
+      },
+    },
+  ],
+  chronicle: [
+    { when: '21 November 1853', place: 'Jhansi', text: 'Gangadhar Rao dies; his adopted son is not recognised.' },
+    { when: 'May 1854', place: 'Jhansi', text: 'Jhansi is annexed under the doctrine of lapse.' },
+    { when: '8 June 1857', place: 'Jhansi', text: 'The British who surrendered are killed at Jokhan Bagh; her role is disputed.' },
+    { when: '22 March 1858', place: 'Jhansi', text: 'Hugh Rose begins the siege.' },
+    { when: '3–4 April', place: 'Jhansi', text: 'The town falls; that night she escapes.' },
+    { when: '5 April', place: 'Kalpi', text: 'Reaches Kalpi around midnight.' },
+    { when: '7 May', place: 'Konch', text: 'Defeated by Rose.' },
+    { when: '22 May', place: 'Kalpi', text: 'Kalpi falls; the rebels leave by night.' },
+    { when: '1 June', place: 'Gwalior', text: 'Scindia’s army goes over to the rebels.' },
+    { when: '17 June', place: 'Kotah-ki-Serai', text: 'She is killed in battle; some records give 18 June.' },
+    { when: '18 April 1859', place: 'Shivpuri', text: 'Tatya Tope is hanged.' },
+  ],
+  sources: [
+    { title: 'Wikipedia: Rani of Jhansi', url: 'https://en.wikipedia.org/wiki/Rani_of_Jhansi' },
+    { title: 'Wikipedia: Central Indian campaign of 1858', url: 'https://en.wikipedia.org/wiki/Central_Indian_campaign_of_1858' },
+    { title: 'Wikipedia: Siege of Jhansi', url: 'https://en.wikipedia.org/wiki/Siege_of_Jhansi' },
+    { title: 'Wikipedia: Timeline of the Indian Rebellion of 1857', url: 'https://en.wikipedia.org/wiki/Timeline_of_the_Indian_Rebellion_of_1857' },
+    { title: 'Britannica: Lakshmi Bai', url: 'https://www.britannica.com/biography/Lakshmi-Bai' },
+    { title: 'FIBIS: Battle of Kota-ki-Serai', url: 'https://wiki.fibis.org/w/Battle_of_Kota-ki-Serai' },
+    { title: 'Wikipedia: Tatya Tope', url: 'https://en.wikipedia.org/wiki/Tatya_Tope' },
+    { title: 'BiblioAsia: the Rani of Jhansi Regiment', url: 'https://biblioasia.nlb.gov.sg/vol-14/issue-1/apr-jun-2018/warrior-women-rani/' },
+  ],
+  ready: true,
+};
