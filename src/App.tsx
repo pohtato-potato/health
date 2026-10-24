@@ -11,6 +11,7 @@ import { useActiveSession, useNow, useSettings, useToday } from './db/hooks';
 import { clearParam, go, useRoute } from './router';
 import { TabBar } from './ui/TabBar';
 import { useToast } from './ui/Toasts';
+import { ShelfPage } from './screens/walk/ShelfPage';
 import { CelebrationWatcher } from './state/Celebrations';
 import { AchievementWatcher } from './state/Achievements';
 import { NotFound } from './screens/NotFound';
@@ -140,6 +141,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/stop': { el: () => <StopPage /> },
   '/arrive': { el: () => <ArrivalPage /> },
   '/passport': { el: () => <PassportPage /> },
+  '/routes': { el: () => <ShelfPage /> },
   '/diary': { el: () => <DiaryPage /> },
   '/departures': { el: () => <DeparturesPage /> },
   '/climate': { el: () => <ClimatePage /> },

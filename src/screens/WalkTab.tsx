@@ -100,7 +100,7 @@ export function WalkTab() {
           <section className="walk-section" aria-label="Challenges">
             <h2 className="walk-h2">Challenges</h2>
             {challenges.map((c) => (
-              <ChallengeCard key={c.run.id} id={c.run.id} km={c.km} state={c.state as 'walking' | 'set down'} line={c.line} target={c.target} onOpen={() => go('/walk')} />
+              <ChallengeCard key={c.run.id} id={c.run.id} km={c.km} state={c.state as 'walking' | 'set down'} line={c.line} target={c.target} onOpen={() => go('/route', { id: c.run.id })} />
             ))}
           </section>
         )}
@@ -108,10 +108,14 @@ export function WalkTab() {
           <section className="walk-section" aria-label="Expeditions">
             <h2 className="walk-h2">Expeditions</h2>
             {expeditions.map((e) => (
-              <ExpeditionLine key={e.run.id} id={e.run.id} km={e.km} state={e.state as 'walking' | 'set down'} onOpen={() => go('/walk')} />
+              <ExpeditionLine key={e.run.id} id={e.run.id} km={e.km} state={e.state as 'walking' | 'set down'} onOpen={() => go('/route', { id: e.run.id })} />
             ))}
           </section>
         )}
+
+        <button type="button" className="walk-ghost walk-find" onClick={() => go('/routes')}>
+          {walking.length ? 'Find another route' : 'Find a route to walk alongside'}
+        </button>
 
         <WalkDoors onGo={(path) => go(path)} />
       </div>
