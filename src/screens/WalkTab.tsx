@@ -2,7 +2,6 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { addDays, daysBetween } from '../domain/dates';
 import { fmtDayMonth, fmtInt } from '../domain/format';
-import { batteryMode } from '../domain/rest';
 import { seasonalThemeOn } from '../domain/themes';
 import { prefOn, type RouteRun } from '../domain/types';
 import { kmFromSteps } from '../domain/walk';
@@ -12,7 +11,6 @@ import { useAllDays, useDay, useSettings, useToday } from '../db/hooks';
 import { regionAt } from '../domain/regions';
 import { go } from '../router';
 import { Aurora } from '../ui/live/Aurora';
-import { useBatteryLevel } from '../ui/RestScreen';
 import type { Festive } from '../walk/art/festive';
 import { kindOf, routeById } from '../walk/catalogue';
 import { STOPS, STRETCHES } from '../walk/content';
@@ -40,7 +38,6 @@ export function WalkTab() {
   const settings = useSettings();
   const day = useDay(today);
   const runs = useLiveQuery(() => db.routes.toArray(), []);
-  const level = useBatteryLevel();
   const seenStretches = useLiveQuery(async () => new Set((await db.seen.where('id').startsWith('walk-stretch:').toArray()).map((s) => s.id)), []);
   const [showing, setShowing] = useState<{ done: Stretch; next?: Stretch }>();
   const news = useRoadNews();
@@ -60,7 +57,6 @@ export function WalkTab() {
   const near = nearestPlace(km);
   const dayN = daysBetween(journeyStart(settings, days), today) + 1;
   const { usualKm, bigKm } = usualAndBig(days, today);
-  const saver = batteryMode(level, !!settings.prefs.batterySaver);
   const festive = prefOn(settings.prefs, 'seasonal') ? (seasonalThemeOn(today, settings.birthday) as Festive | undefined) : undefined;
   // Someone met on the road shows for the day they were met and the day after, as steps are often logged late.
   const met = peopleMet(days.filter((d) => d.date <= today))
@@ -87,8 +83,8 @@ export function WalkTab() {
   const expeditions = walking.filter((w) => kindOf(w.def) === 'expedition');
 
   return (
-    <div className={`page lv lv-tab walk2${saver ? ' saver' : ''}`} style={auroraFor(regionAt(km)) as CSSProperties}>
-      <Aurora still={saver} />
+    <div className="page lv lv-tab walk2" style={auroraFor(regionAt(km)) as CSSProperties}>
+      <Aurora />
       <div className="walk2-col">
         <WalkTop km={km} todayKm={todayKm} stone={stoneFor(km)} festive={festive} onStrip={() => go('/map')} />
         {stretch ? (

@@ -220,10 +220,6 @@
 .lc-sets-row { min-height: 50px; font-size: 18px; border-bottom: 1px solid color-mix(in srgb, var(--text) 10%, transparent); }
 .lc-sets-row.now { font-weight: 600; }
 
-@media (prefers-reduced-motion: reduce) {
-  .lc-ripple, .blob, .wave, .lc-dust i, .lc-bloom, .lc-tempo-track i { animation: none !important; }
-  .lc .ring-fill { animation: none; stroke-dashoffset: var(--off); }
-}
 
 .lc-dev-sep { flex: none; width: 1px; margin: 4px 4px; background: color-mix(in srgb, var(--text) 25%, transparent); }
 
@@ -264,13 +260,6 @@
 .lc-bignums span { display: flex; flex-direction: column; gap: 2px; padding: 12px; border-radius: 18px; background: color-mix(in srgb, var(--c-b) 55%, transparent); border: 1px solid color-mix(in srgb, var(--text) 14%, transparent); }
 .lc-bignums b { font-family: var(--serif); font-size: 32px; font-weight: 400; }
 .lc-bignums small { font-size: 14px; color: color-mix(in srgb, var(--text) 72%, transparent); }
-.lc.rest-saver { background: #000; }
-.lc.rest-saver .lc-field { display: none; }
-.lc-saver .lc-rest-time { color: #d8d4e4; }
-.lc-saver-next { text-align: center; font-size: 18px; color: #d8d4e4; }
-.lc-saver-next b { font-weight: 600; }
-.lc.rest-saver .lc-primary.rest { background: #2a2f55; color: #ede6da; }
-.lc.rest-saver .lc-ghost { background: transparent; }
 
 /* Finale */
 .lc-recs { display: flex; flex-direction: column; gap: 12px; }
@@ -289,9 +278,6 @@
 .lc .hdot.h-rest { background: var(--blue-soft); }
 .lc .hdot.h-between { background: color-mix(in srgb, var(--text) 30%, transparent); }
 
-@media (prefers-reduced-motion: reduce) {
-  .blob.b4, .lc-dim { animation: none !important; transition: none; }
-}
 
 /* Weight lettering in the tap space, like the side letter */
 .lc-bigkg { position: absolute; right: 16px; top: 16px; font-family: var(--serif); font-size: 104px; line-height: 1; color: var(--text); opacity: 0.2; pointer-events: none; font-variant-numeric: tabular-nums; }

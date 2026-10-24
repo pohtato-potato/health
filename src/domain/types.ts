@@ -147,8 +147,6 @@ export interface Prefs {
   goldRings?: boolean;
   /** Water tracking; the owner's starter turns it off. */
   water?: boolean;
-  /** Battery saver for sessions: true black, no animation, the dimmed rest screen. */
-  batterySaver?: boolean;
   /** Check-in photos shot in a mirror: flip them back so left stays left. */
   mirrorCheckIn?: boolean;
   /** Full-screen celebrations: records, firsts, perfect days. */
@@ -179,7 +177,6 @@ const PREF_DEFAULTS: Required<Prefs> = {
   freeMealSaveUp: false,
   goldRings: false,
   water: false,
-  batterySaver: false,
   mirrorCheckIn: false,
   moments: true,
   quietPublic: true,

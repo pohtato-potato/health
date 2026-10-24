@@ -11,7 +11,6 @@ interface Props {
   was?: { value: string; date: DayKey };
   song?: string;
   onGo: () => void;
-  saver: boolean;
 }
 
 /** Gold dust rising, slowly. */
@@ -28,8 +27,8 @@ function Dust({ n }: { n: number }) {
 /** A new record: the count in gold with a bloom, the old best, and the song that was playing. */
 export function RecordScreen(p: Props) {
   return (
-    <LiveFrame state="record" saver={p.saver} className="lv-record">
-      {!p.saver && <Dust n={18} />}
+    <LiveFrame state="record" className="lv-record">
+      <Dust n={18} />
       <div className="lv-record-in">
         <div className="lv-kicker gold">New record</div>
         <div className="lv-bloom num tn">{p.value}</div>

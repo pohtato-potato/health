@@ -12,7 +12,6 @@ interface Props {
   next: { label: string; kg: number | null; aim?: string; tempo: boolean; cue?: string } | null;
   onMore: () => void;
   onReady: () => void;
-  saver: boolean;
   rings: [string, string, string];
   /** The note kept on the exercise just done, for next time and the coach. */
   note?: string;
@@ -43,28 +42,8 @@ export function RestLive(p: Props) {
     </div>
   );
 
-  if (p.saver)
-    return (
-      <LiveFrame state="rest" saver className={`from-${p.from}`} style={style} top={p.top}>
-        <div className="lv-rest-time num tn" style={{ marginTop: 60 }}>
-          {mmss(left)}
-        </div>
-        {p.next && (
-          <div className="lv-saver-next">
-            Next: <b>{p.next.label}</b>
-            {p.next.kg !== null && <> · {p.next.kg} kg</>}
-          </div>
-        )}
-        {p.why && <div className="lv-saver-next" style={{ fontSize: 15 }}>{p.why}</div>}
-        <div className="lv-small" style={{ textAlign: 'center' }}>
-          Battery saver · no motion · the screen stays on
-        </div>
-        {foot}
-      </LiveFrame>
-    );
-
   return (
-    <LiveFrame state="rest" saver={false} className={`from-${p.from}`} style={style} top={p.top}>
+    <LiveFrame state="rest" className={`from-${p.from}`} style={style} top={p.top}>
       <div className="lv-rest-ring">
         <svg viewBox="0 0 260 260" width="250" height="250" aria-hidden="true">
           <circle cx="130" cy="130" r={R} className="track" />

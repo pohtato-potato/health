@@ -72,9 +72,4 @@ describe('part 4 review fixes', () => {
     expect(CITY_FACTS.Chandigarh.heightM).toBe(321);
     expect(CITY_FACTS.Belagavi.heightM).toBe(770);
   });
-
-  it('holds the counters still in battery saver', () => {
-    const a = arrivalFor('Agra', all, '2026-01-01')!;
-    expect(renderToStaticMarkup(<ArrivalView a={a} beat={2} still onNext={() => {}} onSkip={() => {}} />)).toContain(`>${a.steps.toLocaleString('en-IN')}<`);
-  });
 });

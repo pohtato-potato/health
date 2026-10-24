@@ -1053,22 +1053,6 @@ textarea.field {
   animation: ping 2.2s ease-out infinite;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .cf,
-  .ping,
-  .glow,
-  .tw,
-  .jig,
-  .resume .dot {
-    animation: none;
-  }
-  .sheet,
-  .toast,
-  .scrim,
-  .moment {
-    animation: none;
-  }
-}
 
 /* The weekly receipt: the one light moment in a dark app */
 .receipt {
@@ -1729,11 +1713,6 @@ textarea.field {
     opacity: 1;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .season .flame {
-    animation: none;
-  }
-}
 .theme-swatch {
   display: flex;
   width: 44px;
@@ -1804,11 +1783,6 @@ textarea.field {
 @keyframes blink {
   50% {
     opacity: 0.35;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .blink {
-    animation: none;
   }
 }
 

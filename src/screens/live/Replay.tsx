@@ -3,13 +3,11 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { useAllSets, useAllSetsWithSkips, useSessions, useSettings } from '../../db/hooks';
 import { RINGS } from '../../domain/liveLook';
-import { batteryMode } from '../../domain/rest';
 import { sessionQuality } from '../../domain/sessionQuality';
 import { withTrip } from '../../domain/trip';
 import { findSession } from '../../domain/plan';
 import { usualLength } from '../../domain/sessionEdges';
 import { go, useRoute } from '../../router';
-import { useBatteryLevel } from '../../ui/RestScreen';
 import { useLiveTheme } from '../../ui/live/useLiveTheme';
 import { finaleExtras, recordLines, recordPages } from '../SessionDone';
 import { finaleData } from './finaleData';
@@ -25,7 +23,6 @@ export function Replay() {
   const withSkips = useAllSetsWithSkips();
   const songs = useLiveQuery(() => db.songs.where('id').startsWith(`${id}:`).toArray(), [id]);
   const theme = useLiveTheme(settings);
-  const level = useBatteryLevel();
   const [step, setStep] = useState(1);
   if (!settings?.plan || !sessions || !sets || !withSkips || !songs) return <div className="page bare" />;
   const session = sessions.find((s) => s.id === id && s.status === 'done');
@@ -72,7 +69,6 @@ export function Replay() {
       onBack={done}
       onDiscard={done}
       onDone={done}
-      saver={batteryMode(level, !!settings.prefs.batterySaver)}
       rings={RINGS[theme]}
     />
   );

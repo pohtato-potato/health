@@ -55,4 +55,4 @@ The owner has about 40% vision loss and poor depth perception, and reads the pho
 - **Contrast.** WCAG AA is the minimum. A high-contrast option (Settings › Feel) brings quiet and dim text close to full brightness; new colours must stay legible with it on.
 - **Aim.** Anything tapped mid-set must be reachable without fine aim: 44 px targets at the least, set fields and the done dot bigger with larger text, and an option to enter every set with the big dial and chips.
 - **Depth.** Don't rely on shadows, blur or overlap to show what is on top or tappable; use borders, position and labels.
-- Reduced-motion support stays.
+- No reduced-motion or battery-saver variants: the owner doesn't want them (25 Oct 2026). Motion stays as designed.

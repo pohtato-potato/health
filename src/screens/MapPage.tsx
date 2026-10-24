@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { batteryMode } from '../domain/rest';
 import { hasReward } from '../domain/rewards';
 import { fmtInt } from '../domain/format';
 import { ALL_STATES, chapterAt, kmFromSteps, statesReached, strideM } from '../domain/walk';
 import { useAllDays, useSettings } from '../db/hooks';
 import { back } from '../router';
 import { Icon } from '../ui/Icon';
-import { useBatteryLevel } from '../ui/RestScreen';
 import { useUnlockedIds } from '../ui/Theme';
 import { STRETCHES } from '../walk/content';
 import { flyoverAllowed, flyoverBox, trailTo, type MapLevel } from '../walk/mapView';
@@ -18,7 +16,6 @@ import { IndiaMap, MAP_ASPECT, MapKey, MapLevels } from './walk/IndiaMap';
 /** How long the flyover lasts. */
 const FLY_MS = 15_000;
 
-const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /**
  * The map: the walk on a night map of India, opening on the stretch you're on, out to the chapter or all of India
@@ -30,25 +27,16 @@ export function MapPage() {
   const unlocked = useUnlockedIds();
   const [level, setLevel] = useState<MapLevel>('stretch');
   const [flyT, setFlyT] = useState<number>();
-  const battery = useBatteryLevel();
   const raf = useRef(0);
   const km = days ? kmFromSteps([...stepsByDay(days).values()].reduce((a, b) => a + b, 0)) : 0;
-  const canFly = !!settings && flyoverAllowed(km, reducedMotion() || batteryMode(battery, !!settings.prefs.batterySaver));
+  const canFly = flyoverAllowed(km);
   useEffect(() => () => cancelAnimationFrame(raf.current), []);
-  // Battery saver can come on mid-flight: the map goes still at once.
-  useEffect(() => {
-    if (!canFly) {
-      cancelAnimationFrame(raf.current);
-      setFlyT(undefined);
-    }
-  }, [canFly]);
   if (!settings || !days || !unlocked) return <div className="page" />;
 
   const ch = chapterAt(km);
   const reached = statesReached(km).map((s) => s.name);
   const nextState = ALL_STATES.find((s) => s.km > km && !reached.includes(s.name));
   const stretch = stretchAt(km, STRETCHES);
-  const still = reducedMotion() || batteryMode(battery, !!settings.prefs.batterySaver);
   const gold = hasReward(unlocked, 'A gold route on your map');
 
   const fly = () => {
@@ -67,7 +55,7 @@ export function MapPage() {
   };
 
   return (
-    <div className={`page walk3${still ? ' saver-still' : ''}`}>
+    <div className="page walk3">
       <button type="button" className="backlink" onClick={() => back('/walk')}>
         <Icon name="left" size={20} stroke={1.8} />
         Walk

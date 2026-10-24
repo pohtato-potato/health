@@ -49,8 +49,8 @@ export function trailLegs(km: number): { points: Pt[]; sea: boolean }[] {
   return legs;
 }
 
-/** The flyover needs a trail to fly along, and motion allowed (not reduced motion, not battery saver). */
-export const flyoverAllowed = (km: number, still: boolean) => !still && trailTo(km).length > 1;
+/** The flyover needs a trail to fly along. */
+export const flyoverAllowed = (km: number) => trailTo(km).length > 1;
 
 /** The rest of the chapter from where you are, leg by leg; a leg to a stop reached by boat is a sea leg. */
 export function roadAhead(km: number): { points: Pt[]; sea: boolean }[] {

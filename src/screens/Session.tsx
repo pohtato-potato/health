@@ -36,7 +36,6 @@ import { flagEvents, nextUp, pendingSwaps } from '../state/derived';
 import { clock } from './NextUpCard';
 import { TempoCoach } from '../ui/TempoCoach';
 import { RestPill } from '../ui/RestPill';
-import { RestScreen } from '../ui/RestScreen';
 import { prefOn } from '../domain/types';
 import { askConfirm } from '../ui/Confirm';
 import { withTrip } from '../domain/trip';
@@ -99,10 +98,10 @@ const valueOf = valueOfSet;
 function Runner({ session, settings, plan, allSets }: { session: TrainingSession; settings: Settings; plan: PlanDef; allSets: SetEntry[] }) {
   const r = useRunner(session, settings, plan, allSets);
   if (session.view !== 'list') return <LiveSession r={r} session={session} settings={settings} plan={plan} />;
-  const { toast, now, exs, groups, mine, history, statuses, extra, setExtra, complete, gi, setGi, editing, setEditing, draft, setDraft, rest, restHidden, setRestHidden, saver, watch, setWatch, swapFor, setSwapFor, coach, setCoach, group, rows, current, activeKey, extendRest, stopRest, defaults, kgEditable, save, skip, undoSkip, remove, toggleTempo, finish, def, firstIdx, restLeft, nextGroup, groupDone, tired, offerFor, answer } = r;
+  const { toast, now, exs, groups, mine, history, statuses, extra, setExtra, complete, gi, setGi, editing, setEditing, draft, setDraft, rest, watch, setWatch, swapFor, setSwapFor, coach, setCoach, group, rows, current, activeKey, extendRest, stopRest, defaults, kgEditable, save, skip, undoSkip, remove, toggleTempo, finish, def, firstIdx, restLeft, nextGroup, groupDone, tired, offerFor, answer } = r;
 
   return (
-    <div className={`page bare${saver ? ' saver' : ''}`} style={{ gap: 16, paddingTop: 'calc(14px + var(--safe-top))' }}>
+    <div className="page bare" style={{ gap: 16, paddingTop: 'calc(14px + var(--safe-top))' }}>
       <div className="row">
         <button type="button" className="icon-btn" aria-label="Minimise session" onClick={() => go('/today')}>
           <Icon name="down" size={22} />
@@ -313,8 +312,6 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
           </div>
         );
       })}
-
-      {rest && restLeft > 0 && saver && !restHidden && <RestScreen endsAt={rest.endsAt} total={rest.total} onEndNow={stopRest} onHide={() => setRestHidden(true)} />}
 
       {rest && restLeft > 0 && (
         <div className="restdock">

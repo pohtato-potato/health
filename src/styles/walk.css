@@ -28,10 +28,9 @@
 /* The walked part is its own line (it draws itself from the start; its width is set in map units by the component). */
 @keyframes walk-draw { from { stroke-dashoffset: 1; } }
 @keyframes walk-breathe { 0%, 100% { opacity: 0.55; transform: scale(1); } 50% { opacity: 0; transform: scale(1.9); } }
-@media (prefers-reduced-motion: no-preference) {
-  .walk-art-walked { animation: walk-draw 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both; }
-  .walk-halo { animation: walk-breathe 2.6s ease-in-out infinite; }
-}
+.walk-art-walked { animation: walk-draw 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both; }
+.walk-halo { animation: walk-breathe 2.6s ease-in-out infinite; }
+
 
 /* The Walk tab (part 2): one column on the aurora, the scene edge to edge at the top. */
 .walk2 { --walk-glass: color-mix(in srgb, #0c0e1d 50%, transparent); --walk-edge: color-mix(in srgb, var(--text) 18%, transparent); flex-direction: column; }
@@ -182,25 +181,21 @@
 @keyframes walk-sweep { from { background-position: 120% 0; } to { background-position: -40% 0; } }
 @keyframes walk-ring { 0% { opacity: 0.8; transform: scale(0.6); } 100% { opacity: 0; transform: scale(2.4); } }
 @keyframes walk-slam-c { 0% { opacity: 0; transform: translateY(-50%) scale(1.9) rotate(-14deg); } 60% { opacity: 1; transform: translateY(-50%) scale(0.95) rotate(-6deg); } 100% { transform: translateY(-50%) scale(1) rotate(-6deg); } }
-@media (prefers-reduced-motion: no-preference) {
-  .walk-arr-scene svg { animation: walk-kenburns 7s ease-out both; transform-origin: 70% 45%; }
-  .walk-arr-sweep { animation: walk-sweep 2.6s ease-in-out 0.4s both; }
-  .walk-arr-kick { animation: walk-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both; }
-  .walk-arr-name span { animation: walk-letter 0.9s cubic-bezier(0.16, 1, 0.3, 1) both; }
-  .walk-arr-rule { animation: walk-rule 0.9s cubic-bezier(0.16, 1, 0.3, 1) 1.4s both; }
-  .walk-arr-head .walk-arr-sub, .walk-arr-board { animation: walk-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 1.6s both; }
-  .walk-prints g { animation: walk-fade 0.5s ease both; }
-  .walk-arr.b2 .walk-arr-over { animation: walk-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both; }
-  .walk-zoom-cam { animation: walk-cam 2.2s cubic-bezier(0.65, 0, 0.35, 1) 0.2s both; }
-  .walk-race .runner { animation: walk-run var(--d) cubic-bezier(0.45, 0, 0.2, 1) 0.4s both; }
-  .walk-race .fill { animation: walk-bar var(--d) cubic-bezier(0.45, 0, 0.2, 1) 0.4s both; }
-  .walk-race li { animation: walk-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
-  .walk-arr-stamp { animation: walk-slam-c 0.62s cubic-bezier(0.3, 1.4, 0.5, 1) 0.5s both; }
-  .walk-arr-ring { animation: walk-ring 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.92s both; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .walk-arr-col, .walk-arr-head { animation: walk-fade 0.4s ease both; }
-}
+.walk-arr-scene svg { animation: walk-kenburns 7s ease-out both; transform-origin: 70% 45%; }
+.walk-arr-sweep { animation: walk-sweep 2.6s ease-in-out 0.4s both; }
+.walk-arr-kick { animation: walk-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both; }
+.walk-arr-name span { animation: walk-letter 0.9s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.walk-arr-rule { animation: walk-rule 0.9s cubic-bezier(0.16, 1, 0.3, 1) 1.4s both; }
+.walk-arr-head .walk-arr-sub, .walk-arr-board { animation: walk-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 1.6s both; }
+.walk-prints g { animation: walk-fade 0.5s ease both; }
+.walk-arr.b2 .walk-arr-over { animation: walk-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both; }
+.walk-zoom-cam { animation: walk-cam 2.2s cubic-bezier(0.65, 0, 0.35, 1) 0.2s both; }
+.walk-race .runner { animation: walk-run var(--d) cubic-bezier(0.45, 0, 0.2, 1) 0.4s both; }
+.walk-race .fill { animation: walk-bar var(--d) cubic-bezier(0.45, 0, 0.2, 1) 0.4s both; }
+.walk-race li { animation: walk-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.walk-arr-stamp { animation: walk-slam-c 0.62s cubic-bezier(0.3, 1.4, 0.5, 1) 0.5s both; }
+.walk-arr-ring { animation: walk-ring 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.92s both; }
+
 
 /* Part 4: the passport booklet. */
 .walk-pp { display: flex; flex-direction: column; gap: 14px; }
@@ -281,9 +276,8 @@
 .walk-visa-exit circle { fill: color-mix(in srgb, var(--gold) 22%, #1a1408); stroke: var(--gold); stroke-width: 3; }
 .walk-visa-exit circle.in { fill: none; stroke-width: 1.2; }
 .walk-visa-exit text { fill: var(--gold); font-weight: 600; }
-@media (prefers-reduced-motion: no-preference) {
-  .walk-finish .walk-visa-exit { animation: walk-land 0.5s cubic-bezier(0.3, 1.4, 0.5, 1) 1.1s both; }
-}
+.walk-finish .walk-visa-exit { animation: walk-land 0.5s cubic-bezier(0.3, 1.4, 0.5, 1) 1.1s both; }
+
 .walk-choose { align-self: stretch; }
 .walk-find { align-self: stretch; }
 .walk-shelf-card .walk-rc-name { font-size: 22px; }
@@ -306,10 +300,9 @@
 .walk-chips button.on { background: color-mix(in srgb, var(--route-ink) 30%, transparent); border-color: var(--route-ink); font-weight: 600; }
 .walk-target { display: flex; flex-direction: column; gap: 6px; font-size: 15px; text-align: left; }
 .walk-target input { min-height: 48px; padding: 0 12px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--text) 30%, transparent); background: transparent; color: var(--text); font-size: 16px; color-scheme: dark; }
-@media (prefers-reduced-motion: no-preference) {
-  .walk-join-road { animation: walk-fade-in 1.2s ease both; }
-  .walk-join-visa { animation: walk-land 0.6s cubic-bezier(0.3, 1.3, 0.5, 1) 0.4s both; }
-}
+.walk-join-road { animation: walk-fade-in 1.2s ease both; }
+.walk-join-visa { animation: walk-land 0.6s cubic-bezier(0.3, 1.3, 0.5, 1) 0.4s both; }
+
 @keyframes walk-fade-in { from { opacity: 0; } }
 @keyframes walk-land { from { opacity: 0; transform: scale(1.3) rotate(-6deg); } to { transform: rotate(-3deg); } }
 .walk-route-kind { display: inline-flex; align-items: center; gap: 8px; color: var(--route-ink); }

@@ -28,7 +28,7 @@ const full: FinaleData = {
 };
 const at = (step: number, data = full, p: Partial<Parameters<typeof LiveFinale>[0]> = {}) =>
   renderToStaticMarkup(
-    <LiveFinale step={step} onStep={noop} data={data} flags={[{ id: 'knee', label: 'Knee' }, { id: 'back', label: 'Lower back' }]} picked={[]} onPick={noop} note="" onNote={noop} onSave={noop} saving={false} onBack={noop} onDiscard={noop} onDone={noop} saver={false} rings={['#111111', '#222222', '#333333']} {...p} />,
+    <LiveFinale step={step} onStep={noop} data={data} flags={[{ id: 'knee', label: 'Knee' }, { id: 'back', label: 'Lower back' }]} picked={[]} onPick={noop} note="" onNote={noop} onSave={noop} saving={false} onBack={noop} onDiscard={noop} onDone={noop} rings={['#111111', '#222222', '#333333']} {...p} />,
   );
 
 describe('which finale pages show', () => {
@@ -80,11 +80,6 @@ describe('the finale pages', () => {
     expect(h).toMatch(/class="lv [^"]*st-record/);
     expect(h).toContain('>19<');
     expect(h).toContain('Done');
-  });
-  it('is still in battery saver', () => {
-    const h = at(6, full, { saver: true });
-    expect(h).not.toContain('blob');
-    expect(h).not.toContain('lv-dust');
   });
   it('steps through only the pages that show', () => {
     expect(at(1, empty)).toContain('88 min');

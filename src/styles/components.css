@@ -307,18 +307,6 @@
   opacity: 0.88;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .wheel-row,
-  .check-box,
-  .check-tick,
-  .restpill-fill,
-  .story {
-    transition: none;
-  }
-  .story-body {
-    animation: none;
-  }
-}
 
 /* TimeTile: the tile and its wheels stack; the tile fills its column. */
 .timetile {
@@ -433,11 +421,6 @@
 .h3 {
   font-family: var(--serif);
   font-size: 20px;
-}
-@media (prefers-reduced-motion: reduce) {
-  .mealbox {
-    transition: none;
-  }
 }
 
 /* Protein spread: one bar split by meal. */
@@ -594,11 +577,6 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-@media (prefers-reduced-motion: reduce) {
-  .heavier-glow {
-    animation: none;
-  }
-}
 
 /* Set quality */
 .formchip.on {
@@ -628,7 +606,6 @@
   border: 1px solid var(--gold-border);
 }
 
-/* Rest: the dock and the battery saver's black screen. */
 .restdock {
   position: sticky;
   bottom: calc(12px + var(--safe-bottom));
@@ -655,16 +632,6 @@
   font-size: 96px;
   color: #6b6890;
   letter-spacing: -0.02em;
-}
-/* Battery saver: true black, nothing moving. */
-.page.saver {
-  background: #000;
-}
-.page.saver *,
-.page.saver *::before,
-.page.saver *::after {
-  animation: none !important;
-  transition: none !important;
 }
 
 /* Body map */
@@ -937,11 +904,10 @@
     transform: translateX(-420px);
   }
 }
-@media (prefers-reduced-motion: no-preference) {
-  .festive-drift {
-    animation: festive-drift 9s ease-in-out infinite alternate;
-  }
+.festive-drift {
+  animation: festive-drift 9s ease-in-out infinite alternate;
 }
+
 @keyframes festive-drift {
   to {
     transform: translate(6px, 10px);
@@ -971,11 +937,10 @@
   background: #fff4d6;
   box-shadow: 0 0 10px 2px rgba(242, 196, 109, 0.8);
 }
-@media (prefers-reduced-motion: no-preference) {
-  .first-rays {
-    animation: first-spin 40s linear infinite;
-  }
+.first-rays {
+  animation: first-spin 40s linear infinite;
 }
+
 @keyframes first-spin {
   to {
     transform: rotate(360deg);
@@ -987,15 +952,6 @@
   border-radius: 50%;
   background: radial-gradient(circle, #fff4d6 0%, #f2c46d 30%, rgba(242, 196, 109, 0) 70%);
   align-self: center;
-}
-@media (prefers-reduced-motion: reduce) {
-  .backdrop *,
-  .backdrop {
-    animation: none !important;
-  }
-  .backdrop .shoot {
-    opacity: 0.8;
-  }
 }
 
 .sky {
@@ -1133,11 +1089,6 @@
 }
 .film-foot {
   cursor: default;
-}
-@media (prefers-reduced-motion: reduce) {
-  .film {
-    transition: none;
-  }
 }
 
 /* Settings: three short parts (your plan, your data, the feel). */

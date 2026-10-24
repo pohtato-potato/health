@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { regionAt } from '../../domain/regions';
 import { ALL_STATES } from '../../domain/walk';
 import { useAllDays, useSettings } from '../../db/hooks';
-import { batteryMode } from '../../domain/rest';
-import { useBatteryLevel } from '../../ui/RestScreen';
 import { go, useRoute } from '../../router';
 import type { RegionId } from '../../ui/light';
 import { arrivalFor, passportCounts, passportPages } from '../../walk/arrivals';
@@ -30,13 +28,10 @@ export function ArrivalPage() {
   const days = useAllDays();
   const settings = useSettings();
   const [beat, setBeat] = useState(1);
-  const level = useBatteryLevel();
   if (!days || !settings) return <div className="page walk3" />;
   const steps = stepsByDay(days);
   const toWalk = () => go('/walk', undefined, { replace: true });
-  // Battery saver: still frames, nothing moving (the .page.saver rule stops every animation).
-  const saver = batteryMode(level, !!settings.prefs.batterySaver);
-  const wrap = `page walk3 walk-arr-page-wrap${saver ? ' saver' : ''}`;
+  const wrap = 'page walk3 walk-arr-page-wrap';
 
   const state = params.get('s');
   if (state) {
@@ -66,7 +61,7 @@ export function ArrivalPage() {
     );
   return (
     <div className={wrap}>
-      <ArrivalView a={a} beat={beat} still={saver} onNext={() => (beat >= 5 ? toWalk() : setBeat(beat + 1))} onSkip={toWalk} />
+      <ArrivalView a={a} beat={beat} onNext={() => (beat >= 5 ? toWalk() : setBeat(beat + 1))} onSkip={toWalk} />
     </div>
   );
 }

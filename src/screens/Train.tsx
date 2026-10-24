@@ -19,10 +19,8 @@ import { deloadCase } from '../domain/deload';
 import { placeFor } from '../domain/places';
 import { TRIP_SESSION_ID } from '../domain/trip';
 import { markSetsSkipped, patchSettings } from '../db/actions';
-import { batteryMode } from '../domain/rest';
 import { loadBlocks, plateChanges, usualLength } from '../domain/sessionEdges';
 import { filmDue, formFocus, fourWeeksAgo, heroFor, monthSoFar, tonight, trainGlow, volumeLine, weekVolume } from '../domain/trainView';
-import { useBatteryLevel } from '../ui/RestScreen';
 import { Aurora } from '../ui/live/Aurora';
 import { TonightCard, UpNextCard } from './train/Cards';
 import { BodyCard, FourWeeksCard, MonthCard, PlanCard, RecentCard, RecordsCard } from './train/Sections';
@@ -34,7 +32,6 @@ export function Train() {
   const sets = useAllSets();
   const days = useAllDays();
   const active = useActiveSession();
-  const level = useBatteryLevel();
   if (!settings || !sessions || !sets || !days || active === undefined) return <div className="page" />;
 
   const plan = settings.plan;
@@ -47,7 +44,6 @@ export function Train() {
     );
   }
 
-  const saver = batteryMode(level, !!settings.prefs.batterySaver);
   const up = nextUp(settings, sessions, sets, days);
   const weeks = weeksFor(settings, sessions, today, days);
   const done = doneSessions(sessions);
@@ -83,8 +79,8 @@ export function Train() {
   }
 
   return (
-    <div className={`page lv lv-tab st-${trainGlow(tn && { records: tn.records.length, checks: tn.checks, formAvg: tn.formAvg })}${saver ? ' saver' : ''}`}>
-      <Aurora still={saver} />
+    <div className={`page lv lv-tab st-${trainGlow(tn && { records: tn.records.length, checks: tn.checks, formAvg: tn.formAvg })}`}>
+      <Aurora />
       <div className="lv-tr-head">
         <h1 className="lv-h1">Train</h1>
         <div className="lv-tr-week" aria-label={`${Math.min(weeks.thisWeek, weeks.perWeek)} of ${weeks.perWeek} sessions this week`}>

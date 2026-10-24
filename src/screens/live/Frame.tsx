@@ -2,10 +2,10 @@ import type { CSSProperties, ReactNode } from 'react';
 import { Aurora } from '../../ui/live/Aurora';
 
 /** A live-session screen: the aurora behind, tinted by `state`, with the header on top. */
-export function LiveFrame({ state, saver, className = '', style, top, scroll, children }: { state: string; saver: boolean; className?: string; style?: CSSProperties; top?: ReactNode; scroll?: boolean; children: ReactNode }) {
+export function LiveFrame({ state, className = '', style, top, scroll, children }: { state: string; className?: string; style?: CSSProperties; top?: ReactNode; scroll?: boolean; children: ReactNode }) {
   return (
-    <div className={`lv st-${state}${saver ? ' saver' : ''}${className ? ` ${className}` : ''}`} style={style}>
-      <Aurora still={saver} />
+    <div className={`lv st-${state}${className ? ` ${className}` : ''}`} style={style}>
+      <Aurora />
       <div className="lv-body">
         <section className={scroll ? 'lv-screen lv-scroll' : 'lv-screen'}>
           {top}

@@ -24,7 +24,6 @@ import { ThemeSheet, useUnlockedIds } from '../ui/Theme';
 import { PROJECT_INSTRUCTIONS, ReviewSheet } from './Review';
 import { themeById } from '../domain/themes';
 import { askConfirm } from '../ui/Confirm';
-import { useBatteryLevel } from '../ui/RestScreen';
 import { setupGaps } from '../domain/setupCheck';
 import { saveAuditPack } from '../export/saveAuditPack';
 import { undoImport, undoOnOffer } from '../domain/planImport';
@@ -33,7 +32,6 @@ import { PlanImportSheet } from '../sheets/PlanImportSheet';
 type Editor = null | 'targets' | 'item' | 'homes' | 'you' | 'plates' | 'theme' | 'review';
 
 export function SettingsScreen() {
-  const battery = useBatteryLevel();
   const settings = useSettings();
   const today = useToday();
   const { params } = useRoute();
@@ -96,7 +94,7 @@ export function SettingsScreen() {
     export: `Audit pack · review day ${settings.reviewDay !== undefined ? ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][settings.reviewDay] : 'not set'}`,
     lastfm: settings.lastfm?.key ? `connected · ${settings.lastfm.users.length} user${settings.lastfm.users.length === 1 ? '' : 's'}` : 'not connected',
     storage: pwa.persisted ? 'protected' : 'not protected yet',
-    feel: `${prefOn(p, 'largeText') ? 'larger text' : 'standard text'}${prefOn(p, 'highContrast') ? ' · high contrast' : ''} · battery saver ${p.batterySaver ? 'on' : 'automatic below 30%'}`,
+    feel: `${prefOn(p, 'largeText') ? 'larger text' : 'standard text'}${prefOn(p, 'highContrast') ? ' · high contrast' : ''}`,
     home: 'shortcuts',
     privacy: `photos ${prefOn(p, 'blurPhotos') ? 'blurred' : 'shown'}${prefOn(p, 'lockPhotos') && settings.photoKey ? ' · locked' : ''}`,
   };
@@ -191,12 +189,6 @@ export function SettingsScreen() {
       </Group>
 
       <Group id="training" title="Training plan">
-        <SwitchRow
-          title="Battery saver for sessions"
-          sub={battery !== undefined ? `On by itself below 30%. The phone reports ${Math.round(battery * 100)}% now.` : "This browser doesn't report the battery, so switch it on by hand."}
-          checked={!!settings.prefs.batterySaver}
-          onChange={(v) => setPref('batterySaver', v)}
-        />
         <LinkRow
           title="Plan"
           sub={settings.plan ? `${settings.plan.sessions.length} sessions · ${settings.plan.flags.length} joint checks` : 'None yet'}
@@ -474,7 +466,7 @@ export function SettingsScreen() {
 
       <h2 className="settings-part">The feel</h2>
 
-      <Group id="feel" title="Battery saver and feel">
+      <Group id="feel" title="Feel">
         <SwitchRow title="Larger text" sub="Small labels and set inputs get bigger" checked={prefOn(p, 'largeText')} onChange={(v) => setPref('largeText', v)} />
         <SwitchRow title="High contrast" sub="Quiet text and borders close to full brightness" checked={prefOn(p, 'highContrast')} onChange={(v) => setPref('highContrast', v)} />
         <SwitchRow title="Big dials for every set" sub="Reps on a dial and loads as chips, no small fields to aim at" checked={prefOn(p, 'bigSetControls')} onChange={(v) => setPref('bigSetControls', v)} />

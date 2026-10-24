@@ -173,7 +173,7 @@ The world has a second register for celebration: full-screen moments, story card
 - Metric inks with fixed meaning; gold reserved for records and moments.
 - Every tappable control is a full pill or a softly rounded tile, at least 44px tall.
 - One phone column, 480px wide at most, with safe-area padding top and bottom.
-- Motion that settles (expo-out), all of it switched off under reduced motion and in battery saver.
+- Motion that settles (expo-out). There are no reduced-motion or battery-saver variants, at the owner's request (25 Oct 2026).
 
 ## Colors
 
@@ -322,7 +322,7 @@ The weekly receipt (mono on paper with a torn edge) and walk postcards (tilted p
 ### Named Rules
 **The Pill Rule.** Every tappable control is a pill or a rounded tile, and nothing tappable is shorter than 44px.
 
-**The Settle Rule.** Things arrive and settle: sheets rise in 0.24s on cubic-bezier(0.2, 0.8, 0.2, 1), toasts drop in 0.25s on the same curve, moments and stories ease in on cubic-bezier(0.16, 1, 0.3, 1), scrims fade in 0.18s. Under reduced motion every animation and transition is removed; battery saver goes true black and stops all motion.
+**The Settle Rule.** Things arrive and settle: sheets rise in 0.24s on cubic-bezier(0.2, 0.8, 0.2, 1), toasts drop in 0.25s on the same curve, moments and stories ease in on cubic-bezier(0.16, 1, 0.3, 1), scrims fade in 0.18s.
 
 ## Do's and Don'ts
 
@@ -331,7 +331,6 @@ The weekly receipt (mono on paper with a torn edge) and walk postcards (tilted p
 - **Do** bind a metric's colour to its metric token so theme days and night mode cannot change its meaning.
 - **Do** set result numbers in Fraunces 300 with lining figures, and entered or running numbers with tabular figures.
 - **Do** keep every tappable target at least 44px tall and shape it as a pill or rounded tile.
-- **Do** give every new animation a reduced-motion off switch, and keep it still in battery saver.
 - **Do** use the blue 2px outline (offset 2px) as the system focus ring, and the gold ring on custom instruments (wheel, dial, check, body map).
 - **Do** keep text at WCAG AA: moon text, quiet and dim pass on every surface; faint is for borders, locked states and large text only.
 

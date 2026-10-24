@@ -16,10 +16,9 @@ import { REGIONS } from '../../walk/geo';
 
 const fmt = (n: number) => Math.round(n).toLocaleString('en-IN');
 
-function useCount(to: number, ms = 1600, delay = 0, still = false) {
+function useCount(to: number, ms = 1600, delay = 0) {
   const [n, setN] = useState(to);
   useEffect(() => {
-    if (still || typeof matchMedia === 'undefined' || matchMedia('(prefers-reduced-motion: reduce)').matches) return setN(to);
     let raf = 0;
     let t0 = 0;
     const tick = (t: number) => {
@@ -31,15 +30,15 @@ function useCount(to: number, ms = 1600, delay = 0, still = false) {
     setN(0);
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [to, ms, delay, still]);
+  }, [to, ms, delay]);
   return n;
 }
 
-export function ArrivalView({ a, beat, onNext, onSkip, still = false }: { a: ArrivalInfo; beat: number; onNext: () => void; onSkip: () => void; still?: boolean }) {
+export function ArrivalView({ a, beat, onNext, onSkip }: { a: ArrivalInfo; beat: number; onNext: () => void; onSkip: () => void }) {
   let body: ReactNode;
   if (beat === 1) body = <Approach a={a} />;
-  else if (beat === 2) body = <Footprints a={a} still={still} />;
-  else if (beat === 3) body = <ZoomOut a={a} still={still} />;
+  else if (beat === 2) body = <Footprints a={a} />;
+  else if (beat === 3) body = <ZoomOut a={a} />;
   else if (beat === 4) body = <Race a={a} />;
   else body = <StampBeat a={a} />;
   return (
@@ -105,8 +104,8 @@ function Approach({ a }: { a: ArrivalInfo }) {
   );
 }
 
-function Footprints({ a, still }: { a: ArrivalInfo; still: boolean }) {
-  const steps = useCount(a.steps, 2600, 300, still);
+function Footprints({ a }: { a: ArrivalInfo }) {
+  const steps = useCount(a.steps, 2600, 300);
   const prints = Array.from({ length: 34 }, (_, i) => {
     const t = i / 33;
     const x = 180 + Math.sin(t * Math.PI * 2.2) * 90;
@@ -130,10 +129,10 @@ function Footprints({ a, still }: { a: ArrivalInfo; still: boolean }) {
   );
 }
 
-function ZoomOut({ a, still }: { a: ArrivalInfo; still: boolean }) {
+function ZoomOut({ a }: { a: ArrivalInfo }) {
   const india = REGIONS.india;
   const [gx, gy] = a.at;
-  const km = useCount(a.km, 1800, 1500, still);
+  const km = useCount(a.km, 1800, 1500);
   return (
     <div className="walk-arr-col">
       <svg className="walk-zoom" viewBox={india.box.join(' ')} role="img" aria-label={`India, with your trail from Delhi to ${a.name}`}>

@@ -24,7 +24,7 @@ Non-goals: no logging streak, no notifications, nothing rewards eating less, not
 
 ## Design language
 
-- **Living colour.** Every Walk screen sits on the aurora from Today and Train (`src/ui/live/Aurora.tsx`, `src/styles/live.css`), tinted by the region you're walking through. Battery saver is black and still; reduced motion replaces drift and drawing with fades; `html.contrast` reaches every colour through tokens.
+- **Living colour.** Every Walk screen sits on the aurora from Today and Train (`src/ui/live/Aurora.tsx`, `src/styles/live.css`), tinted by the region you're walking through. `html.contrast` reaches every colour through tokens.
 - **Each route has one ink,** set in its data. A route's ink tints its card glow, its border, its walked line, its banner and its joining page. **Never gold:** gold is only for records, finished routes' exit stamps and the top achievement.
 - **The map card** is the one look for challenge and shelf cards: the route's real land, framed to the route's own extent, with a glow in its ink behind it, the walked part bright and the rest dashed, an era stamp, and a ribbon for book routes. The poster, ticket and data-art looks were tried and discarded.
 - **Landmarks** are painted, layered silhouettes in the scene's four inks, seen along their setting (the Gwalior fort on its cliff is the standard). The same drawing is engraved on its passport stamp. **A mix, not a focus on religion:** places of worship are fine where they are a city's defining sight (Madurai, Bhubaneswar, Amritsar, Varanasi's ghats), but they stay a small share, and the writing about any place mixes its history, people, food and land rather than dwelling on faith. No deity motifs or emblems as ornament.
@@ -73,7 +73,6 @@ One scroll, no sub-tabs. Tapping Today's walk opens this tab (Today's full-scree
 - **Day one beside today** sits on the Footprints beat.
 - **One page per city:** the postcard, what to eat and hear, the land, the next stop. Buttons say where they go ("Passport", "Back to the walk").
 - **Arrival days** mark Today's walk caption with the stamp until midnight.
-- **Reduced motion** uses fades; **battery saver** uses still frames.
 
 ## The passport
 
@@ -250,7 +249,7 @@ Each part ships on its own, behind no flag, with its tests.
 - Pure rules test-first in `tests/walk-*.test.ts`: route km over spans, places taken, finished, marks reached, near/between, usual and big day, time at your pace, which arrivals play and which are quiet, the day's moment budget, banner gathering.
 - **Catalogue checks** for every route: places in order and within its length, at least one source, ink not gold, a line with at least two points, `then` only when `record` is not `none`, pages sorted by km.
 - Static render tests (`react-dom/server`) for the route page, joining page, banner and stamp against routes with and without content, including the longest name.
-- Browser checks at 360 px on the restored dev data for each part, with reduced motion and battery saver on and off.
+- Browser checks at 360 px on the restored dev data for each part.
 - Tests run under `TZ=UTC`.
 
 ## Open questions for the owner
@@ -277,6 +276,11 @@ Each part ships on its own, behind no flag, with its tests.
 4. **The Today branch** (`feat/today-page`) isn't merged into main yet, and part 0 builds on it. Merge it first, or build the walk on top and merge both together?
 5. **Re-walking a finished route:** allowed (a second run with its own visa), or a finished route stays finished?
 6. **The flyover** at 15 seconds: right length, or shorter?
+
+## Decided later (25 Oct)
+
+7. **No battery saver and no reduced-motion variants** anywhere in the app; the owner doesn't use them. Removed app-wide.
+8. **The Walk tab's scene is the approved painted frame** (mockup round 4, `walk-art/top-ravines.svg`), rebuilt per region; the earlier side-on scene stays for Today and the road pages only.
 
 ## Decided after review (24 Oct)
 

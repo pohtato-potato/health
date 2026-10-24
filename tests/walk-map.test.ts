@@ -81,10 +81,9 @@ describe('part 5 fixes: the map’s geometry', () => {
     expect(trailLegs(300).every((l) => !l.sea)).toBe(true);
   });
 
-  it('offers the flyover only with a trail to fly and when motion is allowed', async () => {
+  it('offers the flyover only with a trail to fly', async () => {
     const { flyoverAllowed } = await import('../src/walk/mapView');
-    expect(flyoverAllowed(0, false)).toBe(false);
-    expect(flyoverAllowed(300, false)).toBe(true);
-    expect(flyoverAllowed(300, true)).toBe(false);
+    expect(flyoverAllowed(0)).toBe(false);
+    expect(flyoverAllowed(300)).toBe(true);
   });
 });

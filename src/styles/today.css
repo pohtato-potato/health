@@ -89,7 +89,6 @@
 .td-hold { position: relative; overflow: hidden; isolation: isolate; }
 .td-hold-fill { position: absolute; inset: 0; z-index: -1; background: color-mix(in srgb, var(--sage) 45%, transparent); transform: scaleX(0); transform-origin: left; }
 .td-hold.holding .td-hold-fill { transform: scaleX(1); transition: transform 0.65s linear; }
-@media (prefers-reduced-motion: reduce) { .td-hold.holding .td-hold-fill { transition: none; } }
 
 /* The page leaves room at its foot so the handle never covers the last line. */
 .page.td-page { padding-bottom: calc(var(--tab-h) + var(--safe-bottom) + 104px); }
@@ -114,4 +113,3 @@
 .td-dtile b { font-family: var(--serif); font-weight: 400; font-size: 34px; line-height: 1; }
 .td-dtile span { font-size: 15px; }
 .td-dtile small { font-size: 14px; color: var(--quiet); }
-@media (prefers-reduced-motion: reduce) { .td-drawer { animation: none; } }
