@@ -11,7 +11,7 @@ export const rani: RouteDef = {
   hook: 'Out of besieged Jhansi on horseback, to Kalpi, to Gwalior, and her last battle.',
   group: 'india',
   km: 534,
-  record: 'dated',
+  record: 'estimated',
   region: 'india',
   ink: '#d98aa8',
   places: [

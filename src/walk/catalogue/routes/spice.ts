@@ -8,7 +8,7 @@ export const spice: RouteDef = {
   hook: 'Down the Malabar coast, where pepper drew Romans, Arabs, Chinese and Portuguese.',
   group: 'india',
   km: 282,
-  record: 'dated',
+  record: 'none',
   region: 'india',
   ink: '#7fc48a',
   places: [
