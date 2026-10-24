@@ -152,6 +152,51 @@ Sent 24 Oct as a third pinboard (private claude.ai Artifact, answers saved to it
 
 88 pins in ten lanes: whole You layouts and where the journey clock sits (10), what counts as due (10), each Track page top to bottom (12), where insights live (9), the weekly story card by card (12), the monthly ritual and report (10), Earned arranged (8), the year page (5), data trust (5), fresh ideas (7). Verdicts go here once answered.
 
+### Round 3 verdicts
+
+63 of 88 answered (54 pinned, 8 dropped, 1 maybe), with five notes. Left unanswered: the other three layouts, the small corner clock, Go to at the very top, each Track page's own list, most of the Earned details, the temperature blanket, three data-trust details.
+
+- **Layout:** pinned "profile on top, grid below", the journey clock as the header, an Insights door, and one name per page. On the clock as a grid tile: the clock should have a decently prominent place of its own, outside the grid.
+- **Due line:** pinned the check-in, the weekly story, the month report, backup, the data check-up, the year page and a near milestone. Dropped: appointments, refills, and "Nothing due" (the line can go when nothing is due).
+- **Track pages:** pinned the shared page shape and a sentence per tile on Tracks home.
+- **Insights:** pinned examples and saved questions in "ask your own data", record lines in the weekly story and on Today, odds on the weekly story's last card, Gremlin introducing reports with plain words below, "why did this change?" on any number, and "compared with your usual". Dropped the limit of three per page ("can have more, I don't mind").
+- **Weekly story:** pinned every card: tally, swing, food, sleep, training, the walk chapter, the best day, record lines, odds, the backup card and the cricket scorecard. The Screen Time-style lines are a maybe: "I like some character; plain is just okay." On the backup card: also an option to export the week to the trainer.
+- **Monthly:** pinned every step and section: the film, closing credits, the check-in steps, the assessment, the lab report rows, top fives, the sleep profile, a report card, the Claude review step and a full backup to finish.
+- **Earned:** pinned the proposed order. Dropped the transit map.
+- **Year page:** pinned the almanac tables, the most-of lists, the replay, and day one against today.
+- **Data trust:** pinned the check-up's list and seven daily snapshots.
+- **Fresh ideas:** pinned starter ideas for your own tracks, answers kept as cards, and this month against the same month last year. Gremlin's footnotes are pinned, but "it can be one of the things you said no to, I don't mind". Dropped the tide table, museum labels and the sealed lines on the anniversary.
+
+### Answers in the chat (24 Oct)
+
+1. **What You is opened for:** time pass; sometimes stats and trends; and motivation on a slow day, to see everything that has improved.
+2. **Pages never opened:** most of them have been debloated by now.
+
+### Decisions from round 3
+
+39. You is a profile on top and a fixed grid below. The journey clock is the header, prominent and outside the grid. An Insights door joins the grid. Every page has one name, used everywhere.
+40. The Due line shows: check-in due, weekly story ready, month report ready, backup days not saved, the data check-up, the year page, a milestone within reach. Appointments and refills stay out. With nothing due, the line goes.
+41. Every Track page follows the shared shape; Tracks home shows a sentence per tile. Each page's own views are the ones pinned in round 2 (decision 32).
+42. No cap on insights per page. "Ask your own data" has examples and saved questions, and an answer can be kept as a card. Record lines go in the weekly story and on Today; odds close the weekly story; "why did this change?" works on any number; big numbers say how they compare with your usual. Gremlin may open a report; numbers and insights below stay plain.
+43. The weekly story holds, in order: tally, swing, food, sleep, training, the walk chapter, the best day, record lines, the scorecard, next week's odds, and the backup card. Its lines may carry some character rather than staying strictly plain.
+44. The month report: the film with closing credits, the assessment with a report card, the lab report rows, top fives, the sleep profile. The ritual: photos, tape, t-shirt, your line, the report, the Claude review step, a full backup.
+45. Earned follows the proposed order: trophy case, this month's shelf, earlier shelves, firsts, milestones, night sky, then the records wall and achievements as doors.
+46. The year page: almanac tables, most-of lists, the replay, day one against today. Once there is a year of data, the month report adds the same month a year ago.
+47. The data check-up looks for empty days, double entries, a weight far off the trend, unfinished sessions, steps far above usual, and doses ticked twice. Seven daily snapshots are kept.
+48. Your own tracks start from a short list of ideas.
+49. Not doing: appointments or refills on the Due line, the transit map, the tide table, museum labels, sealed lines on the anniversary. Gremlin's footnotes are optional and the first to cut.
+
+### To settle
+
+- **Exporting the week to a trainer** (round 3 note) against round 2's removal of the coach export (decision 26). Round 4 offers a light version.
+- **The main job of You** is now known: stats and trends to pass the time, and seeing what has improved on a slow day. Round 4 is built around it.
+
+## Round 4
+
+Sent 24 Oct as a fourth, shorter pinboard (private claude.ai Artifact, answers saved to its `pins` collection): https://claude.ai/artifact/Q4g6fMX4FqqwAfVinPLytp
+
+42 pins in six lanes: a slow day on You (10), stats to browse (6), the week to your trainer (4), character in the words (4), loose ends (10), features for a slow day (8). After this round the scoping is written up as one brief for the design pass.
+
 ## Open questions
 
-From round 1's numbered list, still open: 1 (what You is opened for), 2 (pages never opened, partly answered), 3 (what's missing), 6 (where Medicines lives), 7 (the ritual in one sitting or over days), 9 (backup habits), 10 (settings changed), 15 (how much working), 19 (the step streak). The rest were settled by pins.
+Still open from round 1's list: 3 (what You is missing), 9 (backup habits), 10 (settings changed), 19 (the step streak; round 2 replaced it with habit strength on Steps, but Journey's other streaks are undecided). Medicines keeping a door on You as well as its Tracks tile is unanswered.
