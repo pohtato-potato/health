@@ -12,6 +12,9 @@ import { stretchAt } from '../walk/road';
 import { RouteSwitch } from '../walk/RouteSwitch';
 import { stepsByDay } from '../walk/runs';
 import { IndiaMap, MAP_ASPECT, MapKey, MapLevels } from './walk/IndiaMap';
+import { WalkFrame } from './walk/WalkFrame';
+import { auroraFor } from '../walk/page';
+import { regionAt } from '../domain/regions';
 
 /** How long the flyover lasts. */
 const FLY_MS = 15_000;
@@ -55,7 +58,7 @@ export function MapPage() {
   };
 
   return (
-    <div className="page walk3">
+    <WalkFrame tint={auroraFor(regionAt(km))}>
       <button type="button" className="backlink" onClick={() => back('/walk')}>
         <Icon name="left" size={20} stroke={1.8} />
         Walk
@@ -82,6 +85,6 @@ export function MapPage() {
       </p>
       <MapKey />
       <p className="walk-sub">Each step counts as {strideM().toFixed(2)} m (you can change it in Settings). Distances follow the highways, roughly. Islands are reached by sea.</p>
-    </div>
+    </WalkFrame>
   );
 }

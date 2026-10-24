@@ -2,7 +2,7 @@ import type { DayKey } from '../domain/dates';
 import { fmtInt } from '../domain/format';
 import type { Day, Status } from '../domain/types';
 import { ALL_STOPS, crossings, kmFromSteps, positionAt } from '../domain/walk';
-import { inksFor, mix, type RegionId } from '../ui/light';
+import { mix, type RegionId } from '../ui/light';
 import { STOP_WORDS, type SmallStop } from './content/types';
 import { HINDI } from './hindi';
 
@@ -125,10 +125,30 @@ export function nearestPlace(km: number): string {
 const GROUND = '#0c0e1d';
 
 /**
- * The aurora's colours for a region: its land ink sunk deep into the night. The accent glow stays the app's own
- * (some regions' lightest inks are sandy golds, and gold is for what you earned).
+ * The aurora for each region, as the approved board drew it: plum over the ravines, sea blue on the coast, green in
+ * the ghats, each deep but keeping its hue (a land ink sunk into the night turns muddy brown). The accent is the
+ * small warm light; never gold, which is for what you earned.
  */
-export function auroraFor(region: RegionId): { '--lv-a': string; '--lv-b': string } {
-  const [, land] = inksFor(region);
-  return { '--lv-a': mix(land, GROUND, 0.7), '--lv-b': mix(land, GROUND, 0.92) };
+const AURORA: Record<RegionId, [string, string]> = {
+  plains: ['#34385f', '#c9b8e8'],
+  desert: ['#55304a', '#e3a27c'],
+  ravines: ['#4a2a4f', '#e3a27c'],
+  deccan: ['#4a3156', '#e3a27c'],
+  ghats: ['#2f4a4a', '#a8d39a'],
+  coast: ['#263d63', '#9fd3e6'],
+  east: ['#2e4a48', '#a8d39a'],
+  northeast: ['#2a4a44', '#a8d39a'],
+  himalaya: ['#2c3966', '#c3d6f2'],
+};
+
+export type AuroraTint = { '--lv-a': string; '--lv-b': string; '--lv-accent': string };
+
+export function auroraFor(region: RegionId): AuroraTint {
+  const [a, accent] = AURORA[region];
+  return { '--lv-a': a, '--lv-b': GROUND, '--lv-accent': accent };
+}
+
+/** A route's pages take their aurora from the route's own ink, sunk deep into the night. */
+export function auroraForInk(ink: string): AuroraTint {
+  return { '--lv-a': mix(ink, GROUND, 0.7), '--lv-b': GROUND, '--lv-accent': ink };
 }

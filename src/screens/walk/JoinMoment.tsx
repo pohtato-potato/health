@@ -1,7 +1,7 @@
 import type { DayKey } from '../../domain/dates';
 import type { RouteRun } from '../../domain/types';
 import { RECORD_NAMES, kindOf, routeById, type RouteDef } from '../../walk/catalogue';
-import { timeAtPace } from '../../walk/page';
+import { auroraForInk, timeAtPace } from '../../walk/page';
 import { PLACES, runState } from '../../walk/runs';
 import { signatureOf } from '../../walk/signature';
 import { storyState } from '../../walk/story';
@@ -9,6 +9,7 @@ import { MarkShape } from '../../walk/ui/MarkShape';
 import { inkStyle } from '../../walk/ui/RouteArt';
 import { RouteMap } from '../../walk/ui/RouteMap';
 import { Visa } from './Visa';
+import { WalkFrame } from './WalkFrame';
 
 const fmt = (n: number) => Math.round(n).toLocaleString('en-IN');
 
@@ -41,19 +42,19 @@ export function JoinView(p: { def: RouteDef; runs: RouteRun[]; usualKm: number; 
   const run = p.runs.find((r) => r.id === def.id);
   if (!run)
     return (
-      <main className="walk-moment walk-join" style={inkStyle(def.id)}>
+      <WalkFrame as="main" className="walk-moment walk-join" tint={auroraForInk(def.ink)} style={inkStyle(def.id)}>
         <h1 className="walk-title">{def.name}</h1>
         <p className="walk-para">You haven’t joined this route.</p>
         <button type="button" className="walk-primary" onClick={p.onPage}>
           See its page
         </button>
-      </main>
+      </WalkFrame>
     );
   const expedition = kindOf(def) === 'expedition';
   const sig = signatureOf(def);
   const story = storyState(run, def);
   return (
-    <main className={`walk-moment walk-join${expedition ? ' exp' : ''}`} style={inkStyle(def.id)}>
+    <WalkFrame as="main" className={`walk-moment walk-join${expedition ? ' exp' : ''}`} tint={auroraForInk(def.ink)} style={inkStyle(def.id)}>
       <div className="walk-join-road" aria-hidden="true">
         <RouteMap id={def.id} km={0} />
       </div>
@@ -107,6 +108,6 @@ export function JoinView(p: { def: RouteDef; runs: RouteRun[]; usualKm: number; 
           </label>
         )}
       </div>
-    </main>
+    </WalkFrame>
   );
 }

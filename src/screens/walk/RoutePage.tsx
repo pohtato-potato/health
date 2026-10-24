@@ -14,6 +14,8 @@ import { RouteMap } from '../../walk/ui/RouteMap';
 import { endsOf } from './JoinMoment';
 import { TAKEN } from './Shelf';
 import { Sources } from './Sources';
+import { WalkFrame } from './WalkFrame';
+import { auroraFor, auroraForInk } from '../../walk/page';
 
 const fmt = (n: number) => Math.round(n).toLocaleString('en-IN');
 const KIND = { challenge: 'Challenge', expedition: 'Expedition' };
@@ -21,13 +23,13 @@ const KIND = { challenge: 'Challenge', expedition: 'Expedition' };
 /** A stale link, or a draft opened in a production build: said plainly. */
 export function NotOnShelf({ onShelf }: { onShelf: () => void }) {
   return (
-    <main className="page walk3">
+    <WalkFrame as="main" tint={auroraFor('plains')}>
       <h1 className="walk-title">This route isn’t on the shelf</h1>
       <p className="walk-para">It may still be being written, or the link is old.</p>
       <button type="button" className="walk-primary" onClick={onShelf}>
         See the routes
       </button>
-    </main>
+    </WalkFrame>
   );
 }
 
@@ -94,7 +96,7 @@ export function RoutePageView(p: {
   const yourDayAt = thenAt && run ? finishedOn(run, { km: def.places.find((x) => x.name === thenAt.name)!.km }, p.steps) : undefined;
 
   return (
-    <main className={`page walk3 walk-route${kind === 'expedition' ? ' exp' : ''}`} style={inkStyle(def.id)}>
+    <WalkFrame as="main" className={`walk-route${kind === 'expedition' ? ' exp' : ''}`} tint={auroraForInk(def.ink)} style={inkStyle(def.id)}>
       <button type="button" className="backlink" onClick={p.onBack}>
         <Icon name="left" size={20} stroke={1.8} />
         Walk
@@ -306,6 +308,6 @@ export function RoutePageView(p: {
         )}
       </div>
       {def.sources.length > 0 && <Sources sources={def.sources} />}
-    </main>
+    </WalkFrame>
   );
 }

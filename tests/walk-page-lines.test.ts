@@ -36,7 +36,7 @@ describe('status lines and the region’s light', () => {
       expect(luminance(t['--lv-a']), r).toBeLessThan(0.12);
       expect(goldish(t['--lv-a']), r).toBe(false);
       expect(t['--lv-b']).toMatch(/^#[0-9a-f]{6}$/);
-      expect(Object.keys(t)).not.toContain('--lv-accent');
+      expect(goldish(t['--lv-accent']), r).toBe(false);
     }
   });
 });

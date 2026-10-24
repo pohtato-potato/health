@@ -5,6 +5,8 @@ import { inkStyle } from '../../walk/ui/RouteArt';
 import { RouteMap } from '../../walk/ui/RouteMap';
 import { endsOf } from './JoinMoment';
 import { Visa } from './Visa';
+import { WalkFrame } from './WalkFrame';
+import { auroraForInk } from '../../walk/page';
 
 const fmt = (n: number) => Math.round(n).toLocaleString('en-IN');
 
@@ -13,7 +15,7 @@ export function FinishView({ def, doneOn, from, onPage, onClose }: { def: RouteD
   const days = daysBetween(from, doneOn) + 1;
   const sig = signatureOf(def);
   return (
-    <main className="walk-moment walk-finish" style={inkStyle(def.id)}>
+    <WalkFrame as="main" className="walk-moment walk-finish" tint={auroraForInk(def.ink)} style={inkStyle(def.id)}>
       <div className="walk-join-road done" aria-hidden="true">
         <RouteMap id={def.id} km={def.km} />
       </div>
@@ -33,6 +35,6 @@ export function FinishView({ def, doneOn, from, onPage, onClose }: { def: RouteD
           Back to the walk
         </button>
       </div>
-    </main>
+    </WalkFrame>
   );
 }

@@ -8,7 +8,10 @@ import { Icon } from '../../ui/Icon';
 import { Sheet } from '../../ui/Sheet';
 import { useToast } from '../../ui/Toasts';
 import { CATALOGUE, kindOf, type RouteDef } from '../../walk/catalogue';
-import { usualAndBig } from '../../walk/page';
+import { auroraFor, usualAndBig } from '../../walk/page';
+import { regionAt } from '../../domain/regions';
+import { kmFromSteps } from '../../domain/walk';
+import { WalkFrame } from './WalkFrame';
 import { placesFree, routeKm, stepsByDay } from '../../walk/runs';
 import { chooseForMe } from '../../walk/shelf';
 import { RouteSheetView, ShelfView, TAKEN } from './Shelf';
@@ -43,7 +46,7 @@ export function ShelfPage() {
   };
 
   return (
-    <div className="page walk3">
+    <WalkFrame tint={auroraFor(regionAt(kmFromSteps([...steps.values()].reduce((a, b) => a + b, 0))))}>
       <button type="button" className="backlink" onClick={() => back('/walk')}>
         <Icon name="left" size={20} stroke={1.8} />
         Walk
@@ -60,6 +63,6 @@ export function ShelfPage() {
           <RouteSheetView def={def} runs={runs} km={kmById.get(def.id) ?? 0} free={free} pinned={pins.has(def.id)} usualKm={usualKm} onJoin={() => void join(def)} onPage={() => (setOpen(undefined), go('/route', { id: def.id }))} onPin={() => pin(def.id)} />
         </Sheet>
       )}
-    </div>
+    </WalkFrame>
   );
 }
