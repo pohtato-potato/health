@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Scene } from '../../walk/art/scene';
 import { CITY_COUNT, type ArrivalInfo } from '../../walk/arrivals';
+import { CITY_FACTS } from '../../walk/content/cities';
 import { REGIONS } from '../../walk/geo';
 
 /**
@@ -15,10 +16,10 @@ import { REGIONS } from '../../walk/geo';
 
 const fmt = (n: number) => Math.round(n).toLocaleString('en-IN');
 
-function useCount(to: number, ms = 1600, delay = 0) {
+function useCount(to: number, ms = 1600, delay = 0, still = false) {
   const [n, setN] = useState(to);
   useEffect(() => {
-    if (typeof matchMedia === 'undefined' || matchMedia('(prefers-reduced-motion: reduce)').matches) return setN(to);
+    if (still || typeof matchMedia === 'undefined' || matchMedia('(prefers-reduced-motion: reduce)').matches) return setN(to);
     let raf = 0;
     let t0 = 0;
     const tick = (t: number) => {
@@ -30,15 +31,15 @@ function useCount(to: number, ms = 1600, delay = 0) {
     setN(0);
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [to, ms, delay]);
+  }, [to, ms, delay, still]);
   return n;
 }
 
-export function ArrivalView({ a, beat, onNext, onSkip }: { a: ArrivalInfo; beat: number; onNext: () => void; onSkip: () => void }) {
+export function ArrivalView({ a, beat, onNext, onSkip, still = false }: { a: ArrivalInfo; beat: number; onNext: () => void; onSkip: () => void; still?: boolean }) {
   let body: ReactNode;
   if (beat === 1) body = <Approach a={a} />;
-  else if (beat === 2) body = <Footprints a={a} />;
-  else if (beat === 3) body = <ZoomOut a={a} />;
+  else if (beat === 2) body = <Footprints a={a} still={still} />;
+  else if (beat === 3) body = <ZoomOut a={a} still={still} />;
   else if (beat === 4) body = <Race a={a} />;
   else body = <StampBeat a={a} />;
   return (
@@ -55,6 +56,16 @@ export function ArrivalView({ a, beat, onNext, onSkip }: { a: ArrivalInfo; beat:
         Skip
       </button>
       <p className="walk-arr-tap">
+        <button
+          type="button"
+          className="walk-arr-next"
+          onClick={(e) => {
+            e.stopPropagation();
+            onNext();
+          }}
+        >
+          {beat >= 5 ? 'Back to the walk' : 'Next'}
+        </button>
         <span className="walk-arr-dots" aria-hidden="true">
           {[1, 2, 3, 4, 5].map((i) => (
             <i key={i} className={i === beat ? 'on' : i < beat ? 'done' : ''} />
@@ -94,8 +105,8 @@ function Approach({ a }: { a: ArrivalInfo }) {
   );
 }
 
-function Footprints({ a }: { a: ArrivalInfo }) {
-  const steps = useCount(a.steps, 2600, 300);
+function Footprints({ a, still }: { a: ArrivalInfo; still: boolean }) {
+  const steps = useCount(a.steps, 2600, 300, still);
   const prints = Array.from({ length: 34 }, (_, i) => {
     const t = i / 33;
     const x = 180 + Math.sin(t * Math.PI * 2.2) * 90;
@@ -113,16 +124,16 @@ function Footprints({ a }: { a: ArrivalInfo }) {
       </svg>
       <div className="walk-arr-over">
         <p className="walk-arr-big">{fmt(steps)}</p>
-        <p className="walk-arr-sub">steps, from Delhi to {a.name}. Every one of them yours, taken at home, at the office, on the way.</p>
+        <p className="walk-arr-sub">steps, from Delhi{a.chapter > 1 ? ', and round again,' : ''} to {a.name}. Every one of them yours, taken at home, at the office, on the way.</p>
       </div>
     </div>
   );
 }
 
-function ZoomOut({ a }: { a: ArrivalInfo }) {
+function ZoomOut({ a, still }: { a: ArrivalInfo; still: boolean }) {
   const india = REGIONS.india;
   const [gx, gy] = a.at;
-  const km = useCount(a.km, 1800, 1500);
+  const km = useCount(a.km, 1800, 1500, still);
   return (
     <div className="walk-arr-col">
       <svg className="walk-zoom" viewBox={india.box.join(' ')} role="img" aria-label={`India, with your trail from Delhi to ${a.name}`}>
@@ -182,9 +193,9 @@ function Race({ a }: { a: ArrivalInfo }) {
 export function StampTemplate({ name, state, n, ut, date }: { name: string; state: string; n: number; ut: boolean; date?: string }) {
   const upper = name.toUpperCase();
   const fit = upper.length > 12 ? { textLength: 136, lengthAdjust: 'spacingAndGlyphs' as const } : {};
-  const kind = ut ? 'UNION TERRITORY' : state.length > 16 ? state.split(' ')[0].toUpperCase() : state.toUpperCase();
+  const kind = state.toUpperCase();
   return (
-    <svg className={`walk-stamp ${ut ? 'ut' : 'state'}`} viewBox="0 0 170 190" width="170" height="190" role="img" aria-label={`Passport stamp: arrived, ${name}, ${state}`}>
+    <svg className={`walk-stamp ${ut ? 'ut' : 'state'}`} viewBox="0 0 170 190" width="170" height="190" role="img" aria-label={`Passport stamp: arrived, ${name}, ${state}${date ? `, ${date}` : ''}`}>
       <rect x="3" y="3" width="164" height="184" rx={ut ? 2 : 6} fill="#eee8dc" />
       {ut ? (
         <>
@@ -204,14 +215,9 @@ export function StampTemplate({ name, state, n, ut, date }: { name: string; stat
       <text x="85" y="140" textAnchor="middle" fontFamily="Fraunces Variable, Georgia, serif" fontSize={upper.length > 9 ? 17 : 22} fill="#2a2620" {...fit}>
         {upper}
       </text>
-      <text x="85" y="160" textAnchor="middle" fontFamily="DM Mono" fontSize="13" fill="#2a2620" {...(kind.length > 16 ? { textLength: 136, lengthAdjust: 'spacingAndGlyphs' as const } : {})}>
+      <text x="85" y="160" textAnchor="middle" fontFamily="DM Mono" fontSize={kind.length > 20 ? 11 : 13} fill="#2a2620" {...(kind.length > 16 ? { textLength: 136, lengthAdjust: 'spacingAndGlyphs' as const } : {})}>
         {kind}
       </text>
-      {date && (
-        <text x="85" y="176" textAnchor="middle" fontFamily="DM Mono" fontSize="11" fill="#2a2620" aria-hidden="true">
-          {date}
-        </text>
-      )}
     </svg>
   );
 }
@@ -234,7 +240,7 @@ export function StateShape({ state, className }: { state: string; className?: st
 function StampBeat({ a }: { a: ArrivalInfo }) {
   return (
     <div className="walk-arr-col pad">
-      <div className={`walk-arr-page ${a.ut ? 'ut' : ''}`}>
+      <div className={`walk-arr-page ${a.ut ? 'ut' : ''}${a.state.length > 18 ? ' long' : ''}`}>
         <span className="walk-arr-page-head">
           <b>{a.state}</b>
           <small>{a.ut ? 'Union territory' : 'State'}</small>
@@ -267,16 +273,26 @@ export function StateLineView({ state, ut, counts, landFrom, landNow, onNext }: 
         <p className="walk-arr-sub">{landFrom === landNow ? `Still ${landNow}, as when you set off.` : `You set off on ${landFrom}. Now it’s ${landNow}.`}</p>
       </div>
       <p className="walk-arr-tap">
-        <span>Tap to go on</span>
+        <button
+          type="button"
+          className="walk-arr-next"
+          onClick={(e) => {
+            e.stopPropagation();
+            onNext();
+          }}
+        >
+          Back to the walk
+        </button>
       </p>
     </main>
   );
 }
 
-export function ArrivalFallback({ onBack }: { onBack: () => void }) {
+export function ArrivalFallback({ city, onBack }: { city?: string; onBack: () => void }) {
+  const onWalk = !!city && CITY_FACTS[city] !== undefined;
   return (
     <div className="walk-stop">
-      <h1 className="walk-title">That arrival isn't on the walk.</h1>
+      <h1 className="walk-title">{onWalk ? `You haven’t reached ${city} yet.` : 'That arrival isn’t on the walk.'}</h1>
       <button type="button" className="walk-ghost" onClick={onBack}>
         Back to the walk
       </button>

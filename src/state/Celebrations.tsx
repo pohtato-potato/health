@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import { addDays, dayRange, daysBetween, weekStart, type DayKey } from '../domain/dates';
 import { fmt1, fmtDayMonth, fmtInt, weekdayName } from '../domain/format';
 import { CHAPTERS, arrivals, chapterAt, kmFromSteps } from '../domain/walk';
-import { arrivalToPlay, stateLineToPlay } from '../walk/arrivals';
+import { arrivalToPlay, canPlayArrivalAt, stateLineToPlay } from '../walk/arrivals';
 import { bump } from '../db/actions';
 import { db } from '../db/db';
 import { useAllDays, useAllSets, useEntriesBetween, useMeasurements, useSessions, useSettings, useToday } from '../db/hooks';
@@ -185,9 +185,8 @@ export function CelebrationWatcher() {
     }
     // Arrivals: of the cities reached on a day saved today or yesterday, the farthest plays full screen and the rest
     // are stamped quietly; a chapter's end keeps its own moment. A new state line plays when no city does. They take
-    // over the screen only on Today or the Walk tab, where steps are saved; anywhere else they wait, unmarked.
-    const here = window.location.hash.replace(/^#/, '').split('?')[0] || '/today';
-    if (here === '/today' || here === '/walk') {
+    // over the screen only on Today or the Walk tab with no sheet open; anywhere else they wait, unmarked.
+    if (canPlayArrivalAt(window.location.hash)) {
       const seenNow = new Set([...seen, ...queued.current]);
       const play = arrivalToPlay(steps, today, seenNow);
       for (const key of [...play.quiet, ...(play.city ? [play.city.key] : [])]) {
@@ -208,8 +207,11 @@ export function CelebrationWatcher() {
           if (ended.n === 3) void bump('states-36');
           show({ kind: 'milestone', key: `chapter:${ended.n}`, value: fmtInt(a.km), unit: 'km', title: `${a.name}.`, text, voice: 'postcard' });
         } else go('/arrive', { c: a.name, ch: String(a.chapter) });
-        // A state line crossed the same day is stamped quietly; the city's arrival shows the state.
-        if (line.key) void db.seen.put({ id: line.key, at: Date.now() });
+        // A state line crossed in the same save is stamped quietly; the city's arrival shows the state.
+        if (line.key) {
+          queued.current.add(line.key);
+          void db.seen.put({ id: line.key, at: Date.now() });
+        }
       } else if (line.state && line.key) {
         queued.current.add(line.key);
         void db.seen.put({ id: line.key, at: Date.now() });

@@ -42,7 +42,7 @@ describe('the arrival on screen', () => {
     const ut = renderToStaticMarkup(<StampTemplate name="Delhi" state="Delhi" n={1} ut />);
     expect(state).toContain('walk-stamp state');
     expect(ut).toContain('walk-stamp ut');
-    expect(ut).toContain('UNION TERRITORY');
+    expect(ut).toContain('>DELHI<'); // a territory's stamp names it, like a state's
   });
 
   it('marks a state line with its count and how the land has changed', () => {

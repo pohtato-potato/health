@@ -27,10 +27,16 @@ export interface ArrivalInfo {
   reached: string[];
 }
 
-/** The state or territory you're in at this km. */
-function stateAt(km: number): { name: string; ut: boolean } {
-  const s = ALL_STATES.filter((x) => x.km <= km).at(-1) ?? ALL_STATES[0];
-  return { name: s.name, ut: !!s.ut };
+/** A city's state or territory. The walk re-enters some states, so this comes from the city, not the km. */
+function stateOf(city: string): { name: string; ut: boolean } {
+  const name = CITY_FACTS[city]?.state ?? 'Delhi';
+  return { name, ut: !!ALL_STATES.find((s) => s.name === name)?.ut };
+}
+
+/** Arrivals take over the screen only on Today or the Walk tab, and never over an open sheet (Steps, say). */
+export function canPlayArrivalAt(hash: string): boolean {
+  const [path, query = ''] = hash.replace(/^#/, '').split('?');
+  return (path === '' || path === '/today' || path === '/walk') && !new URLSearchParams(query).has('sheet');
 }
 
 const firstOf = <T extends { name: string }>(xs: T[]) => {
@@ -50,7 +56,7 @@ export function arrivalFor(name: string, stepsByDay: Map<DayKey, number>, startD
   const upTo = all.filter((x) => x.km <= a.km);
   const stopIndex = ALL_STOPS.findIndex((s) => s.km === a.km);
   const next = ALL_STOPS[stopIndex + 1];
-  const st = stateAt(a.km);
+  const st = stateOf(name);
   return {
     name,
     km: a.km,
@@ -104,7 +110,7 @@ export interface PassportPage {
 
 /** A page per state or territory reached, in order, with the cities first reached there. */
 export function passportPages(stepsByDay: Map<DayKey, number>): PassportPage[] {
-  const cities = firstOf(arrivals(stepsByDay)).map((c, i) => ({ ...c, n: i + 1, state: stateAt(c.km).name }));
+  const cities = firstOf(arrivals(stepsByDay)).map((c, i) => ({ ...c, n: i + 1, state: stateOf(c.name).name }));
   return firstOf(crossings(stepsByDay, ALL_STATES)).map((s) => ({
     state: s.name,
     ut: !!s.ut,

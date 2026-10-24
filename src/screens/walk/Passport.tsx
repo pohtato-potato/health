@@ -58,9 +58,14 @@ export function PassportView({ pages, startDay, onReplay }: { pages: PassportPag
                 {p.cities.map((c) => (
                   <div key={c.name} className="walk-pg-city">
                     <StampTemplate name={c.name} state={p.state} n={c.n} ut={p.ut} date={fmtDayMonth(c.date)} />
-                    <button type="button" className="walk-pg-replay" onClick={() => onReplay(c.name)}>
-                      Replay {c.name}
-                    </button>
+                    <span className="walk-pg-date">{fmtDayMonth(c.date)}</span>
+                    {c.n === 1 ? (
+                      <span className="walk-pg-note">Where the walk began</span>
+                    ) : (
+                      <button type="button" className="walk-pg-replay" onClick={() => onReplay(c.name)}>
+                        Replay {c.name}
+                      </button>
+                    )}
                   </div>
                 ))}
                 {!p.cities.length && <p className="walk-pg-note">No city on this road here, just the line on the map.</p>}

@@ -35,13 +35,19 @@ export function ArrivalPage() {
   const steps = stepsByDay(days);
   const toWalk = () => go('/walk', undefined, { replace: true });
   // Battery saver: still frames, nothing moving (the .page.saver rule stops every animation).
-  const wrap = `page walk3 walk-arr-page-wrap${batteryMode(level, !!settings.prefs.batterySaver) ? ' saver' : ''}`;
+  const saver = batteryMode(level, !!settings.prefs.batterySaver);
+  const wrap = `page walk3 walk-arr-page-wrap${saver ? ' saver' : ''}`;
 
   const state = params.get('s');
   if (state) {
     const pages = passportPages(steps);
     const i = pages.findIndex((p) => p.state === state);
-    if (i < 0) return <ArrivalFallback onBack={toWalk} />;
+    if (i < 0)
+      return (
+        <div className="page walk3">
+          <ArrivalFallback onBack={toWalk} />
+        </div>
+      );
     const km = ALL_STATES.find((s) => s.name === state)!.km;
     return (
       <div className={wrap}>
@@ -52,10 +58,15 @@ export function ArrivalPage() {
 
   const ch = params.get('ch');
   const a = arrivalFor(params.get('c') ?? '', steps, journeyStart(settings, days), ch ? Number(ch) : undefined);
-  if (!a) return <div className="page walk3"><ArrivalFallback onBack={toWalk} /></div>;
+  if (!a)
+    return (
+      <div className="page walk3">
+        <ArrivalFallback city={params.get('c') ?? undefined} onBack={toWalk} />
+      </div>
+    );
   return (
     <div className={wrap}>
-      <ArrivalView a={a} beat={beat} onNext={() => (beat >= 5 ? toWalk() : setBeat(beat + 1))} onSkip={toWalk} />
+      <ArrivalView a={a} beat={beat} still={saver} onNext={() => (beat >= 5 ? toWalk() : setBeat(beat + 1))} onSkip={toWalk} />
     </div>
   );
 }

@@ -24,7 +24,8 @@ describe('the passport', () => {
   it('stamps each city, states and territories differently, with a replay for each', () => {
     expect(html).toContain('walk-stamp ut'); // Delhi
     expect(html).toContain('walk-stamp state'); // Agra, Gwalior
-    for (const c of ['Delhi', 'Agra', 'Gwalior']) expect(html).toMatch(new RegExp(`<button[^>]*>Replay ${c}</button>`));
+    for (const c of ['Agra', 'Gwalior']) expect(html).toMatch(new RegExp(`<button[^>]*>Replay ${c}</button>`));
+    expect(html).not.toContain('Replay Delhi'); // the start has no arrival to replay
   });
 
   it('keeps a souvenir on each state page', () => {
