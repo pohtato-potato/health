@@ -234,3 +234,35 @@
 .walk-pg-date { position: relative; font-family: 'DM Mono', monospace; font-size: 14px; color: #2a2620; }
 .walk-arr-page.long { height: auto; min-height: 300px; padding-bottom: 210px; }
 .walk-arr-page.long .walk-arr-page-head b { font-size: 19px; }
+
+/* Part 5: the map. Night ground, the survey's graticule, states in their land's ink once walked into. */
+.walk-imap-wrap { margin: 0 -22px; border-radius: 0; overflow: hidden; background: #0b0d20; }
+.walk-imap { display: block; width: 100%; aspect-ratio: 328 / 380; height: auto; }
+.walk-imap-grat line { stroke: color-mix(in srgb, var(--pearl) 10%, transparent); stroke-width: 0.6; }
+.walk-imap-deg { font-family: 'DM Mono', monospace; fill: color-mix(in srgb, var(--pearl) 55%, transparent); }
+.walk-imap-near { fill: color-mix(in srgb, var(--text) 3%, transparent); stroke: color-mix(in srgb, var(--text) 12%, transparent); stroke-width: 0.6; }
+.walk-imap-land { fill: #151a3a; stroke: color-mix(in srgb, var(--pearl) 45%, transparent); stroke-width: 1.2; }
+.walk-map-state { fill: transparent; stroke: color-mix(in srgb, var(--pearl) 28%, transparent); stroke-width: 0.7; stroke-dasharray: 2 2; }
+.walk-map-state.on { stroke: color-mix(in srgb, var(--pearl) 60%, transparent); stroke-dasharray: none; }
+.walk-imap-road { fill: none; stroke: color-mix(in srgb, var(--text) 50%, transparent); stroke-width: 1.4; stroke-dasharray: 4 4; stroke-linecap: round; }
+.walk-imap-road.sea { stroke: color-mix(in srgb, var(--pearl) 60%, transparent); stroke-dasharray: 1 5; }
+.walk-imap-trail { fill: none; stroke: var(--sage); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 4px color-mix(in srgb, var(--sage) 60%, transparent)); }
+.walk-imap-trail.gold { stroke: var(--gold); }
+.walk-imap-statename { font-family: var(--serif); fill: var(--text); paint-order: stroke; stroke: #0b0d20; stroke-width: 3px; }
+.walk-imap-city, .walk-imap-place, .walk-imap-stopname { font-family: var(--sans); fill: var(--text); paint-order: stroke; stroke: #0b0d20; stroke-width: 3px; }
+.walk-imap-place { font-style: italic; fill: color-mix(in srgb, var(--text) 80%, transparent); }
+.walk-imap-stopname { fill: color-mix(in srgb, var(--sage) 85%, var(--text)); }
+.walk-imap-mark { fill: none; stroke: var(--text); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.walk-imap-mark.on { fill: var(--text); }
+.walk-imap-stop { fill: #0b0d20; stroke: var(--sage); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.walk-imap-stop.on { fill: var(--sage); }
+.walk-imap-you { fill: var(--text); stroke: var(--sage); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.walk-levels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.walk-levels button { min-height: 48px; padding: 0 8px; border-radius: 999px; font-size: 14px; color: var(--text); border: 1px solid color-mix(in srgb, var(--text) 25%, transparent); }
+.walk-levels button.on { background: var(--text); color: #0e1020; font-weight: 600; }
+.walk-map-key { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.walk-map-key li { display: flex; align-items: center; gap: 10px; }
+.walk-map-key i { flex: none; width: 28px; height: 0; border-top: 3px solid var(--sage); }
+.walk-map-key i.road { border-top: 2px dashed color-mix(in srgb, var(--text) 55%, transparent); }
+.walk-map-key i.sea { border-top: 2px dotted var(--pearl); }
+.walk-map-key i.state { height: 14px; border: 1px solid color-mix(in srgb, var(--pearl) 60%, transparent); background: color-mix(in srgb, #b77a5c 45%, transparent); }

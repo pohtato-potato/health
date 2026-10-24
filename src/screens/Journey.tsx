@@ -8,7 +8,7 @@ import { dayRings, stepStreakFor, targetsFor, weeksFor } from '../state/derived'
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { Icon } from '../ui/Icon';
-import { AchievementsCard } from './MapPage';
+import { AchievementsCard } from './AchievementsCard';
 import { DeparturesCard } from './Departures';
 import { ChallengeCard } from '../state/Challenge';
 import { OnThisDayCard } from './OnThisDay';
