@@ -29,7 +29,7 @@ export const HINDI: Record<string, string> = {
   Thiruvananthapuram: 'तिरुवनंतपुरम',
   Kavaratti: 'कवरत्ती',
   Panaji: 'पणजी',
-  Daman: 'दमण',
+  Daman: 'दमन',
   Raipur: 'रायपुर',
   'Port Blair': 'पोर्ट ब्लेयर',
   Gangtok: 'गंगटोक',

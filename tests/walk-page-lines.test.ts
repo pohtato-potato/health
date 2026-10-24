@@ -24,7 +24,7 @@ describe('status lines and the region’s light', () => {
 
   it('names the city first reached today', () => {
     const steps = new Map([['2026-01-01', 300_000]]); // 222 km at 0.74 m
-    expect(arrivedToday(steps, '2026-01-01')).toBe('Delhi');
+    expect(arrivedToday(steps, '2026-01-01')).toBeUndefined(); // you start in Delhi; you don't arrive there
     steps.set('2026-01-02', 20_000); // to about 236.8 km: Agra
     expect(arrivedToday(steps, '2026-01-02')).toBe('Agra');
     expect(arrivedToday(steps, '2026-01-03')).toBeUndefined();

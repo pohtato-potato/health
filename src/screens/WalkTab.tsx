@@ -16,7 +16,7 @@ import { useBatteryLevel } from '../ui/RestScreen';
 import type { Festive } from '../walk/art/festive';
 import { kindOf, routeById } from '../walk/catalogue';
 import { reachedCards } from '../walk/cards';
-import { arrivedToday, auroraFor, statusLines, stoneFor, tomorrowLine, usualAndBig, whereLine, whereNow } from '../walk/page';
+import { arrivedToday, auroraFor, nearestPlace, statusLines, stoneFor, tomorrowLine, usualAndBig, whereLine, whereNow } from '../walk/page';
 import { peopleMet } from '../walk/people';
 import { routeKm, runState, stepsByDay } from '../walk/runs';
 import { journeyStart } from './Journey';
@@ -41,7 +41,7 @@ export function WalkTab() {
   const km = kmFromSteps([...steps.values()].reduce((a, b) => a + b, 0));
   const todayKm = kmFromSteps(steps.get(today) ?? 0);
   const where = whereNow(km);
-  const near = where.kind === 'between' ? where.from : where.place;
+  const near = nearestPlace(km);
   const dayN = daysBetween(journeyStart(settings, days), today) + 1;
   const { usualKm, bigKm } = usualAndBig(days, today);
   const saver = batteryMode(level, !!settings.prefs.batterySaver);

@@ -30,11 +30,12 @@ const MIN_DAYS = 7;
 
 /**
  * A usual day and a big day, in km: the median and the 90th percentile (nearest rank) of the last 28 days before
- * today with steps. With fewer than 7 such days, 10 km and 15 km.
+ * today with measured steps. With fewer than 7 such days, 10 km and 15 km.
  */
-export function usualAndBig(days: Pick<Day, 'date' | 'steps'>[], today: DayKey): { usualKm: number; bigKm: number; known: boolean } {
+export function usualAndBig(days: Pick<Day, 'date' | 'steps' | 'stepsEstimated'>[], today: DayKey): { usualKm: number; bigKm: number; known: boolean } {
+  // Steps typed as a guess stay out, as they do from every step average.
   const recent = days
-    .filter((d) => d.date < today && d.steps !== undefined)
+    .filter((d) => d.date < today && d.steps !== undefined && !d.stepsEstimated)
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, SAMPLE_DAYS)
     .map((d) => d.steps!)
@@ -97,11 +98,19 @@ export function statusLines(i: { arrival?: string; stop?: string; person?: { nam
   return out.slice(0, 3);
 }
 
-/** The last city first reached on this day, if any. */
+/** The last city reached on this day, if any: a city met again later in the walk counts again; the start doesn't. */
 export function arrivedToday(stepsByDay: Map<DayKey, number>, today: DayKey): string | undefined {
-  const seen = new Set<string>();
-  const firsts = crossings(stepsByDay, ALL_STOPS).filter((s) => !seen.has(s.name) && seen.add(s.name));
-  return firsts.filter((s) => s.date === today).at(-1)?.name;
+  return crossings(stepsByDay, ALL_STOPS.filter((s) => s.km > 0))
+    .filter((s) => s.date === today)
+    .at(-1)?.name;
+}
+
+/** The place you're nearest: the one you're near, or the nearer of the two you're between. */
+export function nearestPlace(km: number): string {
+  const w = whereNow(km);
+  if (w.kind !== 'between') return w.place;
+  const pos = positionAt(km);
+  return km - pos.from.km <= pos.to!.km - km ? w.from : w.to;
 }
 
 /** The night ground the aurora sits on. */
