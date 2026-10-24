@@ -197,6 +197,31 @@ Sent 24 Oct as a fourth, shorter pinboard (private claude.ai Artifact, answers s
 
 42 pins in six lanes: a slow day on You (10), stats to browse (6), the week to your trainer (4), character in the words (4), loose ends (10), features for a slow day (8). After this round the scoping is written up as one brief for the design pass.
 
+### Round 4 verdicts
+
+39 of 42 answered (38 pinned, 1 dropped), with three notes. The three lighter trainer options were left unanswered once the full export was pinned.
+
+- **A slow day:** all ten pinned. On the league table: "love the idea, big football fan".
+- **Stats to browse:** all six pinned.
+- **The week to the trainer:** the full coach export is pinned.
+- **Character:** all four pinned: weekly and monthly lines in Gremlin's voice, light character in good-news headlines, plain words kept for prompts, joints and confirmations, and a switch for character in reports.
+- **Loose ends:** all ten pinned. On Journey's streaks: "I'd still want the streak tracked, it is a decent motivator; don't give it a prominent space though." On levels: "add any that make sense."
+- **References:** pinned Duolingo's percentile line, Finch, the Gyroscope score over time, Mario Kart's ghost, Nike Run Club's best-of badges, Steam's year in review and Timehop. Dropped Apple Photos Memories.
+
+### Decisions from round 4
+
+50. You's main job is a slow-day lift: under the journey clock, a "what's better" list (against four weeks ago and day one), with day one against today, progress bars since day one, the nearest win today, and Gremlin noticing a slow day.
+51. Slow-day extras: a jar of wins, a league table of your months, this week against your best week, the month's highlight reel, a random good day.
+52. Stats to browse: every trend on one page as small charts, a "did you know" card, a stat of the week with its archive, a record book beyond lifts, On This Day on You, and three saved questions on You.
+53. **The coach export stays.** This reverses decision 26: the weekly coach export is built as the Train spec describes, offered from the weekly story's last card.
+54. **Streaks stay tracked, quietly.** This refines decision 32: Steps leads with habit strength, and the step, training-week and perfect-day streaks are still counted and shown somewhere low-key (Earned or the stats page), never prominently.
+55. Gremlin's voice carries the weekly and monthly lines and good-news headlines, with a switch to turn it down. Prompts, confirmations, joint flags and anything about the body or food stay plain.
+56. Round 3's per-page Track lists are used as written. Medicines lives in Tracks only. The trophy case fills itself until you choose up to six. One earned title can show in the greeting. Records are a door inside Earned. Achievements that can repeat level up (any that make sense). A snapshot is taken before every big change. Retired features keep their data in backups. The year page includes the temperature blanket.
+
+## Scoping done
+
+The scoping is written up as one brief for the design pass: `docs/superpowers/scoping/you-brief.md`.
+
 ## Open questions
 
-Still open from round 1's list: 3 (what You is missing), 9 (backup habits), 10 (settings changed), 19 (the step streak; round 2 replaced it with habit strength on Steps, but Journey's other streaks are undecided). Medicines keeping a door on You as well as its Tracks tile is unanswered.
+Still open from round 1's list: 9 (backup habits) and 10 (settings changed), useful for the design pass but not blocking. The owner's reworked Walk page and other uncommitted changes are not on any branch yet; the brief should be checked against them once pushed.
