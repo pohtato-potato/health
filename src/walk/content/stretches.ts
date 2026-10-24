@@ -116,7 +116,7 @@ export const STRETCHES: Stretch[] = [
     page: [
       'South of Bhopal the road drops off the Malwa plateau towards the Narmada. On the way it passes the oldest human traces on this whole walk: the rock shelters of Bhimbetka, lived in for well over a hundred thousand years and painted for tens of thousands.',
       'The archaeologist V. S. Wakankar spotted them from a train window in 1957. Bhimbetka became a UNESCO World Heritage Site in 2003.',
-      'The road meets the Narmada at Narmadapuram. Until 2022 the town was Hoshangabad, named after Hoshang Shah, the sultan who ruled Malwa in the early 1400s. The state renamed it after the river; supporters said it restored the town’s older name, and the old one had stood for about six hundred years.',
+      'The road meets the Narmada at Narmadapuram. Until 2022 the town was Hoshangabad, named after Hoshang Shah, the sultan who ruled Malwa in the early 1400s. The state renamed it after the river. Supporters called Hoshang Shah an invader; critics saw one more Muslim name erased from the map. The old name had stood for about six hundred years.',
       'The Narmada is one of the few big Indian rivers that runs west, to the Arabian Sea, along a long trough in the earth between the Vindhyas and the Satpuras.',
     ],
     sources: [
@@ -179,7 +179,7 @@ export const STRETCHES: Stretch[] = [
     toKm: 1270,
     page: [
       'South of Nagpur is cotton country, the black-soil fields of Wardha and Yavatmal. It is also where India’s farm crisis first became a national story: Vidarbha was among the first regions where large numbers of farmers took their own lives, many of them in debt from loans taken to grow cotton after failed crops.',
-      'Near Wardha is Sevagram, where Gandhi lived from 1936 until his death in 1948, on land given by the industrialist Jamnalal Bajaj. When he arrived there was only a cart track to the village; he chose it to live as its poorest did.',
+      'Near Wardha is Sevagram, where Gandhi made his home from 1936 until he left in 1946, on land given by the industrialist Jamnalal Bajaj. When he arrived there was only a cart track to the village; he chose it to live as its poorest did.',
       'The forests here hold tigers close to farms. In 2018 a tigress the forest department called T1, and others called Avni, was shot near Pandharkawada after being blamed for several deaths. The Supreme Court had allowed it if she could not be caught; how she was killed is still disputed.',
     ],
     sources: [
@@ -196,13 +196,15 @@ export const STRETCHES: Stretch[] = [
     fromKm: 1270,
     toKm: 1440,
     page: [
-      'At the Penganga river the road enters Telangana, India’s newest state, formed on 2 June 2014. It was carved out of Andhra Pradesh after decades of protest over jobs, water and power, including a student uprising in 1969 in which hundreds were killed in police firing (counts vary).',
-      'Adilabad is forest and Gond country. The Kawal Tiger Reserve lies along the Godavari, meant to link the tiger forests of central India with those of the Eastern Ghats; for now it has no tigers of its own. The corridor towards Maharashtra’s Tadoba is named after Komaram Bheem, a Gond leader who fought the Nizam’s officials.',
+      'At the Penganga river the road enters Telangana, India’s newest state, formed on 2 June 2014. It was carved out of Andhra Pradesh after decades of protest over jobs, water and power, including a student uprising in 1969 in which hundreds were killed in police firing (counts vary). Leaders in coastal Andhra and Rayalaseema opposed the split to the end.',
+      'Adilabad is forest and Gond country. The Kawal Tiger Reserve lies along the Godavari, meant to link the tiger forests of central India with those of the Eastern Ghats; for now it has no tigers of its own, only ones passing through. The corridor towards Maharashtra’s Tadoba, made a conservation reserve in 2025, is named after Komaram Bheem, a Gond leader who fought the Nizam’s officials.',
       'Then the Godavari, India’s second-longest river, dammed here at Sriram Sagar, whose foundation stone Nehru laid in 1963. Water from rivers like this one was among the grievances behind the demand for a state of its own: who got it, and who got the jobs and power that came with it.',
     ],
     sources: [
       W('The News Minute: timeline of the formation of Telangana', 'https://www.thenewsminute.com/article/timeline-events-led-formation-telangana-31155'),
       W('NTCA: Kawal Tiger Reserve', 'https://ntca.gov.in/assets/uploads/briefnote/kawal.pdf'),
+      W('IAS Parliament: Kawal Tiger Reserve', 'https://www.shankariasparliament.com/current-affairs/gs-iii/kawal-tiger-reserve'),
+      W('Vajiram and Ravi: Kawal Tiger Reserve and the Kumram Bheem Conservation Reserve', 'https://vajiramandravi.com/current-affairs/kawal-tiger-reserve-2'),
       W('Wikipedia: Sriram Sagar Project', 'https://en.wikipedia.org/wiki/Sriram_Sagar_Project'),
       W('Wikipedia: Komaram Bheem', 'https://en.wikipedia.org/wiki/Komaram_Bheem'),
     ],
@@ -216,8 +218,9 @@ export const STRETCHES: Stretch[] = [
     page: [
       'For two centuries this was the Nizams’ country: the princely state of Hyderabad, the most populous and the richest in India, ruled by a Muslim dynasty over a mostly Hindu population, much of it Telugu-speaking.',
       'At independence the last Nizam, Mir Osman Ali Khan, tried to stay independent. A militia, the Razakars, terrorised villages that opposed him, while a communist-led peasant revolt fought the Nizam’s landlords across Telangana. In September 1948 the Indian army marched in, in what the government called a police action, and the Nizam gave in after five days.',
-      'What followed was long kept quiet. A government inquiry, the Sunderlal Committee, estimated that 27,000 to 40,000 people were killed, many of them Muslims attacked by mobs after the army arrived, in some places with soldiers taking part. Its report was not made public for decades. Other estimates are far higher.',
-      'Both memories live on in Telangana: liberation from the Nizam and the Razakars for some, a massacre for others. Both are part of the road into Hyderabad.',
+      'What followed was long kept quiet. An inquiry Nehru sent unofficially, the Sunderlal Committee, estimated that 27,000 to 40,000 Muslims were killed, mostly by mobs after the army arrived, in some places with soldiers taking part; the worst of it was in Marathwada and around Gulbarga and Bidar, not on this road. The report also recorded the Razakars’ crimes against Hindus. It was not made public for decades, and other estimates are far higher.',
+      'Then the army turned on the communist rebels, who held out in the villages until 1951.',
+      'All of it lives on in Telangana’s memory: liberation from the Nizam and the Razakars for some, a massacre for others, a peasants’ revolution put down for others again. All of it is part of the road into Hyderabad.',
     ],
     sources: [
       W('Wikipedia: Annexation of Hyderabad', 'https://en.wikipedia.org/wiki/Annexation_of_Hyderabad'),

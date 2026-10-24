@@ -221,7 +221,7 @@ export const STOPS: SmallStop[] = [
       'The archaeologist V. S. Wakankar noticed the rocks from a passing train in 1957.',
       'The shelters became a UNESCO World Heritage Site in 2003.',
     ],
-    sources: [W('Wikipedia: Bhimbetka rock shelters', 'https://en.wikipedia.org/wiki/Bhimbetka_rock_shelters'), W('UNESCO: Rock Shelters of Bhimbetka', 'https://whc.unesco.org/en/list/925/')],
+    sources: [W('Wikipedia: Bhimbetka rock shelters', 'https://en.wikipedia.org/wiki/Bhimbetka_rock_shelters'), W('UNESCO: Rock Shelters of Bhimbetka', 'https://whc.unesco.org/en/list/925/'), W('Brewminate: the Bhimbetka rock shelters', 'https://brewminate.com/the-bhimbetka-rock-shelters-and-art-of-prehistoric-india/')],
   },
   {
     id: 'narmada',
@@ -242,8 +242,8 @@ export const STOPS: SmallStop[] = [
     name: 'Itarsi Junction',
     facts: [
       'Itarsi is where two of India’s great railway lines cross: Delhi to Chennai, and Mumbai to Howrah.',
-      'Hundreds of trains pass through each day; counts range from about 250 to over 400, depending on the year.',
-      'In 2015 a fire in its signal cabin cancelled hundreds of trains for over a month.',
+      'Hundreds of trains pass through each day.',
+      'In 2015 a fire in its signal cabin cancelled about 2,000 trains over five weeks.',
     ],
     sources: [W('Wikipedia: Itarsi Junction railway station', 'https://en.wikipedia.org/wiki/Itarsi_Junction_railway_station')],
   },
@@ -267,7 +267,7 @@ export const STOPS: SmallStop[] = [
     name: 'Where the Tapti begins',
     facts: [
       'The Tapti rises at Multai, a town in the Satpura hills about 750 m up.',
-      'The town’s old name, Multapi, is read as the origin of the Tapi.',
+      'The town’s old name, Multapi, is usually read as source of the Tapi.',
       'Like the Narmada, it runs west: about 724 km to the Arabian Sea at the Gulf of Khambhat.',
     ],
     sources: [W('Wikipedia: Multai', 'https://en.wikipedia.org/wiki/Multai'), W('Wikipedia: Tapti River', 'https://en.wikipedia.org/wiki/Tapti_River')],
@@ -281,9 +281,9 @@ export const STOPS: SmallStop[] = [
       'Every year at Pandhurna, people from two villages throw stones at each other across the Jam river for a day.',
       'The Pandhurna side tries to reach a palash tree and a flag planted mid-river.',
       'Hundreds are hurt each year: 934 people in 2025, by one report. Deaths have been recorded since the 1950s.',
-      'Local stories of how it began differ: a fort once defended with stones, or a doomed love between the two villages.',
+      'It is said to be about 400 years old; one local story ties it to a love between the two villages that ended in violence.',
     ],
-    sources: [W('The Hitavada: 934 injured in Pandhurna’s Gotmar Mela (2025)', 'https://www.thehitavada.com/Encyc/2025/8/24/934-people-injured-in-pandhurnas-traditional-gotmar-mela.html'), W('ThePrint: over 450 injured in Gotmar Mela', 'https://theprint.in/india/mp-over-450-injured-in-pandhurnas-gotmar-mela-renowned-for-its-stone-pelting-tradition/3040595/')],
+    sources: [W('Sakshi Post: Gotmar Mela opens', 'https://www.sakshipost.com/news/mp-world-famous-gotmar-mela-opens-devotion-25-injured-stone-battle-443902'), W('The Hitavada: 934 injured in Pandhurna’s Gotmar Mela (2025)', 'https://www.thehitavada.com/Encyc/2025/8/24/934-people-injured-in-pandhurnas-traditional-gotmar-mela.html'), W('ThePrint: over 450 injured in Gotmar Mela', 'https://theprint.in/india/mp-over-450-injured-in-pandhurnas-gotmar-mela-renowned-for-its-stone-pelting-tradition/3040595/')],
   },
   {
     id: 'into-maharashtra',
@@ -292,7 +292,7 @@ export const STOPS: SmallStop[] = [
     name: 'Into Maharashtra',
     facts: [
       'The road enters Maharashtra in Vidarbha, the state’s eastern region.',
-      'Vidarbha became part of Maharashtra in 1960, under the Nagpur Pact of 1953, which promised among other things a session of the legislature in Nagpur every year.',
+      'Vidarbha joined Bombay State in 1956 and Maharashtra in 1960, under the Nagpur Pact of 1953, which promised among other things a session of the legislature in Nagpur every year.',
       'A movement for a separate state of Vidarbha has never quite gone away.',
     ],
     sources: [W('Wikipedia: Vidarbha', 'https://en.wikipedia.org/wiki/Vidarbha'), W('Wikipedia: Nagpur Pact', 'https://en.wikipedia.org/wiki/Nagpur_Pact')],
@@ -306,7 +306,6 @@ export const STOPS: SmallStop[] = [
       'The orchards around Nagpur grow the Nagpur mandarin, a loose-skinned orange.',
       'It has had a geographical indication since 2014, so only fruit from this belt may carry the name.',
       'Growers say it is passed off often enough outside Vidarbha to need one.',
-      'Nagpur and Amravati districts hold about four-fifths of Maharashtra’s mandarin orchards.',
     ],
     sources: [W('Down To Earth: GI tag for Nagpur orange', 'https://www.downtoearth.org.in/environment/gi-tag-for-nagpur-orange-to-benefit-both-farmers-and-consumers-46104')],
   },
@@ -321,7 +320,7 @@ export const STOPS: SmallStop[] = [
       'He brought settlers of every faith to his new city on the plains.',
       'His son Chand Sultan moved the capital here; in 1743 the Maratha Bhonsles took it over.',
     ],
-    sources: [W('Wikipedia: Bakht Buland Shah', 'https://en.wikipedia.org/wiki/Bakht_Buland_Shah'), W('Wikipedia: Gonds of Deogarh', 'https://en.wikipedia.org/wiki/Gonds_of_Deogarh')],
+    sources: [W('Wikipedia: Bakht Buland Shah', 'https://en.wikipedia.org/wiki/Bakht_Buland_Shah'), W('Wikipedia: Gonds of Deogarh', 'https://en.wikipedia.org/wiki/Gonds_of_Deogarh'), W('Wikipedia: Chand Sultan', 'https://en.wikipedia.org/wiki/Chand_Sultan')],
   },
   {
     id: 'sitabuldi',
@@ -330,7 +329,7 @@ export const STOPS: SmallStop[] = [
     name: 'Sitabuldi',
     facts: [
       'In November 1817 the Bhonsle ruler Appa Sahib turned on the British and attacked them on the twin hills of Sitabuldi. He lost.',
-      'He was deposed, and much of his kingdom passed to the British.',
+      'He was soon deposed. The kingdom lived on under British control until it was annexed in 1853.',
       'Who built the fort on the hill is disputed: the British after the battle, or Appa Sahib just before it.',
       'It is an army fort, opened to the public only on a few days a year.',
     ],
@@ -367,7 +366,7 @@ export const STOPS: SmallStop[] = [
     name: 'A village with no road',
     facts: [
       'In April 1936 Gandhi walked to Segaon, a village near Wardha reached only by a cart track.',
-      'He lived there for most of his last twelve years; the village became Sevagram.',
+      'It was his base for a decade, until he left in 1946; the village became Sevagram.',
       'The land came from his supporter Jamnalal Bajaj, an industrialist.',
     ],
     sources: [W('Wikipedia: Sevagram', 'https://en.wikipedia.org/wiki/Sevagram'), W('Sevagram Ashram: the founding', 'https://gandhiashramsevagram.org/sevagram-ashram/sevagram-ashram-founding.php')],
@@ -378,9 +377,9 @@ export const STOPS: SmallStop[] = [
     km: 1190,
     name: 'Bor, the smallest tiger reserve',
     facts: [
-      'Bor, near Wardha, became a tiger reserve in 2014 and is India’s smallest, at about 138 sq km.',
+      'Bor, near Wardha, became a tiger reserve in 2014; at about 138 sq km of core forest it is often called India’s smallest.',
       'It had four tigers or so when it was declared.',
-      'Critics said it broke the tiger authority’s own rule of 800 to 1,000 sq km of undisturbed forest; a buffer of about 661 sq km was added.',
+      'Critics said it broke the tiger authority’s own rule of 800 to 1,000 sq km of undisturbed forest; a buffer of about 678 sq km was added in 2015.',
     ],
     creature: 'tiger',
     sources: [W('Down To Earth: Bor becomes smallest tiger reserve', 'https://www.downtoearth.org.in/amp/story/wildlife-biodiversity/bor-becomes-smallest-tiger-reserve-in-india-with-four-tigers-45035'), W('India Environment Portal: NTCA goes against its norms for Bor', 'https://indiaenvironmentportal.org.in/news-clippings/national-tiger-conservation-authority-goes-against-its-own-norms-for-bor-tiger-reserve')],
@@ -393,7 +392,7 @@ export const STOPS: SmallStop[] = [
     facts: [
       'In 2018 a tigress the forest department called T1, and others called Avni, was blamed for several deaths near Pandharkawada.',
       'The Supreme Court allowed her to be shot if she could not be tranquillised and caught.',
-      'She was killed that November. Officials said she charged; an expert report said she was shot from behind.',
+      'She was killed that November. Officials said the shot was self-defence; a wildlife biologist’s analysis said she was facing away.',
       'The killing split opinion across India between villagers who feared her and people who wanted her saved.',
     ],
     creature: 'tiger',
@@ -407,7 +406,7 @@ export const STOPS: SmallStop[] = [
     facts: [
       'Here the Penganga river is the border between Maharashtra and Telangana.',
       'It runs along the state line before joining the Wardha.',
-      'The two states are building a barrage on it together, to water fields on both sides.',
+      'Telangana has built a barrage on it under an agreement with Maharashtra, though its canals were still unfinished in 2024.',
     ],
     sources: [W('Telangana360: Penganga river', 'https://www.telangana360.com/2016/11/penganga-river.html'), W('Deccan Chronicle: Korata-Chanaka barrage', 'https://deccanchronicle.com/southern-states/telangana/work-on-korata-chanaka-barrage-remains-incomplete-895218')],
   },
@@ -417,9 +416,9 @@ export const STOPS: SmallStop[] = [
     km: 1305,
     name: 'Kuntala falls',
     facts: [
-      'Telangana’s highest waterfall drops about 45 m, roughly 150 ft, on the Kadam river near Neradigonda.',
+      'Long called Telangana’s highest waterfall, it drops about 45 m, roughly 150 ft, on the Kadam river near Neradigonda.',
       'It is two falls together, and runs fullest after the monsoon.',
-      'Its name is linked to kunta, a word for a pond in Telugu and Gondi.',
+      'Local stories link its name to kunta, a pond in Telugu and Gondi, or to Shakuntala.',
     ],
     sources: [W('Telangana Tourism: Kuntala and Pochera falls', 'https://telanganatourism.gov.in/blog/kuntala-pochera-waterfalls.html'), W('Telangana360: Kuntala waterfalls', 'https://www.telangana360.com/2016/01/kuntala-waterfalls.html')],
   },
@@ -431,7 +430,7 @@ export const STOPS: SmallStop[] = [
     facts: [
       'The Kawal Tiger Reserve covers about 1,015 sq km of forest along the Godavari.',
       'It is meant to link the tiger forests of Maharashtra and Chhattisgarh with those to the south.',
-      'For now it has no tigers living there; the tiger authority has named it a priority place to bring them back.',
+      'For now it has no tigers of its own, only ones passing through from Maharashtra; the tiger authority has named it a priority place to bring them back.',
     ],
     creature: 'tiger',
     sources: [W('NTCA: Kawal Tiger Reserve', 'https://ntca.gov.in/assets/uploads/briefnote/kawal.pdf'), W('IAS Parliament: Kawal Tiger Reserve', 'https://www.shankariasparliament.com/current-affairs/gs-iii/kawal-tiger-reserve')],
@@ -447,7 +446,7 @@ export const STOPS: SmallStop[] = [
       'When Hyderabad state ended, the artisans lost royal patrons; since 1955 a cooperative has kept the work going.',
       'Under current rules they may only use fallen trees.',
     ],
-    sources: [W('Wikipedia: Nirmal toys and craft', 'https://en.wikipedia.org/wiki/Nirmal_toys_and_craft'), W('Outlook Traveller: Nirmal, home to Nakkash artists', 'https://www.outlooktraveller.com/explore/culture/nirmal-home-to-nakkash-artists-of-telangana')],
+    sources: [W('Wikipedia: Nirmal toys and craft', 'https://en.wikipedia.org/wiki/Nirmal_toys_and_craft'), W('PARI: Once upon a toy town', 'https://ruralindiaonline.org/articles/once-upon-a-toy-town'), W('Outlook Traveller: Nirmal, home to Nakkash artists', 'https://www.outlooktraveller.com/explore/culture/nirmal-home-to-nakkash-artists-of-telangana')],
   },
   {
     id: 'sriram-sagar',
