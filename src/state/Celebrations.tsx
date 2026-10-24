@@ -2,7 +2,8 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef } from 'react';
 import { addDays, dayRange, daysBetween, weekStart, type DayKey } from '../domain/dates';
 import { fmt1, fmtDayMonth, fmtInt, weekdayName } from '../domain/format';
-import { ALL_STOPS, CHAPTERS, arrivals, chapterAt, kmFromSteps } from '../domain/walk';
+import { CHAPTERS, arrivals, chapterAt, kmFromSteps } from '../domain/walk';
+import { arrivalToPlay, stateLineToPlay } from '../walk/arrivals';
 import { bump } from '../db/actions';
 import { db } from '../db/db';
 import { useAllDays, useAllSets, useEntriesBetween, useMeasurements, useSessions, useSettings, useToday } from '../db/hooks';
@@ -182,27 +183,37 @@ export function CelebrationWatcher() {
         });
       }
     }
-    for (const a of arrivals(steps)) {
-      if (a.km === 0 || a.date < yesterday) continue;
-      // Chapter 1 keys stay as they were; later chapters revisit some cities.
-      const key = a.chapter === 1 ? `city:${a.name}` : `city:${a.chapter}:${a.name}`;
-      if (!fresh(key)) continue;
-      queued.current.add(key);
-      void db.seen.put({ id: key, at: Date.now() });
-      const stop = ALL_STOPS.findIndex((s) => s.km === a.km);
-      const ended = CHAPTERS.find((c) => c.end === a.km);
-      if (ended) {
-        const text = [
-          'Delhi to the southern tip of India, on foot, at home. Chapter 1 is done.',
-          'Round the Golden Quadrilateral and back to Chennai: Kolkata, Delhi and Mumbai along the way. Chapter 2 is done.',
-          'Every state and every territory of India, the islands included. The whole map is yours.',
-        ][ended.n - 1];
-        if (ended.n === 2) void bump('quad-done');
-        if (ended.n === 3) void bump('states-36');
-        show({ kind: 'milestone', key: `chapter:${ended.n}`, value: fmtInt(a.km), unit: 'km', title: `${a.name}.`, text, voice: 'postcard' });
-      } else {
-        const next = ALL_STOPS[stop + 1];
-        toast({ kicker: 'Postcard', text: `Greetings from ${a.name}`, sub: `${fmtInt(a.km)} km in.${next ? ` Next: ${next.name}.` : ''} Tap to read it.`, tone: 'gold', ms: 6000, onTap: () => go('/postcard', { c: a.name }) });
+    // Arrivals: of the cities reached on a day saved today or yesterday, the farthest plays full screen and the rest
+    // are stamped quietly; a chapter's end keeps its own moment. A new state line plays when no city does. They take
+    // over the screen only on Today or the Walk tab, where steps are saved; anywhere else they wait, unmarked.
+    const here = window.location.hash.replace(/^#/, '').split('?')[0] || '/today';
+    if (here === '/today' || here === '/walk') {
+      const seenNow = new Set([...seen, ...queued.current]);
+      const play = arrivalToPlay(steps, today, seenNow);
+      for (const key of [...play.quiet, ...(play.city ? [play.city.key] : [])]) {
+        queued.current.add(key);
+        void db.seen.put({ id: key, at: Date.now() });
+      }
+      const line = stateLineToPlay(steps, today, seenNow);
+      if (play.city) {
+        const a = arrivals(steps).find((x) => x.name === play.city!.name && x.chapter === play.city!.chapter)!;
+        const ended = CHAPTERS.find((c) => c.end === a.km);
+        if (ended) {
+          const text = [
+            'Delhi to the southern tip of India, on foot, at home. Chapter 1 is done.',
+            'Round the Golden Quadrilateral and back to Chennai: Kolkata, Delhi and Mumbai along the way. Chapter 2 is done.',
+            'Every state and every territory of India, the islands included. The whole map is yours.',
+          ][ended.n - 1];
+          if (ended.n === 2) void bump('quad-done');
+          if (ended.n === 3) void bump('states-36');
+          show({ kind: 'milestone', key: `chapter:${ended.n}`, value: fmtInt(a.km), unit: 'km', title: `${a.name}.`, text, voice: 'postcard' });
+        } else go('/arrive', { c: a.name, ch: String(a.chapter) });
+        // A state line crossed the same day is stamped quietly; the city's arrival shows the state.
+        if (line.key) void db.seen.put({ id: line.key, at: Date.now() });
+      } else if (line.state && line.key) {
+        queued.current.add(line.key);
+        void db.seen.put({ id: line.key, at: Date.now() });
+        go('/arrive', { s: line.state });
       }
     }
 
