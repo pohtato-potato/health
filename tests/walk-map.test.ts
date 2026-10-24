@@ -67,3 +67,24 @@ describe('the map’s geometry', () => {
     expect(contains(one, CITY_POINTS.Delhi)).toBe(true);
   });
 });
+
+describe('part 5 fixes: the map’s geometry', () => {
+  it('splits the trail into legs, the legs to an island by sea', async () => {
+    const { trailLegs } = await import('../src/walk/mapView');
+    const kav = ALL_STOPS.find((s) => s.name === 'Kavaratti')!;
+    const legs = trailLegs(kav.km + 10);
+    expect(legs.some((l) => l.sea && l.points.some((p) => p[0] === CITY_POINTS.Kavaratti[0] && p[1] === CITY_POINTS.Kavaratti[1]))).toBe(true);
+    expect(legs.filter((l) => !l.sea).length).toBeGreaterThan(0);
+    // Joined up, the legs are the trail.
+    const joined = legs.flatMap((l, i) => (i === 0 ? l.points : l.points.slice(1)));
+    expect(joined).toEqual(trailTo(kav.km + 10));
+    expect(trailLegs(300).every((l) => !l.sea)).toBe(true);
+  });
+
+  it('offers the flyover only with a trail to fly and when motion is allowed', async () => {
+    const { flyoverAllowed } = await import('../src/walk/mapView');
+    expect(flyoverAllowed(0, false)).toBe(false);
+    expect(flyoverAllowed(300, false)).toBe(true);
+    expect(flyoverAllowed(300, true)).toBe(false);
+  });
+});

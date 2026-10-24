@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { ALL_STOPS } from '../../domain/walk';
 import { STOPS } from '../../walk/content';
 import { CITY_POINTS, REGIONS } from '../../walk/geo';
-import { labelPoint, levelBox, pointAtKm, roadAhead, stateInk, trailTo, type MapLevel } from '../../walk/mapView';
+import { labelPoint, levelBox, pointAtKm, roadAhead, stateInk, trailLegs, type MapLevel } from '../../walk/mapView';
 import { stretchAt } from '../../walk/road';
 import { STRETCHES } from '../../walk/content';
 import { whereLine, whereNow } from '../../walk/page';
@@ -20,10 +20,10 @@ interface Label {
 }
 
 /**
- * Keeps labels from colliding: in priority order, each label tries its own side and the other at a few heights; one that still overlaps a label already placed is left out (its dot or mark stays). Sizes are screen
+ * Keeps labels from colliding: in priority order, each label tries its own side and the other at a few heights; one that still overlaps a label already placed, or would leave the frame, is left out (its dot or mark stays). Sizes are screen
  * pixels. The map page lists every state walked into in words as well, so no name depends on fitting.
  */
-export function placeLabels(labels: Label[], toScreen: (p: [number, number]) => [number, number]): Label[] {
+export function placeLabels(labels: Label[], toScreen: (p: [number, number]) => [number, number], frame?: [number, number]): Label[] {
   const placed: { l: Label; box: [number, number, number, number] }[] = [];
   const boxOf = (l: Label): [number, number, number, number] => {
     const [x, y] = toScreen(l.at);
@@ -32,7 +32,8 @@ export function placeLabels(labels: Label[], toScreen: (p: [number, number]) => 
     const y0 = y + l.dy - l.size;
     return [x0 - 2, y0 - 2, x0 + w + 2, y0 + l.size * 1.2 + 2];
   };
-  const clear = (b: [number, number, number, number]) => placed.every(({ box: o }) => b[2] <= o[0] || o[2] <= b[0] || b[3] <= o[1] || o[3] <= b[1]);
+  const inside = (b: [number, number, number, number]) => !frame || (b[0] >= 0 && b[1] >= 0 && b[2] <= frame[0] && b[3] <= frame[1]);
+  const clear = (b: [number, number, number, number]) => inside(b) && placed.every(({ box: o }) => b[2] <= o[0] || o[2] <= b[0] || b[3] <= o[1] || o[3] <= b[1]);
   for (const l of labels) {
     const flip = { ...l, dx: -l.dx, anchor: l.anchor === 'start' ? ('end' as const) : ('start' as const) };
     const tries = l.anchor === 'middle' ? [0, 18, -16, 34, -32].map((d) => ({ ...l, dy: l.dy + d })) : [0, 16, -16].flatMap((d) => [{ ...l, dy: l.dy + d }, { ...flip, dy: flip.dy + d }]);
@@ -61,7 +62,7 @@ const ROADSIDE: [string, [number, number]][] = [['Dholpur', [px(77.88), py(26.7)
 
 /**
  * The walk on a night map of India with the survey's graticule: every state, the ones walked into in the ink of
- * their land with their names; the road ahead dashed (by sea, dotted); your trail; the cities as survey marks;
+ * their land with their names; the road ahead dashed and your trail solid (by sea, both dotted); the cities as survey marks;
  * at the stretch level, its small stops. Labels are drawn in screen pixels, so they stay 14 px or more at any zoom.
  */
 export function IndiaMap({ km, reached, level, width, box, gold }: { km: number; reached: string[]; level: MapLevel; width?: number; box?: [number, number, number, number]; gold?: boolean }) {
@@ -70,7 +71,7 @@ export function IndiaMap({ km, reached, level, width, box, gold }: { km: number;
   const unit = drawn / w;
   const india = REGIONS.india;
   const here = pointAtKm(km);
-  const trail = trailTo(km);
+  const trail = trailLegs(km);
   const reachedSet = new Set(reached);
   const nextStop = ALL_STOPS.find((s) => s.km > km);
   const passedNames = new Set(ALL_STOPS.filter((s) => s.km <= km).map((s) => s.name));
@@ -93,19 +94,22 @@ export function IndiaMap({ km, reached, level, width, box, gold }: { km: number;
     ...grid.lon.filter((lon) => px(lon) > x && px(lon) < x + w).map((lon) => L(`lon${lon}`, [px(lon), y + h], `${lon}°E`, 14, 'walk-imap-deg', 4, -8)),
     ...grid.lat.filter((lat) => py(lat) > y && py(lat) < y + h).map((lat) => L(`lat${lat}`, [x, py(lat)], `${lat}°N`, 14, 'walk-imap-deg', 6, -6)),
   ];
-  // Most important first: the states walked into (the biggest first), the next city, the cities (latest first), the stretch's stops, roadside places (Dholpur).
+  // Most important first: the states walked into (the biggest first), the next city, the cities (latest first), the stretch's stops, roadside places (Dholpur), then the degrees where there's room.
   const next = cities.find((c) => c.name === nextStop?.name);
-  const labels = placeLabels(
+  const degreeKeys = new Set(degrees.map((d) => d.key));
+  const placed = placeLabels(
     [
-      ...degrees,
       ...(india.states ?? []).filter((s) => reachedSet.has(s.name) && s.name !== 'Delhi' && s.name !== 'Chandigarh').sort((a, b) => b.areaKm2 - a.areaKm2).map((s) => L(`state-${s.name}`, labelPoint(s.path), s.name, 14, 'walk-imap-statename', 0, 5, 'middle')),
       ...(next ? [L(`city-${next.name}`, CITY_POINTS[next.name]!, next.name, 15, 'walk-imap-city')] : []),
       ...cities.filter((c) => c !== next).reverse().map((c) => L(`city-${c.name}`, CITY_POINTS[c.name]!, c.name, 15, 'walk-imap-city')),
       ...[...stops].reverse().map((s) => L(`stop-${s.id}`, pointAtKm(s.km), s.name, 14, 'walk-imap-stopname', 6, 16)),
       ...(level === 'stretch' ? ROADSIDE.map(([n, p]) => L(`place-${n}`, p, n, 14, 'walk-imap-place', -6, 4, 'end')) : []),
+      ...degrees,
     ],
     toScreen,
-  ).filter((l) => !degrees.includes(l));
+    [drawn, drawn / MAP_ASPECT],
+  );
+  const labels = placed.filter((l) => !degreeKeys.has(l.key));
   return (
     <svg
       ref={ref}
@@ -122,7 +126,7 @@ export function IndiaMap({ km, reached, level, width, box, gold }: { km: number;
         {grid.lat.map((lat) => (
           <line key={`lat${lat}`} x1={-50} y1={py(lat)} x2={350} y2={py(lat)} vectorEffect="non-scaling-stroke" />
         ))}
-        {degrees.map(draw)}
+        {placed.filter((l) => degreeKeys.has(l.key)).map(draw)}
       </g>
       {india.extra && <path d={india.extra} className="walk-imap-near" vectorEffect="non-scaling-stroke" />}
       <path d={india.outline} className="walk-imap-land" vectorEffect="non-scaling-stroke" />
@@ -132,7 +136,9 @@ export function IndiaMap({ km, reached, level, width, box, gold }: { km: number;
       {roadAhead(km).map((leg, i) => (
         <path key={i} d={path(leg.points)} className={`walk-imap-road${leg.sea ? ' sea' : ''}`} vectorEffect="non-scaling-stroke" />
       ))}
-      {trail.length > 1 && <path d={path(trail)} className={`walk-imap-trail${gold ? ' gold' : ''}`} vectorEffect="non-scaling-stroke" />}
+      {trail.map((leg, i) => (
+        <path key={i} d={path(leg.points)} className={`walk-imap-trail${leg.sea ? ' sea' : ''}${gold ? ' gold' : ''}`} vectorEffect="non-scaling-stroke" />
+      ))}
       {cities.map((s) => {
         const p = CITY_POINTS[s.name]!;
         return <path key={s.name} d={`M${p[0]} ${p[1] - 3.2 / unit} l${2.8 / unit} ${4.8 / unit} h${-5.6 / unit} Z`} className={`walk-imap-mark${passedNames.has(s.name) ? ' on' : ''}`} />;

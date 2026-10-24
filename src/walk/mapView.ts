@@ -34,6 +34,24 @@ export function trailTo(km: number): Pt[] {
   return last && last[0] === here[0] && last[1] === here[1] ? passed : [...passed, here];
 }
 
+/** Your trail leg by leg, as `trailTo` draws it: a leg to a stop reached by boat (or towards one) is a sea leg. */
+export function trailLegs(km: number): { points: Pt[]; sea: boolean }[] {
+  const passed = ALL_STOPS.filter((s) => s.km <= km);
+  const next = ALL_STOPS.find((s) => s.km > km);
+  const pts = trailTo(km);
+  const legs: { points: Pt[]; sea: boolean }[] = [];
+  for (let i = 1; i < pts.length; i++) {
+    const sea = !!(i < passed.length ? passed[i].sea : next?.sea);
+    const last = legs.at(-1);
+    if (last && last.sea === sea) last.points.push(pts[i]);
+    else legs.push({ points: [pts[i - 1], pts[i]], sea });
+  }
+  return legs;
+}
+
+/** The flyover needs a trail to fly along, and motion allowed (not reduced motion, not battery saver). */
+export const flyoverAllowed = (km: number, still: boolean) => !still && trailTo(km).length > 1;
+
 /** The rest of the chapter from where you are, leg by leg; a leg to a stop reached by boat is a sea leg. */
 export function roadAhead(km: number): { points: Pt[]; sea: boolean }[] {
   const ch = chapterAt(km);

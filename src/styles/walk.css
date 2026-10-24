@@ -248,6 +248,7 @@
 .walk-imap-road.sea { stroke: color-mix(in srgb, var(--pearl) 60%, transparent); stroke-dasharray: 1 5; }
 .walk-imap-trail { fill: none; stroke: var(--sage); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 4px color-mix(in srgb, var(--sage) 60%, transparent)); }
 .walk-imap-trail.gold { stroke: var(--gold); }
+.walk-imap-trail.sea { stroke-dasharray: 0.5 7; }
 .walk-imap-statename { font-family: var(--serif); fill: var(--text); paint-order: stroke; stroke: #0b0d20; stroke-width: 3px; }
 .walk-imap-city, .walk-imap-place, .walk-imap-stopname { font-family: var(--sans); fill: var(--text); paint-order: stroke; stroke: #0b0d20; stroke-width: 3px; }
 .walk-imap-place { font-style: italic; fill: color-mix(in srgb, var(--text) 80%, transparent); }

@@ -1,6 +1,9 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { IndiaMap, MapKey, MapLevels } from '../src/screens/walk/IndiaMap';
+import { ALL_STOPS, statesReached } from '../src/domain/walk';
+import { IndiaMap, MAP_ASPECT, MapKey, MapLevels, placeLabels } from '../src/screens/walk/IndiaMap';
+import { REGIONS } from '../src/walk/geo';
+import { labelPoint, levelBox } from '../src/walk/mapView';
 
 const reached = ['Delhi', 'Haryana', 'Uttar Pradesh', 'Rajasthan', 'Madhya Pradesh'];
 const screenSizes = (html: string) => {
@@ -74,5 +77,41 @@ describe('labels that never collide', () => {
 
   it('always names the next city', () => {
     expect(renderToStaticMarkup(<IndiaMap km={300} reached={reached} level="india" width={328} />)).toContain('>Gwalior</text>');
+  });
+});
+
+describe('part 5 fixes: labels', () => {
+  const late = ALL_STOPS.at(-1)!.km - 10;
+  const lateReached = statesReached(late).map((s) => s.name);
+  const levels = ['stretch', 'chapter', 'india'] as const;
+
+  it('draws each degree label once', () => {
+    for (const km of [0, 300, 1620, 2870, late])
+      for (const level of levels) {
+        const html = renderToStaticMarkup(<IndiaMap km={km} reached={statesReached(km).map((s) => s.name)} level={level} width={328} />);
+        const degs = [...html.matchAll(/>(\d+°[EN])<\/text>/g)].map((m) => m[1]);
+        expect(new Set(degs).size, `${km} ${level}`).toBe(degs.length);
+      }
+  });
+
+  it('lets state names win over degree labels late in the walk', () => {
+    const html = renderToStaticMarkup(<IndiaMap km={late} reached={lateReached} level="india" width={328} />);
+    const names = [...html.matchAll(/class="walk-imap-statename"[^>]*>([^<]+)</g)].map((m) => m[1]);
+    const withoutDegrees = placeLabels(
+      (REGIONS.india.states ?? []).filter((s) => lateReached.includes(s.name) && s.name !== 'Delhi' && s.name !== 'Chandigarh').sort((a, b) => b.areaKm2 - a.areaKm2).map((s) => ({ key: s.name, at: labelPoint(s.path), text: s.name, size: 14, cls: '', dx: 0, dy: 5, anchor: 'middle' as const })),
+      ([x, y]) => {
+        const [bx, by, bw] = levelBox('india', late, MAP_ASPECT);
+        const u = 328 / bw;
+        return [(x - bx) * u, (y - by) * u];
+      },
+      [328, 328 / MAP_ASPECT],
+    ).length;
+    expect(names.length).toBe(withoutDegrees);
+  });
+
+  it('keeps labels inside the frame', () => {
+    const toScreen = (p: [number, number]): [number, number] => p;
+    const [l] = placeLabels([{ key: 'a', at: [320, 100], text: 'Kanyakumari', size: 15, cls: '', dx: 6, dy: 4, anchor: 'start' }], toScreen, [328, 380]);
+    expect(l.anchor).toBe('end');
   });
 });

@@ -9,7 +9,7 @@ import { Icon } from '../ui/Icon';
 import { useBatteryLevel } from '../ui/RestScreen';
 import { useUnlockedIds } from '../ui/Theme';
 import { STRETCHES } from '../walk/content';
-import { flyoverBox, trailTo, type MapLevel } from '../walk/mapView';
+import { flyoverAllowed, flyoverBox, trailTo, type MapLevel } from '../walk/mapView';
 import { stretchAt } from '../walk/road';
 import { RouteSwitch } from '../walk/RouteSwitch';
 import { stepsByDay } from '../walk/runs';
@@ -32,10 +32,18 @@ export function MapPage() {
   const [flyT, setFlyT] = useState<number>();
   const battery = useBatteryLevel();
   const raf = useRef(0);
+  const km = days ? kmFromSteps([...stepsByDay(days).values()].reduce((a, b) => a + b, 0)) : 0;
+  const canFly = !!settings && flyoverAllowed(km, reducedMotion() || batteryMode(battery, !!settings.prefs.batterySaver));
   useEffect(() => () => cancelAnimationFrame(raf.current), []);
+  // Battery saver can come on mid-flight: the map goes still at once.
+  useEffect(() => {
+    if (!canFly) {
+      cancelAnimationFrame(raf.current);
+      setFlyT(undefined);
+    }
+  }, [canFly]);
   if (!settings || !days || !unlocked) return <div className="page" />;
 
-  const km = kmFromSteps([...stepsByDay(days).values()].reduce((a, b) => a + b, 0));
   const ch = chapterAt(km);
   const reached = statesReached(km).map((s) => s.name);
   const nextState = ALL_STATES.find((s) => s.km > km && !reached.includes(s.name));
@@ -76,7 +84,7 @@ export function MapPage() {
       <div className="walk-imap-wrap" onClick={flyT !== undefined ? stop : undefined}>
         <IndiaMap km={km} reached={reached} level={level} gold={gold} box={flyT !== undefined ? flyoverBox(trailTo(km), flyT, MAP_ASPECT) : undefined} />
       </div>
-      {!still && (
+      {canFly && (
         <button type="button" className="walk-ghost" onClick={flyT === undefined ? fly : stop}>
           {flyT === undefined ? 'Fly over your trail' : 'Stop the flyover'}
         </button>
