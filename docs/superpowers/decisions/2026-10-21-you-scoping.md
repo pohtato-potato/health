@@ -112,6 +112,46 @@ Sent 24 Oct as a second pinboard (private claude.ai Artifact, answers saved to i
 
 129 pins in ten lanes: confirm what goes (12), finding your way on You (13), every Track looked at again (27), insights that show their working (10), Earned (11), reports and the monthly ritual (12), backups and data (6), Settings (7), Body, Medicines and the Diary (9), and features from unexpected places (22). Verdicts go here once answered.
 
+### Round 2 verdicts
+
+128 of 129 answered (98 pinned, 28 dropped, 2 maybe), with no notes. Unanswered: one name per page everywhere.
+
+- **Confirmed removals and rules:** all pinned except What if, which is dropped from the removal list (so it stays, rebuilt).
+- **Finding your way:** pinned the fixed grid, You as a profile, bands by time, the Go to box, the A–Z index and the Due line in plain words. The journey clock as You's header is a maybe. Dropped: arranged by question, your own top four, trip meters, the Due line as passes, days to reveal day under the clock.
+- **Tracks:** all pinned except the month by food category and the learned-maintenance page.
+- **Insights:** all ten pinned.
+- **Earned:** pinned the trophy case, firsts as a timeline, named milestones, Today's moments, a shelf per month, the night sky as a shelf, and achievements that level up. Dropped: the album with empty slots, record certificates, the form guide, exercise cards on the shelf.
+- **Reports:** pinned one weekly story for the app, the week's tally, the ritual's order, the month report as an assessment, the year page on the anniversary, and the journey replay. Dropped: the ritual over several days, the month as one long scroll, the newspaper front page, the bookshelf archive, a note to next month, keeping Claude's reply.
+- **Backups:** pinned daily snapshots, the data check-up, every edit by day, and worded status. Dropped: the deposit slip, reminders only on the Due line.
+- **Settings:** all pinned except "What's new".
+- **Body, Medicines, Diary:** pinned tape that knows if you measured, the Body door's contents, Medicines inside Tracks, Diary search and month view, the audit note by long press. Dropped: the photo flipbook, past appointments kept. Medicines as a door on You: no verdict.
+- **References:** pinned the almanac, Fitbit's sleep profile, Letterboxd's year in stats, Screen Time's weekly report, Spotify's top five and Waze's "compared with your usual". Strava's fitness and freshness is a maybe. The rest dropped.
+
+### Decisions from round 2
+
+23. Removed: Experiments; water tracking; every voice but Gremlin and the Voice row; Larger text, High contrast and Big dials (`PRODUCT.md` to be updated when built); the climate report; the month and journey Wrapped.
+24. "Never colour alone" is retired app-wide. `DESIGN.md` and `PRODUCT.md` change when this is built.
+25. Small controls grow their tap areas to 44 px without changing the look, as on Today.
+26. The coach export comes out of the Train redesign spec as well.
+27. The character sheet goes. Its titles become trophies; the themes it unlocked move to the theme picker.
+28. What if stays, rebuilt as "What would it take": start from a goal and show the sum.
+29. Training's "+0%" is replaced by strength per exercise, which says "not enough sessions yet" until it can speak.
+30. Ways to find things on You, to be tried together: a fixed grid, You as a profile, bands by time, a Go to box and an A–Z index. The Due line is plain words. Where the journey clock sits is still open.
+31. Every Track page answers what changed, why and what next, under a sentence headline; Tracks home shows a sentence per tile; any two measures can be compared; the app spots natural experiments; you can add your own tracks.
+32. Per Track: Food gets the bank-statement week, the protein clock and the food compendium; Shape the reveal-day cone, reasons on the weight trend and the tape strip; Steps the sorted-days strip, what a good week looks like, and habit strength in place of the streak; Sleep social jet lag, the sleep-lab chart and a sleep balance, with the fixed tip removed; Training strength lines, "did readiness call it?" and a status word; Joints a calendar per joint; Drinks the morning after with its days; Readiness what fed each score.
+33. Insights come as a lab report, "ask your own data", record lines, odds, the week's swing, "why did this change?", "what would it take", confidence in words, one finding a day on You, and keep or dismiss.
+34. Earned holds a trophy case, firsts as a timeline, named milestones, Today's moments, a shelf per month, the night sky and achievements that level up.
+35. One weekly story serves Today, Walk and You, opening with the week's tally. The month report is an assessment. The monthly ritual runs in one sitting, in order. The year page opens on the journey's anniversary, with a replay.
+36. Backups gain daily snapshots on the phone, a data check-up and the full edit history. Backup reminders are not limited to the Due line.
+37. Settings: the proposed group order; search also finds pages; recently changed at the top; each setting says where it shows; it opens on the last group used; the setup card goes.
+38. An untouched tape reading is saved as "not re-measured". Medicines lives inside Tracks. The Diary gets search and a month view. An audit note is left by long-pressing a page title.
+
+## Round 3
+
+Sent 24 Oct as a third pinboard (private claude.ai Artifact, answers saved to its `pins` collection): https://claude.ai/artifact/62HbM5cZe72k2swKrdxLZw
+
+88 pins in ten lanes: whole You layouts and where the journey clock sits (10), what counts as due (10), each Track page top to bottom (12), where insights live (9), the weekly story card by card (12), the monthly ritual and report (10), Earned arranged (8), the year page (5), data trust (5), fresh ideas (7). Verdicts go here once answered.
+
 ## Open questions
 
 From round 1's numbered list, still open: 1 (what You is opened for), 2 (pages never opened, partly answered), 3 (what's missing), 6 (where Medicines lives), 7 (the ritual in one sitting or over days), 9 (backup habits), 10 (settings changed), 15 (how much working), 19 (the step streak). The rest were settled by pins.
