@@ -23,7 +23,7 @@ describe('the Walk tab’s sections', () => {
   it('shows an expedition as a slim line with its km', () => {
     const html = renderToStaticMarkup(<ExpeditionLine id="xuanzang" km={2610} state="walking" onOpen={() => {}} />);
     expect(html).toContain('Xuanzang&#x27;s road');
-    expect(html).toContain('2,610 of 10,000 km');
+    expect(html).toContain('2,610 of 17,000 km');
   });
 
   it('keeps the status lines’ space when there are none', () => {
