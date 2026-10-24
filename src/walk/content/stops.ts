@@ -27,7 +27,10 @@ export const STOPS: SmallStop[] = [
       'Sources measure the protected river differently, from about 400 km to about 600 km.',
       'Ganges river dolphins live here, and eight of the 26 kinds of turtle found in India.',
     ],
-    sources: [W('Wikipedia: National Chambal Sanctuary', 'https://en.wikipedia.org/wiki/National_Chambal_Sanctuary'), W('Ministry of Environment of Japan: Asia Parks paper on the sanctuary (Banerjee)', 'https://www.env.go.jp/nature/asia-parks/pdf/wg2/APC_WG6-13_Sujoy%20Banerjee.pdf')],
+    sources: [
+      W('Wikipedia: National Chambal Sanctuary', 'https://en.wikipedia.org/wiki/National_Chambal_Sanctuary'),
+      W('Ministry of Environment of Japan: Asia Parks paper on the sanctuary (Banerjee)', 'https://www.env.go.jp/nature/asia-parks/pdf/wg2/APC_WG6-13_Sujoy%20Banerjee.pdf'),
+    ],
   },
   {
     id: 'gharials',
@@ -41,7 +44,11 @@ export const STOPS: SmallStop[] = [
       'Counts have risen from about a hundred in 1974 to around two thousand in recent surveys.',
     ],
     creature: 'gharial',
-    sources: [W('Wikipedia: Gharial', 'https://en.wikipedia.org/wiki/Gharial'), W('The Better India: Chambal gharial count, 2025', 'https://thebetterindia.com/web-stories/chambal-sanctuary-gharial-count-2025-up-wildlife-conservation-success'), W('Ministry of Environment of Japan: Asia Parks paper on the sanctuary (Banerjee)', 'https://www.env.go.jp/nature/asia-parks/pdf/wg2/APC_WG6-13_Sujoy%20Banerjee.pdf')],
+    sources: [
+      W('Wikipedia: Gharial', 'https://en.wikipedia.org/wiki/Gharial'),
+      W('The Better India: Chambal gharial count, 2025', 'https://thebetterindia.com/web-stories/chambal-sanctuary-gharial-count-2025-up-wildlife-conservation-success'),
+      W('Ministry of Environment of Japan: Asia Parks paper on the sanctuary (Banerjee)', 'https://www.env.go.jp/nature/asia-parks/pdf/wg2/APC_WG6-13_Sujoy%20Banerjee.pdf'),
+    ],
   },
   {
     id: 'morena-gajak',
@@ -66,7 +73,14 @@ export const STOPS: SmallStop[] = [
       'From the mid-2000s the archaeologist K. K. Muhammed rebuilt them piece by piece, after persuading the dacoit gang that used the site to stay away.',
       'Accounts differ on how many were restored: about 60 or about 80.',
     ],
-    sources: [W('Wikipedia: K. K. Muhammed', 'https://en.wikipedia.org/wiki/K._K._Muhammed'), W('Storytrails: Bateshwar', 'https://storytrails.in/places/bateshwar-restoration-of-the-largest-temple-ruins/'), W('Outlook Traveller: How one archaeologist brought Bateshwar back to life', 'https://www.outlooktraveller.com/amp/story/destinations/india/from-our-latest-issue-how-one-archaeologist-brought-bateshwar-back-to-life')],
+    sources: [
+      W('Wikipedia: K. K. Muhammed', 'https://en.wikipedia.org/wiki/K._K._Muhammed'),
+      W('Storytrails: Bateshwar', 'https://storytrails.in/places/bateshwar-restoration-of-the-largest-temple-ruins/'),
+      W(
+        'Outlook Traveller: How one archaeologist brought Bateshwar back to life',
+        'https://www.outlooktraveller.com/amp/story/destinations/india/from-our-latest-issue-how-one-archaeologist-brought-bateshwar-back-to-life',
+      ),
+    ],
   },
   {
     id: 'gwalior-zero',
@@ -78,7 +92,10 @@ export const STOPS: SmallStop[] = [
       'It is a land grant: the zeros are in the size of a garden and the number of garlands it owed.',
       'For a long time it was called the oldest zero anywhere. Older ones have since been found, in Cambodia (late 600s) and, if its dating holds, in the Bakhshali manuscript.',
     ],
-    sources: [W('Wikipedia: Chaturbhuj Temple, Gwalior', 'https://en.wikipedia.org/wiki/Chaturbhuj_Temple,_Gwalior'), W('The Better India: Chaturbhuj temple', 'https://thebetterindia.com/270912/chaturbhuj-temple-in-gwali')],
+    sources: [
+      W('Wikipedia: Chaturbhuj Temple, Gwalior', 'https://en.wikipedia.org/wiki/Chaturbhuj_Temple,_Gwalior'),
+      W('The Better India: Chaturbhuj temple', 'https://thebetterindia.com/270912/chaturbhuj-temple-in-gwali'),
+    ],
   },
   {
     id: 'kuno-cheetahs',
@@ -91,7 +108,15 @@ export const STOPS: SmallStop[] = [
       'He killed a calf and a goat on the way, and both times was tranquillised and carried back.',
       'Officials said the cats were exploring their new home and there was nothing to worry about.',
     ],
-    sources: [W('WION: Namibia’s Oban, who became Kuno’s Pawan', 'https://www.wionews.com/india-news/namibias-oban-who-became-kunos-breezy-pawan-found-dead-753974'), W('The Hitavada: Cheetah Oban sneaks out of Kuno for second time', 'https://thehitavada.com/Encyc/2023/4/17/Cheetah-Oban-sneaks-out-of-Kuno-for-second-time-.html'), W('The Hitavada: Cheetah Pawan rescued from Shivpuri for second time', 'https://www.thehitavada.com/Encyc/2023/4/24/Cheetah-Pawan-rescued-from-Shivpuri-for-second-time.html'), W('Outlook: Cheetahs exploring habitat, nothing to worry', 'https://www.outlookindia.com/national/cheetahs-exploring-habitat-nothing-to-worry-project-tiger-head-on-straying-incident-in-madhya-pradesh-news-276655')],
+    sources: [
+      W('WION: Namibia’s Oban, who became Kuno’s Pawan', 'https://www.wionews.com/india-news/namibias-oban-who-became-kunos-breezy-pawan-found-dead-753974'),
+      W('The Hitavada: Cheetah Oban sneaks out of Kuno for second time', 'https://thehitavada.com/Encyc/2023/4/17/Cheetah-Oban-sneaks-out-of-Kuno-for-second-time-.html'),
+      W('The Hitavada: Cheetah Pawan rescued from Shivpuri for second time', 'https://www.thehitavada.com/Encyc/2023/4/24/Cheetah-Pawan-rescued-from-Shivpuri-for-second-time.html'),
+      W(
+        'Outlook: Cheetahs exploring habitat, nothing to worry',
+        'https://www.outlookindia.com/national/cheetahs-exploring-habitat-nothing-to-worry-project-tiger-head-on-straying-incident-in-madhya-pradesh-news-276655',
+      ),
+    ],
   },
   {
     id: 'madhav-tigers',
@@ -105,7 +130,10 @@ export const STOPS: SmallStop[] = [
       'Reports of the time counted five to seven tigers, cubs included.',
     ],
     creature: 'tiger',
-    sources: [W('All India Radio: Madhav declared a tiger reserve', 'https://www.newsonair.gov.in/mp-madhav-national-park-in-shivpuri-district-declared-as-new-tiger-reserve'), W('Outlook Traveller: Madhav declared India’s 58th tiger reserve', 'https://www.outlooktraveller.com/News/madhav-national-park-declared-indias-58th-tiger-reserve')],
+    sources: [
+      W('All India Radio: Madhav declared a tiger reserve', 'https://www.newsonair.gov.in/mp-madhav-national-park-in-shivpuri-district-declared-as-new-tiger-reserve'),
+      W('Outlook Traveller: Madhav declared India’s 58th tiger reserve', 'https://www.outlooktraveller.com/News/madhav-national-park-declared-indias-58th-tiger-reserve'),
+    ],
   },
   {
     id: 'shivpuri-chhatris',
@@ -118,7 +146,10 @@ export const STOPS: SmallStop[] = [
       'Madho Rao Scindia’s is inlaid with lapis lazuli and onyx, and faces his mother’s.',
       'Rites are still held at them, more like a living memorial than a tomb.',
     ],
-    sources: [W('Britannica: Shivpuri', 'https://www.britannica.com/place/Shivpuri'), W('Sahapedia: Seeking legitimacy in stone, the Scindia chhatris', 'https://www.sahapedia.org/seeking-legitimacy-stone-scindia-chhatris-gwalior')],
+    sources: [
+      W('Britannica: Shivpuri', 'https://www.britannica.com/place/Shivpuri'),
+      W('Sahapedia: Seeking legitimacy in stone, the Scindia chhatris', 'https://www.sahapedia.org/seeking-legitimacy-stone-scindia-chhatris-gwalior'),
+    ],
   },
   {
     id: 'karera-bustards',
@@ -132,7 +163,14 @@ export const STOPS: SmallStop[] = [
       'In 2010 the national wildlife board agreed to remove its protection; the change still needs the Supreme Court’s consent.',
     ],
     creature: 'bustard',
-    sources: [W('Wikipedia: Karera Wildlife Sanctuary', 'https://en.wikipedia.org/wiki/Karera_Wildlife_Sanctuary'), W('Governance Now: Karera sanctuary set to close', 'https://www.governancenow.com/gov-next/green-gov/karera-sanctuary-set-close-golden-bird-visits-no-more'), W('101Reporters: Farmers troubled by a bird that no longer exists', 'https://101reporters.com/article/environment/Farmers_in_Madhya_Pradesh_wildlife_sanctuary_troubled_by_a_bird_that_no_longer_exists')],
+    sources: [
+      W('Wikipedia: Karera Wildlife Sanctuary', 'https://en.wikipedia.org/wiki/Karera_Wildlife_Sanctuary'),
+      W('Governance Now: Karera sanctuary set to close', 'https://www.governancenow.com/gov-next/green-gov/karera-sanctuary-set-close-golden-bird-visits-no-more'),
+      W(
+        '101Reporters: Farmers troubled by a bird that no longer exists',
+        'https://101reporters.com/article/environment/Farmers_in_Madhya_Pradesh_wildlife_sanctuary_troubled_by_a_bird_that_no_longer_exists',
+      ),
+    ],
   },
   {
     id: 'bajrangarh',
@@ -195,7 +233,11 @@ export const STOPS: SmallStop[] = [
       'In the early 1950s the director Mehboob Khan shot much of Aan here, with Dilip Kumar: one of the first Indian films released in Technicolor.',
       'He called the place the Kashmir of Malwa, and the name stuck.',
     ],
-    sources: [W('MP Tourism: Narsinghgarh fort', 'https://www.mptourism.com/narsinghgarh-fort-and-deogarh-fort.html'), W('Technicolor: Jhansi Ki Rani, India’s first Technicolor film', 'https://technicolor.com/news/revisiting-jhansi-ki-rani-indias-first-technicolor-film'), W('Wikipedia: Narsinghgarh, Madhya Pradesh', 'https://en.wikipedia.org/wiki/Narsinghgarh,_Madhya_Pradesh')],
+    sources: [
+      W('MP Tourism: Narsinghgarh fort', 'https://www.mptourism.com/narsinghgarh-fort-and-deogarh-fort.html'),
+      W('Technicolor: Jhansi Ki Rani, India’s first Technicolor film', 'https://technicolor.com/news/revisiting-jhansi-ki-rani-indias-first-technicolor-film'),
+      W('Wikipedia: Narsinghgarh, Madhya Pradesh', 'https://en.wikipedia.org/wiki/Narsinghgarh,_Madhya_Pradesh'),
+    ],
   },
   {
     id: 'bhojtal',
@@ -208,7 +250,10 @@ export const STOPS: SmallStop[] = [
       'The lake still supplies about two-fifths of Bhopal’s drinking water.',
       'With the Lower Lake it forms the Bhoj Wetland, protected under the Ramsar convention.',
     ],
-    sources: [W('Wikipedia: Bhojtal', 'https://en.wikipedia.org/wiki/Bhojtal'), W('Free Press Journal: Bhopal’s millennium', 'https://www.freepressjournal.in/bhopal/tome-and-plume-bhopals-millennium-from-masters-plan-in-1047-to-masses-blueprint-of-2047')],
+    sources: [
+      W('Wikipedia: Bhojtal', 'https://en.wikipedia.org/wiki/Bhojtal'),
+      W('Free Press Journal: Bhopal’s millennium', 'https://www.freepressjournal.in/bhopal/tome-and-plume-bhopals-millennium-from-masters-plan-in-1047-to-masses-blueprint-of-2047'),
+    ],
   },
   {
     id: 'bhimbetka',
@@ -221,7 +266,11 @@ export const STOPS: SmallStop[] = [
       'The archaeologist V. S. Wakankar noticed the rocks from a passing train in 1957.',
       'The shelters became a UNESCO World Heritage Site in 2003.',
     ],
-    sources: [W('Wikipedia: Bhimbetka rock shelters', 'https://en.wikipedia.org/wiki/Bhimbetka_rock_shelters'), W('UNESCO: Rock Shelters of Bhimbetka', 'https://whc.unesco.org/en/list/925/'), W('Brewminate: the Bhimbetka rock shelters', 'https://brewminate.com/the-bhimbetka-rock-shelters-and-art-of-prehistoric-india/')],
+    sources: [
+      W('Wikipedia: Bhimbetka rock shelters', 'https://en.wikipedia.org/wiki/Bhimbetka_rock_shelters'),
+      W('UNESCO: Rock Shelters of Bhimbetka', 'https://whc.unesco.org/en/list/925/'),
+      W('Brewminate: the Bhimbetka rock shelters', 'https://brewminate.com/the-bhimbetka-rock-shelters-and-art-of-prehistoric-india/'),
+    ],
   },
   {
     id: 'narmada',
@@ -233,7 +282,10 @@ export const STOPS: SmallStop[] = [
       'The river runs west to the Arabian Sea, along a trough between the Vindhya and Satpura hills.',
       'The town was called Hoshangabad, after a sultan of Malwa, until it was renamed for the river in 2022.',
     ],
-    sources: [W('Wikipedia: Narmada River', 'https://en.wikipedia.org/wiki/Narmada_River'), W('ThePrint: Hoshangabad to be renamed Narmadapuram', 'https://theprint.in/india/madhya-pradeshs-hoshangabad-to-be-renamed-as-narmadapuram-says-cm-shivraj-singh-chouhan/608706/')],
+    sources: [
+      W('Wikipedia: Narmada River', 'https://en.wikipedia.org/wiki/Narmada_River'),
+      W('ThePrint: Hoshangabad to be renamed Narmadapuram', 'https://theprint.in/india/madhya-pradeshs-hoshangabad-to-be-renamed-as-narmadapuram-says-cm-shivraj-singh-chouhan/608706/'),
+    ],
   },
   {
     id: 'itarsi',
@@ -283,7 +335,11 @@ export const STOPS: SmallStop[] = [
       'Hundreds are hurt each year: 934 people in 2025, by one report. Deaths have been recorded since the 1950s.',
       'It is said to be about 400 years old; one local story ties it to a love between the two villages that ended in violence.',
     ],
-    sources: [W('Sakshi Post: Gotmar Mela opens', 'https://www.sakshipost.com/news/mp-world-famous-gotmar-mela-opens-devotion-25-injured-stone-battle-443902'), W('The Hitavada: 934 injured in Pandhurna’s Gotmar Mela (2025)', 'https://www.thehitavada.com/Encyc/2025/8/24/934-people-injured-in-pandhurnas-traditional-gotmar-mela.html'), W('ThePrint: over 450 injured in Gotmar Mela', 'https://theprint.in/india/mp-over-450-injured-in-pandhurnas-gotmar-mela-renowned-for-its-stone-pelting-tradition/3040595/')],
+    sources: [
+      W('Sakshi Post: Gotmar Mela opens', 'https://www.sakshipost.com/news/mp-world-famous-gotmar-mela-opens-devotion-25-injured-stone-battle-443902'),
+      W('The Hitavada: 934 injured in Pandhurna’s Gotmar Mela (2025)', 'https://www.thehitavada.com/Encyc/2025/8/24/934-people-injured-in-pandhurnas-traditional-gotmar-mela.html'),
+      W('ThePrint: over 450 injured in Gotmar Mela', 'https://theprint.in/india/mp-over-450-injured-in-pandhurnas-gotmar-mela-renowned-for-its-stone-pelting-tradition/3040595/'),
+    ],
   },
   {
     id: 'into-maharashtra',
@@ -320,7 +376,11 @@ export const STOPS: SmallStop[] = [
       'He brought settlers of every faith to his new city on the plains.',
       'His son Chand Sultan moved the capital here; in 1743 the Maratha Bhonsles took it over.',
     ],
-    sources: [W('Wikipedia: Bakht Buland Shah', 'https://en.wikipedia.org/wiki/Bakht_Buland_Shah'), W('Wikipedia: Gonds of Deogarh', 'https://en.wikipedia.org/wiki/Gonds_of_Deogarh'), W('Wikipedia: Chand Sultan', 'https://en.wikipedia.org/wiki/Chand_Sultan')],
+    sources: [
+      W('Wikipedia: Bakht Buland Shah', 'https://en.wikipedia.org/wiki/Bakht_Buland_Shah'),
+      W('Wikipedia: Gonds of Deogarh', 'https://en.wikipedia.org/wiki/Gonds_of_Deogarh'),
+      W('Wikipedia: Chand Sultan', 'https://en.wikipedia.org/wiki/Chand_Sultan'),
+    ],
   },
   {
     id: 'sitabuldi',
@@ -333,7 +393,10 @@ export const STOPS: SmallStop[] = [
       'Who built the fort on the hill is disputed: the British after the battle, or Appa Sahib just before it.',
       'It is an army fort, opened to the public only on a few days a year.',
     ],
-    sources: [W('Wikipedia: Sitabuldi Fort', 'https://en.wikipedia.org/wiki/Sitabuldi_Fort'), W('Incredible India: Sitabuldi Fort', 'https://incredibleindia.gov.in/en/maharashtra/nagpur/sitabuldi-fort')],
+    sources: [
+      W('Wikipedia: Sitabuldi Fort', 'https://en.wikipedia.org/wiki/Sitabuldi_Fort'),
+      W('Incredible India: Sitabuldi Fort', 'https://incredibleindia.gov.in/en/maharashtra/nagpur/sitabuldi-fort'),
+    ],
   },
   {
     id: 'saoji',
@@ -345,7 +408,13 @@ export const STOPS: SmallStop[] = [
       'It comes from the Halba Koshti weavers, who came to work in Nagpur’s textile mills in the late 1800s.',
       'Its masala is a family secret, often said to use about 32 spices.',
     ],
-    sources: [W('Free Press Journal: what is Saoji cuisine', 'https://www.freepressjournal.in/lifestyle/what-is-saoji-cuisine-nagpurs-fiery-culinary-legacy-returns-to-focus-after-maha-fdas-chief-tukaram-mundhe-remark'), W('Onmanorama: Nagpur Saoji', 'https://www.onmanorama.com/food/recipe/2018/08/06/nagpur-saoji-secret-recipe.html')],
+    sources: [
+      W(
+        'Free Press Journal: what is Saoji cuisine',
+        'https://www.freepressjournal.in/lifestyle/what-is-saoji-cuisine-nagpurs-fiery-culinary-legacy-returns-to-focus-after-maha-fdas-chief-tukaram-mundhe-remark',
+      ),
+      W('Onmanorama: Nagpur Saoji', 'https://www.onmanorama.com/food/recipe/2018/08/06/nagpur-saoji-secret-recipe.html'),
+    ],
   },
   {
     id: 'deekshabhoomi',
@@ -382,7 +451,13 @@ export const STOPS: SmallStop[] = [
       'Critics said it broke the tiger authority’s own rule of 800 to 1,000 sq km of undisturbed forest; a buffer of about 678 sq km was added in 2015.',
     ],
     creature: 'tiger',
-    sources: [W('Down To Earth: Bor becomes smallest tiger reserve', 'https://www.downtoearth.org.in/amp/story/wildlife-biodiversity/bor-becomes-smallest-tiger-reserve-in-india-with-four-tigers-45035'), W('India Environment Portal: NTCA goes against its norms for Bor', 'https://indiaenvironmentportal.org.in/news-clippings/national-tiger-conservation-authority-goes-against-its-own-norms-for-bor-tiger-reserve')],
+    sources: [
+      W('Down To Earth: Bor becomes smallest tiger reserve', 'https://www.downtoearth.org.in/amp/story/wildlife-biodiversity/bor-becomes-smallest-tiger-reserve-in-india-with-four-tigers-45035'),
+      W(
+        'India Environment Portal: NTCA goes against its norms for Bor',
+        'https://indiaenvironmentportal.org.in/news-clippings/national-tiger-conservation-authority-goes-against-its-own-norms-for-bor-tiger-reserve',
+      ),
+    ],
   },
   {
     id: 'avni',
@@ -396,7 +471,10 @@ export const STOPS: SmallStop[] = [
       'The killing split opinion across India between villagers who feared her and people who wanted her saved.',
     ],
     creature: 'tiger',
-    sources: [W('The Wire: Maharashtra prepares to kill an alleged man-eater', 'https://thewire.in/environment/maharashtra-prepares-to-kill-alleged-man-eater-activists-and-experts-protest'), W('The Quint: tigress Avni shot from behind, says expert’s report', 'https://www.thequint.com/amp/story/news/hot-news/tigress-avni-shot-from-behind-says-expert-s-report-2')],
+    sources: [
+      W('The Wire: Maharashtra prepares to kill an alleged man-eater', 'https://thewire.in/environment/maharashtra-prepares-to-kill-alleged-man-eater-activists-and-experts-protest'),
+      W('The Quint: tigress Avni shot from behind, says expert’s report', 'https://www.thequint.com/amp/story/news/hot-news/tigress-avni-shot-from-behind-says-expert-s-report-2'),
+    ],
   },
   {
     id: 'penganga',
@@ -408,7 +486,10 @@ export const STOPS: SmallStop[] = [
       'It runs along the state line before joining the Wardha.',
       'Telangana has built a barrage on it under an agreement with Maharashtra, though its canals were still unfinished in 2024.',
     ],
-    sources: [W('Telangana360: Penganga river', 'https://www.telangana360.com/2016/11/penganga-river.html'), W('Deccan Chronicle: Korata-Chanaka barrage', 'https://deccanchronicle.com/southern-states/telangana/work-on-korata-chanaka-barrage-remains-incomplete-895218')],
+    sources: [
+      W('Telangana360: Penganga river', 'https://www.telangana360.com/2016/11/penganga-river.html'),
+      W('Deccan Chronicle: Korata-Chanaka barrage', 'https://deccanchronicle.com/southern-states/telangana/work-on-korata-chanaka-barrage-remains-incomplete-895218'),
+    ],
   },
   {
     id: 'kuntala',
@@ -420,7 +501,10 @@ export const STOPS: SmallStop[] = [
       'It is two falls together, and runs fullest after the monsoon.',
       'Local stories link its name to kunta, a pond in Telugu and Gondi, or to Shakuntala.',
     ],
-    sources: [W('Telangana Tourism: Kuntala and Pochera falls', 'https://telanganatourism.gov.in/blog/kuntala-pochera-waterfalls.html'), W('Telangana360: Kuntala waterfalls', 'https://www.telangana360.com/2016/01/kuntala-waterfalls.html')],
+    sources: [
+      W('Telangana Tourism: Kuntala and Pochera falls', 'https://telanganatourism.gov.in/blog/kuntala-pochera-waterfalls.html'),
+      W('Telangana360: Kuntala waterfalls', 'https://www.telangana360.com/2016/01/kuntala-waterfalls.html'),
+    ],
   },
   {
     id: 'kawal',
@@ -433,7 +517,10 @@ export const STOPS: SmallStop[] = [
       'For now it has no tigers of its own, only ones passing through from Maharashtra; the tiger authority has named it a priority place to bring them back.',
     ],
     creature: 'tiger',
-    sources: [W('NTCA: Kawal Tiger Reserve', 'https://ntca.gov.in/assets/uploads/briefnote/kawal.pdf'), W('IAS Parliament: Kawal Tiger Reserve', 'https://www.shankariasparliament.com/current-affairs/gs-iii/kawal-tiger-reserve')],
+    sources: [
+      W('NTCA: Kawal Tiger Reserve', 'https://ntca.gov.in/assets/uploads/briefnote/kawal.pdf'),
+      W('IAS Parliament: Kawal Tiger Reserve', 'https://www.shankariasparliament.com/current-affairs/gs-iii/kawal-tiger-reserve'),
+    ],
   },
   {
     id: 'nirmal-toys',
@@ -446,7 +533,11 @@ export const STOPS: SmallStop[] = [
       'When Hyderabad state ended, the artisans lost royal patrons; since 1955 a cooperative has kept the work going.',
       'Under current rules they may only use fallen trees.',
     ],
-    sources: [W('Wikipedia: Nirmal toys and craft', 'https://en.wikipedia.org/wiki/Nirmal_toys_and_craft'), W('PARI: Once upon a toy town', 'https://ruralindiaonline.org/articles/once-upon-a-toy-town'), W('Outlook Traveller: Nirmal, home to Nakkash artists', 'https://www.outlooktraveller.com/explore/culture/nirmal-home-to-nakkash-artists-of-telangana')],
+    sources: [
+      W('Wikipedia: Nirmal toys and craft', 'https://en.wikipedia.org/wiki/Nirmal_toys_and_craft'),
+      W('PARI: Once upon a toy town', 'https://ruralindiaonline.org/articles/once-upon-a-toy-town'),
+      W('Outlook Traveller: Nirmal, home to Nakkash artists', 'https://www.outlooktraveller.com/explore/culture/nirmal-home-to-nakkash-artists-of-telangana'),
+    ],
   },
   {
     id: 'sriram-sagar',
@@ -482,7 +573,10 @@ export const STOPS: SmallStop[] = [
       'Its fort was rebuilt, by one account in 1786, on the site of an older one.',
       'Descendants of the family restored it privately, and in 2022 it won a UNESCO Asia-Pacific heritage award.',
     ],
-    sources: [W('Outlook Traveller: India bags top awards for heritage conservation', 'https://www.outlooktraveller.com/explore/culture/india-bags-top-awards-for-heritage-conservation'), W('Telangana360: Domakonda fort', 'https://telangana360.com/2016/11/domakonda-fort.html')],
+    sources: [
+      W('Outlook Traveller: India bags top awards for heritage conservation', 'https://www.outlooktraveller.com/explore/culture/india-bags-top-awards-for-heritage-conservation'),
+      W('Telangana360: Domakonda fort', 'https://telangana360.com/2016/11/domakonda-fort.html'),
+    ],
   },
   {
     id: 'medak',
@@ -494,7 +588,10 @@ export const STOPS: SmallStop[] = [
       'During a famine its builder, the Methodist minister Charles Walker Posnett, paid people to build it in grain and wages instead of running a free kitchen.',
       'Sources date that famine differently, but agree on the food-for-work.',
     ],
-    sources: [W('Wikipedia: Medak Cathedral', 'https://en.wikipedia.org/wiki/Medak_Cathedral'), W('Outlook Traveller: Marvellous Medak', 'https://www.outlooktraveller.com/explore/features/marvellous-medak')],
+    sources: [
+      W('Wikipedia: Medak Cathedral', 'https://en.wikipedia.org/wiki/Medak_Cathedral'),
+      W('Outlook Traveller: Marvellous Medak', 'https://www.outlooktraveller.com/explore/features/marvellous-medak'),
+    ],
   },
   {
     id: 'osmania-biscuit',
@@ -506,6 +603,503 @@ export const STOPS: SmallStop[] = [
       'Their sweet-and-salty Osmania biscuit is named after the last Nizam, Mir Osman Ali Khan.',
       'Many old Irani cafes have closed, replaced by biryani places.',
     ],
-    sources: [W('The News Minute: why Hyderabad’s Irani cafes are disappearing', 'https://www.thenewsminute.com/article/ek-pauna-do-biscoot-why-hyderabads-irani-cafes-are-disappearing-115625'), W('Scroll: where have Hyderabad’s Irani cafes gone', 'https://scroll.in/magazine/872563/where-have-hyderabads-irani-cafes-gone-theyve-been-replaced-by-biryani-joints')],
+    sources: [
+      W('The News Minute: why Hyderabad’s Irani cafes are disappearing', 'https://www.thenewsminute.com/article/ek-pauna-do-biscoot-why-hyderabads-irani-cafes-are-disappearing-115625'),
+      W('Scroll: where have Hyderabad’s Irani cafes gone', 'https://scroll.in/magazine/872563/where-have-hyderabads-irani-cafes-gone-theyve-been-replaced-by-biryani-joints'),
+    ],
+  },
+  {
+    id: 'golconda',
+    kind: 'fort',
+    km: 1625,
+    name: 'Golconda',
+    facts: [
+      'On Hyderabad’s western edge stands Golconda, capital of the Qutb Shahi kings from 1518.',
+      'It was the great market for diamonds from the Krishna valley; the Koh-i-Noor is said to have come from these mines.',
+      'Aurangzeb besieged it for eight months in 1687; by most accounts it fell when a bribed officer opened a gate.',
+    ],
+    sources: [W('Wikipedia: Golconda', 'https://en.wikipedia.org/wiki/Golconda'), W('Wikipedia: Siege of Golconda', 'https://en.wikipedia.org/wiki/Siege_of_Golconda')],
+  },
+  {
+    id: 'haleem',
+    kind: 'food',
+    km: 1665,
+    name: 'Hyderabadi haleem',
+    facts: [
+      'Haleem is wheat, meat and lentils pounded and slow-cooked for hours into a thick, spiced porridge.',
+      'In Hyderabad it is the dish of Ramzan evenings.',
+      'In 2010 it became the first meat dish in India to get a geographical indication; critics asked what about it depends on the place.',
+    ],
+    sources: [
+      W('ICAR: Hyderabad Haleem gets GI certification', 'https://icar.org.in/node/1585'),
+      W('SpicyIP: Hyderabadi Haleem gets dubious GI tag', 'https://spicyip.com/2010/09/spicyip-tidbit-hyderabadi-haleem-gets.html'),
+    ],
+  },
+  {
+    id: 'pillalamarri',
+    kind: 'strange',
+    km: 1705,
+    name: 'The banyan of Pillalamarri',
+    facts: [
+      'Just off the road at Mahbubnagar, a single banyan tree has spread over about three acres, its hanging roots grown into trunks of their own.',
+      'It is said to be about 700 years old; estimates range from 500 to 800.',
+      'In 2018, with termites eating it, forest officers gave it a saline drip, injecting the solution into its branches.',
+    ],
+    sources: [
+      W('The News Minute: 700-year-old banyan put on drips', 'https://www.thenewsminute.com/article/save-700-year-old-banyan-tree-telangana-officials-put-it-drips-79814'),
+      W('Atlas Obscura: a dying banyan brought back with an IV', 'https://www.atlasobscura.com/articles/dying-banyan-tree-survives-with-iv'),
+    ],
+  },
+  {
+    id: 'gadwal',
+    kind: 'strange',
+    km: 1745,
+    name: 'Gadwal saris',
+    facts: [
+      'Gadwal, west of the road, weaves saris with a cotton body and a silk border and end.',
+      'The body and border are woven apart and locked together in the weft, a joint that takes great skill.',
+      'The sari is a registered geographical indication of Telangana.',
+    ],
+    sources: [
+      W('Wikipedia: Gadwal sari', 'https://en.wikipedia.org/wiki/Gadwal_sari'),
+      W('Vikaspedia: Gadwal saree', 'https://en.vikaspedia.in/social-welfare/entrepreneurship/indian-handloom/gadwal-saree'),
+    ],
+  },
+  {
+    id: 'krishna',
+    kind: 'river',
+    km: 1785,
+    name: 'The Krishna',
+    facts: [
+      'The road crosses the Krishna, one of India’s great rivers, on its way east to the Bay of Bengal.',
+      'A road bridge here, built in the 1950s, first carried trade between Telangana and Rayalaseema.',
+      'Upstream is the Jurala dam; the crossing at Beechupally is about 30 km below it.',
+    ],
+    sources: [W('Wikipedia: Beechupally', 'https://en.wikipedia.org/wiki/Beechupally'), W('Wikipedia: Krishna River', 'https://en.wikipedia.org/wiki/Krishna_River')],
+  },
+  {
+    id: 'into-andhra',
+    kind: 'border',
+    km: 1830,
+    name: 'Into Andhra Pradesh',
+    facts: [
+      'The road enters Andhra Pradesh at Kurnool, on the Tungabhadra.',
+      'From 1953 to 1956 Kurnool was the capital of Andhra State, the first Indian state drawn by language.',
+      'In 1956 the capital moved to Hyderabad, which in 2014 went to Telangana.',
+    ],
+    sources: [W('Wikipedia: Andhra State', 'https://en.wikipedia.org/wiki/Andhra_State'), W('Wikipedia: Kurnool', 'https://en.wikipedia.org/wiki/Kurnool')],
+  },
+  {
+    id: 'rollapadu',
+    kind: 'wildlife',
+    km: 1850,
+    name: 'Rollapadu’s bustards',
+    facts: [
+      'East of Kurnool, the Rollapadu sanctuary was made in 1988, after great Indian bustards were found here again in 1982.',
+      'Lesser floricans come here for the winter grassland too.',
+      'The bustards have all but gone: the last one was reported in March 2022.',
+    ],
+    creature: 'bustard',
+    sources: [
+      W('Zoo’s Print: Rollapadu sanctuary report', 'https://zoosprint.org/index.php/zpj/article/view/6810/6219'),
+      W(
+        'Deccan Chronicle: two wildlife sanctuaries fail to fulfil purpose',
+        'https://www.deccanchronicle.com/amp/southern-states/andhra-pradesh/two-wildlife-sanctuaries-fail-to-fulfil-purpose-in-ap-1888613',
+      ),
+    ],
+  },
+  {
+    id: 'belum',
+    kind: 'strange',
+    km: 1870,
+    name: 'The Belum caves',
+    facts: [
+      'Off the road lies the Belum cave system, about 3.2 km of passages through limestone, the second longest known in India.',
+      'Villagers knew and used it long before the geologist Robert Bruce Foote recorded it in 1884.',
+      'Its deepest point is about 46 m below the entrance.',
+    ],
+    sources: [W('Wikipedia: Belum Caves', 'https://en.wikipedia.org/wiki/Belum_Caves'), W('Wikipedia: Robert Bruce Foote', 'https://en.wikipedia.org/wiki/Robert_Bruce_Foote')],
+  },
+  {
+    id: 'gooty',
+    kind: 'fort',
+    km: 1910,
+    name: 'Gooty',
+    facts: [
+      'Gooty’s fort climbs a crag above the town.',
+      'The Maratha general Murari Rao held it until Hyder Ali besieged it in 1775 and the water ran out.',
+      'Thomas Munro, governor of Madras, died of cholera nearby in 1827 and was first buried at Gooty.',
+    ],
+    sources: [W('Wikipedia: Gooty Fort', 'https://en.wikipedia.org/wiki/Gooty_Fort'), W('Wikipedia: Sir Thomas Munro, 1st Baronet', 'https://en.wikipedia.org/wiki/Sir_Thomas_Munro,_1st_Baronet')],
+  },
+  {
+    id: 'ragi-sangati',
+    kind: 'food',
+    km: 1950,
+    name: 'Ragi sangati',
+    facts: [
+      'Rayalaseema’s staple: finger-millet flour stirred into boiling water, sometimes with rice, and shaped into a ball.',
+      'You pinch off a piece and swallow it with a thin, sharp curry.',
+      'Karnataka calls it ragi mudde; it is the food of farmers in dry country.',
+    ],
+    sources: [
+      W('Anantapur district: ragi sangati', 'https://ananthapuramu.ap.gov.in/culinary-delight/ragi-mudda-ragi-sangati/'),
+      W('Wikipedia: Ragi mudde', 'https://en.wikipedia.org/wiki/Ragi_mudde'),
+    ],
+  },
+  {
+    id: 'penukonda',
+    kind: 'fort',
+    km: 1990,
+    name: 'Penukonda',
+    facts: [
+      'After Vijayanagara’s defeat at Talikota in 1565, its kings fled to this hill fort and made it their capital.',
+      'In 1576 the Bijapur sultan besieged it for three months and was beaten off.',
+      'Sources differ on when the court moved on to Chandragiri: 1585 or 1592.',
+    ],
+    sources: [W('Wikipedia: Penukonda', 'https://en.wikipedia.org/wiki/Penukonda'), W('Wikipedia: Siege of Penukonda', 'https://en.wikipedia.org/wiki/Siege_of_Penukonda')],
+  },
+  {
+    id: 'lepakshi',
+    kind: 'strange',
+    km: 2030,
+    name: 'The hanging pillar',
+    facts: [
+      'In the Lepakshi temple, built around 1530, one of about 70 stone pillars does not quite touch the floor.',
+      'Visitors slide a cloth underneath it; stories say a British engineer once tried to find out what held it up.',
+      'Its ceiling painting of a single figure, about 24 by 14 feet, is said to be the largest of its kind in India.',
+    ],
+    sources: [
+      W('Incredible India: Lepakshi temple', 'https://www.incredibleindia.gov.in/en/andhra-pradesh/anantapur/lepakshi-temple'),
+      W('Amusing Planet: the hanging pillar of Lepakshi', 'https://www.amusingplanet.com/2015/08/the-hanging-pillar-of-lepakshi-temple.html'),
+    ],
+  },
+  {
+    id: 'penna',
+    kind: 'river',
+    km: 2072,
+    name: 'The Penna',
+    facts: [
+      'The Penna rises in the Nandi Hills just ahead and flows north into Andhra Pradesh, the way you have come.',
+      'It runs about 597 km, turns east through the Eastern Ghats and reaches the sea near Nellore.',
+      'Most of its basin is dry country, and in many years it barely flows.',
+    ],
+    sources: [W('Wikipedia: Penna River', 'https://en.wikipedia.org/wiki/Penna_River')],
+  },
+  {
+    id: 'into-karnataka',
+    kind: 'border',
+    km: 2112,
+    name: 'Into Karnataka',
+    facts: [
+      'The road climbs into Karnataka.',
+      'The state was formed in 1956 as Mysore State, bringing Kannada-speaking regions together, and took the name Karnataka in 1973.',
+      'Bengaluru, its capital, sits on the plateau about 900 m up.',
+    ],
+    sources: [
+      W('Wikipedia: Mysore State', 'https://en.wikipedia.org/wiki/Mysore_State'),
+      W('Wikipedia: List of renamed places in India', 'https://en.wikipedia.org/wiki/List_of_renamed_places_in_India'),
+    ],
+  },
+  {
+    id: 'nandi-hills',
+    kind: 'fort',
+    km: 2135,
+    name: 'Nandi Hills',
+    facts: [
+      'Nandi Hills rises to about 1,478 m north of Bengaluru, with fort walls strengthened by Hyder Ali and Tipu Sultan.',
+      'A cliff there is called Tipu’s Drop; the story that prisoners were thrown from it is tradition, not record.',
+      'Several rivers are said to rise on the hill, the Arkavathy and the Penna among them; most springs have dried.',
+    ],
+    sources: [W('Wikipedia: Nandi Hills, India', 'https://en.wikipedia.org/wiki/Nandi_Hills,_India'), W('Karnataka Tourism: Nandi Hills', 'https://karnatakatourism.org/tour-item/nandi-hills')],
+  },
+  {
+    id: 'devanahalli',
+    kind: 'fort',
+    km: 2170,
+    name: 'Devanahalli',
+    facts: [
+      'Tipu Sultan was born at Devanahalli, in 1750 or 1751 (sources and the plaque differ).',
+      'A small memorial marks the spot outside the old fort, now in the shadow of Bengaluru’s airport.',
+      'The fort began as a mud fort around 1501 and passed to the British in 1791.',
+    ],
+    sources: [
+      W('Wikipedia: Devanahalli Fort', 'https://en.wikipedia.org/wiki/Devanahalli_Fort'),
+      W('Deccan Herald: the storied past of Devanahalli fort', 'https://deccanherald.com/india/karnataka/the-storied-past-of-devanahalli-fort-3275426'),
+    ],
+  },
+  {
+    id: 'kempegowda',
+    kind: 'fort',
+    km: 2200,
+    name: 'Kempe Gowda’s Bengaluru',
+    facts: [
+      'Bengaluru began in 1537 as a mud fort built by Kempe Gowda, a local chief under Vijayanagara.',
+      'Stone towers credited to a later Kempe Gowda still stand at Lalbagh, Ulsoor Lake and two other spots.',
+      'They are often called boundary markers; most historians think they were watchtowers.',
+    ],
+    sources: [
+      W('Wikipedia: History of Bengaluru', 'https://en.wikipedia.org/wiki/History_of_Bengaluru'),
+      W('Live History India: Bangalore Fort', 'https://livehistoryindia.com/story/monuments/bangalore-fort'),
+    ],
+  },
+  {
+    id: 'into-tamil-nadu',
+    kind: 'border',
+    km: 2230,
+    name: 'Into Tamil Nadu',
+    facts: [
+      'The road drops off the plateau into Tamil Nadu at Hosur.',
+      'Until 14 January 1969 the state was Madras State; its new name means the land of the Tamils.',
+      'Its borders were drawn by language in 1956.',
+    ],
+    sources: [W('Wikipedia: List of renamed places in India', 'https://en.wikipedia.org/wiki/List_of_renamed_places_in_India'), W('Wikipedia: Tamil Nadu', 'https://en.wikipedia.org/wiki/Tamil_Nadu')],
+  },
+  {
+    id: 'krishnagiri-mangoes',
+    kind: 'food',
+    km: 2275,
+    name: 'Krishnagiri’s mangoes',
+    facts: [
+      'Krishnagiri district grows more mangoes than anywhere else in Tamil Nadu.',
+      'Most of the crop goes to pulp factories, for juice sold across the world.',
+      'A bad year hurts: in 2026 the totapuri crop fell to well under half the year before.',
+    ],
+    sources: [
+      W('Wikipedia: Krishnagiri district', 'https://en.wikipedia.org/wiki/Krishnagiri_district'),
+      W('DT Next: Krishnagiri’s mango economy', 'https://www.dtnext.in/amp/story/news/tamilnadu/krishnagiris-mango-economy-beaten-to-pulp'),
+    ],
+  },
+  {
+    id: 'baramahal',
+    kind: 'fort',
+    km: 2315,
+    name: 'The Baramahal',
+    facts: [
+      'This hill country of forts passed from Tipu Sultan to the East India Company by the treaty of 1792.',
+      'Alexander Read and his deputy Thomas Munro first tried here the ryotwari system, taxing each farmer directly.',
+      'Historians still argue over who devised it, and whether it eased or deepened the burden on farmers.',
+    ],
+    sources: [
+      W('GKToday: Ryotwari settlement in south India', 'https://www.gktoday.in/ryotwari-settlement-in-south-india/'),
+      W('Project MUSE: review on Munro and the Baramahal', 'https://muse.jhu.edu/article/865630/summary'),
+    ],
+  },
+  {
+    id: 'hogenakkal',
+    kind: 'river',
+    km: 2350,
+    name: 'Hogenakkal',
+    facts: [
+      'West of Dharmapuri, the Kaveri comes into Tamil Nadu from Karnataka over a run of falls at Hogenakkal.',
+      'The name is Kannada for smoking rocks, after the mist the water throws up.',
+      'Round bamboo coracles, about 2 m across, carry people through the gorge.',
+    ],
+    sources: [
+      W('Wikipedia: Hogenakkal Falls', 'https://en.wikipedia.org/wiki/Hogenakkal_Falls'),
+      W('Outlook Traveller: the smoking falls of India', 'https://www.outlooktraveller.com/see/did-you-know-about-the-smoking-falls-of-india'),
+    ],
+  },
+  {
+    id: 'yercaud',
+    kind: 'food',
+    km: 2390,
+    name: 'Shevaroy coffee',
+    facts: [
+      'Above Salem rise the Shevaroy Hills, with the hill town of Yercaud on top.',
+      'Coffee was first planted here around 1820 by M. D. Cockburn, then the collector of Salem; sources differ on where the plants came from.',
+      'Coffee still grows on the hills, shaded by taller trees.',
+    ],
+    sources: [W('Wikipedia: M. D. Cockburn', 'https://en.wikipedia.org/wiki/M._D._Cockburn'), W('Wikipedia: Yercaud', 'https://en.wikipedia.org/wiki/Yercaud')],
+  },
+  {
+    id: 'namakkal-fort',
+    kind: 'fort',
+    km: 2435,
+    name: 'Namakkal’s rock',
+    facts: [
+      'Namakkal’s fort sits on a single bare rock about 65 to 75 m high.',
+      'It is usually credited to Ramachandra Nayaka, a vassal of Madurai.',
+      'Tipu held it for a time, but did not build it; the British took it in 1768 and lost it to Hyder Ali.',
+    ],
+    sources: [W('Wikipedia: Namakkal Fort', 'https://en.wikipedia.org/wiki/Namakkal_Fort')],
+  },
+  {
+    id: 'kaveri',
+    kind: 'river',
+    km: 2470,
+    name: 'The Kaveri',
+    facts: [
+      'Near Paramathi Velur the road crosses the Kaveri, the river of southern India’s rice.',
+      'The bridge opened in 1952, after two towns argued for years over where it should go.',
+      'Karnataka upstream and Tamil Nadu downstream have fought over its water for more than a century.',
+    ],
+    sources: [W('Wikipedia: Paramathi Velur', 'https://en.wikipedia.org/wiki/Paramathi_Velur'), W('Wikipedia: Kaveri River water dispute', 'https://en.wikipedia.org/wiki/Kaveri_River_water_dispute')],
+  },
+  {
+    id: 'amaravathi',
+    kind: 'river',
+    km: 2505,
+    name: 'The Amaravathi at Karur',
+    facts: [
+      'Karur stands on the Amaravathi, a river called Aanporunai in Sangam poems, just before it joins the Kaveri.',
+      'Inscriptions nearby point to Karur, then Karuvur, as a capital of the early Cheras.',
+      'Roman and other ancient coins have been found in the river bed here; Ptolemy named the town around 150 CE.',
+    ],
+    sources: [
+      W('Wikipedia: History of Karur', 'https://en.wikipedia.org/wiki/History_of_Karur'),
+      W('Tamil Nadu Archaeology: Chera site museum, Karur', 'https://www.tnarch.gov.in/chera-site-museum-karur'),
+    ],
+  },
+  {
+    id: 'dindigul-biryani',
+    kind: 'food',
+    km: 2545,
+    name: 'Dindigul biryani',
+    facts: [
+      'Dindigul’s biryani uses seeraga samba, a small fragrant rice that soaks up the spices.',
+      'Its most famous house began in 1957 as a four-seat eatery; the founder’s turban gave it its name, Thalappakatti.',
+      'Other stories trace the town’s biryani further back; they are not well documented.',
+    ],
+    sources: [
+      W('Thalappakatti: about us', 'https://thalappakatti.com/about-us'),
+      W('The Better India: a four-seater eatery into a biryani empire', 'https://thebetterindia.com/web-stories/dindigul-thalappakatti-biryani-global-journey'),
+    ],
+  },
+  {
+    id: 'dindigul-fort',
+    kind: 'fort',
+    km: 2560,
+    name: 'Dindigul’s rock fort',
+    facts: [
+      'The Madurai Nayak king Muthu Krishnappa built the fort on Dindigul’s great rock in 1605.',
+      'Mysore took it in 1742; Hyder Ali made it a strong military base.',
+      'It passed to the British in the 1790s; sources give 1790, 1792 and 1799.',
+    ],
+    sources: [W('Wikipedia: Dindigul Fort', 'https://en.wikipedia.org/wiki/Dindigul_Fort'), W('Dindigul district: history', 'https://dindigul.nic.in/history/')],
+  },
+  {
+    id: 'madurai-malli',
+    kind: 'strange',
+    km: 2595,
+    name: 'Madurai jasmine',
+    facts: [
+      'The jasmine grown around Madurai changes colour through the day: greenish white in the morning, milky by afternoon, creamy at dusk.',
+      'In 2013 it became the first flower in Tamil Nadu with a geographical indication.',
+      'Madurai is called India’s jasmine capital, and its flowers fly out to the USA and Dubai.',
+    ],
+    sources: [
+      W('Wikipedia: Madurai Malli', 'https://en.wikipedia.org/wiki/Madurai_Malli'),
+      W('SpicyIP: Madurai Malli is granted GI status', 'https://spicyip.com/2013/01/guest-post-madurai-malli-is-granted-gi.html'),
+    ],
+  },
+  {
+    id: 'vaigai',
+    kind: 'river',
+    km: 2622,
+    name: 'The Vaigai',
+    facts: [
+      'Madurai stands on the Vaigai, the city’s river since the Sangam age.',
+      'Once it flowed all year; now it is often dry in the city, its water held upstream by the Vaigai dam, built in 1959.',
+      'Water from the Periyar in Kerala is sent through a tunnel in the Ghats to feed it.',
+    ],
+    sources: [
+      W('Wikipedia: Vaigai River', 'https://en.wikipedia.org/wiki/Vaigai_River'),
+      W('Scroll: a new tiger reserve and the revival of the Vaigai', 'https://scroll.in/article/996570/in-madurai-a-new-tiger-reserve-holds-hope-for-the-revival-of-the-vaigai-river'),
+    ],
+  },
+  {
+    id: 'sivakasi',
+    kind: 'strange',
+    km: 2665,
+    name: 'Sivakasi’s fireworks',
+    facts: [
+      'West of the road, Sivakasi makes most of India’s fireworks and many of its matches.',
+      'In 1922 two cousins from the town, Ayya Nadar and Shanmuga Nadar, went to Calcutta to learn match-making and came back to start factories.',
+      'The dry weather suits the work; the town has also seen many deadly factory explosions.',
+    ],
+    sources: [
+      W('Wikipedia: Ayya Nadar', 'https://en.wikipedia.org/wiki/Ayya_Nadar'),
+      W('Madras Musings: Ayya and Shanmugam of Sivakasi', 'https://madrasmusings.com/vol-35-no-2/ayya-and-shanmugam-who-steered-sivakasi-into-becoming-a-mini-japan/'),
+    ],
+  },
+  {
+    id: 'kovilpatti',
+    kind: 'food',
+    km: 2708,
+    name: 'Kovilpatti’s peanut candy',
+    facts: [
+      'Kovilpatti makes kadalai mittai: peanuts grown in the black soil around it, set in pale jaggery.',
+      'Makers say the river water matters, and in 2020 the candy got a geographical indication.',
+      'About 150 small makers turn it out in and around the town.',
+    ],
+    sources: [W('Deccan Herald: Kovilpatti kadalai mittai gets GI tag', 'https://deccanherald.com/india/sweet-news-famous-kovilpatti-kadalai-mittai-gets-gi-tag-831871.html')],
+  },
+  {
+    id: 'kayathar',
+    kind: 'fort',
+    km: 2745,
+    name: 'Kattabomman at Kayathar',
+    facts: [
+      'Veerapandiya Kattabomman, chief of Panchalankurichi, refused to pay the East India Company’s taxes.',
+      'He was captured, and on 16 October 1799 he was hanged at Kayathar, beside this road.',
+      'The British pulled down his fort; Tamil Nadu built a memorial fort on its site in 1974.',
+    ],
+    sources: [
+      W('Wikipedia: Veerapandiya Kattabomman', 'https://en.wikipedia.org/wiki/Veerapandiya_Kattabomman'),
+      W('Wikipedia: Panchalankurichi Fort', 'https://en.wikipedia.org/wiki/Panchalankurichi_Fort'),
+    ],
+  },
+  {
+    id: 'thamirabarani',
+    kind: 'river',
+    km: 2775,
+    name: 'The Thamirabarani',
+    facts: [
+      'Tirunelveli sits on the Thamirabarani, which rises in the Western Ghats and flows to the Gulf of Mannar.',
+      'Unusually for Tamil Nadu, it flows all year round.',
+      'The later Pandyas built canals from it that still water the paddy here.',
+    ],
+    sources: [W('Wikipedia: Thamirabarani River', 'https://en.wikipedia.org/wiki/Thamirabarani_River'), W('Wikipedia: Tirunelveli', 'https://en.wikipedia.org/wiki/Tirunelveli')],
+  },
+  {
+    id: 'tirunelveli-halwa',
+    kind: 'food',
+    km: 2785,
+    name: 'Tirunelveli halwa',
+    facts: [
+      'Tirunelveli’s halwa is made from milk pressed out of soaked whole wheat, cooked with sugar and a great deal of ghee.',
+      'Its most famous shop, Iruttu Kadai, the dark shop, opened in 1900 and was once lit by a single bulb.',
+      'People credit the Thamirabarani’s water for the taste; that is local belief.',
+    ],
+    sources: [W('Wikipedia: Iruttu Kadai', 'https://en.wikipedia.org/wiki/Iruttu_Kadai'), W('Open: the migrant halwa', 'https://openthemagazine.com/features/living/the-migrant-halwa')],
+  },
+  {
+    id: 'kmtr',
+    kind: 'wildlife',
+    km: 2815,
+    name: 'Kalakad–Mundanthurai',
+    facts: [
+      'In the Ghats to the west lies Kalakad–Mundanthurai, Tamil Nadu’s first tiger reserve, declared in 1988.',
+      'Its forests feed the Thamirabarani.',
+      'Tigers live here, and the lion-tailed macaque, a monkey found only in the Western Ghats.',
+    ],
+    creature: 'tiger',
+    sources: [
+      W('Wildlife Institute of India: Kalakad-Mundanthurai Tiger Reserve', 'https://mee-tr.wii.gov.in/Home/Geospatial/kalakad-mundanthurai-tiger-reserve'),
+      W('NTCA: KMTR brief', 'https://ntca.gov.in/assets/uploads/briefnote/kmtr.pdf'),
+    ],
+  },
+  {
+    id: 'muppandal',
+    kind: 'strange',
+    km: 2850,
+    name: 'The wind gap',
+    facts: [
+      'At the Aralvaimozhi gap, wind from the Arabian Sea funnels through the hills.',
+      'The turbines at Muppandal, begun in 1986, add up to about 1,500 MW: India’s largest onshore wind farm.',
+      'Claims that it is the largest in Asia or among the largest in the world vary by source.',
+    ],
+    sources: [W('Wikipedia: Muppandal Wind Farm', 'https://en.wikipedia.org/wiki/Muppandal_Wind_Farm'), W('Wikipedia: Aralvaimozhi', 'https://en.wikipedia.org/wiki/Aralvaimozhi')],
   },
 ];
