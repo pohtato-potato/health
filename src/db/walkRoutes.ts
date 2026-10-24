@@ -92,3 +92,9 @@ export async function pauseStory(id: string, km: number | undefined): Promise<vo
   const { storyPauseKm: _, ...rest } = run;
   await db.routes.put(km === undefined ? rest : { ...rest, storyPauseKm: km });
 }
+
+/** A book or film route: walk it with the story, or with places only. */
+export async function setRouteStory(id: string, story: 'story' | 'places'): Promise<void> {
+  const run = await db.routes.get(id);
+  if (run) await db.routes.put({ ...run, story });
+}

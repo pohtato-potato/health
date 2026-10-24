@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { exportData, restoreData } from '../src/db/backup';
 import { HealthDB, db, setDatabase } from '../src/db/db';
-import { joinRoute, markRouteDone, pauseStory, pickRouteUp, setRouteDown, setRouteTarget } from '../src/db/walkRoutes';
+import { joinRoute, markRouteDone, pauseStory, pickRouteUp, setRouteDown, setRouteStory, setRouteTarget } from '../src/db/walkRoutes';
 import { withCatalogue, type RouteDef } from '../src/walk/catalogue';
 
 const route = (id: string, km: number) => ({ id, km, name: id, places: [], pages: [], sources: [] }) as unknown as RouteDef;
@@ -97,4 +97,17 @@ describe('walking a route, saved', () => {
     expect(await joinRoute('nowhere', '2026-01-01')).toBe('no place');
     expect(await db.routes.count()).toBe(0);
   });
+
+  it(
+    'saves how a book route is walked, story or places',
+    inCatalogue(async () => {
+      await joinRoute('a', '2026-01-01');
+      await setRouteStory('a', 'places');
+      expect((await db.routes.get('a'))!.story).toBe('places');
+      await setRouteStory('a', 'story');
+      expect((await db.routes.get('a'))!.story).toBe('story');
+      await setRouteStory('missing', 'places');
+      expect(await db.routes.get('missing')).toBeUndefined();
+    }),
+  );
 });
