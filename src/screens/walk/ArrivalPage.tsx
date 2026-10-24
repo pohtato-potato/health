@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { regionAt } from '../../domain/regions';
 import { ALL_STATES } from '../../domain/walk';
 import { useAllDays, useSettings } from '../../db/hooks';
+import { batteryMode } from '../../domain/rest';
+import { useBatteryLevel } from '../../ui/RestScreen';
 import { go, useRoute } from '../../router';
 import type { RegionId } from '../../ui/light';
 import { arrivalFor, passportCounts, passportPages } from '../../walk/arrivals';
@@ -28,9 +30,12 @@ export function ArrivalPage() {
   const days = useAllDays();
   const settings = useSettings();
   const [beat, setBeat] = useState(1);
+  const level = useBatteryLevel();
   if (!days || !settings) return <div className="page walk3" />;
   const steps = stepsByDay(days);
   const toWalk = () => go('/walk', undefined, { replace: true });
+  // Battery saver: still frames, nothing moving (the .page.saver rule stops every animation).
+  const wrap = `page walk3 walk-arr-page-wrap${batteryMode(level, !!settings.prefs.batterySaver) ? ' saver' : ''}`;
 
   const state = params.get('s');
   if (state) {
@@ -39,7 +44,7 @@ export function ArrivalPage() {
     if (i < 0) return <ArrivalFallback onBack={toWalk} />;
     const km = ALL_STATES.find((s) => s.name === state)!.km;
     return (
-      <div className="page walk3 walk-arr-page-wrap">
+      <div className={wrap}>
         <StateLineView state={state} ut={pages[i].ut} counts={passportCounts(pages.slice(0, i + 1))} landFrom={LAND[regionAt(0)]} landNow={LAND[regionAt(km)]} onNext={toWalk} />
       </div>
     );
@@ -49,7 +54,7 @@ export function ArrivalPage() {
   const a = arrivalFor(params.get('c') ?? '', steps, journeyStart(settings, days), ch ? Number(ch) : undefined);
   if (!a) return <div className="page walk3"><ArrivalFallback onBack={toWalk} /></div>;
   return (
-    <div className="page walk3 walk-arr-page-wrap">
+    <div className={wrap}>
       <ArrivalView a={a} beat={beat} onNext={() => (beat >= 5 ? toWalk() : setBeat(beat + 1))} onSkip={toWalk} />
     </div>
   );

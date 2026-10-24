@@ -15,7 +15,6 @@ import { Aurora } from '../ui/live/Aurora';
 import { useBatteryLevel } from '../ui/RestScreen';
 import type { Festive } from '../walk/art/festive';
 import { kindOf, routeById } from '../walk/catalogue';
-import { reachedCards } from '../walk/cards';
 import { STOPS, STRETCHES } from '../walk/content';
 import { arrivedToday, auroraFor, nearestPlace, statusLines, stoneFor, stopLine, timeAtPace, tomorrowLine, usualAndBig, whereLine, whereNow } from '../walk/page';
 import { stopToday, stretchAt, stretchDay, stretchEndToShow } from '../walk/road';
@@ -68,7 +67,6 @@ export function WalkTab() {
   const lines = statusLines({ arrival: arrivedToday(steps, today), stop: stop && stopLine(stop), person: met?.who, status: day?.status, near });
   const stretch = stretchAt(km, STRETCHES);
   const tomorrow = tomorrowLine(km, usualKm, bigKm);
-  const cards = reachedCards(km);
 
   const walking = (runs ?? [])
     .map((run: RouteRun) => {
@@ -115,18 +113,6 @@ export function WalkTab() {
           </section>
         )}
 
-        {cards.length > 0 && (
-          <section className="walk-section" aria-label="Cities reached">
-            <h2 className="walk-h2">Cities reached</h2>
-            <div className="walk-chips">
-              {cards.map((c) => (
-                <button key={c.city} type="button" className="chip" onClick={() => go('/postcard', { c: c.city })}>
-                  {c.city}
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
         <WalkDoors onGo={(path) => go(path)} />
       </div>
       {showing && (

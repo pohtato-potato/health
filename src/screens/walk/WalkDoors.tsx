@@ -1,12 +1,13 @@
 import { Icon } from '../../ui/Icon';
 
 const DOORS: [string, string][] = [
+  ['Passport', '/passport'],
   ['Map', '/map'],
   ['Departures', '/departures'],
   ['Wrapped', '/wrapped'],
 ];
 
-/** The ways on from the Walk tab, each a full-width row. The passport joins them when it exists. */
+/** The ways on from the Walk tab, each a full-width row. */
 export function WalkDoors({ onGo }: { onGo: (path: string) => void }) {
   return (
     <nav className="walk-doors" aria-label="More of the walk">

@@ -67,6 +67,7 @@ const PostcardPage = page(() => import('./screens/Postcard'), 'PostcardPage');
 const StretchPage = page(() => import('./screens/walk/RoadPages'), 'StretchPage');
 const StopPage = page(() => import('./screens/walk/RoadPages'), 'StopPage');
 const ArrivalPage = page(() => import('./screens/walk/ArrivalPage'), 'ArrivalPage');
+const PassportPage = page(() => import('./screens/walk/PassportPage'), 'PassportPage');
 const ArrivalRedirect = page(() => import('./screens/Postcard'), 'ArrivalRedirect');
 const DiaryPage = page(() => import('./screens/Diary'), 'DiaryPage');
 const DeparturesPage = page(() => import('./screens/Departures'), 'DeparturesPage');
@@ -138,6 +139,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/stretch': { el: () => <StretchPage /> },
   '/stop': { el: () => <StopPage /> },
   '/arrive': { el: () => <ArrivalPage /> },
+  '/passport': { el: () => <PassportPage /> },
   '/diary': { el: () => <DiaryPage /> },
   '/departures': { el: () => <DeparturesPage /> },
   '/climate': { el: () => <ClimatePage /> },
