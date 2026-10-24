@@ -4,8 +4,10 @@ import { findExercise, isPlaceholder, targetText } from '../domain/plan';
 import { ringsFor, sleepMinutes, targetsOn, totalsFor } from '../domain/rings';
 import { weightTrend } from '../domain/streaks';
 import { stepStreakOf, targetsAt, trainingWeeksOf } from '../domain/occasions';
-import type { Day, Food, FoodEntry, Measurement, SetEntry, Settings, TrackValue, TrainingSession } from '../domain/types';
+import type { Day, Food, FoodEntry, Measurement, SetEntry, Settings, TrackValue, TrainingSession, RouteRun } from '../domain/types';
 import { kmFromSteps, positionAt } from '../domain/walk';
+import { routeById } from '../walk/catalogue';
+import { routeKm, runState, stepsByDay } from '../walk/runs';
 import type { Cell, Sheet } from './xlsx';
 import { slotStatus } from '../domain/checklist';
 import { entryTime } from '../domain/foods';
@@ -24,6 +26,8 @@ export interface ExportData {
   sets: SetEntry[];
   measurements: Measurement[];
   trackValues?: TrackValue[];
+  /** Challenges and expeditions joined. */
+  routes?: RouteRun[];
 }
 
 const measuredSteps = (day: Day | undefined) => (day?.stepsEstimated ? undefined : day?.steps);
@@ -330,7 +334,18 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
     ['Records: the best set per exercise id (the highest estimated one-rep max for loaded reps), the best at each load, and any older names. Skipped and placeholder sets are left out.'],
     ['Targets history: the targets in force from each date.'],
     ['Plan: the training plan as it stands.'],
+    ['Routes: each challenge and expedition joined, with the km walked on it, whether it is walking, set down or finished, the day it was joined and the day it was finished.'],
   ];
+
+  // Routes
+  const routeSteps = stepsByDay(d.days);
+  const routeRows: Cell[][] = [['route', 'name', 'km_walked', 'of_km', 'state', 'joined', 'finished']];
+  for (const run of d.routes ?? []) {
+    const def = routeById(run.id);
+    if (!def) continue;
+    const km = routeKm(run, def, routeSteps);
+    routeRows.push([run.id, def.name, r1(km), def.km, runState(run, def, km), run.spans[0]?.from ?? null, run.doneOn ?? null]);
+  }
 
   return [
     { name: 'README', rows: readme, header: false, widths: [120] },
@@ -345,6 +360,7 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
     { name: 'Records', rows: records },
     { name: 'Targets history', rows: targets },
     { name: 'Plan', rows: planRows },
+    ...(routeRows.length > 1 ? [{ name: 'Routes', rows: routeRows }] : []),
     ...(slots.length
       ? [
           {

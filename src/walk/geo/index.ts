@@ -9,13 +9,18 @@ export { INDIA_AREA_KM2, MAIN_CITIES, REGIONS, type Region, type RegionKey, type
 
 export let ROUTE_LINES: Record<string, RouteLine> = GENERATED;
 
-/** Tests only: run `fn` with these route lines in place of the generated ones. */
+/** Tests only: run `fn` with these route lines in place of the generated ones (until its promise settles, if it returns one). */
 export function withLines<T>(lines: Record<string, RouteLine>, fn: () => T): T {
   const before = ROUTE_LINES;
   ROUTE_LINES = lines;
+  let out: T;
   try {
-    return fn();
-  } finally {
+    out = fn();
+  } catch (e) {
     ROUTE_LINES = before;
+    throw e;
   }
+  if (out instanceof Promise) return out.finally(() => (ROUTE_LINES = before)) as T;
+  ROUTE_LINES = before;
+  return out;
 }

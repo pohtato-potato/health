@@ -657,6 +657,23 @@ export interface ChartMarker {
   auto?: boolean;
 }
 
+/**
+ * A route you've joined: the days it was walked, and how. One row per route, kept when it's set down or finished.
+ * A span's `from` day counts; its `to` day (the day it was set down) doesn't.
+ */
+export interface RouteRun {
+  id: string;
+  spans: { from: DayKey; to?: DayKey }[];
+  /** Book and film routes: walk with the story or with places only. */
+  story?: 'story' | 'places';
+  /** Set by "Pause the story here". */
+  storyPauseKm?: number;
+  /** An optional date you're aiming for. */
+  target?: DayKey;
+  /** Set when the finish moment is shown; once set, the route stays finished. */
+  doneOn?: DayKey;
+}
+
 export interface WalkRecord {
   id: string;
   kind: 'journal' | 'camp' | 'structure' | 'souvenir' | 'quest';

@@ -23,6 +23,7 @@ import type {
   ForecastRecord,
   ChartMarker,
   WalkRecord,
+  RouteRun,
   SongRecord,
   Seen as ThemeSeen,
 } from '../domain/types';
@@ -51,6 +52,7 @@ export class HealthDB extends Dexie {
   forecasts!: EntityTable<ForecastRecord, 'id'>;
   markers!: EntityTable<ChartMarker, 'id'>;
   walk!: EntityTable<WalkRecord, 'id'>;
+  routes!: EntityTable<RouteRun, 'id'>;
   themesSeen!: EntityTable<ThemeSeen, 'id'>;
   songs!: EntityTable<SongRecord, 'id'>;
   useful!: EntityTable<Seen, 'id'>;
@@ -89,6 +91,9 @@ export class HealthDB extends Dexie {
       songs: 'id, at',
       useful: 'id',
     });
+    this.version(4).stores({
+      routes: 'id',
+    });
   }
 }
 
@@ -115,6 +120,7 @@ export const TABLES = [
   'forecasts',
   'markers',
   'walk',
+  'routes',
   'themesSeen',
   'songs',
   'useful',

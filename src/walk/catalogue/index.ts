@@ -39,13 +39,18 @@ export function kindOf(def: Pick<RouteDef, 'km'>): 'challenge' | 'expedition' {
   return def.km > 1500 ? 'expedition' : 'challenge';
 }
 
-/** Tests only: run `fn` with these routes in place of the catalogue. */
+/** Tests only: run `fn` with these routes in place of the catalogue (until its promise settles, if it returns one). */
 export function withCatalogue<T>(defs: RouteDef[], fn: () => T): T {
   const before = catalogue;
   catalogue = defs;
+  let out: T;
   try {
-    return fn();
-  } finally {
+    out = fn();
+  } catch (e) {
     catalogue = before;
+    throw e;
   }
+  if (out instanceof Promise) return out.finally(() => (catalogue = before)) as T;
+  catalogue = before;
+  return out;
 }

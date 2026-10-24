@@ -19,6 +19,7 @@ export async function saveWorkbook() {
     sets: (tables.sets ?? []) as ExportData['sets'],
     measurements: (tables.measurements ?? []) as ExportData['measurements'],
     trackValues: (tables.trackValues ?? []) as ExportData['trackValues'],
+    routes: (tables.routes ?? []) as ExportData['routes'],
   };
   const bytes = buildXlsx(workbookSheets(data));
   void bump('export', { day: dayKey() });
