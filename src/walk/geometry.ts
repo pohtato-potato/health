@@ -23,6 +23,16 @@ export function along(line: Pt[], frac: number): Pt {
   return line[line.length - 1];
 }
 
+/** The drawn line from its start to a share of the way along, ending exactly at that point. */
+export function partOf(line: Pt[], frac: number): Pt[] {
+  const cum = lengths(line);
+  const want = Math.max(0, Math.min(1, frac)) * cum[cum.length - 1];
+  const out: Pt[] = [line[0]];
+  for (let i = 1; i < line.length && cum[i] < want; i++) out.push(line[i]);
+  out.push(along(line, frac));
+  return out;
+}
+
 /** How far along the drawn line a point of it is, as a share of the whole. */
 export function lineFracAtIndex(line: Pt[], i: number): number {
   const cum = lengths(line);

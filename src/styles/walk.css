@@ -1,0 +1,34 @@
+/*
+ * The walk's drawings: the map card (walk-art), the route map (walk-map) and the marks.
+ * Each route's colour arrives as --route-ink on the element that draws it (inkStyle); never gold.
+ */
+
+.walk-art { display: block; width: 100%; height: 100%; overflow: hidden; }
+.walk-art-grid line { stroke: color-mix(in srgb, var(--text) 9%, transparent); stroke-width: 0.7; }
+.walk-land { fill: color-mix(in srgb, var(--route-ink) 9%, transparent); stroke: color-mix(in srgb, var(--route-ink) 45%, transparent); stroke-width: 1.2; stroke-linejoin: round; }
+.walk-ridge { fill: color-mix(in srgb, var(--text) 4%, transparent); stroke: color-mix(in srgb, var(--text) 16%, transparent); stroke-width: 0.8; stroke-linejoin: round; }
+.walk-art-ahead { fill: none; stroke: color-mix(in srgb, var(--text) 55%, transparent); stroke-width: 1.6; stroke-dasharray: 3 5; stroke-linecap: round; }
+.walk-art-walked { fill: none; stroke: var(--route-ink); stroke-dasharray: 1; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 4px color-mix(in srgb, var(--route-ink) 60%, transparent)); }
+.walk-art-start { fill: var(--route-ink); }
+.walk-art-end { fill: var(--deep); stroke: var(--text); stroke-width: 1.8; }
+.walk-art-stop { fill: var(--deep); stroke: color-mix(in srgb, var(--text) 70%, transparent); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.walk-you { fill: var(--route-ink); stroke: var(--deep); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.walk-halo { fill: var(--route-ink); opacity: 0.4; transform-box: fill-box; transform-origin: center; }
+.walk-art-names text,
+.walk-map-name { font-family: var(--serif); fill: var(--text); paint-order: stroke; stroke: var(--deep); stroke-width: 3px; stroke-linejoin: round; }
+
+.walk-map { display: block; width: 100%; height: auto; -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.walk-map .walk-land { stroke-width: 1; }
+.walk-map-out { fill: none; stroke: color-mix(in srgb, var(--text) 60%, transparent); stroke-width: 1.6; stroke-dasharray: 4 5; stroke-linecap: round; }
+.walk-map-home { fill: none; stroke: color-mix(in srgb, var(--route-ink) 70%, transparent); stroke-width: 1.6; stroke-dasharray: 1 5; stroke-linecap: round; }
+.walk-map-place { fill: var(--deep); stroke: var(--text); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+
+.walk-mark { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+/* The walked part is its own line (it draws itself from the start; its width is set in map units by the component). */
+@keyframes walk-draw { from { stroke-dashoffset: 1; } }
+@keyframes walk-breathe { 0%, 100% { opacity: 0.55; transform: scale(1); } 50% { opacity: 0; transform: scale(1.9); } }
+@media (prefers-reduced-motion: no-preference) {
+  .walk-art-walked { animation: walk-draw 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both; }
+  .walk-halo { animation: walk-breathe 2.6s ease-in-out infinite; }
+}

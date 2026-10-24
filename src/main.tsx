@@ -8,6 +8,7 @@ import './styles/tokens.css';
 import './styles/components.css';
 import './styles/access.css';
 import './styles/living.css';
+import './styles/walk.css';
 import './styles/walk-proto.css';
 import './styles/live.css';
 import { StrictMode } from 'react';
