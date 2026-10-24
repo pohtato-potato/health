@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CATALOGUE, kindOf, routeById, shelfRoutes } from '../src/walk/catalogue';
+import { lineProblems } from '../src/walk/catalogue/checks';
 import { ROUTE_LINES } from '../src/walk/geo';
 import { goldish } from './helpers/goldish';
 
@@ -31,6 +32,21 @@ for (const r of CATALOGUE)
         if (i) expect(m.km).toBeGreaterThan(r.signature!.marks[i - 1].km);
       });
     });
+    if (r.ready)
+      it('is whole before it reaches the shelf: its line, a page for every stretch, its collection and sources', () => {
+        expect(lineProblems(r, ROUTE_LINES[r.id])).toEqual([]);
+        expect(r.pages[0]?.km).toBe(0);
+        const gap = Math.max(60, r.km / 8);
+        r.pages.forEach((p, i) => {
+          expect(p.line.length, p.title).toBeGreaterThan(0);
+          expect(p.page.length, p.title).toBeGreaterThan(0);
+          if (i) expect(p.km - r.pages[i - 1].km, p.title).toBeLessThanOrEqual(gap);
+        });
+        expect(r.km - r.pages.at(-1)!.km).toBeLessThanOrEqual(gap);
+        expect(r.signature?.marks.length ?? 0).toBeGreaterThanOrEqual(6);
+        for (const t of r.then?.places ?? []) expect(r.places.map((p) => p.name), t.name).toContain(t.name);
+        expect(r.sources.length).toBeGreaterThanOrEqual(2);
+      });
     if (r.ready)
       it('is written and sourced before it reaches the shelf', () => {
         expect(r.sources.length).toBeGreaterThan(0);
