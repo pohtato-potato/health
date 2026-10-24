@@ -17,7 +17,7 @@ export function approachScale(kmToNext: number | undefined): number {
  * On the Walk tab it is full-bleed with the title over the sky, your trail in sage and a marker
  * for where you are.
  */
-export function WalkScene({ km, caption = true, hero, dayN, festive }: { festive?: Festive; km: number; caption?: boolean; hero?: boolean; dayN?: number }) {
+export function WalkScene({ km, caption = true, hero, dayN, festive, todayKm }: { festive?: Festive; km: number; caption?: boolean; hero?: boolean; dayN?: number; todayKm?: number }) {
   const pos = positionAt(km);
   const ahead = pos.to ?? pos.from;
   const toNext = pos.to ? Math.max(0, pos.to.km - km) : undefined;
@@ -25,9 +25,13 @@ export function WalkScene({ km, caption = true, hero, dayN, festive }: { festive
   const W = 390;
   const H = 250;
   const you = { x: W * 0.62, y: H * 0.905 };
+  // The trail behind you shows about 40 km of road: today's piece is drawn brighter, never thinner than 6 units.
+  const trail = `M-10 ${H * 0.96} C ${W * 0.2} ${H * 0.93}, ${W * 0.4} ${H * 0.94}, ${you.x} ${you.y}`;
+  const todayShare = todayKm && todayKm > 0 ? Math.min(1, Math.max(6 / (you.x + 10), todayKm / 40)) : 0;
   const overlay = hero ? (
     <g>
-      <path d={`M-10 ${H * 0.96} C ${W * 0.2} ${H * 0.93}, ${W * 0.4} ${H * 0.94}, ${you.x} ${you.y}`} fill="none" stroke="#8FC9B0" strokeWidth="3" strokeLinecap="round" strokeOpacity="0.9" />
+      <path d={trail} fill="none" stroke="#8FC9B0" strokeWidth="3" strokeLinecap="round" strokeOpacity="0.9" />
+      {todayShare > 0 && <path className="walk-today" d={trail} pathLength={1} fill="none" stroke="#DDF3E8" strokeWidth="4.5" strokeLinecap="round" strokeDasharray={`${todayShare} 1`} strokeDashoffset={todayShare - 1} />}
       <path d={`M${you.x} ${you.y} C ${W * 0.75} ${H * 0.89}, ${W * 0.88} ${H * 0.88}, ${W + 10} ${H * 0.87}`} fill="none" stroke="#EDE6DA" strokeOpacity="0.45" strokeWidth="1.6" strokeDasharray="4 5" strokeLinecap="round" />
       <g transform={`translate(${you.x + 22} ${H * 0.9})`}>
         <circle cx="0" cy="-2" r="16" fill="#F2C46D" opacity="0.1" />
@@ -37,11 +41,6 @@ export function WalkScene({ km, caption = true, hero, dayN, festive }: { festive
       </g>
       <circle cx={you.x} cy={you.y} r="9" fill="#EDE6DA" opacity="0.18" />
       <circle cx={you.x} cy={you.y} r="4.2" fill="#EDE6DA" stroke="#0e1020" strokeWidth="1.2" />
-      {toNext !== undefined && (
-        <text x={you.x - 10} y={you.y - 13} textAnchor="middle" fontFamily="var(--sans)" fontSize="10" fontWeight="600" fill="#EDE6DA" style={{ paintOrder: 'stroke', stroke: 'rgba(8,10,23,0.55)', strokeWidth: 3 }}>
-          You · {fmtInt(Math.round(toNext))} km to {lm?.label ?? ahead.name}
-        </text>
-      )}
     </g>
   ) : undefined;
   return (
