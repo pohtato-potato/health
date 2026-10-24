@@ -27,7 +27,7 @@ Non-goals: no logging streak, no notifications, nothing rewards eating less, not
 - **Living colour.** Every Walk screen sits on the aurora from Today and Train (`src/ui/live/Aurora.tsx`, `src/styles/live.css`), tinted by the region you're walking through. Battery saver is black and still; reduced motion replaces drift and drawing with fades; `html.contrast` reaches every colour through tokens.
 - **Each route has one ink,** set in its data. A route's ink tints its card glow, its border, its walked line, its banner and its joining page. **Never gold:** gold is only for records, finished routes' exit stamps and the top achievement.
 - **The map card** is the one look for challenge and shelf cards: the route's real land, framed to the route's own extent, with a glow in its ink behind it, the walked part bright and the rest dashed, an era stamp, and a ribbon for book routes. The poster, ticket and data-art looks were tried and discarded.
-- **Landmarks** are painted, layered silhouettes in the scene's four inks, seen along their setting (the Gwalior fort on its cliff is the standard). The same drawing is engraved on its passport stamp. **No religious motifs** in any drawing, stamp or ornament; places of worship appear as part of a skyline only when they are the city's single defining landmark, and never as the emblem.
+- **Landmarks** are painted, layered silhouettes in the scene's four inks, seen along their setting (the Gwalior fort on its cliff is the standard). The same drawing is engraved on its passport stamp. **A mix, not a focus on religion:** places of worship are fine where they are a city's defining sight (Madurai, Bhubaneswar, Amritsar, Varanasi's ghats), but they stay a small share, and the writing about any place mixes its history, people, food and land rather than dwelling on faith. No deity motifs or emblems as ornament.
 - **Accessibility, every screen:**
   - standard text size for the magnifier, never larger by default, nothing that carries meaning under 14 px;
   - never colour alone: every state has a word ("walked", "set down", "aiming for", "reached");
@@ -277,3 +277,12 @@ Each part ships on its own, behind no flag, with its tests.
 4. **The Today branch** (`feat/today-page`) isn't merged into main yet, and part 0 builds on it. Merge it first, or build the walk on top and merge both together?
 5. **Re-walking a finished route:** allowed (a second run with its own visa), or a finished route stays finished?
 6. **The flyover** at 15 seconds: right length, or shorter?
+
+## Decided after review (24 Oct)
+
+1. **Tōkaidō's macrons** render correctly on the S23; the fault was the desktop preview only.
+2. **Landmarks:** places of worship are fine, as a mix. Kept where they are the defining sight (Madurai, Bhubaneswar, Amritsar, Varanasi); the other eight cities in the table above get the proposed secular landmarks.
+3. **Writing review:** Claude reviews each content batch (sources, accuracy, all sides, our own words) before it is marked ready; the owner doesn't need to read every batch.
+4. **The Today branch:** the walk is built on top of `feat/today-page`, and both merge together.
+5. **Re-walking:** a finished route stays finished, for now.
+6. **The flyover:** 15 seconds stands.
