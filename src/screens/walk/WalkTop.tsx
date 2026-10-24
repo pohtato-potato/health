@@ -1,5 +1,5 @@
 import type { Festive } from '../../walk/art/festive';
-import { WalkScene } from '../../walk/WalkScene';
+import { WalkVista } from '../../walk/WalkVista';
 import { Milestone } from './Milestone';
 
 /**
@@ -10,7 +10,7 @@ export function WalkTop({ km, todayKm, stone, festive, onStrip }: { km: number; 
   return (
     <div className="walk-top2">
       <div className="walk-top2-scene">
-        <WalkScene km={km} caption={false} hero todayKm={todayKm} festive={festive} />
+        <WalkVista km={km} todayKm={todayKm} festive={festive} />
         {stone && (
           <span className="walk-stone-at">
             <Milestone stone={stone} />

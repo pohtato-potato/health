@@ -37,8 +37,8 @@
 .walk2-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .walk-top2 { margin: calc(-18px - var(--safe-top)) -22px 0; display: flex; flex-direction: column; }
 .walk-top2-scene { position: relative; }
-.walk-top2-scene .band.walk-hero { height: 300px; border-radius: 0; }
-.walk-stone-at { position: absolute; left: 9%; bottom: 3%; line-height: 0; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35)); }
+.walk-top2-scene .vista { display: block; width: 100%; height: auto; aspect-ratio: 360 / 216; -webkit-mask-image: linear-gradient(#000 82%, transparent); mask-image: linear-gradient(#000 82%, transparent); }
+.walk-stone-at { position: absolute; left: 12.8%; bottom: 6.5%; line-height: 0; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35)); }
 .walk-strip { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 22px; color: var(--text); background: linear-gradient(180deg, color-mix(in srgb, #0c0e1d 70%, transparent), transparent); text-align: left; }
 .walk-strip-road { flex: 1; height: 2px; background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--text) 55%, transparent) 0 6px, transparent 6px 11px); }
 .walk-strip-next { font-size: 15px; font-weight: 600; white-space: nowrap; }
@@ -111,7 +111,7 @@
 .walk-dots { display: flex; gap: 5px; }
 .walk-dots i { width: 7px; height: 7px; border-radius: 50%; background: color-mix(in srgb, var(--text) 30%, transparent); }
 .walk-dots i.on { background: var(--text); }
-.walk-top2-scene.road .band.walk-hero { height: 220px; }
+
 
 /* Part 4: arrivals. No gold here: gold is for records and finished routes. */
 .walk-arr-page-wrap { padding-left: 0; padding-right: 0; background: #0b0c1c; }

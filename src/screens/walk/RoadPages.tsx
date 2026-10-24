@@ -4,7 +4,7 @@ import { back, useRoute } from '../../router';
 import { Aurora } from '../../ui/live/Aurora';
 import { STOPS, STRETCHES } from '../../walk/content';
 import { auroraFor } from '../../walk/page';
-import { WalkScene } from '../../walk/WalkScene';
+import { WalkVista } from '../../walk/WalkVista';
 import { StopView } from './StopView';
 import { StretchView } from './StretchView';
 
@@ -16,7 +16,7 @@ function RoadPage({ km, children }: { km: number; children: ReactNode }) {
       <div className="walk2-col">
         <div className="walk-top2">
           <div className="walk-top2-scene road">
-            <WalkScene km={km} caption={false} hero />
+            <WalkVista km={km} />
           </div>
         </div>
         {children}

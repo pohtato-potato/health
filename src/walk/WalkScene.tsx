@@ -12,47 +12,20 @@ export function approachScale(kmToNext: number | undefined): number {
   return 0.55 + 0.45 * (1 - Math.min(1, kmToNext / 60));
 }
 
-/**
- * The scene for where the walk is: the region's land lit for the hour, the next landmark ahead.
- * On the Walk tab it is full-bleed with the title over the sky, your trail in sage and a marker
- * for where you are.
- */
-export function WalkScene({ km, caption = true, hero, dayN, festive, todayKm }: { festive?: Festive; km: number; caption?: boolean; hero?: boolean; dayN?: number; todayKm?: number }) {
+/** The scene for where the walk is, as Today shows it: the region's land lit for the hour, the next landmark ahead. */
+export function WalkScene({ km, caption = true, dayN, festive }: { festive?: Festive; km: number; caption?: boolean; dayN?: number }) {
   const pos = positionAt(km);
   const ahead = pos.to ?? pos.from;
   const toNext = pos.to ? Math.max(0, pos.to.km - km) : undefined;
   const lm = landmarkFor(ahead.name);
-  const W = 390;
-  const H = 250;
-  const you = { x: W * 0.62, y: H * 0.905 };
-  // The trail behind you shows about 40 km of road: today's piece is drawn brighter, never thinner than 6 units.
-  const trail = `M-10 ${H * 0.96} C ${W * 0.2} ${H * 0.93}, ${W * 0.4} ${H * 0.94}, ${you.x} ${you.y}`;
-  const todayShare = todayKm && todayKm > 0 ? Math.min(1, Math.max(6 / (you.x + 10), todayKm / 40)) : 0;
-  const overlay = hero ? (
-    <g>
-      <path d={trail} fill="none" stroke="#8FC9B0" strokeWidth="3" strokeLinecap="round" strokeOpacity="0.9" />
-      {todayShare > 0 && <path className="walk-today" d={trail} pathLength={1} fill="none" stroke="#DDF3E8" strokeWidth="4.5" strokeLinecap="round" strokeDasharray={`${todayShare} 1`} strokeDashoffset={todayShare - 1} />}
-      <path d={`M${you.x} ${you.y} C ${W * 0.75} ${H * 0.89}, ${W * 0.88} ${H * 0.88}, ${W + 10} ${H * 0.87}`} fill="none" stroke="#EDE6DA" strokeOpacity="0.45" strokeWidth="1.6" strokeDasharray="4 5" strokeLinecap="round" />
-      <g transform={`translate(${you.x + 22} ${H * 0.9})`}>
-        <circle cx="0" cy="-2" r="16" fill="#F2C46D" opacity="0.1" />
-        <path d="M-9 4 L0 -10 L9 4 Z" fill="#2a2440" stroke="#EDE6DA" strokeOpacity="0.55" strokeWidth="1" strokeLinejoin="round" />
-        <path d="M0 -10 V4 M-2.5 4 L0 -2 L2.5 4" fill="none" stroke="#F2C46D" strokeOpacity="0.8" strokeWidth="0.9" />
-        <path d="M12 5 c1-3 3-3 2-6 2 2 2 4 1 6Z" fill="#F2C46D" opacity="0.85" />
-      </g>
-      <circle cx={you.x} cy={you.y} r="9" fill="#EDE6DA" opacity="0.18" />
-      <circle cx={you.x} cy={you.y} r="4.2" fill="#EDE6DA" stroke="#0e1020" strokeWidth="1.2" />
-    </g>
-  ) : undefined;
   return (
     <Scene
       city={ahead.name}
       region={regionAt(km)}
       part={partOfDay(new Date())}
-      people={!hero}
+      people
       festive={festive}
       landmarkScale={approachScale(toNext)}
-      className={hero ? 'walk-hero' : undefined}
-      overlay={overlay}
       caption={
         caption ? (
           <>
