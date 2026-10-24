@@ -1,16 +1,29 @@
 import type { DayKey } from '../domain/dates';
 import type { RouteRun } from '../domain/types';
 import { kindOf, routeById } from '../walk/catalogue';
-import { placesFree, routeKm, runState, stepsByDay } from '../walk/runs';
+import { finishedOn, placesFree, routeKm, runState, stepsByDay } from '../walk/runs';
 import { db } from './db';
 
-/** Every run with its km so far, to know which are walking. */
+/**
+ * Every run with its km so far, to know which are walking. A route that has reached its length gets its finish
+ * day written now, so it stays finished whatever happens to the stride later.
+ */
 async function standing(): Promise<{ runs: RouteRun[]; kmById: Map<string, number> }> {
-  const [runs, days] = await Promise.all([db.routes.toArray(), db.days.toArray()]);
+  const [stored, days] = await Promise.all([db.routes.toArray(), db.days.toArray()]);
   const steps = stepsByDay(days);
+  const runs: RouteRun[] = [];
+  for (const r of stored) {
+    const def = routeById(r.id);
+    const done = !r.doneOn && def ? finishedOn(r, def, steps) : undefined;
+    if (done) await db.routes.put({ ...r, doneOn: done });
+    runs.push(done ? { ...r, doneOn: done } : r);
+  }
   const kmById = new Map(runs.map((r) => [r.id, routeById(r.id) ? routeKm(r, routeById(r.id)!, steps) : 0]));
   return { runs, kmById };
 }
+
+/** Reads and writes for one join or pick-up in one transaction, so two quick taps can't both take the last place. */
+const atomically = <T>(fn: () => Promise<T>) => db.transaction('rw', db.routes, db.days, fn);
 
 const isOpen = (run: RouteRun) => run.spans.length > 0 && run.spans[run.spans.length - 1].to === undefined;
 
@@ -24,12 +37,16 @@ async function walkFrom(id: string, today: DayKey, run: RouteRun | undefined, st
 }
 
 /** Join a route, or carry on with one you'd set down. A finished route stays finished. */
-export async function joinRoute(id: string, today: DayKey, story?: 'story' | 'places'): Promise<'joined' | 'resumed' | 'no place' | 'finished'> {
+export function joinRoute(id: string, today: DayKey, story?: 'story' | 'places'): Promise<'joined' | 'resumed' | 'no place' | 'finished'> {
+  return atomically(() => join(id, today, story));
+}
+
+async function join(id: string, today: DayKey, story?: 'story' | 'places'): Promise<'joined' | 'resumed' | 'no place' | 'finished'> {
   const def = routeById(id);
   if (!def) return 'no place';
-  const run = await db.routes.get(id);
+  const { runs, kmById } = await standing();
+  const run = runs.find((r) => r.id === id);
   if (run) {
-    const { kmById } = await standing();
     if (runState(run, def, kmById.get(id) ?? 0) === 'finished') return 'finished';
     if (isOpen(run)) return 'resumed';
     return (await walkFrom(id, today, run)) ? 'resumed' : 'no place';
@@ -46,11 +63,13 @@ export async function setRouteDown(id: string, today: DayKey): Promise<void> {
 }
 
 /** Pick a set-down route up again, from today, if a place is free. */
-export async function pickRouteUp(id: string, today: DayKey): Promise<'picked up' | 'no place'> {
-  const run = await db.routes.get(id);
-  if (!run || !routeById(id)) return 'no place';
-  if (isOpen(run)) return 'picked up';
-  return (await walkFrom(id, today, run)) ? 'picked up' : 'no place';
+export function pickRouteUp(id: string, today: DayKey): Promise<'picked up' | 'no place'> {
+  return atomically(async () => {
+    const run = await db.routes.get(id);
+    if (!run || !routeById(id)) return 'no place';
+    if (isOpen(run)) return 'picked up';
+    return (await walkFrom(id, today, run)) ? 'picked up' : 'no place';
+  });
 }
 
 /** Mark a route finished, on the day its finish moment was shown. */

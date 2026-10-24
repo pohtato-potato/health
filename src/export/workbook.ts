@@ -7,7 +7,7 @@ import { stepStreakOf, targetsAt, trainingWeeksOf } from '../domain/occasions';
 import type { Day, Food, FoodEntry, Measurement, SetEntry, Settings, TrackValue, TrainingSession, RouteRun } from '../domain/types';
 import { kmFromSteps, positionAt } from '../domain/walk';
 import { routeById } from '../walk/catalogue';
-import { routeKm, runState, stepsByDay } from '../walk/runs';
+import { finishedOn, routeKm, runState, stepsByDay } from '../walk/runs';
 import type { Cell, Sheet } from './xlsx';
 import { slotStatus } from '../domain/checklist';
 import { entryTime } from '../domain/foods';
@@ -344,7 +344,7 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
     const def = routeById(run.id);
     if (!def) continue;
     const km = routeKm(run, def, routeSteps);
-    routeRows.push([run.id, def.name, r1(km), def.km, runState(run, def, km), run.spans[0]?.from ?? null, run.doneOn ?? null]);
+    routeRows.push([run.id, def.name, r1(km), def.km, runState(run, def, km), run.spans[0]?.from ?? null, run.doneOn ?? finishedOn(run, def, routeSteps) ?? null]);
   }
 
   return [

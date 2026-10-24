@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import type { Region } from '../geo';
 
 /**
@@ -20,3 +21,20 @@ export function frameRoute(line: [number, number][], region: Region, px: [number
 export const pathOf = (line: [number, number][]) => 'M' + line.map((p) => p.join(' ')).join(' L');
 
 export const fmtKm = (n: number) => Math.round(n).toLocaleString('en-IN');
+
+/**
+ * The drawing's width on screen, so names keep their pixel size: the `width` given, else the measured width once
+ * it's on screen, else the width it's designed for.
+ */
+export function useDrawnWidth(width: number | undefined, designed: number) {
+  const [measured, setMeasured] = useState<number>();
+  const ref = useRef<SVGSVGElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (width !== undefined || !el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(([e]) => e.contentRect.width > 0 && setMeasured(e.contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [width]);
+  return [ref, width ?? measured ?? designed] as const;
+}

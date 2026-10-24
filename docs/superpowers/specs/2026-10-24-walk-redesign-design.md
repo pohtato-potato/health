@@ -200,7 +200,7 @@ A new table `routes` in database version 4, one row per route ever joined:
 | `story` | `'story' \| 'places'`? | book routes |
 | `storyPauseKm` | number? | set by "Pause the story here" |
 | `target` | DayKey? | optional target date |
-| `doneOn` | DayKey? | set when the finish moment is shown; once set, a route stays finished |
+| `doneOn` | DayKey? | the day the route reached its length, written as soon as it's noticed; once set, a route stays finished (the finish moment itself is tracked with a `seen` id) |
 
 Seen moments, arrivals played and banners dismissed use the existing `seen` table with prefixed ids (`walk-arrival:<place>:<km>`, `walk-moment:<day>`, `walk-news:<route>:<km>`, `walk-stretch:<id>`).
 
@@ -210,7 +210,7 @@ The backup and the workbook export include `routes`. Older backups without it im
 
 - **The one kilometre figure:** `kmFromSteps(steps) = steps × stride / 1000`, stride from Settings (default 0.74 m, accepted 0.3–1.5 m). Every screen uses it.
 - **A route's km:** the sum of `kmFromSteps` over the days inside its spans, capped at its length. Days with no steps saved add nothing.
-- **A route is finished** when its km reaches its length, or `doneOn` is set.
+- **A route is finished** when its km reaches its length, or `doneOn` is set. `doneOn` is written the first time the app sees the km reach the length, so a later, shorter stride never unfinishes it.
 - **Places taken:** active challenges (not set down, not finished) and active expeditions, two of each at most. "Join" is offered only when a place of that kind is free.
 - **Time at your pace:** route km ÷ your usual daily km (the median of the last 28 days with steps; 10 km if fewer than 7 such days), said as days, weeks, months or years.
 - **Signature marks reached:** the marks at or before your km; without `marks`, `count = max(6, round(km / 50))` marks spaced evenly.

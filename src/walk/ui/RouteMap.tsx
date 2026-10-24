@@ -1,27 +1,31 @@
 import { routeById } from '../catalogue';
 import { REGIONS, ROUTE_LINES } from '../geo';
 import { along, fracAtKm, partOf } from '../geometry';
-import { frameRoute, pathOf } from './frame';
+import { frameRoute, pathOf, useDrawnWidth } from './frame';
 
 /**
  * A route page's map: the land, the whole road (out and home drawn differently where it turns), the labelled
- * places, and your dot. Drawn for a 360 px wide screen at 360 × 250; names are 14 px in screen pixels.
+ * places, and your dot. Shaped 360 × 250; names are 14 px on screen at whatever width it's shown.
  */
-export function RouteMap({ id, km }: { id: string; km: number }) {
+export function RouteMap({ id, km, width }: { id: string; km: number; width?: number }) {
+  const [ref, drawn] = useDrawnWidth(width, 360);
   const def = routeById(id);
   const art = ROUTE_LINES[id];
   if (!def || !art) return null;
   const region = REGIONS[art.region];
   const line = art.line;
-  const { x, y, w, h, unit } = frameRoute(line, region, [360, 250], [0.7, 0.5], 0.06);
+  const { x, y, w, h } = frameRoute(line, region, [360, 250], [0.7, 0.5], 0.06);
+  const unit = drawn / w;
   const turnAt = def.turn === undefined ? undefined : (def.places.find((p) => p.km === def.turn)?.at ?? undefined);
   const out = pathOf(turnAt === undefined ? line : line.slice(0, turnAt + 1));
   const home = turnAt === undefined ? '' : pathOf(line.slice(turnAt));
   const frac = fracAtKm(def, km);
   const [ux, uy] = along(line, frac);
-  const places = def.places.length ? def.places : [{ name: art.ends[0], km: 0, at: 0 }, { name: art.ends[1], km: def.km, at: line.length - 1 }];
+  // Only places marked for a label are written; a route with none shows its two ends.
+  const labelled = def.places.filter((p) => p.label);
+  const places = labelled.length ? labelled : [{ name: art.ends[0], km: 0, at: 0 }, { name: art.ends[1], km: def.km, at: line.length - 1 }];
   return (
-    <svg className="walk-map" viewBox={`${x} ${y} ${w} ${h}`} preserveAspectRatio="xMidYMid slice" role="img" aria-label={`${def.name}: the whole road, from ${art.ends[0]} to ${art.ends[1]}`}>
+    <svg ref={ref} className="walk-map" viewBox={`${x} ${y} ${w} ${h}`} preserveAspectRatio="xMidYMid slice" role="img" aria-label={`${def.name}: the whole road, from ${art.ends[0]} to ${art.ends[1]}`}>
       {region.extra && <path className="walk-ridge" d={region.extra} vectorEffect="non-scaling-stroke" />}
       <path className="walk-land" d={region.outline} vectorEffect="non-scaling-stroke" />
       <path className="walk-map-out" d={out} vectorEffect="non-scaling-stroke" />

@@ -19,6 +19,7 @@ export const xuanzang: RouteDef = {
     { name: 'Bamiyan', km: 3833, at: 9, label: true },
     { name: 'Nalanda', km: 5550, at: 14, label: true },
     { name: 'Khotan', km: 7752, at: 18, label: true },
+    { name: "Chang'an", km: 10000, at: 21 },
   ],
   turn: 5550,
   signature: {
