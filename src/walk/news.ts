@@ -74,3 +74,18 @@ export function gatherNews(items: NewsItem[]): NewsBannerData | undefined {
   const names = [...new Set(items.map(nameOf))];
   return { title: `${items.length} things happened on the road`, text: names.length > 2 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names.join(' and '), action: items.length === 2 ? 'See both' : 'See all', items };
 }
+
+/** A moment that waited (`walk-later:<day>:<path>`), as a banner item in words. */
+export function laterItem(id: string): NewsItem | undefined {
+  const m = id.match(/^walk-later:\d{4}-\d{2}-\d{2}:(.+)$/);
+  if (!m) return undefined;
+  const path = m[1];
+  const q = new URLSearchParams(path.split('?')[1] ?? '');
+  if (path.startsWith('/finish')) {
+    const def = routeById(q.get('id') ?? '');
+    return def ? { key: id, what: `You finished ${def.name}`, open: `/route?id=${def.id}`, routeId: def.id, kind: kindOf(def) } : undefined;
+  }
+  if (q.get('c')) return { key: id, what: `You reached ${q.get('c')}`, open: path, kind: 'walk' };
+  if (q.get('s')) return { key: id, what: `You walked into ${q.get('s')}`, open: path, kind: 'walk' };
+  return undefined;
+}

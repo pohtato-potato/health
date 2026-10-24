@@ -14,6 +14,7 @@ import { useToast } from './ui/Toasts';
 import { ShelfPage } from './screens/walk/ShelfPage';
 import { RouteScreen } from './screens/walk/RouteScreen';
 import { JoinPage } from './screens/walk/JoinPage';
+import { FinishPage } from './screens/walk/FinishPage';
 import { CelebrationWatcher } from './state/Celebrations';
 import { AchievementWatcher } from './state/Achievements';
 import { NotFound } from './screens/NotFound';
@@ -146,6 +147,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/routes': { el: () => <ShelfPage /> },
   '/route': { el: () => <RouteScreen /> },
   '/join': { el: () => <JoinPage /> },
+  '/finish': { el: () => <FinishPage /> },
   '/diary': { el: () => <DiaryPage /> },
   '/departures': { el: () => <DeparturesPage /> },
   '/climate': { el: () => <ClimatePage /> },

@@ -4,6 +4,9 @@ import { addDays, dayRange, daysBetween, weekStart, type DayKey } from '../domai
 import { fmt1, fmtDayMonth, fmtInt, weekdayName } from '../domain/format';
 import { CHAPTERS, arrivals, chapterAt, kmFromSteps } from '../domain/walk';
 import { arrivalToPlay, canPlayArrivalAt, stateLineToPlay } from '../walk/arrivals';
+import { routeById } from '../walk/catalogue';
+import { planWalkMoments, type MomentCandidate } from '../walk/moments';
+import { routeKm } from '../walk/runs';
 import { bump } from '../db/actions';
 import { db } from '../db/db';
 import { useAllDays, useAllSets, useEntriesBetween, useMeasurements, useSessions, useSettings, useToday } from '../db/hooks';
@@ -58,10 +61,11 @@ export function CelebrationWatcher() {
   const sets = useAllSets();
   const measurements = useMeasurements();
   const seen = useLiveQuery(async () => new Set((await db.seen.toArray()).map((x) => x.id)), []);
+  const runs = useLiveQuery(() => db.routes.toArray(), []);
   const queued = useRef(new Set<string>());
 
   useEffect(() => {
-    if (!settings?.setupDone || !days || !week || !sessions || !sets || !measurements || !seen) return;
+    if (!settings?.setupDone || !days || !week || !sessions || !sets || !measurements || !seen || !runs) return;
     const fresh = (key: string) => !seen.has(key) && !queued.current.has(key);
     const push = (m: MomentData) => {
       if (!fresh(m.key)) return;
@@ -183,40 +187,47 @@ export function CelebrationWatcher() {
         });
       }
     }
-    // Arrivals: of the cities reached on a day saved today or yesterday, the farthest plays full screen and the rest
-    // are stamped quietly; a chapter's end keeps its own moment. A new state line plays when no city does. They take
-    // over the screen only on Today or the Walk tab with no sheet open; anywhere else they wait, unmarked.
+    // A day's budget is one full-screen moment: a route finished, or else the farthest new city, or else a new
+    // state line. The rest wait as a banner (walk-later ids). Other cities reached in the same save are stamped
+    // quietly, and a chapter's end keeps its own moment. They take over the screen only on Today or the Walk tab with
+    // no sheet open; anywhere else they wait, unmarked.
     if (canPlayArrivalAt(window.location.hash)) {
       const seenNow = new Set([...seen, ...queued.current]);
-      const play = arrivalToPlay(steps, today, seenNow);
-      for (const key of [...play.quiet, ...(play.city ? [play.city.key] : [])]) {
+      const mark = (key: string) => {
         queued.current.add(key);
         void db.seen.put({ id: key, at: Date.now() });
-      }
+      };
+      const play = arrivalToPlay(steps, today, seenNow);
+      play.quiet.forEach(mark);
       const line = stateLineToPlay(steps, today, seenNow);
+      const candidates: MomentCandidate[] = [];
+      for (const run of runs) {
+        const def = routeById(run.id);
+        if (def && (run.doneOn || routeKm(run, def, steps) >= def.km) && !seenNow.has(`walk-finish:${def.id}`)) candidates.push({ kind: 'finish', key: `walk-finish:${def.id}`, path: `/finish?id=${def.id}` });
+      }
       if (play.city) {
         const a = arrivals(steps).find((x) => x.name === play.city!.name && x.chapter === play.city!.chapter)!;
         const ended = CHAPTERS.find((c) => c.end === a.km);
-        if (ended) {
-          const text = [
-            'Delhi to the southern tip of India, on foot, at home. Chapter 1 is done.',
-            'Round the Golden Quadrilateral and back to Chennai: Kolkata, Delhi and Mumbai along the way. Chapter 2 is done.',
-            'Every state and every territory of India, the islands included. The whole map is yours.',
-          ][ended.n - 1];
-          if (ended.n === 2) void bump('quad-done');
-          if (ended.n === 3) void bump('states-36');
-          show({ kind: 'milestone', key: `chapter:${ended.n}`, value: fmtInt(a.km), unit: 'km', title: `${a.name}.`, text, voice: 'postcard' });
-        } else go('/arrive', { c: a.name, ch: String(a.chapter) });
+        candidates.push({ kind: 'arrival', key: play.city.key, path: `/arrive?c=${encodeURIComponent(a.name)}&ch=${a.chapter}${ended ? '&end=1' : ''}` });
         // A state line crossed in the same save is stamped quietly; the city's arrival shows the state.
-        if (line.key) {
-          queued.current.add(line.key);
-          void db.seen.put({ id: line.key, at: Date.now() });
-        }
-      } else if (line.state && line.key) {
-        queued.current.add(line.key);
-        void db.seen.put({ id: line.key, at: Date.now() });
-        go('/arrive', { s: line.state });
-      }
+        if (line.key) mark(line.key);
+      } else if (line.state && line.key) candidates.push({ kind: 'state', key: line.key, path: `/arrive?s=${encodeURIComponent(line.state)}` });
+      const plan = planWalkMoments(candidates, seenNow, today);
+      plan.seen.forEach(mark);
+      const [path, query = ''] = (plan.open ?? '').split('?');
+      const q = new URLSearchParams(query);
+      if (q.get('end')) {
+        const a = arrivals(steps).find((x) => x.name === q.get('c') && x.chapter === Number(q.get('ch')))!;
+        const ended = CHAPTERS.find((c) => c.end === a.km)!;
+        const text = [
+          'Delhi to the southern tip of India, on foot, at home. Chapter 1 is done.',
+          'Round the Golden Quadrilateral and back to Chennai: Kolkata, Delhi and Mumbai along the way. Chapter 2 is done.',
+          'Every state and every territory of India, the islands included. The whole map is yours.',
+        ][ended.n - 1];
+        if (ended.n === 2) void bump('quad-done');
+        if (ended.n === 3) void bump('states-36');
+        show({ kind: 'milestone', key: `chapter:${ended.n}`, value: fmtInt(a.km), unit: 'km', title: `${a.name}.`, text, voice: 'postcard' });
+      } else if (path) go(path, Object.fromEntries(q));
     }
 
     // Reveal day: once, on the goal date or the first open after it.
@@ -252,7 +263,7 @@ export function CelebrationWatcher() {
     if ((settings.medRewards ?? DEFAULT_MED_REWARDS).keptWeek && today <= addDays(ws, 2) && keptWeek(settings.checklist, days, settings, lastWs)) {
       push({ kind: 'golden', key: `keptweek:${lastWs}`, kicker: 'A kept week', place: `Week of ${fmtDayMonth(lastWs)}`, title: 'Every dose on time', text: 'Seven days, and every dose within the hour. That is the quiet kind of discipline.' });
     }
-  }, [settings, days, week, sessions, sets, measurements, seen, today, ws, show, toast]);
+  }, [settings, days, week, sessions, sets, measurements, seen, runs, today, ws, show, toast]);
 
   return null;
 }

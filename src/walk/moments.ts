@@ -21,3 +21,19 @@ export function momentToday(candidates: MomentCandidate[], seen: Set<string>, to
   if (seen.has(momentKey(today))) return { play: undefined, later: sorted };
   return { play: sorted[0], later: sorted.slice(1) };
 }
+
+/** The seen id for a moment that waited, kept with its day and where it plays, so the banner can offer it. */
+export const laterKey = (day: string, path: string) => `walk-later:${day}:${path}`;
+
+/**
+ * What to do with today's candidates: the page to open (if the day has room) and the seen ids to write, so that
+ * nothing plays twice and whatever waited is offered as a banner.
+ */
+export function planWalkMoments(candidates: MomentCandidate[], seen: Set<string>, today: string): { open?: string; seen: string[] } {
+  if (!candidates.length) return { open: undefined, seen: [] };
+  const { play, later } = momentToday(candidates, seen, today);
+  return {
+    open: play?.path,
+    seen: [...(play ? [play.key, momentKey(today)] : []), ...later.flatMap((c) => [c.key, laterKey(today, c.path)])],
+  };
+}
