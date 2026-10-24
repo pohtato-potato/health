@@ -1,82 +1,114 @@
-import { addDays } from '../domain/dates';
+import { useLiveQuery } from 'dexie-react-hooks';
+import type { CSSProperties } from 'react';
+import { addDays, daysBetween } from '../domain/dates';
 import { fmtDayMonth, fmtInt } from '../domain/format';
-import { chapterAt, kmFromSteps, positionAt } from '../domain/walk';
+import { batteryMode } from '../domain/rest';
+import { seasonalThemeOn } from '../domain/themes';
+import { prefOn, type RouteRun } from '../domain/types';
+import { kmFromSteps } from '../domain/walk';
 import { changePlace } from '../db/actions';
+import { db } from '../db/db';
 import { useAllDays, useDay, useSettings, useToday } from '../db/hooks';
+import { regionAt } from '../domain/regions';
 import { go } from '../router';
-import { Icon } from '../ui/Icon';
-import { WalkScene } from '../walk/WalkScene';
-import { PlaceStatusRow } from './walk/PlaceStatusRow';
+import { Aurora } from '../ui/live/Aurora';
+import { useBatteryLevel } from '../ui/RestScreen';
+import type { Festive } from '../walk/art/festive';
+import { kindOf, routeById } from '../walk/catalogue';
 import { reachedCards } from '../walk/cards';
-import { passAhead } from '../walk/passes';
+import { arrivedToday, auroraFor, statusLines, stoneFor, tomorrowLine, usualAndBig, whereLine, whereNow } from '../walk/page';
 import { peopleMet } from '../walk/people';
+import { routeKm, runState, stepsByDay } from '../walk/runs';
+import { journeyStart } from './Journey';
+import { PlaceStatusRow } from './walk/PlaceStatusRow';
+import { ChallengeCard, ExpeditionLine } from './walk/RouteCards';
+import { StatusLines } from './walk/StatusLines';
+import { WalkDoors } from './walk/WalkDoors';
+import { WalkTitle } from './walk/WalkTitle';
+import { WalkTop } from './walk/WalkTop';
 
-/** The Walk tab: where you are, lit for the hour, what's next, and the road so far. */
+/** The Walk tab: the scene and the stone, where you are, a few lines about today, tomorrow, your routes, the doors. */
 export function WalkTab() {
   const today = useToday();
   const days = useAllDays();
   const settings = useSettings();
   const day = useDay(today);
+  const runs = useLiveQuery(() => db.routes.toArray(), []);
+  const level = useBatteryLevel();
   if (!days || !settings) return <div className="page" />;
-  const km = kmFromSteps(days.reduce((n, d) => n + (d.steps ?? 0), 0));
-  const pos = positionAt(km);
-  const chapter = chapterAt(km);
-  const pass = passAhead(km, pos.to?.km);
-  const next = pass ? `${fmtInt(Math.ceil(pass.km - km))} km to ${pass.name}, ${fmtInt(pass.heightM)} m` : pos.to ? `${fmtInt(Math.ceil(pos.to.km - km))} km to ${pos.to.name}` : undefined;
+
+  const steps = stepsByDay(days);
+  const km = kmFromSteps([...steps.values()].reduce((a, b) => a + b, 0));
+  const todayKm = kmFromSteps(steps.get(today) ?? 0);
+  const where = whereNow(km);
+  const near = where.kind === 'between' ? where.from : where.place;
+  const dayN = daysBetween(journeyStart(settings, days), today) + 1;
+  const { usualKm, bigKm } = usualAndBig(days, today);
+  const saver = batteryMode(level, !!settings.prefs.batterySaver);
+  const festive = prefOn(settings.prefs, 'seasonal') ? (seasonalThemeOn(today, settings.birthday) as Festive | undefined) : undefined;
   // Someone met on the road shows for the day they were met and the day after, as steps are often logged late.
-  const met = peopleMet(days.filter((d) => d.date <= today)).filter((m) => m.date >= addDays(today, -1)).at(-1);
+  const met = peopleMet(days.filter((d) => d.date <= today))
+    .filter((m) => m.date >= addDays(today, -1))
+    .at(-1);
+  const lines = statusLines({ arrival: arrivedToday(steps, today), person: met?.who, status: day?.status, near });
+  const tomorrow = tomorrowLine(km, usualKm, bigKm);
   const cards = reachedCards(km);
 
+  const walking = (runs ?? [])
+    .map((run: RouteRun) => {
+      const def = routeById(run.id);
+      if (!def) return undefined;
+      const routeKmNow = routeKm(run, def, steps);
+      const state = runState(run, def, routeKmNow);
+      if (state === 'finished') return undefined;
+      const page = [...def.pages].reverse().find((p) => p.km <= routeKmNow);
+      const target = run.target && run.target >= today ? `aiming for ${fmtDayMonth(run.target)}` : undefined;
+      return { run, def, km: routeKmNow, state, line: page?.line, target };
+    })
+    .filter((x) => x !== undefined);
+  const challenges = walking.filter((w) => kindOf(w.def) === 'challenge');
+  const expeditions = walking.filter((w) => kindOf(w.def) === 'expedition');
+
   return (
-    <div className="page walk">
-      <div className="walk-top">
-        <WalkScene km={km} caption={false} hero />
-        <div className="walk-title">
-          <h1 className="h1">{pos.done ? 'Leh, the end of the road' : `Near ${pos.from.name}`}</h1>
-          <span className="t14 tn">
-            {fmtInt(Math.round(km))} km · Chapter {chapter.n}
-          </span>
-        </div>
-      </div>
-      <PlaceStatusRow settings={settings} today={today} day={day} onPlace={(id) => void changePlace(today, id)} />
-      {next && <div className="t15">{next}</div>}
-      {!days.some((d) => d.steps !== undefined) && <div className="t14 q lh">Log today's steps and you'll set off from Delhi.</div>}
-      {met && (
-        <div className="card">
-          <div className="lbl">Met on the road · {met.date === today ? 'today' : fmtDayMonth(met.date)}</div>
-          <div className="t15 lh">
-            {met.who.name}, {met.who.who}. {met.who.line}
-          </div>
-        </div>
-      )}
+    <div className={`page lv lv-tab walk2${saver ? ' saver' : ''}`} style={auroraFor(regionAt(km)) as CSSProperties}>
+      <Aurora still={saver} />
+      <div className="walk2-col">
+        <WalkTop km={km} todayKm={todayKm} stone={stoneFor(km)} festive={festive} onStrip={() => go('/map')} />
+        <WalkTitle where={whereLine(where)} sub={`${fmtInt(Math.round(km))} km from Delhi · day ${fmtInt(Math.max(1, dayN))}`} />
+        <PlaceStatusRow settings={settings} today={today} day={day} onPlace={(id) => void changePlace(today, id)} />
+        <StatusLines lines={lines} tomorrow={days.some((d) => d.steps !== undefined) ? tomorrow : "Log today's steps and you'll set off from Delhi."} />
 
-      <div className="list">
-        {[
-          { label: 'Route', sub: 'The whole walk on one map', path: '/map' },
-          { label: 'Departures', sub: 'Every milestone ahead', path: '/departures' },
-        ].map((x) => (
-          <button key={x.path} type="button" className="li" onClick={() => go(x.path)}>
-            <span className="s">
-              <span>{x.label}</span>
-              <small>{x.sub}</small>
-            </span>
-            <Icon name="right" size={16} stroke={1.8} color="var(--dim)" />
-          </button>
-        ))}
-      </div>
-
-      {cards.length > 0 && (
-        <div className="col gap8">
-          <div className="lbl">Cities reached</div>
-          <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
-            {cards.map((c) => (
-              <button key={c.city} type="button" className="chip" onClick={() => go('/postcard', { c: c.city })}>
-                {c.city}
-              </button>
+        {challenges.length > 0 && (
+          <section className="walk-section" aria-label="Challenges">
+            <h2 className="walk-h2">Challenges</h2>
+            {challenges.map((c) => (
+              <ChallengeCard key={c.run.id} id={c.run.id} km={c.km} state={c.state as 'walking' | 'set down'} line={c.line} target={c.target} onOpen={() => go('/walk')} />
             ))}
-          </div>
-        </div>
-      )}
+          </section>
+        )}
+        {expeditions.length > 0 && (
+          <section className="walk-section" aria-label="Expeditions">
+            <h2 className="walk-h2">Expeditions</h2>
+            {expeditions.map((e) => (
+              <ExpeditionLine key={e.run.id} id={e.run.id} km={e.km} state={e.state as 'walking' | 'set down'} onOpen={() => go('/walk')} />
+            ))}
+          </section>
+        )}
+
+        {cards.length > 0 && (
+          <section className="walk-section" aria-label="Cities reached">
+            <h2 className="walk-h2">Cities reached</h2>
+            <div className="walk-chips">
+              {cards.map((c) => (
+                <button key={c.city} type="button" className="chip" onClick={() => go('/postcard', { c: c.city })}>
+                  {c.city}
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+        <WalkDoors onGo={(path) => go(path)} />
+      </div>
     </div>
   );
 }

@@ -10,7 +10,7 @@ const dayAt = (id: string) => ({ date: '2026-10-21', place: id }) as Day;
 
 describe('the place and status row on the Walk tab', () => {
   it('shows every place as a chip, the current one pressed', () => {
-    const html = renderToStaticMarkup(<PlaceStatusRow settings={withPlaces(['Place A', 'Place B'])} today="2026-10-21" day={dayAt('b')} onPlace={() => {}} />);
+    const html = renderToStaticMarkup(<PlaceStatusRow settings={withPlaces(['Place A', 'Place B'])} today="2026-10-21" day={dayAt('b')} onPlace={() => {}} startOpen />);
     expect(html).toContain('Place A');
     expect(html).toContain('Place B');
     expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
@@ -18,9 +18,20 @@ describe('the place and status row on the Walk tab', () => {
   });
 
   it('shows the status row with no places set', () => {
-    const html = renderToStaticMarkup(<PlaceStatusRow settings={withPlaces([])} today="2026-10-21" day={null} onPlace={() => {}} />);
+    const html = renderToStaticMarkup(<PlaceStatusRow settings={withPlaces([])} today="2026-10-21" day={null} onPlace={() => {}} startOpen />);
     expect(html).not.toContain('Where now');
     expect(html).toContain('Status');
+  });
+
+  it('folds into one small summary button until opened', () => {
+    const html = renderToStaticMarkup(<PlaceStatusRow settings={withPlaces(['Place A', 'Place B'])} today="2026-10-21" day={{ ...dayAt('b'), status: 'sick' }} onPlace={() => {}} />);
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).toContain('Place B · Sick');
+    expect(html).not.toContain('Where now');
+  });
+
+  it('says no status in words when there is none', () => {
+    expect(renderToStaticMarkup(<PlaceStatusRow settings={withPlaces(['Place A'])} today="2026-10-21" day={dayAt('a')} onPlace={() => {}} />)).toContain('Place A · No status');
   });
 
   it('WalkFull is gone', () => {

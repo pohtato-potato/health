@@ -1438,25 +1438,5 @@
   margin-bottom: 8px;
 }
 
-/* Walk (s11): the scene full-bleed with the title over its sky. */
 /* The place and status row under the walk's title: status chips as tall and as legible as the place chips. */
 .walk-place-status .chip.sm { height: 44px; font-size: 14px; }
-
-.walk-top {
-  position: relative;
-  margin: calc(-18px - var(--safe-top)) -22px 0;
-}
-.walk-top .band.walk-hero {
-  height: 330px;
-  border-radius: 0 0 26px 26px;
-}
-.walk-title {
-  position: absolute;
-  top: calc(18px + var(--safe-top));
-  left: 22px;
-  right: 22px;
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  text-shadow: 0 1px 12px rgba(8, 10, 23, 0.6);
-}

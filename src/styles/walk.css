@@ -32,3 +32,54 @@
   .walk-art-walked { animation: walk-draw 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both; }
   .walk-halo { animation: walk-breathe 2.6s ease-in-out infinite; }
 }
+
+/* The Walk tab (part 2): one column on the aurora, the scene edge to edge at the top. */
+.walk2 { --walk-glass: color-mix(in srgb, #0c0e1d 50%, transparent); --walk-edge: color-mix(in srgb, var(--text) 18%, transparent); flex-direction: column; }
+.walk2-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.walk-top2 { margin: calc(-18px - var(--safe-top)) -22px 0; display: flex; flex-direction: column; }
+.walk-top2-scene { position: relative; }
+.walk-top2-scene .band.walk-hero { height: 300px; border-radius: 0; }
+.walk-stone-at { position: absolute; left: 9%; bottom: 3%; line-height: 0; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35)); }
+.walk-strip { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 22px; color: var(--text); background: linear-gradient(180deg, color-mix(in srgb, #0c0e1d 70%, transparent), transparent); text-align: left; }
+.walk-strip-road { flex: 1; height: 2px; background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--text) 55%, transparent) 0 6px, transparent 6px 11px); }
+.walk-strip-next { font-size: 15px; font-weight: 600; white-space: nowrap; }
+
+.walk-head { display: flex; flex-direction: column; gap: 4px; }
+.walk-title { font-family: var(--serif); font-weight: 400; font-size: 28px; line-height: 1.1; margin: 0; text-wrap: balance; overflow-wrap: anywhere; }
+.walk-sub { margin: 0; font-size: 14px; color: color-mix(in srgb, var(--text) 80%, transparent); }
+.walk-h2 { font-family: var(--serif); font-weight: 400; font-size: 22px; margin: 6px 0 0; }
+.walk-section { display: flex; flex-direction: column; gap: 12px; }
+.walk-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Three lines' height is always kept, so the page never jumps when a line comes or goes. */
+.walk-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 15px; line-height: 1.4; min-height: calc(3 * 1.4em + 2 * 6px); }
+.walk-tomorrow { margin: 0; font-size: 15px; line-height: 1.4; color: color-mix(in srgb, var(--text) 88%, transparent); }
+
+/* The map card. */
+.walk-rc { position: relative; display: flex; flex-direction: column; width: 100%; padding: 0; border-radius: 22px; overflow: hidden; text-align: left; color: var(--text); border: 1.5px solid color-mix(in srgb, var(--route-ink) 55%, transparent); background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--route-ink) 26%, #11132a), #0b0c1c 75%); box-shadow: 0 18px 40px -22px color-mix(in srgb, var(--route-ink) 60%, #000); }
+.walk-rc:active { transform: scale(0.99); }
+.walk-rc.down { border-style: dashed; }
+.walk-rc-band { position: relative; height: 150px; overflow: hidden; background: repeating-linear-gradient(-35deg, color-mix(in srgb, var(--route-ink) 7%, transparent) 0 1px, transparent 1px 7px); }
+.walk-era-stamp { position: absolute; left: 12px; top: 12px; min-width: 64px; height: 64px; padding: 0 8px; display: grid; place-items: center; border-radius: 50%; font-family: var(--serif); font-size: 15px; line-height: 1.1; text-align: center; color: var(--route-ink); border: 1.5px solid color-mix(in srgb, var(--route-ink) 70%, transparent); box-shadow: inset 0 0 0 4px color-mix(in srgb, var(--route-ink) 12%, transparent); transform: rotate(-10deg); background: color-mix(in srgb, #0b0c1c 70%, transparent); }
+.walk-ribbon { position: absolute; top: 0; right: 22px; width: 20px; height: 44px; background: var(--route-ink); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%); }
+.walk-rc-panel { display: flex; flex-direction: column; gap: 6px; padding: 12px 16px 16px; background: rgba(5, 6, 14, 0.72); border-top: 1px solid color-mix(in srgb, var(--route-ink) 30%, transparent); }
+.walk-rc-name { font-family: var(--serif); font-size: 24px; line-height: 1.1; }
+.walk-rc-nums { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; font-size: 14px; color: color-mix(in srgb, var(--text) 82%, transparent); }
+.walk-rc-nums b { font-family: var(--serif); font-weight: 300; font-size: 34px; line-height: 1; color: var(--route-ink); font-variant-numeric: lining-nums; }
+.walk-rc-state { padding: 2px 10px; border-radius: 999px; border: 1px dashed var(--walk-edge); color: var(--text); }
+.walk-rc-line { font-size: 15px; line-height: 1.4; }
+.walk-rc-target { align-self: flex-start; font-size: 14px; padding: 3px 10px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--route-ink) 50%, transparent); color: var(--route-ink); }
+
+/* An expedition's slim line. */
+.walk-exp { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 72px; padding: 10px 12px; border-radius: 18px; text-align: left; color: var(--text); background: linear-gradient(100deg, color-mix(in srgb, var(--route-ink) 14%, #0c0e1d), var(--walk-glass) 70%); border: 1px solid color-mix(in srgb, var(--route-ink) 35%, transparent); }
+.walk-exp-art { flex: none; width: 64px; height: 52px; border-radius: 12px; overflow: hidden; background: #0b0c1c; }
+.walk-exp-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.walk-exp-name { font-family: var(--serif); font-size: 19px; line-height: 1.15; }
+.walk-exp-meta { font-size: 14px; color: color-mix(in srgb, var(--text) 80%, transparent); }
+
+.walk-doors { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.walk-doors button { min-height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 0 16px; border-radius: 16px; background: var(--walk-glass); border: 1px solid var(--walk-edge); color: var(--text); font-size: 15px; text-align: left; }
+
+.walk-place-status { display: flex; flex-direction: column; gap: 8px; }
+.walk-ps-toggle { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 48px; padding: 0 16px; border-radius: 999px; background: var(--walk-glass); border: 1px solid var(--walk-edge); color: var(--text); font-size: 15px; text-align: left; }
+.walk-ps-change { font-size: 14px; color: color-mix(in srgb, var(--text) 75%, transparent); text-decoration: underline; text-underline-offset: 3px; }

@@ -36,6 +36,6 @@ describe('part 0 review fixes', () => {
   });
 
   it('shows the status row once the day has loaded, even when there is no day saved', () => {
-    expect(renderToStaticMarkup(<PlaceStatusRow settings={settings} today={today} day={null} onPlace={() => {}} />)).toContain('Status');
+    expect(renderToStaticMarkup(<PlaceStatusRow settings={settings} today={today} day={null} onPlace={() => {}} startOpen />)).toContain('Status');
   });
 });
