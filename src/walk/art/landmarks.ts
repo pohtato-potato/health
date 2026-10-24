@@ -104,21 +104,6 @@ const SHAPES: Record<string, () => Shape> = {
     lights: [win(60, -26, 3, 3), win(104, -27, 3, 3)],
   }),
   riverbridge: () => ({ paths: [rect(0, -22, 120, 4), ...arches(2, 118, 5, -18, -2, 6)], accents: [rect(0, -2, 120, 2)], lights: [rect(14, -21, 2, 2), rect(46, -21, 2, 2), rect(78, -21, 2, 2), rect(106, -21, 2, 2)] }),
-  hillriver: () => ({
-    paths: [
-      `M0 -4C16 -20 34 -42 58 -46C80 -48 100 -28 120 -4V0H0Z`,
-    ],
-    accents: [
-      `M0 -4C30 -8 62 -1 120 -6V0H0Z`,
-      // the elephant carved from the rock at the foot of the hill, beside the edicts
-      `M66 -8C66 -22 74 -28 86 -28C96 -28 102 -22 102 -14V-8H97V-14H92V-8H78V-14H73V-8Z`,
-      `M66 -20C61 -17 60 -10 63 -8H66Z`,
-    ],
-  }),
-  arcade: () => ({
-    paths: [rect(8, -34, 104, 34), rect(4, -38, 112, 4), `M44 -38C44 -58 76 -58 76 -38Z`, rect(59, -62, 2, 6), `M10 -38C10 -46 22 -46 22 -38Z`, `M98 -38C98 -46 110 -46 110 -38Z`],
-    lights: [14, 30, 46, 64, 80, 96].map((x) => `M${x} -4V-18Q${x + 5} -28 ${x + 10} -18V-4Z`),
-  }),
   museum: () => ({
     paths: [rect(14, -26, 92, 26), `M8 -26L24 -44H96L112 -26Z`, `M36 -44L48 -58H72L84 -44Z`, rect(59, -64, 2, 6)],
     lights: [win(22, -18), win(34, -18), win(46, -18), win(70, -18), win(82, -18), win(94, -18), win(58, -52, 4, 4)],
@@ -132,14 +117,18 @@ const SHAPES: Record<string, () => Shape> = {
     paths: [...arches(4, 116, 6, -26, 0), ...arches(8, 112, 8, -46, -26, 3), rect(4, -50, 112, 4), rect(68, -58, 22, 8), rect(66, -60, 26, 2)],
     lights: [win(71, -56, 3, 3), win(77, -56, 3, 3), win(83, -56, 3, 3)],
   }),
-  townhall: () => ({
-    paths: [rect(10, -30, 100, 30), rect(6, -34, 108, 4), rect(50, -58, 20, 24), `M48 -58L60 -66L72 -58Z`],
-    lights: [...[16, 28, 40, 74, 86, 98].map((x) => `M${x} -6V-18Q${x + 3} -23 ${x + 6} -18V-6Z`), `M60 -48m-5 0a5 5 0 1 0 10 0a5 5 0 1 0 -10 0Z`],
-  }),
   ridgepalace: () => ({
     paths: [`M0 0C20 -10 34 -18 50 -20H84C96 -16 108 -8 120 0Z`, `M44 -20L48 -76H90L94 -20Z`, rect(56, -82, 22, 6)],
     lights: [52, 62, 72, 82].flatMap((x) => [win(x, -66, 3, 4), win(x, -50, 3, 4), win(x, -34, 3, 4)]),
   }),
+  gopuram: () => {
+    const tiers = [0, 1, 2, 3, 4, 5].map((i) => `M${30 + i * 5} ${-i * 12}L${33 + i * 5} ${-(i + 1) * 12}H${87 - i * 5}L${90 - i * 5} ${-i * 12}Z`);
+    return { paths: [...tiers, `M52 -72C52 -80 68 -80 68 -72Z`, rect(58, -80, 4, 6)] };
+  },
+  shikhara: () => ({
+    paths: [rect(28, -18, 64, 18), `M42 -18C40 -44 52 -70 60 -78C68 -70 80 -44 78 -18Z`, `M18 -18C17 -30 24 -40 28 -44C32 -40 38 -30 38 -18Z`, rect(58, -86, 4, 8)],
+  }),
+  gurdwara: () => ({ paths: [rect(32, -30, 56, 30), onion(60, -30, 26, 26), onion(36, -30, 8, 8), onion(84, -30, 8, 8), rect(58, -60, 4, 4)], accents: [rect(0, 0, 120, 4)], lights: [win(44, -22), win(56, -22), win(68, -22)] }),
   hand: () => ({ paths: [`M54 0V-20H66V0Z`, `M44 -20C40 -36 42 -52 48 -60L50 -46C52 -60 56 -66 60 -66C64 -66 68 -60 70 -46L72 -60C78 -52 80 -36 76 -20Z`] }),
 };
 
@@ -152,13 +141,13 @@ const STOP_ART: Record<string, [string, string]> = {
   Nagpur: ['pillar', 'the Zero Mile Stone'],
   Hyderabad: ['charminar', 'the Charminar'],
   Bengaluru: ['palace', 'Vidhana Soudha'],
-  Madurai: ['arcade', 'Thirumalai Nayak Palace'],
+  Madurai: ['gopuram', 'the Meenakshi temple towers'],
   Kanyakumari: ['rock', 'the rock memorial'],
   Chennai: ['lighthouse', 'the Marina lighthouse'],
   Nellore: ['riverbridge', 'the bridge over the Penna'],
   Vijayawada: ['bridge', 'the Prakasam barrage'],
   Visakhapatnam: ['hills', 'the Kailasagiri hills'],
-  Bhubaneswar: ['hillriver', 'Dhauli hill above the Daya'],
+  Bhubaneswar: ['shikhara', 'the Lingaraj temple'],
   Kolkata: ['bridge', 'the Howrah Bridge'],
   Varanasi: ['ghat', 'the ghats'],
   Kanpur: ['clocktower', 'the Ghanta Ghar'],
@@ -188,7 +177,7 @@ const STOP_ART: Record<string, [string, string]> = {
   Dehradun: ['clocktower', 'the Ghanta Ghar'],
   Shimla: ['viaduct', "the toy train's viaduct"],
   Chandigarh: ['hand', 'the Open Hand'],
-  Amritsar: ['townhall', 'the Town Hall'],
+  Amritsar: ['gurdwara', 'the Golden Temple'],
   Srinagar: ['peaks', 'the Zabarwan range'],
   Leh: ['ridgepalace', 'Leh Palace'],
 };
