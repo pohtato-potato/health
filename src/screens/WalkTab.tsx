@@ -30,6 +30,8 @@ import { StatusLines } from './walk/StatusLines';
 import { WalkDoors } from './walk/WalkDoors';
 import { WalkTitle } from './walk/WalkTitle';
 import { WalkTop } from './walk/WalkTop';
+import { NewsBannerView } from './walk/NewsBanner';
+import { useRoadNews } from './walk/useRoadNews';
 
 /** The Walk tab: the scene and the stone, where you are, a few lines about today, tomorrow, your routes, the doors. */
 export function WalkTab() {
@@ -41,6 +43,7 @@ export function WalkTab() {
   const level = useBatteryLevel();
   const seenStretches = useLiveQuery(async () => new Set((await db.seen.where('id').startsWith('walk-stretch:').toArray()).map((s) => s.id)), []);
   const [showing, setShowing] = useState<{ done: Stretch; next?: Stretch }>();
+  const news = useRoadNews();
   const end = days && seenStretches ? stretchEndToShow(stepsByDay(days), STRETCHES, seenStretches) : undefined;
   useEffect(() => {
     if (!end?.show) return;
@@ -95,6 +98,8 @@ export function WalkTab() {
         )}
         <PlaceStatusRow settings={settings} today={today} day={day} onPlace={(id) => void changePlace(today, id)} />
         <StatusLines lines={lines} onOpen={(path) => go(path.split('?')[0], Object.fromEntries(new URLSearchParams(path.split('?')[1] ?? '')))} tomorrow={days.some((d) => d.steps !== undefined) ? tomorrow : "Log today's steps and you'll set off from Delhi."} />
+
+        {news?.banner && <NewsBannerView banner={news.banner} kmById={news.kmById} onOpen={news.open} onDismiss={news.dismiss} />}
 
         {challenges.length > 0 && (
           <section className="walk-section" aria-label="Challenges">

@@ -55,6 +55,7 @@ export const BANNER_PRIORITY = {
   recap: 60,
   review: 55,
   occasion: 50,
+  walkNews: 45,
   install: 40,
 } as const;
 

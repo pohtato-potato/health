@@ -334,3 +334,18 @@
 .walk-chron li { display: flex; flex-direction: column; gap: 2px; padding: 10px 0; border-bottom: 1px solid color-mix(in srgb, var(--text) 12%, transparent); }
 .walk-map-key i.out, .walk-map-key i.home { display: inline-block; width: 28px; height: 0; border-top: 3px dashed color-mix(in srgb, var(--text) 60%, transparent); vertical-align: middle; }
 .walk-map-key i.home { border-top: 3px dotted var(--route-ink); }
+.walk-news { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 18px; color: var(--text); --route-ink: var(--sage); border: 1.5px solid color-mix(in srgb, var(--route-ink) 55%, transparent); background: radial-gradient(120% 120% at 0% 0%, color-mix(in srgb, var(--route-ink) 24%, #11132a), #0b0c1c 80%); }
+.walk-news-row { display: flex; gap: 12px; align-items: center; }
+.walk-news-art { position: relative; flex: 0 0 72px; height: 56px; border-radius: 12px; overflow: hidden; display: grid; place-items: center; background: rgba(5, 6, 14, 0.5); }
+.walk-news-art .walk-art { width: 100%; height: 100%; }
+.walk-news-mark { position: absolute; right: 2px; bottom: 2px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: #0b0c1c; }
+.walk-news-mark .walk-mark { width: 18px; height: 18px; fill: none; stroke: var(--route-ink); stroke-width: 1.6; }
+.walk-news-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.walk-news-text small { font-size: 14px; color: var(--route-ink); }
+.walk-news-text b { font-weight: 500; font-size: 16px; line-height: 1.3; }
+.walk-news-x { flex: 0 0 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; color: var(--text); }
+.walk-news-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.walk-news-list li { display: flex; gap: 10px; align-items: center; font-size: 15px; }
+.walk-news-list li .grow { flex: 1; display: flex; flex-direction: column; }
+.walk-news-list li small { font-size: 14px; color: var(--route-ink); }
+.walk-primary.small { min-height: 48px; font-size: 15px; align-self: flex-start; }

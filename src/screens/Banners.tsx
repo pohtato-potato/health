@@ -21,6 +21,8 @@ import { weeklyCheckIn } from '../domain/benchmark';
 import { targetsFor } from '../state/derived';
 import { patchSettings, setTargets } from '../db/actions';
 import { doseSchedule, nextDose } from '../domain/medicines';
+import { NewsBannerView } from './walk/NewsBanner';
+import { useRoadNews } from './walk/useRoadNews';
 
 const DISMISSED_KEY = 'health.banner.dismissed';
 function readDismissed(): { date: string; ids: string[] } | null {
@@ -31,7 +33,7 @@ function readDismissed(): { date: string; ids: string[] } | null {
   }
 }
 
-type Banner = BannerCandidate & { icon: ReactNode; title: string; sub?: string; actions: BannerAction[] };
+type Banner = BannerCandidate & { icon: ReactNode; title: string; sub?: string; actions: BannerAction[]; node?: ReactNode };
 
 /** One quiet banner on Today, always in the same slot: a new version, a dose, the morning log, a backup, the week, a check-in, an occasion, installing. Never notifications. */
 export function Banners() {
@@ -45,6 +47,7 @@ export function Banners() {
   const toast = useToast();
   const usage = useLiveQuery(() => db.usage.where('at').above(Date.now() - 14 * 86_400_000).toArray(), []);
   const [busy, setBusy] = useState(false);
+  const news = useRoadNews();
   const [dismissed, setDismissed] = useState(readDismissed);
   // The banner chosen on load is held until the next load, so the page never moves while you read.
   const held = useRef<string | null | undefined>(undefined);
@@ -133,6 +136,9 @@ export function Banners() {
   else if (fest)
     candidates.push({ id: 'occasion', priority: BANNER_PRIORITY.occasion, icon: <Icon name="calendar" size={20} color="var(--pearl)" />, title: fest.inDays <= 0 ? `${fest.name} is here` : `${fest.name} in ${fest.inDays} day${fest.inDays === 1 ? '' : 's'}`, sub: 'Occasion mode holds the rings steady for it.', actions: [{ label: 'Set up', run: () => openSheet('occasion', { kind: 'festival', name: fest.name, from: fest.from > today ? fest.from : today, to: fest.to }) }] });
 
+  if (news?.banner)
+    candidates.push({ id: 'walk-news', priority: BANNER_PRIORITY.walkNews, anytime: true, icon: null, title: news.banner.title, actions: [], node: <NewsBannerView banner={news.banner} kmById={news.kmById} onOpen={news.open} onDismiss={news.dismiss} /> });
+
   if (pwa.canInstall && !pwa.installed)
     candidates.push({ id: 'install', priority: BANNER_PRIORITY.install, icon: <Icon name="phone" size={20} color="var(--pearl)" />, title: 'Install Health on your home screen.', sub: 'It opens full-screen.', actions: [{ label: 'Install', run: () => promptInstall() }] });
 
@@ -150,5 +156,6 @@ export function Banners() {
       /* storage can be unavailable; the dismissal lasts until reload */
     }
   };
+  if (shown.node) return shown.node;
   return <TodayBanner icon={shown.icon} title={shown.title} sub={shown.sub} actions={shown.actions} onDismiss={dismiss} />;
 }
