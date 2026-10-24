@@ -236,8 +236,8 @@ export const STRETCHES: Stretch[] = [
     fromKm: 1620,
     toKm: 1830,
     page: [
-      'South of Hyderabad the road crosses the dry red country of southern Telangana towards two great rivers, the Krishna and the Tungabhadra. A road bridge over the Krishna, built in the 1950s, first tied Telangana to Rayalaseema for trade.',
-      'Across them is Kurnool, which was a capital for three years. When Andhra State was carved out of Madras State in October 1953, the first Indian state made for a language, Kurnool was its capital, though it was short of buildings for a government.',
+      'South of Hyderabad the road crosses the dry red country of southern Telangana towards two great rivers, the Krishna and the Tungabhadra. A road bridge over the Krishna, built in the 1950s, helped trade grow between Telangana and Rayalaseema.',
+      'Across them is Kurnool, which was a capital for three years. In October 1953 Andhra State was carved out of Madras State, the first state of independent India made for a language. Kurnool was its capital, though it had few buildings for a government.',
       'In November 1956 Andhra joined the Telugu-speaking districts of Hyderabad State to form Andhra Pradesh, with Hyderabad as its capital. Kurnool went back to being a district town. Fifty-eight years later Telangana split away again, and Andhra Pradesh had to look for a capital once more.',
     ],
     sources: [
@@ -272,9 +272,9 @@ export const STRETCHES: Stretch[] = [
     fromKm: 2010,
     toKm: 2190,
     page: [
-      'After the Deccan sultans destroyed Vijayanagara’s army at Talikota in 1565 and sacked its capital at Hampi, the Aravidu kings fled south to the hill fort of Penukonda. It held the empire for about two decades more; sources differ on when the court moved on to Chandragiri.',
-      'Nearby, at Lepakshi, governors of the empire built a temple in the 1530s that is now famous less for its gods than for its engineering and its paintings: a pillar that does not touch the floor, and the largest single-figure ceiling painting in India.',
-      'Then the road climbs to the plateau of Karnataka, Hyder Ali and Tipu Sultan’s country. Tipu was born at Devanahalli, near where Bengaluru’s airport is now; he and his father fought the British in four wars between them; the hill fort of Nandi above the road was one of theirs. To some he is a patriot who died fighting colonial rule, to others a ruler who persecuted his subjects. Historians still argue both.',
+      'After the Deccan sultans destroyed Vijayanagara’s army at Talikota in 1565 and sacked its capital at Hampi, the court, led by the Aravidu regent Tirumala, fled south to the hill fort of Penukonda. It held the empire for about two decades more; sources differ on when the court moved on to Chandragiri.',
+      'Nearby, at Lepakshi, governors of the empire built a temple in the 1530s that is now famous less for its gods than for its engineering and its paintings: a pillar that does not touch the floor, and a ceiling painting said to be the largest of a single figure in India.',
+      'Then the road climbs to the plateau of Karnataka, Hyder Ali and Tipu Sultan’s country. Tipu was born at Devanahalli, near Bengaluru’s airport. He and his father fought the British in four wars. The hill fort of Nandi above the road was one of theirs. To some he is a patriot who died fighting colonial rule, to others a ruler who persecuted his subjects. Historians still argue both.',
     ],
     sources: [
       W('Wikipedia: Penukonda', 'https://en.wikipedia.org/wiki/Penukonda'),
@@ -291,9 +291,9 @@ export const STRETCHES: Stretch[] = [
     fromKm: 2190,
     toKm: 2395,
     page: [
-      'Down off the plateau the road enters Tamil Nadu, which took that name in 1969; until then it was Madras State. The country round Krishnagiri and Salem was the Baramahal, a name usually read as the twelve forts.',
+      'At Hosur, still on the plateau, the road enters Tamil Nadu, which took that name in 1969; until then it was Madras State. The country round Krishnagiri and Salem was the Baramahal, a name usually read as the twelve forts.',
       'Tipu Sultan lost the Baramahal to the East India Company by the treaty of 1792. Its new administrators, Alexander Read and his deputy Thomas Munro, tried out here the way of taxing land, field by field and farmer by farmer, that the Company then spread across the south.',
-      'Today the old forts look down on mango orchards. Krishnagiri district grows more mangoes than any other in Tamil Nadu, much of it pulped for juice.',
+      'Today the old forts look down on mango orchards. Krishnagiri district is one of India’s biggest mango growers, much of it pulped for juice.',
     ],
     sources: [
       W('Wikipedia: Krishnagiri district', 'https://en.wikipedia.org/wiki/Krishnagiri_district'),
@@ -360,8 +360,8 @@ export const STRETCHES: Stretch[] = [
     fromKm: 2780,
     toKm: 2870,
     page: [
-      'The last stretch runs through the Aralvaimozhi gap, where the wind from the Arabian Sea pours through the hills; it turns the long rows of turbines at Muppandal, India’s largest onshore wind farm.',
-      'Kanyakumari district was part of the princely state of Travancore. Its Tamil-speaking taluks campaigned from 1945 to join Madras State, and police firing at protests killed nine people. On 1 November 1956 the four taluks were transferred, and the southern tip of India became Tamil Nadu’s.',
+      'The last stretch runs through the Aralvaimozhi gap, where the wind from the Arabian Sea pours through the hills; it turns the long rows of turbines at Muppandal, often called India’s largest onshore wind farm.',
+      'Kanyakumari district was part of the princely state of Travancore. Its Tamil-speaking taluks campaigned from 1945 to join Madras State, and police firings killed eleven people, nine of them on one day in August 1954. On 1 November 1956 the four taluks were transferred, and the southern tip of India became Tamil Nadu’s.',
       'At the end, three seas meet: the Bay of Bengal, the Indian Ocean and the Arabian Sea. Chapter 1 ends here.',
     ],
     sources: [

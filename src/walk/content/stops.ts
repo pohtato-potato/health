@@ -643,7 +643,7 @@ export const STOPS: SmallStop[] = [
     facts: [
       'Just off the road at Mahbubnagar, a single banyan tree has spread over about three acres, its hanging roots grown into trunks of their own.',
       'It is said to be about 700 years old; estimates range from 500 to 800.',
-      'In 2018, with termites eating it, forest officers gave it a saline drip, injecting the solution into its branches.',
+      'In 2018, with termites eating it, forest officers hung saline bottles filled with diluted insecticide and dripped it into its branches.',
     ],
     sources: [
       W('The News Minute: 700-year-old banyan put on drips', 'https://www.thenewsminute.com/article/save-700-year-old-banyan-tree-telangana-officials-put-it-drips-79814'),
@@ -672,10 +672,14 @@ export const STOPS: SmallStop[] = [
     name: 'The Krishna',
     facts: [
       'The road crosses the Krishna, one of India’s great rivers, on its way east to the Bay of Bengal.',
-      'A road bridge here, built in the 1950s, first carried trade between Telangana and Rayalaseema.',
+      'A road bridge here, built in the 1950s, helped trade grow between Telangana and Rayalaseema.',
       'Upstream is the Jurala dam; the crossing at Beechupally is about 30 km below it.',
     ],
-    sources: [W('Wikipedia: Beechupally', 'https://en.wikipedia.org/wiki/Beechupally'), W('Wikipedia: Krishna River', 'https://en.wikipedia.org/wiki/Krishna_River')],
+    sources: [
+      W('Rural Tourism: Beechupally', 'https://rural.tourism.gov.in/Beechupally-destination.html'),
+      W('Wikipedia: Beechupally', 'https://en.wikipedia.org/wiki/Beechupally'),
+      W('Wikipedia: Krishna River', 'https://en.wikipedia.org/wiki/Krishna_River'),
+    ],
   },
   {
     id: 'into-andhra',
@@ -684,7 +688,7 @@ export const STOPS: SmallStop[] = [
     name: 'Into Andhra Pradesh',
     facts: [
       'The road enters Andhra Pradesh at Kurnool, on the Tungabhadra.',
-      'From 1953 to 1956 Kurnool was the capital of Andhra State, the first Indian state drawn by language.',
+      'From 1953 to 1956 Kurnool was the capital of Andhra State, the first state of independent India drawn by language.',
       'In 1956 the capital moved to Hyderabad, which in 2014 went to Telangana.',
     ],
     sources: [W('Wikipedia: Andhra State', 'https://en.wikipedia.org/wiki/Andhra_State'), W('Wikipedia: Kurnool', 'https://en.wikipedia.org/wiki/Kurnool')],
@@ -701,6 +705,7 @@ export const STOPS: SmallStop[] = [
     ],
     creature: 'bustard',
     sources: [
+      W('AP Forest Department: Rollapadu', 'https://forests.ap.gov.in/rollapadu.php'),
       W('Zoo’s Print: Rollapadu sanctuary report', 'https://zoosprint.org/index.php/zpj/article/view/6810/6219'),
       W(
         'Deccan Chronicle: two wildlife sanctuaries fail to fulfil purpose',
@@ -714,11 +719,15 @@ export const STOPS: SmallStop[] = [
     km: 1870,
     name: 'The Belum caves',
     facts: [
-      'Off the road lies the Belum cave system, about 3.2 km of passages through limestone, the second longest known in India.',
+      'About 50 km east of the road lies the Belum cave system, about 3.2 km of passages through limestone, the longest known cave in India’s plains.',
       'Villagers knew and used it long before the geologist Robert Bruce Foote recorded it in 1884.',
       'Its deepest point is about 46 m below the entrance.',
     ],
-    sources: [W('Wikipedia: Belum Caves', 'https://en.wikipedia.org/wiki/Belum_Caves'), W('Wikipedia: Robert Bruce Foote', 'https://en.wikipedia.org/wiki/Robert_Bruce_Foote')],
+    sources: [
+      W('Wikipedia: Belum Caves', 'https://en.wikipedia.org/wiki/Belum_Caves'),
+      W('Nandyal district: Belum caves', 'https://nandyal.ap.gov.in/adventures/'),
+      W('Wikipedia: Robert Bruce Foote', 'https://en.wikipedia.org/wiki/Robert_Bruce_Foote'),
+    ],
   },
   {
     id: 'gooty',
@@ -775,24 +784,12 @@ export const STOPS: SmallStop[] = [
     ],
   },
   {
-    id: 'penna',
-    kind: 'river',
-    km: 2072,
-    name: 'The Penna',
-    facts: [
-      'The Penna rises in the Nandi Hills just ahead and flows north into Andhra Pradesh, the way you have come.',
-      'It runs about 597 km, turns east through the Eastern Ghats and reaches the sea near Nellore.',
-      'Most of its basin is dry country, and in many years it barely flows.',
-    ],
-    sources: [W('Wikipedia: Penna River', 'https://en.wikipedia.org/wiki/Penna_River')],
-  },
-  {
     id: 'into-karnataka',
     kind: 'border',
-    km: 2112,
+    km: 2045,
     name: 'Into Karnataka',
     facts: [
-      'The road climbs into Karnataka.',
+      'At Kodikonda, just past Lepakshi, the road crosses into Karnataka.',
       'The state was formed in 1956 as Mysore State, bringing Kannada-speaking regions together, and took the name Karnataka in 1973.',
       'Bengaluru, its capital, sits on the plateau about 900 m up.',
     ],
@@ -800,6 +797,18 @@ export const STOPS: SmallStop[] = [
       W('Wikipedia: Mysore State', 'https://en.wikipedia.org/wiki/Mysore_State'),
       W('Wikipedia: List of renamed places in India', 'https://en.wikipedia.org/wiki/List_of_renamed_places_in_India'),
     ],
+  },
+  {
+    id: 'penna',
+    kind: 'river',
+    km: 2090,
+    name: 'The Penna',
+    facts: [
+      'The Penna rises in the Nandi Hills just ahead and flows north into Andhra Pradesh, the way you have come.',
+      'It runs about 597 km, turns east through the Eastern Ghats and reaches the sea near Nellore.',
+      'Most of its basin is dry country, and in many years it barely flows.',
+    ],
+    sources: [W('Wikipedia: Penna River', 'https://en.wikipedia.org/wiki/Penna_River')],
   },
   {
     id: 'nandi-hills',
@@ -836,7 +845,7 @@ export const STOPS: SmallStop[] = [
     facts: [
       'Bengaluru began in 1537 as a mud fort built by Kempe Gowda, a local chief under Vijayanagara.',
       'Stone towers credited to a later Kempe Gowda still stand at Lalbagh, Ulsoor Lake and two other spots.',
-      'They are often called boundary markers; most historians think they were watchtowers.',
+      'They are usually described as watchtowers that also marked the town’s limits.',
     ],
     sources: [
       W('Wikipedia: History of Bengaluru', 'https://en.wikipedia.org/wiki/History_of_Bengaluru'),
@@ -849,7 +858,7 @@ export const STOPS: SmallStop[] = [
     km: 2230,
     name: 'Into Tamil Nadu',
     facts: [
-      'The road drops off the plateau into Tamil Nadu at Hosur.',
+      'The road crosses into Tamil Nadu at Hosur, still on the plateau, and drops down beyond Krishnagiri.',
       'Until 14 January 1969 the state was Madras State; its new name means the land of the Tamils.',
       'Its borders were drawn by language in 1956.',
     ],
@@ -861,9 +870,9 @@ export const STOPS: SmallStop[] = [
     km: 2275,
     name: 'Krishnagiri’s mangoes',
     facts: [
-      'Krishnagiri district grows more mangoes than anywhere else in Tamil Nadu.',
+      'Krishnagiri district is one of the biggest mango growers in India.',
       'Most of the crop goes to pulp factories, for juice sold across the world.',
-      'A bad year hurts: in 2026 the totapuri crop fell to well under half the year before.',
+      'A bad year hurts: in 2026 the totapuri crop was expected to fall to under half the year before.',
     ],
     sources: [
       W('Wikipedia: Krishnagiri district', 'https://en.wikipedia.org/wiki/Krishnagiri_district'),
@@ -986,7 +995,7 @@ export const STOPS: SmallStop[] = [
     facts: [
       'The jasmine grown around Madurai changes colour through the day: greenish white in the morning, milky by afternoon, creamy at dusk.',
       'In 2013 it became the first flower in Tamil Nadu with a geographical indication.',
-      'Madurai is called India’s jasmine capital, and its flowers fly out to the USA and Dubai.',
+      'Madurai is called India’s jasmine capital, and its flowers are sold well beyond India.',
     ],
     sources: [
       W('Wikipedia: Madurai Malli', 'https://en.wikipedia.org/wiki/Madurai_Malli'),
@@ -1000,7 +1009,7 @@ export const STOPS: SmallStop[] = [
     name: 'The Vaigai',
     facts: [
       'Madurai stands on the Vaigai, the city’s river since the Sangam age.',
-      'Once it flowed all year; now it is often dry in the city, its water held upstream by the Vaigai dam, built in 1959.',
+      'Once it flowed for much of the year; now it is often dry in the city, its water held upstream by the Vaigai dam, built in 1959.',
       'Water from the Periyar in Kerala is sent through a tunnel in the Ghats to feed it.',
     ],
     sources: [
@@ -1097,7 +1106,7 @@ export const STOPS: SmallStop[] = [
     name: 'The wind gap',
     facts: [
       'At the Aralvaimozhi gap, wind from the Arabian Sea funnels through the hills.',
-      'The turbines at Muppandal, begun in 1986, add up to about 1,500 MW: India’s largest onshore wind farm.',
+      'The turbines at Muppandal, begun in 1986, add up to about 1,500 MW: often called India’s largest onshore wind farm.',
       'Claims that it is the largest in Asia or among the largest in the world vary by source.',
     ],
     sources: [W('Wikipedia: Muppandal Wind Farm', 'https://en.wikipedia.org/wiki/Muppandal_Wind_Farm'), W('Wikipedia: Aralvaimozhi', 'https://en.wikipedia.org/wiki/Aralvaimozhi')],
