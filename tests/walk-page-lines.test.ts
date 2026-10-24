@@ -5,7 +5,7 @@ import { goldish } from './helpers/goldish';
 
 describe('status lines and the region’s light', () => {
   it('orders the lines arrival, stop, person, rest, at most three', () => {
-    const l = statusLines({ arrival: 'Agra', stop: 'A river crossing', person: { name: 'P', who: 'a carter', line: 'Says hello.' }, status: 'sick', near: 'Agra' });
+    const l = statusLines({ arrival: 'Agra', stop: { kind: 'stop', text: 'A river crossing' }, person: { name: 'P', who: 'a carter', line: 'Says hello.' }, status: 'sick', near: 'Agra' });
     expect(l.map((x) => x.kind)).toEqual(['arrival', 'stop', 'person']);
     expect(l[0].text).toBe('Arrived in Agra today.');
     expect(l[2].text).toBe('Met P, a carter. Says hello.');

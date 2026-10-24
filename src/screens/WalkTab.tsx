@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { addDays, daysBetween } from '../domain/dates';
 import { fmtDayMonth, fmtInt } from '../domain/format';
 import { batteryMode } from '../domain/rest';
@@ -16,7 +16,11 @@ import { useBatteryLevel } from '../ui/RestScreen';
 import type { Festive } from '../walk/art/festive';
 import { kindOf, routeById } from '../walk/catalogue';
 import { reachedCards } from '../walk/cards';
-import { arrivedToday, auroraFor, nearestPlace, statusLines, stoneFor, tomorrowLine, usualAndBig, whereLine, whereNow } from '../walk/page';
+import { STOPS, STRETCHES } from '../walk/content';
+import { arrivedToday, auroraFor, nearestPlace, statusLines, stoneFor, stopLine, timeAtPace, tomorrowLine, usualAndBig, whereLine, whereNow } from '../walk/page';
+import { stopToday, stretchAt, stretchDay, stretchesEnded } from '../walk/road';
+import { Sheet } from '../ui/Sheet';
+import { StretchEndView } from './walk/StretchEndView';
 import { peopleMet } from '../walk/people';
 import { routeKm, runState, stepsByDay } from '../walk/runs';
 import { journeyStart } from './Journey';
@@ -35,6 +39,8 @@ export function WalkTab() {
   const day = useDay(today);
   const runs = useLiveQuery(() => db.routes.toArray(), []);
   const level = useBatteryLevel();
+  const seenStretches = useLiveQuery(async () => new Set((await db.seen.where('id').startsWith('walk-stretch:').toArray()).map((s) => s.id)), []);
+  const [closed, setClosed] = useState<string>();
   if (!days || !settings) return <div className="page" />;
 
   const steps = stepsByDay(days);
@@ -50,7 +56,18 @@ export function WalkTab() {
   const met = peopleMet(days.filter((d) => d.date <= today))
     .filter((m) => m.date >= addDays(today, -1))
     .at(-1);
-  const lines = statusLines({ arrival: arrivedToday(steps, today), person: met?.who, status: day?.status, near });
+  const stop = stopToday(steps, today, STOPS);
+  const lines = statusLines({ arrival: arrivedToday(steps, today), stop: stop && stopLine(stop), person: met?.who, status: day?.status, near });
+  const stretch = stretchAt(km, STRETCHES);
+  // A stretch's end shows once, on the next open: the latest ended stretch not yet seen.
+  const ended = seenStretches ? stretchesEnded(steps, STRETCHES).filter((s) => !seenStretches.has(`walk-stretch:${s.id}`)).at(-1) : undefined;
+  const endNow = ended && ended.id !== closed ? ended : undefined;
+  const closeEnd = () => {
+    if (!endNow) return;
+    setClosed(endNow.id);
+    // Every ended stretch up to this one counts as seen, so a long gap doesn't queue several sheets.
+    void db.seen.bulkPut(stretchesEnded(steps, STRETCHES).map((s) => ({ id: `walk-stretch:${s.id}`, at: Date.now() })));
+  };
   const tomorrow = tomorrowLine(km, usualKm, bigKm);
   const cards = reachedCards(km);
 
@@ -74,9 +91,13 @@ export function WalkTab() {
       <Aurora still={saver} />
       <div className="walk2-col">
         <WalkTop km={km} todayKm={todayKm} stone={stoneFor(km)} festive={festive} onStrip={() => go('/map')} />
-        <WalkTitle where={whereLine(where)} sub={`${fmtInt(Math.round(km))} km from Delhi · day ${fmtInt(Math.max(1, dayN))}`} />
+        {stretch ? (
+          <WalkTitle where={stretch.name} sub={`${stretch.plain} · day ${stretchDay(steps, today, stretch)} of ${timeAtPace(stretch.toKm - stretch.fromKm, usualKm)}`} onWhere={() => go('/stretch', { id: stretch.id })} />
+        ) : (
+          <WalkTitle where={whereLine(where)} sub={`${fmtInt(Math.round(km))} km from Delhi · day ${fmtInt(Math.max(1, dayN))}`} />
+        )}
         <PlaceStatusRow settings={settings} today={today} day={day} onPlace={(id) => void changePlace(today, id)} />
-        <StatusLines lines={lines} tomorrow={days.some((d) => d.steps !== undefined) ? tomorrow : "Log today's steps and you'll set off from Delhi."} />
+        <StatusLines lines={lines} onOpen={(path) => go(path.split('?')[0], Object.fromEntries(new URLSearchParams(path.split('?')[1] ?? '')))} tomorrow={days.some((d) => d.steps !== undefined) ? tomorrow : "Log today's steps and you'll set off from Delhi."} />
 
         {challenges.length > 0 && (
           <section className="walk-section" aria-label="Challenges">
@@ -109,6 +130,20 @@ export function WalkTab() {
         )}
         <WalkDoors onGo={(path) => go(path)} />
       </div>
+      {endNow && (
+        <Sheet onClose={closeEnd}>
+          <StretchEndView
+            done={endNow}
+            next={STRETCHES[STRETCHES.indexOf(endNow) + 1]}
+            onRead={() => {
+              const next = STRETCHES[STRETCHES.indexOf(endNow) + 1];
+              closeEnd();
+              if (next) go('/stretch', { id: next.id });
+            }}
+            onClose={closeEnd}
+          />
+        </Sheet>
+      )}
     </div>
   );
 }

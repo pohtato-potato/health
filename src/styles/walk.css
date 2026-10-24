@@ -83,3 +83,32 @@
 .walk-place-status { display: flex; flex-direction: column; gap: 8px; }
 .walk-ps-toggle { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 48px; padding: 0 16px; border-radius: 999px; background: var(--walk-glass); border: 1px solid var(--walk-edge); color: var(--text); font-size: 15px; text-align: left; }
 .walk-ps-change { font-size: 14px; color: color-mix(in srgb, var(--text) 75%, transparent); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Part 3: the stretch title, the stop line, a stop's card of facts, a stretch's page and its end. */
+.walk-title-btn { padding: 0; min-height: 44px; font: inherit; color: inherit; text-align: left; text-decoration: underline; text-decoration-thickness: 1px; text-decoration-color: color-mix(in srgb, var(--text) 35%, transparent); text-underline-offset: 6px; }
+.walk-linkline { padding: 6px 0; min-height: 44px; font: inherit; color: inherit; text-align: left; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--text) 40%, transparent); text-underline-offset: 3px; }
+.walk3 { gap: 18px; }
+.walk-kind { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; letter-spacing: 0.04em; text-transform: uppercase; color: color-mix(in srgb, var(--text) 80%, transparent); }
+.walk-title.big { font-size: 34px; font-weight: 300; line-height: 1.05; }
+.walk-h3 { font-size: 15px; font-weight: 600; margin: 0 0 6px; }
+.walk-para { margin: 0; font-size: 16px; line-height: 1.55; }
+.walk-deeper { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 16px; background: color-mix(in srgb, #0c0e1d 55%, transparent); border: 1px solid color-mix(in srgb, var(--text) 16%, transparent); }
+.walk-sources ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.4; color: color-mix(in srgb, var(--text) 80%, transparent); }
+.walk-sources a { color: inherit; }
+.walk-ghost { min-height: 48px; padding: 0 18px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--text) 30%, transparent); color: var(--text); font-size: 15px; align-self: flex-start; }
+.walk-primary { min-height: 52px; padding: 0 22px; border-radius: 999px; background: var(--text); color: #0e1020; font-weight: 600; font-size: 16px; }
+.walk-stop, .walk-stretch, .walk-end { display: flex; flex-direction: column; gap: 14px; }
+.walk-end-btns { display: flex; flex-direction: column; gap: 10px; }
+.walk-end-btns .walk-ghost { align-self: stretch; }
+
+.walk-deck { position: relative; padding: 10px 6px 0; }
+.walk-deck-back { position: absolute; inset: 0 14px auto; height: 100%; border-radius: 20px; border: 1px solid color-mix(in srgb, var(--text) 12%, transparent); background: color-mix(in srgb, #0c0e1d 60%, transparent); }
+.walk-deck-back.b1 { transform: translateY(-5px) scale(0.97); }
+.walk-deck-back.b2 { transform: translateY(-10px) scale(0.94); }
+.walk-fact { position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; width: 100%; min-height: 190px; padding: 20px 18px 16px; border-radius: 20px; text-align: left; color: var(--text); background: color-mix(in srgb, #14172e 90%, transparent); border: 1px solid color-mix(in srgb, var(--text) 18%, transparent); }
+.walk-fact-text { font-family: var(--serif); font-size: 20px; line-height: 1.35; }
+.walk-fact-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; color: color-mix(in srgb, var(--text) 75%, transparent); }
+.walk-dots { display: flex; gap: 5px; }
+.walk-dots i { width: 7px; height: 7px; border-radius: 50%; background: color-mix(in srgb, var(--text) 30%, transparent); }
+.walk-dots i.on { background: var(--text); }
+.walk-top2-scene.road .band.walk-hero { height: 220px; }

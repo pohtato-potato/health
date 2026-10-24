@@ -3,6 +3,7 @@ import { fmtInt } from '../domain/format';
 import type { Day, Status } from '../domain/types';
 import { ALL_STOPS, crossings, kmFromSteps, positionAt } from '../domain/walk';
 import { inksFor, mix, type RegionId } from '../ui/light';
+import { STOP_WORDS, type SmallStop } from './content/types';
 import { HINDI } from './hindi';
 
 /** Within this many km of a place, you're near it. */
@@ -77,6 +78,13 @@ export function stoneFor(km: number): { name: string; hindi: string; km: number 
 export interface StatusLine {
   kind: 'arrival' | 'stop' | 'person' | 'rest';
   text: string;
+  /** Where tapping the line goes, if anywhere. */
+  open?: string;
+}
+
+/** A small stop as a status line: its kind in words and its name, opening its card. */
+export function stopLine(stop: SmallStop): StatusLine {
+  return { kind: 'stop', text: `${STOP_WORDS[stop.kind]} · ${stop.name}`, open: `/stop?id=${stop.id}` };
 }
 
 /** A rest or travel day, in kind words; nothing for an occasion or an ordinary day. */
@@ -88,10 +96,10 @@ export function restLine(status: Status | undefined, near: string): string | und
 }
 
 /** Up to three short lines under the title, each kind at most once: an arrival, a small stop, a person met, a rest day. */
-export function statusLines(i: { arrival?: string; stop?: string; person?: { name: string; who: string; line: string }; status?: Status; near: string }): StatusLine[] {
+export function statusLines(i: { arrival?: string; stop?: StatusLine; person?: { name: string; who: string; line: string }; status?: Status; near: string }): StatusLine[] {
   const out: StatusLine[] = [];
   if (i.arrival) out.push({ kind: 'arrival', text: `Arrived in ${i.arrival} today.` });
-  if (i.stop) out.push({ kind: 'stop', text: i.stop });
+  if (i.stop) out.push(i.stop);
   if (i.person) out.push({ kind: 'person', text: `Met ${i.person.name}, ${i.person.who}. ${i.person.line}` });
   const rest = restLine(i.status, i.near);
   if (rest) out.push({ kind: 'rest', text: rest });
