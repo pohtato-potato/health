@@ -44,6 +44,18 @@ FANTASY = {'box': [0, 0, 160, 104], 'outline': 'M6 30 L20 18 L34 22 L44 12 L60 1
 # The main walk's chapter-1 cities, from their real places.
 CITIES = {'Delhi': (77.23, 28.65), 'Agra': (78.01, 27.18), 'Gwalior': (78.18, 26.22), 'Bhopal': (77.41, 23.26), 'Nagpur': (79.09, 21.15),
           'Hyderabad': (78.49, 17.39), 'Bengaluru': (77.59, 12.97), 'Madurai': (78.12, 9.93), 'Kanyakumari': (77.54, 8.08)}
+# Every city on the walk (longitude, latitude), for arrivals and the passport.
+ALL_CITIES = {**CITIES,
+    'Chennai': (80.27, 13.08), 'Nellore': (79.99, 14.44), 'Vijayawada': (80.65, 16.51), 'Visakhapatnam': (83.22, 17.69), 'Bhubaneswar': (85.82, 20.30),
+    'Kolkata': (88.36, 22.57), 'Varanasi': (82.97, 25.32), 'Kanpur': (80.33, 26.45), 'Jaipur': (75.79, 26.91), 'Udaipur': (73.71, 24.59),
+    'Ahmedabad': (72.57, 23.02), 'Surat': (72.83, 21.17), 'Mumbai': (72.88, 19.08), 'Pune': (73.86, 18.52), 'Belagavi': (74.50, 15.85),
+    'Hubballi': (75.12, 15.36), 'Puducherry': (79.81, 11.94), 'Thiruvananthapuram': (76.94, 8.52), 'Kavaratti': (72.64, 10.57), 'Panaji': (73.83, 15.49),
+    'Daman': (72.83, 20.40), 'Raipur': (81.63, 21.25), 'Port Blair': (92.73, 11.62), 'Gangtok': (88.61, 27.33), 'Dispur': (91.79, 26.14),
+    'Shillong': (91.89, 25.58), 'Agartala': (91.28, 23.83), 'Aizawl': (92.72, 23.73), 'Imphal': (93.94, 24.82), 'Kohima': (94.11, 25.67),
+    'Itanagar': (93.62, 27.08), 'Dehradun': (78.03, 30.32), 'Shimla': (77.17, 31.10), 'Chandigarh': (76.78, 30.73), 'Amritsar': (74.87, 31.63),
+    'Srinagar': (74.80, 34.08), 'Leh': (77.58, 34.15)}
+# Natural Earth's names where the walk uses another.
+STATE_NAMES = {'Andaman and Nicobar': 'Andaman and Nicobar Islands'}
 EARTH_KM = 6371.0
 
 
@@ -124,14 +136,14 @@ for r in REGIONS:
     if r == 'india':
         ind = next(f for f in india_pov if f['properties'].get('ADM0_A3') == 'IND')
         neigh = ''.join(path(f['geometry'], p, 0.8, box) for f in india_pov if f['properties'].get('ADM0_A3') in ('PAK', 'NPL', 'BGD', 'CHN', 'BTN', 'MMR', 'LKA', 'AFG'))
-        st = [{'name': f['properties']['name'], 'path': path(f['geometry'], p, 0.35, box), 'areaKm2': round(area(f['geometry'])), 'ut': f['properties']['name'] in UNION_TERRITORIES}
+        st = [{'name': STATE_NAMES.get(f['properties']['name'], f['properties']['name']), 'path': path(f['geometry'], p, 0.35, box), 'areaKm2': round(area(f['geometry'])), 'ut': f['properties']['name'] in UNION_TERRITORIES}
               for f in sorted(states, key=lambda f: f['properties']['name'])]
         region_out[r] = {'box': [0, 0, 300, H], 'outline': path(ind['geometry'], p, TOL[r], box), 'extra': neigh, 'states': st}
     else:
         feats = [f for f in world if f['properties'].get('ADM0_A3') in COUNTRIES[r]]
         region_out[r] = {'box': [0, 0, 300, H], 'outline': ''.join(path(f['geometry'], p, TOL[r], box) for f in feats)}
 
-missing = UNION_TERRITORIES - {s['name'] for s in region_out['india']['states']}
+missing = {STATE_NAMES.get(n, n) for n in UNION_TERRITORIES} - {s['name'] for s in region_out['india']['states']}
 assert not missing, f'union territories not found: {missing}'
 india_area = sum(s['areaKm2'] for s in region_out['india']['states'])
 
@@ -166,7 +178,9 @@ for rid, v in routes.items():
 route_lines += ['};', '']
 p, _ = proj('india')
 route_lines += ["/** The main walk's chapter-1 cities on the India map. */",
-                f'export const MAIN_CITIES: Record<string, [number, number]> = {ts({k: [round(c, 1) for c in p(*v)] for k, v in CITIES.items()})};', '']
+                f'export const MAIN_CITIES: Record<string, [number, number]> = {ts({k: [round(c, 1) for c in p(*v)] for k, v in CITIES.items()})};', '',
+                "/** Every city on the walk on the India map, from its longitude and latitude. */",
+                f'export const CITY_POINTS: Record<string, [number, number]> = {ts({k: [round(c, 1) for c in p(*v)] for k, v in ALL_CITIES.items()})};', '']
 
 os.makedirs(out_dir, exist_ok=True)
 open(os.path.join(out_dir, 'regions.ts'), 'w').write('\n'.join(regions))

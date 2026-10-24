@@ -1,0 +1,56 @@
+import type { Source } from './types';
+
+/**
+ * Each city's height above sea level, rounded, as on Indian railway station boards. From each city's Wikipedia
+ * article; a city's height varies across it, so these are the usual figures quoted for its centre.
+ */
+export const CITY_FACTS: Record<string, { heightM: number }> = {
+  Delhi: { heightM: 216 },
+  Agra: { heightM: 170 },
+  Gwalior: { heightM: 197 },
+  Bhopal: { heightM: 527 },
+  Nagpur: { heightM: 310 },
+  Hyderabad: { heightM: 542 },
+  Bengaluru: { heightM: 920 },
+  Madurai: { heightM: 134 },
+  Kanyakumari: { heightM: 30 },
+  Chennai: { heightM: 7 },
+  Nellore: { heightM: 18 },
+  Vijayawada: { heightM: 23 },
+  Visakhapatnam: { heightM: 45 },
+  Bhubaneswar: { heightM: 45 },
+  Kolkata: { heightM: 9 },
+  Varanasi: { heightM: 81 },
+  Kanpur: { heightM: 126 },
+  Jaipur: { heightM: 431 },
+  Udaipur: { heightM: 598 },
+  Ahmedabad: { heightM: 53 },
+  Surat: { heightM: 13 },
+  Mumbai: { heightM: 14 },
+  Pune: { heightM: 560 },
+  Belagavi: { heightM: 751 },
+  Hubballi: { heightM: 640 },
+  Puducherry: { heightM: 3 },
+  Thiruvananthapuram: { heightM: 10 },
+  Kavaratti: { heightM: 2 },
+  Panaji: { heightM: 7 },
+  Daman: { heightM: 12 },
+  Raipur: { heightM: 298 },
+  'Port Blair': { heightM: 16 },
+  Gangtok: { heightM: 1650 },
+  Dispur: { heightM: 55 },
+  Shillong: { heightM: 1525 },
+  Agartala: { heightM: 13 },
+  Aizawl: { heightM: 1132 },
+  Imphal: { heightM: 786 },
+  Kohima: { heightM: 1261 },
+  Itanagar: { heightM: 320 },
+  Dehradun: { heightM: 640 },
+  Shimla: { heightM: 2205 },
+  Chandigarh: { heightM: 350 },
+  Amritsar: { heightM: 234 },
+  Srinagar: { heightM: 1585 },
+  Leh: { heightM: 3500 },
+};
+
+export const CITY_SOURCES: Source[] = [{ title: 'Wikipedia: each city’s article (elevation in the infobox)' }];
