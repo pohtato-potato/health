@@ -88,10 +88,16 @@ export const arc: RouteDef = {
       },
     },
     {
-      km: 1050,
+      km: 1000,
       title: 'Across the Deccan',
       line: 'Across the Deccan plateau, years at a time.',
       page: ['Survey parties worked in the cooler months and waited out the rains. In the plains they lost men to fever; at times the whole party numbered several hundred people, with elephants and bullock carts.'],
+    },
+    {
+      km: 1250,
+      title: 'Bidar',
+      line: 'Past Bidar, on its red plateau.',
+      page: ['The arc passed close to Bidar, an old capital of the Bahmani sultans standing on a plateau of red laterite. Stations were set on whatever rose above the plain: hills, rocks, old forts.'],
     },
     {
       km: 1432,
