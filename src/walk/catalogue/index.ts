@@ -20,6 +20,12 @@ import { napoleon } from './routes/napoleon';
 import { silk } from './routes/silk';
 import { tenthousand } from './routes/tenthousand';
 import { sigeric } from './routes/sigeric';
+import { livingstone } from './routes/livingstone';
+import { mansa } from './routes/mansa';
+import { burke } from './routes/burke';
+import { inca } from './routes/inca';
+import { longmarch } from './routes/longmarch';
+import { longwalk } from './routes/longwalk';
 import { harold } from './routes/harold';
 import { piku } from './routes/piku';
 import { frodo } from './routes/frodo';
@@ -34,7 +40,7 @@ import { hedge } from './routes/hedge';
 export * from './types';
 
 /** Every route, in shelf order. */
-const ALL: RouteDef[] = [shivaji, dandi, kos, rani, meerut, forts, deccan, indus, spice, hadrian, sparta, shackleton, kokoda, cortes, tokaido, camino, napoleon, silk, hannibal, tenthousand, sigeric, harold, piku, frodo, rann, xuanzang, gt, arc, humayun, bose, hedge];
+const ALL: RouteDef[] = [shivaji, dandi, kos, rani, meerut, forts, deccan, indus, spice, hadrian, sparta, shackleton, kokoda, cortes, tokaido, camino, napoleon, silk, hannibal, tenthousand, sigeric, livingstone, mansa, burke, inca, longmarch, longwalk, harold, piku, frodo, rann, xuanzang, gt, arc, humayun, bose, hedge];
 
 let catalogue = ALL;
 

@@ -35,6 +35,12 @@ REGIONS = {
     'mexico': (-100.2, -95.2, 17.8, 21.2),
     'russia': (23.0, 39.5, 52.5, 57.0),
     'fergana': (65.0, 77.5, 37.0, 42.8),
+    'eastafrica': (27.0, 41.5, -15.0, -4.0),
+    'sahara': (-14.0, 34.0, 8.0, 33.0),
+    'australia': (134.0, 150.0, -39.5, -15.5),
+    'andes': (-82.0, -68.0, -16.0, 2.0),
+    'china': (99.0, 119.0, 22.0, 39.0),
+    'longwalk': (74.0, 134.0, 22.0, 64.0),
 }
 COUNTRIES = {
     'britain': ['GBR', 'IRL', 'FRA'],
@@ -49,9 +55,15 @@ COUNTRIES = {
     'mexico': ['MEX'],
     'russia': ['RUS', 'BLR', 'LTU', 'LVA', 'POL', 'UKR', 'EST'],
     'fergana': ['UZB', 'TJK', 'KGZ', 'KAZ', 'CHN', 'AFG', 'TKM'],
+    'eastafrica': ['TZA', 'ZMB', 'COD', 'MWI', 'MOZ', 'KEN', 'BDI', 'RWA', 'UGA', 'AGO', 'ZWE'],
+    'sahara': ['MLI', 'GIN', 'SEN', 'GMB', 'GNB', 'SLE', 'LBR', 'CIV', 'BFA', 'GHA', 'TGO', 'BEN', 'NGA', 'NER', 'TCD', 'MRT', 'ESH', 'MAR', 'DZA', 'TUN', 'LBY', 'EGY', 'SDN', 'CMR', 'ISR', 'PSX', 'JOR', 'SAU'],
+    'australia': ['AUS', 'PNG'],
+    'andes': ['PER', 'ECU', 'COL', 'BOL', 'CHL', 'BRA'],
+    'china': ['CHN', 'TWN', 'VNM', 'LAO', 'MMR'],
+    'longwalk': ['RUS', 'MNG', 'CHN', 'KAZ', 'IND', 'NPL', 'BTN', 'BGD', 'MMR', 'PAK', 'KGZ', 'TJK', 'AFG'],
 }
 FINE = {'greece', 'southgeorgia', 'papua', 'mexico'}
-TOL = {'india': 0.45, 'britain': 0.5, 'med': 0.6, 'japan': 0.5, 'asia': 0.7, 'iberia': 0.5, 'greece': 0.9, 'anatolia': 0.6, 'southgeorgia': 0.4, 'papua': 0.4, 'mexico': 0.9, 'russia': 1.6, 'fergana': 1.4}
+TOL = {'india': 0.45, 'britain': 0.5, 'med': 0.6, 'japan': 0.5, 'asia': 0.7, 'iberia': 0.5, 'greece': 0.9, 'anatolia': 0.6, 'southgeorgia': 0.4, 'papua': 0.4, 'mexico': 0.9, 'russia': 1.6, 'fergana': 1.4, 'eastafrica': 1.0, 'sahara': 1.4, 'australia': 1.0, 'andes': 1.0, 'china': 1.2, 'longwalk': 1.6}
 UNION_TERRITORIES = {
     'Andaman and Nicobar', 'Chandigarh', 'Dadra and Nagar Haveli and Daman and Diu', 'Delhi',
     'Jammu and Kashmir', 'Ladakh', 'Lakshadweep', 'Puducherry',
@@ -172,7 +184,7 @@ HEADER = """/**
 """
 
 regions = [HEADER,
-           "export type RegionKey = 'india' | 'britain' | 'med' | 'japan' | 'asia' | 'iberia' | 'greece' | 'anatolia' | 'southgeorgia' | 'papua' | 'mexico' | 'russia' | 'fergana' | 'fantasy';", '',
+           "export type RegionKey = 'india' | 'britain' | 'med' | 'japan' | 'asia' | 'iberia' | 'greece' | 'anatolia' | 'southgeorgia' | 'papua' | 'mexico' | 'russia' | 'fergana' | 'eastafrica' | 'sahara' | 'australia' | 'andes' | 'china' | 'longwalk' | 'fantasy';", '',
            'export interface Region {', '  box: [number, number, number, number];', '  outline: string;',
            '  /** Neighbouring land, drawn fainter. */', '  extra?: string;',
            '  /** India only: each state and union territory, with its area on the sphere. */',
