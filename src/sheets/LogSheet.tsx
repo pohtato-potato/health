@@ -13,8 +13,11 @@ import { DateChip, useLogDate } from '../ui/DateChip';
 import { checklistSlots, dayRings, freeMealsThisWeek, nextUp } from '../state/derived';
 import { prefOn } from '../domain/types';
 import { StatusRow } from '../ui/StatusRow';
+import { usualFoods } from '../domain/usual';
+import { mealForTime, portionFor } from '../domain/foods';
+import { UsualChips } from '../screens/today/LogBelow';
 
-/** The + sheet (s2): six drawn tiles tinted by their metric, More, and one search box for anything. */
+/** The + sheet (s2), in Today's order: one search box for anything, your usual foods, the drawn tiles, then More. */
 export function LogSheet() {
   const settings = useSettings();
   const today = useToday();
@@ -25,8 +28,11 @@ export function LogSheet() {
   const sets = useAllSets();
   const active = useActiveSession();
   const foods = useFoods();
+  const monthEntries = useEntriesBetween(addDays(today, -60), today);
 
-  if (!settings || !days || !entries || !sessions || !sets || active === undefined || !foods) return <Sheet title="Log">{null}</Sheet>;
+  if (!settings || !days || !entries || !sessions || !sets || active === undefined || !foods || !monthEntries) return <Sheet title="Log">{null}</Sheet>;
+  const mealNow = mealForTime();
+  const usual = usualFoods(monthEntries, foods, mealNow, today);
 
   const day = days.find((d) => d.date === date);
   const { totals, targets } = dayRings(settings, date, day, entries);
@@ -50,6 +56,13 @@ export function LogSheet() {
   return (
     <Sheet title="Log">
       <DateChip value={date} onChange={setDate} />
+      <LogSearch foods={foods} onAction={(a) => (a.sheet ? replaceSheet(a.sheet) : go(a.route!))} onFood={(f) => replaceSheet('addfood', { ...d, food: f.id })} onQuick={() => replaceSheet('quick', d)} />
+      {usual.length > 0 && (
+        <section className="col gap2" aria-label={`Your usual ${mealNow}`}>
+          <span className="t14 q">Your usual {mealNow}</span>
+          <UsualChips items={usual.map((u) => ({ id: u.food.id, name: u.food.name, portion: portionFor(u.food, u.amount) }))} onAdd={(id) => replaceSheet('addfood', { ...d, food: id })} />
+        </section>
+      )}
       <div className="log-grid">
         {tile('food', 'var(--kcal)', 'Food', totals.entries ? `${fmtInt(totals.kcal)} kcal` : 'Nothing yet', () => replaceSheet('addfood', d))}
         {tile('sun', 'var(--gold)', 'Morning log', day?.morning ? `Done ${fmtTime(day.morning.at)}` : 'Weight, sleep', () => replaceSheet('morning', d))}
@@ -66,11 +79,10 @@ export function LogSheet() {
       <button type="button" className="wide" onClick={() => replaceSheet('more', d)}>
         <span className="col gap2">
           <span className="t15">More</span>
-          <span className="t12 q">Drinks, night out, free meal, waist, status, check-in</span>
+          <span className="t14 q">Drinks, night out, free meal, waist, status, check-in</span>
         </span>
         <Icon name="right" size={18} stroke={1.8} color="var(--quiet)" />
       </button>
-      <LogSearch foods={foods} onAction={(a) => (a.sheet ? replaceSheet(a.sheet) : go(a.route!))} onFood={(f) => replaceSheet('addfood', { ...d, food: f.id })} onQuick={() => replaceSheet('quick', d)} />
     </Sheet>
   );
 }

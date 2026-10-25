@@ -1,0 +1,14 @@
+/* The region's colour beyond Today: pages opened from Today on its aurora, sheets in a solid tint of the land. */
+:root { --region-a: #34385f; --glass: color-mix(in srgb, #0c0e1d 50%, transparent); --glass-edge: color-mix(in srgb, var(--text) 18%, transparent); }
+
+.lv.lv-ground { position: fixed; inset: 0; z-index: 0; display: block; }
+html.region .app > .page { position: relative; z-index: 1; background: none; }
+html.region .app > .page :is(.card, .panel, .meal-panel, .list) { background: var(--glass); border-color: var(--glass-edge); }
+html.region .app > .page { --hairline: var(--glass-edge); }
+
+/* Sheets stay solid for reading through the magnifier, tinted by the land; what sits inside them is glass. */
+.sheet { background: color-mix(in srgb, var(--region-a) 34%, #0c0e1d); border-top-color: var(--glass-edge); --hairline: var(--glass-edge); }
+.sheet :is(.card, .panel, .meal-panel, .list, .log-tile, .wide, .log-search, .td-food) { background: var(--glass); border-color: var(--glass-edge); }
+
+/* The day's glow: the small light grows when the day earned one. */
+.lv.lv-glow .b4 { opacity: 0.38; width: 85vmax; height: 85vmax; right: -35vmax; top: 30vmax; }

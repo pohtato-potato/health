@@ -10,6 +10,8 @@ import { removeExercise } from '../domain/planEdit';
 import { loggedLater, neglectedExercises, suspiciousSets } from '../domain/trainingChecks';
 import { askConfirm } from '../ui/Confirm';
 import type { SetEntry, Settings, TrainingSession } from '../domain/types';
+import { regionTint } from '../ui/live/regionTint';
+import { kmFromSteps } from '../domain/walk';
 import { useActiveSession, useAllDays, useAllSets, useSessions, useSettings, useToday } from '../db/hooks';
 import { go, openSheet } from '../router';
 import { doneSessions, nextUp, triggersMet, weeksFor } from '../state/derived';
@@ -78,8 +80,12 @@ export function Train() {
     else setsByEx.set(s.exerciseId, [s]);
   }
 
+  // The region is the ground; tonight's session, if it went well, is the light on it (the full colour is for the live session).
+  const walkKm = kmFromSteps(days.reduce((n, d) => n + (d.steps ?? 0), 0));
+  const g = trainGlow(tn && { records: tn.records.length, checks: tn.checks, formAvg: tn.formAvg });
+  const trainLight = g === 'calm' ? undefined : g;
   return (
-    <div className={`page lv lv-tab st-${trainGlow(tn && { records: tn.records.length, checks: tn.checks, formAvg: tn.formAvg })}`}>
+    <div className={`page lv lv-tab${trainLight ? ' lv-glow' : ''}`} style={regionTint(walkKm, trainLight)}>
       <Aurora />
       <div className="lv-tr-head">
         <h1 className="lv-h1">Train</h1>

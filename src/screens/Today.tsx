@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useMemo, useState } from 'react';
 import { addDays, logHour, partOfDay, weekStart } from '../domain/dates';
 import { fmtDuration, fmtInt, fmtTime } from '../domain/format';
 import { findSession } from '../domain/plan';
@@ -11,7 +11,7 @@ import { prefOn } from '../domain/types';
 import { voiceFor } from '../domain/voice';
 import { kmFromSteps } from '../domain/walk';
 import { scenePlace, todayWalkLine, walkCaption } from '../domain/walkCaption';
-import { arrivedToday, auroraFor, nearestPlace, restLine, stoneFor, stopLine, tomorrowLine, usualAndBig, whereLine, whereNow } from '../walk/page';
+import { arrivedToday, nearestPlace, restLine, stoneFor, stopLine, tomorrowLine, usualAndBig, whereLine, whereNow } from '../walk/page';
 import { stopToday, stretchAt } from '../walk/road';
 import { STOPS, STRETCHES } from '../walk/content';
 import { stepsByDay } from '../walk/runs';
@@ -41,7 +41,8 @@ import { glanceLine } from '../domain/glance';
 import { logMinutes } from '../domain/todayMoment';
 import { placeFor } from '../domain/places';
 import { proteinGap } from '../domain/proteinGap';
-import { go, openSheet } from '../router';
+import { go, openSheet, useRoute } from '../router';
+import { regionTint, type DayGlow } from '../ui/live/regionTint';
 import { Rings } from '../ui/Rings';
 import { useToast } from '../ui/Toasts';
 import {
@@ -60,7 +61,7 @@ import { SeasonStrip, useUnlockedIds } from '../ui/Theme';
 import { hasReward } from '../domain/rewards';
 import { NextUpCard } from './NextUpCard';
 import { RecordsStrip } from './today/NextStrip';
-import { tonight } from '../domain/trainView';
+import { tonight, trainGlow } from '../domain/trainView';
 import { fmtSet } from '../domain/setText';
 import { regionAt } from '../domain/regions';
 import { themeDayOn } from '../domain/calendar';
@@ -93,6 +94,7 @@ export function Today() {
   const nowMs = useNow(60_000);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const gapAdd = useGapAdd(today, foods);
+  const route = useRoute();
 
   if (!settings || !days || !entries || !sessions || !sets || active === undefined || !foods || !weekEntries || !monthEntries) {
     return <div className="page" />;
@@ -162,6 +164,11 @@ export function Today() {
   // The scene is the place, as the arrival's welcome draws it (the fort at Gwalior), every day, not only on arrival.
   const pos = positionAt(walkKm);
   const scene = <Scene city={scenePlace(walkKm, pos.from, pos.done ? undefined : pos.to, (n) => !!landmarkFor(n))} part={partOfDay(new Date(nowMs))} landmarkScale={1.6} festive={festive} />;
+  // How the day went lights the land: gold for a perfect day or a record night, green for a session in range.
+  const tn = tonight(sessions, sets, today);
+  const sessionGlow = trainGlow(tn && { records: tn.records.length, checks: tn.checks, formAvg: tn.formAvg });
+  const devGlow = import.meta.env.DEV ? (route.params.get('glow') as DayGlow | null) : null;
+  const glow: DayGlow | undefined = devGlow ?? (rings.perfect ? 'perfect' : sessionGlow === 'calm' ? undefined : sessionGlow);
   const stamp = arrival ? <StampTemplate name={arrival.name} state={arrival.state} n={arrival.n} ut={arrival.ut} /> : undefined;
   const mealNow = mealForTime();
   const usual = usualFoods(monthEntries, foods, mealNow, today);
@@ -183,7 +190,8 @@ export function Today() {
   const slots = checklistSlots(settings, today);
   return (
     <TodayLayout
-      tint={auroraFor(regionAt(walkKm)) as CSSProperties}
+      tint={regionTint(walkKm, glow)}
+      glow={!!glow}
       overlays={
         <>
           {drawerOpen && (
