@@ -53,7 +53,7 @@ export const arc: RouteDef = {
       ],
       deeper: {
         title: 'How a straight line shows the shape of the earth',
-        text: 'If the earth were a perfect sphere, a degree of latitude would be the same length everywhere. Because it bulges at the equator, a degree is a little longer near the poles. Measure a long north–south arc very precisely, compare the length of its degrees, and you can work out how much the earth is flattened. The Great Arc was the longest such measurement made anywhere in its time. It also found that the Himalaya pulled plumb lines less than their mass should, one of the clues that led to the idea of isostasy: mountains float on deeper rock, with roots beneath them.',
+        text: 'If the earth were a perfect sphere, a degree of latitude would be the same length everywhere. Because it bulges at the equator, a degree is a little longer near the poles. Measure a long north–south arc very precisely, compare the length of its degrees, and you can work out how much the earth is flattened. The Great Arc was the longest such measurement made anywhere in its time. It also found that the Himalaya pulled plumb lines less than their mass should. That was one of the clues to isostasy: mountains float on deeper rock, with roots beneath them.',
       },
     },
     {
@@ -78,7 +78,7 @@ export const arc: RouteDef = {
       page: ['A baseline measured at Bangalore in 1804 checked how true the triangles had stayed. Lengths were measured with chains laid on tables in the shade and corrected for the temperature.'],
     },
     {
-      km: 748,
+      km: 800,
       title: 'Mapping as conquest',
       line: 'Who was the map for?',
       page: ['The survey was paid for by the East India Company, which was taking control of India as the arc moved north. Exact maps told it what it owned, what to tax and how to move armies.'],
@@ -88,22 +88,22 @@ export const arc: RouteDef = {
       },
     },
     {
-      km: 1000,
+      km: 1108,
+      title: 'Bidar',
+      line: 'Past Bidar, on its red plateau.',
+      page: ['The arc passed close to Bidar, an old capital of the Bahmani sultans standing on a plateau of red laterite. A baseline was measured near Bidar to check the work, and stations were set on whatever rose above the plain: hills, rocks, old forts.'],
+    },
+    {
+      km: 1270,
       title: 'Across the Deccan',
       line: 'Across the Deccan plateau, years at a time.',
       page: ['Survey parties worked in the cooler months and waited out the rains. In the plains they lost men to fever; at times the whole party numbered several hundred people, with elephants and bullock carts.'],
     },
     {
-      km: 1250,
-      title: 'Bidar',
-      line: 'Past Bidar, on its red plateau.',
-      page: ['The arc passed close to Bidar, an old capital of the Bahmani sultans standing on a plateau of red laterite. Stations were set on whatever rose above the plain: hills, rocks, old forts.'],
-    },
-    {
       km: 1432,
       title: 'Hinganghat',
       line: 'At Hinganghat, Lambton dies at work.',
-      page: ['Lambton died in camp at Hinganghat, in the Maratha country south of Nagpur, in January 1823, at about seventy, with the arc about two-thirds done. He is buried there. His assistant, George Everest, took over.'],
+      page: ['Lambton died in camp at Hinganghat, in the Maratha country south of Nagpur, in January 1823, at about seventy, with the arc a little over half done. He is buried there. His assistant, George Everest, took over.'],
     },
     {
       km: 1640,
@@ -129,14 +129,14 @@ export const arc: RouteDef = {
       line: 'The Indian mathematicians who did the sums.',
       page: [
         'The calculations were done by "computers", many of them Indian. The best known is Radhanath Sikdar, who joined the survey in 1831.',
-        'In 1852, by the usual account, he worked out that the mountain called Peak XV was the highest in the world. One historian argues the published records don’t show his part in it.',
+        'In 1852, by the usual account, he worked out that the mountain called Peak XV was the highest in the world. Some historians doubt the story; one study of the survey’s memos finds he ran the team that did the sums rather than finding the peak alone.',
       ],
     },
     {
       km: 2548,
       title: 'Dehra Dun',
       line: 'The last baseline, at Dehra Dun.',
-      page: ['A final baseline in the Dehra Dun valley checked the whole arc against its start. The Survey of India still has its headquarters in Dehra Dun.'],
+      page: ['A final baseline in the Dehra Dun valley checked the triangles against a fresh measurement on the ground. The Survey of India still has its headquarters in Dehra Dun.'],
     },
     {
       km: 2565,
@@ -153,7 +153,8 @@ export const arc: RouteDef = {
     { when: '1804', place: 'Bangalore', text: 'A second baseline checks the work.' },
     { when: 'January 1823', place: 'Hinganghat', text: 'Lambton dies; Everest takes over.' },
     { when: '1841', place: 'Banog', text: 'The arc is finished.' },
-    { when: '1852', place: 'Calcutta', text: 'Peak XV is worked out to be the highest mountain.' },
+    { when: '1852', place: 'Calcutta', text: 'Peak XV is worked out to be the highest mountain, by the usual account.' },
+    { when: '1856', place: 'Calcutta', text: 'Waugh announces the result.' },
     { when: '1865', place: 'London', text: 'The Royal Geographical Society names it Everest.' },
   ],
   sources: [

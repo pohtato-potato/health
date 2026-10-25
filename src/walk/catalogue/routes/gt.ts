@@ -10,7 +10,7 @@ export const gt: RouteDef = {
   era: '300 BCE–today',
   hook: "Sher Shah's highway, and Kim's road, from Bengal to the Khyber.",
   group: 'india',
-  km: 2526,
+  km: 2555,
   record: 'none',
   region: 'india',
   ink: '#a8c8a0',
@@ -38,7 +38,8 @@ export const gt: RouteDef = {
     { name: 'Rohtas', km: 2269, at: 20 },
     { name: 'Rawalpindi', km: 2365, at: 21 },
     { name: 'Attock', km: 2457, at: 22 },
-    { name: 'Peshawar', km: 2526, at: 23, label: true },
+    { name: 'Nowshera', km: 2500, at: 23 },
+    { name: 'Peshawar', km: 2555, at: 24, label: true },
   ],
   signature: {
     title: 'Capitals of the road',
@@ -51,7 +52,7 @@ export const gt: RouteDef = {
       { km: 1526, name: 'Delhi, capital of many' },
       { km: 2069, name: 'Lahore, Mughal and Sikh capital' },
       { km: 2269, name: 'Rohtas, Sher Shah’s fortress' },
-      { km: 2526, name: 'Peshawar, the Kushan capital' },
+      { km: 2555, name: 'Peshawar, the Kushan capital' },
     ],
   },
   pages: [
@@ -65,7 +66,7 @@ export const gt: RouteDef = {
       ],
       deeper: {
         title: 'The spine of every empire',
-        text: 'Whoever ruled north India needed this road: to move armies, collect revenue and carry orders. The Mauryas used its ancestor in the 3rd century BCE. In the 1540s Sher Shah Suri relaid it from Bengal towards the northwest, with trees, wells, sarais and a pillar every kos. The Mughals kept it as the Badshahi Sadak, the imperial road. The British straightened and metalled it in the 19th century and gave it its English name. Today it is a chain of national highways in India, Pakistan, Bangladesh and Afghanistan. Each empire claimed to have built it; each mostly rebuilt what the last one left.',
+        text: 'Whoever ruled north India needed this road: to move armies, collect revenue and carry orders. The Mauryas used its ancestor in the 3rd century BCE. In the 1540s Sher Shah Suri relaid it from Bengal towards the northwest, with trees, wells, sarais and a pillar every kos. The Mughals kept it as the Badshahi Sadak, the imperial road. The British straightened and metalled it in the 19th century and gave it its English name. Today it is a chain of national highways in India, Pakistan, Bangladesh and Afghanistan. Each empire rebuilt what the last one left.',
       },
     },
     {
@@ -78,7 +79,7 @@ export const gt: RouteDef = {
       km: 400,
       title: 'Over the plateau',
       line: 'Up onto the Chota Nagpur plateau, forest and old rock.',
-      page: ['West of Dhanbad the road crosses the Chota Nagpur plateau. Parasnath, the highest hill in Jharkhand, rises to the north; it is one of the holiest places for Jains.'],
+      page: ['West of Dhanbad the road crosses the Chota Nagpur plateau. Parasnath, the highest hill in Jharkhand, rises just south of the road; it is one of the holiest places for Jains.'],
     },
     {
       km: 583,
@@ -99,7 +100,7 @@ export const gt: RouteDef = {
       km: 837,
       title: 'Prayagraj',
       line: 'Prayagraj, where the Yamuna meets the Ganga.',
-      page: ['Akbar built a great fort here at the meeting of the Ganga and the Yamuna in 1583 and named the city Ilahabad. The name became Allahabad, and in 2018 the city was renamed Prayagraj, a change that was much argued over.'],
+      page: ['Akbar built a great fort here at the meeting of the Ganga and the Yamuna in 1583 and named the city Ilahabas. The name became Allahabad, and in 2018 the city was renamed Prayagraj, a change that was much argued over.'],
     },
     {
       km: 1050,
@@ -107,7 +108,7 @@ export const gt: RouteDef = {
       line: 'Kanpur, where the worst of 1857 happened on both sides.',
       page: [
         'In June 1857 the British garrison at Kanpur, then Cawnpore, surrendered to Nana Sahib after a three-week siege. As they boarded boats at Satichaura Ghat on 27 June, firing broke out and most of the men were killed. In July the women and children held at the Bibighar were killed too.',
-        'The British reprisals that followed were savage: villages along the road were burned and many people hanged without trial.',
+        'British reprisals, begun on the march up from Allahabad and worse after the Bibighar, were savage: villages along the road were burned and many people hanged without trial.',
       ],
     },
     {
@@ -126,7 +127,7 @@ export const gt: RouteDef = {
       km: 1748,
       title: 'Ambala',
       line: 'Ambala, a British cantonment town, and where Kim carries his message.',
-      page: ['The British set up a large military cantonment at Ambala in the 1840s. In Kipling’s novel Kim, the boy is first drawn into the Great Game by carrying a message to the commander here.'],
+      page: ['The British set up a large military cantonment at Ambala in the 1840s. In Kipling’s novel Kim, the boy is first drawn into the Great Game by carrying a secret message to an English officer here.'],
     },
     {
       km: 2011,
@@ -142,12 +143,12 @@ export const gt: RouteDef = {
       title: 'The border',
       line: 'At Wagah the road crosses the line drawn through the Punjab in 1947.',
       page: [
-        'In August 1947 the border between India and Pakistan was drawn through the Punjab, and millions crossed it, many on foot along this road, Muslims going west and Hindus and Sikhs going east.',
+        'In August 1947 the border between India and Pakistan was drawn through the Punjab. Millions crossed it, many on foot along this road, Muslims going west and Hindus and Sikhs going east.',
         'Columns of refugees miles long were attacked from both sides. Estimates of the dead of Partition range from about 200,000 to two million.',
       ],
       deeper: {
         title: 'Partition on the road',
-        text: 'The boundary, drawn in a few weeks by a British lawyer who had never been to India, was announced two days after independence. Violence had begun before it and grew after it. Trains arrived with every passenger dead; foot columns, the kafilas, were ambushed at river crossings and in villages along the road, in both directions. Women were abducted on a vast scale. Every community suffered and every community did harm. Historians still argue over how much was planned and how much was panic, and over the British decision to leave so fast. The road that had joined the Punjab for two thousand years now ended at a gate, opened and closed each evening in a ceremony.',
+        text: 'The boundary, drawn in a few weeks by a British lawyer who had never been to India, was announced two days after independence. Violence had begun before it and grew after it. Trains arrived with most of their passengers dead; foot columns, the kafilas, were ambushed at river crossings and in villages along the road, in both directions. Women were abducted on a vast scale. Every community suffered and every community did harm. Historians still argue over how much was planned and how much was panic, and over the British decision to leave so fast. The road that had joined the Punjab for two thousand years now ended at a gate, opened and closed each evening in a ceremony.',
       },
     },
     {
@@ -163,7 +164,7 @@ export const gt: RouteDef = {
       km: 2269,
       title: 'Rohtas',
       line: 'Rohtas, the fortress Sher Shah built to keep Humayun out.',
-      page: ['Sher Shah began the great fort of Rohtas in 1541, to hold down the local Gakhar chiefs and to block the way back for Humayun. It was never besieged, and is a UNESCO World Heritage Site.'],
+      page: ['Sher Shah began the great fort of Rohtas in 1541, to hold down the local Gakhar chiefs and to block the way back for Humayun. It survives remarkably whole, and is a UNESCO World Heritage Site.'],
     },
     {
       km: 2457,
@@ -172,7 +173,7 @@ export const gt: RouteDef = {
       page: ['At Attock the road crosses the Indus. Akbar built a fort here in 1581–83 to guard the crossing, the gate between India and the lands beyond.'],
     },
     {
-      km: 2526,
+      km: 2555,
       title: 'Peshawar',
       line: 'Peshawar, at the foot of the Khyber Pass.',
       page: ['Peshawar was Purushapura, a capital of the Kushan kings nearly two thousand years ago. Beyond it the road climbs the Khyber Pass towards Kabul, the way invaders and traders came into India for centuries.'],

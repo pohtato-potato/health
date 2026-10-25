@@ -46,11 +46,11 @@ export const hedge: RouteDef = {
       line: 'At Tarbela on the Indus, a customs line begins its march across India.',
       page: [
         'Salt from the coast and the salt mines was taxed by the East India Company, and the tax was higher in some provinces than others. To stop cheaper salt being smuggled in, the British built a customs line across the country.',
-        'By 1869 it was continuous, about 4,030 km, from Tarbela in the Himalayan foothills to Sonapur near the Bay of Bengal.',
+        'By 1869 it was continuous, about 4,030 km, from Tarbela in the Himalayan foothills to Sonapur on the Mahanadi, in Orissa.',
       ],
       deeper: {
         title: 'Salt as a tax',
-        text: 'Salt was taxed because everyone needs it: a tax on salt reached people who owned nothing else to tax. In Bengal the duty rose about tenfold in the 1780s and stayed high for nearly a century. Inside the customs line, people ate on average about half the salt of those outside it, around 3.6 kg a year against up to 7.3. Nobody knows how many died of too little salt, especially in famines. The tax was not abolished until 1946, and in 1930 Gandhi chose it for the Dandi March because it fell on everyone.',
+        text: 'Salt was taxed because everyone needs it: a tax on salt reached people who owned nothing else to tax. In Bengal the duty rose about tenfold in the 1780s and stayed high for nearly a century. Inside the customs line, people ate on average about half the salt of those outside it, around 3.6 kg a year against up to 7.3. Officials defended it as a few annas a year per person, the only tax most people paid; critics, then and since, called it a tax on the poorest. Moxham argues the shortage cost lives, especially in famines; nobody can count them. The tax was not abolished until 1946, and in 1930 Gandhi chose it for the Dandi March because it fell on everyone.',
       },
     },
     {
@@ -110,8 +110,8 @@ export const hedge: RouteDef = {
     {
       km: 2500,
       title: 'Famine',
-      line: 'Through central India, where famine hit hardest.',
-      page: ['The Great Famine of 1876–78 killed about six and a half million people. It also cut the land tax so badly that the government had to rethink how it raised money, and the line went with it.'],
+      line: 'Through central India, as famine struck the south and west.',
+      page: ['The Great Famine of 1876–78, worst in the south and west, killed somewhere between five and a half and nearly ten million people. Lost land tax added to the pressure to scrap the line.'],
     },
     {
       km: 2950,
@@ -134,7 +134,7 @@ export const hedge: RouteDef = {
     {
       km: KM,
       title: 'Sonapur',
-      line: 'At Sonapur, the end of the line, and the end of the hedge.',
+      line: 'At Sonapur on the Mahanadi, the end of the line, and of the hedge.',
       page: [
         'In 1879 the salt duties were equalised across British India, and on 1 April 1879 the line was abandoned. Some stretches in the northwest were still patrolled into the 1890s.',
         'The hedge was left to die or be cut for firewood, and within a century almost nobody remembered it.',
@@ -148,7 +148,7 @@ export const hedge: RouteDef = {
     { when: '1876–1878', place: 'Southern and central India', text: 'The Great Famine.' },
     { when: '1 April 1879', place: 'The whole line', text: 'The line is abandoned.' },
     { when: '1930', place: 'Dandi', text: 'Gandhi’s Salt March breaks the salt law.' },
-    { when: '1946', place: 'Delhi', text: 'The salt tax is abolished.' },
+    { when: 'October 1946', place: 'Delhi', text: 'The Interim Government abolishes the salt tax.' },
     { when: '1998', place: 'Etawah', text: 'Roy Moxham finds a remnant.' },
   ],
   sources: [
