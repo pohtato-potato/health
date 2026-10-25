@@ -1375,3 +1375,15 @@
 
 /* The place and status row under the walk's title: status chips as tall and as legible as the place chips. */
 .walk-place-status .chip.sm { height: 44px; font-size: 14px; }
+
+/* A trail drawing draws itself: the month's stretch in the film, a chapter at its end. */
+.trail-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: trail-draw 1.8s ease-out 0.2s forwards;
+}
+@keyframes trail-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
