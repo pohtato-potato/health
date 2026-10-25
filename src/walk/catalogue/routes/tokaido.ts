@@ -70,11 +70,11 @@ export const tokaido: RouteDef = {
       line: 'From the bridge at Nihonbashi, the road west to Kyoto.',
       page: [
         'In 1601, the year after he won the battle of Sekigahara, Tokugawa Ieyasu ordered post stations set up along the coast road from his castle town of Edo to Kyoto, where the emperor lived.',
-        'All distances in Japan were measured from the Nihonbashi bridge in Edo, today’s Tokyo. They still are.',
+        'Road distances in Japan were measured from the Nihonbashi bridge in Edo, today’s Tokyo, and the national road network still is.',
       ],
       deeper: {
         title: 'A road as a means of control',
-        text: 'The Tōkaidō was the busiest of five official highways, and the shogunate used them to govern. From the 1630s the system of alternate attendance, sankin-kōtai, required most daimyō, the regional lords, to spend every other year in Edo, and to leave their wives and heirs there when they went home. Their processions, of hundreds or thousands of retainers, cost them a fortune on the road and in Edo, which kept them too poor to rebel. Checkpoints inspected travellers, who needed permits to pass. Bridges were often left unbuilt over big rivers, for defence. The same system that held the lords down also made the road a great market, and spread news, fashions and prints across the country.',
+        text: 'The Tōkaidō was the busiest of five official highways, and the shogunate used them to govern. From the 1630s the system of alternate attendance, sankin-kōtai, required most daimyō, the regional lords, to spend every other year in Edo, and to leave their wives and heirs there when they went home. Their processions, of hundreds or thousands of retainers, cost them a fortune on the road and in Edo, which, historians often say, kept them too poor to rebel. Checkpoints inspected travellers, who needed permits to pass. Bridges were often left unbuilt over big rivers, probably partly for defence. The same system that held the lords down also made the road a great market, and spread news, fashions and prints across the country.',
       },
     },
     {
@@ -135,7 +135,7 @@ export const tokaido: RouteDef = {
       km: 254,
       title: 'Hamamatsu',
       line: 'Hamamatsu, Ieyasu’s castle for seventeen years.',
-      page: ['Tokugawa Ieyasu held Hamamatsu castle for seventeen years while he rose from a minor lord to the most powerful man in Japan. Its castle is called the castle of promotion for it.'],
+      page: ['Tokugawa Ieyasu held Hamamatsu castle for seventeen years while he rose from a minor lord to one of the great lords of Japan. It is called the castle of promotion, because so many of its later lords rose high too.'],
     },
     {
       km: 271,
@@ -209,7 +209,7 @@ export const tokaido: RouteDef = {
     { when: '1635', place: 'Edo', text: 'Alternate attendance is made law for the lords.' },
     { when: '1802', place: 'Edo', text: 'Shank’s Mare begins.' },
     { when: '1833', place: 'Edo', text: 'Hiroshige’s Fifty-three Stations begin to appear.' },
-    { when: '1868', place: 'Kyoto to Tokyo', text: 'The emperor moves to Tokyo.' },
+    { when: '1868–69', place: 'Kyoto to Tokyo', text: 'The emperor moves to Tokyo.' },
     { when: '1964', place: 'Tokyo to Osaka', text: 'The Shinkansen opens.' },
   ],
   sources: [

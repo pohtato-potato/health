@@ -39,7 +39,7 @@ export const shackleton: RouteDef = {
       title: 'The wrong side of the island',
       line: 'At King Haakon Bay, the boat has landed on the wrong side of South Georgia.',
       page: [
-        'Shackleton’s ship Endurance was crushed by the Weddell Sea ice and sank in November 1915. Its 28 men camped on the ice, then sailed small boats to Elephant Island. From there six of them sailed the 7-metre James Caird about 1,300 km across the Southern Ocean, and on 10 May 1916 landed on South Georgia.',
+        'Shackleton’s ship Endurance was crushed by the Weddell Sea ice and sank in November 1915. Its 28 men camped on the ice, then sailed small boats to Elephant Island. From there six of them sailed the 7-metre James Caird about 1,300 to 1,500 km across the Southern Ocean, and on 10 May 1916 landed on South Georgia.',
         'They landed on the uninhabited south coast. The whaling stations were on the north side, across mountains no one had crossed.',
       ],
       deeper: {
@@ -52,7 +52,7 @@ export const shackleton: RouteDef = {
       title: 'Three set off',
       line: 'In the small hours of 19 May, three men set off under a full moon.',
       page: [
-        'Three of the six were too weak to go on, and stayed at a camp under an upturned boat they called Peggotty Camp. Shackleton, Frank Worsley, the ship’s captain, and Tom Crean, an Irish seaman, set off at about 3 in the morning on 19 May.',
+        'Two of the six were too weak to go on, and McCarthy stayed to look after them, at a camp under an upturned boat they called Peggotty Camp. Shackleton, Frank Worsley, the ship’s captain, and Tom Crean, an Irish seaman, set off at about 3 in the morning on 19 May.',
         'They carried a small stove, food for three days, a 15-metre rope and a carpenter’s adze. Screws from the boat were driven through their boot soles for grip.',
       ],
     },
@@ -60,7 +60,7 @@ export const shackleton: RouteDef = {
       km: 13,
       title: 'The snowfield',
       line: 'Up onto the snowfield, roped together, in fog.',
-      page: ['They climbed onto a wide snowfield, now named after the expedition’s geologist, and walked roped together through fog. Worsley steered by compass. At one point the fog lifted to show they had nearly walked onto a crevassed glacier, and they had to turn back.'],
+      page: ['They climbed onto a wide snowfield, now the Murray Snowfield, and walked roped together through fog. Worsley steered by compass. At one point the fog lifted to show they had nearly walked onto a crevassed glacier, and they had to turn back.'],
     },
     {
       km: 20,
@@ -95,7 +95,7 @@ export const shackleton: RouteDef = {
       line: 'Down to Fortuna Bay, and one more ridge.',
       page: [
         'They came down to the shore of Fortuna Bay and climbed the last ridge beyond it.',
-        'Shackleton later wrote that on the march it often seemed to him they were four, not three, and Worsley said he had felt the same. Neither spoke of it at the time.',
+        'Shackleton later wrote that on the march it often seemed to him they were four, not three. Afterwards Worsley and Crean both said they had felt the same.',
       ],
     },
     {
@@ -131,7 +131,7 @@ export const shackleton: RouteDef = {
     { title: 'Ernest Shackleton, South (1919), Project Gutenberg', url: 'https://www.gutenberg.org/ebooks/5199' },
     { title: 'Wikipedia: Imperial Trans-Antarctic Expedition', url: 'https://en.wikipedia.org/wiki/Imperial_Trans-Antarctic_Expedition' },
     { title: 'Wikipedia: Ross Sea party', url: 'https://en.wikipedia.org/wiki/Ross_Sea_party' },
-    { title: 'Royal Museums Greenwich: Shackleton’s Endurance expedition', url: 'https://www.rmg.co.uk/stories/topics/shackleton-endurance-expedition' },
+    { title: 'Wikipedia: Endurance (1912 ship)', url: 'https://en.wikipedia.org/wiki/Endurance_(1912_ship)' },
   ],
   ready: true,
 };

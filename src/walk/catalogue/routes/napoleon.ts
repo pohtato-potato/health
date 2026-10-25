@@ -12,7 +12,7 @@ export const napoleon: RouteDef = {
   id: 'napoleon',
   name: 'The retreat from Moscow',
   era: '1812',
-  hook: 'The largest army Europe had seen marches out of a burned city into the Russian winter.',
+  hook: 'Perhaps the largest army Europe had seen marches out of a burned city into the Russian winter.',
   group: 'world',
   km: KM,
   record: 'dated',
@@ -61,7 +61,7 @@ export const napoleon: RouteDef = {
       ],
       deeper: {
         title: 'Why he stayed so long',
-        text: 'Napoleon’s wars had always ended the same way: he took the enemy’s capital or beat its army, and the enemy made peace. He expected Alexander to do the same, and sent messages offering terms. Alexander, under pressure from his nobles not to give in, never replied. Moscow was not even the capital; St Petersburg was. Every week Napoleon waited, the season turned, and the Russian army rebuilt itself south of the city. Historians argue whether leaving in early October would have saved the army; most think the war was lost the day he chose to go deeper into Russia instead of wintering at Smolensk.',
+        text: 'Napoleon’s wars had always ended the same way: he took the enemy’s capital or beat its army, and the enemy made peace. He expected Alexander to do the same, and sent messages offering terms. Alexander, under pressure from his nobles not to give in, never replied. Moscow was not even the capital; St Petersburg was. Every week Napoleon waited, the season turned, and the Russian army rebuilt itself south of the city. Historians argue whether leaving in early October would have saved the army; many think the war was lost the day he chose to go deeper into Russia instead of wintering at Smolensk.',
       },
     },
     {
@@ -108,7 +108,7 @@ export const napoleon: RouteDef = {
       km: 546,
       title: 'Krasny',
       line: 'At Krasny, the corps are cut off one by one.',
-      page: ['From 15 to 18 November the Russians attacked the strung-out corps near Krasny. Marshal Ney’s rearguard was cut off; he slipped away across the half-frozen Dnieper at night with a few hundred of his men. Napoleon, hearing he was safe, called him the bravest of the brave.'],
+      page: ['From 15 to 18 November the Russians attacked the strung-out corps near Krasny. Marshal Ney’s rearguard was cut off; he slipped away across the half-frozen Dnieper at night with fewer than a thousand of his men. Napoleon, hearing he was safe, called him the bravest of the brave.'],
     },
     {
       km: 617,
@@ -120,7 +120,7 @@ export const napoleon: RouteDef = {
       km: 690,
       title: 'The trap',
       line: 'Three Russian armies close in on the Berezina.',
-      page: ['Russian armies were coming from the north, the south and the east, aiming to trap Napoleon at the river. The southern one took Borisov and burned its bridge on 23 November.'],
+      page: ['Russian armies were coming from the north, the south and the east, aiming to trap Napoleon at the river. The southern one took Borisov on 21 November; driven back across the river two days later, it burned the bridge behind it.'],
     },
     {
       km: 773,
@@ -159,7 +159,7 @@ export const napoleon: RouteDef = {
       ],
       deeper: {
         title: 'Minard’s chart',
-        text: 'In 1869 the French engineer Charles Joseph Minard drew the campaign as a single picture: a broad band for the army going to Moscow, its width the number of men, and a thin black band coming back, with the temperature on the retreat drawn below it. It shows six things at once, the army’s size, its place, its direction, the dates, the cold and the rivers, and has been called the best statistical graphic ever drawn. Minard drew it as an argument against war. His numbers are his own, and historians’ differ; the shape of the story is the same.',
+        text: 'In 1869 the French engineer Charles Joseph Minard drew the campaign as a single picture: a broad band for the army going to Moscow, its width the number of men, and a thin black band coming back, with the temperature on the retreat drawn below it. It shows six things at once: the army’s size, its position on the map in two directions, its direction of travel, the dates and the cold. It has been called the best statistical graphic ever drawn, and is often read as an argument against war. His numbers are his own, and historians’ differ; the shape of the story is the same.',
       },
     },
   ],

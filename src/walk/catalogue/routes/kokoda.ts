@@ -59,7 +59,7 @@ export const kokoda: RouteDef = {
       ],
       deeper: {
         title: 'The war in the Pacific, from Papua',
-        text: 'For Australians, Kokoda became a founding story of the nation, like Gallipoli. For Papua it was a war between two outside powers fought on its land. Villages were bombed, gardens stripped by both armies, and thousands of men taken from their homes to carry. For the Japanese soldiers of the South Seas Force, most of whom had marched in from the coast with two weeks’ food, it ended in starvation and retreat. Their commander, Horii Tomitarō, drowned crossing the Kumusi River in November. Each country tells the track as its own story; few books tell all three.',
+        text: 'For Australians, Kokoda became a founding story of the nation, like Gallipoli. For Papua it was a war between two outside powers fought on its land. Villages were bombed, gardens stripped by both armies, and thousands of men taken from their homes to carry. For the Japanese soldiers of the South Seas Force, most of whom had marched in from the coast with two weeks’ food, it ended in starvation and retreat. Their commander, Horii Tomitarō, drowned near the mouth of the Kumusi River in November. Each country tells the track as its own story; few books tell all three.',
       },
     },
     {
@@ -71,7 +71,7 @@ export const kokoda: RouteDef = {
     {
       km: 16,
       title: 'Isurava',
-      line: 'At Isurava, outnumbered, they hold for four days.',
+      line: 'At Isurava, outnumbered, they hold for five days.',
       page: [
         'From 26 to 31 August the 39th, joined by regular battalions of the 21st Brigade, held Isurava against a much larger Japanese force.',
         'On 29 August Private Bruce Kingsbury charged a Japanese position firing a Bren gun from the hip and broke the attack, before he was shot dead. He was awarded the Victoria Cross, the first won on Australian territory.',
@@ -99,7 +99,7 @@ export const kokoda: RouteDef = {
       ],
       deeper: {
         title: 'How the carriers’ story was told',
-        text: 'Wartime newspapers praised the carriers as gentle helpers, in words that today read as both grateful and condescending. Their own side of it was rarely asked. Many were conscripted, paid little, and worked at a pace that killed some of them; others chose to go. On the north side some Orokaiva helped the Japanese, and after the war more than twenty Papuans were hanged by the Australian authorities for it. Recognition was slow: in 2009 Australia began giving surviving carriers a commemorative medallion, when few were left alive. Historians now treat the carriers as people with their own reasons, not as a chorus in an Australian story.',
+        text: 'Wartime newspapers praised the carriers as gentle helpers, in words that today read as both grateful and condescending. Their own side of it was rarely asked. Many were conscripted, paid little, and worked at a pace that killed some of them; others chose to go. On the north side some Orokaiva helped the Japanese, and in 1943 the Australian authorities hanged about twenty of them at Higaturu, mostly for betraying missionaries to the Japanese. Recognition was slow: in 2009 Australia began giving surviving carriers a commemorative medallion, when few were left alive. Historians now treat the carriers as people with their own reasons, not as a chorus in an Australian story.',
       },
     },
     {
@@ -123,7 +123,7 @@ export const kokoda: RouteDef = {
     {
       km: 82,
       title: 'Ioribaiwa',
-      line: 'At Ioribaiwa, the Japanese can see the lights of Port Moresby.',
+      line: 'At Ioribaiwa, Japanese soldiers said they could see the lights of Port Moresby.',
       page: ['By 16 September the Japanese held Ioribaiwa Ridge, less than 50 km from Port Moresby. Their soldiers were starving. Far away, the Americans had landed on Guadalcanal, and Tokyo ordered the force in Papua to stop and go back.'],
     },
     {
@@ -149,7 +149,7 @@ export const kokoda: RouteDef = {
     { when: '6–8 September', place: 'Brigade Hill', text: 'The 21st Brigade is cut in two.' },
     { when: '16 September', place: 'Ioribaiwa', text: 'The Japanese reach their furthest point.' },
     { when: '2 November 1942', place: 'Kokoda', text: 'The Australians retake Kokoda.' },
-    { when: 'January 1943', place: 'Buna and Gona', text: 'The beachheads fall.' },
+    { when: 'By January 1943', place: 'Buna and Gona', text: 'The beachheads fall.' },
   ],
   sources: [
     { title: 'Wikipedia: Kokoda Track campaign', url: 'https://en.wikipedia.org/wiki/Kokoda_Track_campaign' },

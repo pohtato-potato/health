@@ -8,7 +8,7 @@ export const sparta: RouteDef = {
   id: 'sparta',
   name: 'Pheidippides: Athens to Sparta',
   era: '490 BC',
-  hook: 'The first long-distance runner in history, sent to beg Sparta for help before Marathon.',
+  hook: 'One of the first long-distance runners known by name, sent to beg Sparta for help before Marathon.',
   group: 'world',
   km: 246,
   record: 'estimated',
@@ -62,7 +62,7 @@ export const sparta: RouteDef = {
       km: 22,
       title: 'Eleusis',
       line: 'West along the Sacred Way to Eleusis.',
-      page: ['The road west out of Athens followed the Sacred Way to Eleusis, now Elefsina, home of the Eleusinian Mysteries, rites so secret that no initiate ever wrote down what happened in them.'],
+      page: ['The road west out of Athens followed the Sacred Way to Eleusis, now Elefsina, home of the Eleusinian Mysteries, rites so secret that no surviving account tells what happened in them.'],
     },
     {
       km: 45,
@@ -74,7 +74,7 @@ export const sparta: RouteDef = {
       km: 80,
       title: 'The Isthmus',
       line: 'Across the Isthmus into the Peloponnese.',
-      page: ['The narrow Isthmus of Corinth joins the Peloponnese to the rest of Greece. The canal you cross was cut only in the 1880s; in ancient times ships were dragged across on a paved trackway, the diolkos.'],
+      page: ['The narrow Isthmus of Corinth joins the Peloponnese to the rest of Greece. The canal you cross was cut only in 1881–93; in ancient times ships were dragged across on a paved trackway, the diolkos.'],
     },
     {
       km: 93,
@@ -115,7 +115,7 @@ export const sparta: RouteDef = {
       line: 'At Sparta, the answer: not until the full moon.',
       page: [
         'Herodotus says Pheidippides reached Sparta on the day after he left Athens. The Spartans were willing to help, but said their law forbade them to march before the moon was full; they were keeping a festival, probably the Carneia.',
-        'Their army set out after the full moon and arrived the day after the battle. The Athenians, with the small city of Plataea, had beaten the Persians at Marathon without them.',
+        'Their army set out after the full moon and arrived too late, after the battle. The Athenians, with the small city of Plataea, had beaten the Persians at Marathon without them.',
       ],
       deeper: {
         title: 'How one passage became the marathon',
@@ -137,7 +137,7 @@ export const sparta: RouteDef = {
     { title: 'Wikipedia: Pheidippides', url: 'https://en.wikipedia.org/wiki/Pheidippides' },
     { title: 'Wikipedia: Spartathlon', url: 'https://en.wikipedia.org/wiki/Spartathlon' },
     { title: 'Wikipedia: Battle of Marathon', url: 'https://en.wikipedia.org/wiki/Battle_of_Marathon' },
-    { title: 'Spartathlon: history of the race', url: 'https://www.spartathlon.gr/en/the-spartathlon-race-en/history-en.html' },
+    { title: 'Spartathlon, the official race site', url: 'https://www.spartathlon.gr/' },
   ],
   ready: true,
 };

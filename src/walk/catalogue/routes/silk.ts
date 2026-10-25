@@ -9,7 +9,7 @@ export const silk: RouteDef = {
   id: 'silk',
   name: 'Samarkand to Kashgar',
   era: '2nd century BC–today',
-  hook: 'Through the Fergana valley and over the mountains, on the road merchants ran for a thousand years.',
+  hook: 'Through the Fergana valley and over the mountains, on the road merchants ran for two thousand years.',
   group: 'world',
   km: 1100,
   record: 'place',
@@ -56,7 +56,7 @@ export const silk: RouteDef = {
       ],
       deeper: {
         title: 'The Silk Road is a 19th-century name',
-        text: 'Nobody who travelled these roads called them the Silk Road. The name, Seidenstraße, was coined by the German geographer Ferdinand von Richthofen in 1877. There was never one road, but a web of routes between China, India, Persia and the Mediterranean, used in short stages: very few people, or goods, went the whole way. Silk was only one of the goods, alongside horses, paper, glass, spices, slaves and silver. Ideas travelled too. Buddhism reached China along these roads, and Islam came later to Central Asia; papermaking spread west from China, probably through Samarkand.',
+        text: 'Nobody who travelled these roads called them the Silk Road. The name, Seidenstraße, was made popular by the German geographer Ferdinand von Richthofen in 1877. There was never one road, but a web of routes between China, India, Persia and the Mediterranean, used in short stages: very few people, or goods, went the whole way. Silk was only one of the goods, alongside horses, paper, glass, spices, slaves and silver. Ideas travelled too. Buddhism reached China along these roads, and Islam came later to Central Asia; papermaking spread west from China, probably through Samarkand.',
       },
     },
     {
@@ -72,7 +72,7 @@ export const silk: RouteDef = {
       km: 111,
       title: 'Jizzakh',
       line: 'Jizzakh, and the Gate of Timur.',
-      page: ['East of Samarkand the road went through a narrow gorge called the Gate of Timur, where conquerors carved their names on the rock. Beyond it lies the hungry steppe, a dry plain watered only in the Soviet era by canals for cotton.'],
+      page: ['East of Samarkand the road went through a narrow gorge called the Gate of Timur, where conquerors carved their names on the rock. Beyond it lies the hungry steppe, a dry plain watered on a large scale only from the late Tsarist and Soviet eras, by canals for cotton.'],
     },
     {
       km: 200,
@@ -84,7 +84,7 @@ export const silk: RouteDef = {
       km: 297,
       title: 'Khujand',
       line: 'Khujand, Alexander’s furthest city.',
-      page: ['On the Syr Darya, Alexander founded a city in 329 BC that he called Alexandria Eschate, Alexandria the Furthest. Khujand, in what is now Tajikistan, stands on or near it. It marked the furthest edge of the Greek world in Asia.'],
+      page: ['On the Syr Darya, Alexander founded a city in 329 BC that he called Alexandria Eschate, Alexandria the Furthest. Khujand, in what is now Tajikistan, stands on or near it. It marked the north-eastern edge of Alexander’s empire.'],
     },
     {
       km: 380,
@@ -119,7 +119,7 @@ export const silk: RouteDef = {
       line: 'Osh, under the rock of Sulayman-Too.',
       page: [
         'Osh is one of the oldest towns of the valley, under a rocky hill, Sulayman-Too, with caves, rock carvings and shrines used for thousands of years.',
-        'Its people are Kyrgyz and Uzbek. In June 2010 violence between them killed hundreds, most of them Uzbeks, and drove tens of thousands from their homes.',
+        'Its people are Kyrgyz and Uzbek. In June 2010 violence between them killed over 400 people, most of them Uzbeks, and drove hundreds of thousands from their homes.',
       ],
     },
     {
@@ -177,12 +177,12 @@ export const silk: RouteDef = {
     { when: '1370s', place: 'Samarkand', text: 'Timur makes it his capital.' },
     { when: '1483', place: 'Andijan', text: 'Babur is born in the Fergana valley.' },
     { when: '1876', place: 'Kokand', text: 'Russia annexes the khanate.' },
-    { when: '1877', place: 'Berlin', text: 'Richthofen names the Silk Road.' },
+    { when: '1877', place: 'Berlin', text: 'Richthofen makes the name Silk Road popular.' },
   ],
   sources: [
     { title: 'Wikipedia: Silk Road', url: 'https://en.wikipedia.org/wiki/Silk_Road' },
     { title: 'Wikipedia: Sogdia', url: 'https://en.wikipedia.org/wiki/Sogdia' },
-    { title: 'Wikipedia: Sogdian Ancient Letters', url: 'https://en.wikipedia.org/wiki/Ancient_Letters' },
+    { title: 'Wikipedia: Sogdian language', url: 'https://en.wikipedia.org/wiki/Sogdian_language' },
     { title: 'Wikipedia: War of the Heavenly Horses', url: 'https://en.wikipedia.org/wiki/War_of_the_Heavenly_Horses' },
     { title: 'UNESCO: Samarkand, crossroad of cultures', url: 'https://whc.unesco.org/en/list/603/' },
     { title: 'OHCHR: assessment of human rights concerns in Xinjiang (2022)', url: 'https://www.ohchr.org/en/documents/country-reports/ohchr-assessment-human-rights-concerns-xinjiang-uyghur-autonomous-region' },

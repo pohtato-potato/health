@@ -119,7 +119,7 @@ export const camino: RouteDef = {
       km: 250,
       title: 'Settlers from France',
       line: 'Across the hills towards Burgos, on a road that brought settlers.',
-      page: ['The kings of Navarre and Castile moved the road south of the mountains in the 11th century, built bridges and invited craftsmen and traders from France to settle along it. Many towns had a street of the Franks, and the road is called the French way after them.'],
+      page: ['The kings of Navarre and Castile moved the road south of the mountains in the 11th century, built bridges and invited craftsmen and traders from France to settle along it. Many towns had a street of the Franks, and the road is called the French way, after the route from France and the Franks who used it.'],
     },
     {
       km: 280,
@@ -178,7 +178,7 @@ export const camino: RouteDef = {
       title: 'O Cebreiro',
       line: 'Up into Galicia at O Cebreiro, and its round stone houses.',
       page: [
-        'O Cebreiro, at about 1,300 metres, is the first village in Galicia. Its pallozas, round stone houses with thatched roofs, keep a building tradition far older than the road.',
+        'O Cebreiro, at about 1,300 metres, is the first village in Galicia. Its pallozas, round stone houses with thatched roofs, keep a building tradition probably far older than the road.',
         'In the 1980s its priest, Elías Valiña, began painting yellow arrows to mark the way, and wrote the first modern guide. The arrows are now everywhere.',
       ],
     },
@@ -205,8 +205,8 @@ export const camino: RouteDef = {
       title: 'Santiago de Compostela',
       line: 'Into the square at Santiago, and the end of the road.',
       page: [
-        'Walkers end in the Obradoiro square, in front of the cathedral. At some services a huge silver censer, the botafumeiro, is swung on ropes from one side of the church to the other, almost to the roof.',
-        'Many go on another three days to Finisterre, which the Romans thought was the end of the world.',
+        'Walkers end in the Obradoiro square, in front of the cathedral. At some services a huge silver-plated censer, the botafumeiro, is swung on ropes from one side of the church to the other, almost to the roof.',
+        'Many go on another three days to Finisterre, whose name, from the Latin finis terrae, means the end of the earth.',
       ],
       deeper: {
         title: 'Why the road came back',
@@ -229,7 +229,7 @@ export const camino: RouteDef = {
     { title: 'Wikipedia: Codex Calixtinus', url: 'https://en.wikipedia.org/wiki/Codex_Calixtinus' },
     { title: 'UNESCO: Routes of Santiago de Compostela', url: 'https://whc.unesco.org/en/list/669/' },
     { title: 'Pilgrim’s Reception Office, Santiago: yearly statistics' },
-    { title: 'Wikipedia: Elías Valiña', url: 'https://en.wikipedia.org/wiki/El%C3%ADas_Vali%C3%B1a_Samp%C3%A9drio' },
+    { title: 'Wikipedia (Spanish): Elías Valiña', url: 'https://es.wikipedia.org/wiki/El%C3%ADas_Vali%C3%B1a' },
   ],
   ready: true,
 };

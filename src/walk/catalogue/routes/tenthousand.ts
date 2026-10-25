@@ -23,8 +23,8 @@ export const tenthousand: RouteDef = {
     { name: 'Mespila', km: 522, at: 6 },
     { name: 'The Carduchian mountains', km: 721, at: 8, label: true },
     { name: 'The Centrites', km: 823, at: 9 },
-    { name: 'The Armenian snows', km: 1001, at: 11, label: true },
-    { name: 'The Euphrates', km: 1070, at: 12 },
+    { name: 'The Euphrates', km: 1001, at: 11 },
+    { name: 'The Armenian snows', km: 1070, at: 12, label: true },
     { name: 'The Chalybes', km: 1267, at: 14 },
     { name: 'Gymnias', km: 1365, at: 15 },
     { name: 'Mount Theches', km: 1442, at: 16, label: true },
@@ -41,8 +41,8 @@ export const tenthousand: RouteDef = {
       { km: 522, name: 'The ruins of Mespila' },
       { km: 721, name: 'Seven days in the mountains' },
       { km: 823, name: 'Across the Centrites' },
-      { km: 1001, name: 'The snows of Armenia' },
-      { km: 1070, name: 'Wading the Euphrates' },
+      { km: 1001, name: 'Wading the Euphrates' },
+      { km: 1070, name: 'The snows of Armenia' },
       { km: 1267, name: 'Through the Chalybes' },
       { km: 1442, name: 'The sea, the sea' },
       { km: 1500, name: 'Trapezus' },
@@ -86,7 +86,7 @@ export const tenthousand: RouteDef = {
       ],
       deeper: {
         title: 'An army that votes',
-        text: 'With their generals dead and no state behind them, the Greeks ran themselves like a city on the move. Soldiers met in assembly, debated and voted on where to go, whom to elect and how to punish wrongdoers; they put their generals on trial at the end of the march, Xenophon among them. They burned their wagons and spare tents by agreement, to move faster. Historians have called it a travelling democracy, and Xenophon shows its arguments and its bad decisions as well as its good ones. It is one of the earliest close pictures we have of ordinary men governing themselves under pressure.',
+        text: 'With their generals dead and no state behind them, the Greeks ran themselves like a city on the move. Soldiers met in assembly, debated and voted on where to go, whom to elect and how to punish wrongdoers; they put their generals on trial once they reached the coast, Xenophon among them. They burned their wagons and spare tents by agreement, to move faster. Historians have called it a travelling democracy, and Xenophon shows its arguments and its bad decisions as well as its good ones. It is one of the earliest close pictures we have of ordinary men governing themselves under pressure.',
       },
     },
     {
@@ -118,18 +118,18 @@ export const tenthousand: RouteDef = {
     },
     {
       km: 1001,
+      title: 'The Euphrates',
+      line: 'Wading the Euphrates, near its source.',
+      page: ['They waded the Euphrates near its sources, the water up to their waists. The river they had marched beside months before, on the way to Babylon, was here a stream in the snow.'],
+    },
+    {
+      km: 1070,
       title: 'The Armenian snow',
       line: 'Into the Armenian highlands, in deep winter.',
       page: [
         'Armenia in winter was deep in snow. The north wind froze men where they stood; some lost toes to frostbite and some went snow-blind. Xenophon says those who kept moving and covered their eyes survived.',
         'In the villages people lived in houses dug into the ground, with their animals, and drank barley beer through straws from big jars. The soldiers rested there for a week.',
       ],
-    },
-    {
-      km: 1070,
-      title: 'The Euphrates',
-      line: 'Wading the Euphrates, near its source.',
-      page: ['They waded the Euphrates near its sources, the water up to their waists. The river they had marched beside months before, on the way to Babylon, was here a stream in the snow.'],
     },
     {
       km: 1170,

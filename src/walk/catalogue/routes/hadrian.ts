@@ -20,7 +20,7 @@ export const hadrian: RouteDef = {
   places: [
     { name: 'Wallsend', km: 0, at: 0, label: true },
     { name: 'Newcastle', km: 7, at: 1 },
-    { name: 'Heddon-on-the-Wall', km: 21, at: 3 },
+    { name: 'Heddon-on-the-Wall', km: 24, at: 3 },
     { name: 'Chesters', km: 48, at: 5 },
     { name: 'Housesteads', km: 63, at: 7, label: true },
     { name: 'Birdoswald', km: 84, at: 9 },
@@ -55,7 +55,7 @@ export const hadrian: RouteDef = {
       page: ['Hadrian’s family name was Aelius, and the Roman bridge and fort here were named Pons Aelius after him. The Norman castle that gave Newcastle its name was built on the fort’s site a thousand years later.'],
     },
     {
-      km: 21,
+      km: 24,
       title: 'The first stones',
       line: 'At Heddon, the first long stretch of wall still standing.',
       page: [
@@ -81,26 +81,26 @@ export const hadrian: RouteDef = {
       line: 'Housesteads, high on the crags, with its stone latrine.',
       page: [
         'Vercovicium, now Housesteads, sits on the Whin Sill, a ridge of hard volcanic rock that the wall follows for miles. About 800 infantry lived here.',
-        'Its latrine had seats over a flushing channel, and the soldiers cleaned themselves with sponges on sticks.',
+        'Its latrine had seats over a flushing channel, and the soldiers probably cleaned themselves with sponges on sticks.',
       ],
     },
     {
       km: 67,
       title: 'Sycamore Gap',
-      line: 'A dip in the crags where a lone tree stood for two hundred years.',
-      page: ['A sycamore grew in a gap in the wall here for about two centuries and became one of the most photographed trees in England. In September 2023 it was cut down overnight, deliberately; two men were later convicted. Seedlings from it have been planted across the country.'],
+      line: 'A dip in the crags where a lone tree stood for over a century.',
+      page: ['A sycamore grew in a gap in the wall here for well over a century, probably planted in the late 1800s, and became one of the most photographed trees in England. In September 2023 it was cut down overnight, deliberately; two men were later convicted. Seedlings from it have been planted across the country.'],
     },
     {
       km: 70,
       title: 'Vindolanda',
       line: 'Just south of the wall, Vindolanda and its letters.',
       page: [
-        'The fort of Vindolanda is older than the wall, from about AD 85. In its waterlogged ground archaeologists found hundreds of wooden writing tablets, the oldest handwritten documents known from Britain.',
+        'The fort of Vindolanda is older than the wall, from about AD 85. In its waterlogged ground archaeologists found more than a thousand wooden writing tablets, among the oldest handwritten documents from Britain.',
         'One is a birthday invitation from Claudia Severa to her friend Sulpicia Lepidina, partly in her own hand. Another mentions socks, sandals and two pairs of underpants sent to a soldier.',
       ],
       deeper: {
         title: 'Life in a garrison town',
-        text: 'The tablets show a frontier full of ordinary life: accounts, leave requests, a complaint about a beating, orders for beer. Soldiers lived with families outside the walls, in towns of traders, wives and children, though serving soldiers could not legally marry until about AD 197. One report calls the locals Brittunculi, little Britons, the only Roman name we have for them that sounds like everyday talk. The tablets also show how far the army was from a garrison of Italians: its units were raised all over the empire, and by the 2nd century many were recruited locally.',
+        text: 'The tablets show a frontier full of ordinary life: accounts, leave requests, a complaint about a beating, orders for beer. Soldiers lived with families outside the walls, in towns of traders, wives and children, though serving soldiers could not legally marry until about AD 197. One report calls the locals Brittunculi, little Britons, a rare glimpse of how soldiers talked about them. The tablets also show how far the army was from a garrison of Italians: its units were raised all over the empire, and by the 2nd century many were recruited locally.',
       },
     },
     {

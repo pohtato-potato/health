@@ -53,7 +53,7 @@ export const cortes: RouteDef = {
       line: 'At Cempoala, the Totonacs see a chance to be free of the Mexica.',
       page: [
         'Hernán Cortés landed on the Gulf coast in April 1519 with about 500 soldiers, against the orders of the Spanish governor of Cuba. To stop anyone going back, he had most of his ships run aground and stripped.',
-        'The Totonac city of Cempoala paid tribute to the Mexica, the people we often call the Aztecs, and resented it. Its ruler sided with the newcomers. In mid-August 1519 Cortés marched inland with a few hundred Spaniards and Totonac warriors and porters.',
+        'The Totonac city of Cempoala paid tribute to the Mexica, the people we often call the Aztecs, and resented it. Its ruler sided with the newcomers. On 16 August 1519 Cortés marched inland with a few hundred Spaniards and Totonac warriors and porters.',
       ],
       deeper: {
         title: 'A war among Mexico’s peoples',
@@ -90,7 +90,7 @@ export const cortes: RouteDef = {
     {
       km: 240,
       title: 'Tlaxcala’s war',
-      line: 'At the borders of Tlaxcala, three weeks of battle.',
+      line: 'At the borders of Tlaxcala, two to three weeks of battle.',
       page: [
         'Tlaxcala was a confederation of four city-states that the Mexica had surrounded but never conquered. In early September 1519 its armies fought the newcomers in a series of battles.',
         'The Spanish survived, barely. Then Tlaxcala’s leaders, among them Xicotencatl the Elder, chose to ally with them against their old enemy. His son, the war leader Xicotencatl the Younger, opposed the alliance; the Spanish later hanged him.',
@@ -108,7 +108,7 @@ export const cortes: RouteDef = {
       line: 'The words of the march pass through one woman.',
       page: [
         'Every word Cortés spoke to a Nahua lord passed through Malintzin, a Nahua woman who had been sold into slavery among the Maya and given to the Spanish in March 1519 with nineteen other women.',
-        'At first she put Nahuatl into Maya for a Spaniard who knew Maya; soon she learned Spanish. Nahua accounts and paintings show her at Cortés’s side at every meeting, often at the centre of the picture.',
+        'At first she put Nahuatl into Maya for a Spaniard who knew Maya; soon she learned Spanish. Nahua accounts and paintings show her at Cortés’s side at meeting after meeting, often at the centre of the picture.',
       ],
       deeper: {
         title: 'How Malintzin has been judged',

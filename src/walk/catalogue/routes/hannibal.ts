@@ -21,7 +21,7 @@ export const hannibal: RouteDef = {
   places: [
     { name: 'New Carthage', km: 0, at: 0, label: true },
     { name: 'Saguntum', km: 260, at: 2 },
-    { name: 'The Ebro', km: 465, at: 3, label: true },
+    { name: 'The Ebro', km: 480, at: 3, label: true },
     { name: 'Tarraco', km: 540, at: 4 },
     { name: 'Emporion', km: 750, at: 5 },
     { name: 'The Pyrenees', km: 790, at: 6, label: true },
@@ -33,7 +33,7 @@ export const hannibal: RouteDef = {
   ],
   signature: {
     title: 'The elephants',
-    note: 'Polybius says Hannibal brought 37 war elephants out of Spain. One mark for each of them, all the way to Italy.',
+    note: 'Ancient writers say Hannibal brought 37 war elephants out of Spain. One mark for each of them, all the way to Italy.',
     mark: 'elephant',
     marks: Array.from({ length: ELEPHANTS }, (_, i) => ({ km: Math.round(((i + 1) * KM) / ELEPHANTS), name: `Elephant ${i + 1}` })),
   },
@@ -45,7 +45,7 @@ export const hannibal: RouteDef = {
       line: 'From New Carthage, in spring 218 BC, an army sets out for Italy.',
       page: [
         'New Carthage, now Cartagena, was the capital of Carthage’s empire in Spain, built by Hannibal’s family. In 219 BC Hannibal besieged Saguntum, a city allied to Rome, and Rome declared war.',
-        'Rome expected to fight in Spain and Africa. In late spring 218 BC Hannibal marched the other way, overland for Italy, with, says Polybius, 90,000 infantry, 12,000 cavalry and 37 elephants.',
+        'Rome expected to fight in Spain and Africa. In late spring 218 BC Hannibal marched the other way, overland for Italy, with, says Polybius, 90,000 infantry and 12,000 cavalry, and, says Appian, 37 elephants.',
       ],
       deeper: {
         title: 'Carthage, told by its enemies',
@@ -71,7 +71,7 @@ export const hannibal: RouteDef = {
       page: ['Few of Hannibal’s soldiers were from Carthage itself. His infantry were Libyans and Spaniards, his best cavalry Numidians from North Africa, who rode without bridles, and his slingers came from the Balearic islands. Holding together an army of so many languages was one of his great achievements.'],
     },
     {
-      km: 465,
+      km: 480,
       title: 'The Ebro',
       line: 'Across the Ebro, the line Carthage had promised not to cross.',
       page: ['A treaty of 226 BC had set the Ebro as the limit of Carthage’s power in Spain. Crossing it, Hannibal fought his way through the tribes to the north and left part of his army to hold them down. Polybius gives the distance from New Carthage to the river as 2,600 stades, about 480 km.'],
@@ -132,7 +132,7 @@ export const hannibal: RouteDef = {
       title: 'The high pass',
       line: 'At the top, snow, and a view of Italy.',
       page: [
-        'At the summit, Polybius says, the old snow was already covered with new. Hannibal showed his men the plains of the Po below and told them they were standing on the walls of Rome.',
+        'At the summit, Polybius says, the old snow was already covered with new. Hannibal showed his men the plains of the Po below and pointed out where Rome lay; Livy has him say they were climbing the walls of Rome itself.',
         'On the way down a landslip had carried away the track. The army spent days cutting a new one; Livy adds that they cracked a great rock with fire and sour wine, a story Polybius does not tell.',
       ],
     },
@@ -141,12 +141,12 @@ export const hannibal: RouteDef = {
       title: 'The Taurini',
       line: 'Into the plains of Italy, with half the army gone.',
       page: [
-        'The army came down among the Taurini, near today’s Turin, five months after leaving New Carthage. Hannibal himself later recorded, in an inscription Polybius saw, that he reached Italy with 20,000 infantry and 6,000 cavalry.',
-        'Within weeks he beat the Romans at the Ticinus and the Trebia. Most of the elephants died in the cold that winter. Livy says only one survived, and Hannibal rode it through the marshes of the Arno the next spring.',
+        'The army came down into the plains near the Taurini, around today’s Turin, five months after leaving New Carthage. Hannibal himself later recorded, in an inscription Polybius saw, that he reached Italy with 20,000 infantry and 6,000 cavalry.',
+        'Within weeks he beat the Romans at the Ticinus and the Trebia. Most of the elephants died in the cold that winter. Polybius and Livy say only one survived, and Hannibal rode it through the marshes of the Arno the next spring.',
       ],
       deeper: {
         title: 'Why invade by land?',
-        text: 'Rome had won control of the sea in the first war. A seaborne invasion of Italy would have been sunk or met on the beach. By land, Hannibal could arrive where he was not expected, and recruit Gauls in the north who hated Rome. His real aim was to break Rome’s alliances in Italy: beat its armies, free its allies, and leave it too weak to fight. He beat its armies for fifteen years, most famously at Cannae in 216 BC, but most of the allies held. He never besieged Rome. In 202 BC, recalled to Africa, he lost to Scipio at Zama, and Carthage made peace.',
+        text: 'Rome had won control of the sea in the first war. A seaborne invasion of Italy would have been sunk or met on the beach. By land, Hannibal could arrive where he was not expected, and recruit Gauls in the north who hated Rome. His real aim was to break Rome’s alliances in Italy: beat its armies, free its allies, and leave it too weak to fight. He fought in Italy for fifteen years, winning most famously at Cannae in 216 BC, but most of the allies held. He never besieged Rome. In 202 BC, recalled to Africa, he lost to Scipio at Zama, and Carthage made peace.',
       },
     },
   ],
