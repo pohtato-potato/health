@@ -9,6 +9,10 @@ import { spice } from './routes/spice';
 import { deccan } from './routes/deccan';
 import { shivaji } from './routes/shivaji';
 import { hadrian } from './routes/hadrian';
+import { sparta } from './routes/sparta';
+import { shackleton } from './routes/shackleton';
+import { kokoda } from './routes/kokoda';
+import { cortes } from './routes/cortes';
 import { tokaido } from './routes/tokaido';
 import { hannibal } from './routes/hannibal';
 import { sigeric } from './routes/sigeric';
@@ -26,7 +30,7 @@ import { hedge } from './routes/hedge';
 export * from './types';
 
 /** Every route, in shelf order. */
-const ALL: RouteDef[] = [shivaji, dandi, kos, rani, meerut, forts, deccan, indus, spice, hadrian, tokaido, hannibal, sigeric, harold, piku, frodo, rann, xuanzang, gt, arc, humayun, bose, hedge];
+const ALL: RouteDef[] = [shivaji, dandi, kos, rani, meerut, forts, deccan, indus, spice, hadrian, sparta, shackleton, kokoda, cortes, tokaido, hannibal, sigeric, harold, piku, frodo, rann, xuanzang, gt, arc, humayun, bose, hedge];
 
 let catalogue = ALL;
 

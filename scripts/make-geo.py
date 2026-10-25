@@ -27,14 +27,31 @@ REGIONS = {
     'med': (-10.0, 16.0, 36.0, 52.5),
     'japan': (131.5, 142.5, 32.5, 38.5),
     'asia': (48.0, 112.0, 20.0, 46.0),
+    'iberia': (-10.0, 3.5, 35.8, 44.2),
+    'greece': (20.0, 26.5, 35.5, 40.5),
+    'anatolia': (26.0, 48.0, 31.0, 43.5),
+    'southgeorgia': (-38.4, -35.6, -55.0, -53.8),
+    'papua': (146.4, 149.0, -10.4, -8.0),
+    'mexico': (-100.2, -95.2, 17.8, 21.2),
+    'russia': (23.0, 39.5, 52.5, 57.0),
+    'fergana': (65.0, 77.5, 37.0, 42.8),
 }
 COUNTRIES = {
     'britain': ['GBR', 'IRL', 'FRA'],
     'med': ['ESP', 'PRT', 'FRA', 'ITA', 'CHE', 'GBR', 'IRL', 'BEL', 'NLD', 'DEU', 'AUT', 'LUX', 'MCO', 'SVN', 'HRV', 'DZA', 'MAR', 'TUN'],
     'japan': ['JPN', 'KOR'],
     'asia': ['CHN', 'MNG', 'KAZ', 'KGZ', 'UZB', 'TJK', 'TKM', 'AFG', 'PAK', 'IND', 'NPL', 'BTN', 'BGD', 'MMR', 'IRN'],
+    'iberia': ['ESP', 'PRT', 'FRA', 'AND', 'MAR', 'DZA', 'GIB'],
+    'greece': ['GRC', 'TUR', 'ALB', 'MKD', 'BGR'],
+    'anatolia': ['TUR', 'SYR', 'IRQ', 'IRN', 'ARM', 'GEO', 'AZE', 'GRC', 'BGR', 'CYP', 'LBN', 'JOR', 'ISR', 'PSX', 'SAU', 'KWT'],
+    'southgeorgia': ['SGS'],
+    'papua': ['PNG'],
+    'mexico': ['MEX'],
+    'russia': ['RUS', 'BLR', 'LTU', 'LVA', 'POL', 'UKR', 'EST'],
+    'fergana': ['UZB', 'TJK', 'KGZ', 'KAZ', 'CHN', 'AFG', 'TKM'],
 }
-TOL = {'india': 0.45, 'britain': 0.5, 'med': 0.6, 'japan': 0.5, 'asia': 0.7}
+FINE = {'greece', 'southgeorgia', 'papua', 'mexico'}
+TOL = {'india': 0.45, 'britain': 0.5, 'med': 0.6, 'japan': 0.5, 'asia': 0.7, 'iberia': 0.5, 'greece': 0.9, 'anatolia': 0.6, 'southgeorgia': 0.4, 'papua': 0.4, 'mexico': 0.9, 'russia': 1.6, 'fergana': 1.4}
 UNION_TERRITORIES = {
     'Andaman and Nicobar', 'Chandigarh', 'Dadra and Nagar Haveli and Daman and Diu', 'Delhi',
     'Jammu and Kashmir', 'Ladakh', 'Lakshadweep', 'Puducherry',
@@ -140,7 +157,8 @@ for r in REGIONS:
               for f in sorted(states, key=lambda f: f['properties']['name'])]
         region_out[r] = {'box': [0, 0, 300, H], 'outline': path(ind['geometry'], p, TOL[r], box), 'extra': neigh, 'states': st}
     else:
-        feats = [f for f in world if f['properties'].get('ADM0_A3') in COUNTRIES[r]]
+        # Small regions take their coast from the 10m file (the India point-of-view one; it differs only on India's borders).
+        feats = [f for f in (india_pov if r in FINE else world) if f['properties'].get('ADM0_A3') in COUNTRIES[r]]
         region_out[r] = {'box': [0, 0, 300, H], 'outline': ''.join(path(f['geometry'], p, TOL[r], box) for f in feats)}
 
 missing = {STATE_NAMES.get(n, n) for n in UNION_TERRITORIES} - {s['name'] for s in region_out['india']['states']}
@@ -154,7 +172,7 @@ HEADER = """/**
 """
 
 regions = [HEADER,
-           "export type RegionKey = 'india' | 'britain' | 'med' | 'japan' | 'asia' | 'fantasy';", '',
+           "export type RegionKey = 'india' | 'britain' | 'med' | 'japan' | 'asia' | 'iberia' | 'greece' | 'anatolia' | 'southgeorgia' | 'papua' | 'mexico' | 'russia' | 'fergana' | 'fantasy';", '',
            'export interface Region {', '  box: [number, number, number, number];', '  outline: string;',
            '  /** Neighbouring land, drawn fainter. */', '  extra?: string;',
            '  /** India only: each state and union territory, with its area on the sphere. */',
