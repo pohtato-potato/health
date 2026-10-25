@@ -20,11 +20,12 @@ import { xuanzang } from './routes/xuanzang';
 import { gt } from './routes/gt';
 import { arc } from './routes/arc';
 import { humayun } from './routes/humayun';
+import { bose } from './routes/bose';
 
 export * from './types';
 
 /** Every route, in shelf order. */
-const ALL: RouteDef[] = [shivaji, dandi, kos, rani, meerut, forts, deccan, indus, spice, hadrian, tokaido, hannibal, sigeric, harold, piku, frodo, rann, xuanzang, gt, arc, humayun];
+const ALL: RouteDef[] = [shivaji, dandi, kos, rani, meerut, forts, deccan, indus, spice, hadrian, tokaido, hannibal, sigeric, harold, piku, frodo, rann, xuanzang, gt, arc, humayun, bose];
 
 let catalogue = ALL;
 
