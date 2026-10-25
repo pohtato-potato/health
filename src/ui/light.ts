@@ -26,6 +26,11 @@ const INKS: Record<RegionId, [string, string, string, string]> = {
   himalaya: ['#dfe6ee', '#a9b8c8', '#7a8ca0', '#4f5f72'],
 };
 
+/** A region's four inks at full daylight, far to near. */
+export function inksFor(region: RegionId): [string, string, string, string] {
+  return INKS[region];
+}
+
 const SKY: Record<PartOfDay, [string, string, string]> = {
   dawn: ['#2b3d73', '#9a7aa6', '#f2c49a'],
   day: ['#4f7fc0', '#8fb6e0', '#e6eef2'],

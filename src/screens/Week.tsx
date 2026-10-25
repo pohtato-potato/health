@@ -1,3 +1,4 @@
+import { RegionFrame } from '../ui/live/RegionFrame';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
 import { addDays, dayKey, weekStart } from '../domain/dates';
@@ -12,8 +13,11 @@ import { back, go, useRoute } from '../router';
 import { Icon } from '../ui/Icon';
 import { useToast } from '../ui/Toasts';
 import { targetsFor, weeksFor } from '../state/derived';
-import { usualWake } from './TodayNight';
+import { usualWake } from '../domain/wake';
 import { basisLabel } from '../domain/logged';
+import { stepsByDay } from '../walk/runs';
+import { weekWalk } from '../walk/week';
+import { WeekRoadCard } from './walk/WeekRoadCard';
 
 function useWeekData() {
   const { params } = useRoute();
@@ -41,13 +45,14 @@ export function WeekRecap() {
   const thisNote = useLiveQuery(() => (data ? db.weeks.get(data.from) : undefined), [data?.from]);
   const nextNote = useLiveQuery(() => (nextWeek ? db.weeks.get(nextWeek) : undefined), [nextWeek]);
   const [oneThing, setOneThing] = useState<string | null>(null);
+  const runs = useLiveQuery(() => db.routes.toArray(), []);
 
   useEffect(() => {
     if (!data) return;
     void db.weeks.get(data.from).then((n) => db.weeks.put({ ...(n ?? { id: data.from }), recapSeenAt: Date.now() }));
   }, [data?.from]);
 
-  if (!data) return <div className="page bare" />;
+  if (!data) return <RegionFrame className="bare" />;
   const { w, prev, settings, all, foods } = data;
   const perWeek = targetsFor(settings, w.to).sessionsPerWeek;
   const weeks = weeksFor(settings, data.sessions, w.to);
@@ -71,7 +76,7 @@ export function WeekRecap() {
   };
 
   return (
-    <div className="page bare">
+    <RegionFrame className="bare">
       <button type="button" className="backlink" onClick={() => back('/journey')}>
         <Icon name="left" size={20} stroke={1.8} />
         Journey
@@ -98,6 +103,8 @@ export function WeekRecap() {
           </div>
         ))}
       </div>
+
+      {runs && <WeekRoadCard w={weekWalk(w.from, stepsByDay(data.days), runs)} />}
 
       {w.records.length > 0 && (
         <div className="card gold">
@@ -166,7 +173,7 @@ export function WeekRecap() {
       <button type="button" className="btn lg block" onClick={() => back('/journey')}>
         Done
       </button>
-    </div>
+    </RegionFrame>
   );
 }
 

@@ -1,205 +1,152 @@
-import { useRef, useState, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
-import { addDays } from '../domain/dates';
-import { fmtDayMonthFrom, fmtInt } from '../domain/format';
-import { chapterAt, kmFromSteps, positionAt } from '../domain/walk';
-import { useAllDays, useAllSets, useSessions, useSettings, useToday } from '../db/hooks';
-import { go } from '../router';
-import { Seg } from '../ui/controls';
-import { Icon } from '../ui/Icon';
-import { distanceInTerms, ghostLastMonth, journal, loadedSteps } from '../walk/journal';
-import { WalkScene } from '../walk/WalkScene';
-import { reachedCards, walkForecast } from '../walk/cards';
-import { recordLine, trackRecord } from '../domain/forecastStore';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useEffect, useState, type CSSProperties } from 'react';
+import { addDays, daysBetween } from '../domain/dates';
+import { fmtDayMonth, fmtInt } from '../domain/format';
+import { seasonalThemeOn } from '../domain/themes';
+import { prefOn, type RouteRun } from '../domain/types';
+import { kmFromSteps } from '../domain/walk';
+import { changePlace } from '../db/actions';
 import { db } from '../db/db';
-import { useEffect } from 'react';
-import { saveForecast } from '../db/forecasts';
-import { dayNumber } from '../domain/forecastStore';
-import { meetBuilt, structuresFrom } from '../walk/camps';
-import { bestStrengthIndex, effectiveKm, PASSES } from '../walk/passes';
-import { detourKm, QuestPanel, SouvenirShelf, useQuestState } from '../walk/WalkExtras';
-import { dayDoses, lanternOn } from '../domain/medicines';
+import { useAllDays, useDay, useSettings, useToday } from '../db/hooks';
+import { regionAt } from '../domain/regions';
+import { go } from '../router';
+import { Aurora } from '../ui/live/Aurora';
+import type { Festive } from '../walk/art/festive';
+import { kindOf, routeById } from '../walk/catalogue';
+import { STOPS, STRETCHES } from '../walk/content';
+import { arrivedToday, auroraFor, nearestPlace, statusLines, stoneFor, stopLine, timeAtPace, tomorrowLine, usualAndBig, whereLine, whereNow } from '../walk/page';
+import { stopToday, stretchAt, stretchDay, stretchEndToShow } from '../walk/road';
+import type { Stretch } from '../walk/content/types';
+import { Sheet } from '../ui/Sheet';
+import { StretchEndView } from './walk/StretchEndView';
 import { peopleMet } from '../walk/people';
+import { placesFree, routeKm, runState, stepsByDay } from '../walk/runs';
 import { journeyStart } from './Journey';
+import { PlaceStatusRow } from './walk/PlaceStatusRow';
+import { ChallengeCard, ExpeditionLine } from './walk/RouteCards';
+import { StatusLines } from './walk/StatusLines';
+import { WalkDoors } from './walk/WalkDoors';
+import { WalkTitle } from './walk/WalkTitle';
+import { WalkTop } from './walk/WalkTop';
+import { WalkStrip } from './walk/WalkStrip';
+import { stripFor } from '../walk/strip';
+import { NewsBannerView } from './walk/NewsBanner';
+import { skyLine } from '../walk/sky';
+import { useRoadNews } from './walk/useRoadNews';
 
-type Tab = 'journal' | 'route';
+/** "1 challenge place free", or both kinds, in words. */
+function freeLine(free: { challenge: number; expedition: number }): string {
+  const part = (n: number, kind: string) => `${n} ${kind} ${n === 1 ? 'place' : 'places'} free`;
+  if (!free.challenge && !free.expedition) return 'Every place is taken';
+  return [free.challenge && part(free.challenge, 'challenge'), free.expedition && part(free.expedition, 'expedition')].filter(Boolean).join(' · ');
+}
 
-/** The Walk tab: where you are, lit for the hour, and the road behind and ahead. */
-export function WalkTab({ extraTabs }: { extraTabs?: { id: string; label: string; body: ReactNode }[] } = {}) {
-  const settings = useSettings();
+/** The Walk tab: the scene and the stone, where you are, a few lines about today, tomorrow, your routes, the doors. */
+export function WalkTab() {
   const today = useToday();
   const days = useAllDays();
-  const sessions = useSessions();
-  const sets = useAllSets();
-  const [tab, setTab] = useState<string>('journal');
-  // The journal is a sheet: a few days showing, pulled up over the scene for the rest.
-  const [up, setUp] = useState(false);
-  const dragFrom = useRef<number | null>(null);
-  const quests = useQuestState();
-  const forecasts = useLiveQuery(() => db.forecasts.toArray(), []);
-  // Keep today's walk forecast so its track record can be checked when the day comes.
-  const keep = (() => {
-    if (!days) return undefined;
-    const recentDays = days.filter((d) => d.date >= addDays(today, -14) && d.date < today && d.steps !== undefined);
-    const pace = recentDays.length ? recentDays.reduce((n, d) => n + d.steps!, 0) / recentDays.length : undefined;
-    return walkForecast(kmFromSteps(days.reduce((n, d) => n + (d.steps ?? 0), 0)), pace, today);
-  })();
+  const settings = useSettings();
+  const day = useDay(today);
+  const runs = useLiveQuery(() => db.routes.toArray(), []);
+  const seenStretches = useLiveQuery(async () => new Set((await db.seen.where('id').startsWith('walk-stretch:').toArray()).map((s) => s.id)), []);
+  const [showing, setShowing] = useState<{ done: Stretch; next?: Stretch }>();
+  const news = useRoadNews();
+  const end = days && seenStretches ? stretchEndToShow(stepsByDay(days), STRETCHES, seenStretches) : undefined;
   useEffect(() => {
-    if (keep) void saveForecast({ kind: `walk:${keep.name}`, targetDate: keep.range[1], low: dayNumber(keep.range[0]), high: dayNumber(keep.range[1]) }, today);
-  }, [keep?.name, keep?.range[0], keep?.range[1], today]);
-  if (!settings || !days || !sessions || !sets) return <div className="page" />;
-  const steps = days.reduce((n, d) => n + (d.steps ?? 0), 0);
-  // The best strength reached so far: once a pass opens it stays open.
-  const strength = bestStrengthIndex(sets, today);
-  const raw = Math.max(0, kmFromSteps(steps) - detourKm(quests ?? []));
-  const km = effectiveKm(raw, strength);
-  const waiting = PASSES.find((p) => p.km === km && raw > km);
-  const records = new Set(sets.filter((x) => x.mark === '!!').map((x) => x.sessionId));
-  const built = structuresFrom(days, sessions, records);
-  const met = meetBuilt(km, built);
-  const pos = positionAt(km);
-  const chapter = chapterAt(km);
-  const loaded = loadedSteps(sets);
-  const meetings = new Map(peopleMet(days.filter((d) => d.date <= today)).map((m) => [m.date, m.who]));
-  const lines: (ReturnType<typeof journal>[number] & { met?: string })[] = journal(days, sessions, today, loaded, journeyStart(settings, days)).map((l) => {
-    const b = built.find((x) => x.date === l.date);
-    const withCamp = b ? { ...l, body: `${l.body} Built a ${b.kind} by the road.` } : l;
-    const lit = lanternOn(settings, days.find((d) => d.date === l.date)) ? { ...withCamp, body: `${withCamp.body} A lantern burned at camp: every dose on time.` } : withCamp;
-    const m = meetings.get(l.date);
-    return m ? { ...lit, met: `${m.name}, ${m.who}. ${m.line}` } : lit;
-  });
-  const todayDay = days.find((d) => d.date === today);
-  const lanterns = todayDay && lanternOn(settings, todayDay) ? dayDoses(settings.checklist.filter((i) => i.active && i.med), todayDay, settings).onTime : 0;
-  const ghost = ghostLastMonth(days, today);
-  const recent = days.filter((d) => d.date >= addDays(today, -14) && d.date < today && d.steps !== undefined);
-  const perDay = recent.length ? recent.reduce((n, d) => n + d.steps!, 0) / recent.length : undefined;
-  const forecast = walkForecast(km, perDay, today);
-  const record = forecasts ? recordLine(trackRecord(forecasts.filter((f) => f.kind.startsWith('walk:')).map((f) => ({ ...f, kind: 'walk' })), 'walk')) : undefined;
-  const cards = reachedCards(km);
-  const terms = distanceInTerms(km);
-  // Raised, the sheet lives at the top of the document so nothing above it traps its position.
-  const portal = (el: ReactNode) => (up ? createPortal(<>{el}<div className="scrim" style={{ zIndex: 44 }} onClick={() => setUp(false)} /></>, document.body) : el);
-  const todaySteps = days.find((d) => d.date === today)?.steps ?? 0;
+    if (!end?.show) return;
+    setShowing({ done: end.show, next: end.next });
+    void db.seen.bulkPut(end.markSeen.map((id) => ({ id, at: Date.now() })));
+    // Only a newly ended stretch matters here.
+  }, [end?.show?.id]);
+  if (!days || !settings) return <div className="page" />;
 
-  const tabs: { id: string; label: string }[] = [
-    { id: 'journal', label: 'Journal' },
-    { id: 'route', label: 'Route' },
-    { id: 'souvenirs', label: 'Souvenirs' },
-    { id: 'quests', label: 'Quests' },
-    ...(extraTabs ?? []).map(({ id, label }) => ({ id, label })),
-  ];
+  const steps = stepsByDay(days);
+  const km = kmFromSteps([...steps.values()].reduce((a, b) => a + b, 0));
+  const todayKm = kmFromSteps(steps.get(today) ?? 0);
+  const where = whereNow(km);
+  const near = nearestPlace(km);
+  const dayN = daysBetween(journeyStart(settings, days), today) + 1;
+  const { usualKm, bigKm } = usualAndBig(days, today);
+  const festive = prefOn(settings.prefs, 'seasonal') ? (seasonalThemeOn(today, settings.birthday) as Festive | undefined) : undefined;
+  // Someone met on the road shows for the day they were met and the day after, as steps are often logged late.
+  const met = peopleMet(days.filter((d) => d.date <= today))
+    .filter((m) => m.date >= addDays(today, -1))
+    .at(-1);
+  const stop = stopToday(steps, today, STOPS);
+  const lines = statusLines({ arrival: arrivedToday(steps, today), stop: stop && stopLine(stop), person: met?.who, status: day?.status, sky: skyLine(today), near });
+  const stretch = stretchAt(km, STRETCHES);
+  const tomorrow = tomorrowLine(km, usualKm, bigKm);
+
+  const walking = (runs ?? [])
+    .map((run: RouteRun) => {
+      const def = routeById(run.id);
+      if (!def) return undefined;
+      const routeKmNow = routeKm(run, def, steps);
+      const state = runState(run, def, routeKmNow);
+      if (state === 'finished') return undefined;
+      const page = [...def.pages].reverse().find((p) => p.km <= routeKmNow);
+      const target = run.target && run.target >= today ? `aiming for ${fmtDayMonth(run.target)}` : undefined;
+      return { run, def, km: routeKmNow, state, line: page?.line, target };
+    })
+    .filter((x) => x !== undefined);
+  const challenges = walking.filter((w) => kindOf(w.def) === 'challenge');
+  const expeditions = walking.filter((w) => kindOf(w.def) === 'expedition');
 
   return (
-    <div className="page walk">
-      <div className="walk-top">
-        <WalkScene km={km} ghostKm={ghost} caption={false} hero carryFrac={todaySteps ? (loaded.get(today) ?? 0) / todaySteps : 0} built={built.at(-1)?.kind} lanterns={lanterns} />
-        <div className="walk-title">
-          <h1 className="h1">{pos.done ? 'Leh, the end of the road' : `Near ${pos.from.name}`}</h1>
-          <span className="t13 tn">
-            {fmtInt(Math.round(km))} km · Chapter {chapter.n}
-          </span>
-        </div>
-      </div>
-      <div className="col gap4">
-        {pos.to && <div className="t14 q">{fmtInt(Math.max(0, Math.round(pos.to.km - km)))} km to {pos.to.name}</div>}
-        {terms && <div className="t14">{terms}</div>}
-        {waiting && (
-          <div className="t14 gold lh">
-            Waiting at the foot of {waiting.name}, {fmtInt(waiting.heightM)} m. It opens at strength +{waiting.need}%; you're at +{strength}%. Training gets you over.
-          </div>
+    <div className="page lv lv-tab walk2" style={auroraFor(regionAt(km)) as CSSProperties}>
+      <Aurora />
+      <div className="walk2-col">
+        <WalkTop km={km} todayKm={todayKm} stone={stoneFor(km)} festive={festive} />
+        {stretch ? (
+          <WalkTitle where={stretch.name} sub={`${stretch.plain} · day ${stretchDay(steps, today, stretch)} of ${timeAtPace(stretch.toKm - stretch.fromKm, usualKm)}`} onWhere={() => go('/stretch', { id: stretch.id })} />
+        ) : (
+          <WalkTitle where={whereLine(where)} sub={`${fmtInt(Math.round(km))} km from Delhi · day ${fmtInt(Math.max(1, dayN))}`} />
         )}
-        {met.map((b) => (
-          <div key={b.name} className="t14 gold">
-            You passed something you built: {b.name}.
-          </div>
-        ))}
-        {ghost !== undefined && <div className="t13 q">A month ago you were {fmtInt(Math.round(km - ghost))} km back, near {positionAt(ghost).from.name}.</div>}
+        <WalkStrip strip={stripFor(km, todayKm, stretch, STOPS)} onOpen={() => go('/map')} />
+        <PlaceStatusRow settings={settings} today={today} day={day} onPlace={(id) => void changePlace(today, id)} />
+        <StatusLines
+          today={`${steps.has(today) ? `Today ${todayKm.toFixed(1)} km` : 'Today: no steps logged yet'}${stretch ? ` · ${fmtInt(Math.round(km))} km from Delhi` : ''}`}
+          lines={lines} onOpen={(path) => go(path.split('?')[0], Object.fromEntries(new URLSearchParams(path.split('?')[1] ?? '')))} tomorrow={days.some((d) => d.steps !== undefined) ? tomorrow : "Log today's steps and you'll set off from Delhi."} />
+
+        {news?.banner && <NewsBannerView banner={news.banner} kmById={news.kmById} onOpen={news.open} onDismiss={news.dismiss} />}
+
+        {challenges.length > 0 && (
+          <section className="walk-section" aria-label="Challenges">
+            <h2 className="walk-h2">Challenges</h2>
+            {challenges.map((c) => (
+              <ChallengeCard key={c.run.id} id={c.run.id} km={c.km} state={c.state as 'walking' | 'set down'} line={c.line} target={c.target} onOpen={() => go('/route', { id: c.run.id })} />
+            ))}
+          </section>
+        )}
+        {expeditions.length > 0 && (
+          <section className="walk-section" aria-label="Expeditions">
+            <h2 className="walk-h2">Expeditions</h2>
+            {expeditions.map((e) => (
+              <ExpeditionLine key={e.run.id} id={e.run.id} km={e.km} state={e.state as 'walking' | 'set down'} onOpen={() => go('/route', { id: e.run.id })} />
+            ))}
+          </section>
+        )}
+
+        <button type="button" className="walk-primary walk-find" onClick={() => go('/routes')}>
+          Choose a walk
+          <small>{freeLine(placesFree(runs ?? [], new Map(walking.map((w) => [w.run.id, w.km]))))}</small>
+        </button>
+
+        <WalkDoors onGo={(path) => go(path)} />
       </div>
-
-      <Seg options={tabs} value={tab as Tab} onChange={setTab} />
-
-      {tab === 'journal' && portal(
-        <div className={`card pull-sheet${up ? ' up' : ''}`} style={{ gap: 0 }}>
-          {lines.length > 4 && (
-            <button
-              type="button"
-              className="pull-handle"
-              aria-expanded={up}
-              aria-label={up ? 'Lower the journal' : 'Pull up the whole journal'}
-              onPointerDown={(e) => (dragFrom.current = e.clientY)}
-              onPointerUp={(e) => {
-                const dy = dragFrom.current === null ? 0 : e.clientY - dragFrom.current;
-                dragFrom.current = null;
-                setUp(dy < -24 ? true : dy > 24 ? false : !up);
-              }}
-            >
-              <i />
-              <span className="t12 q">{up ? 'Journal · pull down' : `Journal · ${lines.length} days · pull up`}</span>
-            </button>
-          )}
-          {lines.length === 0 && <div className="t14 q lh">Log today's steps and the road starts writing itself.</div>}
-          {lines.slice(0, up ? 60 : 4).map((l) => (
-            <div key={l.date} className="col gap2" style={{ padding: '10px 0', borderTop: '1px solid var(--divider)' }}>
-              <span className="t14">{l.head}</span>
-              <span className="t13 q lh">{l.body}</span>
-              {l.met && <span className="t13 lh met-line"><b>Met ·</b> {l.met}</span>}
-            </div>
-          ))}
-          {forecast && (
-            <div className="t13 lh" style={{ padding: '12px 0 4px', borderTop: '1px solid var(--divider)' }}>
-              {forecast.name} around {fmtDayMonthFrom(forecast.date, today)}
-              {record ? <span className="q"> · {record}</span> : null}
-            </div>
-          )}
-        </div>,
+      {showing && (
+        <Sheet onClose={() => setShowing(undefined)}>
+          <StretchEndView
+            done={showing.done}
+            next={showing.next}
+            onRead={() => {
+              setShowing(undefined);
+              if (showing.next) go('/stretch', { id: showing.next.id });
+            }}
+            onClose={() => setShowing(undefined)}
+          />
+        </Sheet>
       )}
-
-      {tab === 'route' && (
-        <div className="col gap8">
-          {forecast && (
-            <div className="card">
-              <div className="t16">
-                {forecast.name} around {fmtDayMonthFrom(forecast.date, today)}
-              </div>
-              <div className="t13 q">
-                Between {fmtDayMonthFrom(forecast.range[0], today)} and {fmtDayMonthFrom(forecast.range[1], today)}, at your two-week average of {fmtInt(Math.round(perDay!))} steps a day.
-              </div>
-              {record && <div className="t12 q">{record}.</div>}
-            </div>
-          )}
-          <div className="lbl" style={{ paddingTop: 4 }}>
-            Cards from the road
-          </div>
-          <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
-            {cards.map((c) => (
-              <button key={c.city} type="button" className="chip sm" onClick={() => go('/arrival', { city: c.city })}>
-                {c.city}
-              </button>
-            ))}
-          </div>
-          <div className="list">
-            {[
-              { label: 'Route', sub: 'The whole walk on one map', path: '/map' },
-              { label: 'Departures', sub: 'Every milestone ahead', path: '/departures' },
-              { label: 'Overview', sub: 'The walk in numbers', path: '/journey' },
-            ].map((x) => (
-              <button key={x.path} type="button" className="li" onClick={() => go(x.path)}>
-                <span className="s">
-                  <span>{x.label}</span>
-                  <small>{x.sub}</small>
-                </span>
-                <Icon name="right" size={16} stroke={1.8} color="var(--dim)" />
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {tab === 'souvenirs' && <SouvenirShelf km={km} />}
-      {tab === 'quests' && <QuestPanel days={days} km={km} />}
-
-      {extraTabs?.find((t) => t.id === tab)?.body}
     </div>
   );
 }

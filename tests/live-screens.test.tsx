@@ -10,7 +10,7 @@ const ex: ExerciseDef = { id: 'curl', order: '1', name: 'Curl', sets: 3, reps: [
 const row: Row = { ex, setNo: 2, side: 'both', drop: false, key: 'curl:2:both' };
 const counted = (n: number, burnAt?: number): LiveCounter => ({ key: row.key, taps: Array.from({ length: n }, (_, i) => NOW - (n - i) * 3000), burnAt, startedAt: n ? NOW - n * 3000 : undefined });
 const noop = () => {};
-const base = { row, name: 'Curl', kg: 10, aim: '10–15', bottom: 10, bar: 12, tempo: false, timed: false, nudge: false, onCounter: noop, onDone: noop, onSkip: noop, saver: false, theme: 'dusk' as const, buzz: false, now: NOW };
+const base = { row, name: 'Curl', kg: 10, aim: '10–15', bottom: 10, bar: 12, tempo: false, timed: false, nudge: false, onCounter: noop, onDone: noop, onSkip: noop, theme: 'dusk' as const, buzz: false, now: NOW };
 const html = (p: Partial<typeof base> & { c: LiveCounter; leadSide?: 'L' | 'R'; firstAtLoad?: boolean }) => renderToStaticMarkup(<SetScreen {...base} {...p} />);
 
 describe('the set screen', () => {
@@ -36,9 +36,6 @@ describe('the set screen', () => {
   });
   it('counts seconds on a timed set', () => {
     expect(html({ timed: true, c: { key: row.key, taps: [NOW - 65_000], startedAt: NOW - 65_000 } })).toContain('1:05');
-  });
-  it('draws no aurora in battery saver', () => {
-    expect(html({ saver: true, c: counted(3) })).not.toContain('blob');
   });
   it('calls a set past the plan an extra set', () => {
     expect(html({ row: { ...row, setNo: 4, key: 'curl:4:both' }, c: { key: 'curl:4:both', taps: [] } })).toContain('Set 4 of 4 · extra');
@@ -69,7 +66,7 @@ describe('the check screen', () => {
     { id: 'slow', text: 'Slow lowering', kind: 'do' as const },
   ];
   const check = (p: Partial<Parameters<typeof CheckScreen>[0]> = {}) =>
-    renderToStaticMarkup(<CheckScreen reps={11} unit="reps" state="burn" checks={checks} onSave={noop} saver={false} {...p} />);
+    renderToStaticMarkup(<CheckScreen reps={11} unit="reps" state="burn" checks={checks} onSave={noop} {...p} />);
   it('says "Same as last set" while the answers match the last set', () => {
     expect(check({ prev: { checks: { tuck: 'ok' }, rir: 1 } })).toContain('Same as last set');
     expect(check()).toContain('>Save<');
@@ -101,7 +98,7 @@ import { justTags, restoreCounter } from '../src/domain/liveSet';
 
 describe('rest', () => {
   const rest = (p: Partial<Parameters<typeof RestLive>[0]> = {}) =>
-    renderToStaticMarkup(<RestLive endsAt={NOW + 45_000} total={90} now={NOW} from="burn" just={['record']} next={{ label: 'Set 3', kg: 10, aim: '10–15', tempo: false }} onMore={noop} onReady={noop} saver={false} rings={['#111111', '#222222', '#333333']} {...p} />);
+    renderToStaticMarkup(<RestLive endsAt={NOW + 45_000} total={90} now={NOW} from="burn" just={['record']} next={{ label: 'Set 3', kg: 10, aim: '10–15', tempo: false }} onMore={noop} onReady={noop} rings={['#111111', '#222222', '#333333']} {...p} />);
   it('tags the set just done', () => {
     expect(justTags({ mark: '!!', burnAt: 9, checks: { a: 'ok', b: 'ok', c: 'slip' } })).toEqual(['record', 'burn from 10', '2 went well', '1 slipped']);
     expect(justTags({})).toEqual([]);
@@ -111,11 +108,6 @@ describe('rest', () => {
     expect(h).toContain('--fade:0.5');
     expect(h).toMatch(/class="lv [^"]*st-rest[^"]*from-burn/);
     expect(h).toContain('0:45');
-  });
-  it('is black and still in battery saver, with the next set readable', () => {
-    const h = rest({ saver: true });
-    expect(h).not.toContain('blob');
-    expect(h).toContain('Set 3');
   });
 });
 

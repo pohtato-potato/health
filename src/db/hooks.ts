@@ -4,11 +4,16 @@ import { dayKey, type DayKey } from '../domain/dates';
 import type { Day, Food, FoodEntry, Measurement, SetEntry, Settings, TrainingSession } from '../domain/types';
 import { defaultSettings } from './actions';
 import { db } from './db';
+import { setStride } from '../domain/walk';
 import { realSets } from '../domain/plan';
 
 /** Undefined while loading, then the settings (defaults if none saved yet). */
 export function useSettings(): Settings | undefined {
-  return useLiveQuery(async () => (await db.settings.get('app')) ?? defaultSettings(), []);
+  return useLiveQuery(async () => {
+    const s = (await db.settings.get('app')) ?? defaultSettings();
+    setStride(s.strideM);
+    return s;
+  }, []);
 }
 
 export function useDay(date: DayKey): Day | undefined | null {
@@ -81,7 +86,13 @@ export function useNow(ms = 1000): number {
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), ms);
-    return () => window.clearInterval(id);
+    // A phone app resumes from the background without a fresh interval tick: catch up as soon as it's visible.
+    const back = () => document.visibilityState === 'visible' && setNow(Date.now());
+    document.addEventListener('visibilitychange', back);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', back);
+    };
   }, [ms]);
   return now;
 }

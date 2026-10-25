@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { strongestWeek, surpriseRecord } from '../src/domain/film';
 import { pickChallenge, type DaySummary } from '../src/domain/challenges';
-import { nextStopLine } from '../src/walk/journal';
+import { nextStopLine } from '../src/walk/lines';
 
 const set = (date: string, exercise: string, loadKg: number | null, reps: number, mark?: '!!') => ({ date, exercise, exerciseId: exercise, loadKg, reps, mark, side: 'both' as const });
 

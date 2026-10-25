@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { batteryMode, restSpans, restState } from '../src/domain/rest';
+import { restSpans, restState } from '../src/domain/rest';
 
 describe('rest and battery', () => {
   it('rest ends at zero and reports endedAgo', () => {
@@ -22,13 +22,5 @@ describe('rest and battery', () => {
     expect(spans.filter((s) => s.kind === 'rest').reduce((n, s) => n + (s.to - s.from), 0)).toBe(90_000 + 200_000 + 100_000);
     expect(spans[0]).toEqual({ from: 0, to: 600_000, kind: 'lift' });
     for (let i = 1; i < spans.length; i++) expect(spans[i].from).toBe(spans[i - 1].to);
-  });
-
-  it('batteryMode without getBattery uses manual', () => {
-    expect(batteryMode(undefined, true)).toBe(true);
-    expect(batteryMode(undefined, false)).toBe(false);
-    expect(batteryMode(0.29, false)).toBe(true);
-    expect(batteryMode(0.3, false)).toBe(false);
-    expect(batteryMode(0.8, true)).toBe(true);
   });
 });

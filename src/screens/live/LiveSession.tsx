@@ -141,7 +141,6 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
     </>
   );
 
-  const saver = r.saver;
 
   if (!session.beforeDone && !r.mine.length) {
     return (
@@ -156,7 +155,6 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
         onSoreness={(n) => patchSession(session.id, { legSoreness: n })}
         warmup={plan.warmup}
         onStart={() => patchSession(session.id, { beforeDone: true })}
-        saver={saver}
         top={top}
       />
     );
@@ -173,7 +171,6 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
           // The rest held back for the record starts now, at full length.
           r.afterRow(done);
         }}
-        saver={saver}
       />
     );
   }
@@ -195,7 +192,6 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
         clean={settings.formRecordsClean !== false}
         checks={checksFor(x.ex)}
         prev={prev ? { checks: prev.checks, rir: prev.rir } : undefined}
-        saver={saver}
         detail={`${timed ? 'held' : 'reps'}${r.defaults(x).kg !== null ? ` at ${r.defaults(x).kg} kg` : ''}${sideWord(x.side)}`}
         top={top}
         saving={saving}
@@ -259,7 +255,6 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
           r.stopRest();
           if (!row && ni !== undefined) r.setGi(ni);
         }}
-        saver={saver}
         rings={RINGS[theme]}
         top={top}
       />
@@ -268,7 +263,7 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
 
   if (!row) {
     return (
-      <LiveFrame state="calm" saver={saver} top={top}>
+      <LiveFrame state="calm" top={top}>
         <div className="lv-ex" style={{ marginTop: 24 }}>
           <h1 className="lv-name">{nextG ? `Up next: ${nextG.map(nameOf).join(' + ')}` : 'Every set is in'}</h1>
         </div>
@@ -281,7 +276,7 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
 
   if (measureOf(row.ex) === 'steps') {
     return (
-      <LiveFrame state="calm" saver={saver} top={top}>
+      <LiveFrame state="calm" top={top}>
         <h1 className="lv-name">{nameOf(row.ex)}</h1>
         <p className="lv-small">Steps are logged in the list.</p>
         <div style={{ marginTop: 'auto' }}>
@@ -308,7 +303,6 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
           forNames={(block?.exs ?? [row.ex]).filter((e) => !r.mine.some((m) => m.exerciseId === e.id) && r.defaults(firstRow(e)).kg === kg).map(nameOf)}
           collar={collar}
           onGo={(ticked) => patchSession(session.id, { platesSeen: [...(session.platesSeen ?? []), row.ex.id], ...(ticked ? { collarCheckedAt: Date.now() } : {}) })}
-          saver={saver}
           top={top}
         />
       );
@@ -327,7 +321,6 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
         onSetup={(text) => patchSettings((s) => ({ setups: addSetup(s.setups, row.ex.id, session.date, text) }))}
         checks={checksFor(row.ex)}
         onGo={() => patchSession(session.id, { guided: [...(session.guided ?? []), row.ex.id] })}
-        saver={saver}
         top={top}
       />
     );
@@ -354,7 +347,6 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
         }}
         onDone={() => setPending({ row, c, endedAt: Date.now() })}
         onSkip={() => void r.skip(row)}
-        saver={saver}
         theme={theme}
         buzz={!!settings.prefs.buzz}
         now={r.now}

@@ -174,17 +174,23 @@ export function chapterAt(km: number): Chapter {
   return CHAPTERS.find((c) => km < c.end) ?? CHAPTERS[CHAPTERS.length - 1];
 }
 
-/** The Golden Quadrilateral, drawn faintly on the map as a teaser during chapter 1. */
-export const QUAD = [
-  { name: 'Mumbai', x: 57.9, y: 194.2 },
-  { name: 'Chennai', x: 127.3, y: 254.2 },
-  { name: 'Kolkata', x: 203.4, y: 159.3 },
-];
-
 export const INDIA_OUTLINE =
   'M54.3 21 L62.8 16 L76.9 14.5 L86.3 18 L96.6 26 L104.1 29 L112.6 25 L121 25.5 L127.6 32 L123.9 42 L119.2 58 L113.5 62 L113.5 71 L120.1 75 L126.7 82 L125.7 96 L136.1 101 L149.2 110 L163.3 111 L175.6 117 L189.7 120 L200 121 L200.9 112 L205.6 104 L208.5 112 L208.5 115.5 L218.8 117 L238.5 116 L235.7 107 L251.7 102 L269.6 92 L280.8 97 L288.4 103 L283.7 111 L273.3 113 L267.7 119 L262 129 L257.3 145 L250.8 152 L247 165 L242.3 162 L240.4 155 L234.8 155.5 L230.1 151 L231 144 L237.6 142 L240.4 138 L235.7 133.5 L218.8 133 L216.9 130 L217.9 125.5 L210.3 124.5 L203.8 122.5 L200.9 129 L200 134 L205.6 142 L207.5 151 L208.5 161 L210.3 168 L202.8 169 L195.3 169 L189.7 174 L185.9 181 L180.3 186 L172.7 191 L166.2 197 L156.8 206 L147.4 215 L139.8 222 L135.1 227 L127.6 231 L125.7 241 L127.6 254 L123.9 264 L122.9 271 L123.4 282 L118.2 284 L118.2 292 L111.6 296 L106.9 300 L101.7 304.2 L97.5 301 L92.8 296 L89.1 286 L85.3 273 L80.6 265 L75.9 256 L72.2 243 L68.4 234 L65.6 226 L61.8 215 L58.1 199 L57.1 189 L57.1 179 L55.2 170 L55.2 162 L50.5 168 L48.7 173 L42.1 177 L34.6 176 L27 170 L21.4 162 L32.7 156 L25.2 156.5 L17.6 153 L13.9 149 L18.6 145 L27 142 L36.4 141 L41.1 139 L36.4 131 L31.7 125 L26.1 119 L31.7 109 L44 105 L53.4 96 L62.8 86 L68.4 81 L73.1 74 L74 69 L76.9 62 L73.1 59 L64.6 53 L63.7 46 L61.8 37 L58.1 31 L54.3 25 Z';
 
-export const kmFromSteps = (steps: number) => (steps * STRIDE_M) / 1000;
+let stride = STRIDE_M;
+
+/**
+ * The stride every distance on the walk uses: the owner's setting when there is one, 0.74 m
+ * otherwise. Set wherever settings are read, so every screen turns steps into the same kilometres.
+ */
+export function setStride(m: number | undefined) {
+  stride = m && m >= 0.3 && m <= 1.5 ? m : STRIDE_M;
+}
+
+export const strideM = () => stride;
+
+/** The one way steps become kilometres on the walk. */
+export const kmFromSteps = (steps: number) => (steps * stride) / 1000;
 
 export interface WalkPosition {
   km: number;
@@ -234,12 +240,6 @@ export function arrivals(stepsByDay: Map<DayKey, number>): { name: string; km: n
     stepsByDay,
     ALL_STOPS.map((s) => ({ name: s.name, km: s.km, chapter: s.chapter })),
   );
-}
-
-/** The first day in each state or territory. */
-export function stateEntries(stepsByDay: Map<DayKey, number>): { name: string; km: number; date: DayKey; ut?: boolean }[] {
-  const seen = new Set<string>();
-  return crossings(stepsByDay, ALL_STATES).filter((s) => !seen.has(s.name) && seen.add(s.name));
 }
 
 /** States and territories reached, each once. */

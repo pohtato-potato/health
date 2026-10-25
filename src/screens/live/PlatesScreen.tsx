@@ -11,7 +11,6 @@ interface Props {
   collar: boolean;
   /** On Ready; `collarTicked` when the collars were checked here. Saved then, so nothing moves while you tick. */
   onGo: (collarTicked: boolean) => void;
-  saver: boolean;
   top?: ReactNode;
 }
 
@@ -22,7 +21,7 @@ export function PlatesScreen(p: Props) {
   const [tight, setTight] = useState(false);
   const blocked = p.collar && !tight;
   return (
-    <LiveFrame state="calm" saver={p.saver} top={p.top}>
+    <LiveFrame state="calm" top={p.top}>
       {p.change && (
         <>
           <h1 className="lv-h1" style={{ marginTop: 24 }}>

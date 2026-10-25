@@ -19,7 +19,6 @@ interface Props {
   onBack: () => void;
   onDiscard: () => void;
   onDone: () => void;
-  saver: boolean;
   rings: [string, string, string];
 }
 
@@ -52,7 +51,7 @@ export function LiveFinale(p: Props) {
   const total = Math.max(1, d.hour.total);
 
   return (
-    <LiveFrame state={state} saver={p.saver} className={`fs-${TINT[page]}`} style={style} scroll>
+    <LiveFrame state={state} className={`fs-${TINT[page]}`} style={style} scroll>
       {/* No dots on the flags page: the page count is only known once the session is saved. */}
       {page !== 'flags' && (
         <div className="lv-steps" role="img" aria-label={`Page ${p.step + 1} of ${pages.length}`}>
@@ -248,13 +247,11 @@ export function LiveFinale(p: Props) {
 
       {page === 'best' && d.best && (
         <div className="lv-record-in">
-          {!p.saver && (
-            <div className="lv-dust" aria-hidden="true">
-              {Array.from({ length: 14 }, (_, i) => (
-                <i key={i} style={{ left: `${(i * 53) % 100}%`, animationDuration: `${6 + (i % 5)}s`, animationDelay: `${(i * 0.7) % 5}s` }} />
-              ))}
-            </div>
-          )}
+          <div className="lv-dust" aria-hidden="true">
+            {Array.from({ length: 14 }, (_, i) => (
+              <i key={i} style={{ left: `${(i * 53) % 100}%`, animationDuration: `${6 + (i % 5)}s`, animationDelay: `${(i * 0.7) % 5}s` }} />
+            ))}
+          </div>
           <div className="lv-kicker gold">Tonight's best</div>
           <div className="lv-bloom num tn" style={{ fontSize: 120 }}>
             {d.best.big}

@@ -167,7 +167,7 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
           <SleepWheel label="Asleep" value={asleep} hint={lastSleep?.asleep ?? 23 * 60} from={19 * 60} to={29 * 60} onChange={editAsleep} />
           <SleepWheel label="Woke" value={woke} hint={lastSleep?.woke ?? 7 * 60} from={4 * 60} to={13 * 60} onChange={editWoke} />
         </div>
-        <div className="row" style={{ gap: 10 }}>
+        <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
           <span className="t13 q tn" style={{ whiteSpace: 'nowrap' }}>
             {sleepLen !== undefined ? `${fmtDuration(sleepLen)} · how rested` : 'How rested'}
           </span>
@@ -194,7 +194,7 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
       )}
 
       <div className="panel col gap10">
-        <button type="button" className="row" aria-expanded={more} onClick={() => setMore(!more)} style={{ minHeight: 40 }}>
+        <button type="button" className="row tap44" aria-expanded={more} onClick={() => setMore(!more)} style={{ minHeight: 40 }}>
           <span className="t15">Energy, stomach, soreness</span>
           <span className="t12 q">{energy !== undefined || stomach !== undefined || Object.keys(sore).length ? 'answered' : '3 quick taps'}</span>
         </button>

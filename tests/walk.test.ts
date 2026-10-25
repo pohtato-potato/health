@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_STATES, ALL_STOPS, CHAPTERS, CITIES, PLACE_COUNT, POSTCARDS, QUAD_DONE_KM, STATE_COUNT, TOTAL_KM, arrivals, chapterAt, positionAt, stateEntries, statesReached } from '../src/domain/walk';
+import { ALL_STATES, ALL_STOPS, CHAPTERS, CITIES, PLACE_COUNT, POSTCARDS, QUAD_DONE_KM, STATE_COUNT, TOTAL_KM, arrivals, chapterAt, positionAt, statesReached } from '../src/domain/walk';
 
 describe('the walk across India', () => {
   it('covers all 28 states and 8 union territories exactly once', () => {
@@ -41,7 +41,5 @@ describe('the walk across India', () => {
     for (let i = 0; i < 250; i++) steps.set(new Date(d0.getTime() + i * 86_400_000).toISOString().slice(0, 10), 20000);
     const a = arrivals(steps);
     expect(a.some((x) => x.name === 'Chennai' && x.chapter === 2)).toBe(true);
-    const s = stateEntries(steps);
-    expect(new Set(s.map((x) => x.name)).size).toBe(s.length);
   });
 });

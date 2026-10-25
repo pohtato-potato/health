@@ -7,7 +7,7 @@ import { findExercise, groupExercises, isSuperset, topOfRange } from './plan';
 import { triggerMet } from './progression';
 import { targetsOn } from './rings';
 import type { SetEntry, Settings } from './types';
-import { QUAD_DONE_KM, STRIDE_M, statesReached } from './walk';
+import { QUAD_DONE_KM, kmFromSteps, statesReached } from './walk';
 
 export type Category = 'start' | 'steps' | 'india' | 'training' | 'strength' | 'food' | 'water' | 'sleep' | 'body' | 'streaks' | 'nights' | 'joints' | 'data' | 'secret';
 export type Tier = 'b' | 's' | 'g' | 'p';
@@ -174,7 +174,7 @@ a('steps', 'Personal best', 'Beat your best-ever step day.', 's', (s) => {
 });
 a('steps', 'Ten lakh club', 'Walk 10,00,000 steps in total.', 's', (s) => s.totalSteps >= 1e6, { progress: (s) => [s.totalSteps, 1e6] });
 a('steps', 'Naatu Naatu', 'Walk 25,000 steps in a day. The feet are dancing now.', 'g', (s) => stepDays(s).some((d) => d.steps! >= 25000));
-a('steps', 'Half marathon', 'Walk 21.1 km in a single day.', 'g', (s) => stepDays(s).some((d) => d.steps! * STRIDE_M >= 21100));
+a('steps', 'Half marathon', 'Walk 21.1 km in a single day.', 'g', (s) => stepDays(s).some((d) => kmFromSteps(d.steps!) >= 21.1));
 a('steps', '400K club', 'Walk 4,00,000 steps in one calendar month.', 'g', (s) =>
   [...byMonth(s.daily).values()].some((ds) => ds.reduce((n, d) => n + (d.steps ?? 0), 0) >= 4e5),
 );
@@ -224,7 +224,7 @@ a(
   'india',
   'Around the world',
   (s) => {
-    const perDay = (stepDays(s).slice(-30).reduce((n, d) => n + d.steps!, 0) * STRIDE_M) / 1000 / Math.max(1, Math.min(30, stepDays(s).length));
+    const perDay = kmFromSteps(stepDays(s).slice(-30).reduce((n, d) => n + d.steps!, 0)) / Math.max(1, Math.min(30, stepDays(s).length));
     const years = perDay > 0 ? Math.round((40075 - s.km) / perDay / 365) : 0;
     return `Walk 40,075 km in total.${years > 0 ? ` Expected arrival: about ${years} years from now.` : ''}`;
   },

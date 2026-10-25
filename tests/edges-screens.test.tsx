@@ -8,7 +8,7 @@ const blocks = [
   { kg: 5, items: [{ name: 'Lateral raise', light: false }] },
 ];
 const before = (p: Partial<Parameters<typeof BeforeScreen>[0]> = {}) =>
-  renderToStaticMarkup(<BeforeScreen name="Session C" usual={{ min: 92, fromHistory: true }} startedAt={0} blocks={blocks} changes={1} legs onSoreness={noop} warmup="Arm circles" onStart={noop} saver={false} {...p} />);
+  renderToStaticMarkup(<BeforeScreen name="Session C" usual={{ min: 92, fromHistory: true }} startedAt={0} blocks={blocks} changes={1} legs onSoreness={noop} warmup="Arm circles" onStart={noop} {...p} />);
 
 describe('before the session', () => {
   it('says how long it usually takes', () => {
@@ -40,7 +40,7 @@ import type { ExerciseDef } from '../src/domain/plan';
 
 const row: ExerciseDef = { id: 'lean-lateral', order: '4', name: 'Lean-away lateral raise', sets: 3, reps: [12, 20], load: 'pair', perSide: true, lead: 'L', leadWhy: 'the smaller left side leads', guide: { setup: 'Hold the door frame.', movement: 'Raise to shoulder height.', breathing: '', faults: [], feel: 'Side of the shoulder.', stop: '', progress: '' } };
 const guide = (p: Partial<Parameters<typeof GuideScreen>[0]> = {}) =>
-  renderToStaticMarkup(<GuideScreen ex={row} name={row.name} kg={5} lead="L" tempo={false} setup={{ text: 'Door frame, left hand', from: '2026-10-21' }} onSetup={noop} checks={[]} onGo={noop} saver={false} {...p} />);
+  renderToStaticMarkup(<GuideScreen ex={row} name={row.name} kg={5} lead="L" tempo={false} setup={{ text: 'Door frame, left hand', from: '2026-10-21' }} onSetup={noop} checks={[]} onGo={noop} {...p} />);
 
 describe('the guide before the first set', () => {
   it('names the lead side and why', () => {
@@ -64,7 +64,7 @@ describe('the guide before the first set', () => {
 
 describe('a note from the rest screen', () => {
   const rest = (note?: string) =>
-    renderToStaticMarkup(<RestLive endsAt={60_000} total={90} now={0} from="in" just={[]} next={null} onMore={noop} onReady={noop} saver={false} rings={['#111111', '#222222', '#333333']} note={note} onNote={noop} />);
+    renderToStaticMarkup(<RestLive endsAt={60_000} total={90} now={0} from="in" just={[]} next={null} onMore={noop} onReady={noop} rings={['#111111', '#222222', '#333333']} note={note} onNote={noop} />);
   it('shows the note kept', () => expect(rest('Elbow ached on set 3')).toContain('Note: Elbow ached on set 3'));
   it('offers one when there is none', () => expect(rest()).toContain('+ Note on this exercise'));
 });
@@ -73,7 +73,7 @@ import { PlatesScreen } from '../src/screens/live/PlatesScreen';
 
 describe('the plate change', () => {
   const plates = (p: Partial<Parameters<typeof PlatesScreen>[0]> = {}) =>
-    renderToStaticMarkup(<PlatesScreen change={{ from: 10, to: 5 }} forNames={['Skull crusher', 'Floor fly']} collar={false} onGo={noop} saver={false} {...p} />);
+    renderToStaticMarkup(<PlatesScreen change={{ from: 10, to: 5 }} forNames={['Skull crusher', 'Floor fly']} collar={false} onGo={noop} {...p} />);
   it('shows the change and who it is for', () => {
     const h = plates();
     expect(h).toMatch(/10 kg[\s\S]*→[\s\S]*5 kg/);
@@ -97,15 +97,10 @@ import { SessionLook, SetsLook } from '../src/screens/live/QuickLooks';
 
 describe('the record moment', () => {
   const rec = (p: Partial<Parameters<typeof RecordScreen>[0]> = {}) =>
-    renderToStaticMarkup(<RecordScreen name="Romanian deadlift" kg={10} value="19" was={{ value: '18', date: '2026-10-03' }} onGo={noop} saver={false} {...p} />);
+    renderToStaticMarkup(<RecordScreen name="Romanian deadlift" kg={10} value="19" was={{ value: '18', date: '2026-10-03' }} onGo={noop} {...p} />);
   it('names the old best and when', () => expect(rec()).toContain('Your best was 18, on 3 Oct.'));
   it('is gold', () => expect(rec()).toMatch(/class="lv [^"]*st-record/));
   it('names the song when known', () => expect(rec({ song: 'Midnight City · M83' })).toContain('Midnight City · M83'));
-  it('is still in battery saver', () => {
-    const h = rec({ saver: true });
-    expect(h).not.toContain('blob');
-    expect(h).not.toContain('lv-dust');
-  });
 });
 
 describe('quick looks', () => {

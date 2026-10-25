@@ -1,0 +1,171 @@
+import type { RouteDef } from '../types';
+
+/**
+ * Subhas Chandra Bose's escape, January 1941: out of house arrest in Calcutta, across India by night train in disguise,
+ * over the frontier to Kabul. The dates are firm; parts of the route are disputed, and the pages say so.
+ */
+export const bose: RouteDef = {
+  id: 'bose',
+  name: 'Bose’s great escape',
+  era: '1941',
+  hook: 'Out of house arrest in Calcutta, in disguise, across India and over the frontier to Kabul.',
+  group: 'india',
+  km: 2731,
+  record: 'estimated',
+  region: 'india',
+  ink: '#e8968a',
+  places: [
+    { name: 'Elgin Road', km: 0, at: 0, label: true },
+    { name: 'Bardhaman', km: 103, at: 1 },
+    { name: 'Gomoh', km: 314, at: 2, label: true },
+    { name: 'Gaya', km: 488, at: 3 },
+    { name: 'Mughalsarai', km: 709, at: 4 },
+    { name: 'Allahabad', km: 853, at: 5 },
+    { name: 'Kanpur', km: 1065, at: 6 },
+    { name: 'Delhi', km: 1504, at: 7, label: true },
+    { name: 'Ambala', km: 1724, at: 8 },
+    { name: 'Lahore', km: 2023, at: 9 },
+    { name: 'Rawalpindi', km: 2312, at: 10 },
+    { name: 'Peshawar', km: 2472, at: 11, label: true },
+    { name: 'Jalalabad', km: 2600, at: 12 },
+    { name: 'Kabul', km: 2731, at: 13, label: true },
+  ],
+  signature: {
+    title: 'The escape, step by step',
+    note: 'Each stage of the escape, from the bedroom in Calcutta to the bazaar in Kabul.',
+    mark: 'walker',
+    marks: [
+      { km: 1, name: 'Out of the house at night' },
+      { km: 103, name: 'Burdwan, by one account' },
+      { km: 314, name: 'Gomoh, by another' },
+      { km: 1504, name: 'Through Delhi by train' },
+      { km: 2472, name: 'Peshawar, the frontier guide' },
+      { km: 2600, name: 'Over the hills on foot' },
+      { km: 2731, name: 'Kabul' },
+    ],
+  },
+  pages: [
+    {
+      km: 0,
+      title: 'Elgin Road',
+      line: 'In the night, Bose slips out of his house in Calcutta, watched by the police.',
+      page: [
+        'In late 1940 Subhas Chandra Bose was held under house arrest at his family home on Elgin Road, watched by the police. He had grown a beard and stayed in his room, seeing no one.',
+        'On the night of 16 to 17 January 1941 he left the house in disguise as a Muslim gentleman, and was driven away in the family’s Wanderer car.',
+      ],
+      deeper: {
+        title: 'Bose and Gandhi',
+        text: 'Bose was elected Congress president in 1938 and again in 1939, the second time against Gandhi’s preferred candidate, Pattabhi Sitaramayya. Gandhi took the defeat personally, the Working Committee would not cooperate, and Bose resigned within months. He founded the Forward Bloc on the left of Congress. The two men differed on means, Gandhi insisting on non-violence and Bose willing to use force, and on what free India should be. When the Second World War began, Bose wanted to use Britain’s difficulty to win independence at once, with help from Britain’s enemies if need be.',
+      },
+    },
+    {
+      km: 103,
+      title: 'Burdwan or Gomoh',
+      line: 'Which station did he board at? The accounts disagree.',
+      page: [
+        'The usual account, from his nephew Sisir Kumar Bose who drove him, has them driving through the night to Sisir’s brother’s house near Dhanbad. The next night Bose caught the Kalka Mail at Gomoh.',
+        'The researcher Jayanta Chowdhury argues, against most accounts, that a friend drove him to Burdwan, where he boarded the Frontier Mail. This walk passes both.',
+      ],
+    },
+    {
+      km: 314,
+      title: 'Gomoh',
+      line: 'At Gomoh, by the usual account, Bose boards the train west.',
+      page: ['Gomoh was a railway junction on the line to the northwest. Its station is now named after Bose.'],
+    },
+    {
+      km: 500,
+      title: 'Mohammed Ziauddin',
+      line: 'On the night train, a man called Mohammed Ziauddin.',
+      page: ['He travelled as Mohammed Ziauddin, an insurance agent, on the long train to the northwest. Nobody on the train recognised one of the most famous politicians in India.'],
+    },
+    {
+      km: 714,
+      title: 'A country at war',
+      line: 'India is at war, without having been asked.',
+      page: ['In September 1939 the Viceroy had declared India at war with Germany without consulting any Indian leader. Congress ministries resigned in protest, and Bose saw the war as the moment to strike.'],
+    },
+    {
+      km: 1045,
+      title: 'Across the plains',
+      line: 'West across the plains, through the day.',
+      page: ['The train ran on by Gaya and Mughalsarai through the Gangetic plain. Behind him in Calcutta his family kept up the pretence that he was still in his room.'],
+    },
+    {
+      km: 1300,
+      title: 'The police find out',
+      line: 'Days later, Calcutta discovers he is gone.',
+      page: ['The escape was discovered only around 26 January, when he failed to appear in court. By then he was already on the frontier. It was one of the British intelligence services’ most embarrassing failures.'],
+    },
+    {
+      km: 1504,
+      title: 'Delhi',
+      line: 'Through Delhi, and on towards the Punjab.',
+      page: ['From Delhi the line ran northwest through the Punjab to Peshawar, the railway’s last city before the mountains.'],
+    },
+    {
+      km: 1724,
+      title: 'The Punjab',
+      line: 'Through the Punjab towards the frontier.',
+      page: ['The trains of the northwest carried soldiers, officials and traders the length of the Punjab. Which train he took is part of the dispute; a bearded passenger in a fez attracted no notice on any of them.'],
+    },
+    {
+      km: 2023,
+      title: 'Lahore',
+      line: 'Lahore, and the last stretch to Peshawar.',
+      page: ['Beyond Lahore the line crossed the rivers of the Punjab, the Ravi, the Chenab and the Jhelum, and climbed towards the Indus at Attock.'],
+    },
+    {
+      km: 2312,
+      title: 'Towards the frontier',
+      line: 'Past Rawalpindi, the hills close in.',
+      page: ['The North-West Frontier Province was a land of tribal areas the British never fully controlled. That was what made the crossing possible.'],
+    },
+    {
+      km: 2472,
+      title: 'Peshawar',
+      line: 'At Peshawar, a guide, and a new disguise.',
+      page: [
+        'At Peshawar Bose was met by local helpers, among them Bhagat Ram Talwar, who would guide him to Kabul. Unknown to Bose, Talwar later worked as a Soviet agent, and then for the British too.',
+        'Bose could not speak Pashto, so he was to play a deaf and dumb tribesman.',
+      ],
+    },
+    {
+      km: 2600,
+      title: 'Over the hills',
+      line: 'On foot and by lorry, over the hills into Afghanistan.',
+      page: ['From about 26 January they went on foot and by lorry through the tribal country and over the border into Afghanistan, then down to Jalalabad and up to Kabul.'],
+    },
+    {
+      km: 2731,
+      title: 'Kabul',
+      line: 'In Kabul, weeks of waiting for a way out.',
+      page: [
+        'In Kabul Bose hid for weeks with the help of an Indian trader, trying to get the Soviet and German legations to help him. In the end the Italians gave him a passport in the name of Orlando Mazzotta.',
+        'In March he travelled through Soviet Central Asia to Moscow, and by early April 1941 he was in Berlin.',
+      ],
+      deeper: {
+        title: 'The Axis gamble',
+        text: 'In Berlin Bose set up the Free India Centre and a small Indian Legion recruited from prisoners of war. He met Hitler once, in 1942, without getting the commitment he wanted. In 1943 a German submarine took him to Japanese-held Asia, where he led the Indian National Army against the British in Burma. Historians still argue over his choice of allies. To some he was a patriot who used the only help on offer; to others he made common cause with regimes guilty of terrible crimes. Few dispute that the INA trials after the war helped shake British confidence that the Indian Army would stay loyal.',
+      },
+    },
+  ],
+  chronicle: [
+    { when: '1938', place: 'Haripura', text: 'Bose becomes Congress president.' },
+    { when: '1939', place: 'Tripuri', text: 'Re-elected against Gandhi’s candidate, then resigns.' },
+    { when: 'September 1939', place: 'Delhi', text: 'India is declared at war without its leaders being asked.' },
+    { when: '16–17 January 1941', place: 'Calcutta', text: 'Bose escapes from house arrest.' },
+    { when: 'About 26 January', place: 'Peshawar', text: 'Sets off over the frontier; the escape is discovered.' },
+    { when: 'March 1941', place: 'Kabul', text: 'Leaves on an Italian passport.' },
+    { when: 'Early April 1941', place: 'Berlin', text: 'Reaches Germany.' },
+  ],
+  sources: [
+    { title: 'Wikipedia: Subhas Chandra Bose', url: 'https://en.wikipedia.org/wiki/Subhas_Chandra_Bose' },
+    { title: 'Wikipedia: Sisir Kumar Bose', url: 'https://en.wikipedia.org/wiki/Sisir_Kumar_Bose' },
+    { title: 'Wikipedia: Bhagat Ram Talwar', url: 'https://en.wikipedia.org/wiki/Bhagat_Ram_Talwar' },
+    { title: 'Morung Express: researcher shares Netaji’s great escape route', url: 'https://morungexpress.com/researcher-shares-netajis-great-escape-route' },
+    { title: 'India Heritage: how Bose escaped the city', url: 'https://indiaheritage.in/netaji-bose-how-kolkatas-favorite-son-escaped-the-city/' },
+    { title: 'The Daily Star: the great escape', url: 'https://archive.thedailystar.net/magazine/2005/02/04/retro.htm' },
+  ],
+  ready: true,
+};

@@ -26,12 +26,6 @@ export function restSpans(startedAt: number, endedAt: number, rests: { from: num
   return out;
 }
 
-/** Battery saver: below 30 % when the browser reports it, or switched on by hand. */
-export const LOW_BATTERY = 0.3;
-export function batteryMode(level: number | undefined, manual: boolean): boolean {
-  return manual || (level !== undefined && level < LOW_BATTERY);
-}
-
 export interface ActiveRest {
   from: number;
   endsAt: number;

@@ -1,3 +1,4 @@
+import { RegionFrame } from '../ui/live/RegionFrame';
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { addDays, atOn, parseDay } from '../domain/dates';
 import { fmtDayLong, fmtInt, fmtTime } from '../domain/format';
@@ -30,7 +31,7 @@ export function CloseDay() {
   const [closed, setClosed] = useState(false);
   const [showDraft, setShowDraft] = useState(false);
   const today = useToday();
-  if (!settings || !days || !entries || !history || !sessions) return <div className="page" />;
+  if (!settings || !days || !entries || !history || !sessions) return <RegionFrame />;
 
   const dayMap = new Map(days.map((d) => [d.date, d]));
   const day = dayMap.get(date);
@@ -50,7 +51,7 @@ export function CloseDay() {
   const weekdayName = WEEKDAYS[parseDay(date).getDay()];
   const isToday = date === today;
   return (
-    <div className="page" style={{ paddingBottom: 'calc(40px + var(--safe-bottom))' }}>
+    <RegionFrame style={{ paddingBottom: 'calc(40px + var(--safe-bottom))' }}>
       <button type="button" className="backlink" onClick={() => back('/today')}>
         <Icon name="left" size={20} stroke={1.8} />
         Back
@@ -152,7 +153,7 @@ export function CloseDay() {
         </button>
       )}
       <div className="t12 q center lh">Closing says everything eaten is in, so averages count it as a full day.</div>
-    </div>
+    </RegionFrame>
   );
 }
 
@@ -259,7 +260,7 @@ function MealBoard({ date, entries, times }: { date: string; entries: FoodEntry[
                   >
                     <Icon name="more" size={18} color="var(--dim)" />
                   </button>
-                  <button type="button" className="col gap2 grow" style={{ textAlign: 'left', minWidth: 0 }} onClick={() => openSheet('entry', { id: e.id })}>
+                  <button type="button" className="col gap2 grow tap44" style={{ textAlign: 'left', minWidth: 0 }} onClick={() => openSheet('entry', { id: e.id })}>
                     <span className="t15">{e.name}</span>
                     <span className="t12 q">{e.portion}</span>
                   </button>

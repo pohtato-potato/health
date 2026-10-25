@@ -165,7 +165,7 @@ The app is lit by where you are on the walk and the hour. Everything sits on a d
 
 Numbers and titles speak in a light, optical-size serif (Fraunces); everything you operate speaks in a quiet sans (DM Sans); clocks, wheels and receipts speak in a mono (DM Mono). The serif is the voice of the data, which is why counts are set at weight 300 with lining figures and line-height 1.
 
-The world has a second register for celebration: full-screen moments, story cards, the monthly film, a paper receipt, postcards from the walk and a split-flap departures board. These step outside the card grammar on purpose, but they draw from the same inks and the same serif. After 11 pm the whole palette dims and warms; theme days (festivals, sky, nerdy and personal dates) repaint the ground and accents for one day.
+The world has a second register for celebration: full-screen moments, story cards, the monthly film, a paper receipt, postcards from the walk and a split-flap departures board. These step outside the card grammar on purpose, but they draw from the same inks and the same serif. Theme days (festivals, sky, nerdy and personal dates) repaint the ground and accents for one day.
 
 **Key Characteristics:**
 - Deep indigo night ground with tonal layering and hairline borders; shadows only on things that float.
@@ -173,7 +173,7 @@ The world has a second register for celebration: full-screen moments, story card
 - Metric inks with fixed meaning; gold reserved for records and moments.
 - Every tappable control is a full pill or a softly rounded tile, at least 44px tall.
 - One phone column, 480px wide at most, with safe-area padding top and bottom.
-- Motion that settles (expo-out), all of it switched off under reduced motion and in battery saver.
+- Motion that settles (expo-out). There are no reduced-motion or battery-saver variants, at the owner's request (25 Oct 2026).
 
 ## Colors
 
@@ -211,7 +211,6 @@ Soft, dusty inks on deep indigo: nothing saturated, nothing pure white, every ac
 
 **The Earned Gold Rule.** Gold marks something the owner did: a record, a moment, a milestone, a seasonal day. It is never decoration on an ordinary card.
 
-**The Night Dims Rule.** After 11 pm the night palette replaces the ground and accents with dimmer, warmer values, the tab bar drops to 60% opacity, and night overrides any theme day.
 
 ## Typography
 
@@ -289,7 +288,10 @@ Soft and round. Controls are full pills whose radius is half their height (48px 
 - **Back link:** quiet text with a chevron, 44px tall.
 
 ### Sheets
-Bottom sheets rise from a 72% scrim, surface background, 28px top corners, a 40 by 4px grabber, and a scrolling body with 14px gaps. Tall sheets fill the screen less 56px.
+Bottom sheets rise from a 72% scrim, 28px top corners, a 40 by 4px grabber, and a scrolling body with 14px gaps. Tall sheets fill the screen less 56px.
+- **A solid tint of the land:** every sheet, on every tab, is the region's colour mixed into the night (34% of `--region-a` into `#0c0e1d`, set on the root by `RegionRoot` from where the walk is). Never see-through: the magnifier needs a steady ground.
+- **Glass inside:** cards, tiles, fields, segmented controls, food chips and the search are the Walk glass (`#0c0e1d` at 50%) with the 18% text hairline; row rules use the same edge, bar tracks and control edges the text's own colour. All of it lives in `src/styles/region.css`, by redefining the surface tokens inside `.sheet`.
+- **The + sheet** follows Today's order (`LogSheetLayout`): Log anything, "Your usual {meal}" chips (one tap adds the food at its usual portion, with an Undo toast, through the same `useAddUsual` as Today), the tiles, then More.
 
 ### Toasts
 Raised pill-cornered panels (20px) at the top of the screen with the float shadow, an optional action, and gold, sage or lavender washes for celebratory kinds.
@@ -301,7 +303,31 @@ The app's pickers. The wheel is a snapping mono column with a lens of two button
 A 56px raised pill docked at the bottom during a session: a blue wash fills left to right as the rest runs, the time sits in 24px, and an end button sits inside.
 
 ### Walk Band
-A 250px illustrated scene of the current stop, layered far to near in the region's four inks and lit by the part of the day (dawn, day, dusk, night), with the place name in 28px serif over a soft text shadow.
+The older side-on scene (`WalkScene`): the current stop layered far to near in the region's four inks and lit by the part of the day. It is still used on the road pages. The Walk tab uses the painted vista below; Today and the arrivals use the place scene (`src/walk/art/scene.tsx`).
+
+### Walk Tab
+- **The scene:** the painted vista (`src/walk/art/vista.tsx`): one road running to the horizon with the walker at road scale and today's piece of road in sage. It is drawn for 9 regions × 4 hours, with the moon at its phase and meteor showers. It runs edge to edge at 360:216 and fades into the page.
+- **The milestone:** a cream stone on the road's left shoulder, the next stop in Hindi on its cap and the whole km left below.
+- **Colour:** every Walk page sits on the aurora tinted by its region (`auroraFor` in `src/walk/page.ts`: plum over the ravines, sea blue on the coast, green in the ghats). Route pages take the route's ink (`auroraForInk`). Never brown, never gold.
+- **Title:** the stretch's storybook name in serif (a button to its long page, underlined by a soft hairline), with the plain route and the day of the stretch under it. With no stretch: "Near X" within 20 km, else "Between X and Y".
+- **Glass surfaces:** cards, doors and the place and status pill are the Walk glass (`#0c0e1d` at 50%) with an 18% text hairline. The one primary action ("Choose a walk") is a cream pill.
+- **Status lines:** up to three short lines (an arrival, a small stop, a person met, a rest day, the sky), then tomorrow's line. The block keeps three lines' height so the page never jumps.
+
+### Today
+- **Varied blocks, not a stack of cards:** only the moment card is a card. The walk, the line, the rings and Next up sit straight on the page, each in its own form.
+- **Walk on Today:** the place itself, drawn as the arrival's welcome draws it (`Scene`: the fort at Gwalior, the Taj at Agra), every day and lit for the hour. The nearer of the place behind and the place ahead, preferring one that has its drawing. The caption sits under the picture, in the fade: date, place and status (14px), the Walk tab's title (28px serif), and one walk line (an arrival, a small stop, a rest day, the sky, tomorrow, else the milestone's km). On an arrival day the city's passport stamp sits tilted on the sky until midnight. Tapping opens the Walk tab.
+- **Colour:** Today sits on the aurora tinted by the walk's region, and its surfaces are the Walk glass with a hairline.
+- **The day's glow:** how the day went fills half the field (the `b2` blob at 0.8) with the session's own deep colour, its light low in the field: green (`#1a8f6a`, light `#bfe8d4`) after a session in range, gold (`#8a6420`, light `#f6cf72`) after a record night or on a perfect day, none on an ordinary day. `dayGlow` in `src/domain/dayGlow.ts` decides (perfect, then record, then in range); Today and the Train tab both use it. A quarter dim and a brighter quiet keep text on the glow at AA. The whole screen changes colour only in a live session (`st-*`) and in full-screen moments.
+
+### Region Frame
+The pages Today opens (Food, Close the day, Readiness, the weekly recap, Check-in) opt in with `RegionFrame` (`src/ui/live/RegionFrame.tsx`): the region's aurora as a fixed layer behind the page, the page's own layout unchanged on top. Inside, cards, panels, lists and fields are the Walk glass and every rule the glass edge. On the land, quiet and dim text are a step lighter (`#c4c1cf`, `#aeabbd`) to keep 4.5:1 on the plum of the ravines, the brightest ground. The weekly receipt stays paper.
+- **Banner slot:** one banner at a time, a line between two hairlines with a 44px action and a 44px dismiss that lasts the log day.
+- **The line:** the day's headline in 26px serif, the time trailing it in 14px; the voice in italic only at moments, gold on a perfect day.
+- **Rings:** the drawing, and beside it only the numbers (34px serif in each ring's ink) with a 14px unit. The target and its action appear on tap.
+- **Moment card:** the one lit card (22px radius, soft offset shadow); gold border and button on a perfect day.
+- **Next up strip:** between two hairlines like a departures row; a record night turns it into the gold records strip.
+- **Logging below the fold:** usual-food chips, Log anything, meal tiles (kcal on one line, protein on its own), press-and-hold checklist chips.
+- **Drawer handle:** a pill above the tab bar showing readiness, protein and Close the day; it opens the drawer.
 
 ### Moments and Stories
 Full-screen celebrations on deep night with a centred serif title (36 to 44px), a quiet detail line, one voice line, and a large primary button. Backdrops (bloom, rays, bursts, rings, confetti) use the metric inks and gold. Stories and the monthly film use progress bars of 3px segments and tap zones to advance.
@@ -310,9 +336,9 @@ Full-screen celebrations on deep night with a centred serif title (36 to 44px), 
 The weekly receipt (mono on paper with a torn edge) and walk postcards (tilted paper cards) are the only light surfaces, each with the paper shadow.
 
 ### Named Rules
-**The Pill Rule.** Every tappable control is a pill or a rounded tile, and nothing tappable is shorter than 44px.
+**The Pill Rule.** Every tappable control is a pill or a rounded tile, and nothing tappable is shorter than 44px. A control drawn smaller grows its tap area with an invisible centred `::after` of at least 44 by 44px (`.tap44` for one-off buttons; `.chip.sm`, `.tool`, `.seg button` and `.grip` have it built in).
 
-**The Settle Rule.** Things arrive and settle: sheets rise in 0.24s on cubic-bezier(0.2, 0.8, 0.2, 1), toasts drop in 0.25s on the same curve, moments and stories ease in on cubic-bezier(0.16, 1, 0.3, 1), scrims fade in 0.18s. Under reduced motion every animation and transition is removed; battery saver goes true black and stops all motion.
+**The Settle Rule.** Things arrive and settle: sheets rise in 0.24s on cubic-bezier(0.2, 0.8, 0.2, 1), toasts drop in 0.25s on the same curve, moments and stories ease in on cubic-bezier(0.16, 1, 0.3, 1), scrims fade in 0.18s.
 
 ## Do's and Don'ts
 
@@ -321,7 +347,6 @@ The weekly receipt (mono on paper with a torn edge) and walk postcards (tilted p
 - **Do** bind a metric's colour to its metric token so theme days and night mode cannot change its meaning.
 - **Do** set result numbers in Fraunces 300 with lining figures, and entered or running numbers with tabular figures.
 - **Do** keep every tappable target at least 44px tall and shape it as a pill or rounded tile.
-- **Do** give every new animation a reduced-motion off switch, and keep it still in battery saver.
 - **Do** use the blue 2px outline (offset 2px) as the system focus ring, and the gold ring on custom instruments (wheel, dial, check, body map).
 - **Do** keep text at WCAG AA: moon text, quiet and dim pass on every surface; faint is for borders, locked states and large text only.
 

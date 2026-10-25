@@ -43,28 +43,6 @@
   color-scheme: dark;
 }
 
-/* After 11 pm: dimmer, warmer, quieter. */
-:root.night {
-  --ink: #09080b;
-  --deep: #050406;
-  --tabbar: #0b0a0e;
-  --surface: #121016;
-  --raised: #17151c;
-  --hairline: #221e26;
-  --divider: #1a171e;
-  --track: #1f1c24;
-  --btn-border: #2c2831;
-  --text: #d8cfc3;
-  --quiet: #8e857d;
-  --dim: #7a726b;
-  --voice: #b8aea3;
-  --apricot: #c99173;
-  --lavender: #9d90cc;
-  --sage: #7fae99;
-  --blue: #8e95c9;
-  --pearl: #b2bfc9;
-}
-
 *,
 *::before,
 *::after {
@@ -230,6 +208,9 @@ button:disabled {
 }
 .gold {
   color: var(--gold);
+}
+.apricot {
+  color: var(--apricot);
 }
 .center {
   text-align: center;
@@ -485,7 +466,11 @@ button.card:active {
 .chip.sm::after {
   content: '';
   position: absolute;
-  inset: -4px 0;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
 }
 .tool {
   height: 40px;
@@ -981,12 +966,6 @@ textarea.field {
   animation: fade 0.3s ease-out;
   overflow-y: auto;
 }
-:root.night .moment {
-  background: #09080b;
-}
-:root.night .tabbar {
-  opacity: 0.6;
-}
 .moment-body {
   flex: 1;
   width: 100%;
@@ -1078,22 +1057,6 @@ textarea.field {
   animation: ping 2.2s ease-out infinite;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .cf,
-  .ping,
-  .glow,
-  .tw,
-  .jig,
-  .resume .dot {
-    animation: none;
-  }
-  .sheet,
-  .toast,
-  .scrim,
-  .moment {
-    animation: none;
-  }
-}
 
 /* The weekly receipt: the one light moment in a dark app */
 .receipt {
@@ -1754,11 +1717,6 @@ textarea.field {
     opacity: 1;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .season .flame {
-    animation: none;
-  }
-}
 .theme-swatch {
   display: flex;
   width: 44px;
@@ -1829,11 +1787,6 @@ textarea.field {
 @keyframes blink {
   50% {
     opacity: 0.35;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .blink {
-    animation: none;
   }
 }
 

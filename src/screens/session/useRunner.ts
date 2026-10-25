@@ -26,8 +26,7 @@ import { setLastSetAt, setRestRunning } from '../../state/restState';
 import { useNow } from '../../db/hooks';
 import { go } from '../../router';
 import { useToast } from '../../ui/Toasts';
-import { useBatteryLevel } from '../../ui/RestScreen';
-import { batteryMode, resumeRest, type ActiveRest } from '../../domain/rest';
+import { resumeRest, type ActiveRest } from '../../domain/rest';
 import { prefOn } from '../../domain/types';
 import { askConfirm } from '../../ui/Confirm';
 import { fmtDayMonth } from '../../domain/format';
@@ -83,9 +82,6 @@ export function useRunner(session: TrainingSession, settings: Settings, plan: Pl
     setRestState(r);
     void patchSession(session.id, { activeRest: r });
   };
-  const [restHidden, setRestHidden] = useState(false);
-  const level = useBatteryLevel();
-  const saver = batteryMode(level, !!settings.prefs.batterySaver);
   const [watch, setWatch] = useState<{ key: string; startedAt: number } | null>(null);
   const [swapFor, setSwapFor] = useState<string | null>(null);
   const [coach, setCoach] = useState<string | null>(null);
@@ -139,7 +135,6 @@ export function useRunner(session: TrainingSession, settings: Settings, plan: Pl
     if (rest) logRest(rest);
     const endsAt = Date.now() + sec * 1000;
     setRest({ from: Date.now(), endsAt, total: sec });
-    setRestHidden(false);
     if (settings.prefs.ding) cancelDing.current = scheduleDing(sec);
     buzzTimer.current = window.setTimeout(() => buzz([90, 70, 90]), sec * 1000);
   };
@@ -285,7 +280,7 @@ export function useRunner(session: TrainingSession, settings: Settings, plan: Pl
       void patchSession(session.id, { restWhy: longest.why });
       startRest(longest.sec);
     } else if (after === 'glide') {
-      window.setTimeout(() => document.getElementById(`row-${next.key}`)?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' }), 120);
+      window.setTimeout(() => document.getElementById(`row-${next.key}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 120);
     }
   };
 
@@ -338,7 +333,7 @@ export function useRunner(session: TrainingSession, settings: Settings, plan: Pl
 
   return {
     toast, now, exs, groups, mine, history, statuses, extra, setExtra, groupRows, complete, gi, setGi, editing, setEditing, draft, setDraft,
-    rest, restHidden, setRestHidden, level, saver, watch, setWatch, swapFor, setSwapFor, coach, setCoach, group, rows, current, activeKey,
+    rest, watch, setWatch, swapFor, setSwapFor, coach, setCoach, group, rows, current, activeKey,
     startRest, extendRest, stopRest, defaults, kgEditable, save, afterRow, skip, undoSkip, remove, toggleTempo, finish, def, firstIdx, restLeft,
     nextGroup, groupDone, tired, offerFor, answer, saveCounter };
 }

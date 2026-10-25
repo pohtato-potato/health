@@ -8,6 +8,10 @@ import { constellationFor, skyStars } from '../domain/nightSky';
 import { dayRings } from '../state/derived';
 import { lastMonth, monthlyFilm, strongestWeek, surpriseRecord, type FilmSlide } from '../domain/film';
 import { back, go, useRoute } from '../router';
+import { positionAt } from '../domain/walk';
+import { stepsByDay } from '../walk/runs';
+import { monthTrail } from '../walk/trail';
+import { TrailDrawing } from '../walk/ui/TrailDrawing';
 import { Icon } from '../ui/Icon';
 
 const FIELD: Record<string, string> = {
@@ -38,8 +42,13 @@ export function MonthlyFilmPage() {
   const byDate = new Map<string, typeof entries>();
   for (const e of entries) if (e.date.startsWith(month)) byDate.set(e.date, [...(byDate.get(e.date) ?? []), e]);
   const perfect = days.filter((d) => d.date.startsWith(month) && d.date < today && byDate.has(d.date) && dayRings(settings, d.date, d, byDate.get(d.date)!).rings.perfect && dosesAllowPerfect(settings, d)).map((d) => d.date);
-  const frames: (FilmSlide & { stars?: { x: number; y: number }[] })[] = [
-    ...film.slides,
+  const trail = monthTrail(month, stepsByDay(days));
+  const [fromName, toName] = trail ? [positionAt(trail.fromKm).from.name, positionAt(trail.toKm).from.name] : [];
+  const road = trail ? (fromName === toName ? `Around ${toName}` : `From ${fromName} to ${toName}`) : '';
+  const frames: (FilmSlide & { stars?: { x: number; y: number }[]; trail?: { fromKm: number; toKm: number } })[] = [
+    ...film.slides.slice(0, 1),
+    ...(trail ? [{ big: '', small: `${road}: the month on the road.`, tone: 'sage' as const, trail }] : []),
+    ...film.slides.slice(1),
     ...(week ? [{ big: `${fmtInt(week.kg)} kg`, small: `moved in your strongest week, from ${fmtDayMonth(week.from)}, over ${week.sets} sets.`, tone: 'lavender' as const }] : []),
     ...(surprise ? [{ big: `+${surprise.pct}%`, small: `${surprise.exercise}, ${surprise.from} to ${surprise.to} kg on ${fmtDayMonth(surprise.date)}. The record you didn’t see coming.`, tone: 'gold' as const }] : []),
     ...(perfect.length ? [{ big: constellationFor(month).name, small: `${perfect.length} perfect day${perfect.length === 1 ? '' : 's'}, joined into this month’s constellation.`, tone: 'lavender' as const, stars: skyStars(perfect) }] : []),
@@ -68,9 +77,13 @@ export function MonthlyFilmPage() {
         {film.heading}
       </div>
       <div className="film-body" aria-live="polite">
-        <div className="film-big tn" style={{ color: INK[f.tone], fontSize: f.big.length > 6 ? 64 : 96 }}>
-          {f.big}
-        </div>
+        {f.trail ? (
+          <TrailDrawing fromKm={f.trail.fromKm} toKm={f.trail.toKm} label={road} />
+        ) : (
+          <div className="film-big tn" style={{ color: INK[f.tone], fontSize: f.big.length > 6 ? 64 : 96 }}>
+            {f.big}
+          </div>
+        )}
         <div className="t17 lh" style={{ color: 'var(--text)', opacity: 0.9 }}>
           {f.small}
         </div>

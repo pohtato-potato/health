@@ -18,9 +18,7 @@ import { withTrip } from '../domain/trip';
 import { comparable, contextOf } from '../domain/context';
 import { movedLine, vsLastTime, type FinaleData } from '../domain/finale';
 import { RINGS } from '../domain/liveLook';
-import { batteryMode } from '../domain/rest';
 import { usualLength } from '../domain/sessionEdges';
-import { useBatteryLevel } from '../ui/RestScreen';
 import { useLiveTheme } from '../ui/live/useLiveTheme';
 import { LiveFinale } from './live/LiveFinale';
 import { finaleData } from './live/finaleData';
@@ -121,7 +119,6 @@ export function sessionStats(mine: SetEntry[], plan?: PlanDef) {
 function LiveDone({ session, plan, days, sets, withSkips, sessions, settings }: { session: TrainingSession; plan: PlanDef; days: Day[]; sets: SetEntry[]; withSkips: SetEntry[]; sessions: TrainingSession[]; settings: Settings }) {
   const toast = useToast();
   const theme = useLiveTheme(settings);
-  const saver = batteryMode(useBatteryLevel(), !!settings.prefs.batterySaver);
   const [step, setStep] = useState(0);
   const [picked, setPicked] = useState<string[]>(session.flags ?? []);
   const [note, setNote] = useState(session.notes ?? '');
@@ -199,7 +196,6 @@ function LiveDone({ session, plan, days, sets, withSkips, sessions, settings }: 
       onBack={() => go('/session', undefined, { replace: true })}
       onDiscard={discard}
       onDone={() => go('/train', undefined, { replace: true })}
-      saver={saver}
       rings={RINGS[theme]}
     />
   );

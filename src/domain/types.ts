@@ -95,7 +95,6 @@ export interface Experiment {
 
 /** What an on-time dose can earn; each switchable. */
 export interface MedRewards {
-  lantern: boolean;
   keptWeek: boolean;
   perfectDay: boolean;
   keptCount: boolean;
@@ -148,8 +147,6 @@ export interface Prefs {
   goldRings?: boolean;
   /** Water tracking; the owner's starter turns it off. */
   water?: boolean;
-  /** Battery saver for sessions: true black, no animation, the dimmed rest screen. */
-  batterySaver?: boolean;
   /** Check-in photos shot in a mirror: flip them back so left stays left. */
   mirrorCheckIn?: boolean;
   /** Full-screen celebrations: records, firsts, perfect days. */
@@ -180,7 +177,6 @@ const PREF_DEFAULTS: Required<Prefs> = {
   freeMealSaveUp: false,
   goldRings: false,
   water: false,
-  batterySaver: false,
   mirrorCheckIn: false,
   moments: true,
   quietPublic: true,
@@ -233,6 +229,8 @@ export interface Settings {
   homes: Home[];
   equipment: Equipment;
   loopSteps?: number;
+  /** Metres per step for the walk; 0.74 when not set. */
+  strideM?: number;
   prefs: Prefs;
   backup: { lastQuick?: number; lastFull?: number; lastFullBytes?: number; nudgeDays: number };
   plan?: PlanDef;
@@ -654,6 +652,23 @@ export interface ChartMarker {
   date: string;
   text: string;
   auto?: boolean;
+}
+
+/**
+ * A route you've joined: the days it was walked, and how. One row per route, kept when it's set down or finished.
+ * A span's `from` day counts; its `to` day (the day it was set down) doesn't.
+ */
+export interface RouteRun {
+  id: string;
+  spans: { from: DayKey; to?: DayKey }[];
+  /** Book and film routes: walk with the story or with places only. */
+  story?: 'story' | 'places';
+  /** Set by "Pause the story here". */
+  storyPauseKm?: number;
+  /** An optional date you're aiming for. */
+  target?: DayKey;
+  /** Set when the finish moment is shown; once set, the route stays finished. */
+  doneOn?: DayKey;
 }
 
 export interface WalkRecord {

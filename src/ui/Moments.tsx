@@ -45,6 +45,8 @@ export type MomentData =
       stats?: { value: string; label: string }[];
       icon?: IconName;
       voice?: Moment;
+      /** The second button, in place of "See your journey". */
+      more?: { label: string; path: string; params?: Record<string, string> };
     }
   | { kind: 'achievement'; key: string; id: string; tier: Tier; name: string; desc: string; reward?: string; title?: boolean; icon: IconName }
   | { kind: 'golden'; key: string; kicker: string; title: string; place?: string; text: string; foot?: string }
@@ -254,10 +256,11 @@ function MomentView({ m, onClose, voice, shuffle, special, quiet }: { m: MomentD
             className="btn lg ghost grow"
             onClick={() => {
               onClose();
-              go('/journey');
+              if (m.more) go(m.more.path, m.more.params);
+              else go('/journey');
             }}
           >
-            See your journey
+            {m.more?.label ?? 'See your journey'}
           </button>
           <button type="button" className="btn lg grow" onClick={onClose}>
             Close

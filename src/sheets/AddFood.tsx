@@ -327,7 +327,7 @@ export function AddFood() {
             <div key={f.id} className="food-row">
               <button
                 type="button"
-                className="col gap2 grow"
+                className="col gap2 grow tap44"
                 style={{ textAlign: 'left' }}
                 onClick={() => {
                   setPickedId(f.id);

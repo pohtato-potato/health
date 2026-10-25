@@ -34,3 +34,10 @@ export function slotStatus(day: Pick<Day, 'ticks' | 'missed' | 'ticksLate'> | un
   if (day?.missed?.[key]) return { kind: 'missed' };
   return { kind: 'not-logged' };
 }
+
+/** Where a tick lands: a late tick is saved at the planned dose time and marked recorded late, as the Checklist sheet does. */
+export function tickFor(date: DayKey, slot: string, settings: Pick<Settings, 'places'>, day: Pick<Day, 'place' | 'placeChanges'> | undefined, on: boolean, now: number): { at?: number; recordedLate?: number } {
+  if (!on) return {};
+  const planned = slotTime(slot, settings, day);
+  return isLateTick(date, planned, now) ? { at: atOn(date, planned), recordedLate: now } : {};
+}

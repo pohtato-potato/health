@@ -1,0 +1,133 @@
+/* Today: a varied page in the Train world. Only the moment card is a card; everything else sits on the page in its own form. */
+
+/* The banner slot: one line between two hairlines, always in the same place. */
+.td-banner { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline); }
+.td-banner-icon { flex: none; display: grid; place-items: center; }
+.td-banner-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.td-banner-text b { font-size: 16px; font-weight: 600; }
+.td-banner-text span { font-size: 14px; color: var(--quiet); }
+.td-banner-acts { flex: none; display: flex; gap: 8px; }
+.td-banner-act { min-height: 44px; padding: 0 16px; border-radius: 22px; border: 1px solid var(--button-edge, var(--hairline)); background: none; color: var(--text); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+.td-banner-act.ghost { font-weight: 400; color: var(--quiet); }
+.td-banner-x { flex: none; width: 44px; height: 44px; margin-right: -10px; display: grid; place-items: center; border: 0; background: none; color: var(--quiet); cursor: pointer; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* The walk: edge to edge through the page padding, melting into the page below. */
+.td-walk { position: relative; display: block; width: auto; margin: calc(-18px - var(--safe-top)) -22px 0; padding: 0; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; }
+/* The caption leaves the road clear: it sits under the picture, in the fade, as the Walk tab's title does. */
+.td-walk-cap { position: relative; display: flex; flex-direction: column; gap: 4px; margin-top: -28px; padding: 0 22px; }
+.td-walk-line { font-size: 14px; font-weight: 600; color: var(--quiet); }
+.td-walk-near { font-family: var(--serif); font-size: 28px; line-height: 1.1; text-wrap: balance; }
+.td-walk-next { margin: 0; font-size: 15px; }
+
+.td-h3 { margin: 14px 0 2px; font-family: var(--serif); font-weight: 400; font-size: 20px; }
+.td-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* The line: the day's headline set large on the page; the voice in italic at moments; a joint flag in plain words. */
+.td-line-wrap { display: flex; flex-direction: column; gap: 8px; }
+.td-line { margin: 0; font-family: var(--serif); font-size: 26px; line-height: 1.2; text-wrap: balance; }
+.td-line-voice { font-style: italic; color: var(--voice, var(--text)); }
+.td-line-voice.gold { color: var(--gold); }
+.td-line-flag { font-family: var(--sans); font-size: 17px; color: var(--apricot); }
+.td-clock { font-family: var(--sans); font-style: normal; font-size: 14px; color: var(--quiet); white-space: nowrap; }
+.td-why { margin: 0; display: flex; gap: 8px; align-items: flex-start; font-size: 15px; line-height: 1.4; color: var(--text); }
+.td-why svg { flex: none; margin-top: 3px; color: var(--apricot); }
+.td-why b { font-weight: 600; }
+
+/* Rings: the drawing, and beside it only the numbers, each in its ring's ink with a tiny unit. */
+.td-rings { display: flex; flex-direction: column; gap: 10px; }
+.td-rings-row { display: flex; align-items: center; gap: 22px; }
+.td-ringfig { flex: none; }
+.td-nums { display: flex; flex-direction: column; min-width: 0; }
+.td-num { display: flex; align-items: baseline; gap: 6px; min-height: 50px; padding: 0; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
+.td-num b { font-family: var(--serif); font-weight: 400; font-size: 34px; line-height: 1; white-space: nowrap; }
+.td-num > span { font-size: 14px; color: var(--quiet); }
+.td-ringmore { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 15px; color: var(--quiet); }
+.td-stepin { display: flex; gap: 8px; }
+.td-stepin input { width: 128px; min-height: 44px; font: inherit; font-size: 18px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--hairline); background: var(--surface); color: var(--text); }
+
+/* The moment card: the one lit card on the page. */
+.td-moment { display: flex; flex-direction: column; gap: 8px; padding: 20px 18px 18px; border-radius: 22px; border: 1px solid color-mix(in srgb, var(--text) 22%, transparent); background: linear-gradient(160deg, color-mix(in srgb, var(--raised) 80%, var(--lavender) 12%), var(--surface)); box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.6); }
+.td-moment.gold { border-color: color-mix(in srgb, var(--gold) 70%, transparent); background: linear-gradient(160deg, color-mix(in srgb, var(--gold) 22%, var(--surface)), var(--surface)); }
+.td-moment-title { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 26px; line-height: 1.15; }
+.td-moment-sub { margin: 0; font-size: 16px; line-height: 1.45; color: color-mix(in srgb, var(--text) 88%, transparent); }
+.td-moment-acts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.td-moment-btn { flex: 1 1 auto; min-height: 54px; }
+.td-moment-btn.gold { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+
+/* Next up: a strip between two hairlines, like a departures row. */
+.td-next { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline); }
+.td-next-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; min-height: 44px; }
+.td-next-title { font-family: var(--serif); font-size: 24px; line-height: 1.15; }
+.td-next-sub { font-size: 15px; color: var(--quiet); }
+.td-next-ready { font-size: 15px; color: var(--sage); }
+.td-next-side { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+.td-week { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--quiet); }
+.td-week i { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid color-mix(in srgb, var(--text) 50%, transparent); }
+.td-week i.on { background: var(--sage); border-color: var(--sage); }
+.td-week i.next { border-color: var(--text); border-width: 2px; }
+.td-records { border-color: color-mix(in srgb, var(--gold) 45%, transparent); }
+.td-finale { border-color: var(--gold); color: var(--gold); background: none; }
+
+/* Logging below the fold: a quiet section, headings in the serif, no card around it. */
+.td-log { display: flex; flex-direction: column; gap: 12px; padding-top: 6px; }
+.td-h { margin: 10px 0 0; font-family: var(--serif); font-weight: 400; font-size: 22px; }
+.td-hint { margin: -6px 0 0; font-size: 14px; color: var(--quiet); }
+.td-quick { display: flex; gap: 10px; overflow-x: auto; margin: 0 -22px; padding: 2px 22px 6px; scrollbar-width: none; }
+/* In the + sheet the row bleeds to the sheet's own 20 px edge, not the page's 22. */
+.sheet .td-quick { margin: 0 -20px; padding-inline: 20px; }
+.td-food { flex: none; display: flex; flex-direction: column; align-items: flex-start; min-height: 64px; min-width: 112px; padding: 10px 14px; border-radius: 16px; border: 1px solid var(--hairline); background: var(--surface); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.td-food b { font-size: 16px; font-weight: 600; }
+.td-food span { font-size: 14px; color: var(--quiet); }
+.td-meals { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.td-meal { display: flex; flex-direction: column; gap: 2px; min-height: 92px; padding: 10px; border-radius: 16px; border: 1px solid var(--hairline); background: var(--surface); color: var(--text); font: inherit; text-align: left; cursor: pointer; min-width: 0; }
+.td-meal.empty { border-style: dashed; background: none; cursor: default; justify-content: space-between; }
+.td-meal-open { display: flex; flex-direction: column; gap: 2px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; min-height: 44px; }
+.td-meal-name { font-size: 14px; color: var(--quiet); }
+.td-meal b { font-family: var(--serif); font-weight: 400; font-size: 22px; line-height: 1.1; }
+.td-meal > span:not(.td-meal-name) { font-size: 14px; color: var(--quiet); line-height: 1.25; }
+.td-same { min-height: 44px; padding: 0; border: 0; background: none; color: var(--sage); font: inherit; font-size: 14px; font-weight: 600; text-align: left; cursor: pointer; }
+.td-hold { position: relative; overflow: hidden; isolation: isolate; }
+.td-hold-fill { position: absolute; inset: 0; z-index: -1; background: color-mix(in srgb, var(--sage) 45%, transparent); transform: scaleX(0); transform-origin: left; }
+.td-hold.holding .td-hold-fill { transform: scaleX(1); transition: transform 0.65s linear; }
+
+/* The page leaves room at its foot so the handle never covers the last line. */
+.page.td-page { padding-bottom: calc(var(--tab-h) + var(--safe-bottom) + 104px); }
+
+/* The drawer handle: a pill above the tab bar that says what's inside. */
+.td-handle { position: fixed; z-index: 19; left: 50%; transform: translateX(-50%); width: min(calc(100% - 24px), 520px); bottom: calc(var(--tab-h) + var(--safe-bottom) + 10px); display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 14px 12px; min-height: 56px; border-radius: 20px; border: 1px solid var(--hairline); background: color-mix(in srgb, var(--tabbar) 92%, transparent); color: var(--quiet); font: inherit; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7); }
+.td-handle i { width: 40px; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--text) 45%, transparent); }
+.td-handle-row { display: flex; justify-content: space-between; gap: 10px; width: 100%; font-size: 14px; }
+.td-handle-row b { color: var(--text); font-weight: 700; }
+.td-handle-close { color: var(--text); font-weight: 700; }
+
+/* The drawer: pulled up over Today; its foot clears the tab bar. */
+.td-scrim { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-end; background: rgba(0, 0, 0, 0.45); }
+.td-drawer { width: 100%; max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; padding: 8px 18px calc(var(--tab-h) + var(--safe-bottom) + 18px); border-radius: 26px 26px 0 0; border-top: 1px solid var(--hairline); background: var(--raised); animation: td-up 0.35s cubic-bezier(0.2, 0.8, 0.3, 1); }
+@keyframes td-up { from { transform: translateY(40%); opacity: 0; } }
+.td-grab { align-self: center; display: grid; place-items: center; min-width: 88px; min-height: 44px; border: 0; background: none; cursor: pointer; }
+.td-grab i { width: 44px; height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--text) 45%, transparent); }
+.td-drawer-voice { margin: 0; font-family: var(--serif); font-style: italic; font-size: 22px; line-height: 1.3; color: var(--voice, var(--text)); }
+.td-dgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.td-dtile { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 14px; min-height: 120px; border-radius: 18px; border: 1px solid var(--hairline); background: var(--surface); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.td-dtile:disabled { cursor: default; }
+.td-dtile b { font-family: var(--serif); font-weight: 400; font-size: 34px; line-height: 1; }
+.td-dtile span { font-size: 15px; }
+.td-dtile small { font-size: 14px; color: var(--quiet); }
+
+/* Today on the region's aurora, as every Walk page sits. At the top, the place as the arrival's welcome draws it. */
+.td-page.lv-tab { flex-direction: column; }
+.td-page.lv-tab > .sr-only { position: absolute; }
+.td-walk > .band { display: block; height: calc(240px + var(--safe-top)); border-radius: 0; -webkit-mask-image: linear-gradient(#000 76%, transparent); mask-image: linear-gradient(#000 76%, transparent); }
+.td-walk > .band svg { display: block; width: 100%; height: 100%; }
+/* The arrival day's passport stamp, pressed onto the scene at a tilt. */
+.td-walk-stamp { position: absolute; left: 18px; top: calc(14px + var(--safe-top)); width: 72px; line-height: 0; transform: rotate(-7deg); filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35)); }
+.td-walk-stamp svg { display: block; width: 100%; height: auto; }
+
+/* Surfaces on the colour: the Walk's glass and hairline, so the land's colour shows through instead of navy blocks on plum. */
+.td-page { --td-glass: color-mix(in srgb, #0c0e1d 50%, transparent); --td-edge: color-mix(in srgb, var(--text) 18%, transparent); --hairline: var(--td-edge); }
+.td-page .td-moment:not(.gold) { border-color: var(--td-edge); background: linear-gradient(160deg, color-mix(in srgb, var(--lv-a) 62%, #0c0e1d), var(--td-glass)); }
+.td-page .td-food, .td-page .td-meal:not(.empty) { border-color: var(--td-edge); background: var(--td-glass); }
+.td-page .td-meal.empty { border-color: var(--td-edge); }
+.td-page .log-search { border-color: var(--td-edge); background: var(--td-glass); }

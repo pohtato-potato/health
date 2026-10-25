@@ -1,0 +1,74 @@
+import { describe, expect, it } from 'vitest';
+import { CATALOGUE, kindOf, routeById, shelfRoutes } from '../src/walk/catalogue';
+import { lineProblems } from '../src/walk/catalogue/checks';
+import { ROUTE_LINES } from '../src/walk/geo';
+import { goldish } from './helpers/goldish';
+
+
+for (const r of CATALOGUE)
+  describe(r.id, () => {
+    it('has a line', () => expect(ROUTE_LINES[r.id]?.line.length).toBeGreaterThanOrEqual(2));
+    it('keeps places in order and within its length', () => {
+      r.places.forEach((p, i) => {
+        expect(p.km, p.name).toBeGreaterThanOrEqual(0);
+        expect(p.km, p.name).toBeLessThanOrEqual(r.km);
+        if (i) expect(p.km, p.name).toBeGreaterThan(r.places[i - 1].km);
+        expect(p.at, p.name).toBeLessThan(ROUTE_LINES[r.id].line.length);
+      });
+    });
+    it('is never gold', () => {
+      expect(r.ink).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(goldish(r.ink), r.ink).toBe(false);
+    });
+    it('says nothing of then-and-you without a record', () => {
+      if (r.record === 'none') expect(r.then).toBeUndefined();
+    });
+    it('sorts its pages by km', () => r.pages.forEach((p, i) => i && expect(p.km).toBeGreaterThanOrEqual(r.pages[i - 1].km)));
+    it('has a book only when it is in the books group', () => expect(!!r.book).toBe(r.group === 'books'));
+    it('keeps its signature marks in order and within its length', () => {
+      r.signature?.marks.forEach((m, i) => {
+        expect(m.km).toBeGreaterThan(0);
+        expect(m.km).toBeLessThanOrEqual(r.km);
+        if (i) expect(m.km).toBeGreaterThan(r.signature!.marks[i - 1].km);
+      });
+    });
+    if (r.ready)
+      it('is whole before it reaches the shelf: its line, a page for every stretch, its collection and sources', () => {
+        expect(lineProblems(r, ROUTE_LINES[r.id])).toEqual([]);
+        expect(r.pages[0]?.km).toBe(0);
+        const gap = Math.max(60, r.km / 8);
+        r.pages.forEach((p, i) => {
+          expect(p.line.length, p.title).toBeGreaterThan(0);
+          expect(p.page.length, p.title).toBeGreaterThan(0);
+          if (i) expect(p.km - r.pages[i - 1].km, p.title).toBeLessThanOrEqual(gap);
+        });
+        expect(r.km - r.pages.at(-1)!.km).toBeLessThanOrEqual(gap);
+        expect(r.signature?.marks.length ?? 0).toBeGreaterThanOrEqual(6);
+        for (const t of r.then?.places ?? []) expect(r.places.map((p) => p.name), t.name).toContain(t.name);
+        expect(r.sources.length).toBeGreaterThanOrEqual(2);
+      });
+    if (r.ready)
+      it('is written and sourced before it reaches the shelf', () => {
+        expect(r.sources.length).toBeGreaterThan(0);
+        expect(r.pages.length).toBeGreaterThan(0);
+        if (r.book) expect(r.book.fullSynopsis).not.toBe('');
+      });
+  });
+
+describe('the catalogue', () => {
+  it('knows gold when it sees it', () => {
+    expect(goldish('#f2c46d')).toBe(true);
+    expect(goldish('#e6c28a')).toBe(true);
+    expect(goldish('#9fd3e6')).toBe(false);
+  });
+  it('ids are unique', () => expect(new Set(CATALOGUE.map((r) => r.id)).size).toBe(CATALOGUE.length));
+  it('finds a route by id', () => {
+    expect(routeById('dandi')?.name).toBe('The Dandi March');
+    expect(routeById('nowhere')).toBeUndefined();
+  });
+  it('1,500 km is a challenge, 1,501 an expedition', () => {
+    expect(kindOf({ ...CATALOGUE[0], km: 1500 })).toBe('challenge');
+    expect(kindOf({ ...CATALOGUE[0], km: 1501 })).toBe('expedition');
+  });
+  it('shows only ready routes on the shelf', () => expect(shelfRoutes().every((r) => r.ready)).toBe(true));
+});

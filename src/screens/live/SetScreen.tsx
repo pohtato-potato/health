@@ -26,7 +26,6 @@ interface Props {
   onCounter: (c: LiveCounter) => void;
   onDone: () => void;
   onSkip: () => void;
-  saver: boolean;
   theme: ThemeId;
   buzz: boolean;
   now: number;
@@ -44,7 +43,6 @@ export function SetScreen(p: Props) {
   const state = setState({ reps, burnAt: c.burnAt, bottom: p.bottom, bar: p.bar });
   const last = c.taps[c.taps.length - 1];
   const tempo = p.tempo && !p.timed ? tapTempo(last === undefined ? undefined : p.now - last) : undefined;
-  const still = p.saver || (typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches);
   const perSide = row.side !== 'both';
 
   // Fast taps land before the next render: count from the latest value, not this render's.
@@ -57,7 +55,6 @@ export function SetScreen(p: Props) {
   };
   // The ripple's spot is read at the press: the event is gone by the time a hold fires.
   const ripple = (cls: string) => {
-    if (still) return;
     setRipples((rs) => [...rs.slice(-5), { id: Date.now() + Math.random(), x: at.current.x, y: at.current.y, cls }]);
   };
   const onHold = () => {
@@ -107,7 +104,7 @@ export function SetScreen(p: Props) {
   const C = 2 * Math.PI * R;
 
   return (
-    <LiveFrame state={state} saver={p.saver} className={tempo ? `tempo-${tempo.phase}` : ''} style={tempo ? ({ '--tempo': tempo.frac } as React.CSSProperties) : undefined} top={p.top}>
+    <LiveFrame state={state} className={tempo ? `tempo-${tempo.phase}` : ''} style={tempo ? ({ '--tempo': tempo.frac } as React.CSSProperties) : undefined} top={p.top}>
       <div className="lv-ex">
         <h1 className="lv-name">{p.name}</h1>
         <div className="lv-meta">

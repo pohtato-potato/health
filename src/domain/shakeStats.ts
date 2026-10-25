@@ -3,7 +3,7 @@ import { fmt1, fmtDayMonth, fmtDuration, fmtInt } from './format';
 import { sleepMinutes } from './rings';
 import { weightTrend } from './streaks';
 import type { Day, FoodEntry, Measurement, SetEntry, Settings, TrainingSession } from './types';
-import { kmFromSteps, positionAt } from './walk';
+import { kmFromSteps, positionAt, setStride } from './walk';
 
 export interface Stat {
   text: string;
@@ -22,6 +22,7 @@ export function statDeck(d: {
   sets: SetEntry[];
   measurements: Measurement[];
 }): Stat[] {
+  setStride(d.settings.strideM);
   const out: Stat[] = [];
   const done = d.sessions.filter((s) => s.status === 'done').sort((a, b) => a.startedAt - b.startedAt);
   const doneIds = new Set(done.map((s) => s.id));

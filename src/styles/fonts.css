@@ -1,0 +1,23 @@
+/*
+ * Fraunces comes split into subsets. The basic Latin one is checked first and holds the combining macron but not
+ * ō, ā, ū and the rest, so the browser builds them from o plus a loose macron that lands on the next letter
+ * (Tōkaidō came out as "Tokaido¯"). Declaring the extended subset again for Latin Extended-A, after the package's
+ * own faces, makes it the first choice for those letters.
+ */
+@font-face {
+  font-family: 'Fraunces Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('../../node_modules/@fontsource-variable/fraunces/files/fraunces-latin-ext-opsz-normal.woff2') format('woff2-variations');
+  unicode-range: U+0100-017F;
+}
+
+@font-face {
+  font-family: 'Fraunces Variable';
+  font-style: italic;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('../../node_modules/@fontsource-variable/fraunces/files/fraunces-latin-ext-opsz-italic.woff2') format('woff2-variations');
+  unicode-range: U+0100-017F;
+}

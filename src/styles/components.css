@@ -307,18 +307,6 @@
   opacity: 0.88;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .wheel-row,
-  .check-box,
-  .check-tick,
-  .restpill-fill,
-  .story {
-    transition: none;
-  }
-  .story-body {
-    animation: none;
-  }
-}
 
 /* TimeTile: the tile and its wheels stack; the tile fills its column. */
 .timetile {
@@ -433,11 +421,6 @@
 .h3 {
   font-family: var(--serif);
   font-size: 20px;
-}
-@media (prefers-reduced-motion: reduce) {
-  .mealbox {
-    transition: none;
-  }
 }
 
 /* Protein spread: one bar split by meal. */
@@ -594,11 +577,6 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-@media (prefers-reduced-motion: reduce) {
-  .heavier-glow {
-    animation: none;
-  }
-}
 
 /* Set quality */
 .formchip.on {
@@ -628,7 +606,6 @@
   border: 1px solid var(--gold-border);
 }
 
-/* Rest: the dock and the battery saver's black screen. */
 .restdock {
   position: sticky;
   bottom: calc(12px + var(--safe-bottom));
@@ -639,32 +616,6 @@
 }
 .restdock .restpill {
   flex: 1;
-}
-.restscreen {
-  position: fixed;
-  inset: 0;
-  z-index: 86;
-  background: #000;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-}
-.restscreen-time {
-  font-size: 96px;
-  color: #6b6890;
-  letter-spacing: -0.02em;
-}
-/* Battery saver: true black, nothing moving. */
-.page.saver {
-  background: #000;
-}
-.page.saver *,
-.page.saver *::before,
-.page.saver *::after {
-  animation: none !important;
-  transition: none !important;
 }
 
 /* Body map */
@@ -787,22 +738,6 @@
   background: var(--text);
 }
 
-/* Walk: the souvenir shelf */
-.shelf {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-.niche {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 12px 14px;
-  min-height: 64px;
-  border-radius: 14px;
-  background: linear-gradient(180deg, var(--raised), var(--surface));
-  border: 1px solid var(--gold-border);
-}
 .map-zoom {
   position: absolute;
   right: 8px;
@@ -819,68 +754,6 @@
   border: 1px solid var(--btn-border);
   color: var(--text);
   font-size: 18px;
-}
-.pull-handle {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 0 10px;
-  touch-action: none;
-  background: none;
-  border: 0;
-  width: 100%;
-}
-.pull-handle i {
-  width: 40px;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--btn-border);
-}
-.pull-sheet.up {
-  position: fixed;
-  top: 72px;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(100%, 480px);
-  z-index: 45;
-  overflow-y: auto;
-  background: var(--surface);
-  border-radius: 22px 22px 0 0;
-  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.45);
-  padding-bottom: calc(24px + env(safe-area-inset-bottom));
-}
-@media (prefers-reduced-motion: no-preference) {
-  .pull-sheet.up {
-    animation: pull-up 0.24s ease-out;
-  }
-}
-@keyframes pull-up {
-  from {
-    transform: translate(-50%, 40%);
-    opacity: 0.6;
-  }
-}
-.met-line {
-  color: var(--text);
-}
-.met-line b {
-  color: var(--rose);
-  font-weight: 600;
-}
-.niche-art {
-  height: 38px;
-  display: flex;
-  align-items: flex-end;
-}
-.niche.waiting .niche-art {
-  display: none;
-}
-.niche.waiting {
-  background: transparent;
-  border: 1px dashed var(--btn-border);
-  color: var(--dim);
 }
 
 /* Arrival flyover */
@@ -1015,11 +888,10 @@
     transform: translateX(-420px);
   }
 }
-@media (prefers-reduced-motion: no-preference) {
-  .festive-drift {
-    animation: festive-drift 9s ease-in-out infinite alternate;
-  }
+.festive-drift {
+  animation: festive-drift 9s ease-in-out infinite alternate;
 }
+
 @keyframes festive-drift {
   to {
     transform: translate(6px, 10px);
@@ -1049,11 +921,10 @@
   background: #fff4d6;
   box-shadow: 0 0 10px 2px rgba(242, 196, 109, 0.8);
 }
-@media (prefers-reduced-motion: no-preference) {
-  .first-rays {
-    animation: first-spin 40s linear infinite;
-  }
+.first-rays {
+  animation: first-spin 40s linear infinite;
 }
+
 @keyframes first-spin {
   to {
     transform: rotate(360deg);
@@ -1065,15 +936,6 @@
   border-radius: 50%;
   background: radial-gradient(circle, #fff4d6 0%, #f2c46d 30%, rgba(242, 196, 109, 0) 70%);
   align-self: center;
-}
-@media (prefers-reduced-motion: reduce) {
-  .backdrop *,
-  .backdrop {
-    animation: none !important;
-  }
-  .backdrop .shoot {
-    opacity: 0.8;
-  }
 }
 
 .sky {
@@ -1212,11 +1074,6 @@
 .film-foot {
   cursor: default;
 }
-@media (prefers-reduced-motion: reduce) {
-  .film {
-    transition: none;
-  }
-}
 
 /* Settings: three short parts (your plan, your data, the feel). */
 .settings-part {
@@ -1227,61 +1084,6 @@
   color: var(--text);
 }
 
-/* Today (s1): ring rows, the place chip, the readiness card. */
-.ring-row {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  min-height: 44px;
-  width: 100%;
-  text-align: left;
-}
-/* At 14 px the target gets its own line under the value, so nothing wraps mid-number or runs past the card. */
-.ring-row {
-  flex-wrap: wrap;
-}
-.ring-row b,
-.ring-row .right {
-  white-space: nowrap;
-}
-.ring-row .right {
-  flex-basis: 100%;
-  text-align: left;
-  padding-left: 16px;
-}
-.ring-row i {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex: none;
-  align-self: center;
-}
-.ring-row b {
-  font-size: 19px;
-  font-weight: 700;
-}
-.place-chip {
-  min-height: 34px;
-  position: relative;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid var(--hairline);
-  background: var(--surface);
-  font-size: 13px;
-  font-weight: 600;
-}
-/* The tap area reaches 44 px; the chip keeps its 34 px look. */
-.place-chip::after {
-  content: '';
-  position: absolute;
-  inset: -5px 0;
-}
-.ready-card {
-  flex-direction: row;
-  align-items: center;
-  gap: 16px;
-  text-align: left;
-}
 .right {
   text-align: right;
 }
@@ -1310,7 +1112,7 @@
   font-weight: 600;
 }
 .log-tile > span:last-child {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--quiet);
   line-height: 1.25;
 }
@@ -1571,22 +1373,32 @@
   margin-bottom: 8px;
 }
 
-/* Walk (s11): the scene full-bleed with the title over its sky. */
-.walk-top {
-  position: relative;
-  margin: calc(-18px - var(--safe-top)) -22px 0;
+/* The place and status row under the walk's title: status chips as tall and as legible as the place chips. */
+.walk-place-status .chip.sm { height: 44px; font-size: 14px; }
+
+/* A trail drawing draws itself: the month's stretch in the film, a chapter at its end. */
+.trail-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: trail-draw 1.8s ease-out 0.2s forwards;
 }
-.walk-top .band.walk-hero {
-  height: 330px;
-  border-radius: 0 0 26px 26px;
+@keyframes trail-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
 }
-.walk-title {
-  position: absolute;
-  top: calc(18px + var(--safe-top));
-  left: 22px;
-  right: 22px;
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  text-shadow: 0 1px 12px rgba(8, 10, 23, 0.6);
+
+/* The chapter film: the walk's own night, with the sage of the road. */
+.chapter-film {
+  background: linear-gradient(165deg, #172a3a, #1d3a32 55%, #0f1d1a);
+}
+
+/* Close the day: the walker walks the day's kilometres. */
+.day-walker { display: flex; flex-direction: column; gap: 4px; padding: 10px 0; }
+.day-walker-done { stroke-dasharray: 1; stroke-dashoffset: 1; animation: trail-draw 2s ease-out 0.3s forwards; }
+.day-walker-dot { animation: day-walk 2s ease-out 0.3s forwards; }
+@keyframes day-walk {
+  to {
+    transform: translateX(var(--to));
+  }
 }

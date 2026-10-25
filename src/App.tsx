@@ -2,6 +2,7 @@ import { TrainProto } from './screens/proto/TrainLiving';
 import { SessionProto } from './screens/proto/SessionLiving';
 import { prefOn } from './domain/types';
 import { Suspense, lazy, useEffect, type ComponentType, type ReactNode } from 'react';
+import { RegionRoot } from './ui/live/RegionFrame';
 import { findSession } from './domain/plan';
 import { fmtLitres } from './domain/format';
 import { addWater } from './db/actions';
@@ -10,6 +11,10 @@ import { useActiveSession, useNow, useSettings, useToday } from './db/hooks';
 import { clearParam, go, useRoute } from './router';
 import { TabBar } from './ui/TabBar';
 import { useToast } from './ui/Toasts';
+import { ShelfPage } from './screens/walk/ShelfPage';
+import { RouteScreen } from './screens/walk/RouteScreen';
+import { JoinPage } from './screens/walk/JoinPage';
+import { FinishPage } from './screens/walk/FinishPage';
 import { CelebrationWatcher } from './state/Celebrations';
 import { AchievementWatcher } from './state/Achievements';
 import { NotFound } from './screens/NotFound';
@@ -45,7 +50,6 @@ import { MuscleMapPage } from './screens/MuscleMap';
 import { ShortSessionSheet } from './sheets/ShortSession';
 import { WeeklyReviewPage } from './screens/WeeklyReview';
 import { WalkTab } from './screens/WalkTab';
-import { ArrivalCardPage } from './screens/ArrivalCard';
 import { NightSkyPage } from './screens/NightSky';
 import { MedicinesPage } from './screens/Medicines';
 import { ExerciseGuidePage } from './screens/ExerciseGuide';
@@ -64,6 +68,13 @@ const CheckInScreen = page(() => import('./screens/CheckIn'), 'CheckInScreen');
 const PhotosPage = page(() => import('./screens/Photos'), 'PhotosPage');
 const MapPage = page(() => import('./screens/MapPage'), 'MapPage');
 const PostcardPage = page(() => import('./screens/Postcard'), 'PostcardPage');
+const StretchPage = page(() => import('./screens/walk/RoadPages'), 'StretchPage');
+const StopPage = page(() => import('./screens/walk/RoadPages'), 'StopPage');
+const ArrivalPage = page(() => import('./screens/walk/ArrivalPage'), 'ArrivalPage');
+const ChapterFilmPage = page(() => import('./screens/walk/ChapterFilm'), 'ChapterFilmPage');
+const RoadSoFarPage = page(() => import('./screens/walk/RoadSoFar'), 'RoadSoFarPage');
+const PassportPage = page(() => import('./screens/walk/PassportPage'), 'PassportPage');
+const ArrivalRedirect = page(() => import('./screens/Postcard'), 'ArrivalRedirect');
 const DiaryPage = page(() => import('./screens/Diary'), 'DiaryPage');
 const DeparturesPage = page(() => import('./screens/Departures'), 'DeparturesPage');
 const CharacterPage = page(() => import('./screens/Character'), 'CharacterPage');
@@ -104,7 +115,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/tracks': { el: () => <Tracks />, tab: 'you' },
   '/journey': { el: () => <Journey /> },
   '/walk': { el: () => <WalkTab />, tab: 'walk' },
-  '/arrival': { el: () => <ArrivalCardPage /> },
+  '/arrival': { el: () => <ArrivalRedirect /> },
   '/sky': { el: () => <NightSkyPage /> },
   '/medicines': { el: () => <MedicinesPage /> },
   '/guide': { el: () => <ExerciseGuidePage /> },
@@ -131,6 +142,16 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/receipt': { el: () => <ReceiptPage /> },
   '/map': { el: () => <MapPage /> },
   '/postcard': { el: () => <PostcardPage /> },
+  '/stretch': { el: () => <StretchPage /> },
+  '/stop': { el: () => <StopPage /> },
+  '/arrive': { el: () => <ArrivalPage /> },
+  '/chapter': { el: () => <ChapterFilmPage /> },
+  '/road': { el: () => <RoadSoFarPage /> },
+  '/passport': { el: () => <PassportPage /> },
+  '/routes': { el: () => <ShelfPage /> },
+  '/route': { el: () => <RouteScreen /> },
+  '/join': { el: () => <JoinPage /> },
+  '/finish': { el: () => <FinishPage /> },
   '/diary': { el: () => <DiaryPage /> },
   '/departures': { el: () => <DeparturesPage /> },
   '/climate': { el: () => <ClimatePage /> },
@@ -146,19 +167,16 @@ export function App() {
   const settings = useSettings();
   const route = useRoute();
   const today = useToday();
-  const night = false;
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('night', night);
-  }, [night]);
   const largeText = settings ? prefOn(settings.prefs, 'largeText') : false;
   const contrast = settings ? prefOn(settings.prefs, 'highContrast') : false;
   useEffect(() => {
     document.documentElement.classList.toggle('large-text', largeText);
     document.documentElement.classList.toggle('contrast', contrast);
   }, [largeText, contrast]);
-  useThemeClass(settings, today, night);
+  useThemeClass(settings, today);
 
+  // Design prototypes use sample data only, so they open without setup (handy on a fresh phone).
+  if (route.path.startsWith('/proto/') && PAGES[route.path]) return PAGES[route.path].el();
   if (!settings) return null;
   if (!settings.setupDone) return <Setup />;
 
@@ -166,6 +184,7 @@ export function App() {
   const sheet = route.params.get('sheet');
   return (
     <div className="app">
+      <RegionRoot />
       <Suspense fallback={<div className="page" />}>{page.el()}</Suspense>
       {page.tab && <TabBar active={page.tab} />}
       {page.tab && <ResumePill />}

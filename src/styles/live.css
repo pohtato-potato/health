@@ -127,12 +127,6 @@
 .lv-rest-ring .fill { fill: none; stroke: var(--ring1); stroke-width: 12; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
 .lv-rest-ring-in { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .lv-rest-ring-in b { font-family: var(--serif); font-size: 76px; font-weight: 300; line-height: 1; }
-.lv.saver .lv-field { display: none; }
-.lv.saver .lv-rest-time { color: #d8d4e4; }
-.lv-saver-next { text-align: center; font-size: 18px; color: #d8d4e4; }
-.lv-saver-next b { font-weight: 600; }
-.lv.saver .lv-primary.rest { background: #2a2f55; color: #ede6da; }
-.lv.saver .lv-ghost { background: transparent; }
 .lv-bigkg { position: absolute; right: 16px; top: 16px; font-family: var(--serif); font-size: 104px; line-height: 1; color: var(--text); opacity: 0.2; pointer-events: none; font-variant-numeric: tabular-nums; }
 .lv-bigkg small { font-size: 34px; margin-left: 4px; }
 .lv-screen { overflow-y: auto; }
@@ -141,21 +135,12 @@
 .lv-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
 .lv-skip { align-self: center; min-height: 44px; font-size: 15px; color: color-mix(in srgb, var(--text) 75%, transparent); text-decoration: underline; }
 
-/* Battery saver: true black, nothing moving, text in readable grey */
-.lv.saver { background: #000; --lv-a: #000; --lv-b: #000; }
-.lv.saver .lv-field, .lv.saver .lv-ripple { display: none; }
-.lv.saver, .lv.saver .lv-count { color: #d8d4e4; text-shadow: none; }
 
 /* High contrast: a quieter field, full-strength text */
 html.contrast .lv .lv-field { opacity: 0.45; }
 html.contrast .lv .lv-small, html.contrast .lv .lv-hint, html.contrast .lv .lv-aim, html.contrast .lv .q { color: var(--text); }
 html.contrast .lv-check, html.contrast .lv-ghost { border-color: var(--text); }
 
-@media (prefers-reduced-motion: reduce) {
-  .lv .blob { animation: none !important; }
-  .lv-ripple { display: none; }
-  .lv-dim { transition: none; }
-}
 .lv-chipbtn { min-height: 44px; padding: 0 14px; border-radius: 999px; font-size: 15px; color: var(--text); background: color-mix(in srgb, var(--lv-b) 50%, transparent); border: 1px solid color-mix(in srgb, var(--text) 22%, transparent); }
 .lv-card-h { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, var(--text) 70%, transparent); }
 .lv-hint { min-height: 2.9em; }
@@ -203,8 +188,6 @@ html.contrast .lv-check, html.contrast .lv-ghost { border-color: var(--text); }
 .lv-dust i { position: absolute; bottom: -10px; width: 4px; height: 4px; border-radius: 50%; background: #ffe2a0; box-shadow: 0 0 8px var(--gold); animation: lv-dust linear infinite; }
 @keyframes lv-dust { from { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } to { transform: translateY(-110vh); opacity: 0; } }
 .lv-primary.gold { background: var(--gold); box-shadow: 0 0 28px color-mix(in srgb, var(--gold) 45%, transparent); }
-.lv.saver .lv-bloom { text-shadow: none; color: var(--gold); animation: none; }
-@media (prefers-reduced-motion: reduce) { .lv-bloom, .lv-dust i { animation: none; } .lv-dust { display: none; } }
 
 /* Quick looks */
 .lv-sheet { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-end; background: rgba(0, 0, 0, 0.55); }
@@ -260,8 +243,6 @@ html.contrast .lv-check, html.contrast .lv-ghost { border-color: var(--text); }
 .lv-trackrow { display: flex; align-items: center; gap: 12px; min-height: 58px; font-size: 16px; border-bottom: 1px solid color-mix(in srgb, var(--text) 10%, transparent); }
 .lv-trackrow .art { width: 42px; height: 42px; flex: none; border-radius: 10px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); }
 .fs-music .lv-h1 { background: linear-gradient(90deg, #ff9fd0, #b7a6f0, #7fd6ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
-@media (prefers-reduced-motion: reduce) { .lv .ring-fill { animation: none; stroke-dashoffset: var(--off); } }
-.lv.saver .ring-fill { animation: none; stroke-dashoffset: var(--off); }
 
 /* Train: the living background behind a scrolling tab page */
 .lv.lv-tab { position: relative; inset: auto; min-height: 100dvh; overflow: visible; display: flex; }

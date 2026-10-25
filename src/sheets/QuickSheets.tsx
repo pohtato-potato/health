@@ -19,7 +19,7 @@ import { isEased, placeFor } from '../domain/places';
 import { prefOn } from '../domain/types';
 import { MealPicker } from './FoodForms';
 import { DateChip, useLogDate } from '../ui/DateChip';
-import { courseOn, dayDoses, DEFAULT_MED_REWARDS } from '../domain/medicines';
+import { courseOn } from '../domain/medicines';
 import { undoEdit } from '../db/edits';
 
 export function WaterSheet() {
@@ -169,8 +169,6 @@ export function ChecklistSheet() {
     void setTick(date, key, on);
   };
 
-  const lanterns = dayDoses(items.filter((i) => i.med), day ?? { date }, settings).onTime;
-  const lanternOnReward = (settings.medRewards ?? DEFAULT_MED_REWARDS).lantern;
 
   return (
     <Sheet title="Checklist" sub={date === today ? 'Today' : fmtDayMonth(date)}>
@@ -199,7 +197,7 @@ export function ChecklistSheet() {
                   }}
                 />
               ) : (
-                <button type="button" className="t16" style={{ textAlign: 'left', minHeight: 36 }} onClick={() => setEditing(item.id)} aria-label={`Rename ${item.name}`}>
+                <button type="button" className="t16 tap44" style={{ textAlign: 'left', minHeight: 36 }} onClick={() => setEditing(item.id)} aria-label={`Rename ${item.name}`}>
                   {item.name}
                 </button>
               )}
@@ -243,12 +241,6 @@ export function ChecklistSheet() {
           </div>
         );
       })}
-      {lanternOnReward && items.some((i) => i.med) && (
-        <div className="row t13">
-          <span className="q">On time lights a lantern at tonight's camp</span>
-          <span className="gold tn">{lanterns} lit</span>
-        </div>
-      )}
       <div className="row" style={{ gap: 8 }}>
         <button type="button" className="btn ghost grow" onClick={() => saveItems([{ id: uid(), name: 'New item', slots: ['Morning'], active: true }])}>
           Add an item

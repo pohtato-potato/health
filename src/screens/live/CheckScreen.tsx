@@ -19,7 +19,6 @@ interface Props {
   checks: FormCheck[];
   prev?: { checks?: Marks; rir?: number };
   onSave: (v: { checks: Marks; rir?: number }) => void;
-  saver: boolean;
   /** Heavier than ever before: no best to name. */
   firstAtLoad?: boolean;
   /** A save is being written: the button waits. */
@@ -50,7 +49,7 @@ export function CheckScreen(p: Props) {
     });
 
   return (
-    <LiveFrame state={state} saver={p.saver} top={p.top}>
+    <LiveFrame state={state} top={p.top}>
       <div className="lv-check-head">
         <span className={`lv-count num tn ${state}`} style={{ fontSize: 64 }}>
           {p.unit === 'seconds' ? mmss(p.reps) : p.reps}

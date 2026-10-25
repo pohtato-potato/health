@@ -35,6 +35,20 @@ const minaret = (x: number, h: number, w = 4) => `M${x - w / 2} 0V${-h}H${x + w 
 const rect = (x: number, y: number, w: number, h: number) => `M${x} ${y}h${w}v${h}h${-w}Z`;
 const win = (x: number, y: number, w = 3, h = 5) => rect(x, y, w, h);
 
+/** A row of arches from x0 to x1: piers down to `bottom`, and the walling above each arch up to `top`. */
+function arches(x0: number, x1: number, n: number, top: number, bottom: number, pier = 4): string[] {
+  const span = (x1 - x0 - pier) / n;
+  const out: string[] = [];
+  for (let i = 0; i <= n; i++) out.push(rect(r(x0 + i * span), top, pier, bottom - top));
+  const spring = top + (bottom - top) * 0.45;
+  for (let i = 0; i < n; i++) {
+    const a = r(x0 + i * span + pier);
+    const b = r(x0 + (i + 1) * span);
+    out.push(`M${a} ${top}H${b}V${r(spring)}Q${r((a + b) / 2)} ${r(top - (spring - top) * 0.2)} ${a} ${r(spring)}Z`);
+  }
+  return out;
+}
+
 const SHAPES: Record<string, () => Shape> = {
   fort: () => ({
     paths: [
@@ -45,7 +59,6 @@ const SHAPES: Record<string, () => Shape> = {
   dome: () => ({
     paths: [`M30 0V-26H90V0Z`, onion(60, -26, 34, 34), rect(57, -64, 6, 6), minaret(18, 44), minaret(102, 44), minaret(8, 34), minaret(112, 34)],
   }),
-  mosque: () => ({ paths: [`M24 0V-24H96V0Z`, onion(60, -24, 30, 28), onion(40, -24, 14, 14), onion(80, -24, 14, 14), minaret(14, 52), minaret(106, 52)] }),
   arch: () => ({
     paths: [`M30 0V-52H90V0H70V-30C70 -38 50 -38 50 -30V0Z`, rect(26, -58, 68, 6), rect(40, -64, 40, 6)],
     lights: [rect(56, -36, 8, 2)],
@@ -63,13 +76,6 @@ const SHAPES: Record<string, () => Shape> = {
     const wins = [0, 1, 2, 3].flatMap((i) => [0, 1, 2, 3].map((j) => win(26 + i * 8 + j * 18 - i * 4, -12 - i * 12, 3, 4)));
     return { paths: [rect(14, -16, 92, 16), ...tiers, onion(60, -76, 12, 10)], lights: wins };
   },
-  gopuram: () => {
-    const tiers = [0, 1, 2, 3, 4, 5].map((i) => `M${30 + i * 5} ${-i * 12}L${33 + i * 5} ${-(i + 1) * 12}H${87 - i * 5}L${90 - i * 5} ${-i * 12}Z`);
-    return { paths: [...tiers, `M52 -72C52 -80 68 -80 68 -72Z`, rect(58, -80, 4, 6)] };
-  },
-  shikhara: () => ({
-    paths: [rect(28, -18, 64, 18), `M42 -18C40 -44 52 -70 60 -78C68 -70 80 -44 78 -18Z`, `M18 -18C17 -30 24 -40 28 -44C32 -40 38 -30 38 -18Z`, rect(58, -86, 4, 8)],
-  }),
   ghat: () => ({
     paths: [`M0 0V-6H120V0Z`, `M6 -6V-12H114V-6Z`, `M14 -12V-18H106V-12Z`, `M26 -18C25 -36 32 -48 36 -52C40 -48 47 -36 46 -18Z`, `M70 -18C69 -42 78 -58 84 -64C90 -58 99 -42 98 -18Z`, rect(52, -30, 12, 12)],
     lights: [win(56, -26, 2, 3), win(82, -26, 2, 3), win(34, -24, 2, 3)],
@@ -82,7 +88,6 @@ const SHAPES: Record<string, () => Shape> = {
   }),
   clocktower: () => ({ paths: [rect(48, -60, 24, 60), `M46 -60L60 -76L74 -60Z`, rect(40, -8, 40, 8)], lights: [`M60 -48m-6 0a6 6 0 1 0 12 0a6 6 0 1 0 -12 0Z`] }),
   step: () => ({ paths: [`M10 0V-24H110V0Z`, `M24 -24V-34H96V-24Z`, rect(34, -46, 6, 12), rect(80, -46, 6, 12), rect(30, -48, 60, 4)], lights: [win(30, -18, 4, 8), win(48, -18, 4, 8), win(66, -18, 4, 8), win(84, -18, 4, 8)] }),
-  church: () => ({ paths: [rect(32, -40, 56, 40), `M32 -40L60 -60L88 -40Z`, rect(24, -62, 14, 62), rect(82, -62, 14, 62), `M24 -62L31 -72L38 -62Z`, `M82 -62L89 -72L96 -62Z`, rect(59, -72, 2, 12), rect(55, -68, 10, 2)], lights: [win(57, -30, 6, 10), win(28, -50), win(86, -50)] }),
   peaks: () => ({
     paths: [`M0 0L28 -46L42 -30L66 -74L88 -40L100 -52L120 0Z`],
     accents: [`M56 -56L66 -74L76 -56L70 -60L66 -54L61 -60Z`, `M22 -36L28 -46L34 -38L30 -40Z`, `M96 -46L100 -52L105 -44Z`],
@@ -92,8 +97,38 @@ const SHAPES: Record<string, () => Shape> = {
     accents: [`M14 -10h18v1.5h-18zM20 -16h20v1.5h-20zM60 -20h24v1.5h-24zM70 -28h20v1.5h-20zM96 -18h14v1.5h-14z`],
     lights: [win(40, -14, 3, 3), win(78, -16, 3, 3), win(56, -10, 3, 3)],
   }),
+  lake: () => ({
+    paths: [`M0 -9C16 -26 32 -30 50 -26C64 -23 78 -34 96 -31C108 -29 116 -20 120 -9Z`, `M22 -14H54L49 -9H27Z`, `M80 -12H98L95 -9H83Z`],
+    // sails pale against the far shore, water below the hulls
+    accents: [rect(0, -9, 120, 9), `M38 -15V-42L54 -17Z`, `M36 -16L24 -36V-16Z`, `M89 -13V-28L98 -14Z`],
+    lights: [win(60, -26, 3, 3), win(104, -27, 3, 3)],
+  }),
+  riverbridge: () => ({ paths: [rect(0, -22, 120, 4), ...arches(2, 118, 5, -18, -2, 6)], accents: [rect(0, -2, 120, 2)], lights: [rect(14, -21, 2, 2), rect(46, -21, 2, 2), rect(78, -21, 2, 2), rect(106, -21, 2, 2)] }),
+  museum: () => ({
+    paths: [rect(14, -26, 92, 26), `M8 -26L24 -44H96L112 -26Z`, `M36 -44L48 -58H72L84 -44Z`, rect(59, -64, 2, 6)],
+    lights: [win(22, -18), win(34, -18), win(46, -18), win(70, -18), win(82, -18), win(94, -18), win(58, -52, 4, 4)],
+  }),
+  houses: () => ({
+    paths: [rect(6, -30, 34, 30), `M2 -30L23 -44L44 -30Z`, rect(44, -36, 34, 36), `M40 -36L61 -50L82 -36Z`, rect(82, -28, 34, 28), `M78 -28L99 -40L120 -28Z`],
+    accents: [rect(48, -20, 26, 2), rect(10, -16, 26, 2), rect(86, -14, 26, 2)],
+    lights: [win(14, -26), win(28, -26), win(52, -32), win(68, -32), win(92, -24), win(106, -24)],
+  }),
+  viaduct: () => ({
+    paths: [...arches(4, 116, 6, -26, 0), ...arches(8, 112, 8, -46, -26, 3), rect(4, -50, 112, 4), rect(68, -58, 22, 8), rect(66, -60, 26, 2)],
+    lights: [win(71, -56, 3, 3), win(77, -56, 3, 3), win(83, -56, 3, 3)],
+  }),
+  ridgepalace: () => ({
+    paths: [`M0 0C20 -10 34 -18 50 -20H84C96 -16 108 -8 120 0Z`, `M44 -20L48 -76H90L94 -20Z`, rect(56, -82, 22, 6)],
+    lights: [52, 62, 72, 82].flatMap((x) => [win(x, -66, 3, 4), win(x, -50, 3, 4), win(x, -34, 3, 4)]),
+  }),
+  gopuram: () => {
+    const tiers = [0, 1, 2, 3, 4, 5].map((i) => `M${30 + i * 5} ${-i * 12}L${33 + i * 5} ${-(i + 1) * 12}H${87 - i * 5}L${90 - i * 5} ${-i * 12}Z`);
+    return { paths: [...tiers, `M52 -72C52 -80 68 -80 68 -72Z`, rect(58, -80, 4, 6)] };
+  },
+  shikhara: () => ({
+    paths: [rect(28, -18, 64, 18), `M42 -18C40 -44 52 -70 60 -78C68 -70 80 -44 78 -18Z`, `M18 -18C17 -30 24 -40 28 -44C32 -40 38 -30 38 -18Z`, rect(58, -86, 4, 8)],
+  }),
   gurdwara: () => ({ paths: [rect(32, -30, 56, 30), onion(60, -30, 26, 26), onion(36, -30, 8, 8), onion(84, -30, 8, 8), rect(58, -60, 4, 4)], accents: [rect(0, 0, 120, 4)], lights: [win(44, -22), win(56, -22), win(68, -22)] }),
-  stupa: () => ({ paths: [`M24 0C24 -32 96 -32 96 0Z`, rect(52, -36, 16, 8), rect(58, -50, 4, 14), rect(50, -44, 20, 2), rect(52, -48, 16, 2), rect(16, -2, 88, 2)] }),
   hand: () => ({ paths: [`M54 0V-20H66V0Z`, `M44 -20C40 -36 42 -52 48 -60L50 -46C52 -60 56 -66 60 -66C64 -66 68 -60 70 -46L72 -60C78 -52 80 -36 76 -20Z`] }),
 };
 
@@ -102,14 +137,14 @@ const STOP_ART: Record<string, [string, string]> = {
   Delhi: ['arch', 'India Gate'],
   Agra: ['dome', 'the Taj Mahal'],
   Gwalior: ['fort', 'the fort'],
-  Bhopal: ['mosque', 'Taj-ul-Masajid'],
+  Bhopal: ['lake', 'the Upper Lake'],
   Nagpur: ['pillar', 'the Zero Mile Stone'],
   Hyderabad: ['charminar', 'the Charminar'],
   Bengaluru: ['palace', 'Vidhana Soudha'],
-  Madurai: ['gopuram', 'the temple towers'],
+  Madurai: ['gopuram', 'the Meenakshi temple towers'],
   Kanyakumari: ['rock', 'the rock memorial'],
   Chennai: ['lighthouse', 'the Marina lighthouse'],
-  Nellore: ['gopuram', 'the Ranganatha temple'],
+  Nellore: ['riverbridge', 'the bridge over the Penna'],
   Vijayawada: ['bridge', 'the Prakasam barrage'],
   Visakhapatnam: ['hills', 'the Kailasagiri hills'],
   Bhubaneswar: ['shikhara', 'the Lingaraj temple'],
@@ -123,11 +158,11 @@ const STOP_ART: Record<string, [string, string]> = {
   Mumbai: ['arch', 'the Gateway of India'],
   Pune: ['fort', 'Shaniwar Wada'],
   Belagavi: ['fort', 'the Belagavi fort'],
-  Hubballi: ['shikhara', 'the Chandramouleshwara temple'],
-  Puducherry: ['church', 'the Basilica'],
-  Thiruvananthapuram: ['gopuram', 'the Padmanabhaswamy temple'],
+  Hubballi: ['lake', 'Unkal Lake'],
+  Puducherry: ['lighthouse', 'the old lighthouse'],
+  Thiruvananthapuram: ['museum', 'the Napier Museum'],
   Kavaratti: ['lighthouse', 'the lagoon lighthouse'],
-  Panaji: ['church', 'the Church of Our Lady'],
+  Panaji: ['houses', 'the Fontainhas houses'],
   Daman: ['fort', 'the Moti Daman fort'],
   Raipur: ['clocktower', 'the old clock tower'],
   'Port Blair': ['fort', 'the Cellular Jail'],
@@ -140,11 +175,11 @@ const STOP_ART: Record<string, [string, string]> = {
   Kohima: ['hills', 'the hill town'],
   Itanagar: ['peaks', 'the eastern Himalaya'],
   Dehradun: ['clocktower', 'the Ghanta Ghar'],
-  Shimla: ['church', 'Christ Church on the Ridge'],
+  Shimla: ['viaduct', "the toy train's viaduct"],
   Chandigarh: ['hand', 'the Open Hand'],
   Amritsar: ['gurdwara', 'the Golden Temple'],
   Srinagar: ['peaks', 'the Zabarwan range'],
-  Leh: ['stupa', 'Shanti Stupa'],
+  Leh: ['ridgepalace', 'Leh Palace'],
 };
 
 export const LANDMARKS: Record<string, Landmark> = Object.fromEntries(

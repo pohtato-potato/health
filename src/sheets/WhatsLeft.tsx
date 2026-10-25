@@ -115,7 +115,7 @@ export function WhatsLeft() {
       )}
       <div className="t12 d center lh">
         Only foods you've saved are suggested.{freeUsed ? '' : ' Your free meal for this week is still unused.'}{' '}
-        <button type="button" className="d" style={{ textDecoration: 'underline' }} onClick={() => replaceSheet('addfood')}>
+        <button type="button" className="d tap44" style={{ textDecoration: 'underline' }} onClick={() => replaceSheet('addfood')}>
           Add food
         </button>
       </div>

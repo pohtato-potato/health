@@ -1,0 +1,191 @@
+import type { RouteDef } from '../types';
+
+/**
+ * The March of the Ten Thousand, 401–400 BC: Greek mercenaries stranded after Cunaxa fight their way up the Tigris,
+ * through the Carduchian mountains and the Armenian winter to the Black Sea at Trapezus. Xenophon, who led them,
+ * measured it in stages and parasangs; modern reconstructions put the retreat at about 1,500 km and differ on the way.
+ */
+export const tenthousand: RouteDef = {
+  id: 'tenthousand',
+  name: 'The March of the Ten Thousand',
+  era: '401–400 BC',
+  hook: 'A leaderless Greek army, deep in Persia, votes to walk home.',
+  group: 'world',
+  km: 1500,
+  record: 'estimated',
+  region: 'anatolia',
+  ink: '#d0a8b8',
+  places: [
+    { name: 'Cunaxa', km: 0, at: 0, label: true },
+    { name: 'The Tigris', km: 180, at: 2 },
+    { name: 'The Great Zab', km: 452, at: 4, label: true },
+    { name: 'Larissa', km: 474, at: 5 },
+    { name: 'Mespila', km: 522, at: 6 },
+    { name: 'The Carduchian mountains', km: 721, at: 8, label: true },
+    { name: 'The Centrites', km: 823, at: 9 },
+    { name: 'The Euphrates', km: 1001, at: 11 },
+    { name: 'The Armenian snows', km: 1070, at: 12, label: true },
+    { name: 'The Chalybes', km: 1267, at: 14 },
+    { name: 'Gymnias', km: 1365, at: 15 },
+    { name: 'Mount Theches', km: 1442, at: 16, label: true },
+    { name: 'Trapezus', km: 1500, at: 17, label: true },
+  ],
+  signature: {
+    title: 'Xenophon’s stages',
+    note: 'Xenophon counted the march in stages, each a day’s march, and in parasangs, a Persian measure of about five or six kilometres. Each mark is a stage he describes.',
+    mark: 'stage',
+    marks: [
+      { km: 1, name: 'After Cunaxa, alone' },
+      { km: 180, name: 'Across the Tigris' },
+      { km: 452, name: 'The Zab, the generals seized' },
+      { km: 522, name: 'The ruins of Mespila' },
+      { km: 721, name: 'Seven days in the mountains' },
+      { km: 823, name: 'Across the Centrites' },
+      { km: 1001, name: 'Wading the Euphrates' },
+      { km: 1070, name: 'The snows of Armenia' },
+      { km: 1267, name: 'Through the Chalybes' },
+      { km: 1442, name: 'The sea, the sea' },
+      { km: 1500, name: 'Trapezus' },
+    ],
+  },
+  pages: [
+    {
+      km: 0,
+      title: 'Cunaxa',
+      line: 'At Cunaxa the battle is won, and the man they fought for is dead.',
+      page: [
+        'In 401 BC Cyrus the Younger, a Persian prince, marched from western Anatolia to take the throne from his brother, the king Artaxerxes II. He hired more than ten thousand Greek soldiers, telling them at first only that they were going against a rebel tribe.',
+        'At Cunaxa, near Babylon, the Greeks broke the king’s army in front of them. But Cyrus charged at his brother and was killed. The Greeks had won their part of a battle that was now lost, and they were over 2,000 km from home.',
+      ],
+    },
+    {
+      km: 90,
+      title: 'Xenophon',
+      line: 'One of the soldiers will write it all down.',
+      page: ['Among them was Xenophon, a young Athenian gentleman and a student of Socrates, who had come along as a volunteer, not a soldier. His book about the march, the Anabasis, is the main record of it, and he is its hero, which is worth remembering as you read.'],
+    },
+    {
+      km: 180,
+      title: 'Up the Tigris',
+      line: 'North up the Tigris, shadowed by the king’s army.',
+      page: ['The king’s commander, Tissaphernes, offered to lead the Greeks home and marched alongside them up the Tigris, neither side trusting the other. They passed through rich country, and Xenophon describes great walls and canals left by older empires.'],
+    },
+    {
+      km: 330,
+      title: 'Uneasy truce',
+      line: 'On through Mesopotamia, under truce, watching their guides.',
+      page: ['The Greeks kept to their camps and their formations, marching through land they did not know with an army that could attack them at any moment. Supplies came by buying, foraging and taking.'],
+    },
+    {
+      km: 452,
+      title: 'The Great Zab',
+      line: 'At the Zab, the generals go to a meeting and do not come back.',
+      page: [
+        'Near the Great Zab river, Tissaphernes invited the Greek generals to a meeting to clear up their differences. Five of them went, with their captains. The captains were cut down and the generals sent to the king and beheaded.',
+        'That night, Xenophon says, he could not sleep, and dreamed. He got up, called the officers together and told them they must choose new leaders and fight their way out. He was one of those chosen.',
+      ],
+      deeper: {
+        title: 'An army that votes',
+        text: 'With their generals dead and no state behind them, the Greeks ran themselves like a city on the move. Soldiers met in assembly, debated and voted on where to go, whom to elect and how to punish wrongdoers; they put their generals on trial once they reached the coast, Xenophon among them. They burned their wagons and spare tents by agreement, to move faster. Historians have called it a travelling democracy, and Xenophon shows its arguments and its bad decisions as well as its good ones. It is one of the earliest close pictures we have of ordinary men governing themselves under pressure.',
+      },
+    },
+    {
+      km: 522,
+      title: 'Mespila',
+      line: 'Past the ruins of great cities, their names already forgotten.',
+      page: ['Xenophon describes two great ruined cities on the Tigris, which he calls Larissa and Mespila, with walls of brick and stone. They were Nimrud and Nineveh, capitals of the Assyrian empire, destroyed about two hundred years before. Their own people’s names for them were already lost to the Greeks.'],
+    },
+    {
+      km: 621,
+      title: 'Into the hills',
+      line: 'North, away from the plain, into the mountains.',
+      page: ['The Persians harried them with archers and slingers on the plain. The Greeks formed slingers of their own from the Rhodians among them. Then their prisoners told them of a way north, through mountains the king had never conquered.'],
+    },
+    {
+      km: 721,
+      title: 'The Carduchians',
+      line: 'Seven days fighting through the Carduchian mountains.',
+      page: [
+        'The Carduchians lived free in the mountains and had once destroyed a royal army of 120,000, the prisoners said. For seven days they fought the Greeks from the heights, rolling rocks onto the paths and shooting arrows that went through shields. Xenophon says those seven days were worse than everything the king had done to them.',
+        'Many historians link the Carduchians with the Kurds of these same mountains, though the connection is argued over.',
+      ],
+    },
+    {
+      km: 823,
+      title: 'The Centrites',
+      line: 'Across the Centrites, with enemies on both banks.',
+      page: ['At the Centrites river, the border of Armenia, the Carduchians were behind them and Armenian cavalry in front. Two young soldiers found a ford while gathering firewood, and the army crossed by it, fighting at both ends.'],
+    },
+    {
+      km: 1001,
+      title: 'The Euphrates',
+      line: 'Wading the Euphrates, near its source.',
+      page: ['They waded the Euphrates near its sources, the water up to their waists. The river they had marched beside months before, on the way to Babylon, was here a stream in the snow.'],
+    },
+    {
+      km: 1070,
+      title: 'The Armenian snow',
+      line: 'Into the Armenian highlands, in deep winter.',
+      page: [
+        'Armenia in winter was deep in snow. The north wind froze men where they stood; some lost toes to frostbite and some went snow-blind. Xenophon says those who kept moving and covered their eyes survived.',
+        'In the villages people lived in houses dug into the ground, with their animals, and drank barley beer through straws from big jars. The soldiers rested there for a week.',
+      ],
+    },
+    {
+      km: 1170,
+      title: 'Lost guides',
+      line: 'A guide runs off, and the army wanders.',
+      page: ['A village headman they had taken as a guide escaped after a quarrel with one of the generals. For days the army marched without knowing the way, reaching a great river Xenophon calls the Phasis, before turning north again.'],
+    },
+    {
+      km: 1267,
+      title: 'The Chalybes',
+      line: 'Through the Chalybes, the fiercest people of the march.',
+      page: ['The Chalybes, Xenophon says, were the bravest people they met, fighting with long spears and carrying off the heads of their enemies. They retreated into their strongholds with all their food, and the Greeks went hungry.'],
+    },
+    {
+      km: 1365,
+      title: 'Gymnias',
+      line: 'At Gymnias, a guide who promises the sea in five days.',
+      page: ['At the town of Gymnias the local ruler gave them a guide who promised to bring them, within five days, to a place where they could see the sea. He led them through the lands of his own people’s enemies, and asked them to burn and plunder as they went.'],
+    },
+    {
+      km: 1442,
+      title: 'Thalatta, thalatta',
+      line: 'On Mount Theches, a shout runs back down the column: the sea!',
+      page: [
+        'On a mountain Xenophon calls Theches, the men at the front began shouting. Xenophon, at the rear, thought they were being attacked and rode up. Then he heard the word: Thalatta! Thalatta! The sea! The sea!',
+        'The soldiers embraced each other and their officers, weeping. They piled up a great cairn of stones and hung it with captured shields.',
+      ],
+    },
+    {
+      km: 1500,
+      title: 'Trapezus',
+      line: 'At Trapezus, Greeks again, and a strange honey.',
+      page: [
+        'Trapezus, now Trabzon, was a Greek colony on the Black Sea. The army held games there, with races and wrestling, to give thanks for getting through.',
+        'Near the town many soldiers ate wild honey and fell down as if drunk or dying. They all recovered within a few days. The honey came from rhododendron flowers, and is still known on this coast as mad honey.',
+      ],
+      deeper: {
+        title: 'What the march taught Greece',
+        text: 'The march ended in an argument, not a homecoming. The army went on along the coast, sold its services, split up and quarrelled, and what was left of it joined a Spartan war in Anatolia. Xenophon was exiled from Athens. But the story travelled. Greek writers took from it that a small Greek army could march through the heart of the Persian empire and out again, and that the empire was weaker than it looked. Some, like the orator Isocrates, urged a Greek invasion of Persia. Within seventy years Alexander did it, and some ancient writers said he had read his Xenophon.',
+      },
+    },
+  ],
+  chronicle: [
+    { when: 'Spring 401 BC', place: 'Sardis', text: 'Cyrus marches east with his Greek mercenaries.' },
+    { when: 'Late summer or autumn 401 BC', place: 'Cunaxa', text: 'Cyrus is killed in battle.' },
+    { when: 'Weeks later', place: 'The Great Zab', text: 'The Greek generals are seized and killed.' },
+    { when: 'Winter 401–400 BC', place: 'Armenia', text: 'The march through the snow.' },
+    { when: 'Spring 400 BC', place: 'Mount Theches', text: 'The army sees the sea.' },
+    { when: '334 BC', place: 'The Hellespont', text: 'Alexander crosses into Asia.' },
+  ],
+  sources: [
+    { title: 'Xenophon, Anabasis, trans. H. G. Dakyns, Project Gutenberg', url: 'https://www.gutenberg.org/ebooks/1170' },
+    { title: 'Wikipedia: Ten Thousand (Greek mercenaries)', url: 'https://en.wikipedia.org/wiki/Ten_Thousand_(Greek_mercenaries)' },
+    { title: 'Wikipedia: Anabasis (Xenophon)', url: 'https://en.wikipedia.org/wiki/Anabasis_(Xenophon)' },
+    { title: 'Wikipedia: Battle of Cunaxa', url: 'https://en.wikipedia.org/wiki/Battle_of_Cunaxa' },
+    { title: 'Robin Lane Fox (ed.), The Long March: Xenophon and the Ten Thousand (2004)' },
+  ],
+  ready: true,
+};

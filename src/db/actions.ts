@@ -16,6 +16,7 @@ import type {
   TrainingSession,
 } from '../domain/types';
 import { db, uid } from './db';
+import { setStride } from '../domain/walk';
 import { recordEdit } from './edits';
 import { logUsage } from './usage';
 import { DEFAULT_EQUIPMENT, DEFAULT_PLAN } from '../domain/defaultPlan';
@@ -42,7 +43,9 @@ export function defaultSettings(): Settings {
 }
 
 export async function getSettings(): Promise<Settings> {
-  return (await db.settings.get('app')) ?? defaultSettings();
+  const s = (await db.settings.get('app')) ?? defaultSettings();
+  setStride(s.strideM);
+  return s;
 }
 
 export async function patchSettings(patch: Partial<Settings> | ((s: Settings) => Partial<Settings>)) {

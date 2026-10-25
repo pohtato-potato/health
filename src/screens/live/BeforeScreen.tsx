@@ -17,7 +17,6 @@ interface Props {
   onSoreness: (n: 1 | 2 | 3 | 4 | 5) => void;
   warmup?: string;
   onStart: () => void;
-  saver: boolean;
   top?: ReactNode;
 }
 
@@ -26,7 +25,7 @@ export function BeforeScreen(p: Props) {
   const [kit, setKit] = useState<string[]>([]);
   const light = p.soreness !== undefined && p.soreness >= 4;
   return (
-    <LiveFrame state="calm" saver={p.saver} top={p.top} scroll>
+    <LiveFrame state="calm" top={p.top} scroll>
       <h1 className="lv-h1">{p.name}</h1>
       <p className="lv-sub">
         {p.usual.fromHistory ? 'usually' : 'about'} <b>{p.usual.min} min</b> · finish about <b>{timeOfDay(p.startedAt + p.usual.min * 60_000)}</b>

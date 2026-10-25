@@ -14,7 +14,6 @@ interface Props {
   onSetup: (text: string) => void;
   checks: FormCheck[];
   onGo: () => void;
-  saver: boolean;
   top?: ReactNode;
 }
 
@@ -36,7 +35,7 @@ export function GuideScreen(p: Props) {
   ].filter((x): x is [string, string] => !!x[1]);
   const side = p.lead === 'L' ? 'Left' : p.lead === 'R' ? 'Right' : undefined;
   return (
-    <LiveFrame state="calm" saver={p.saver} top={p.top} scroll>
+    <LiveFrame state="calm" top={p.top} scroll>
       <div className="lv-kicker">Before the first set</div>
       <h1 className="lv-h1">{p.name}</h1>
       <div className="lv-meta">
