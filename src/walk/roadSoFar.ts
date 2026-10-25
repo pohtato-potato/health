@@ -6,18 +6,19 @@ export interface RoadEvent {
   km: number;
   name: string;
   chapter: number;
-  kind: 'city' | 'state' | 'chapter';
+  kind: 'start' | 'city' | 'state' | 'chapter';
 }
 
-const RANK: Record<RoadEvent['kind'], number> = { city: 0, state: 1, chapter: 2 };
+const RANK: Record<RoadEvent['kind'], number> = { start: 0, city: 1, state: 2, chapter: 3 };
 
-/** Every city reached, every state or territory first entered and every chapter finished, in date order and route order within a day. */
+/** Setting off, every city reached, every state or territory first entered and every chapter finished, in date order and route order within a day. */
 export function roadSoFar(steps: Map<DayKey, number>): RoadEvent[] {
   const seen = new Set<string>();
   const states = crossings(steps, ALL_STATES)
     .filter((s) => !seen.has(s.name) && seen.add(s.name))
+    .filter((s) => s.km > 0)
     .map((s) => ({ date: s.date, km: s.km, name: s.name, chapter: s.chapter, kind: 'state' as const }));
-  const cities = arrivals(steps).map((a) => ({ ...a, kind: 'city' as const }));
+  const cities = arrivals(steps).map((a) => ({ ...a, kind: a.km === 0 ? ('start' as const) : ('city' as const) }));
   const ends = crossings(
     steps,
     CHAPTERS.map((c) => ({ name: c.name, km: c.end, chapter: c.n })),

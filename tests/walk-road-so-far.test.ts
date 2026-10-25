@@ -12,8 +12,7 @@ describe('the road so far', () => {
   it('lists every arrival in date order, then route order within a day', () => {
     const r = roadSoFar(road);
     expect(r.map((e) => `${e.date} ${e.kind} ${e.name}`)).toEqual([
-      '2026-01-01 city Delhi',
-      '2026-01-01 state Delhi',
+      '2026-01-01 start Delhi',
       '2026-01-01 state Haryana',
       '2026-01-01 state Uttar Pradesh',
       '2026-01-02 city Agra',

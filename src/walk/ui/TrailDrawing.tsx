@@ -7,7 +7,7 @@ const path = (pts: Pt[]) => 'M' + pts.map((p) => `${p[0].toFixed(1)} ${p[1].toFi
 
 /**
  * A stretch of the walk drawn on India: the land, the whole trail so far faint, and the stretch bright in sage, with
- * a dot where it began and where it ended. Framed on the stretch, never smaller than a sixth of the country.
+ * a dot where it began and where it ended. Framed on the stretch, never narrower than about half the country, so you can tell where it is.
  */
 export function TrailDrawing({ fromKm, toKm, label }: { fromKm: number; toKm: number; label: string }) {
   const india = REGIONS.india;
@@ -15,7 +15,7 @@ export function TrailDrawing({ fromKm, toKm, label }: { fromKm: number; toKm: nu
   const xs = part.map((p) => p[0]);
   const ys = part.map((p) => p[1]);
   const [bw, bh] = [india.box[2], india.box[3]];
-  const side = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys), bw / 6) * 1.5;
+  const side = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys), bw / 2.6) * 1.3;
   const cx = (Math.max(...xs) + Math.min(...xs)) / 2;
   const cy = (Math.max(...ys) + Math.min(...ys)) / 2;
   const x = Math.min(Math.max(cx - side / 2, 0), Math.max(bw - side, 0));

@@ -11,14 +11,15 @@ import { stepsByDay } from '../../walk/runs';
 import { WalkFrame } from './WalkFrame';
 
 const WORDS: Record<RoadEvent['kind'], (e: RoadEvent) => string> = {
+  start: (e) => `Set off from ${e.name}`,
   city: (e) => `Reached ${e.name}`,
   state: (e) => `Into ${e.name}`,
   chapter: (e) => `Chapter ${e.chapter} walked: ${e.name}`,
 };
 
-/** Each kind keeps its own shape, so the timeline never leans on colour: a dot for a city, a diamond for a state line, a star for a chapter. */
+/** Each kind keeps its own shape, so the timeline never leans on colour: a flag for setting off, a dot for a city, a diamond for a state line, a star for a chapter. */
 function KindMark({ kind }: { kind: RoadEvent['kind'] }) {
-  const d = { city: 'M7 3 a4 4 0 1 0 0.01 0Z', state: 'M7 2 L12 7 L7 12 L2 7Z', chapter: 'M7 1 L8.8 5 L13 5.3 L9.8 8.1 L10.8 12.5 L7 10.2 L3.2 12.5 L4.2 8.1 L1 5.3 L5.2 5Z' }[kind];
+  const d = { start: 'M3 3 L11 7 L3 11Z', city: 'M7 3 a4 4 0 1 0 0.01 0Z', state: 'M7 2 L12 7 L7 12 L2 7Z', chapter: 'M7 1 L8.8 5 L13 5.3 L9.8 8.1 L10.8 12.5 L7 10.2 L3.2 12.5 L4.2 8.1 L1 5.3 L5.2 5Z' }[kind];
   return (
     <svg className={`walk-road-mark ${kind}`} viewBox="0 0 14 14" width="14" height="14" aria-hidden="true">
       <path d={d} />
