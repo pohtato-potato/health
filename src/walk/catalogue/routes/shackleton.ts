@@ -10,7 +10,7 @@ const HOURS = 36;
 
 export const shackleton: RouteDef = {
   id: 'shackleton',
-  name: 'Shackleton crosses South Georgia',
+  name: 'Shackleton’s crossing',
   era: '1916',
   hook: 'Three men, no map and a carpenter’s adze, over the mountains to save twenty-five more.',
   group: 'world',
