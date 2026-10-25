@@ -1,3 +1,4 @@
+import { RegionFrame } from '../ui/live/RegionFrame';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef, useState } from 'react';
 import { scheduleDing, unlockAudio } from '../audio';
@@ -63,7 +64,7 @@ export function CheckInScreen() {
   const [saved, setSaved] = useState<CheckIn | null>(null);
   const started = useRef(Date.now());
 
-  if (!settings || !days || !last) return <div className="page bare" />;
+  if (!settings || !days || !last) return <RegionFrame className="bare" />;
   const std = standing ?? last.lastWaist?.waistStanding ?? 36;
   const rel = relaxed ?? last.lastRelaxed?.waistRelaxed ?? std + 1;
   const sl = slouched ?? last.lastSlouch?.waistSlouched ?? std + 1.5;
@@ -110,7 +111,7 @@ export function CheckInScreen() {
   if (step === 'photos') {
     const done = POSES.filter((p) => shots[p]).length;
     return (
-      <div className="page bare" style={{ gap: 14, paddingTop: 'calc(12px + var(--safe-top))' }}>
+      <RegionFrame className="bare" style={{ gap: 14, paddingTop: 'calc(12px + var(--safe-top))' }}>
         {header}
         <h1 className="h1">Photos</h1>
         <div className="seg" role="tablist">
@@ -142,13 +143,13 @@ export function CheckInScreen() {
             Next: tape measure
           </button>
         </div>
-      </div>
+      </RegionFrame>
     );
   }
 
   if (step === 'tape') {
     return (
-      <div className="page bare" style={{ gap: 16, paddingTop: 'calc(12px + var(--safe-top))' }}>
+      <RegionFrame className="bare" style={{ gap: 16, paddingTop: 'calc(12px + var(--safe-top))' }}>
         {header}
         <h1 className="h1">Tape measure</h1>
         <div className="card" style={{ gap: 6 }}>
@@ -172,14 +173,14 @@ export function CheckInScreen() {
         <button type="button" className="btn lg block" onClick={() => setStep('tshirt')}>
           Next: t-shirt test
         </button>
-      </div>
+      </RegionFrame>
     );
   }
 
   if (step === 'tshirt') {
     const lastTee = last.last?.tshirt;
     return (
-      <div className="page bare" style={{ gap: 16, paddingTop: 'calc(12px + var(--safe-top))' }}>
+      <RegionFrame className="bare" style={{ gap: 16, paddingTop: 'calc(12px + var(--safe-top))' }}>
         {header}
         <h1 className="h1">T-shirt test and your line</h1>
         <Capture
@@ -215,7 +216,7 @@ export function CheckInScreen() {
         <button type="button" className="btn lg block" onClick={save}>
           See this month's results
         </button>
-      </div>
+      </RegionFrame>
     );
   }
 
@@ -239,7 +240,7 @@ export function CheckInScreen() {
   const next = addDays(dayKey(), 30);
 
   return (
-    <div className="page bare" style={{ gap: 16, paddingTop: 'calc(12px + var(--safe-top))' }}>
+    <RegionFrame className="bare" style={{ gap: 16, paddingTop: 'calc(12px + var(--safe-top))' }}>
       {header}
       <div className="col gap6">
         <h1 className="h1" style={{ fontSize: 32 }}>
@@ -296,7 +297,7 @@ export function CheckInScreen() {
           Done
         </button>
       </div>
-    </div>
+    </RegionFrame>
   );
 }
 
@@ -445,7 +446,7 @@ function Capture({
           </button>
         </div>
       ) : (
-        <div className="row" style={{ gap: 8 }}>
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
           <button type="button" className="tool" onClick={() => setFacing(facing === 'user' ? 'environment' : 'user')}>
             <Icon name="swap" size={16} stroke={1.8} />
             {facing === 'user' ? 'Front camera' : 'Back camera'}
@@ -471,7 +472,7 @@ function Capture({
       )}
       {!shotUrl && (
         <>
-          <button type="button" className="link" style={{ alignSelf: 'center', minHeight: 32 }} onClick={() => fileInput.current?.click()}>
+          <button type="button" className="link tap44" style={{ alignSelf: 'center', minHeight: 32 }} onClick={() => fileInput.current?.click()}>
             Use the camera app instead
           </button>
           <input

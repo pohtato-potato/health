@@ -197,7 +197,7 @@ export function ChecklistSheet() {
                   }}
                 />
               ) : (
-                <button type="button" className="t16" style={{ textAlign: 'left', minHeight: 36 }} onClick={() => setEditing(item.id)} aria-label={`Rename ${item.name}`}>
+                <button type="button" className="t16 tap44" style={{ textAlign: 'left', minHeight: 36 }} onClick={() => setEditing(item.id)} aria-label={`Rename ${item.name}`}>
                   {item.name}
                 </button>
               )}

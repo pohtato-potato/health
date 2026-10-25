@@ -10,11 +10,12 @@ import { removeExercise } from '../domain/planEdit';
 import { loggedLater, neglectedExercises, suspiciousSets } from '../domain/trainingChecks';
 import { askConfirm } from '../ui/Confirm';
 import type { SetEntry, Settings, TrainingSession } from '../domain/types';
-import { regionTint } from '../ui/live/regionTint';
+import { devGlow, regionTint } from '../ui/live/regionTint';
+import { dayGlow } from '../domain/dayGlow';
 import { kmFromSteps } from '../domain/walk';
-import { useActiveSession, useAllDays, useAllSets, useSessions, useSettings, useToday } from '../db/hooks';
-import { go, openSheet } from '../router';
-import { doneSessions, nextUp, triggersMet, weeksFor } from '../state/derived';
+import { useActiveSession, useAllDays, useAllSets, useEntries, useSessions, useSettings, useToday } from '../db/hooks';
+import { go, openSheet, useRoute } from '../router';
+import { dayRings, doneSessions, nextUp, triggersMet, weeksFor } from '../state/derived';
 import { TrainNextUp } from './train/TrainNextUp';
 import { sessionStats } from './SessionDone';
 import { deloadCase } from '../domain/deload';
@@ -22,7 +23,7 @@ import { placeFor } from '../domain/places';
 import { TRIP_SESSION_ID } from '../domain/trip';
 import { markSetsSkipped, patchSettings } from '../db/actions';
 import { loadBlocks, plateChanges, usualLength } from '../domain/sessionEdges';
-import { filmDue, formFocus, fourWeeksAgo, heroFor, monthSoFar, tonight, trainGlow, volumeLine, weekVolume } from '../domain/trainView';
+import { filmDue, formFocus, fourWeeksAgo, heroFor, monthSoFar, tonight, volumeLine, weekVolume } from '../domain/trainView';
 import { Aurora } from '../ui/live/Aurora';
 import { TonightCard, UpNextCard } from './train/Cards';
 import { BodyCard, FourWeeksCard, MonthCard, PlanCard, RecentCard, RecordsCard } from './train/Sections';
@@ -34,7 +35,9 @@ export function Train() {
   const sets = useAllSets();
   const days = useAllDays();
   const active = useActiveSession();
-  if (!settings || !sessions || !sets || !days || active === undefined) return <div className="page" />;
+  const entries = useEntries(today);
+  const route = useRoute();
+  if (!settings || !sessions || !sets || !days || active === undefined || !entries) return <div className="page" />;
 
   const plan = settings.plan;
   if (!plan) {
@@ -82,8 +85,8 @@ export function Train() {
 
   // The region is the ground; tonight's session, if it went well, is the light on it (the full colour is for the live session).
   const walkKm = kmFromSteps(days.reduce((n, d) => n + (d.steps ?? 0), 0));
-  const g = trainGlow(tn && { records: tn.records.length, checks: tn.checks, formAvg: tn.formAvg });
-  const trainLight = g === 'calm' ? undefined : g;
+  const perfect = dayRings(settings, today, todayDay, entries).rings.perfect;
+  const trainLight = devGlow(dayGlow({ perfect, session: tn && { records: tn.records.length, checks: tn.checks, formAvg: tn.formAvg } }), route.params);
   return (
     <div className={`page lv lv-tab${trainLight ? ' lv-glow' : ''}`} style={regionTint(walkKm, trainLight)}>
       <Aurora />

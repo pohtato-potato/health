@@ -1,3 +1,4 @@
+import { RegionFrame } from '../ui/live/RegionFrame';
 import { addDays, weekStart } from '../domain/dates';
 import { fmtDayShort, fmtInt } from '../domain/format';
 import { MEAL_NAMES, MEALS } from '../domain/types';
@@ -18,7 +19,7 @@ export function FoodToday() {
   const entries = useEntries(date);
   const ws = weekStart(date);
   const week = useEntriesBetween(ws, addDays(ws, 6));
-  if (!settings || !days || !entries || !week) return <div className="page" />;
+  if (!settings || !days || !entries || !week) return <RegionFrame />;
 
   const day = days.find((d) => d.date === date);
   const { totals, targets, rings } = dayRings(settings, date, day, entries);
@@ -32,7 +33,7 @@ export function FoodToday() {
 
   return (
     <>
-      <div className="page" style={{ paddingBottom: 'calc(110px + var(--safe-bottom))' }}>
+      <RegionFrame style={{ paddingBottom: 'calc(110px + var(--safe-bottom))' }}>
         <div className="row">
           <button type="button" className="backlink" onClick={() => back('/today')}>
             <Icon name="left" size={20} stroke={1.8} />
@@ -149,7 +150,7 @@ export function FoodToday() {
                   <span className={`t13 tn ${es.length ? 'q' : 'f'}`}>{es.length ? `${fmtInt(kcal)} · ${Math.round(protein)} g` : 'Not logged yet'}</span>
                 </div>
                 {es.filter((e) => e.kind === 'food' && e.foodId).length >= 2 && (
-                  <button type="button" className="t12 d" style={{ alignSelf: 'flex-end', marginTop: -4, marginBottom: 2 }} onClick={() => openSheet('savemeal', { meal, ...(date !== today ? { d: date } : {}) })}>
+                  <button type="button" className="t12 d tap44" style={{ alignSelf: 'flex-end', marginTop: -4, marginBottom: 2 }} onClick={() => openSheet('savemeal', { meal, ...(date !== today ? { d: date } : {}) })}>
                     Save as a meal
                   </button>
                 )}
@@ -183,7 +184,7 @@ export function FoodToday() {
             onChange={(v) => void patchDay(date, { foodDone: v })}
           />
         </div>
-      </div>
+      </RegionFrame>
 
       <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 480, bottom: 0, padding: '12px 22px calc(20px + var(--safe-bottom))', display: 'flex', gap: 10, background: 'linear-gradient(transparent, var(--ink) 30%)', zIndex: 10 }}>
         <button type="button" className="btn lg grow" onClick={() => openSheet('addfood', date !== today ? { d: date } : {})}>

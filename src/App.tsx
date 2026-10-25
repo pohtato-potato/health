@@ -2,7 +2,7 @@ import { TrainProto } from './screens/proto/TrainLiving';
 import { SessionProto } from './screens/proto/SessionLiving';
 import { prefOn } from './domain/types';
 import { Suspense, lazy, useEffect, type ComponentType, type ReactNode } from 'react';
-import { RegionGround } from './ui/live/RegionGround';
+import { RegionRoot } from './ui/live/RegionFrame';
 import { findSession } from './domain/plan';
 import { fmtLitres } from './domain/format';
 import { addWater } from './db/actions';
@@ -184,7 +184,7 @@ export function App() {
   const sheet = route.params.get('sheet');
   return (
     <div className="app">
-      <RegionGround path={route.path} />
+      <RegionRoot />
       <Suspense fallback={<div className="page" />}>{page.el()}</Suspense>
       {page.tab && <TabBar active={page.tab} />}
       {page.tab && <ResumePill />}

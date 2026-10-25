@@ -341,4 +341,9 @@ The Walk tab was rebuilt on top of part 1 (`feat/walk`); Today and the Walk ship
 - **Full-screen moments may stack:** Today's and the Walk's moments don't share a daily limit.
 - **Close the day:** part 2's closing moment builds on the walker already moving on Close the day.
 - **Monday:** part 4's "Met this week" slide sits beside the walk's cards in the weekly recap.
-
+- **Downstream (25 Oct, owner's 1A–4A):**
+  - **1A Sheets** are a solid tint of the land (34% of the region's colour into the night), with the Walk glass inside: tiles, fields, chips, the date chips and the morning log's place buttons. Never see-through.
+  - **2A The + sheet** follows Today's order: Log anything, your usual foods, the tiles, More (14px). A usual chip adds the food at its usual portion with an Undo toast, the same code as Today (`useAddUsual`).
+  - **3A The pages Today opens** (Food, Close the day, Readiness, the week, Check-in) sit on the region's aurora through `RegionFrame`, with glass cards and glass-edge rules; layouts unchanged.
+  - **4A The land and the day's glow:** the region's colour is the ground on Today, the Walk, Train between sessions and those pages. How the day went fills half the field with the session's own rich colour (green in range; gold for a record night or a perfect day), from `dayGlow`. Text on the glow keeps AA through a quarter dim, a brighter quiet, and the light sitting low in the field. Only the live session and full-screen moments change the whole screen.
+  - **Open for the owner:** Close the day's gold button (gold is for records and a perfect day), and the toast's "Undo" against "Change".

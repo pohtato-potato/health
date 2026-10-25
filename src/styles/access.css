@@ -53,3 +53,23 @@
   --divider: #3a404c;
   --btn-border: #6b7385;
 }
+
+/* Aim: every tap area reaches 44 px while the control keeps its drawn size. `.tap44` is for one-off small buttons. */
+.tap44,
+.tool,
+.seg button,
+.grip {
+  position: relative;
+}
+.tap44::after,
+.tool::after,
+.seg button::after,
+.grip::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}

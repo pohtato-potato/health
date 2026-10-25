@@ -288,7 +288,10 @@ Soft and round. Controls are full pills whose radius is half their height (48px 
 - **Back link:** quiet text with a chevron, 44px tall.
 
 ### Sheets
-Bottom sheets rise from a 72% scrim, surface background, 28px top corners, a 40 by 4px grabber, and a scrolling body with 14px gaps. Tall sheets fill the screen less 56px.
+Bottom sheets rise from a 72% scrim, 28px top corners, a 40 by 4px grabber, and a scrolling body with 14px gaps. Tall sheets fill the screen less 56px.
+- **A solid tint of the land:** every sheet, on every tab, is the region's colour mixed into the night (34% of `--region-a` into `#0c0e1d`, set on the root by `RegionRoot` from where the walk is). Never see-through: the magnifier needs a steady ground.
+- **Glass inside:** cards, tiles, fields, segmented controls, food chips and the search are the Walk glass (`#0c0e1d` at 50%) with the 18% text hairline; row rules use the same edge, bar tracks and control edges the text's own colour. All of it lives in `src/styles/region.css`, by redefining the surface tokens inside `.sheet`.
+- **The + sheet** follows Today's order (`LogSheetLayout`): Log anything, "Your usual {meal}" chips (one tap adds the food at its usual portion, with an Undo toast, through the same `useAddUsual` as Today), the tiles, then More.
 
 ### Toasts
 Raised pill-cornered panels (20px) at the top of the screen with the float shadow, an optional action, and gold, sage or lavender washes for celebratory kinds.
@@ -314,6 +317,10 @@ The older side-on scene (`WalkScene`): the current stop layered far to near in t
 - **Varied blocks, not a stack of cards:** only the moment card is a card. The walk, the line, the rings and Next up sit straight on the page, each in its own form.
 - **Walk on Today:** the place itself, drawn as the arrival's welcome draws it (`Scene`: the fort at Gwalior, the Taj at Agra), every day and lit for the hour. The nearer of the place behind and the place ahead, preferring one that has its drawing. The caption sits under the picture, in the fade: date, place and status (14px), the Walk tab's title (28px serif), and one walk line (an arrival, a small stop, a rest day, the sky, tomorrow, else the milestone's km). On an arrival day the city's passport stamp sits tilted on the sky until midnight. Tapping opens the Walk tab.
 - **Colour:** Today sits on the aurora tinted by the walk's region, and its surfaces are the Walk glass with a hairline.
+- **The day's glow:** how the day went fills half the field (the `b2` blob at 0.8) with the session's own deep colour, its light low in the field: green (`#1a8f6a`, light `#bfe8d4`) after a session in range, gold (`#8a6420`, light `#f6cf72`) after a record night or on a perfect day, none on an ordinary day. `dayGlow` in `src/domain/dayGlow.ts` decides (perfect, then record, then in range); Today and the Train tab both use it. A quarter dim and a brighter quiet keep text on the glow at AA. The whole screen changes colour only in a live session (`st-*`) and in full-screen moments.
+
+### Region Frame
+The pages Today opens (Food, Close the day, Readiness, the weekly recap, Check-in) opt in with `RegionFrame` (`src/ui/live/RegionFrame.tsx`): the region's aurora as a fixed layer behind the page, the page's own layout unchanged on top. Inside, cards, panels, lists and fields are the Walk glass and every rule the glass edge. On the land, quiet and dim text are a step lighter (`#c4c1cf`, `#aeabbd`) to keep 4.5:1 on the plum of the ravines, the brightest ground. The weekly receipt stays paper.
 - **Banner slot:** one banner at a time, a line between two hairlines with a 44px action and a 44px dismiss that lasts the log day.
 - **The line:** the day's headline in 26px serif, the time trailing it in 14px; the voice in italic only at moments, gold on a perfect day.
 - **Rings:** the drawing, and beside it only the numbers (34px serif in each ring's ink) with a 14px unit. The target and its action appear on tap.
@@ -329,7 +336,7 @@ Full-screen celebrations on deep night with a centred serif title (36 to 44px), 
 The weekly receipt (mono on paper with a torn edge) and walk postcards (tilted paper cards) are the only light surfaces, each with the paper shadow.
 
 ### Named Rules
-**The Pill Rule.** Every tappable control is a pill or a rounded tile, and nothing tappable is shorter than 44px.
+**The Pill Rule.** Every tappable control is a pill or a rounded tile, and nothing tappable is shorter than 44px. A control drawn smaller grows its tap area with an invisible centred `::after` of at least 44 by 44px (`.tap44` for one-off buttons; `.chip.sm`, `.tool`, `.seg button` and `.grip` have it built in).
 
 **The Settle Rule.** Things arrive and settle: sheets rise in 0.24s on cubic-bezier(0.2, 0.8, 0.2, 1), toasts drop in 0.25s on the same curve, moments and stories ease in on cubic-bezier(0.16, 1, 0.3, 1), scrims fade in 0.18s.
 

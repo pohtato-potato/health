@@ -1,3 +1,4 @@
+import { RegionFrame } from '../ui/live/RegionFrame';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
 import { addDays, dayKey, weekStart } from '../domain/dates';
@@ -51,7 +52,7 @@ export function WeekRecap() {
     void db.weeks.get(data.from).then((n) => db.weeks.put({ ...(n ?? { id: data.from }), recapSeenAt: Date.now() }));
   }, [data?.from]);
 
-  if (!data) return <div className="page bare" />;
+  if (!data) return <RegionFrame className="bare" />;
   const { w, prev, settings, all, foods } = data;
   const perWeek = targetsFor(settings, w.to).sessionsPerWeek;
   const weeks = weeksFor(settings, data.sessions, w.to);
@@ -75,7 +76,7 @@ export function WeekRecap() {
   };
 
   return (
-    <div className="page bare">
+    <RegionFrame className="bare">
       <button type="button" className="backlink" onClick={() => back('/journey')}>
         <Icon name="left" size={20} stroke={1.8} />
         Journey
@@ -172,7 +173,7 @@ export function WeekRecap() {
       <button type="button" className="btn lg block" onClick={() => back('/journey')}>
         Done
       </button>
-    </div>
+    </RegionFrame>
   );
 }
 

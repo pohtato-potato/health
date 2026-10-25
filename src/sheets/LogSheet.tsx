@@ -16,6 +16,8 @@ import { StatusRow } from '../ui/StatusRow';
 import { usualFoods } from '../domain/usual';
 import { mealForTime, portionFor } from '../domain/foods';
 import { UsualChips } from '../screens/today/LogBelow';
+import { useAddUsual } from '../screens/today/useAddUsual';
+import { LogSheetLayout } from './LogSheetLayout';
 
 /** The + sheet (s2), in Today's order: one search box for anything, your usual foods, the drawn tiles, then More. */
 export function LogSheet() {
@@ -29,6 +31,7 @@ export function LogSheet() {
   const active = useActiveSession();
   const foods = useFoods();
   const monthEntries = useEntriesBetween(addDays(today, -60), today);
+  const addUsual = useAddUsual();
 
   if (!settings || !days || !entries || !sessions || !sets || active === undefined || !foods || !monthEntries) return <Sheet title="Log">{null}</Sheet>;
   const mealNow = mealForTime();
@@ -55,34 +58,55 @@ export function LogSheet() {
 
   return (
     <Sheet title="Log">
-      <DateChip value={date} onChange={setDate} />
-      <LogSearch foods={foods} onAction={(a) => (a.sheet ? replaceSheet(a.sheet) : go(a.route!))} onFood={(f) => replaceSheet('addfood', { ...d, food: f.id })} onQuick={() => replaceSheet('quick', d)} />
-      {usual.length > 0 && (
-        <section className="col gap2" aria-label={`Your usual ${mealNow}`}>
-          <span className="t14 q">Your usual {mealNow}</span>
-          <UsualChips items={usual.map((u) => ({ id: u.food.id, name: u.food.name, portion: portionFor(u.food, u.amount) }))} onAdd={(id) => replaceSheet('addfood', { ...d, food: id })} />
-        </section>
-      )}
-      <div className="log-grid">
-        {tile('food', 'var(--kcal)', 'Food', totals.entries ? `${fmtInt(totals.kcal)} kcal` : 'Nothing yet', () => replaceSheet('addfood', d))}
-        {tile('sun', 'var(--gold)', 'Morning log', day?.morning ? `Done ${fmtTime(day.morning.at)}` : 'Weight, sleep', () => replaceSheet('morning', d))}
-        {slots.length > 0
-          ? tile('pill', 'var(--pearl)', 'Checklist', `${ticked} of ${slots.length}`, () => replaceSheet('checklist', d))
-          : tile('pill', 'var(--pearl)', 'Checklist', 'Set up', () => go('/medicines'))}
-        {tile('steps', 'var(--steps)', 'Steps', day?.steps !== undefined ? fmtInt(day.steps) : 'Not logged', () => replaceSheet('steps', d))}
-        {plan && (active || up)
-          ? tile('train', 'var(--protein)', sessionName ?? 'Session', active ? 'In progress' : 'Start', () => (active ? go('/session') : go('/session', { start: up!.sessionId })))
-          : tile('train', 'var(--protein)', 'Session', 'No plan yet', () => go('/plan'))}
-        {tile('check', 'var(--gold)', 'Close the day', day?.foodDone ? 'Closed' : 'Meals, checklist', () => go('/close', d))}
-        {prefOn(settings.prefs, 'water') && tile('water', 'var(--blue)', 'Water', `${fmtLitres(totals.waterMl)} of ${fmtLitres(targets.waterMl)} L`, () => replaceSheet('water', d))}
-      </div>
-      <button type="button" className="wide" onClick={() => replaceSheet('more', d)}>
-        <span className="col gap2">
-          <span className="t15">More</span>
-          <span className="t14 q">Drinks, night out, free meal, waist, status, check-in</span>
-        </span>
-        <Icon name="right" size={18} stroke={1.8} color="var(--quiet)" />
-      </button>
+      <LogSheetLayout
+        date={<DateChip value={date} onChange={setDate} />}
+        search={
+          <LogSearch
+            foods={foods}
+            onAction={(a) => (a.sheet ? replaceSheet(a.sheet) : go(a.route!))}
+            onFood={(f) => replaceSheet('addfood', { ...d, food: f.id })}
+            onQuick={() => replaceSheet('quick', d)}
+          />
+        }
+        usual={
+          usual.length > 0 && (
+            <section className="col gap2" aria-label={`Your usual ${mealNow}`}>
+              <span className="t14 q">Your usual {mealNow}</span>
+              <UsualChips
+                items={usual.map((u) => ({ id: u.food.id, name: u.food.name, portion: portionFor(u.food, u.amount) }))}
+                onAdd={(id) => {
+                  const u = usual.find((x) => x.food.id === id);
+                  if (u) void addUsual(u, date, mealNow);
+                }}
+              />
+            </section>
+          )
+        }
+        tiles={
+          <div className="log-grid">
+            {tile('food', 'var(--kcal)', 'Food', totals.entries ? `${fmtInt(totals.kcal)} kcal` : 'Nothing yet', () => replaceSheet('addfood', d))}
+            {tile('sun', 'var(--gold)', 'Morning log', day?.morning ? `Done ${fmtTime(day.morning.at)}` : 'Weight, sleep', () => replaceSheet('morning', d))}
+            {slots.length > 0
+              ? tile('pill', 'var(--pearl)', 'Checklist', `${ticked} of ${slots.length}`, () => replaceSheet('checklist', d))
+              : tile('pill', 'var(--pearl)', 'Checklist', 'Set up', () => go('/medicines'))}
+            {tile('steps', 'var(--steps)', 'Steps', day?.steps !== undefined ? fmtInt(day.steps) : 'Not logged', () => replaceSheet('steps', d))}
+            {plan && (active || up)
+              ? tile('train', 'var(--protein)', sessionName ?? 'Session', active ? 'In progress' : 'Start', () => (active ? go('/session') : go('/session', { start: up!.sessionId })))
+              : tile('train', 'var(--protein)', 'Session', 'No plan yet', () => go('/plan'))}
+            {tile('check', 'var(--gold)', 'Close the day', day?.foodDone ? 'Closed' : 'Meals, checklist', () => go('/close', d))}
+            {prefOn(settings.prefs, 'water') && tile('water', 'var(--blue)', 'Water', `${fmtLitres(totals.waterMl)} of ${fmtLitres(targets.waterMl)} L`, () => replaceSheet('water', d))}
+          </div>
+        }
+        more={
+          <button type="button" className="wide" onClick={() => replaceSheet('more', d)}>
+            <span className="col gap2">
+              <span className="t15">More</span>
+              <span className="t14 q">Drinks, night out, free meal, waist, status, check-in</span>
+            </span>
+            <Icon name="right" size={18} stroke={1.8} color="var(--quiet)" />
+          </button>
+        }
+      />
     </Sheet>
   );
 }
@@ -124,7 +148,7 @@ export function MoreSheet() {
       </div>
       <div className="lbl">Status</div>
       <StatusRow today={today} current={days?.find((x) => x.date === today)?.status} />
-      <button type="button" className="link t13" style={{ alignSelf: 'flex-start', minHeight: 36 }} onClick={() => replaceSheet('occasion')}>
+      <button type="button" className="link t13 tap44" style={{ alignSelf: 'flex-start', minHeight: 36 }} onClick={() => replaceSheet('occasion')}>
         Name an occasion or set dates
       </button>
       <div className="t13 q lh">A status relaxes targets to maintenance and pauses streaks until you switch it off.</div>

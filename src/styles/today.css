@@ -75,6 +75,8 @@
 .td-h { margin: 10px 0 0; font-family: var(--serif); font-weight: 400; font-size: 22px; }
 .td-hint { margin: -6px 0 0; font-size: 14px; color: var(--quiet); }
 .td-quick { display: flex; gap: 10px; overflow-x: auto; margin: 0 -22px; padding: 2px 22px 6px; scrollbar-width: none; }
+/* In the + sheet the row bleeds to the sheet's own 20 px edge, not the page's 22. */
+.sheet .td-quick { margin: 0 -20px; padding-inline: 20px; }
 .td-food { flex: none; display: flex; flex-direction: column; align-items: flex-start; min-height: 64px; min-width: 112px; padding: 10px 14px; border-radius: 16px; border: 1px solid var(--hairline); background: var(--surface); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
 .td-food b { font-size: 16px; font-weight: 600; }
 .td-food span { font-size: 14px; color: var(--quiet); }

@@ -1,15 +1,40 @@
-/* The region's colour beyond Today: pages opened from Today on its aurora, sheets in a solid tint of the land. */
-:root { --region-a: #34385f; --glass: color-mix(in srgb, #0c0e1d 50%, transparent); --glass-edge: color-mix(in srgb, var(--text) 18%, transparent); }
+/* The region's colour beyond the Walk: the pages Today opens sit on its aurora with glass cards, and every sheet is
+   a solid tint of the land with glass inside. --region-a is set on the root from where the walk is (RegionRoot). */
+:root {
+  --region-a: #34385f;
+  --glass: color-mix(in srgb, #0c0e1d 50%, transparent);
+  --glass-edge: color-mix(in srgb, var(--text) 18%, transparent);
+}
 
-.lv.lv-ground { position: fixed; inset: 0; z-index: 0; display: block; }
-html.region .app > .page { position: relative; z-index: 1; background: none; }
-html.region .app > .page :is(.card, .panel, .meal-panel, .list) { background: var(--glass); border-color: var(--glass-edge); }
-html.region .app > .page { --hairline: var(--glass-edge); }
+/* The surfaces inside, in one place: glass for cards, tiles and wells; the glass edge for every hairline and row rule;
+   bar tracks and control edges in the text's own colour, so nothing is navy on the land. */
+.rg-page,
+.sheet {
+  --surface: var(--glass);
+  --raised: var(--glass);
+  --hairline: var(--glass-edge);
+  --divider: var(--glass-edge);
+  --track: color-mix(in srgb, var(--text) 14%, transparent);
+  --btn-border: color-mix(in srgb, var(--text) 26%, transparent);
+}
+:is(.rg-page, .sheet) :is(.field, .seg, .log-search, .td-food) { background: var(--glass); border-color: var(--glass-edge); }
 
-/* Sheets stay solid for reading through the magnifier, tinted by the land; what sits inside them is glass. */
-.sheet { background: color-mix(in srgb, var(--region-a) 34%, #0c0e1d); border-top-color: var(--glass-edge); --hairline: var(--glass-edge); }
-.sheet :is(.card, .panel, .meal-panel, .list, .log-tile, .wide, .log-search, .td-food) { background: var(--glass); border-color: var(--glass-edge); }
+/* Quiet text on the land: the plum of the ravines is the brightest ground, and the standard quiet measured 4.1:1 on
+   it, and dim 3.5:1; a step lighter each keeps 4.5:1. High contrast sets its own, brighter ones. */
+:root:not(.contrast) :is(.lv.lv-tab, .rg-page) { --quiet: #c4c1cf; --dim: #aeabbd; }
 
-/* The day's glow: half the field takes the session's own deep colour, with its light inside, over the land's colour. */
+/* A page Today opens: the aurora is a fixed layer behind it (RegionFrame), so the page keeps its own layout. */
+.lv.rg-ground { position: fixed; inset: 0; z-index: 0; display: block; }
+.rg-page { position: relative; z-index: 1; }
+
+/* Sheets stay solid for reading through the magnifier: about a third of the land's colour mixed into the night. */
+.sheet { background: color-mix(in srgb, var(--region-a) 34%, #0c0e1d); border-top-color: var(--glass-edge); }
+
+/* The day's glow: half the field takes the session's own deep colour, with its light inside, over the land's colour.
+   The light sits low, below the text column, and a quarter dim keeps text on the glow at AA: quiet text measured
+   5.6:1 on green and 6.4:1 on gold at 360 px (it was 1.6:1 with the light behind the rings). Quiet text is brighter
+   here, as high contrast makes it. */
+.lv.lv-glow { --quiet: color-mix(in srgb, var(--text) 90%, transparent); }
 .lv.lv-glow .b2 { background: var(--lv-glow); opacity: 0.8; }
-.lv.lv-glow .b4 { opacity: 0.3; width: 60vmax; height: 60vmax; right: -20vmax; top: 40vmax; }
+.lv.lv-glow .b4 { opacity: 0.3; width: 60vmax; height: 60vmax; right: -30vmax; bottom: -30vmax; top: auto; }
+.lv.lv-glow .lv-dim { opacity: 0.25; }

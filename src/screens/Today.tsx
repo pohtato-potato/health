@@ -29,11 +29,12 @@ import { proteinState } from '../domain/proteinState';
 import { ChecklistChips, MealTiles, UsualChips, mealTotals } from './today/LogBelow';
 import { LogSearch } from '../sheets/LogSearch';
 import { sameAsYesterday, usualFoods } from '../domain/usual';
-import { mealForTime, portionFor, valuesFor } from '../domain/foods';
+import { mealForTime, portionFor } from '../domain/foods';
 import { checklistSlots } from '../state/derived';
 import type { Meal } from '../domain/types';
 import { MomentCard } from './today/MomentCard';
 import { useGapAdd } from './today/useGapAdd';
+import { useAddUsual } from './today/useAddUsual';
 import { momentFor } from '../domain/todayMoment';
 import { tickFor } from '../domain/checklist';
 import { TodayLine } from './today/TodayLine';
@@ -42,7 +43,8 @@ import { logMinutes } from '../domain/todayMoment';
 import { placeFor } from '../domain/places';
 import { proteinGap } from '../domain/proteinGap';
 import { go, openSheet, useRoute } from '../router';
-import { regionTint, type DayGlow } from '../ui/live/regionTint';
+import { devGlow, regionTint } from '../ui/live/regionTint';
+import { dayGlow } from '../domain/dayGlow';
 import { Rings } from '../ui/Rings';
 import { useToast } from '../ui/Toasts';
 import {
@@ -61,7 +63,7 @@ import { SeasonStrip, useUnlockedIds } from '../ui/Theme';
 import { hasReward } from '../domain/rewards';
 import { NextUpCard } from './NextUpCard';
 import { RecordsStrip } from './today/NextStrip';
-import { tonight, trainGlow } from '../domain/trainView';
+import { tonight } from '../domain/trainView';
 import { fmtSet } from '../domain/setText';
 import { regionAt } from '../domain/regions';
 import { themeDayOn } from '../domain/calendar';
@@ -94,6 +96,7 @@ export function Today() {
   const nowMs = useNow(60_000);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const gapAdd = useGapAdd(today, foods);
+  const addUsualNow = useAddUsual();
   const route = useRoute();
 
   if (!settings || !days || !entries || !sessions || !sets || active === undefined || !foods || !weekEntries || !monthEntries) {
@@ -166,18 +169,13 @@ export function Today() {
   const scene = <Scene city={scenePlace(walkKm, pos.from, pos.done ? undefined : pos.to, (n) => !!landmarkFor(n))} part={partOfDay(new Date(nowMs))} landmarkScale={1.6} festive={festive} />;
   // How the day went lights the land: gold for a perfect day or a record night, green for a session in range.
   const tn = tonight(sessions, sets, today);
-  const sessionGlow = trainGlow(tn && { records: tn.records.length, checks: tn.checks, formAvg: tn.formAvg });
-  const devGlow = import.meta.env.DEV ? (route.params.get('glow') as DayGlow | null) : null;
-  const glow: DayGlow | undefined = devGlow ?? (rings.perfect ? 'perfect' : sessionGlow === 'calm' ? undefined : sessionGlow);
+  const glow = devGlow(dayGlow({ perfect: rings.perfect, session: tn && { records: tn.records.length, checks: tn.checks, formAvg: tn.formAvg } }), route.params);
   const stamp = arrival ? <StampTemplate name={arrival.name} state={arrival.state} n={arrival.n} ut={arrival.ut} /> : undefined;
   const mealNow = mealForTime();
   const usual = usualFoods(monthEntries, foods, mealNow, today);
-  const addUsual = async (id: string) => {
+  const addUsual = (id: string) => {
     const u = usual.find((x) => x.food.id === id);
-    if (!u) return;
-    const v = valuesFor(u.food, u.amount);
-    const added = await addEntries([{ date: today, meal: mealNow, at: Date.now(), kind: 'food', foodId: u.food.id, name: u.food.name, amount: u.amount, portion: portionFor(u.food, u.amount), kcal: v.kcal, protein: v.protein }]);
-    toast({ text: `Added ${u.food.name}`, sub: `${portionFor(u.food, u.amount)} · your usual. Open the meal to change it.`, action: { label: 'Undo', run: () => added.forEach((e) => void deleteEntry(e.id)) } });
+    if (u) void addUsualNow(u, today, mealNow);
   };
   const perMeal = mealTotals(entries);
   const MEALS: Meal[] = ['breakfast', 'lunch', 'snacks', 'dinner'];
@@ -259,7 +257,7 @@ export function Today() {
         {usual.length > 0 && (
           <>
             <h2 className="td-h">Your usual {mealNow}</h2>
-            <UsualChips items={usual.map((u) => ({ id: u.food.id, name: u.food.name, portion: portionFor(u.food, u.amount) }))} onAdd={(id) => void addUsual(id)} />
+            <UsualChips items={usual.map((u) => ({ id: u.food.id, name: u.food.name, portion: portionFor(u.food, u.amount) }))} onAdd={addUsual} />
           </>
         )}
         <LogSearch foods={foods} onAction={(a) => (a.sheet ? openSheet(a.sheet) : go(a.route!))} onFood={(f) => openSheet('addfood', { food: f.id })} onQuick={() => openSheet('quick')} />

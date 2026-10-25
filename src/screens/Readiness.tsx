@@ -1,3 +1,4 @@
+import { RegionFrame } from '../ui/live/RegionFrame';
 import { useEffect } from 'react';
 import { addDays, dayKey, logHour } from '../domain/dates';
 import { DEFAULT_WEIGHTS, heldBackText, READINESS_KEYS, readinessText, REFIT_MIN, refitWeights, type ReadinessKey } from '../domain/readiness';
@@ -59,7 +60,7 @@ export function ReadinessPage() {
   const entries = useEntriesBetween(addDays(today, -2), today);
   const sessions = useSessions();
   const sets = useAllSets();
-  if (!settings || !days || !entries || !sessions || !sets) return <div className="page bare" />;
+  if (!settings || !days || !entries || !sessions || !sets) return <RegionFrame className="bare" />;
   const fd = forecastData(settings, today, days, entries, sessions, sets);
   const r = fd.readiness;
   const bands = ['rest', 'easy', 'steady', 'push'] as const;
@@ -76,7 +77,7 @@ export function ReadinessPage() {
   const cravings = fd.list.some((f) => f.id === 'cravings') ? 'high' : 'low';
 
   return (
-    <div className="page bare">
+    <RegionFrame className="bare">
       <button type="button" className="backlink" onClick={() => back('/today')}>
         <Icon name="left" size={20} stroke={1.8} />
         Today
@@ -170,7 +171,7 @@ export function ReadinessPage() {
       </div>
       {!fd.beat.learned && <div className="t12 d center lh">The percentage is an estimate until there are ten sessions to learn from.</div>}
       <div className="t12 d center lh">A guide, not a verdict. Train by how you feel, and a joint flag always wins.</div>
-    </div>
+    </RegionFrame>
   );
 }
 

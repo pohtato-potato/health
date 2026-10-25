@@ -2,10 +2,8 @@ import type { CSSProperties } from 'react';
 import { useAllDays } from '../../db/hooks';
 import { regionAt } from '../../domain/regions';
 import { kmFromSteps } from '../../domain/walk';
+import { isDayGlow, type DayGlow } from '../../domain/dayGlow';
 import { auroraFor } from '../../walk/page';
-
-/** How the day went, as a light on the land: in range, a record night, a perfect day. */
-export type DayGlow = 'in' | 'record' | 'perfect';
 
 /**
  * Each glow: the live session's own deep colour, which fills half the field, and its bright light. Gold only for
@@ -26,4 +24,11 @@ export function regionTint(km: number, glow?: DayGlow): CSSProperties {
 export function useWalkKm(): number | undefined {
   const days = useAllDays();
   return days ? kmFromSteps(days.reduce((n, d) => n + (d.steps ?? 0), 0)) : undefined;
+}
+
+/** In development only, `?glow=in|record|perfect` shows a glow without a session to earn it, for checking the look. */
+export function devGlow(glow: DayGlow | undefined, params: URLSearchParams): DayGlow | undefined {
+  if (!import.meta.env.DEV) return glow;
+  const g = params.get('glow');
+  return isDayGlow(g) ? g : glow;
 }

@@ -261,7 +261,7 @@ function FoodFormInner({ existing, initialName, homes, meal, categories }: { exi
               {c.name}
             </button>
           ))}
-          <input className="field sm" style={{ flex: '1 1 140px' }} value={newCat} onChange={(e) => setNewCat(e.target.value)} placeholder="New category" aria-label="New category" spellCheck autoCapitalize="sentences" />
+          <input className="field sm" style={{ flex: '1 1 140px', minHeight: 44 }} value={newCat} onChange={(e) => setNewCat(e.target.value)} placeholder="New category" aria-label="New category" spellCheck autoCapitalize="sentences" />
         </div>
       </div>
 
