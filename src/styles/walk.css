@@ -348,3 +348,16 @@
 .walk-news-list li small { font-size: 14px; color: var(--route-ink); }
 .walk-primary.small { min-height: 48px; font-size: 15px; align-self: flex-start; }
 .walk-chron-when { font-size: 14px; color: var(--route-ink); font-variant-numeric: lining-nums; }
+.walk-strip2 { display: block; width: 100%; padding: 4px 0; border-radius: 12px; }
+.walk-strip2 svg { display: block; width: 100%; height: auto; overflow: visible; }
+.walk-strip2 .road { stroke: color-mix(in srgb, var(--text) 18%, #1c1f45); }
+.walk-strip2 .walked { stroke: color-mix(in srgb, #8fc9b0 55%, transparent); }
+.walk-strip2 .today, .walk-strip2 .you { stroke: #8fc9b0; }
+.walk-strip2 .stop { fill: #0e1020; stroke: #ede6da; }
+.walk-strip2 .stop.passed, .walk-strip2 .end.passed { fill: #8fc9b0; stroke: none; }
+.walk-strip2 .end { fill: #0e1020; stroke: #ede6da; }
+.walk-strip2 .you { fill: #8fc9b0; stroke: #0e1020; }
+.walk-strip2 .word { fill: #aeabbd; }
+.walk-strip2 .word.next { fill: #ede6da; }
+.walk-primary.walk-find { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 56px; align-self: stretch; }
+.walk-primary.walk-find small { font-size: 14px; font-weight: 500; opacity: 0.8; }

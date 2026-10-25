@@ -47,9 +47,9 @@ describe('the Walk tab’s sections', () => {
     for (const d of ['Passport', 'Map', 'Departures', 'Wrapped']) expect(html).toContain(`>${d}<`);
   });
 
-  it('reads the strip as words, and leaves the stone out at the end of the road', () => {
-    expect(renderToStaticMarkup(<WalkTop km={238} todayKm={8} stone={{ name: 'Gwalior', hindi: 'ग्वालियर', km: 112 }} onStrip={() => {}} />)).toContain('Gwalior · 112 km');
-    expect(renderToStaticMarkup(<WalkTop km={1e9} todayKm={0} onStrip={() => {}} />)).not.toContain('walk-stone');
+  it('stands the stone on the road’s shoulder, and leaves it out at the end of the road', () => {
+    expect(renderToStaticMarkup(<WalkTop km={238} todayKm={8} stone={{ name: 'Gwalior', hindi: 'ग्वालियर', km: 112 }} />)).toContain('Milestone: Gwalior, 112 km');
+    expect(renderToStaticMarkup(<WalkTop km={1e9} todayKm={0} />)).not.toContain('walk-stone');
   });
 
   it('titles the page with where you are and how far from the start', () => {

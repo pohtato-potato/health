@@ -20,7 +20,7 @@ import type { Stretch } from '../walk/content/types';
 import { Sheet } from '../ui/Sheet';
 import { StretchEndView } from './walk/StretchEndView';
 import { peopleMet } from '../walk/people';
-import { routeKm, runState, stepsByDay } from '../walk/runs';
+import { placesFree, routeKm, runState, stepsByDay } from '../walk/runs';
 import { journeyStart } from './Journey';
 import { PlaceStatusRow } from './walk/PlaceStatusRow';
 import { ChallengeCard, ExpeditionLine } from './walk/RouteCards';
@@ -28,8 +28,17 @@ import { StatusLines } from './walk/StatusLines';
 import { WalkDoors } from './walk/WalkDoors';
 import { WalkTitle } from './walk/WalkTitle';
 import { WalkTop } from './walk/WalkTop';
+import { WalkStrip } from './walk/WalkStrip';
+import { stripFor } from '../walk/strip';
 import { NewsBannerView } from './walk/NewsBanner';
 import { useRoadNews } from './walk/useRoadNews';
+
+/** "1 challenge place free", or both kinds, in words. */
+function freeLine(free: { challenge: number; expedition: number }): string {
+  const part = (n: number, kind: string) => `${n} ${kind} ${n === 1 ? 'place' : 'places'} free`;
+  if (!free.challenge && !free.expedition) return 'Every place is taken';
+  return [free.challenge && part(free.challenge, 'challenge'), free.expedition && part(free.expedition, 'expedition')].filter(Boolean).join(' · ');
+}
 
 /** The Walk tab: the scene and the stone, where you are, a few lines about today, tomorrow, your routes, the doors. */
 export function WalkTab() {
@@ -86,14 +95,17 @@ export function WalkTab() {
     <div className="page lv lv-tab walk2" style={auroraFor(regionAt(km)) as CSSProperties}>
       <Aurora />
       <div className="walk2-col">
-        <WalkTop km={km} todayKm={todayKm} stone={stoneFor(km)} festive={festive} onStrip={() => go('/map')} />
+        <WalkTop km={km} todayKm={todayKm} stone={stoneFor(km)} festive={festive} />
         {stretch ? (
           <WalkTitle where={stretch.name} sub={`${stretch.plain} · day ${stretchDay(steps, today, stretch)} of ${timeAtPace(stretch.toKm - stretch.fromKm, usualKm)}`} onWhere={() => go('/stretch', { id: stretch.id })} />
         ) : (
           <WalkTitle where={whereLine(where)} sub={`${fmtInt(Math.round(km))} km from Delhi · day ${fmtInt(Math.max(1, dayN))}`} />
         )}
+        <WalkStrip strip={stripFor(km, todayKm, stretch, STOPS)} onOpen={() => go('/map')} />
         <PlaceStatusRow settings={settings} today={today} day={day} onPlace={(id) => void changePlace(today, id)} />
-        <StatusLines lines={lines} onOpen={(path) => go(path.split('?')[0], Object.fromEntries(new URLSearchParams(path.split('?')[1] ?? '')))} tomorrow={days.some((d) => d.steps !== undefined) ? tomorrow : "Log today's steps and you'll set off from Delhi."} />
+        <StatusLines
+          today={`${steps.has(today) ? `Today ${todayKm.toFixed(1)} km` : 'Today: no steps logged yet'} · ${fmtInt(Math.round(km))} km from Delhi`}
+          lines={lines} onOpen={(path) => go(path.split('?')[0], Object.fromEntries(new URLSearchParams(path.split('?')[1] ?? '')))} tomorrow={days.some((d) => d.steps !== undefined) ? tomorrow : "Log today's steps and you'll set off from Delhi."} />
 
         {news?.banner && <NewsBannerView banner={news.banner} kmById={news.kmById} onOpen={news.open} onDismiss={news.dismiss} />}
 
@@ -114,8 +126,9 @@ export function WalkTab() {
           </section>
         )}
 
-        <button type="button" className="walk-ghost walk-find" onClick={() => go('/routes')}>
-          {walking.length ? 'Find another route' : 'Find a route to walk alongside'}
+        <button type="button" className="walk-primary walk-find" onClick={() => go('/routes')}>
+          Choose a walk
+          <small>{freeLine(placesFree(runs ?? [], new Map(walking.map((w) => [w.run.id, w.km]))))}</small>
         </button>
 
         <WalkDoors onGo={(path) => go(path)} />
