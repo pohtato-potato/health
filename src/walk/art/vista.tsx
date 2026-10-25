@@ -152,7 +152,36 @@ const roadAt = (y: number) => {
   return { cx: 200 - 9 * t, hw: 5 + 90 * Math.pow(t, 1.25) };
 };
 
-export function Vista({ region, part, todayKm, landmark, landmarkScale = 1, festive }: { region: RegionId; part: PartOfDay; todayKm: number; landmark?: Landmark; landmarkScale?: number; festive?: Festive }) {
+/** Tonight's moon and sky events, for the night scene. */
+export interface MoonSky {
+  /** 0 new, 0.5 full. */
+  phase: number;
+  full: boolean;
+  /** A meteor shower at its peak tonight. */
+  shower: boolean;
+}
+
+/** The moon at its phase: the lit disc, with the shadow slid across it; a full moon is larger and wears a halo. */
+function Moon({ at: [x, y], phase, full, shade }: { at: [number, number]; phase: number; full: boolean; shade: string }) {
+  const r = full ? 12 : 9;
+  const lit = (1 - Math.cos(2 * Math.PI * phase)) / 2;
+  const dx = 2 * r * lit * (phase < 0.5 ? -1 : 1);
+  const clip = `vista-moon-${Math.round(phase * 100)}-${x}`;
+  return (
+    <g className="vista-moon">
+      {full && <circle cx={x} cy={y} r={r * 2.4} fill="#f3ecdc" opacity="0.12" />}
+      <defs>
+        <clipPath id={clip}>
+          <circle cx={x} cy={y} r={r} />
+        </clipPath>
+      </defs>
+      <circle cx={x} cy={y} r={r} fill="#f3ecdc" />
+      {!full && <circle cx={x + dx} cy={y} r={r} fill={shade} opacity="0.92" clipPath={`url(#${clip})`} />}
+    </g>
+  );
+}
+
+export function Vista({ region, part, todayKm, landmark, landmarkScale = 1, festive, moon }: { region: RegionId; part: PartOfDay; todayKm: number; landmark?: Landmark; landmarkScale?: number; festive?: Festive; moon?: MoonSky }) {
   const base = lightFor(part, region);
   const sky = festive ? festiveSky(festive, base.sky) : base.sky;
   // The land leans toward the region's aurora, as the board painted it: mauve far off, plum close to, strongest
@@ -225,7 +254,19 @@ export function Vista({ region, part, todayKm, landmark, landmarkScale = 1, fest
           <ellipse cx="200" cy="52" rx="50" ry="2" />
         </g>
       )}
-      <circle className="vista-sun" cx={sun[0]} cy={sun[1]} r={sun[2]} fill={night ? '#f3ecdc' : mix(base.glow, '#ffffff', 0.3)} />
+      {night && moon ? (
+        <Moon at={[sun[0], sun[1]]} phase={moon.phase} full={moon.full} shade={mix(sky[0], sky[1], 0.3)} />
+      ) : (
+        <circle className="vista-sun" cx={sun[0]} cy={sun[1]} r={sun[2]} fill={night ? '#f3ecdc' : mix(base.glow, '#ffffff', 0.3)} />
+      )}
+      {part === 'dusk' && moon?.full && <Moon at={[46, 142]} phase={0.5} full shade={sky[1]} />}
+      {night && moon?.shower && (
+        <g stroke="#f6eed9" strokeWidth="1.1" strokeLinecap="round">
+          {[[70, 52], [180, 44], [250, 66]].map(([x, y], i) => (
+            <line key={i} className="vista-meteor" x1={x} y1={y} x2={x - 26} y2={y + 14} style={{ animationDelay: `${i * 2.3}s` }} />
+          ))}
+        </g>
+      )}
       {!night && (
         <g fill="none" stroke={mix(fore, sky[0], 0.3)} strokeWidth="1.2" strokeLinecap="round">
           <path d="M86 40 q4 -4 8 0 q4 -4 8 0" />

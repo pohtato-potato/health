@@ -39,4 +39,9 @@ describe('status lines and the region’s light', () => {
       expect(goldish(t['--lv-accent']), r).toBe(false);
     }
   });
+  it('adds the night sky last, and only if there is room', () => {
+    expect(statusLines({ sky: 'Full moon tonight.', near: 'Agra' })).toEqual([{ kind: 'sky', text: 'Full moon tonight.' }]);
+    const full = statusLines({ arrival: 'Agra', stop: { kind: 'stop', text: 'A river crossing' }, person: { name: 'P', who: 'a carter', line: 'Hi.' }, sky: 'Full moon tonight.', near: 'Agra' });
+    expect(full.map((l) => l.kind)).toEqual(['arrival', 'stop', 'person']);
+  });
 });

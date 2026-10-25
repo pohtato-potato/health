@@ -76,7 +76,7 @@ export function stoneFor(km: number): { name: string; hindi: string; km: number 
 
 
 export interface StatusLine {
-  kind: 'arrival' | 'stop' | 'person' | 'rest';
+  kind: 'arrival' | 'stop' | 'person' | 'rest' | 'sky';
   text: string;
   /** Where tapping the line goes, if anywhere. */
   open?: string;
@@ -95,14 +95,15 @@ export function restLine(status: Status | undefined, near: string): string | und
   return undefined;
 }
 
-/** Up to three short lines under the title, each kind at most once: an arrival, a small stop, a person met, a rest day. */
-export function statusLines(i: { arrival?: string; stop?: StatusLine; person?: { name: string; who: string; line: string }; status?: Status; near: string }): StatusLine[] {
+/** Up to three short lines under the title, each kind at most once: an arrival, a small stop, a person met, a rest day, the night sky. */
+export function statusLines(i: { arrival?: string; stop?: StatusLine; person?: { name: string; who: string; line: string }; status?: Status; sky?: string; near: string }): StatusLine[] {
   const out: StatusLine[] = [];
   if (i.arrival) out.push({ kind: 'arrival', text: `Arrived in ${i.arrival} today.` });
   if (i.stop) out.push(i.stop);
   if (i.person) out.push({ kind: 'person', text: `Met ${i.person.name}, ${i.person.who}. ${i.person.line}` });
   const rest = restLine(i.status, i.near);
   if (rest) out.push({ kind: 'rest', text: rest });
+  if (i.sky) out.push({ kind: 'sky', text: i.sky });
   return out.slice(0, 3);
 }
 

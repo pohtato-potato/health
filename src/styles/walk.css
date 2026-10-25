@@ -387,3 +387,12 @@
 .walk-road-mark.state { fill: none; stroke: color-mix(in srgb, var(--text) 85%, transparent); stroke-width: 1.4; }
 .walk-road-chapter { color: var(--gold); font-weight: 600; }
 .walk-road-chapter .walk-road-mark { fill: var(--gold); }
+
+/* A meteor shower's night: a streak now and then. */
+.vista-meteor { opacity: 0; animation: vista-meteor 7s linear infinite; }
+@keyframes vista-meteor {
+  0%, 88% { opacity: 0; transform: translate(0, 0); }
+  90% { opacity: 0.9; }
+  96% { opacity: 0; transform: translate(-30px, 16px); }
+  100% { opacity: 0; }
+}

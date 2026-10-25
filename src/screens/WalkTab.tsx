@@ -31,6 +31,7 @@ import { WalkTop } from './walk/WalkTop';
 import { WalkStrip } from './walk/WalkStrip';
 import { stripFor } from '../walk/strip';
 import { NewsBannerView } from './walk/NewsBanner';
+import { skyLine } from '../walk/sky';
 import { useRoadNews } from './walk/useRoadNews';
 
 /** "1 challenge place free", or both kinds, in words. */
@@ -72,7 +73,7 @@ export function WalkTab() {
     .filter((m) => m.date >= addDays(today, -1))
     .at(-1);
   const stop = stopToday(steps, today, STOPS);
-  const lines = statusLines({ arrival: arrivedToday(steps, today), stop: stop && stopLine(stop), person: met?.who, status: day?.status, near });
+  const lines = statusLines({ arrival: arrivedToday(steps, today), stop: stop && stopLine(stop), person: met?.who, status: day?.status, sky: skyLine(today), near });
   const stretch = stretchAt(km, STRETCHES);
   const tomorrow = tomorrowLine(km, usualKm, bigKm);
 
