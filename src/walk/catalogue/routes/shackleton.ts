@@ -21,7 +21,7 @@ export const shackleton: RouteDef = {
   places: [
     { name: 'Peggotty Camp', km: 0, at: 0, label: true },
     { name: 'The Murray Snowfield', km: 13, at: 2 },
-    { name: 'The Trident', km: 27, at: 4, label: true },
+    { name: 'The Trident', km: 27, at: 4 },
     { name: 'The Crean Glacier', km: 33, at: 5 },
     { name: 'Fortuna Bay', km: 42, at: 7 },
     { name: 'Stromness', km: KM, at: 8, label: true },

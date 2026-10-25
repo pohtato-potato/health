@@ -3,6 +3,7 @@ import '@fontsource-variable/fraunces/opsz-italic.css';
 import '@fontsource-variable/dm-sans/opsz.css';
 import '@fontsource/dm-mono/latin-400.css';
 import '@fontsource/dm-mono/latin-500.css';
+import './styles/fonts.css';
 import './styles/app.css';
 import './styles/tokens.css';
 import './styles/components.css';
