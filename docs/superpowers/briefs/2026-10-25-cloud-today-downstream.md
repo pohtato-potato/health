@@ -59,10 +59,11 @@ Food (`/food`), Close the day (`/close`), Readiness (`/readiness`), the weekly r
 
 ### 4A · The land, and a light for how the day went
 - The region's colour is the ground on Today, the Walk, Train between sessions, and the pages above.
-- How the day went is **one light**, the aurora's accent blob, larger and lower on the right:
-  - **soft green** (`#bfe8d4`) after a session in range;
-  - **gold** (`#f6cf72`) after a record night or on a perfect day;
+- How the day went fills **half the field** (the `b2` blob, at 0.8 opacity) with the session's own deep, saturated colour, with its bright light inside. The owner asked for these to be as rich as the live session's, not faded:
+  - **green** (`#1a8f6a`, light `#bfe8d4`) after a session in range;
+  - **gold** (`#8a6420`, light `#f6cf72`) after a record night or on a perfect day;
   - none on an ordinary day.
+- Check the contrast of quiet text where it sits over the glow; the "1 of 4" week line is the closest call.
 - The whole screen changes colour **only** during a live session (the `st-*` states in `src/styles/live.css`, on `/session`) and in full-screen moments.
 - **To build:**
   - A pure `dayGlow({ perfect, session })` in `src/domain/`, tested first. Order: perfect, then record, then in range, then none. Reuse `trainGlow` from `src/domain/trainView.ts`.

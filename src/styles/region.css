@@ -10,5 +10,6 @@ html.region .app > .page { --hairline: var(--glass-edge); }
 .sheet { background: color-mix(in srgb, var(--region-a) 34%, #0c0e1d); border-top-color: var(--glass-edge); --hairline: var(--glass-edge); }
 .sheet :is(.card, .panel, .meal-panel, .list, .log-tile, .wide, .log-search, .td-food) { background: var(--glass); border-color: var(--glass-edge); }
 
-/* The day's glow: the small light grows when the day earned one. */
-.lv.lv-glow .b4 { opacity: 0.38; width: 85vmax; height: 85vmax; right: -35vmax; top: 30vmax; }
+/* The day's glow: half the field takes the session's own deep colour, with its light inside, over the land's colour. */
+.lv.lv-glow .b2 { background: var(--lv-glow); opacity: 0.8; }
+.lv.lv-glow .b4 { opacity: 0.3; width: 60vmax; height: 60vmax; right: -20vmax; top: 40vmax; }
