@@ -34,7 +34,7 @@ function useCount(to: number, ms = 1600, delay = 0) {
   return n;
 }
 
-export function ArrivalView({ a, beat, onNext, onSkip }: { a: ArrivalInfo; beat: number; onNext: () => void; onSkip: () => void }) {
+export function ArrivalView({ a, beat, ended, onNext, onSkip }: { a: ArrivalInfo; beat: number; ended?: boolean; onNext: () => void; onSkip: () => void }) {
   let body: ReactNode;
   if (beat === 1) body = <Approach a={a} />;
   else if (beat === 2) body = <Footprints a={a} />;
@@ -63,7 +63,7 @@ export function ArrivalView({ a, beat, onNext, onSkip }: { a: ArrivalInfo; beat:
             onNext();
           }}
         >
-          {beat >= 5 ? 'Back to the walk' : 'Next'}
+          {beat >= 5 ? (ended ? 'Play the chapter film' : 'Back to the walk') : 'Next'}
         </button>
         <span className="walk-arr-dots" aria-hidden="true">
           {[1, 2, 3, 4, 5].map((i) => (

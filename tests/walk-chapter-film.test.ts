@@ -32,4 +32,9 @@ describe('the chapter film', () => {
     expect(ms).toBeGreaterThanOrEqual(13_000);
     expect(ms).toBeLessThanOrEqual(17_000);
   });
+  it('counts the cities and states reached, not the one you set off from', () => {
+    const f = chapterFilm(1, new Map([['2026-01-01', steps(end1 + 1)]]))!;
+    expect(f.slides[3].big).toBe(String(CHAPTERS[0].route.length - 1));
+    expect(f.slides[4].big).toBe(String(CHAPTERS[0].states.filter((s) => s.km > 0).length));
+  });
 });

@@ -43,8 +43,8 @@ export function RoadSoFarPage() {
         Walk
       </button>
       <div className="walk-head">
-        <h1 className="walk-title">The road so far</h1>
-        <p className="walk-sub">Every place you’ve reached, newest first.</p>
+        <h1 className="walk-title">Wrapped</h1>
+        <p className="walk-sub">The road so far: every place you’ve reached, newest first.</p>
       </div>
       <div className="walk-end-btns">
         {flyoverAllowed(km) && (

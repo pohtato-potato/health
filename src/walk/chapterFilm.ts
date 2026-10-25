@@ -25,8 +25,9 @@ export function chapterFilm(n: number, steps: Map<DayKey, number>): ChapterFilm 
   const to = marks.find((m) => m.name === 'end')?.date;
   if (!from || !to) return undefined;
   const longest = Math.max(0, ...[...steps].filter(([d]) => d >= from && d <= to).map(([, s]) => kmFromSteps(s)));
-  const cities = new Set(ch.route.map((s) => s.name)).size;
-  const states = new Set(ch.states.map((s) => s.name)).size;
+  // Where you set off from doesn't count as reached.
+  const cities = new Set(ch.route.slice(1).map((s) => s.name)).size;
+  const states = new Set(ch.states.filter((s) => s.km > ch.start).map((s) => s.name)).size;
   return {
     n,
     name: ch.name,

@@ -46,4 +46,8 @@ describe('the week on the road', () => {
     expect(html).toContain('Reached Agra and Gwalior.');
     expect(html).toContain('Into Rajasthan and Madhya Pradesh.');
   });
+  it('hides a week too short to show in whole kilometres', () => {
+    const w = weekWalk('2026-01-05', new Map([['2026-01-06', steps(0.3)]]), []);
+    expect(renderToStaticMarkup(<WeekRoadCard w={w} />)).toBe('');
+  });
 });

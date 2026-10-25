@@ -236,7 +236,7 @@ export function CelebrationWatcher() {
           'Round the Golden Quadrilateral and back to Chennai: Kolkata, Delhi and Mumbai along the way. Chapter 2 is done.',
           'Every state and every territory of India, the islands included. The whole map is yours.',
         ][ended.n - 1];
-        show({ kind: 'milestone', key: `chapter:${ended.n}`, value: fmtInt(a.km), unit: 'km', title: `${a.name}.`, text, voice: 'postcard' });
+        show({ kind: 'milestone', key: `chapter:${ended.n}`, value: fmtInt(a.km), unit: 'km', title: `${a.name}.`, text, voice: 'postcard', more: { label: 'Play the chapter film', path: '/chapter', params: { n: String(ended.n) } } });
       } else if (openPath) go(openPath, Object.fromEntries(q));
     }
 

@@ -1,9 +1,16 @@
-import { parseDay, type DayKey } from '../domain/dates';
+import { dayKey, parseDay, type DayKey } from '../domain/dates';
 
 /** The mean length of the moon's cycle, and a new moon to count from (6 Jan 2000, 18:14 UTC). */
 const SYNODIC_DAYS = 29.530588853;
 const NEW_MOON_2000 = Date.UTC(2000, 0, 6, 18, 14);
 const DAY_MS = 86_400_000;
+
+/** Which night the sky belongs to: until noon it is still last night's. */
+export function skyNight(now: Date): DayKey {
+  const d = new Date(now);
+  if (d.getHours() < 12) d.setDate(d.getDate() - 1);
+  return dayKey(d);
+}
 
 /** Where the moon is in its cycle at an instant: 0 new, 0.5 full, back to 1. The mean cycle, good to within about half a day. */
 export function moonPhase(at: Date): number {
@@ -45,13 +52,13 @@ export function fullMoonAt(k: number): Date {
 }
 
 /**
- * A full-moon night: the moon is full during the local calendar day, or in the evening before it (from 18:00), when
- * it already rises full.
+ * A full-moon night: the night of `day` (local noon to the next noon) holds the moment of full moon, so the moon that
+ * rises that evening is the full one.
  */
 export function isFullMoon(day: DayKey): boolean {
   const start = parseDay(day);
-  start.setHours(0, 0, 0, 0);
-  const from = start.getTime() - 6 * 3_600_000;
+  start.setHours(12, 0, 0, 0);
+  const from = start.getTime();
   const to = start.getTime() + DAY_MS;
   const k0 = Math.round((start.getTime() - NEW_MOON_2000) / DAY_MS / SYNODIC_DAYS - 0.5) + 0.5;
   return [k0 - 1, k0, k0 + 1].some((k) => {

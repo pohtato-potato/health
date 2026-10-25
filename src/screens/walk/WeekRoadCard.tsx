@@ -6,7 +6,7 @@ const list = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1)
 
 /** The Monday story's walk card: the week's km, where it took you, what you reached, and the routes you walked. */
 export function WeekRoadCard({ w }: { w: WeekWalk }) {
-  if (w.km <= 0) return null;
+  if (w.km < 0.5) return null;
   const a = positionAt(w.fromKm).from.name;
   const b = positionAt(w.toKm).from.name;
   return (

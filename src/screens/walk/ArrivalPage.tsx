@@ -63,7 +63,7 @@ export function ArrivalPage() {
     );
   return (
     <div className={wrap}>
-      <ArrivalView a={a} beat={beat} onNext={() => (beat < 5 ? setBeat(beat + 1) : ended ? go('/chapter', { n: String(a.chapter) }, { replace: true }) : toWalk())} onSkip={toWalk} />
+      <ArrivalView a={a} beat={beat} ended={ended} onNext={() => (beat < 5 ? setBeat(beat + 1) : ended ? go('/chapter', { n: String(a.chapter) }, { replace: true }) : toWalk())} onSkip={toWalk} />
     </div>
   );
 }

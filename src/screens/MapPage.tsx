@@ -3,7 +3,7 @@ import { hasReward } from '../domain/rewards';
 import { fmtInt } from '../domain/format';
 import { ALL_STATES, chapterAt, kmFromSteps, statesReached, strideM } from '../domain/walk';
 import { useAllDays, useSettings } from '../db/hooks';
-import { back, useRoute } from '../router';
+import { back, clearParam, useRoute } from '../router';
 import { Icon } from '../ui/Icon';
 import { useUnlockedIds } from '../ui/Theme';
 import { STRETCHES } from '../walk/content';
@@ -51,6 +51,8 @@ export function MapPage() {
     if (!flyAsked || !days || !canFly || flown.current) return;
     flown.current = true;
     fly();
+    // Once only: coming back to this page shouldn't replay it.
+    clearParam('fly');
   }, [flyAsked, days, canFly]);
   if (!settings || !days || !unlocked) return <div className="page" />;
 

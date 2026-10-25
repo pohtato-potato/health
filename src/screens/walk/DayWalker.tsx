@@ -22,7 +22,6 @@ export function DayWalker({ d, line }: { d: DayWalk; line: string }) {
       </svg>
       <div className="row t14 q" style={{ gap: 8 }}>
         <span className="grow">{d.passed.length ? `Passed ${d.passed.join(', ')}` : 'This morning'}</span>
-        {d.next && <span className="right">{d.next.name}</span>}
       </div>
     </div>
   );

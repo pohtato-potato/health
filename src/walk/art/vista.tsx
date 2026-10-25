@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import type { PartOfDay } from '../../domain/dates';
 import { lightFor, mix, REGIONS, type RegionId } from '../../ui/light';
 import { FestiveDecor, festiveSky, type Festive } from './festive';
@@ -166,7 +166,7 @@ function Moon({ at: [x, y], phase, full, shade }: { at: [number, number]; phase:
   const r = full ? 12 : 9;
   const lit = (1 - Math.cos(2 * Math.PI * phase)) / 2;
   const dx = 2 * r * lit * (phase < 0.5 ? -1 : 1);
-  const clip = `vista-moon-${Math.round(phase * 100)}-${x}`;
+  const clip = `vista-moon-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   return (
     <g className="vista-moon">
       {full && <circle cx={x} cy={y} r={r * 2.4} fill="#f3ecdc" opacity="0.12" />}
