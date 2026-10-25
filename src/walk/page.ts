@@ -150,11 +150,15 @@ export function auroraFor(region: RegionId): AuroraTint {
 
 /**
  * A route's pages take their aurora from the route's own ink: the ink's hue, deep and still coloured, the way the
- * board tinted Dandi's page sea blue. (Mixing a pale ink into the night turns it grey.)
+ * board tinted Dandi's page sea blue. (Mixing a pale ink into the night turns it grey, and warm ones brown.)
  */
 export function auroraForInk(ink: string): AuroraTint {
   const [h, s] = toHsl(ink);
-  return { '--lv-a': fromHsl(h, Math.max(0.42, Math.min(0.55, s * 0.7)), 0.24), '--lv-b': GROUND, '--lv-accent': ink };
+  // Warm inks (reds, oranges, sands) sunk this deep turn brown; the board's warm pages leaned rose and plum. Nearly
+  // colourless inks get the night's own indigo.
+  if (s < 0.25) return { '--lv-a': fromHsl(255, 0.35, 0.25), '--lv-b': GROUND, '--lv-accent': ink };
+  const hue = h <= 65 ? 338 + (h / 65) * 16 : h;
+  return { '--lv-a': fromHsl(hue, Math.max(0.42, Math.min(0.55, s * 0.7)), 0.24), '--lv-b': GROUND, '--lv-accent': ink };
 }
 
 function toHsl(c: string): [number, number, number] {

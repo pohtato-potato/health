@@ -143,7 +143,7 @@ const TREES: [number, number, number][] = [
 /** The top of today's sage piece of road: further up the road the more you walked, never past the crest. */
 export function todayBandTop(todayKm: number): number {
   const share = Math.min(1, Math.max(0, todayKm) / ROAD_KM);
-  return Math.max(CREST + 3, BOTTOM - (BOTTOM - CREST) * Math.min(0.96, Math.sqrt(share) * 1.15));
+  return Math.max(CREST + 3, Math.min(BOTTOM - 10, BOTTOM - (BOTTOM - CREST) * Math.min(0.96, Math.sqrt(share) * 1.15)));
 }
 
 /** The road's centre and half-width at a height, in perspective. */
@@ -216,7 +216,7 @@ export function Vista({ region, part, todayKm, landmark, landmarkScale = 1, fest
           <stop offset="1" stopColor="#8fc9b0" stopOpacity="0.2" />
         </linearGradient>
       </defs>
-      <rect className="vista-sky" y="0" width={W} height={BOTTOM} fill={`url(#${id}-sky)`} />
+      <rect className="vista-sky" y="0" width={W} height={BOTTOM} fill={`url(#${id}-sky)`} opacity="0.8" />
       <rect width={W} height={BOTTOM} fill={`url(#${id}-sun)`} />
       {night && stars.map(([x, y, r], i) => <circle key={i} className="vista-star" cx={f1(x)} cy={f1(y)} r={r} fill="#f6eed9" opacity={0.35 + (i % 3) * 0.2} />)}
       {!night && (
@@ -239,6 +239,7 @@ export function Vista({ region, part, todayKm, landmark, landmarkScale = 1, fest
       )}
       <path className="vista-far" d={shapes.far.d} fill={land.far === 'sea' ? mix(sky[2], far, 0.35) : far} opacity={land.far === 'sea' ? 1 : 0.9} />
       {land.far === 'sea' && <path d="M150 158 H300" stroke={rimInk} strokeWidth="1.4" opacity="0.45" />}
+      {shapes.far.rims.length > 0 && <path d={shapes.far.rims.join(' ')} fill="none" stroke={rimInk} strokeWidth="1.6" opacity={low ? 0.55 : night ? 0.1 : 0.2} />}
       {shapes.far.snow && <path d={shapes.far.snow} fill="#eef1f6" opacity={night ? 0.5 : 0.85} />}
       {landmark && (
         <g className="vista-landmark" transform={`translate(${f1(262 - 60 * lmS)} ${f1(168)}) scale(${f1(lmS * 100) / 100})`}>

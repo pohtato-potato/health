@@ -247,13 +247,11 @@ export function LiveFinale(p: Props) {
 
       {page === 'best' && d.best && (
         <div className="lv-record-in">
-          {(
-            <div className="lv-dust" aria-hidden="true">
-              {Array.from({ length: 14 }, (_, i) => (
-                <i key={i} style={{ left: `${(i * 53) % 100}%`, animationDuration: `${6 + (i % 5)}s`, animationDelay: `${(i * 0.7) % 5}s` }} />
-              ))}
-            </div>
-          )}
+          <div className="lv-dust" aria-hidden="true">
+            {Array.from({ length: 14 }, (_, i) => (
+              <i key={i} style={{ left: `${(i * 53) % 100}%`, animationDuration: `${6 + (i % 5)}s`, animationDelay: `${(i * 0.7) % 5}s` }} />
+            ))}
+          </div>
           <div className="lv-kicker gold">Tonight's best</div>
           <div className="lv-bloom num tn" style={{ fontSize: 120 }}>
             {d.best.big}

@@ -23,7 +23,7 @@ export interface Strip {
 }
 
 /** The strip's drawn width, and about how wide a 14 px word is per letter. */
-const WIDTH = 300;
+const WIDTH = 292;
 const LETTER = 7.8;
 
 /**
@@ -31,12 +31,11 @@ const LETTER = 7.8;
  * it, and a dot for each small stop with its kind in words. Past the written stretches, the last city to the next.
  */
 export function stripFor(km: number, todayKm: number, stretch: Stretch | undefined, stops: SmallStop[]): Strip {
-  const [fromKm, toKm, from, to] = stretch
-    ? [stretch.fromKm, stretch.toKm, ...stretch.plain.split(' to ')]
-    : (() => {
-        const p = positionAt(km);
-        return [p.from.km, p.to?.km ?? p.from.km + 1, p.from.name, p.to?.name ?? p.from.name];
-      })();
+  const p = positionAt(km);
+  const ends = stretch?.plain.includes(' to ') ? stretch.plain.split(' to ') : [p.from.name, p.to?.name ?? p.from.name];
+  const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+  const [from, to] = ends.map(cap);
+  const [fromKm, toKm] = stretch ? [stretch.fromKm, stretch.toKm] : [p.from.km, p.to?.km ?? p.from.km + 1];
   const span = Math.max(1, toKm - fromKm);
   const frac = (k: number) => Math.min(1, Math.max(0, (k - fromKm) / span));
   const here = stretch ? stops.filter((s) => s.km >= fromKm && s.km < toKm) : [];

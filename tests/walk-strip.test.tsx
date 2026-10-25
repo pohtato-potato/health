@@ -30,6 +30,14 @@ describe('the strip', () => {
     for (let i = 1; i < shown.length; i++) expect((shown[i].frac - shown[i - 1].frac) * 300).toBeGreaterThan((shown[i].word.length + shown[i - 1].word.length) * 3.9);
   });
 
+  it('names the ends with a capital, whatever the stretch’s plain name', () => {
+    const s = stripFor(bandit.fromKm + 1, 0, { ...bandit, plain: 'Nagpur to the Penganga' }, STOPS);
+    expect(s.to).toBe('The Penganga');
+    const odd = stripFor(bandit.fromKm + 1, 0, { ...bandit, plain: 'Somewhere' }, STOPS);
+    expect(odd.from).not.toBe('undefined');
+    expect(odd.to).not.toBe('undefined');
+  });
+
   it('with no stretch written, runs from the last city to the next', () => {
     const s = stripFor(2950, 5, undefined, STOPS);
     expect(s.from).toBeTruthy();
@@ -42,7 +50,9 @@ describe('the strip', () => {
     expect(html).toContain('walk-strip2');
     expect(html).toMatch(/>Morena · \d+ km</);
     expect(html).toContain('>Agra<');
-    for (const m of html.matchAll(/font-size="(\d+)"/g)) expect(Number(m[1])).toBeGreaterThanOrEqual(14);
+    // At 360 px the column is 316 px wide: words must draw at 14 px or more there.
+    const viewW = Number(html.match(/viewBox="0 0 (\d+)/)![1]);
+    for (const m of html.matchAll(/font-size="([\d.]+)"/g)) expect(Number(m[1]) * (316 / viewW)).toBeGreaterThanOrEqual(14);
     expect(html).toMatch(/aria-label="The stretch from Agra to Morena/);
   });
 });

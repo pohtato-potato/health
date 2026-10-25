@@ -104,7 +104,7 @@ export function WalkTab() {
         <WalkStrip strip={stripFor(km, todayKm, stretch, STOPS)} onOpen={() => go('/map')} />
         <PlaceStatusRow settings={settings} today={today} day={day} onPlace={(id) => void changePlace(today, id)} />
         <StatusLines
-          today={`${steps.has(today) ? `Today ${todayKm.toFixed(1)} km` : 'Today: no steps logged yet'} · ${fmtInt(Math.round(km))} km from Delhi`}
+          today={`${steps.has(today) ? `Today ${todayKm.toFixed(1)} km` : 'Today: no steps logged yet'}${stretch ? ` · ${fmtInt(Math.round(km))} km from Delhi` : ''}`}
           lines={lines} onOpen={(path) => go(path.split('?')[0], Object.fromEntries(new URLSearchParams(path.split('?')[1] ?? '')))} tomorrow={days.some((d) => d.steps !== undefined) ? tomorrow : "Log today's steps and you'll set off from Delhi."} />
 
         {news?.banner && <NewsBannerView banner={news.banner} kmById={news.kmById} onOpen={news.open} onDismiss={news.dismiss} />}

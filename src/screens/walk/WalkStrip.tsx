@@ -1,7 +1,7 @@
 import type { Strip } from '../../walk/strip';
 
 const X0 = 12;
-const X1 = 312;
+const X1 = 304;
 const SANS = 'DM Sans Variable, system-ui, sans-serif';
 
 /**
@@ -13,7 +13,7 @@ export function WalkStrip({ strip, onOpen }: { strip: Strip; onOpen: () => void 
   const words = strip.stops.map((s) => s.word.toLowerCase());
   return (
     <button type="button" className="walk-strip2" onClick={onOpen} aria-label={`The stretch from ${strip.from} to ${strip.to}, ${strip.toKm} km left${words.length ? `, with stops: ${words.join(', ')}` : ''}. Open the map`}>
-      <svg viewBox="0 0 324 70" aria-hidden="true">
+      <svg viewBox="0 0 316 70" aria-hidden="true">
         <line x1={X0} y1="20" x2={X1} y2="20" className="road" strokeWidth="8" strokeLinecap="round" />
         <line x1={x(strip.todayFrom)} y1="20" x2={x(strip.youFrac)} y2="20" className="today" strokeWidth="8" strokeLinecap="round" />
         <line x1={X0} y1="20" x2={x(strip.todayFrom)} y2="20" className="walked" strokeWidth="8" strokeLinecap="round" />

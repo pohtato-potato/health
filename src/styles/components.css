@@ -617,22 +617,6 @@
 .restdock .restpill {
   flex: 1;
 }
-.restscreen {
-  position: fixed;
-  inset: 0;
-  z-index: 86;
-  background: #000;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-}
-.restscreen-time {
-  font-size: 96px;
-  color: #6b6890;
-  letter-spacing: -0.02em;
-}
 
 /* Body map */
 .bodymap {

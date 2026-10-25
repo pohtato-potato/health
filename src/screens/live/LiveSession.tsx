@@ -155,7 +155,6 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
         onSoreness={(n) => patchSession(session.id, { legSoreness: n })}
         warmup={plan.warmup}
         onStart={() => patchSession(session.id, { beforeDone: true })}
-       
         top={top}
       />
     );
@@ -172,7 +171,6 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
           // The rest held back for the record starts now, at full length.
           r.afterRow(done);
         }}
-       
       />
     );
   }
@@ -194,7 +192,6 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
         clean={settings.formRecordsClean !== false}
         checks={checksFor(x.ex)}
         prev={prev ? { checks: prev.checks, rir: prev.rir } : undefined}
-       
         detail={`${timed ? 'held' : 'reps'}${r.defaults(x).kg !== null ? ` at ${r.defaults(x).kg} kg` : ''}${sideWord(x.side)}`}
         top={top}
         saving={saving}
@@ -258,7 +255,6 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
           r.stopRest();
           if (!row && ni !== undefined) r.setGi(ni);
         }}
-       
         rings={RINGS[theme]}
         top={top}
       />
@@ -307,7 +303,6 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
           forNames={(block?.exs ?? [row.ex]).filter((e) => !r.mine.some((m) => m.exerciseId === e.id) && r.defaults(firstRow(e)).kg === kg).map(nameOf)}
           collar={collar}
           onGo={(ticked) => patchSession(session.id, { platesSeen: [...(session.platesSeen ?? []), row.ex.id], ...(ticked ? { collarCheckedAt: Date.now() } : {}) })}
-         
           top={top}
         />
       );
@@ -326,7 +321,6 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
         onSetup={(text) => patchSettings((s) => ({ setups: addSetup(s.setups, row.ex.id, session.date, text) }))}
         checks={checksFor(row.ex)}
         onGo={() => patchSession(session.id, { guided: [...(session.guided ?? []), row.ex.id] })}
-       
         top={top}
       />
     );
@@ -353,7 +347,6 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
         }}
         onDone={() => setPending({ row, c, endedAt: Date.now() })}
         onSkip={() => void r.skip(row)}
-       
         theme={theme}
         buzz={!!settings.prefs.buzz}
         now={r.now}

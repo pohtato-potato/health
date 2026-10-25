@@ -47,7 +47,7 @@ function ridge(y: number, amp: number, bumps: number, rnd: () => number): string
  * stop's landmark between the far ridge and the near ground, stars at night, warm windows
  * at dusk and night, and optionally a few people on the road. All vector, no raster.
  */
-export function Scene({ city, region: regionIn, part, people = false, landmarkScale = 1, caption, className, overlay, festive }: { city?: string; region?: RegionId; part: PartOfDay; people?: boolean; landmarkScale?: number; caption?: React.ReactNode; className?: string; overlay?: React.ReactNode; festive?: Festive }) {
+export function Scene({ city, region: regionIn, part, people = false, landmarkScale = 1, caption, festive }: { city?: string; region?: RegionId; part: PartOfDay; people?: boolean; landmarkScale?: number; caption?: React.ReactNode; festive?: Festive }) {
   const lm = city ? landmarkFor(city) : undefined;
   const region = regionIn ?? lm?.region ?? 'plains';
   const base = lightFor(part, region);
@@ -70,7 +70,7 @@ export function Scene({ city, region: regionIn, part, people = false, landmarkSc
   const s = 1.15 * landmarkScale;
 
   return (
-    <figure className={`band${className ? ` ${className}` : ''}`} aria-label={lm ? `${lm.label}, ${city}` : city}>
+    <figure className="band" aria-label={lm ? `${lm.label}, ${city}` : city}>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMax slice" aria-hidden>
         <defs>
           <linearGradient id={`${id}-sky`} x1="0" y1="0" x2="0" y2="1">
@@ -112,7 +112,6 @@ export function Scene({ city, region: regionIn, part, people = false, landmarkSc
             </g>
           </g>
         )}
-        {overlay}
       </svg>
       {caption && <figcaption className="band-caption">{caption}</figcaption>}
     </figure>
