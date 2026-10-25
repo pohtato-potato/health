@@ -65,7 +65,7 @@ const STAGES: [string, string, number][] = [
   ["Fucecchio", "Arne Blanca", 1470],
   ["San Genesio", "Sce Dionisii", 1478],
   ["Coiano", "Sce Peter Currant", 1494],
-  ["Chianni", "Sce Maria Glan", 1503],
+  ["Santa Maria a Chianni", "Sce Maria Glan", 1503],
   ["San Gimignano", "Sce Gemiane", 1515],
   ["San Martino Fosci", "Sce Martin in Fosse", 1524],
   ["Gracciano", "Aelse", 1529],
@@ -122,7 +122,7 @@ export const sigeric: RouteDef = {
   ],
   signature: {
     title: 'Sigeric’s stopping places',
-    note: 'The 79 places his party stayed, from Rome to the Channel, in the spelling his scribe used. You meet them in reverse.',
+    note: 'The 79 places his scribe named, from Rome to the Channel (one of his 80 stages is missing), in his spelling. You meet them in reverse.',
     mark: 'stage',
     marks: STAGES.map(([now, then, km]) => ({ km, name: then === now ? now : `${then}, now ${now}` })),
   },
@@ -133,11 +133,11 @@ export const sigeric: RouteDef = {
       line: 'From Canterbury, on the road an archbishop took to Rome.',
       page: [
         'Sigeric became Archbishop of Canterbury in 990 and, like every new archbishop, travelled to Rome to receive the pallium from the pope, a band of white wool that marked his authority.',
-        'On the way home someone in his party wrote down where they stayed each night, from Rome to the Channel. The list survives in a manuscript in the British Library. It is the oldest record of the road now called the Via Francigena, the road from France.',
+        'On the way home someone in his party wrote down where they stayed each night, from Rome to the Channel. The list survives in a manuscript in the British Library. It is the oldest full list of stops on the road now called the Via Francigena, the road from France.',
       ],
       deeper: {
         title: 'The English church and Rome',
-        text: 'England had been converted from Rome: in 597 Pope Gregory sent a mission under Augustine, who became the first Archbishop of Canterbury. Its archbishops looked to Rome ever after, and from the 8th century went there for the pallium in person. The journey was long, dangerous and very expensive: popes expected gifts, and the lords along the road charged tolls. In 1027 King Cnut, travelling to Rome himself, wrote home that he had persuaded the pope and the Burgundian and Italian rulers to cut the tolls and fees on English travellers. The road joined a small, remote church to the centre of western Christendom, for good and ill, until the break with Rome in the 1530s.',
+        text: 'England had been converted from Rome: in 597 Pope Gregory sent a mission under Augustine, who became the first Archbishop of Canterbury. Its archbishops looked to Rome ever after, and by the 10th century went there for the pallium in person. The journey was long, dangerous and very expensive: popes expected gifts, and the lords along the road charged tolls. In 1027 King Cnut, travelling to Rome himself, wrote home that he had persuaded the pope and the Burgundian and Italian rulers to cut the tolls and fees on English travellers. The road joined a small, remote church to the centre of western Christendom, for good and ill, until the break with Rome in the 1530s.',
       },
     },
     {
@@ -180,19 +180,19 @@ export const sigeric: RouteDef = {
       km: 893,
       title: 'Saint-Maurice',
       line: 'Saint-Maurice, an abbey on the road since 515.',
-      page: ['The abbey of Saint-Maurice was founded in 515 where the Rhône valley narrows, and has been home to a community of monks ever since. Abbeys like this one were the inns of the road, where travellers of rank expected a bed, food and fresh horses.'],
+      page: ['The abbey of Saint-Maurice was founded in 515 where the Rhône valley narrows, and has been home to a religious community ever since. Abbeys like this one were the inns of the road, where travellers of rank expected a bed, food and fresh horses.'],
     },
     {
       km: 945,
       title: 'The Great St Bernard',
       line: 'Over the Great St Bernard, at nearly 2,500 metres.',
       page: [
-        'The pass, at 2,469 metres, is the highest point of the road and is under snow most of the year. In 990 there was no hospice yet; the famous one, with its dogs, came about sixty years later.',
+        'The pass, at 2,469 metres, is the highest point of the road and is under snow most of the year. In 990 there was no hospice yet; it came about sixty years later, and its famous dogs centuries after that.',
         'Raiders from a Muslim base on the Provençal coast had held the passes for years; in 972 they captured the abbot of Cluny near here and held him for ransom. By Sigeric’s time they had been driven out, but the pass was still dangerous.',
       ],
       deeper: {
         title: 'What a 10th-century traveller needed',
-        text: 'An archbishop did not travel alone. He went with clergy, servants and armed men, on horseback with packhorses, carrying silver for gifts and tolls, letters of introduction and the clothes and books his office needed. Most nights he stayed at monasteries and bishops’ houses, which owed hospitality to travellers of rank; poorer pilgrims slept in hostels or barns. Most of the road followed what was left of Roman ones. Twenty kilometres a day was a good average, less in the mountains. Many who set out for Rome died on the way, and several archbishops of Canterbury did.',
+        text: 'An archbishop did not travel alone. He went with clergy, servants and armed men, on horseback with packhorses, carrying silver for gifts and tolls, letters of introduction and the clothes and books his office needed. Most nights he stayed at monasteries and bishops’ houses, which owed hospitality to travellers of rank; poorer pilgrims slept in hostels or barns. Most of the road followed what was left of Roman ones. Twenty kilometres a day was a good average, less in the mountains. Many who set out for Rome died on the way; Archbishop Ælfsige died in the Alps in 959.',
       },
     },
     {
@@ -284,7 +284,7 @@ export const sigeric: RouteDef = {
     { when: '991', place: 'Maldon', text: 'The English are beaten; tribute is paid.' },
     { when: '994', place: 'Canterbury', text: 'Sigeric dies.' },
     { when: '1027', place: 'Rome', text: 'Cnut wins lower tolls for English travellers.' },
-    { when: '1994', place: 'Europe', text: 'The Via Francigena becomes a European Cultural Route.' },
+    { when: '1994', place: 'Europe', text: 'The Via Francigena becomes a Council of Europe Cultural Route.' },
   ],
   sources: [
     { title: 'Wikipedia: Via Francigena (with Sigeric’s list)', url: 'https://en.wikipedia.org/wiki/Via_Francigena' },

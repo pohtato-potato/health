@@ -42,7 +42,7 @@ export const burke: RouteDef = {
       { km: 1600, name: 'Camp 65, Cooper Creek' },
       { km: 3150, name: 'Camp 119, the Bynoe River' },
       { km: GULF, name: 'The mangroves' },
-      { km: 4650, name: 'Polygonum Swamp' },
+      { km: 4400, name: 'Polygonum Swamp' },
       { km: KM, name: 'The Dig Tree' },
     ],
   },
@@ -56,14 +56,14 @@ export const burke: RouteDef = {
     {
       km: 0,
       title: 'Royal Park',
-      line: 'Fifteen thousand people watch the expedition leave Melbourne.',
+      line: 'About fifteen thousand people watch the expedition leave Melbourne.',
       page: [
         'On 20 August 1860 about 15,000 people gathered in Royal Park, Melbourne, to see the Victorian Exploring Expedition set off to cross Australia from south to north, which no European party had yet done.',
-        'It had 19 men, 23 horses, 26 camels shipped from India, six wagons and about 20 tonnes of supplies, including a cedar-topped oak camp table and a Chinese gong.',
+        'It had 19 men, 23 horses, 26 camels shipped from India, six wagons and about 20 tonnes of supplies, even an oak table with a cedar top, and a Chinese gong.',
       ],
       deeper: {
         title: 'Ambition and bad leadership',
-        text: 'Victoria was rich from the gold rush and wanted to beat South Australia to the north coast, where a telegraph line to Asia might run. The Royal Society of Victoria chose as leader Robert O’Hara Burke, an Irish police officer who had never explored anything and could not navigate. He was brave, impatient and quick to quarrel. Within weeks officers were resigning and men being sacked. Historians argue over how much blame he deserves and how much belongs to the committee in Melbourne, whose instructions were vague and whose support was slow. The Royal Commission afterwards blamed Burke’s zeal and the delays of William Wright, who was supposed to bring up supplies from Menindee.',
+        text: 'Victoria was rich from the gold rush and wanted to beat South Australia to the north coast, where a telegraph line to Asia might run. The Royal Society of Victoria chose as leader Robert O’Hara Burke, an Irish police officer who had no experience of exploring or of the bush. He was brave, impatient and quick to quarrel. Within weeks officers were resigning and men being sacked. Historians argue over how much blame he deserves and how much belongs to the committee in Melbourne, whose instructions were vague and whose support was slow. The Royal Commission afterwards blamed Burke’s zeal and the delays of William Wright, who was supposed to bring up supplies from Menindee.',
       },
     },
     {
@@ -77,7 +77,7 @@ export const burke: RouteDef = {
       title: 'Menindee',
       line: 'At Menindee on the Darling, Burke splits the party.',
       page: [
-        'They reached Menindee on 12 October, nearly two months for about 750 km. The second-in-command, George Landells, who had brought the camels from India, had resigned after quarrelling with Burke, and the doctor with him. William Wills, the young surveyor, became second-in-command.',
+        'They reached Menindee on 12 October, after almost two months on the road. The second-in-command, George Landells, who had brought the camels from India, had resigned after quarrelling with Burke, and the doctor with him. William Wills, the young surveyor, became second-in-command.',
         'Impatient, Burke went ahead with a small party for Cooper Creek, leaving the rest to follow with the supplies.',
       ],
     },
@@ -85,7 +85,7 @@ export const burke: RouteDef = {
       km: 1100,
       title: 'Into the inland',
       line: 'Into the dry inland, in a good season.',
-      page: ['Beyond the Darling they crossed into the Channel Country and the edge of the desert. The season was unusually wet, and they found water easily. They were walking through the country of Aboriginal peoples who had lived here for tens of thousands of years and knew every waterhole.'],
+      page: ['Beyond the Darling they crossed the dry Corner Country towards the Cooper. The season was unusually wet, and they found water easily. They were walking through the country of Aboriginal peoples who had lived here for tens of thousands of years and knew every waterhole.'],
     },
     {
       km: 1600,
@@ -151,7 +151,7 @@ export const burke: RouteDef = {
       ],
       deeper: {
         title: 'What the Yandruwandha knew',
-        text: 'The explorers died in country where the Yandruwandha lived well. The people gave them fish, cakes made from nardoo seed and shelter, and kept their fires going. Burke, suspicious, fired his pistol over their heads, and they moved away. The three men then lived on nardoo they prepared themselves; it is now thought they did not treat it as the Yandruwandha did, by grinding it with water, and that an enzyme in the raw seed helped starve them of vitamin B1. King survived because he lived with the Yandruwandha. Seven of the expedition died. In 1863 Melbourne gave Burke and Wills a state funeral and statues; the Yandruwandha were given three brass breastplates.',
+        text: 'The explorers died in country where the Yandruwandha lived well. The people gave them fish, cakes made from nardoo seed and shelter, and kept their fires going. Burke, suspicious, fired his pistol over their heads, and they moved away. The three men then lived on nardoo they prepared themselves; it is now thought they did not treat it as the Yandruwandha did, by grinding it with water, and that an enzyme in the raw seed helped starve them of vitamin B1. King survived because he lived with the Yandruwandha. Seven of the expedition died. Melbourne gave Burke and Wills a state funeral in 1863 and, later, a statue; the Yandruwandha were given three brass breastplates.',
       },
     },
   ],

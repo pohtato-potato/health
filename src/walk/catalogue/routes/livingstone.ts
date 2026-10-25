@@ -41,11 +41,11 @@ export const livingstone: RouteDef = {
       line: 'At Chitambo, in May 1873, Livingstone dies, and his companions decide.',
       page: [
         'David Livingstone, the Scottish missionary and explorer, had spent seven years searching for the source of the Nile, sick and often lost. He died at the village of the chief Chitambo, south of Lake Bangweulu in what is now Zambia, on about 1 May 1873.',
-        'His companions, led by Abdullah Susi and James Chuma, met and decided to carry his body to the coast, to be sent home to Britain. It had never been done, and no one had asked them to.',
+        'His companions, led by Abdullah Susi and James Chuma, met and decided to carry his body to the coast, to be sent home to Britain. Nothing like it had been tried, and no one had asked them to.',
       ],
       deeper: {
         title: 'Their journey, long told as his',
-        text: 'For a century the story was told as Livingstone’s: the great man dying on his knees, his faithful servants bringing him home. The servants were men with their own histories. Chuma, a Yao, had been freed from slave traders by Livingstone in 1861. Susi had worked for him since the 1860s. Jacob Wainwright, also Yao, had been freed from a slave ship and schooled at a mission in Nashik in India before joining. Together they ran a caravan of about sixty people through country at war, made the decisions, bargained with chiefs and kept the body hidden from people who feared a corpse. Historians now treat the carrying as an achievement in its own right, and the decision as theirs.',
+        text: 'For a century the story was told as Livingstone’s: the great man dying on his knees, his faithful servants bringing him home. The servants were men with their own histories. Chuma, a Yao, had been freed from slave traders by Livingstone’s party and Bishop Mackenzie’s mission in 1861. Susi had worked for him since the 1860s. Jacob Wainwright, also Yao, had been freed from a slave ship and schooled at a mission in Nashik in India before joining. Together they ran a caravan of sixty to eighty people, counts vary, through country at war, made the decisions, bargained with chiefs and kept the body hidden from people who feared a corpse. Historians now treat the carrying as an achievement in its own right, and the decision as theirs.',
       },
     },
     {
@@ -53,7 +53,7 @@ export const livingstone: RouteDef = {
       title: 'The heart under a tree',
       line: 'His heart is buried under a tree, and the body dried in the sun.',
       page: [
-        'They removed his heart and organs and buried them in a tin under a mvula tree at Chitambo. Jacob Wainwright read the burial service and carved an inscription on the tree.',
+        'They removed his heart and organs and buried them in a tin under a tree at Chitambo, usually called a mvula, though it was more likely a mpundu. Jacob Wainwright read the burial service and carved an inscription on the tree.',
         'They dried the body in the sun for about two weeks, wrapped it in calico, bound it in bark and lashed it to a pole for carrying.',
       ],
     },
@@ -100,7 +100,7 @@ export const livingstone: RouteDef = {
       km: 1050,
       title: 'The caravan road',
       line: 'East on the caravan road, the slave road to the coast.',
-      page: ['From Unyanyembe the road to the coast was the main route of the ivory and slave caravans. Thousands of captives a year were marched along it to Bagamoyo and shipped to Zanzibar.'],
+      page: ['From Unyanyembe the road to the coast was the main route of the caravans. It was above all an ivory road, but captives were marched along it to the coast too.'],
       deeper: {
         title: 'The trade he wrote against',
         text: 'The East African slave trade was run by Swahili and Arab traders from Zanzibar, with African partners inland, and fed plantations on Zanzibar and markets in Arabia and the Persian Gulf. In July 1871 Livingstone watched slavers fire into a crowded market at Nyangwe on the Lualaba, killing hundreds. His account caused outrage in Britain, and Britain pressed the Sultan of Zanzibar. On 5 June 1873, a month after Livingstone died, the Sultan closed the Zanzibar slave market. The trade went on illegally for years, inland and by smaller boats. Britain’s campaign against it was also, in time, one of the reasons it gave itself for taking over East Africa.',
@@ -124,7 +124,7 @@ export const livingstone: RouteDef = {
       line: 'At Bagamoyo, the sea, and a quick goodbye.',
       page: [
         'In February 1874 the caravan reached Bagamoyo, on the coast opposite Zanzibar. The body was handed over to British officials and shipped home. The bearers were paid their wages and sent away.',
-        'On 18 April 1874 Livingstone was buried in Westminster Abbey. Of those who had carried him, only Jacob Wainwright was there, as a pallbearer. Susi and Chuma came to England later that year to help prepare his journals for publication, and the Royal Geographical Society gave medals to the bearers. The heart stayed at Chitambo, where a memorial stands.',
+        'On 18 April 1874 Livingstone was buried in Westminster Abbey. Of those who had carried him, only Jacob Wainwright was there, as a pallbearer. Susi and Chuma came to England later that year to help prepare his journals for publication. The Royal Geographical Society gave Susi and Chuma medals and struck sixty more for the bearers, though by the time those reached Zanzibar in 1875 most of the men had gone. The heart stayed at Chitambo, where a memorial stands.',
       ],
     },
   ],
@@ -141,7 +141,7 @@ export const livingstone: RouteDef = {
   sources: [
     { title: 'Wikipedia: David Livingstone', url: 'https://en.wikipedia.org/wiki/David_Livingstone' },
     { title: 'Wikipedia: Jacob Wainwright', url: 'https://en.wikipedia.org/wiki/Jacob_Wainwright' },
-    { title: 'Wikipedia: James Chuma', url: 'https://en.wikipedia.org/wiki/James_Chuma' },
+    { title: 'Wikipedia: Chuma and Susi', url: 'https://en.wikipedia.org/wiki/Chuma_and_Susi' },
     { title: 'Livingstone Online', url: 'https://livingstoneonline.org/' },
     { title: 'The Blantyre Project: bringing back Livingstone', url: 'https://blantyreproject.com/2015/08/bringing-back-livingstone-from-africa/' },
   ],

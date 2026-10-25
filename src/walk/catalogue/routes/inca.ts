@@ -46,7 +46,7 @@ export const inca: RouteDef = {
       ],
       deeper: {
         title: 'An empire that ran on knotted cords',
-        text: 'The Incas ruled perhaps ten million people without writing as we know it. Officials kept records on khipu, bundles of knotted cords whose knots, colours and positions recorded numbers, of people, tribute and stores, and perhaps also names and stories. Specialists read them aloud. Spanish officials used khipu records in court cases for decades after the conquest. Most surviving khipu are numerical and can be read; whether some recorded language is still an open question. Labour was the empire’s tax: households owed turns of work, the mit’a, on roads, farms, mines and armies, and the state fed them from its stores while they worked.',
+        text: 'The Incas ruled perhaps ten million people without writing as we know it. Officials kept records on khipu, bundles of knotted cords whose knots, colours and positions recorded numbers, of people, tribute and stores, and perhaps also names and stories. Specialists read them aloud. Spanish officials used khipu records in court cases for decades after the conquest. Most surviving khipu seem to record numbers, and their counting system can be decoded; whether some recorded language is still an open question. Labour was the empire’s tax: households owed turns of work, the mit’a, on roads, farms, mines and armies, and the state fed them from its stores while they worked.',
       },
     },
     {

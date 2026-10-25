@@ -83,14 +83,14 @@ export const mansa: RouteDef = {
       line: 'Into the desert, on the salt road.',
       page: [
         'The trade that crossed this desert was, above all, gold going north and salt coming south. North of here lay the salt mines of Taghaza, where slabs were cut from the ground and, Ibn Battuta says, even the houses and the mosque were built of salt.',
-        'In the forest country to the south salt was so scarce it could be worth its weight in gold. Camels made the whole system possible: they had become common in the Sahara only some centuries before.',
+        'In the forest country to the south salt was scarce and could sell for a high price. Camels made the whole system possible: they had become common in the Sahara only about a thousand years before.',
       ],
     },
     {
       km: 1700,
       title: 'The caravan',
       line: 'A caravan as big as a city, by the story.',
-      page: ['Writers after his time tell of 60,000 people, 12,000 slaves each carrying a bar of gold, and 80 or 100 camels each loaded with gold. Nobody counted. Al-Umari, the best of the Cairo writers, heard that he brought 100 loads of gold. The numbers are tradition; the wealth was real.'],
+      page: ['Later writers tell of 60,000 people, thousands of slaves in silk, some carrying staffs of gold, and 80 or 100 camel-loads of gold. Nobody counted, and historians treat the numbers as tradition. The wealth was real.'],
     },
     {
       km: 2142,
@@ -133,12 +133,12 @@ export const mansa: RouteDef = {
       title: 'Cairo',
       line: 'In Cairo, July 1324, gold spent until its price falls.',
       page: [
-        'Mansa Musa reached Cairo in July 1324 and camped outside the city for about three months. He met the Mamluk sultan, al-Nasir Muhammad, and, by al-Umari’s account, at first refused to bow to the ground before him, then did so as a gesture to God.',
-        'He and his people spent and gave away so much gold that its value in Cairo fell, and al-Umari, writing about twelve years later, says it had still not recovered. On the way home from Mecca he had run out, and borrowed from Cairo’s merchants at high interest.',
+        'Mansa Musa reached Cairo in July 1324. He camped for three days by the pyramids, then stayed in Cairo about three months. He met the Mamluk sultan, al-Nasir Muhammad, and, by al-Umari’s account, at first refused to bow to the ground before him, then did so as a gesture to God.',
+        'He and his people spent and gave away so much gold that its value in Cairo fell, and al-Umari, writing about twelve years later, says it had still not recovered. Some historians think the fall was within the normal ups and downs of Cairo’s gold price. On the way home from Mecca he had run out, and borrowed from Cairo’s merchants at high interest.',
       ],
       deeper: {
         title: 'How one journey put Mali on the map',
-        text: 'Before 1324 Europeans knew vaguely that gold came from south of the Sahara. After it, the merchants of Cairo, Genoa and Venice knew a name. In 1375 the Catalan Atlas, made on Majorca, showed a crowned African king on a throne holding a golden orb, labelled as the lord of the land of gold. Mansa Musa came home with scholars and an architect, Abu Ishaq al-Sahili from Granada, and Timbuktu began to grow into a city of mosques and learning, though the famous Great Mosque there has been rebuilt many times. The fame had a cost: within two centuries Portuguese ships were sailing down the Atlantic coast to reach the gold directly.',
+        text: 'Before 1324 Europeans knew vaguely that gold came from south of the Sahara. After it, the merchants of Cairo, Genoa and Venice knew a name. In 1375 the Catalan Atlas, made on Majorca, showed a crowned African king on a throne holding a golden orb, labelled as Musa of Mali, the richest king of all, for the gold of his country. Mansa Musa came home with scholars and the Granada poet Abu Ishaq al-Sahili, later remembered as his architect, and Timbuktu began to grow into a city of mosques and learning, though the famous Great Mosque there has been rebuilt many times. The fame had a cost: within two centuries Portuguese ships were sailing down the Atlantic coast to reach the gold directly.',
       },
     },
   ],

@@ -87,7 +87,7 @@ export const longmarch: RouteDef = {
       km: 500,
       title: 'Through the blockhouses',
       line: 'West through the Nationalist lines.',
-      page: ['The army broke through three lines of blockhouses with fewer losses than expected; some historians think a local Nationalist commander, wary of Chiang, let them pass.'],
+      page: ['The army broke through three lines of blockhouses with fewer losses than expected; a Guangdong general, Chen Jitang, had secretly agreed to let them through.'],
     },
     {
       km: 960,
@@ -140,7 +140,7 @@ export const longmarch: RouteDef = {
       line: 'Luding Bridge: thirteen iron chains over the Dadu.',
       page: [
         'The official story: on 29 May 1935, 22 volunteers crawled across the chains of the Luding suspension bridge, its planks removed, under machine-gun fire, and stormed the town on the far side. It is the most famous episode of the march.',
-        'Some writers, among them the authors of a hostile 2005 biography of Mao, say there was little or no fighting there. Others reply with local witnesses and records of a real, if smaller, fight. What is certain is that the army crossed and escaped a trap.',
+        'Some writers, among them the authors of a fiercely critical 2005 biography of Mao, say there was little or no fighting there. Others reply with local witnesses and records of a real, if smaller, fight. What is certain is that the army crossed and escaped a trap.',
       ],
     },
     {
@@ -153,7 +153,7 @@ export const longmarch: RouteDef = {
       km: 4310,
       title: 'Two armies meet',
       line: 'At Maogong, two Red Armies meet, and quarrel.',
-      page: ['In June the march met the much larger Fourth Front Army of Zhang Guotao. The two leaderships could not agree where to go, and by September they had split. Zhang went south and lost most of his army; his defeat let the Party remember Mao as the one who was right.'],
+      page: ['In June the march met the much larger Fourth Front Army of Zhang Guotao. The two leaderships could not agree where to go, and by September they had split. Zhang went south and lost heavily, and much of his army was later destroyed in the north-west; his defeats let the Party remember Mao as the one who was right.'],
     },
     {
       km: 4891,

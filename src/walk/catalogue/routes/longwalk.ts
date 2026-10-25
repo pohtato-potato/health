@@ -52,7 +52,8 @@ export const longwalk: RouteDef = {
       title: 'Camp 303',
       line: 'The book begins in a labour camp in Siberia, in the winter of 1941.',
       page: [
-        'In The Long Walk (1956), Sławomir Rawicz, a Polish army officer, tells how he was arrested by the Soviet secret police after the invasion of Poland in 1939, tortured, and sentenced to 25 years in a labour camp in Siberia, which he calls Camp 303, south of Yakutsk.',
+        'In The Long Walk (1956), Sławomir Rawicz, a Polish army officer, tells how he was arrested by the Soviet secret police after the invasion of Poland in 1939, tortured, and sentenced to 25 years in a labour camp in Siberia, which he calls Camp 303 and places about 650 km south of the Arctic Circle.',
+        'The evidence: records found in 2006 say he was sent to the camps for killing an officer of the secret police, and place him in different camps.',
         'The book was written with a journalist, Ronald Downing, from Rawicz’s telling. It sold in the hundreds of thousands and was translated into many languages.',
       ],
       deeper: {
@@ -66,7 +67,7 @@ export const longwalk: RouteDef = {
       line: 'The book: seven men slip out of the camp in a snowstorm.',
       page: [
         'The book says that in April 1941 Rawicz and six others, with help from the camp commandant’s wife, escaped under the wire in a blizzard and headed south, away from the Arctic.',
-        'The evidence: Soviet and Polish records found by a BBC investigation in 2006 show Rawicz in a different camp, released in 1942 under the amnesty for Polish prisoners, with no escape on file.',
+        'The evidence: records found by a BBC investigation in 2006, one in Rawicz’s own hand, show him released in 1942 under the amnesty for Polish prisoners, with no escape on file.',
       ],
     },
     {
@@ -149,9 +150,9 @@ export const longwalk: RouteDef = {
     { when: '2010', place: 'Cinemas', text: 'The Way Back is released.' },
   ],
   sources: [
-    { title: 'Wikipedia: The Long Walk', url: 'https://en.wikipedia.org/wiki/The_Long_Walk' },
+    { title: 'Wikipedia: The Way Back (2010 film)', url: 'https://en.wikipedia.org/wiki/The_Way_Back_(2010_film)' },
     { title: 'Wikipedia: Sławomir Rawicz', url: 'https://en.wikipedia.org/wiki/S%C5%82awomir_Rawicz' },
-    { title: 'BBC News: Walking the walk? (2006)', url: 'http://news.bbc.co.uk/1/hi/magazine/6098218.stm' },
+    { title: 'BBC News: Walking the talk? (Hugh Levinson, 2006)', url: 'http://news.bbc.co.uk/2/hi/uk_news/magazine/6098218.stm' },
     { title: 'Wikipedia: Anders’ Army', url: 'https://en.wikipedia.org/wiki/Anders%27_Army' },
   ],
   ready: true,
