@@ -1,6 +1,5 @@
 import { TrainProto } from './screens/proto/TrainLiving';
 import { SessionProto } from './screens/proto/SessionLiving';
-import { WalkProto } from './screens/proto/WalkProto';
 import { prefOn } from './domain/types';
 import { Suspense, lazy, useEffect, type ComponentType, type ReactNode } from 'react';
 import { findSession } from './domain/plan';
@@ -157,7 +156,6 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/reveal': { el: () => <RevealPage /> },
   '/proto/session': { el: () => <SessionProto /> },
   '/proto/train': { el: () => <TrainProto /> },
-  '/proto/walk': { el: () => <WalkProto /> },
 };
 
 export function App() {
