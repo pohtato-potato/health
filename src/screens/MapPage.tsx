@@ -3,7 +3,7 @@ import { hasReward } from '../domain/rewards';
 import { fmtInt } from '../domain/format';
 import { ALL_STATES, chapterAt, kmFromSteps, statesReached, strideM } from '../domain/walk';
 import { useAllDays, useSettings } from '../db/hooks';
-import { back } from '../router';
+import { back, useRoute } from '../router';
 import { Icon } from '../ui/Icon';
 import { useUnlockedIds } from '../ui/Theme';
 import { STRETCHES } from '../walk/content';
@@ -34,14 +34,6 @@ export function MapPage() {
   const km = days ? kmFromSteps([...stepsByDay(days).values()].reduce((a, b) => a + b, 0)) : 0;
   const canFly = flyoverAllowed(km);
   useEffect(() => () => cancelAnimationFrame(raf.current), []);
-  if (!settings || !days || !unlocked) return <div className="page" />;
-
-  const ch = chapterAt(km);
-  const reached = statesReached(km).map((s) => s.name);
-  const nextState = ALL_STATES.find((s) => s.km > km && !reached.includes(s.name));
-  const stretch = stretchAt(km, STRETCHES);
-  const gold = hasReward(unlocked, 'A gold route on your map');
-
   const fly = () => {
     const t0 = performance.now();
     const tick = (t: number) => {
@@ -52,6 +44,22 @@ export function MapPage() {
     };
     raf.current = requestAnimationFrame(tick);
   };
+  // Opened from the road so far as #/map?fly=1: the whole road replays once, if there's a trail to fly along.
+  const flyAsked = useRoute().params.get('fly') === '1';
+  const flown = useRef(false);
+  useEffect(() => {
+    if (!flyAsked || !days || !canFly || flown.current) return;
+    flown.current = true;
+    fly();
+  }, [flyAsked, days, canFly]);
+  if (!settings || !days || !unlocked) return <div className="page" />;
+
+  const ch = chapterAt(km);
+  const reached = statesReached(km).map((s) => s.name);
+  const nextState = ALL_STATES.find((s) => s.km > km && !reached.includes(s.name));
+  const stretch = stretchAt(km, STRETCHES);
+  const gold = hasReward(unlocked, 'A gold route on your map');
+
   const stop = () => {
     cancelAnimationFrame(raf.current);
     setFlyT(undefined);

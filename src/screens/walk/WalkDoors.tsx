@@ -4,7 +4,7 @@ const DOORS: [string, string][] = [
   ['Passport', '/passport'],
   ['Map', '/map'],
   ['Departures', '/departures'],
-  ['Wrapped', '/wrapped'],
+  ['Wrapped', '/road'],
 ];
 
 /** The ways on from the Walk tab, each a full-width row. */

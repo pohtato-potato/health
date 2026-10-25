@@ -71,6 +71,7 @@ const StretchPage = page(() => import('./screens/walk/RoadPages'), 'StretchPage'
 const StopPage = page(() => import('./screens/walk/RoadPages'), 'StopPage');
 const ArrivalPage = page(() => import('./screens/walk/ArrivalPage'), 'ArrivalPage');
 const ChapterFilmPage = page(() => import('./screens/walk/ChapterFilm'), 'ChapterFilmPage');
+const RoadSoFarPage = page(() => import('./screens/walk/RoadSoFar'), 'RoadSoFarPage');
 const PassportPage = page(() => import('./screens/walk/PassportPage'), 'PassportPage');
 const ArrivalRedirect = page(() => import('./screens/Postcard'), 'ArrivalRedirect');
 const DiaryPage = page(() => import('./screens/Diary'), 'DiaryPage');
@@ -144,6 +145,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/stop': { el: () => <StopPage /> },
   '/arrive': { el: () => <ArrivalPage /> },
   '/chapter': { el: () => <ChapterFilmPage /> },
+  '/road': { el: () => <RoadSoFarPage /> },
   '/passport': { el: () => <PassportPage /> },
   '/routes': { el: () => <ShelfPage /> },
   '/route': { el: () => <RouteScreen /> },
