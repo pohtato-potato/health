@@ -3,7 +3,6 @@ import { daysBetween, type DayKey } from '../../domain/dates';
 import type { RouteRun } from '../../domain/types';
 import { Icon } from '../../ui/Icon';
 import { RECORD_NAMES, kindOf, type RouteDef } from '../../walk/catalogue';
-import { timeAtPace } from '../../walk/page';
 import { finishedOn, runState } from '../../walk/runs';
 import { targetLine } from '../../walk/shelf';
 import { marksReached, signatureOf } from '../../walk/signature';
@@ -13,6 +12,7 @@ import { inkStyle } from '../../walk/ui/RouteArt';
 import { RouteMap } from '../../walk/ui/RouteMap';
 import { endsOf } from './JoinMoment';
 import { TAKEN } from './Shelf';
+import { Odometer, ThenLine } from './RouteNumbers';
 import { Sources } from './Sources';
 import { WalkFrame } from './WalkFrame';
 import { auroraFor, auroraForInk } from '../../walk/page';
@@ -126,25 +126,22 @@ export function RoutePageView(p: {
         )}
       </section>
 
-      <p className="walk-route-num" aria-label={`${fmt(km)} of ${fmt(def.km)} km, ${pct}%`}>
-        <b>{fmt(km)}</b>
-        <span>
-          of {kind === 'expedition' ? 'about ' : ''}
-          {fmt(def.km)} km · {pct}%{day > 0 ? ` · your day ${fmt(day)}` : ''}
-          {state && state !== 'walking' ? ` · ${state === 'finished' ? 'Finished' : 'Set down'}` : ''}
-        </span>
-      </p>
+      <Odometer km={km} of={def.km} about={kind === 'expedition'}>
+        of {kind === 'expedition' ? 'about ' : ''}
+        {fmt(def.km)} km · {pct}%{day > 0 ? ` · your day ${fmt(day)}` : ''}
+        {state && state !== 'walking' ? ` · ${state === 'finished' ? 'Finished' : 'Set down'}` : ''}
+      </Odometer>
 
       {def.record !== 'none' && def.years && <Years theirs={def.years.theirs} note={def.years.note} yours={def.km / Math.max(p.usualKm, 0.1) / 365} />}
-      {def.record !== 'none' && !def.years && def.then && (
-        <section className="walk-then">
-          <span className="walk-kind">Then and you</span>
-          <p className="walk-para">
-            {thenAt ? `${def.then.who} reached ${thenAt.name} on day ${thenAt.theirDay}${yourDayAt && run ? `; you, on day ${daysBetween(run.spans[0].from, yourDayAt) + 1}` : ''}. ` : ''}
-            {def.then.who} took {def.then.totalDays} days in all; at your pace this is {timeAtPace(def.km, p.usualKm)}.
-          </p>
-          <p className="walk-sub">{def.then.source}</p>
-        </section>
+      {def.record !== 'none' && !def.years && def.then && run && (thenAt ?? def.then.places[0]) && (
+        <ThenLine
+          who={def.then.who}
+          place={(thenAt ?? def.then.places[0]).name}
+          theirDay={(thenAt ?? def.then.places[0]).theirDay}
+          yourDay={thenAt && yourDayAt && run ? daysBetween(run.spans[0].from, yourDayAt) + 1 : undefined}
+          totalDays={def.then.totalDays}
+          source={def.then.source}
+        />
       )}
 
       {story === 'paused' && (

@@ -43,8 +43,13 @@ describe('the aurora’s colours', () => {
   it('tints a route’s pages from its own ink, deep and in its hue', () => {
     for (const def of CATALOGUE) {
       const t = auroraForInk(def.ink);
-      const [, , l] = hsl(t['--lv-a']);
+      const [h, sat, l] = hsl(t['--lv-a']);
+      const [inkH] = hsl(def.ink);
       expect(l, def.id).toBeLessThanOrEqual(0.35);
+      expect(l, def.id).toBeGreaterThanOrEqual(0.15);
+      // Pale inks sunk into the night go grey; the board's route pages kept their colour (Dandi's sea, #263d63).
+      expect(sat, def.id).toBeGreaterThanOrEqual(0.3);
+      expect(Math.min(Math.abs(h - inkH), 360 - Math.abs(h - inkH)), def.id).toBeLessThan(12);
       expect(t['--lv-accent']).toBe(def.ink);
     }
   });

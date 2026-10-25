@@ -2,7 +2,7 @@ import type { DayKey } from '../domain/dates';
 import { fmtInt } from '../domain/format';
 import type { Day, Status } from '../domain/types';
 import { ALL_STOPS, crossings, kmFromSteps, positionAt } from '../domain/walk';
-import { mix, type RegionId } from '../ui/light';
+import type { RegionId } from '../ui/light';
 import { STOP_WORDS, type SmallStop } from './content/types';
 import { HINDI } from './hindi';
 
@@ -148,7 +148,31 @@ export function auroraFor(region: RegionId): AuroraTint {
   return { '--lv-a': a, '--lv-b': GROUND, '--lv-accent': accent };
 }
 
-/** A route's pages take their aurora from the route's own ink, sunk deep into the night. */
+/**
+ * A route's pages take their aurora from the route's own ink: the ink's hue, deep and still coloured, the way the
+ * board tinted Dandi's page sea blue. (Mixing a pale ink into the night turns it grey.)
+ */
 export function auroraForInk(ink: string): AuroraTint {
-  return { '--lv-a': mix(ink, GROUND, 0.7), '--lv-b': GROUND, '--lv-accent': ink };
+  const [h, s] = toHsl(ink);
+  return { '--lv-a': fromHsl(h, Math.max(0.42, Math.min(0.55, s * 0.7)), 0.24), '--lv-b': GROUND, '--lv-accent': ink };
+}
+
+function toHsl(c: string): [number, number, number] {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16) / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+  const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  let h = 0;
+  if (d) h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [(h * 60 + 360) % 360, s, l];
+}
+
+function fromHsl(h: number, s: number, l: number): string {
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  const [r, g, b] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+  return '#' + [r, g, b].map((v) => Math.round((v + m) * 255).toString(16).padStart(2, '0')).join('');
 }
