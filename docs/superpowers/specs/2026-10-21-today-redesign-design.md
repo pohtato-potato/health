@@ -333,11 +333,11 @@ The owner approved the spec and all seven open questions as proposed:
 
 The Walk tab was rebuilt on top of part 1 (`feat/walk`); Today and the Walk ship together. Decisions: `Today shared/decisions/2026-10-25-today-after-walk.md`.
 
-- **The walk at the top** is the Walk tab's painted scene (`WalkVista`) at the same frame, with its milestone. The caption sits under the picture, in the fade: the date, place and status; the Walk tab's title (the stretch's name, else near or between places); one walk line.
+- **The walk at the top** is the place, as the arrival's welcome draws it (`Scene`: the fort at Gwalior), every day, not only on arrival days. No road and no milestone; the milestone's km is the walk line's fallback. The caption sits under the picture, in the fade: the date, place and status; the Walk tab's title (the stretch's name, else near or between places); one walk line.
 - **No day count** on Today: the Walk tab counts days on the stretch.
 - **One walk line**, in this order: an arrival, a small stop, a rest day, the night sky, tomorrow (only once today's steps are in), else the km the milestone shows.
 - **Arrival days** press the city's passport stamp onto the scene until midnight.
-- **Colour:** Today sits on the aurora tinted by the region, as every Walk page does (`auroraFor`). Part 2's living colour starts from that tint. The surfaces (moment card, food chips, meal tiles, search) are the Walk's glass with a hairline, so the land's colour shows through. The owner is still choosing between this and the old fills (dev: `#/today?card=as-is`).
+- **Colour:** Today sits on the aurora tinted by the region, as every Walk page does (`auroraFor`). Part 2's living colour starts from that tint. The surfaces (moment card, food chips, meal tiles, search) are the Walk's glass with a hairline, so the land's colour shows through. Chosen over the old navy fills (owner, 25 Oct).
 - **Full-screen moments may stack:** Today's and the Walk's moments don't share a daily limit.
 - **Close the day:** part 2's closing moment builds on the walker already moving on Close the day.
 - **Monday:** part 4's "Met this week" slide sits beside the walk's cards in the weekly recap.

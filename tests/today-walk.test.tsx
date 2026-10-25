@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { todayWalkLine, walkCaption } from '../src/domain/walkCaption';
+import { scenePlace, todayWalkLine, walkCaption } from '../src/domain/walkCaption';
 import { WalkTop } from '../src/screens/today/WalkTop';
 
 describe('walkCaption', () => {
@@ -70,5 +70,22 @@ describe('WalkTop', () => {
   it('leaves an empty third line out', () => {
     const none = renderToStaticMarkup(<WalkTop caption={['Wed 21 Oct', 'Test Country', '']} scene={<svg />} onOpen={() => {}} />);
     expect(none).not.toContain('td-walk-next');
+  });
+});
+
+describe('scenePlace', () => {
+  const from = { name: 'Back Town', km: 100 };
+  const to = { name: 'Front City', km: 200 };
+  const all = () => true;
+  it('draws the nearer of the place behind and the place ahead', () => {
+    expect(scenePlace(130, from, to, all)).toBe('Back Town');
+    expect(scenePlace(170, from, to, all)).toBe('Front City');
+  });
+  it('prefers a place that has its illustration, even if it is farther', () => {
+    expect(scenePlace(130, from, to, (n) => n === 'Front City')).toBe('Front City');
+  });
+  it('keeps the nearer place when neither has one, and the last place at the end of the road', () => {
+    expect(scenePlace(130, from, to, () => false)).toBe('Back Town');
+    expect(scenePlace(130, from, undefined, all)).toBe('Back Town');
   });
 });

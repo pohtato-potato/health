@@ -1,5 +1,5 @@
 import { useMemo, useState, type CSSProperties } from 'react';
-import { addDays, logHour, weekStart } from '../domain/dates';
+import { addDays, logHour, partOfDay, weekStart } from '../domain/dates';
 import { fmtDuration, fmtInt, fmtTime } from '../domain/format';
 import { findSession } from '../domain/plan';
 import { sleepMinutes, stepsGoal } from '../domain/rings';
@@ -10,15 +10,16 @@ import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween
 import { prefOn } from '../domain/types';
 import { voiceFor } from '../domain/voice';
 import { kmFromSteps } from '../domain/walk';
-import { todayWalkLine, walkCaption } from '../domain/walkCaption';
+import { scenePlace, todayWalkLine, walkCaption } from '../domain/walkCaption';
 import { arrivedToday, auroraFor, nearestPlace, restLine, stoneFor, stopLine, tomorrowLine, usualAndBig, whereLine, whereNow } from '../walk/page';
 import { stopToday, stretchAt } from '../walk/road';
 import { STOPS, STRETCHES } from '../walk/content';
 import { stepsByDay } from '../walk/runs';
 import { skyLine } from '../walk/sky';
 import { arrivalFor } from '../walk/arrivals';
-import { WalkVista } from '../walk/WalkVista';
-import { Milestone } from './walk/Milestone';
+import { Scene } from '../walk/art/scene';
+import { landmarkFor } from '../walk/art/landmarks';
+import { positionAt } from '../domain/walk';
 import { StampTemplate } from './walk/Arrival';
 import { WalkTop } from './today/WalkTop';
 import { RingsNumbers } from './today/RingsNumbers';
@@ -40,7 +41,7 @@ import { glanceLine } from '../domain/glance';
 import { logMinutes } from '../domain/todayMoment';
 import { placeFor } from '../domain/places';
 import { proteinGap } from '../domain/proteinGap';
-import { go, openSheet, useRoute } from '../router';
+import { go, openSheet } from '../router';
 import { Rings } from '../ui/Rings';
 import { useToast } from '../ui/Toasts';
 import {
@@ -92,9 +93,6 @@ export function Today() {
   const nowMs = useNow(60_000);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const gapAdd = useGapAdd(today, foods);
-  // Dev only: ?card=as-is shows the old navy surfaces on the region's colour, to compare with the glass.
-  const route = useRoute();
-  const asIs = import.meta.env.DEV && route.params.get('card') === 'as-is';
 
   if (!settings || !days || !entries || !sessions || !sets || active === undefined || !foods || !weekEntries || !monthEntries) {
     return <div className="page" />;
@@ -148,7 +146,7 @@ export function Today() {
   const gap = proteinGap({ protein: totals.protein, proteinTarget: targets.proteinG, kcal: totals.kcal, kcalMax: targets.kcalMax }, foods, monthEntries, Date.now());
   const addGap = () => void gapAdd(gap.picks);
   const ready = forecastData(settings, today, days, monthEntries.filter((e) => e.date >= addDays(today, -2)), sessions, sets).readiness;
-  // The walk at the top says what the Walk tab says: its title, its milestone, and one of its lines.
+  // The walk at the top says what the Walk tab says: its title and one of its lines (the milestone's km when nothing else).
   const steps = stepsByDay(days);
   const startDay = journeyStartOf(settings, days);
   const stretch = stretchAt(walkKm, STRETCHES);
@@ -161,16 +159,9 @@ export function Today() {
   const here = settings.places?.length ? placeFor(day, settings, Date.now()) : undefined;
   const caption = walkCaption({ date: today, place: here?.name, status: day?.status, title: stretch?.name ?? whereLine(whereNow(walkKm)), line: walkLine });
   const festive = prefOn(settings.prefs, 'seasonal') ? (seasonalThemeOn(today, settings.birthday) as Festive | undefined) : undefined;
-  const scene = (
-    <span className="td-walk-scene">
-      <WalkVista km={walkKm} todayKm={kmFromSteps(steps.get(today) ?? 0)} festive={festive} />
-      {stone && (
-        <span className="walk-stone-at">
-          <Milestone stone={stone} />
-        </span>
-      )}
-    </span>
-  );
+  // The scene is the place, as the arrival's welcome draws it (the fort at Gwalior), every day, not only on arrival.
+  const pos = positionAt(walkKm);
+  const scene = <Scene city={scenePlace(walkKm, pos.from, pos.done ? undefined : pos.to, (n) => !!landmarkFor(n))} part={partOfDay(new Date(nowMs))} landmarkScale={1.6} festive={festive} />;
   const stamp = arrival ? <StampTemplate name={arrival.name} state={arrival.state} n={arrival.n} ut={arrival.ut} /> : undefined;
   const mealNow = mealForTime();
   const usual = usualFoods(monthEntries, foods, mealNow, today);
@@ -193,7 +184,6 @@ export function Today() {
   return (
     <TodayLayout
       tint={auroraFor(regionAt(walkKm)) as CSSProperties}
-      asIs={asIs}
       overlays={
         <>
           {drawerOpen && (

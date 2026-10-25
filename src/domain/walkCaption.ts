@@ -26,3 +26,13 @@ export function todayWalkLine(i: { arrival?: string; stop?: string; rest?: strin
   if (i.tomorrow && i.stepsIn) return i.tomorrow;
   return i.stone ? `${fmtInt(i.stone.km)} km to ${i.stone.name}` : '';
 }
+
+/**
+ * Which place Today's scene draws: the nearer of the place behind and the place ahead, the one with its illustration
+ * (the fort at Gwalior, say) if only one has. The same drawings as the arrival's welcome, every day.
+ */
+export function scenePlace(km: number, from: { name: string; km: number }, to: { name: string; km: number } | undefined, drawn: (name: string) => boolean): string {
+  if (!to) return from.name;
+  const [near, far] = km - from.km <= to.km - km ? [from, to] : [to, from];
+  return drawn(near.name) || !drawn(far.name) ? near.name : far.name;
+}

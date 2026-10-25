@@ -300,7 +300,7 @@ The app's pickers. The wheel is a snapping mono column with a lens of two button
 A 56px raised pill docked at the bottom during a session: a blue wash fills left to right as the rest runs, the time sits in 24px, and an end button sits inside.
 
 ### Walk Band
-The older side-on scene (`WalkScene`): the current stop layered far to near in the region's four inks and lit by the part of the day. It is still used on the road pages; the Walk tab and Today use the painted vista below.
+The older side-on scene (`WalkScene`): the current stop layered far to near in the region's four inks and lit by the part of the day. It is still used on the road pages. The Walk tab uses the painted vista below; Today and the arrivals use the place scene (`src/walk/art/scene.tsx`).
 
 ### Walk Tab
 - **The scene:** the painted vista (`src/walk/art/vista.tsx`): one road running to the horizon with the walker at road scale and today's piece of road in sage. It is drawn for 9 regions × 4 hours, with the moon at its phase and meteor showers. It runs edge to edge at 360:216 and fades into the page.
@@ -312,7 +312,7 @@ The older side-on scene (`WalkScene`): the current stop layered far to near in t
 
 ### Today
 - **Varied blocks, not a stack of cards:** only the moment card is a card. The walk, the line, the rings and Next up sit straight on the page, each in its own form.
-- **Walk on Today:** the Walk tab's vista and milestone at the same frame, so tapping it opens the same picture. The caption sits under the picture, in the fade: date, place and status (14px), the Walk tab's title (28px serif), and one walk line (an arrival, a small stop, a rest day, the sky, tomorrow, else the milestone's km). On an arrival day the city's passport stamp sits tilted on the sky until midnight. Tapping opens the Walk tab.
+- **Walk on Today:** the place itself, drawn as the arrival's welcome draws it (`Scene`: the fort at Gwalior, the Taj at Agra), every day and lit for the hour. The nearer of the place behind and the place ahead, preferring one that has its drawing. The caption sits under the picture, in the fade: date, place and status (14px), the Walk tab's title (28px serif), and one walk line (an arrival, a small stop, a rest day, the sky, tomorrow, else the milestone's km). On an arrival day the city's passport stamp sits tilted on the sky until midnight. Tapping opens the Walk tab.
 - **Colour:** Today sits on the aurora tinted by the walk's region, and its surfaces are the Walk glass with a hairline.
 - **Banner slot:** one banner at a time, a line between two hairlines with a 44px action and a 44px dismiss that lasts the log day.
 - **The line:** the day's headline in 26px serif, the time trailing it in 14px; the voice in italic only at moments, gold on a perfect day.

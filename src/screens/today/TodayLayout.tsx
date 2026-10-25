@@ -6,12 +6,12 @@ import { Aurora } from '../../ui/live/Aurora';
  * Next up, then logging below the fold. The drawer handle rides above the tab bar after them. The page sits on the aurora
  * tinted by the region the walk is in, as every Walk page does.
  */
-export function TodayLayout(p: { walk: ReactNode; banner: ReactNode; line: ReactNode; season?: ReactNode; rings: ReactNode; moment: ReactNode; next: ReactNode; log: ReactNode; handle: ReactNode; overlays?: ReactNode; before?: ReactNode; tint?: CSSProperties; asIs?: boolean }) {
+export function TodayLayout(p: { walk: ReactNode; banner: ReactNode; line: ReactNode; season?: ReactNode; rings: ReactNode; moment: ReactNode; next: ReactNode; log: ReactNode; handle: ReactNode; overlays?: ReactNode; before?: ReactNode; tint?: CSSProperties }) {
   return (
     <>
       {p.before}
       {p.overlays}
-      <div className={`page td-page lv lv-tab${p.asIs ? ' as-is' : ''}`} style={p.tint}>
+      <div className="page td-page lv lv-tab" style={p.tint}>
         <Aurora />
         <h1 className="sr-only">Today</h1>
         {p.walk}
