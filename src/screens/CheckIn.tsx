@@ -446,7 +446,7 @@ function Capture({
           </button>
         </div>
       ) : (
-        <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap', justifyContent: 'flex-start' }}>
           <button type="button" className="tool" onClick={() => setFacing(facing === 'user' ? 'environment' : 'user')}>
             <Icon name="swap" size={16} stroke={1.8} />
             {facing === 'user' ? 'Front camera' : 'Back camera'}
