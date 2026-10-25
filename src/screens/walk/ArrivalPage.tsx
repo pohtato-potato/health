@@ -53,6 +53,8 @@ export function ArrivalPage() {
 
   const ch = params.get('ch');
   const a = arrivalFor(params.get('c') ?? '', steps, journeyStart(settings, days), ch ? Number(ch) : undefined);
+  // A chapter's last city leads into the chapter film.
+  const ended = params.get('end') === '1';
   if (!a)
     return (
       <div className="page walk3">
@@ -61,7 +63,7 @@ export function ArrivalPage() {
     );
   return (
     <div className={wrap}>
-      <ArrivalView a={a} beat={beat} onNext={() => (beat >= 5 ? toWalk() : setBeat(beat + 1))} onSkip={toWalk} />
+      <ArrivalView a={a} beat={beat} onNext={() => (beat < 5 ? setBeat(beat + 1) : ended ? go('/chapter', { n: String(a.chapter) }, { replace: true }) : toWalk())} onSkip={toWalk} />
     </div>
   );
 }
