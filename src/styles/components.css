@@ -1392,3 +1392,13 @@
 .chapter-film {
   background: linear-gradient(165deg, #172a3a, #1d3a32 55%, #0f1d1a);
 }
+
+/* Close the day: the walker walks the day's kilometres. */
+.day-walker { display: flex; flex-direction: column; gap: 4px; padding: 10px 0; }
+.day-walker-done { stroke-dasharray: 1; stroke-dashoffset: 1; animation: trail-draw 2s ease-out 0.3s forwards; }
+.day-walker-dot { animation: day-walk 2s ease-out 0.3s forwards; }
+@keyframes day-walk {
+  to {
+    transform: translateX(var(--to));
+  }
+}

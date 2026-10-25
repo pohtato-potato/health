@@ -10,6 +10,9 @@ import { voiceFor, voiceLine } from '../domain/voice';
 import { kmFromSteps, positionAt } from '../domain/walk';
 import { back } from '../router';
 import { nextStopLine } from '../walk/lines';
+import { dayWalk } from '../walk/dayWalk';
+import { stepsByDay } from '../walk/runs';
+import { DayWalker } from './walk/DayWalker';
 import { dayRings, nextUp, targetsFor } from '../state/derived';
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -74,7 +77,7 @@ export function DayClosed({ date, summary: s, onDone }: { date: string; summary:
       <div className="card" style={{ gap: 0, padding: '4px 16px' }}>
         {done.length > 0 && row(findSession(settings.plan!, done[0].session)?.name ?? `Session ${done[0].session}`, rec ? `${rec.exercise.toLowerCase()} record, ${rec.reps ?? rec.seconds}` : 'done')}
         {s.checklist.total > 0 && row('Checklist', `${s.checklist.done} of ${s.checklist.total}${meds.length ? ` · ${doses.onTime} on time` : ''}`)}
-        {row('Walk', `${walkedToday !== undefined ? `${walkedToday.toFixed(1)} km` : 'no steps logged'}${pos.to ? ` · ${nextStopLine(pos.to.name, pos.to.km - total, typicalKm)}` : ''}`)}
+        <DayWalker d={dayWalk(date, stepsByDay(days))} line={`${walkedToday !== undefined ? `${walkedToday.toFixed(1)} km today` : 'no steps logged'}${pos.to ? ` · ${nextStopLine(pos.to.name, pos.to.km - total, typicalKm)}` : ''}`} />
       </div>
       <div className="voice center">“{line}”</div>
       <div className="card" style={{ gap: 2 }}>
