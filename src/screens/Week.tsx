@@ -14,6 +14,9 @@ import { useToast } from '../ui/Toasts';
 import { targetsFor, weeksFor } from '../state/derived';
 import { usualWake } from '../domain/wake';
 import { basisLabel } from '../domain/logged';
+import { stepsByDay } from '../walk/runs';
+import { weekWalk } from '../walk/week';
+import { WeekRoadCard } from './walk/WeekRoadCard';
 
 function useWeekData() {
   const { params } = useRoute();
@@ -41,6 +44,7 @@ export function WeekRecap() {
   const thisNote = useLiveQuery(() => (data ? db.weeks.get(data.from) : undefined), [data?.from]);
   const nextNote = useLiveQuery(() => (nextWeek ? db.weeks.get(nextWeek) : undefined), [nextWeek]);
   const [oneThing, setOneThing] = useState<string | null>(null);
+  const runs = useLiveQuery(() => db.routes.toArray(), []);
 
   useEffect(() => {
     if (!data) return;
@@ -98,6 +102,8 @@ export function WeekRecap() {
           </div>
         ))}
       </div>
+
+      {runs && <WeekRoadCard w={weekWalk(w.from, stepsByDay(data.days), runs)} />}
 
       {w.records.length > 0 && (
         <div className="card gold">
