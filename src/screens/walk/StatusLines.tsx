@@ -9,9 +9,9 @@ export function StatusLines({ lines, today, tomorrow, onOpen }: { lines: StatusL
   const empty = lines.length === 0 && !tomorrow && !today;
   return (
     <ul className="walk-lines" aria-hidden={empty ? true : undefined}>
-      {today && <li className="walk-line today">{today}</li>}
+      {today && <li className="walk-line walk-line-today">{today}</li>}
       {lines.map((l) => (
-        <li key={l.kind} className={`walk-line ${l.kind}`}>
+        <li key={l.kind} className={`walk-line walk-line-${l.kind}`}>
           {l.open && onOpen ? (
             <button type="button" className="walk-linkline" onClick={() => onOpen(l.open!)}>
               {l.text}

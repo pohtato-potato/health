@@ -13,12 +13,12 @@
 
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-/* The walk: edge to edge through the page padding, melting into the page below; the caption on a dark band. */
+/* The walk: edge to edge through the page padding, melting into the page below. */
 .td-walk { position: relative; display: block; width: auto; margin: calc(-18px - var(--safe-top)) -22px 0; padding: 0; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; }
-.td-walk .band { height: calc(236px + var(--safe-top)); border-radius: 0; -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 70%, transparent 100%); mask-image: linear-gradient(to bottom, #000 0, #000 70%, transparent 100%); }
-.td-walk-cap { position: absolute; left: 16px; bottom: 14px; display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border-radius: 14px; background: rgba(8, 10, 22, 0.66); }
+/* The caption leaves the road clear: it sits under the picture, in the fade, as the Walk tab's title does. */
+.td-walk-cap { position: relative; display: flex; flex-direction: column; gap: 4px; margin-top: -4px; padding: 0 22px; }
 .td-walk-line { font-size: 14px; font-weight: 600; color: var(--quiet); }
-.td-walk-near { font-family: var(--serif); font-size: 28px; line-height: 1.1; }
+.td-walk-near { font-family: var(--serif); font-size: 28px; line-height: 1.1; text-wrap: balance; }
 .td-walk-next { margin: 0; font-size: 15px; }
 
 .td-h3 { margin: 14px 0 2px; font-family: var(--serif); font-weight: 400; font-size: 20px; }
@@ -113,3 +113,20 @@
 .td-dtile b { font-family: var(--serif); font-weight: 400; font-size: 34px; line-height: 1; }
 .td-dtile span { font-size: 15px; }
 .td-dtile small { font-size: 14px; color: var(--quiet); }
+
+/* Today on the region's aurora, as every Walk page sits: the Walk tab's painted scene at the top, at the same frame. */
+.td-page.lv-tab { flex-direction: column; }
+.td-page.lv-tab > .sr-only { position: absolute; }
+.td-walk-scene { position: relative; display: block; }
+.td-walk-scene .vista { display: block; width: 100%; height: auto; aspect-ratio: 360 / 216; -webkit-mask-image: linear-gradient(#000 80%, transparent); mask-image: linear-gradient(#000 80%, transparent); }
+/* The arrival day's passport stamp, pressed onto the scene at a tilt. */
+.td-walk-stamp { position: absolute; left: 18px; top: calc(14px + var(--safe-top)); width: 72px; line-height: 0; transform: rotate(-7deg); filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35)); }
+.td-walk-stamp svg { display: block; width: 100%; height: auto; }
+
+/* Surfaces on the colour: the Walk's glass and hairline, so the land's colour shows through instead of navy blocks on plum.
+   ?card=as-is (dev only) keeps the old fills to compare. */
+.td-page:not(.as-is) { --td-glass: color-mix(in srgb, #0c0e1d 50%, transparent); --td-edge: color-mix(in srgb, var(--text) 18%, transparent); --hairline: var(--td-edge); }
+.td-page:not(.as-is) .td-moment:not(.gold) { border-color: var(--td-edge); background: linear-gradient(160deg, color-mix(in srgb, var(--lv-a) 62%, #0c0e1d), var(--td-glass)); }
+.td-page:not(.as-is) .td-food, .td-page:not(.as-is) .td-meal:not(.empty) { border-color: var(--td-edge); background: var(--td-glass); }
+.td-page:not(.as-is) .td-meal.empty { border-color: var(--td-edge); }
+.td-page:not(.as-is) .log-search { border-color: var(--td-edge); background: var(--td-glass); }

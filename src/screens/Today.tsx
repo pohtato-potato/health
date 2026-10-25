@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import { addDays, logHour, weekStart } from '../domain/dates';
 import { fmtDuration, fmtInt, fmtTime } from '../domain/format';
 import { findSession } from '../domain/plan';
@@ -9,9 +9,17 @@ import { useKonami } from '../ui/useKonami';
 import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useSessions, useNow, useSettings, useToday } from '../db/hooks';
 import { prefOn } from '../domain/types';
 import { voiceFor } from '../domain/voice';
-import { kmFromSteps, positionAt } from '../domain/walk';
-import { landmarkFor } from '../walk/art/landmarks';
-import { walkCaption } from '../domain/walkCaption';
+import { kmFromSteps } from '../domain/walk';
+import { todayWalkLine, walkCaption } from '../domain/walkCaption';
+import { arrivedToday, auroraFor, nearestPlace, restLine, stoneFor, stopLine, tomorrowLine, usualAndBig, whereLine, whereNow } from '../walk/page';
+import { stopToday, stretchAt } from '../walk/road';
+import { STOPS, STRETCHES } from '../walk/content';
+import { stepsByDay } from '../walk/runs';
+import { skyLine } from '../walk/sky';
+import { arrivalFor } from '../walk/arrivals';
+import { WalkVista } from '../walk/WalkVista';
+import { Milestone } from './walk/Milestone';
+import { StampTemplate } from './walk/Arrival';
 import { WalkTop } from './today/WalkTop';
 import { RingsNumbers } from './today/RingsNumbers';
 import { TodayLayout } from './today/TodayLayout';
@@ -32,8 +40,7 @@ import { glanceLine } from '../domain/glance';
 import { logMinutes } from '../domain/todayMoment';
 import { placeFor } from '../domain/places';
 import { proteinGap } from '../domain/proteinGap';
-import { WalkScene } from '../walk/WalkScene';
-import { go, openSheet } from '../router';
+import { go, openSheet, useRoute } from '../router';
 import { Rings } from '../ui/Rings';
 import { useToast } from '../ui/Toasts';
 import {
@@ -57,7 +64,6 @@ import { fmtSet } from '../domain/setText';
 import { regionAt } from '../domain/regions';
 import { themeDayOn } from '../domain/calendar';
 import { ThemedRings } from '../ui/rings/ThemedRings';
-import { daysBetween } from '../domain/dates';
 import { journeyStart as journeyStartOf } from './Journey';
 import { seasonalThemeOn } from '../domain/themes';
 import type { Festive } from '../walk/art/festive';
@@ -86,6 +92,9 @@ export function Today() {
   const nowMs = useNow(60_000);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const gapAdd = useGapAdd(today, foods);
+  // Dev only: ?card=as-is shows the old navy surfaces on the region's colour, to compare with the glass.
+  const route = useRoute();
+  const asIs = import.meta.env.DEV && route.params.get('card') === 'as-is';
 
   if (!settings || !days || !entries || !sessions || !sets || active === undefined || !foods || !weekEntries || !monthEntries) {
     return <div className="page" />;
@@ -139,13 +148,30 @@ export function Today() {
   const gap = proteinGap({ protein: totals.protein, proteinTarget: targets.proteinG, kcal: totals.kcal, kcalMax: targets.kcalMax }, foods, monthEntries, Date.now());
   const addGap = () => void gapAdd(gap.picks);
   const ready = forecastData(settings, today, days, monthEntries.filter((e) => e.date >= addDays(today, -2)), sessions, sets).readiness;
-  const dayN = daysBetween(journeyStartOf(settings, days), today) + 1;
-  const pos = positionAt(walkKm);
-  const ahead = pos.to ?? pos.from;
+  // The walk at the top says what the Walk tab says: its title, its milestone, and one of its lines.
+  const steps = stepsByDay(days);
+  const startDay = journeyStartOf(settings, days);
+  const stretch = stretchAt(walkKm, STRETCHES);
+  const stone = stoneFor(walkKm);
+  const arrived = arrivedToday(steps, today);
+  const arrival = arrived ? arrivalFor(arrived, steps, startDay) : undefined;
+  const stop = stopToday(steps, today, STOPS);
+  const { usualKm, bigKm } = usualAndBig(days, today);
+  const walkLine = todayWalkLine({ arrival: arrived, stop: stop && stopLine(stop).text, rest: restLine(day?.status, nearestPlace(walkKm)), sky: skyLine(today), tomorrow: tomorrowLine(walkKm, usualKm, bigKm), stepsIn: steps.has(today), stone });
   const here = settings.places?.length ? placeFor(day, settings, Date.now()) : undefined;
-  const caption = walkCaption({ date: today, place: here?.name, status: day?.status, near: pos.from.name, dayN, kmToNext: pos.to ? Math.max(0, pos.to.km - walkKm) : 0, landmark: landmarkFor(ahead.name)?.label ?? ahead.name });
+  const caption = walkCaption({ date: today, place: here?.name, status: day?.status, title: stretch?.name ?? whereLine(whereNow(walkKm)), line: walkLine });
   const festive = prefOn(settings.prefs, 'seasonal') ? (seasonalThemeOn(today, settings.birthday) as Festive | undefined) : undefined;
-  const scene = <WalkScene km={walkKm} dayN={dayN} caption={false} festive={festive} />;
+  const scene = (
+    <span className="td-walk-scene">
+      <WalkVista km={walkKm} todayKm={kmFromSteps(steps.get(today) ?? 0)} festive={festive} />
+      {stone && (
+        <span className="walk-stone-at">
+          <Milestone stone={stone} />
+        </span>
+      )}
+    </span>
+  );
+  const stamp = arrival ? <StampTemplate name={arrival.name} state={arrival.state} n={arrival.n} ut={arrival.ut} /> : undefined;
   const mealNow = mealForTime();
   const usual = usualFoods(monthEntries, foods, mealNow, today);
   const addUsual = async (id: string) => {
@@ -166,6 +192,8 @@ export function Today() {
   const slots = checklistSlots(settings, today);
   return (
     <TodayLayout
+      tint={auroraFor(regionAt(walkKm)) as CSSProperties}
+      asIs={asIs}
       overlays={
         <>
           {drawerOpen && (
@@ -182,7 +210,7 @@ export function Today() {
     )}
         </>
       }
-      walk={<WalkTop caption={caption} scene={scene} onOpen={() => go('/walk')} />}
+      walk={<WalkTop caption={caption} scene={scene} stamp={stamp} onOpen={() => go('/walk')} />}
       banner={<Banners />}
       line={<TodayLine text={lineText} kind={lineKind} gold={moment === 'perfect'} clock={fmtTime(nowMs)} why={themeDay ? { name: themeDay.name, text: themeDay.why } : undefined} />}
       season={<SeasonStrip settings={settings} today={today} />}

@@ -59,3 +59,11 @@ describe('the Walk tab’s sections', () => {
     expect(html).toContain('241 km from Delhi · day 31');
   });
 });
+
+describe('status line classes', () => {
+  it('prefix the kind, so a global class such as .sky never styles a line', () => {
+    const html = renderToStaticMarkup(<StatusLines lines={[{ kind: 'sky', text: 'Full moon tonight.' }]} />);
+    expect(html).toContain('walk-line walk-line-sky');
+    expect(html).not.toMatch(/class="([^"]*\s)?sky[\s"]/);
+  });
+});

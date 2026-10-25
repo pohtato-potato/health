@@ -300,11 +300,20 @@ The app's pickers. The wheel is a snapping mono column with a lens of two button
 A 56px raised pill docked at the bottom during a session: a blue wash fills left to right as the rest runs, the time sits in 24px, and an end button sits inside.
 
 ### Walk Band
-A 250px illustrated scene of the current stop, layered far to near in the region's four inks and lit by the part of the day (dawn, day, dusk, night), with the place name in 28px serif over a soft text shadow.
+The older side-on scene (`WalkScene`): the current stop layered far to near in the region's four inks and lit by the part of the day. It is still used on the road pages; the Walk tab and Today use the painted vista below.
+
+### Walk Tab
+- **The scene:** the painted vista (`src/walk/art/vista.tsx`): one road running to the horizon with the walker at road scale and today's piece of road in sage. It is drawn for 9 regions × 4 hours, with the moon at its phase and meteor showers. It runs edge to edge at 360:216 and fades into the page.
+- **The milestone:** a cream stone on the road's left shoulder, the next stop in Hindi on its cap and the whole km left below.
+- **Colour:** every Walk page sits on the aurora tinted by its region (`auroraFor` in `src/walk/page.ts`: plum over the ravines, sea blue on the coast, green in the ghats). Route pages take the route's ink (`auroraForInk`). Never brown, never gold.
+- **Title:** the stretch's storybook name in serif (a button to its long page, underlined by a soft hairline), with the plain route and the day of the stretch under it. With no stretch: "Near X" within 20 km, else "Between X and Y".
+- **Glass surfaces:** cards, doors and the place and status pill are the Walk glass (`#0c0e1d` at 50%) with an 18% text hairline. The one primary action ("Choose a walk") is a cream pill.
+- **Status lines:** up to three short lines (an arrival, a small stop, a person met, a rest day, the sky), then tomorrow's line. The block keeps three lines' height so the page never jumps.
 
 ### Today
 - **Varied blocks, not a stack of cards:** only the moment card is a card. The walk, the line, the rings and Next up sit straight on the page, each in its own form.
-- **Walk on Today:** the walk band runs edge to edge and melts into the page; the date, place and status sit in its caption on a dark band (`rgba(8,10,22,.66)`). Tapping it opens the full walk with the place and status pickers.
+- **Walk on Today:** the Walk tab's vista and milestone at the same frame, so tapping it opens the same picture. The caption sits under the picture, in the fade: date, place and status (14px), the Walk tab's title (28px serif), and one walk line (an arrival, a small stop, a rest day, the sky, tomorrow, else the milestone's km). On an arrival day the city's passport stamp sits tilted on the sky until midnight. Tapping opens the Walk tab.
+- **Colour:** Today sits on the aurora tinted by the walk's region, and its surfaces are the Walk glass with a hairline.
 - **Banner slot:** one banner at a time, a line between two hairlines with a 44px action and a 44px dismiss that lasts the log day.
 - **The line:** the day's headline in 26px serif, the time trailing it in 14px; the voice in italic only at moments, gold on a perfect day.
 - **Rings:** the drawing, and beside it only the numbers (34px serif in each ring's ink) with a 14px unit. The target and its action appear on tap.

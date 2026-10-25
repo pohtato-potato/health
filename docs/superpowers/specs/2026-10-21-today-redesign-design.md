@@ -42,8 +42,7 @@ Non-goals: new tracking, notifications, any server, streaks of any kind, anythin
 - Never colour alone. A closed ring, a gold moment and a rare creature always come with words or a shape as well.
 - Every target is at least 44 px. Main actions are 50–56 px.
 - **Stable positions:** blocks never move while you read. The banner slot and the moment card keep their places; only their contents change.
-- **Reduced motion:** every animation jumps to its end state.
-- **Battery saver:** the sky goes black and still, moments show their words without any motion, and the reveal shows its cards without drawing.
+- **No reduced-motion or battery-saver versions** (owner, 25 Oct 2026; removed app-wide): motion stays as designed, and every moment still has its words.
 - **High contrast:** every colour comes from a token.
 
 ## The page, top to bottom
@@ -123,7 +122,7 @@ All times are log-day times: 1 am still counts as the evening before.
 
 ## Moments
 
-Each moment is authored once, in Today's sky. Timings are approximate. Every moment has words for it, so colour and motion never carry it alone. With battery saver on, only the words show; with reduced motion, only the end state.
+Each moment is authored once, in Today's sky. Timings are approximate. Every moment has words for it, so colour and motion never carry it alone.
 
 | Moment | What happens | The aurora |
 |---|---|---|
@@ -284,7 +283,7 @@ Each part ships on its own, with a plan, test-first rules, a browser check and a
 
 0. **Fixes PR.** The checked `fix/today-faults` branch, minus the sick-voice commit, plus the two text sizes.
 1. **The page.** Sections 1–8: the scene and caption, the banner slot, the line, numbers-only rings with tap-for-target and steps, the moment card rules, the Next up and records strips, the logging section with usual portions and meal tiles, and the drawer. It also removes the ticker and the night screen.
-2. **Living colour and moments.** The aurora on Today (time of day, calm everyday colour), rings drawing in and tap-to-spin, and the six moments with the chime and buzz, plus reduced-motion and battery-saver versions.
+2. **Living colour and moments.** The aurora on Today (time of day, calm everyday colour), rings drawing in and tap-to-spin, and the six moments with the chime and buzz.
 3. **The creature engine and the reveal.** The roster format, the visit rules, the odds and the pity rule, growth, field notes, the `sightings` table, and the reveal after the morning log (cards, the growth card, tap reactions, skip and replay).
 4. **The dex and the payoffs.** The dex on You (sky and cards), How it works, You › Themes (wear today, ring styles), the Train record frame, the closed-day creature, the Monday and month slides, the sick companion line and the steps hint.
 5. **The first 20 creatures.** Each drawn in Warli stars with its stages or forms, colours, idle motion and tap reaction, reviewed on an art board before shipping.
@@ -304,7 +303,6 @@ Each part ships on its own, with a plan, test-first rules, a browser check and a
 - **Components:** server-rendered checks that the rings show numbers only, the drawer handle text in each state, and the record strip.
 - **Browser at 375×812 on the restored dev data:**
   - each moment plays and ends in its stated end state;
-  - reduced motion and battery saver show the end state still;
   - no text under 14 px except as allowed;
   - every target at least 44 px;
   - no overlapping text.
@@ -330,3 +328,17 @@ The owner approved the spec and all seven open questions as proposed:
 5. A worn theme lasts one day.
 6. The dex opens on the sky.
 7. The fixes PR merges now, before part 1.
+
+## Decided after the Walk redesign (25 Oct 2026)
+
+The Walk tab was rebuilt on top of part 1 (`feat/walk`); Today and the Walk ship together. Decisions: `Today shared/decisions/2026-10-25-today-after-walk.md`.
+
+- **The walk at the top** is the Walk tab's painted scene (`WalkVista`) at the same frame, with its milestone. The caption sits under the picture, in the fade: the date, place and status; the Walk tab's title (the stretch's name, else near or between places); one walk line.
+- **No day count** on Today: the Walk tab counts days on the stretch.
+- **One walk line**, in this order: an arrival, a small stop, a rest day, the night sky, tomorrow (only once today's steps are in), else the km the milestone shows.
+- **Arrival days** press the city's passport stamp onto the scene until midnight.
+- **Colour:** Today sits on the aurora tinted by the region, as every Walk page does (`auroraFor`). Part 2's living colour starts from that tint. The surfaces (moment card, food chips, meal tiles, search) are the Walk's glass with a hairline, so the land's colour shows through. The owner is still choosing between this and the old fills (dev: `#/today?card=as-is`).
+- **Full-screen moments may stack:** Today's and the Walk's moments don't share a daily limit.
+- **Close the day:** part 2's closing moment builds on the walker already moving on Close the day.
+- **Monday:** part 4's "Met this week" slide sits beside the walk's cards in the weekly recap.
+
