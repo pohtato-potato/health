@@ -17,14 +17,23 @@ interface Props {
   ms?: number;
 }
 
-const W = 320;
-
 export function DrawnLine({ vals, c, c2, h = 90, area = true, width = 2.6, last = true, tip = false, ms = 1100 }: Props) {
   const id = useId().replace(/:/g, '');
   const line = useRef<SVGPathElement>(null);
   const rider = useRef<SVGGElement>(null);
   const svg = useRef<SVGSVGElement>(null);
   const [armed] = useState(() => tip && canAnimate());
+  // Drawn at its real width, so dots stay round and strokes stay even.
+  const [W, setW] = useState(320);
+  useLayoutEffect(() => {
+    if (!svg.current) return;
+    const measure = () => { const w = svg.current?.clientWidth; if (w) setW(w); };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(svg.current);
+    return () => ro.disconnect();
+  }, []);
   const lo = Math.min(...vals) - 2;
   const hi = Math.max(...vals) + 2;
   const pts = vals.map((t, i): Point => [
@@ -73,7 +82,7 @@ export function DrawnLine({ vals, c, c2, h = 90, area = true, width = 2.6, last 
 
   if (vals.length === 0) return null;
   return (
-    <svg ref={svg} className={`yu-line${tip ? ' yu-tip' : ''}`} viewBox={`0 0 ${W} ${h}`} preserveAspectRatio="none" aria-hidden="true" style={{ height: h }}>
+    <svg ref={svg} className={`yu-line${tip ? ' yu-tip' : ''}`} viewBox={`0 0 ${W} ${h}`} aria-hidden="true" style={{ height: h }}>
       <defs>
         <linearGradient id={`${id}s`} x1="0" x2="1" y1="0" y2="0"><stop offset="0" stopColor={c} /><stop offset="1" stopColor={c2 ?? c} /></linearGradient>
         <linearGradient id={`${id}f`} x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor={c2 ?? c} stopOpacity=".5" /><stop offset="1" stopColor={c} stopOpacity="0" /></linearGradient>

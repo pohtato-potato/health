@@ -12,3 +12,84 @@
 @keyframes yu-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes yu-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.55); } }
 @keyframes yu-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* The page. Land and glass, jewel colours. Text floor 14 px. */
+.yu-page { color: var(--text); font-size: 15px; line-height: 1.4; --q: #d3d0dc; --glass2: color-mix(in srgb, #0c0e1d 50%, transparent); --edge: color-mix(in srgb, #ede6da 18%, transparent); }
+.yu-stack { display: flex; flex-direction: column; gap: 16px; }
+.yu-page h1 { font-family: var(--serif); font-weight: 400; font-size: 32px; line-height: 1.12; margin: 0; text-wrap: balance; }
+.yu-page h2 { font-size: 15px; font-weight: 500; color: var(--lv-accent, #ffc7a6); margin: 0; }
+.yu-q { color: var(--q); font-size: 14px; }
+.yu-col { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; text-align: left; }
+.yu-row { display: flex; gap: 10px; align-items: center; }
+.yu-sec { display: flex; flex-direction: column; gap: 8px; }
+.yu-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.yu-clock { display: flex; gap: 14px; align-items: center; background: none; border: 0; padding: 0; color: inherit; font: inherit; width: 100%; min-height: 96px; }
+.yu-clock svg { flex: none; }
+.yu-draw2 { stroke-dasharray: 1; animation: yu-draw 1.8s .1s cubic-bezier(.3,.7,.2,1) both; }
+.yu-hand { transform-origin: 100px 100px; transform-box: view-box; animation: yu-hand 1.8s .1s cubic-bezier(.3,.7,.2,1) both; transform: rotate(var(--a)); }
+@keyframes yu-hand { from { transform: rotate(0); } to { transform: rotate(var(--a)); } }
+.yu-big { font-family: var(--serif); font-size: 27px; line-height: 1.1; }
+.yu-mom { display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 20px; border: 1px solid #ff7db855; background: linear-gradient(155deg, color-mix(in srgb, #ff7db8 24%, #0c0e1d), color-mix(in srgb, #7d5cff 22%, #0c0e1d) 60%, color-mix(in srgb, #0c0e1d 70%, transparent)); }
+.yu-mom-h { display: flex; gap: 14px; align-items: center; }
+.yu-mom-n { font-family: var(--serif); font-size: 66px; line-height: 1; min-width: 78px; color: #ffa593; }
+.yu-mom-h b { font-weight: 500; }
+.yu-trs { display: flex; flex-direction: column; }
+.yu-tr { display: grid; grid-template-columns: 66px 1fr 78px; gap: 0 8px; align-items: center; padding: 7px 0; border-top: 1px solid var(--edge); }
+.yu-tr b { color: var(--c); font-weight: 500; } .yu-tr em { font-style: normal; font-size: 14px; color: var(--c); text-align: right; } .yu-tr small { grid-column: 1/-1; font-size: 14px; color: var(--q); }
+.yu-due { display: flex; flex-direction: column; border-block: 1px solid var(--edge); }
+.yu-due button { display: flex; justify-content: space-between; gap: 10px; background: none; border: 0; color: inherit; font: inherit; font-size: 14px; text-align: left; padding: 11px 0; min-height: 44px; align-items: center; }
+.yu-due button + button { border-top: 1px solid var(--edge); }
+.yu-due u { text-decoration: none; color: #0e1020; background: var(--lv-accent, #ffc7a6); font-weight: 500; border-radius: 999px; padding: 2px 12px; }
+.yu-card { background: var(--glass2); border: 1px solid var(--edge); border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.yu-card b { font-weight: 500; }
+.yu-find { background: linear-gradient(135deg, color-mix(in srgb, #b896ff 34%, #0c0e1d), color-mix(in srgb, #ff7db8 26%, #0c0e1d)); border-color: color-mix(in srgb, #b896ff 50%, transparent); }
+.yu-find u { text-underline-offset: 3px; font-size: 14px; }
+.yu-grem { font-size: 14px; color: var(--lv-accent, #ffc7a6); margin-top: 3px; }
+.yu-trophy { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.yu-trophy div { position: relative; overflow: hidden; display: flex; flex-direction: column; padding: 10px 9px; border-radius: 14px; border: 1px solid #f2c46d88; background: linear-gradient(160deg, #4a3714cc, #1b1408cc); min-width: 0; }
+.yu-trophy b { font-family: var(--serif); font-weight: 400; font-size: 22px; color: #f2c46d; font-variant-numeric: lining-nums; line-height: 1.15; } .yu-trophy span { font-size: 14px; color: #efe2c4; line-height: 1.2; }
+.yu-trophy div::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 40%, #fff3 50%, transparent 60%); transform: translateX(-120%); }
+@keyframes yu-shine { to { transform: translateX(120%); } }
+.yu-doors { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.yu-doors button { position: relative; overflow: hidden; display: flex; flex-direction: column; text-align: left; font: inherit; color: inherit; padding: 11px 12px; min-height: 70px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); background: linear-gradient(150deg, color-mix(in srgb, var(--c) 26%, #0c0e1d), color-mix(in srgb, #0c0e1d 60%, transparent)); }
+.yu-doors b { font-weight: 500; color: var(--c); } .yu-doors span { font-size: 14px; color: var(--q); }
+.yu-rows { display: flex; flex-direction: column; background: var(--glass2); border: 1px solid var(--edge); border-radius: 16px; padding: 2px 14px; }
+.yu-rows > div { display: grid; grid-template-columns: 1fr auto; gap: 0 10px; padding: 9px 0; font-size: 14px; } .yu-rows > div + div { border-top: 1px solid var(--edge); }
+.yu-rows span { color: var(--q); } .yu-rows b { font-weight: 500; } .yu-rows em { grid-column: 1/-1; text-align: right; font-style: normal; color: var(--q); }
+.yu-surprise { font: inherit; font-weight: 500; min-height: 48px; border-radius: 999px; border: 0; color: #0e1020; background: linear-gradient(100deg, #ff7db8, #ffb36b 55%, #ffd98a); background-size: 200% 100%; animation: yu-sheen 6s ease-in-out infinite alternate; }
+@keyframes yu-sheen { to { background-position: 100% 0; } }
+.yu-goto { border: 1px solid var(--edge); border-radius: 999px; padding: 12px 16px; color: var(--q); font-size: 14px; background: var(--glass2); }
+.yu-seg { display: flex; gap: 6px; } .yu-seg button { flex: 1; font: inherit; font-size: 14px; color: var(--text); background: var(--glass2); border: 1px solid var(--edge); border-radius: 999px; min-height: 44px; padding: 4px 8px; }
+.yu-seg button[aria-pressed='true'] { background: var(--text); color: #0e1020; font-weight: 500; }
+.yu-meter i { display: block; height: 10px; border-radius: 5px; background: linear-gradient(to right, var(--c) var(--w), #ede6da22 var(--w)); margin-top: 5px; }
+.yu-cr { flex: none; display: block; width: 74px; height: 60px; overflow: hidden; }
+.yu-tint { --c: #79b4ff; background: linear-gradient(140deg, color-mix(in srgb, var(--c) 28%, #0c0e1d), color-mix(in srgb, var(--c) 8%, #0c0e1d)); border-color: color-mix(in srgb, var(--c) 45%, transparent); }
+.yu-tint > b:first-child { color: var(--c); }
+.yu-poster { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 2px; text-align: left; font: inherit; color: #fff; border: 1px solid #ffffff55; border-radius: 20px; padding: 14px; min-height: 124px; justify-content: flex-end; background: linear-gradient(115deg, #d9408f, #6d2aa8 35%, #2a7fd6 65%, #0f7a6c); background-size: 260% 100%; animation: yu-poster 12s ease-in-out infinite alternate; }
+@keyframes yu-poster { to { background-position: 100% 0; } }
+.yu-poster > span:not(.yu-poster-glow) { position: relative; }
+.yu-poster .yu-q { color: #fff; }
+.yu-poster-t { font-family: var(--serif); font-size: 29px; line-height: 1.1; color: #ffe27a; text-shadow: 0 1px 10px #0006; }
+.yu-poster-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 14px; }
+.yu-poster-row u { text-decoration: none; background: #fff; color: #1b1140; font-weight: 600; border-radius: 999px; padding: 6px 18px; }
+.yu-poster-glow { position: absolute; width: 170px; height: 170px; right: -30px; top: -70px; border-radius: 50%; background: radial-gradient(closest-side, #ffffffa0, transparent); animation: y-pg 7s ease-in-out infinite alternate; }
+
+/* One authored arrival: Momentum. The number and line land together, then the rows arrive one by one. */
+.yu-armed:not(.yu-in) .yu-tr { opacity: 0; }
+.yu-armed.yu-in .yu-tr { animation: yu-rise .45s calc(1.1s + var(--i) * .38s) cubic-bezier(.16,1,.3,1) both; }
+.yu-armed.yu-in .yu-tr .yu-draw { animation: yu-draw .6s calc(1.2s + var(--i) * .38s) cubic-bezier(.3,.7,.2,1) both; }
+.yu-armed.yu-in .yu-tr .yu-dot, .yu-armed.yu-in .yu-tr em { animation: yu-fade .3s calc(1.75s + var(--i) * .38s) both; }
+
+/* Smaller arrivals */
+.yu-armed:not(.yu-in).yu-doors button { opacity: 0; }
+.yu-armed.yu-in.yu-doors button { animation: yu-rise .55s calc(var(--i) * .07s) cubic-bezier(.16,1,.3,1) both; }
+.yu-armed.yu-in.yu-trophy div::after { animation: yu-shine 1.3s calc(var(--i) * .25s + .3s) ease-out; }
+.yu-card-in { animation: yu-rise .5s cubic-bezier(.16,1,.3,1) both; }
+
+.yu-due u, .yu-find u { pointer-events: none; }
+.yu-why { background: none; border: 0; padding: 10px 0 2px; min-height: 44px; font: inherit; font-size: 14px; color: inherit; text-decoration: underline; text-underline-offset: 3px; text-align: left; align-self: flex-start; }
+.yu-goto-in { width: 100%; box-sizing: border-box; min-height: 48px; font: inherit; font-size: 15px; color: var(--text); }
+.yu-goto-in::placeholder { color: var(--q); }
+.yu-goto-hits { display: flex; flex-direction: column; margin-top: 6px; }
+.yu-goto-hits button { min-height: 44px; font: inherit; font-size: 15px; color: var(--text); background: none; border: 0; border-top: 1px solid var(--edge); text-align: left; padding: 0 4px; }
+.yu-settings { min-width: 44px; min-height: 44px; }
