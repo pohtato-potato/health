@@ -3,7 +3,7 @@ import { defaultSettings } from '../src/db/actions';
 import { addDays } from '../src/domain/dates';
 import type { Sighting } from '../src/domain/creatures';
 import type { Day, FoodEntry, SetEntry, Settings, TrainingSession } from '../src/domain/types';
-import { EMPTY_STATS, TITLE_DEFS, earnedTitles, titleName, titleStats, type TitleInput } from '../src/domain/titles';
+import { EMPTY_STATS, TITLE_DEFS, earnedTitles, titleName, titleStats, wornTitle, type TitleInput } from '../src/domain/titles';
 import { CREATURES } from '../src/domain/creatureRoster';
 import { regionAt } from '../src/domain/regions';
 import { PLAN } from './fixtures';
@@ -167,5 +167,19 @@ describe('titleStats', () => {
   it('a plan held 100 days counts its span, and today is not assumed', () => {
     const sessions = [session('a', '2026-07-01'), session('b', addDays('2026-07-01', 100))];
     expect(stat({ sessions }).longestPlanDays).toBe(100);
+  });
+});
+
+describe('wornTitle', () => {
+  const u = new Set<string>();
+  it('names a new title', () => {
+    expect(wornTitle({ title: 't:century' }, u, 1)).toBe('Century');
+  });
+  it('an old level title still resolves once reached', () => {
+    expect(wornTitle({ title: 'lvl:1' }, u, 1)).toBeDefined();
+  });
+  it('nothing worn, or a title that no longer exists, names nothing', () => {
+    expect(wornTitle({}, u, 1)).toBeUndefined();
+    expect(wornTitle({ title: 't:gone' }, u, 1)).toBeUndefined();
   });
 });

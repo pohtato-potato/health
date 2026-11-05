@@ -9,13 +9,14 @@ import { seeded } from '../domain/creatures';
 import { statDeck } from '../domain/shakeStats';
 import { autoTrophies } from '../domain/trophies';
 import { trendRows } from '../domain/momentum';
+import { wornTitle } from '../domain/titles';
 import { kmFromSteps, setStride, strideM } from '../domain/walk';
 import { db } from '../db/db';
 import { useAllDays, useAllEntries, useAllSets, useMeasurements, useSessions, useSettings, useSightings, useToday } from '../db/hooks';
 import { go } from '../router';
 import { Icon } from '../ui/Icon';
 import { RegionFrameView } from '../ui/live/RegionFrame';
-import { useLevel, wornTitle } from './Character';
+import { useLevel } from './Character';
 import { Browse } from './you/Browse';
 import { ClockCard } from './you/ClockCard';
 import { Doors } from './you/Doors';
@@ -50,7 +51,7 @@ export function You() {
   const slow = useMemo(() => (settings && days && sightings ? { settings, days, sightings } : undefined), [settings, days, sightings]);
   const finding = useMemo(() => (browse ? dailyFinding(today, browse) : undefined), [browse, today]);
   const lift = useMemo(() => (slow ? todaysLift(today, slow) : undefined), [slow, today]);
-  const trophies = useMemo(() => (browse ? autoTrophies(browse) : []), [browse]);
+  const trophies = useMemo(() => (browse ? autoTrophies({ ...browse, sightings }) : []), [browse, sightings]);
   const bored = useMemo(() => {
     if (!browse || !days?.length) return undefined;
     const deck = statDeck(browse);

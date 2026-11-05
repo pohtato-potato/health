@@ -3,6 +3,7 @@ import type { Sighting } from './creatures';
 import { notesSoFar } from './creatures';
 import { addDays, daysBetween, weekStart, type DayKey } from './dates';
 import { regionAt } from './regions';
+import { TITLES } from './rewards';
 import { sleepMinutes } from './rings';
 import type { Day, FoodEntry, ForecastRecord, SetEntry, Settings, TrainingSession, UsageEvent } from './types';
 import { CHAPTERS, FINAL_KM, TOTAL_KM, kmFromSteps, setStride } from './walk';
@@ -136,6 +137,14 @@ function longestRun(dates: DayKey[], ok: (d: DayKey) => boolean, step = 1): numb
     prev = d;
   }
   return best;
+}
+
+/** What the worn title is called. Old ids from the character sheet keep working. */
+export function wornTitle(settings: Pick<Settings, 'title'>, unlocked: Set<string>, level: number): string | undefined {
+  const fresh = titleName(settings.title);
+  if (fresh) return fresh;
+  const old = TITLES.find((x) => x.id === settings.title);
+  return old && old.unlocked(unlocked, level) ? old.name : undefined;
 }
 
 export function titleStats(i: TitleInput): TitleStats {

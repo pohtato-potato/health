@@ -54,3 +54,21 @@ describe('storing who came', () => {
     expect((await db.days.get('2026-11-05'))?.revealedAt).toBe(1000);
   });
 });
+
+describe('moments in the data', () => {
+  beforeEach(async () => {
+    await Promise.all(db.tables.map((t) => t.clear()));
+  });
+  it('are backed up, and a backup from before them restores with none', async () => {
+    expect(TABLES).toContain('moments');
+    await db.moments.put({ id: 'm', at: 1, kind: 'title', date: '2026-11-05', payload: { text: 'x' } });
+    const data = await exportData();
+    const file = JSON.stringify(data);
+    await db.moments.clear();
+    await restoreData(parseBackup(file));
+    expect(await db.moments.count()).toBe(1);
+    delete data.tables.moments;
+    await restoreData(parseBackup(JSON.stringify(data)));
+    expect(await db.moments.count()).toBe(0);
+  });
+});

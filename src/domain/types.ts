@@ -236,6 +236,10 @@ export interface Settings {
   plan?: PlanDef;
   /** Up to three question ids kept on the You page. */
   youQuestions?: string[];
+  /** Up to six trophy ids chosen for the case; with none, the case chooses. */
+  trophyPicks?: string[];
+  /** Titles already offered, so a new one offers "Wear it" once. */
+  titlesSeen?: string[];
   /** Choices made while following the plan: harder variants and band levels. */
   planState: { variants: Record<string, number>; band: Record<string, number> };
   /** The session picked to start the loop at import; holds until a rotation session is done after `at`. */

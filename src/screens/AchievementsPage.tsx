@@ -87,9 +87,9 @@ export function AchievementsPage() {
 
   return (
     <div className="page bare">
-      <button type="button" className="backlink" onClick={() => back('/journey')}>
+      <button type="button" className="backlink" onClick={() => back('/earned')}>
         <Icon name="left" size={20} stroke={1.8} />
-        Journey
+        Earned
       </button>
       <div className="col gap6">
         <h1 className="h1" style={{ fontSize: 32 }}>

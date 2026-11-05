@@ -30,6 +30,7 @@ import { Tracks, TrackPage } from './screens/Tracks';
 import { Journey } from './screens/Journey';
 import { You } from './screens/You';
 import { Insights } from './screens/Insights';
+import { Earned } from './screens/Earned';
 import { Setup } from './screens/Setup';
 import { FoodToday } from './screens/FoodToday';
 import { SessionScreen } from './screens/Session';
@@ -134,6 +135,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/muscles': { el: () => <MuscleMapPage /> },
   '/you': { el: () => <You />, tab: 'you' },
   '/insights': { el: () => <Insights />, tab: 'you' },
+  '/earned': { el: () => <Earned /> },
   '/review': { el: () => <WeeklyReviewPage /> },
   '/settings': { el: () => <SettingsScreen /> },
   '/session': { el: () => <SessionScreen /> },
