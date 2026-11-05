@@ -51,6 +51,11 @@ describe('storyChapters', () => {
     expect(swing).toMatchObject({ what: 'Steps', now: '10,000 a day', was: '5,000' });
   });
 
+  it('a week of days with no numbers has no tally of zeros', () => {
+    const got = ids(input({ days: Array.from({ length: 7 }, (_, n) => ({ date: addDays(WEEK, n), note: 'x' }) as unknown as Day) }));
+    expect(got).not.toContain('tally');
+  });
+
   it('a past week opens as it was, whatever came after', () => {
     const before = input({ days: week(WEEK, 9000), sessions: [session(WEEK)] });
     const later = { ...before, days: [...before.days, ...week(addDays(WEEK, 14), 20000)], sessions: [...before.sessions, session(addDays(WEEK, 15))] };

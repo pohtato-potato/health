@@ -8,7 +8,7 @@ export const GO_TO: (GoToHit & { words?: string[] })[] = [
   { label: 'Train', path: '/train', words: ['workout', 'session', 'gym'] },
   { label: 'Walk', path: '/walk', words: ['road', 'map'] },
   { label: 'Tracks', path: '/tracks', words: ['steps', 'sleep', 'food', 'drinks'] },
-  { label: 'Reports', path: '/week', words: ['week', 'story', 'receipt'] },
+  { label: 'Reports', path: '/reports', words: ['week', 'story', 'receipt'] },
   { label: 'Monthly film', path: '/film', words: ['month'] },
   { label: 'Earned', path: '/earned', words: ['titles', 'trophies', 'themes'] },
   { label: 'Achievements', path: '/achievements' },
@@ -25,7 +25,7 @@ export const GO_TO: (GoToHit & { words?: string[] })[] = [
   { label: 'Backup', path: '/settings', words: ['save', 'restore', 'export'] },
 ];
 
-function monthLabel(month: string): string {
+export function monthLabel(month: string): string {
   return `${MONTHS[Number(month.slice(5)) - 1]} ${month.slice(0, 4)}`;
 }
 

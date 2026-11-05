@@ -30,14 +30,9 @@ describe('RegionFrame: a page Today opens sits on the region aurora', () => {
 });
 
 describe('the pages Today opens opt in, with no list of paths', () => {
-  const PAGES = ['src/screens/FoodToday.tsx', 'src/screens/CloseDay.tsx', 'src/screens/Readiness.tsx', 'src/screens/Week.tsx', 'src/screens/CheckIn.tsx'];
+  const PAGES = ['src/screens/FoodToday.tsx', 'src/screens/CloseDay.tsx', 'src/screens/Readiness.tsx', 'src/screens/reports/WeeklyStory.tsx', 'src/screens/CheckIn.tsx'];
   it.each(PAGES)('%s uses RegionFrame', (f) => expect(readFileSync(f, 'utf8')).toMatch(/<RegionFrame\b/));
   it('the prototype path list is gone', () => expect(grepSrc(/REGION_PAGES/)).toEqual([]));
-  it('the weekly receipt stays paper, off the aurora', () => {
-    const week = readFileSync('src/screens/Week.tsx', 'utf8');
-    const receipt = week.slice(week.indexOf('export function ReceiptPage'));
-    expect(receipt).not.toMatch(/<RegionFrame\b/);
-  });
 });
 
 describe('sheets: a solid tint of the land, glass inside', () => {

@@ -1,140 +1,103 @@
-import { useLiveQuery } from 'dexie-react-hooks';
-import { useState } from 'react';
-import { db } from '../db/db';
-import { useAllDays, useAllEntries, useAllSets, useSessions, useSettings, useSightings, useToday } from '../db/hooks';
+import { useState, type CSSProperties } from 'react';
 import { creatureById, nameAt } from '../domain/creatureRoster';
-import { metBetween } from '../domain/creatures';
-import { stageNow } from '../ui/creatures/Payoffs';
-import { fmtDayMonth, fmtInt } from '../domain/format';
-import { dosesAllowPerfect } from '../domain/medicines';
+import { lastMonth } from '../domain/film';
+import { fmtInt } from '../domain/format';
+import { filmFrames, type FilmFrame } from '../domain/monthReport';
 import { constellationFor, skyStars } from '../domain/nightSky';
-import { dayRings } from '../state/derived';
-import { lastMonth, monthlyFilm, strongestWeek, surpriseRecord, type FilmSlide } from '../domain/film';
 import { back, go, useRoute } from '../router';
-import { positionAt } from '../domain/walk';
-import { stepsByDay } from '../walk/runs';
-import { monthTrail } from '../walk/trail';
+import { CreatureFigure } from '../ui/creatures/Figure';
+import { stageNow } from '../ui/creatures/Payoffs';
+import { CountUp } from '../ui/you/CountUp';
+import { GOLD } from '../ui/you/palette';
 import { TrailDrawing } from '../walk/ui/TrailDrawing';
-import { Icon } from '../ui/Icon';
+import { Grades } from './reports/Grades';
+import { useMonthInput } from './reports/useMonthInput';
 
-const FIELD: Record<string, string> = {
-  sage: '#1d3b31',
-  lavender: '#2d2652',
-  gold: '#3d3014',
-  apricot: '#43261a',
-};
-const INK: Record<string, string> = { sage: 'var(--sage)', lavender: 'var(--lavender)', gold: 'var(--gold)', apricot: 'var(--apricot)' };
-
-/** Last month as a tap-through film in bold colour fields and huge type, titled by your most-played workout song. */
-export function MonthlyFilmPage() {
-  const sightings = useSightings();
-  const { params } = useRoute();
-  const today = useToday();
-  const days = useAllDays();
-  const sessions = useSessions();
-  const sets = useAllSets();
-  const songs = useLiveQuery(() => db.songs.toArray(), []);
-  const settings = useSettings();
-  const entries = useAllEntries();
-  const [i, setI] = useState(0);
-  if (!days || !sessions || !sets || !songs || !settings || !entries) return <div className="page bare" />;
-  const month = params.get('m') ?? lastMonth(today);
-  const film = monthlyFilm(month, { days, sessions, sets, songs });
-  // Three more frames: the strongest week, the record nobody saw coming, and the month's constellation.
-  const week = strongestWeek(month, sets);
-  const surprise = surpriseRecord(month, sets);
-  const byDate = new Map<string, typeof entries>();
-  for (const e of entries) if (e.date.startsWith(month)) byDate.set(e.date, [...(byDate.get(e.date) ?? []), e]);
-  const perfect = days.filter((d) => d.date.startsWith(month) && d.date < today && byDate.has(d.date) && dayRings(settings, d.date, d, byDate.get(d.date)!).rings.perfect && dosesAllowPerfect(settings, d)).map((d) => d.date);
-  const trail = monthTrail(month, stepsByDay(days));
-  const [fromName, toName] = trail ? [positionAt(trail.fromKm).from.name, positionAt(trail.toKm).from.name] : [];
-  const road = trail ? (fromName === toName ? `Around ${toName}` : `From ${fromName} to ${toName}`) : '';
-  const met = metBetween(sightings ?? [], `${month}-01`, `${month}-31`).flatMap((id) => {
-    const c = creatureById(id);
-    return c ? [nameAt(c, stageNow(c, sightings ?? []))] : [];
-  });
-  const frames: (FilmSlide & { stars?: { x: number; y: number }[]; trail?: { fromKm: number; toKm: number } })[] = [
-    ...film.slides.slice(0, 1),
-    ...(trail ? [{ big: '', small: `${road}: the month on the road.`, tone: 'sage' as const, trail }] : []),
-    ...film.slides.slice(1),
-    ...(week ? [{ big: `${fmtInt(week.kg)} kg`, small: `moved in your strongest week, from ${fmtDayMonth(week.from)}, over ${week.sets} sets.`, tone: 'lavender' as const }] : []),
-    ...(surprise ? [{ big: `+${surprise.pct}%`, small: `${surprise.exercise}, ${surprise.from} to ${surprise.to} kg on ${fmtDayMonth(surprise.date)}. The record you didn’t see coming.`, tone: 'gold' as const }] : []),
-    ...(met.length ? [{ big: String(met.length), small: `met this month: ${met.join(', ')}.`, tone: 'lavender' as const }] : []),
-    ...(perfect.length ? [{ big: constellationFor(month).name, small: `${perfect.length} perfect day${perfect.length === 1 ? '' : 's'}, joined into this month’s constellation.`, tone: 'lavender' as const, stars: skyStars(perfect) }] : []),
-  ];
-  const f = frames[Math.min(i, frames.length - 1)];
-  const last = i >= frames.length - 1;
-  return (
-    <div className="film" style={{ background: FIELD[f.tone] }} onClick={() => (last ? undefined : setI(i + 1))}>
-      <div className="film-bars" aria-hidden="true">
-        {frames.map((_, k) => (
-          <i key={k} className={k <= i ? 'on' : undefined} />
-        ))}
-      </div>
-      <button
-        type="button"
-        className="icon-btn film-close"
-        aria-label="Close"
-        onClick={(e) => {
-          e.stopPropagation();
-          back('/you');
-        }}
-      >
-        <Icon name="close" size={22} />
-      </button>
-      <div className="t15" style={{ marginTop: 18, fontWeight: 600 }}>
-        {film.heading}
-      </div>
-      <div className="film-body" aria-live="polite">
-        {f.trail ? (
-          <TrailDrawing fromKm={f.trail.fromKm} toKm={f.trail.toKm} label={road} />
-        ) : (
-          <div className="film-big tn" style={{ color: INK[f.tone], fontSize: f.big.length > 6 ? 64 : 96 }}>
-            {f.big}
-          </div>
-        )}
-        <div className="t17 lh" style={{ color: 'var(--text)', opacity: 0.9 }}>
-          {f.small}
-        </div>
-        {f.stars && <Constellation stars={f.stars} />}
-      </div>
-      {!last && (
-        <div className="t13 lh" style={{ opacity: 0.7, marginBottom: 10 }}>
-          Next: {frames.slice(i + 1).map((x) => x.small.split('.')[0]).join(' · ')}
-        </div>
-      )}
-      {last ? (
-        <div className="row film-foot" style={{ gap: 8 }}>
-          <button type="button" className="btn ghost grow" onClick={() => setI(0)}>
-            Again
-          </button>
-          <button type="button" className="btn grow" onClick={() => go('/climate')}>
-            The month in detail
-          </button>
-        </div>
-      ) : (
-        <div className="t12 q film-foot center">Tap for the next one</div>
-      )}
-    </div>
-  );
+function BigNumber({ text }: { text: string }) {
+  const m = /^(\D*)([\d,]+)(.*)$/.exec(text);
+  if (!m) return <>{text}</>;
+  const to = Number(m[2].replace(/,/g, ''));
+  return <CountUp to={to} fmt={(n) => `${m[1]}${fmtInt(n)}${m[3]}`} />;
 }
 
-/** The month's perfect days as stars, joined in date order, scaled to fill the frame. */
-function Constellation({ stars }: { stars: { x: number; y: number }[] }) {
+function Stars({ dates }: { dates: string[] }) {
+  const stars = skyStars(dates);
   const xs = stars.map((s) => s.x);
   const ys = stars.map((s) => s.y);
   const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
-  const fit = (s: { x: number; y: number }) => ({ x: 20 + ((s.x - x0) / Math.max(1, x1 - x0)) * 260, y: 20 + ((s.y - y0) / Math.max(1, y1 - y0)) * 120 });
-  const pts = stars.map(fit);
+  const pts = stars.map((s) => [20 + ((s.x - x0) / Math.max(1, x1 - x0)) * 200, 20 + ((s.y - y0) / Math.max(1, y1 - y0)) * 110]);
   return (
-    <svg viewBox="0 0 300 160" width="100%" aria-hidden="true">
-      <path d={`M${pts.map((p) => `${p.x} ${p.y}`).join(' L')}`} fill="none" stroke="var(--lavender)" strokeOpacity="0.45" strokeWidth="1" />
-      {pts.map((p, k) => (
-        <g key={k}>
-          <circle cx={p.x} cy={p.y} r="7" fill="#fff8e6" opacity="0.12" />
-          <circle cx={p.x} cy={p.y} r="2.4" fill="#fff8e6" />
-        </g>
-      ))}
+    <svg className="yu-f-stars" viewBox="0 0 240 150" aria-hidden="true">
+      {pts.length > 1 && <polyline className="yu-draw2" pathLength={1} points={pts.map((p) => p.join(',')).join(' ')} fill="none" stroke={GOLD} strokeOpacity=".6" strokeWidth="1.6" />}
+      {pts.map(([x, y], i) => <circle key={i} className="yu-star" style={{ '--i': i } as CSSProperties} cx={x} cy={y} r="4.5" fill={GOLD} />)}
     </svg>
+  );
+}
+
+function Frame({ f, month, sightings }: { f: FilmFrame; month: string; sightings: { creatureId: string }[] }) {
+  switch (f.kind) {
+    case 'opening':
+      return <><div className="yu-f-big" style={{ fontSize: 46, color: '#ffc0dc' }}>{f.title}</div><div className="yu-f-s">{f.small}</div></>;
+    case 'number':
+      return <><div className="yu-f-big" style={{ color: f.color, fontSize: f.big.length > 6 ? 60 : 80 }}><BigNumber text={f.big} /></div><div className="yu-f-s">{f.small}</div></>;
+    case 'trail':
+      return <><div className="yu-f-trail"><TrailDrawing fromKm={f.fromKm} toKm={f.toKm} label={f.small} /></div><div className="yu-f-s">{f.small}</div></>;
+    case 'creatures':
+      return (
+        <>
+          <div className="yu-f-art">
+            {f.ids.map((id) => {
+              const c = creatureById(id);
+              if (!c) return null;
+              const stage = stageNow(c, sightings);
+              return <div key={id} className="yu-f-cr" style={{ '--k': c.main } as CSSProperties}><CreatureFigure c={c} stage={stage} width={140} burst={false} /><b>{nameAt(c, stage)}</b></div>;
+            })}
+          </div>
+          <div className="yu-f-s">{f.small}</div>
+        </>
+      );
+    case 'stars':
+      return <><div className="yu-f-big" style={{ fontSize: 46, color: GOLD }}>{constellationFor(month).name}</div><Stars dates={f.dates} /><div className="yu-f-s">{f.small}</div></>;
+    case 'credits':
+      return <div className="yu-roll"><div className="yu-rin">{f.lines.map(([a, b]) => <p key={a}><span>{a}</span>{b}</p>)}</div></div>;
+    case 'assessment':
+      return (
+        <>
+          <div className="yu-f-big" style={{ fontSize: 46 }}>The assessment</div>
+          <Grades grades={f.grades} />
+          <button type="button" className="btn" onClick={(e) => { e.stopPropagation(); go('/reports/month', { m: month }); }}>Read the full report</button>
+        </>
+      );
+  }
+}
+
+/** A month as a tap-through film: colour fields, a coloured number on each screen, credits, then the marks. */
+export function MonthlyFilmPage() {
+  const { params } = useRoute();
+  const input = useMonthInput();
+  const [i, setI] = useState(0);
+  if (!input) return <div className="page bare" />;
+  const month = params.get('m') ?? lastMonth(input.today);
+  const frames = filmFrames(month, input);
+  const close = (e: { stopPropagation: () => void }) => { e.stopPropagation(); back('/you'); };
+  if (!frames.length) {
+    return (
+      <div className="yu-film" style={{ background: 'linear-gradient(165deg,#3a1f6e,#141a4a 70%)' }}>
+        <button type="button" className="yu-close" onClick={close}>Close</button>
+        <div className="yu-film-b"><div className="yu-f-s">Nothing was logged this month, so there's no film yet.</div></div>
+      </div>
+    );
+  }
+  const k = Math.min(i, frames.length - 1);
+  const f = frames[k];
+  return (
+    <div className="yu-film" style={{ background: f.ground }} onClick={() => setI(Math.min(frames.length - 1, k + 1))}>
+      <div className="yu-film-glow" />
+      <div className="yu-bars" aria-hidden="true">{frames.map((_, n) => <i key={n} className={n <= k ? 'on' : undefined} />)}</div>
+      <button type="button" className="yu-close" onClick={close}>Close</button>
+      <div className="yu-film-b" key={k} aria-live="polite"><Frame f={f} month={month} sightings={input.sightings} /></div>
+      {k > 0 && <button type="button" className="yu-film-prev" onClick={(e) => { e.stopPropagation(); setI(k - 1); }}>Back</button>}
+      {k < frames.length - 1 && <span className="yu-film-hint">Tap to go on</span>}
+    </div>
   );
 }

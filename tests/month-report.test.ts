@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultSettings } from '../src/db/actions';
 import { addDays } from '../src/domain/dates';
-import { assessment, filmFrames, monthSpread, monthsWithData, sleepProfile, topFives, type MonthInput } from '../src/domain/monthReport';
+import { assessment, filmFrames, monthSpread, monthsWithData, sleepProfile, topFives, tryNext, type MonthInput } from '../src/domain/monthReport';
 import { correctionsIn, type Correction } from '../src/domain/corrections';
 import type { Day, FoodEntry, SetEntry, Settings, TrainingSession } from '../src/domain/types';
 
@@ -105,5 +105,31 @@ describe('correctionsIn', () => {
   const c = (date: string): Correction => ({ id: date, at: 0, date, what: 'Steps', was: '1', now: '2', note: 'Phone died' });
   it('finds those in the range only', () => {
     expect(correctionsIn('2026-10-01', '2026-10-31', [c('2026-10-05'), c('2026-11-05')]).map((x) => x.date)).toEqual(['2026-10-05']);
+  });
+});
+
+describe('tryNext', () => {
+  it('speaks to the weakest area, and is silent with nothing to go on', () => {
+    expect(tryNext([])).toBeUndefined();
+    expect(tryNext([{ area: 'Steps', word: 'Strong', why: 'x' }, { area: 'Sleep', word: 'Easing', why: 'y' }])).toMatch(/bed/i);
+  });
+});
+
+describe('the drinks grade', () => {
+  const drink = (date: string) => ({ date, kind: 'drink', drink: { count: 2 }, protein: 0, kcal: 100 }) as unknown as FoodEntry;
+  it('slips when there were more nights than the month before, and says both', () => {
+    const g = assessment(MONTH, input({ entries: [drink('2026-09-02'), drink('2026-10-02'), drink('2026-10-03')] })).find((x) => x.area === 'Drinks');
+    expect(g).toMatchObject({ word: 'Slipped', why: '2 nights, up from 1' });
+  });
+  it('is absent when no drink was logged', () => {
+    expect(assessment(MONTH, input({ days: month(9000) })).some((x) => x.area === 'Drinks')).toBe(false);
+  });
+});
+
+describe('film stars', () => {
+  it('carries the perfect days themselves, so they can be joined', () => {
+    const on = { steps: 12000, sleep: { asleep: 1380, woke: 420 } };
+    const f = filmFrames(MONTH, input({ days: month(12000, on).slice(0, 2), sessions: [session('2026-10-02')], entries: [{ date: '2026-10-01', protein: 200, kcal: 2200 } as FoodEntry] })).find((x) => x.kind === 'stars');
+    if (f?.kind === 'stars') expect(f.dates).toContain('2026-10-01');
   });
 });

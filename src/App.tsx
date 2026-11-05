@@ -50,12 +50,12 @@ import { PlanEditor } from './screens/PlanEditor';
 import { RecordsWall } from './screens/RecordsWall';
 import { MuscleMapPage } from './screens/MuscleMap';
 import { ShortSessionSheet } from './sheets/ShortSession';
-import { WeeklyReviewPage } from './screens/WeeklyReview';
 import { WalkTab } from './screens/WalkTab';
 import { NightSkyPage } from './screens/NightSky';
 import { MedicinesPage } from './screens/Medicines';
 import { ExerciseGuidePage } from './screens/ExerciseGuide';
 import { MonthlyFilmPage } from './screens/MonthlyFilm';
+import { Moved } from './screens/reports/Moved';
 import { ExperimentsPage } from './screens/Experiments';
 
 /** A page loaded when first opened, from its module's named export. */
@@ -85,9 +85,11 @@ const RevealPage = page(() => import('./screens/Reveal'), 'RevealPage');
 const SessionView = page(() => import('./screens/SessionView'), 'SessionView');
 const Replay = page(() => import('./screens/live/Replay'), 'Replay');
 const SettingsScreen = page(() => import('./screens/Settings'), 'SettingsScreen');
-const ReceiptPage = page(() => import('./screens/Week'), 'ReceiptPage');
-const WeekRecap = page(() => import('./screens/Week'), 'WeekRecap');
-const ClimatePage = page(() => import('./screens/Reports'), 'ClimatePage');
+const ReportsHome = page(() => import('./screens/reports/ReportsHome'), 'ReportsHome');
+const WeeklyStory = page(() => import('./screens/reports/WeeklyStory'), 'WeeklyStory');
+const MonthPage = page(() => import('./screens/reports/MonthPage'), 'MonthPage');
+const Archive = page(() => import('./screens/reports/Archive'), 'Archive');
+const Corrections = page(() => import('./screens/reports/Corrections'), 'Corrections');
 const DawnPage = page(() => import('./screens/Dawn'), 'DawnPage');
 const DexPage = page(() => import('./screens/Dex'), 'DexPage');
 const YouProto = lazy(() => import('./screens/proto/YouLiving').then((m) => ({ default: m.YouProto })));
@@ -136,7 +138,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/you': { el: () => <You />, tab: 'you' },
   '/insights': { el: () => <Insights />, tab: 'you' },
   '/earned': { el: () => <Earned /> },
-  '/review': { el: () => <WeeklyReviewPage /> },
+  '/review': { el: () => <Moved to="/reports/week" /> },
   '/settings': { el: () => <SettingsScreen /> },
   '/session': { el: () => <SessionScreen /> },
   '/session/done': { el: () => <SessionDone /> },
@@ -146,8 +148,13 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/readiness': { el: () => <ReadinessPage /> },
   '/checkin': { el: () => <CheckInScreen /> },
   '/photos': { el: () => <PhotosPage /> },
-  '/week': { el: () => <WeekRecap /> },
-  '/receipt': { el: () => <ReceiptPage /> },
+  '/reports': { el: () => <ReportsHome />, tab: 'you' },
+  '/reports/week': { el: () => <WeeklyStory />, tab: 'you' },
+  '/reports/month': { el: () => <MonthPage />, tab: 'you' },
+  '/reports/archive': { el: () => <Archive />, tab: 'you' },
+  '/reports/corrections': { el: () => <Corrections />, tab: 'you' },
+  '/week': { el: () => <Moved to="/reports/week" /> },
+  '/receipt': { el: () => <Moved to="/reports/week" /> },
   '/map': { el: () => <MapPage /> },
   '/postcard': { el: () => <PostcardPage /> },
   '/stretch': { el: () => <StretchPage /> },
@@ -162,7 +169,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/finish': { el: () => <FinishPage /> },
   '/diary': { el: () => <DiaryPage /> },
   '/departures': { el: () => <DeparturesPage /> },
-  '/climate': { el: () => <ClimatePage /> },
+  '/climate': { el: () => <Moved to="/reports/month" /> },
   '/wrapped': { el: () => <WrappedPage /> },
   '/character': { el: () => <CharacterPage /> },
   '/physio': { el: () => <PhysioPage /> },

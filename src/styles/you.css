@@ -125,3 +125,67 @@
 .yu-replay button { align-self: flex-start; min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid #fff6; background: none; color: #fff; font: inherit; }
 .yu-rewards .chip, .yu-rewards .t12 { font-size: 14px; }
 .yu-rewards .chip { min-height: 44px; }
+
+/* Reports */
+.yu-h2 { font-family: var(--serif); font-size: 24px; line-height: 1.15; }
+.yu-story { border-radius: 18px; overflow: hidden; border: 1px solid var(--edge); background: var(--glass2); }
+.yu-story-b { padding: 12px 14px; display: flex; flex-direction: column; gap: 3px; }
+.yu-vis-dark { background: #0b1036e6; }
+.yu-spread { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; background: linear-gradient(160deg, #1d1450cc, #0c1a3acc 60%, #0c2a33cc); border: 1px solid var(--edge); border-radius: 18px; padding: 14px; }
+.yu-spread > div { display: flex; flex-direction: column; min-width: 0; }
+.yu-spread > div > b { font-family: var(--serif); font-weight: 400; font-size: 23px; }
+.yu-spread > div > span { font-size: 14px; color: var(--q); }
+.yu-sp1 { grid-column: 1/-1; }
+.yu-sp-big { margin-bottom: 6px; font-family: var(--serif); font-size: 62px; line-height: 1; color: #ff9ccb; }
+.yu-wk { display: flex; gap: 6px; align-items: flex-end; height: 84px; margin-top: 8px; }
+.yu-wk span { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.yu-wk i { display: block; width: 100%; height: var(--h); border-radius: 5px 5px 2px 2px; background: linear-gradient(0deg, #b896ff, #ff7db8); transform-origin: bottom; }
+.yu-wk small { font-size: 14px; color: var(--q); }
+.yu-armed:not(.yu-in) .yu-wk i { transform: scaleY(0); }
+.yu-armed.yu-in .yu-wk i { animation: yu-up2 .7s calc(var(--i) * .07s) cubic-bezier(.16,1,.3,1) both; }
+@keyframes yu-up2 { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.yu-grades { display: flex; flex-direction: column; }
+.yu-grades > div { display: grid; grid-template-columns: 1fr auto; padding: 7px 0; }
+.yu-grades > div + div { border-top: 1px solid var(--edge, #fff3); }
+.yu-grades b { font-weight: 700; }
+.yu-grades small { grid-column: 1/-1; font-size: 14px; color: var(--q, #fffc); }
+.yu-open { text-align: left; font: inherit; color: inherit; min-height: 44px; }
+.yu-rows { display: flex; flex-direction: column; }
+.yu-rows button { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 48px; padding: 0 2px; background: none; border: 0; border-bottom: 1px solid var(--edge); color: inherit; font: inherit; text-align: left; }
+.yu-choices { display: flex; gap: 8px; flex-wrap: wrap; }
+.yu-choices button { min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--edge); background: none; color: inherit; font: inherit; }
+.yu-choices button.on { background: #ffffff24; border-color: currentColor; font-weight: 600; }
+.yu-note, .yu-form input { width: 100%; box-sizing: border-box; min-height: 44px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--edge); background: #0c0e1d80; color: inherit; font: inherit; font-size: 16px; }
+.yu-form { gap: 10px; }
+.yu-form label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--q); }
+.yu-left { align-self: flex-start; min-height: 44px; }
+
+/* The film */
+.yu-page .btn.sm { min-height: 44px; }
+.yu-film { position: fixed; inset: 0; z-index: 50; color: #fff; overflow: hidden; transition: background .6s; font-size: 15px; --q: #fffc; }
+.yu-film-glow { position: absolute; width: 130vmax; height: 130vmax; left: -60vmax; top: -50vmax; background: radial-gradient(closest-side, #ffffff33, transparent); animation: yu-glow 9s ease-in-out infinite alternate; pointer-events: none; }
+@keyframes yu-glow { from { transform: none; } to { transform: translate(55vmax, 60vmax) scale(.8); } }
+.yu-bars { position: absolute; top: calc(10px + env(safe-area-inset-top, 0px)); left: 12px; right: 12px; display: flex; gap: 3px; z-index: 3; }
+.yu-bars i { flex: 1; height: 3px; border-radius: 2px; background: #fff4; }
+.yu-bars i.on { background: #fff; }
+.yu-close, .yu-film-prev { position: absolute; z-index: 4; background: #0004; color: #fff; font: inherit; font-size: 14px; border: 1px solid #fff5; border-radius: 999px; min-height: 44px; padding: 0 16px; }
+.yu-close { top: calc(24px + env(safe-area-inset-top, 0px)); right: 14px; }
+.yu-film-prev { bottom: 24px; left: 18px; }
+.yu-film-hint { position: absolute; bottom: 36px; right: 18px; font-size: 14px; color: #fffc; pointer-events: none; }
+.yu-film-b { position: absolute; inset: 76px 20px 84px; display: flex; flex-direction: column; justify-content: center; gap: 12px; }
+.yu-f-s { font-size: 18px; }
+.yu-f-big { font-variant-numeric: lining-nums; text-shadow: 0 2px 22px #0005; font-family: var(--serif); font-size: 80px; line-height: 1.02; overflow-wrap: anywhere; animation: yu-big .8s cubic-bezier(.16,1,.3,1) both; }
+@keyframes yu-big { from { opacity: 0; transform: translateY(16px) scale(.96); } to { opacity: 1; transform: none; } }
+.yu-f-stars { width: 100%; }
+.yu-star { animation: yu-star .5s calc(var(--i) * .1s) cubic-bezier(.34,1.56,.64,1) both; transform-box: fill-box; transform-origin: center; }
+@keyframes yu-star { from { opacity: 0; transform: scale(.2); } to { opacity: 1; transform: scale(1); } }
+.yu-f-art { display: flex; gap: 8px; justify-content: center; }
+.yu-f-art + .yu-f-s { text-align: center; }
+.yu-f-cr { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 2px; border-radius: 20px; background: radial-gradient(closest-side, color-mix(in srgb, var(--k) 22%, transparent), transparent); }
+.yu-f-cr b { color: var(--k); font-weight: 500; font-size: 18px; text-transform: capitalize; }
+.yu-f-trail { -webkit-mask-image: radial-gradient(closest-side, #000 72%, transparent); mask-image: radial-gradient(closest-side, #000 72%, transparent); }
+.yu-roll { height: 100%; overflow: hidden; text-align: center; }
+.yu-rin { animation: yu-up 16s linear infinite; }
+.yu-rin p { margin: 0 0 26px; font-family: var(--serif); font-size: 23px; }
+.yu-rin span { display: block; font-family: var(--sans); font-size: 14px; color: #fffc; }
+@keyframes yu-up { from { transform: translateY(70vh); } to { transform: translateY(-100%); } }

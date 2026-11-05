@@ -23,8 +23,8 @@ export type StoryChapter =
   | { id: 'tally'; steps: number; sessions: number; records: number; perfect: number }
   | { id: 'swing'; what: string; now: string; was: string; up: boolean }
   | { id: 'food'; proteinAvg?: number; foodDays: number; inRange: number }
-  | { id: 'sleep'; avg: string; nightsNote: string }
-  | { id: 'training'; sessions: number; perWeek: number; sets: number; records: SetEntry[] }
+  | { id: 'sleep'; avg: string; nights: number }
+  | { id: 'training'; sessions: number; perWeek: number; sets: number; restDays: number; records: SetEntry[] }
   | { id: 'finding'; finding: Finding }
   | { id: 'next'; stop?: string; stepsPerDay?: number; by?: DayKey }
   | { id: 'backup'; text: string };
@@ -70,12 +70,12 @@ export function storyChapters(week: DayKey, i: StoryInput): StoryChapter[] {
   const met = metBetween(i.sightings, week, end);
   if (met.length) out.push({ id: 'visitors', ids: met });
 
-  out.push({ id: 'tally', steps: w.steps, sessions: w.sessions, records: w.records.length, perfect: w.perfect });
+  if (w.steps || w.sessions || w.records.length || w.perfect) out.push({ id: 'tally', steps: w.steps, sessions: w.sessions, records: w.records.length, perfect: w.perfect });
   const s = swing(w, prev);
   if (s) out.push(s);
   if (w.foodDays > 0) out.push({ id: 'food', proteinAvg: w.proteinAvg, foodDays: w.foodDays, inRange: w.inRange });
-  if (w.sleepAvg !== undefined) out.push({ id: 'sleep', avg: fmtDuration(w.sleepAvg), nightsNote: `${w.restDays} rest day${w.restDays === 1 ? '' : 's'} this week` });
-  if (w.sessions > 0) out.push({ id: 'training', sessions: w.sessions, perWeek: targetsFor(i.settings, week).sessionsPerWeek, sets: w.sets, records: w.records });
+  if (w.sleepAvg !== undefined) out.push({ id: 'sleep', avg: fmtDuration(w.sleepAvg), nights: days.filter((d) => d.date >= week && d.sleep).length });
+  if (w.sessions > 0) out.push({ id: 'training', sessions: w.sessions, perWeek: targetsFor(i.settings, week).sessionsPerWeek, sets: w.sets, restDays: w.restDays, records: w.records });
   const finding = dailyFinding(end, { today: addDays(end, 1), days, sets });
   if (finding) out.push({ id: 'finding', finding });
   const next: StoryChapter = { id: 'next' };

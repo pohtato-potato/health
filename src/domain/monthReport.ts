@@ -2,6 +2,7 @@ import { metBetween, type Sighting } from './creatures';
 import { parseDay, type DayKey } from './dates';
 import { lastMonth, strongestWeek, surpriseRecord } from './film';
 import { fmtInt } from './format';
+import { dosesAllowPerfect } from './medicines';
 import { sleepMinutes } from './rings';
 import type { Day, FoodEntry, SetEntry, Settings, SongRecord, TrainingSession } from './types';
 import { kmFromSteps, positionAt, setStride } from './walk';
@@ -17,14 +18,14 @@ export interface MonthInput {
   sightings: Sighting[];
   songs: SongRecord[];
 }
-export type GradeWord = 'Strong' | 'Good' | 'Usual' | 'Easing';
+export type GradeWord = 'Strong' | 'Good' | 'Usual' | 'Easing' | 'Slipped';
 export interface Grade { area: string; word: GradeWord; why: string }
 export type FilmFrame =
   | { kind: 'number'; ground: string; big: string; color: string; small: string }
   | { kind: 'opening'; ground: string; title: string; small: string }
   | { kind: 'trail'; ground: string; fromKm: number; toKm: number; small: string }
   | { kind: 'creatures'; ground: string; ids: string[]; small: string }
-  | { kind: 'stars'; ground: string; count: number; small: string }
+  | { kind: 'stars'; ground: string; dates: DayKey[]; small: string }
   | { kind: 'credits'; ground: string; lines: [string, string][] }
   | { kind: 'assessment'; ground: string; grades: Grade[] };
 
@@ -77,7 +78,36 @@ export function assessment(month: string, i: MonthInput): Grade[] {
     const met = nights.filter((d) => sleepMinutes(d.sleep!.asleep, d.sleep!.woke) >= rings(d.date).targets.sleepMin).length;
     out.push({ area: 'Sleep', word: word(met / nights.length), why: `Your target on ${met} of ${nights.length} nights` });
   }
+  const drinkNights = (m: string) => new Set(i.entries.filter((e) => e.kind === 'drink' && e.date.startsWith(m)).map((e) => e.date)).size;
+  const [now, was] = [drinkNights(month), drinkNights(previousMonth(month))];
+  if (now || was) {
+    const n = `${now} night${now === 1 ? '' : 's'}`;
+    out.push(now > was
+      ? { area: 'Drinks', word: was ? 'Slipped' : 'Usual', why: was ? `${n}, up from ${was}` : n }
+      : { area: 'Drinks', word: 'Good', why: now === was ? `${n}, the same as last month` : `${n}, down from ${was}` });
+  }
   return out;
+}
+
+const previousMonth = (m: string) => {
+  const [y, n] = m.split('-').map(Number);
+  return n === 1 ? `${y - 1}-12` : `${y}-${String(n - 1).padStart(2, '0')}`;
+};
+
+const NEXT: Record<string, string> = {
+  Steps: 'A short walk after dinner on the slow days.',
+  Training: 'One short session in the quiet part of the week.',
+  Food: 'Protein at the first meal on the days you miss it.',
+  Sleep: 'Bed half an hour earlier on training nights.',
+  Drinks: 'Pick the nights for drinks at the start of the week.',
+};
+const RANK: GradeWord[] = ['Slipped', 'Easing', 'Usual', 'Good', 'Strong'];
+
+/** One thing to try, from the month's weakest area. */
+export function tryNext(grades: Grade[]): string | undefined {
+  if (!grades.length) return undefined;
+  const worst = [...grades].sort((a, b) => RANK.indexOf(a.word) - RANK.indexOf(b.word))[0];
+  return NEXT[worst.area];
 }
 
 const daysInMonth = (m: string) => new Date(Number(m.slice(0, 4)), Number(m.slice(5)), 0).getDate();
@@ -159,7 +189,7 @@ export function filmFrames(month: string, i: MonthInput): FilmFrame[] {
   }
   const top = [...plays].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
   out.push(top
-    ? { kind: 'opening', ground: GROUND.open, title: `${name}, scored by ${top[0]}`, small: `Played ${top[1]} times during sessions.` }
+    ? { kind: 'opening', ground: GROUND.open, title: `${name}, scored by ${top[0]}`, small: top[1] === 1 ? "Played once during sessions." : `Played ${top[1]} times during sessions.` }
     : { kind: 'opening', ground: GROUND.open, title: `Your ${name}`, small: 'The month, frame by frame.' });
   if (toKm > fromKm) {
     const [a, b] = [positionAt(fromKm).from.name, positionAt(toKm).from.name];
@@ -177,8 +207,8 @@ export function filmFrames(month: string, i: MonthInput): FilmFrame[] {
   if (met.length) out.push({ kind: 'creatures', ground: GROUND.met, ids: met.slice(0, 2), small: `${met.length} met this month.` });
   const food = byDate(i.entries.filter(inMonth(month)));
   const dayBy = new Map(i.days.map((d) => [d.date, d]));
-  const perfect = i.days.filter(inMonth(month)).filter((d) => d.date < i.today && food.has(d.date) && dayRings(i.settings, d.date, dayBy.get(d.date), food.get(d.date)!).rings.perfect).length;
-  if (perfect) out.push({ kind: 'stars', ground: GROUND.stars, count: perfect, small: `${perfect} perfect day${perfect === 1 ? '' : 's'}, joined up.` });
+  const perfect = i.days.filter(inMonth(month)).filter((d) => d.date < i.today && food.has(d.date) && dayRings(i.settings, d.date, dayBy.get(d.date), food.get(d.date)!).rings.perfect && dosesAllowPerfect(i.settings, d)).map((d) => d.date);
+  if (perfect.length) out.push({ kind: 'stars', ground: GROUND.stars, dates: perfect, small: `${perfect.length} perfect day${perfect.length === 1 ? '' : 's'}, joined into this month's stars.` });
 
   const lifts = topFives(month, i).lifts;
   const lines: [string, string][] = [['Starring', 'You']];

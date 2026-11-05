@@ -1,6 +1,5 @@
 import { addDays, dayRange, daysBetween, weekStart, type DayKey } from '../domain/dates';
 import { fmtDayMonth, fmtInt } from '../domain/format';
-import { lastFullWeek, weekNumber } from '../domain/weekly';
 import { INDIA_OUTLINE, PLACE_COUNT, kmFromSteps, positionAt, statesReached } from '../domain/walk';
 import { useAllDays, useAllEntries, useSessions, useSettings, useToday } from '../db/hooks';
 import { go } from '../router';
@@ -233,8 +232,6 @@ function WalkCard({ days }: { days: Day[] }) {
 
 function Reports({ today, settings }: { today: DayKey; settings: Settings }) {
   const [review, setReview] = useState(false);
-  const w = lastFullWeek(today);
-  const monthName = MONTHS[(Number(today.slice(5, 7)) + 10) % 12];
   const row = (title: string, sub: string, onClick?: () => void, tag?: string) => (
     <button type="button" className="sess" onClick={onClick} disabled={!onClick} style={{ opacity: 1 }}>
       <span className="col gap2">
@@ -249,11 +246,7 @@ function Reports({ today, settings }: { today: DayKey; settings: Settings }) {
       <div className="lbl" style={{ paddingBottom: 6 }}>
         Reports
       </div>
-      {row(`Week ${weekNumber(w)} receipt`, `${fmtDayMonth(w)}–${fmtDayMonth(addDays(w, 6))}`, () => go('/receipt', { w }))}
-      {row('Weekly recap', 'How last week went, and one thing for this one', () => go('/week', { w }))}
-      {row(`${monthName} climate report`, 'Your month as a weather report', () => go('/climate'))}
-      {row(`${monthName}, wrapped`, 'Your month in review, Spotify style', () => go('/wrapped'))}
-      {row('The journey, wrapped', 'Every day since the start, in one place', () => go('/wrapped', { all: '1' }))}
+      {row('Reports', 'Every week and month, as it was', () => go('/reports'))}
       {row('Monthly review with Claude', 'A ready-made prompt and your workbook', () => setReview(true), reviewDue(settings, today) ? 'New' : undefined)}
       {review && <ReviewSheet onClose={() => setReview(false)} />}
     </div>

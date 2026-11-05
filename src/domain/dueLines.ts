@@ -24,7 +24,7 @@ export function dueItems(i: { today: DayKey; settings: Settings; days: Day[]; la
   const week = lastFullWeek(i.today);
   const end = addDays(week, 6);
   if (i.storySeenWeek !== week && i.days.some((d) => d.date >= week && d.date <= end)) {
-    out.push({ id: 'story', text: "Last week's story is ready", action: 'Open', path: '/week' });
+    out.push({ id: 'story', text: "Last week's story is ready", action: 'Open', path: '/reports/week' });
   }
   const checkIn = i.lastCheckIn
     ? checkInDue(i.today, i.settings.checkInDay ?? 1, i.lastCheckIn)
