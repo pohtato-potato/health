@@ -1,7 +1,10 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
 import { db } from '../db/db';
-import { useAllDays, useAllEntries, useAllSets, useSessions, useSettings, useToday } from '../db/hooks';
+import { useAllDays, useAllEntries, useAllSets, useSessions, useSettings, useSightings, useToday } from '../db/hooks';
+import { creatureById, nameAt } from '../domain/creatureRoster';
+import { metBetween } from '../domain/creatures';
+import { stageNow } from '../ui/creatures/Payoffs';
 import { fmtDayMonth, fmtInt } from '../domain/format';
 import { dosesAllowPerfect } from '../domain/medicines';
 import { constellationFor, skyStars } from '../domain/nightSky';
@@ -24,6 +27,7 @@ const INK: Record<string, string> = { sage: 'var(--sage)', lavender: 'var(--lave
 
 /** Last month as a tap-through film in bold colour fields and huge type, titled by your most-played workout song. */
 export function MonthlyFilmPage() {
+  const sightings = useSightings();
   const { params } = useRoute();
   const today = useToday();
   const days = useAllDays();
@@ -45,12 +49,17 @@ export function MonthlyFilmPage() {
   const trail = monthTrail(month, stepsByDay(days));
   const [fromName, toName] = trail ? [positionAt(trail.fromKm).from.name, positionAt(trail.toKm).from.name] : [];
   const road = trail ? (fromName === toName ? `Around ${toName}` : `From ${fromName} to ${toName}`) : '';
+  const met = metBetween(sightings ?? [], `${month}-01`, `${month}-31`).flatMap((id) => {
+    const c = creatureById(id);
+    return c ? [nameAt(c, stageNow(c, sightings ?? []))] : [];
+  });
   const frames: (FilmSlide & { stars?: { x: number; y: number }[]; trail?: { fromKm: number; toKm: number } })[] = [
     ...film.slides.slice(0, 1),
     ...(trail ? [{ big: '', small: `${road}: the month on the road.`, tone: 'sage' as const, trail }] : []),
     ...film.slides.slice(1),
     ...(week ? [{ big: `${fmtInt(week.kg)} kg`, small: `moved in your strongest week, from ${fmtDayMonth(week.from)}, over ${week.sets} sets.`, tone: 'lavender' as const }] : []),
     ...(surprise ? [{ big: `+${surprise.pct}%`, small: `${surprise.exercise}, ${surprise.from} to ${surprise.to} kg on ${fmtDayMonth(surprise.date)}. The record you didn’t see coming.`, tone: 'gold' as const }] : []),
+    ...(met.length ? [{ big: String(met.length), small: `met this month: ${met.join(', ')}.`, tone: 'lavender' as const }] : []),
     ...(perfect.length ? [{ big: constellationFor(month).name, small: `${perfect.length} perfect day${perfect.length === 1 ? '' : 's'}, joined into this month’s constellation.`, tone: 'lavender' as const, stars: skyStars(perfect) }] : []),
   ];
   const f = frames[Math.min(i, frames.length - 1)];

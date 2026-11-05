@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { useAllDays, useAllSets, useEntries, useSessions, useSettings, useSightings, useToday } from '../db/hooks';
 import { creatureById, nameAt, noteAt, stageWord, tierWord, type Creature } from '../domain/creatureRoster';
-import { maxStage, type Sighting } from '../domain/creatures';
+import { creatureThemeOn, maxStage, type Sighting } from '../domain/creatures';
 import { addDays } from '../domain/dates';
 import { fmt1, fmtDuration, fmtInt } from '../domain/format';
 import { findSession } from '../domain/plan';
@@ -168,8 +168,8 @@ export function DawnPage() {
       ),
     });
     const km = kmFromSteps(days.reduce((n, d) => n + (d.steps ?? 0), 0));
-    const worn = day?.theme ? creatureById(day.theme)?.theme : undefined;
-    const theme = worn ?? themeDayOn(today, regionAt(km), { birthday: settings.birthday });
+    const calendarOn = (d: string) => themeDayOn(d, regionAt(km), { birthday: settings.birthday });
+    const theme = creatureById(creatureThemeOn({ date: today, worn: day?.theme, sightings, hasOtherTheme: (d) => !!calendarOn(d) }))?.theme ?? calendarOn(today);
     const up = nextUp(settings, sessions, sets, days);
     const session = up && settings.plan ? findSession(settings.plan, up.sessionId)?.name : undefined;
     out.push({

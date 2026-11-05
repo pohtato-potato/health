@@ -8,7 +8,9 @@ import { changeLine, headline, lastFullWeek, receiptLines, suggestOneThing, week
 import { weekday } from '../domain/dates';
 import { saveBackup, shareFile } from '../db/backup';
 import { db } from '../db/db';
-import { useAllDays, useAllEntries, useAllSets, useFoods, useSessions, useSettings, useToday } from '../db/hooks';
+import { useAllDays, useAllEntries, useAllSets, useFoods, useSessions, useSettings, useSightings, useToday } from '../db/hooks';
+import { metBetween } from '../domain/creatures';
+import { MetCard } from '../ui/creatures/Payoffs';
 import { back, go, useRoute } from '../router';
 import { Icon } from '../ui/Icon';
 import { useToast } from '../ui/Toasts';
@@ -39,6 +41,7 @@ function useWeekData() {
 }
 
 export function WeekRecap() {
+  const sightings = useSightings();
   const data = useWeekData();
   const toast = useToast();
   const nextWeek = data ? addDays(data.from, 7) : '';
@@ -105,6 +108,7 @@ export function WeekRecap() {
       </div>
 
       {runs && <WeekRoadCard w={weekWalk(w.from, stepsByDay(data.days), runs)} />}
+      <MetCard title="Met this week" ids={metBetween(sightings ?? [], w.from, addDays(w.from, 6))} sightings={sightings ?? []} />
 
       {w.records.length > 0 && (
         <div className="card gold">

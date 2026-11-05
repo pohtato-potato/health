@@ -431,5 +431,6 @@ export function stageWord(c: Creature, stage: number): string {
   if (c.tier === 'rare') return `Form ${stage} of 3`;
   return stage >= 3 ? 'Grown' : `Stage ${stage} of 3`;
 }
+export const calledAt = (c: Creature, stage: number): string => (c.tier === 'medium' && stage < 3 ? 'something not yet named' : `the ${c.short}`);
 export const nameAt = (c: Creature, stage: number): string => (c.tier === 'medium' && stage < 3 ? 'Not yet known' : c.tier === 'rare' ? c.forms![Math.min(Math.max(1, stage), 3) - 1].name : c.name);
 export const noteAt = (c: Creature, visits: number): string => (c.tier === 'rare' ? c.forms![Math.min(Math.max(1, visits), 3) - 1].note : c.notes[Math.min(Math.max(1, visits), c.notes.length) - 1]);

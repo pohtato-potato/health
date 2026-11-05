@@ -3,7 +3,9 @@ import { useSettings, useSightings, useToday, useAllDays } from '../db/hooks';
 import { CREATURES, creatureById, nameAt, noteAt, stageWord, tierWord } from '../domain/creatureRoster';
 import { dexRows, earnedRingStyles, grownOn, maxStage, notesSoFar, oddsFor } from '../domain/creatures';
 import { go, useRoute } from '../router';
+import '../styles/creatures.css';
 import { CreatureFigure, CreatureSvg, StageDots } from '../ui/creatures/Figure';
+import { DexGrid } from '../ui/creatures/DexGrid';
 import { RegionFrame } from '../ui/live/RegionFrame';
 
 const pct = (n: number) => `${Math.round(n * 100)}%`;
@@ -20,7 +22,7 @@ export function DexPage() {
   const view = params.get('view');
   const open = rows.find((r) => r.id === params.get('c'));
   const nav = (
-    <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+    <div className="dex-nav">
       {[['Sky', '/dex', {}], ['Cards', '/dex', { view: 'cards' }], ['How it works', '/dex', { view: 'how' }], ['Themes', '/dex', { view: 'themes' }]].map(([label, path, p]) => (
         <button key={label as string} type="button" className="btn ghost" onClick={() => go(path as string, p as Record<string, string>)}>{label as string}</button>
       ))}
@@ -93,18 +95,7 @@ export function DexPage() {
     <RegionFrame>
       <h1 className="h1">{view === 'cards' ? 'Cards' : 'Your night sky'}</h1>
       {!rows.length && <p className="t15">Nothing has visited yet. The first come after a morning log with sleep in it.</p>}
-      <div style={{ display: 'grid', gridTemplateColumns: view === 'cards' ? '1fr 1fr' : '1fr 1fr 1fr', gap: 10 }}>
-        {rows.map((r, i) => {
-          const c = creatureById(r.id)!;
-          return (
-            <button key={r.id} type="button" className={view === 'cards' ? 'card' : ''} style={{ minHeight: 44, background: view === 'cards' ? undefined : 'none', border: view === 'cards' ? undefined : 0, color: 'inherit', marginTop: view === 'cards' ? 0 : (i * 37) % 22 }} onClick={() => go('/dex', { c: r.id })}>
-              <span style={{ display: 'block', height: view === 'cards' ? 110 : 76 }}><CreatureSvg c={c} stage={r.stage} /></span>
-              <span className="t14">{nameAt(c, r.stage)}</span>
-              {view === 'cards' && <span className="t14 q" style={{ display: 'block' }}>{stageWord(c, r.stage)} · {r.visits} visit{r.visits === 1 ? '' : 's'}</span>}
-            </button>
-          );
-        })}
-      </div>
+      <DexGrid rows={rows} cards={view === 'cards'} onOpen={(id) => go('/dex', { c: id })} />
       {nav}
     </RegionFrame>
   );

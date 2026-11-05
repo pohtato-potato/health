@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { addDays, dayKey, logHour, partOfDay, weekStart } from '../domain/dates';
-import { creatureThemeOn, revealDue } from '../domain/creatures';
+import { companionFor, creatureThemeOn, revealDue, stepsCreature } from '../domain/creatures';
+import { CREATURES } from '../domain/creatureRoster';
+import { called, SkyTouch } from '../ui/creatures/Payoffs';
 import { creatureById } from '../domain/creatureRoster';
 import { fmtDuration, fmtInt, fmtTime } from '../domain/format';
 import { findSession } from '../domain/plan';
@@ -214,9 +216,14 @@ export function Today() {
   const slots = checklistSlots(settings, today);
   return (
     <TodayLayout
-      tint={regionTint(walkKm, glow)}
-      glow={!!glow}
-      fx={<RingMomentFx playing={playing} />}
+      tint={themeCreature && !glow ? ({ ...regionTint(walkKm), '--lv-glow': themeCreature.sky[0], '--lv-accent': themeCreature.main } as CSSProperties) : regionTint(walkKm, glow)}
+      glow={!!glow || !!themeCreature}
+      fx={
+        <>
+          {themeCreature && <SkyTouch c={themeCreature} />}
+          <RingMomentFx playing={playing} />
+        </>
+      }
       overlays={
         <>
           {drawerOpen && (
@@ -280,6 +287,8 @@ export function Today() {
           gapFoods: gap.picks.map((p) => p.name).join(' and '),
           addLabel: `${gap.picks.length === 1 ? 'Add it' : gap.picks.length === 2 ? 'Add both' : 'Add them'} · ${Math.round(gap.picks.reduce((n, p) => n + p.proteinG, 0))} g`,
           stepsLeft: Math.max(0, stepsLeft),
+          companion: called(companionFor(sightings ?? [], CREATURES, today), sightings ?? []),
+          stepsCreature: called(stepsCreature(sightings ?? [], CREATURES, regionAt(walkKm), today), sightings ?? []),
           laps: loop ? fmtInt(Math.ceil(Math.max(stepsLeft, 0) / loop)) : undefined,
           easedTo: totals.eased ? stepsGoal(targets, true) : undefined,
         }}
