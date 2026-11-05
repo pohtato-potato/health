@@ -1,9 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { achievementById } from '../domain/achievements';
-import { pickChallenge } from '../domain/challenges';
-import { summaries } from '../state/Challenge';
-import { checklistSlots } from '../state/derived';
 import { addDays, type DayKey } from '../domain/dates';
 import { fmt1, fmtDayMonth, fmtDuration, fmtInt, lowerFirst } from '../domain/format';
 import { WEEKDAY_NAMES } from '../domain/insights';
@@ -36,132 +33,16 @@ function useMonthParam(): string {
   return params.get('m') ?? addDays(`${today.slice(0, 7)}-01`, -1).slice(0, 7);
 }
 
-const Svg = ({ children }: { children: ReactNode }) => (
-  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    {children}
-  </svg>
-);
-const ICONS: Record<string, ReactNode> = {
-  sun: (
-    <Svg>
-      <circle cx="12" cy="12" r="4.5" />
-      <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" />
-    </Svg>
-  ),
-  wind: (
-    <Svg>
-      <path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8" />
-    </Svg>
-  ),
-  rain: (
-    <Svg>
-      <path d="M7 15a4.5 4.5 0 1 1 1-8.9A5.5 5.5 0 0 1 18.5 9 3.5 3.5 0 0 1 17 15.8" />
-      <path d="M9 18l-1 2.5M13 18l-1 2.5M17 18l-1 2.5" />
-    </Svg>
-  ),
-  temp: (
-    <Svg>
-      <path d="M10 14.5V4.5a2 2 0 1 1 4 0v10a4 4 0 1 1-4 0z" />
-      <path d="M12 9v7" />
-    </Svg>
-  ),
-  pressure: (
-    <Svg>
-      <path d="M4.5 17a8 8 0 1 1 15 0" />
-      <path d="M12 13l4-4" />
-      <circle cx="12" cy="13" r="1" />
-    </Svg>
-  ),
-  front: (
-    <Svg>
-      <path d="M2.5 16c3-4 6-4 9.5 0s6.5 4 9.5 0" />
-      <path d="M6 12.5l1.5-3 1.5 3zM15 12.5l1.5-3 1.5 3z" fill="currentColor" />
-    </Svg>
-  ),
-};
-
-const share = (a: number, b: number) => (b ? a / b : 0);
-
-/** The month as a weather report. */
-export function ClimatePage() {
-  const month = useMonthParam();
-  const today = useToday();
-  const settings = useSettings();
-  const [from, to0] = monthRange(month);
-  const to = to0 < today ? to0 : addDays(today, -1);
-  const s = usePeriod(from, to);
-  const allDays = useAllDays();
-  const allEntries = useAllEntries();
-  if (!s || !settings || !allDays || !allEntries) return <div className="page bare" />;
-  const sleepShare = share(s.sleepNights, s.sleepLogged);
-  const sky = sleepShare >= 0.7 ? 'Mostly sunny' : sleepShare >= 0.4 ? 'Bright spells' : 'Overcast';
-  const windShare = share(s.stepTarget, s.days);
-  const wind = windShare >= 0.8 ? 'steady winds' : windShare >= 0.5 ? 'a fresh breeze' : 'light airs';
-  const change = s.trendStart !== undefined && s.trendEnd !== undefined ? s.trendEnd - s.trendStart : undefined;
-  const nextMonth = addDays(to0, 1).slice(0, 7);
-  const histTo = addDays(`${nextMonth}-01`, -1) < today ? addDays(`${nextMonth}-01`, -1) : addDays(today, -1);
-  const outlook = pickChallenge(nextMonth, summaries(settings, allDays, allEntries, addDays(`${nextMonth}-01`, -30), histTo), { checklist: checklistSlots(settings).length > 0 });
-  const tiles = [
-    { icon: 'sun', name: 'Sunshine', what: 'Sleep', value: s.sleepAvg ? `${fmtDuration(Math.round(s.sleepAvg))} a night` : '—', cond: sky, line: s.sleepLogged ? `On target ${s.sleepNights} of ${s.sleepLogged} nights.${s.bestNight ? ` Longest: ${fmtDuration(s.bestNight.minutes)} on ${fmtDayMonth(s.bestNight.date)}.` : ''}` : 'No nights logged.' },
-    { icon: 'wind', name: 'Winds', what: 'Steps', value: s.stepsAvg ? `${fmtInt(s.stepsAvg)} a day` : '—', cond: wind.charAt(0).toUpperCase() + wind.slice(1), line: s.bestSteps ? `Gusting to ${fmtInt(s.bestSteps.steps)} on ${fmtDayMonth(s.bestSteps.date)}. Target reached on ${s.stepTarget} days.` : 'No steps logged.' },
-    { icon: 'rain', name: 'Rainfall', what: 'Water', value: s.waterAvg ? `${fmt1(s.waterAvg)} L a day` : '—', cond: share(s.waterDays, s.days) >= 0.6 ? 'Wet' : share(s.waterDays, s.days) >= 0.3 ? 'Showers' : 'Dry spell', line: `Target reached on ${s.waterDays} days.` },
-    { icon: 'temp', name: 'Temperature', what: 'Calories', value: s.kcalAvg ? `${fmtInt(s.kcalAvg)} kcal` : '—', cond: share(s.inRange, s.foodDays) >= 0.7 ? 'Mild' : 'Changeable', line: s.foodDays ? `Within the range on ${s.inRange} of ${s.foodDays} logged days.` : 'No food logged.' },
-    { icon: 'pressure', name: 'Pressure', what: 'Training', value: `${s.sessions} session${s.sessions === 1 ? '' : 's'}`, cond: s.sessions >= 12 ? 'High' : s.sessions >= 6 ? 'Moderate' : 'Low', line: `${fmtInt(s.sets)} sets and ${fmtInt(s.kgMoved)} kg moved${s.records.length ? `, with records on ${s.records.map(lowerFirst).join(', ')}` : ''}.` },
-    {
-      icon: 'front',
-      name: 'Fronts',
-      what: 'Weight trend',
-      value: change !== undefined ? `${change <= 0 ? '−' : '+'}${fmt1(Math.abs(change))} kg` : '—',
-      cond: change === undefined ? 'No readings' : change <= -0.3 ? 'Cool front' : change >= 0.3 ? 'Warm front' : 'Settled',
-      line: s.waistStart !== undefined && s.waistEnd !== undefined && s.waistEnd !== s.waistStart ? `Waist ${s.waistEnd < s.waistStart ? 'down' : 'up'} ${fmt1(Math.abs(s.waistEnd - s.waistStart))} in.` : 'Waist unchanged, or not measured.',
-    },
-  ];
-
-  return (
-    <div className="page bare">
-      <button type="button" className="backlink" onClick={() => back('/journey')}>
-        <Icon name="left" size={20} stroke={1.8} />
-        Journey
-      </button>
-      <div className="col gap6">
-        <div className="lbl blue">Climate report</div>
-        <h1 className="h1">
-          {monthName(month)} {month.slice(0, 4)}
-        </h1>
-        <div className="t16 lh">
-          {sky}, with {wind}. {s.perfect ? `${s.perfect} perfect day${s.perfect === 1 ? '' : 's'}` : 'No perfect days this time'}
-          {s.cities.length ? `, and you walked into ${s.cities.join(' and ')}` : ''}.
-        </div>
-      </div>
-      <div className="grid2">
-        {tiles.map((t) => (
-          <div key={t.name} className="card" style={{ gap: 6, padding: 14 }}>
-            <div className="row" style={{ color: 'var(--blue)' }}>
-              {ICONS[t.icon]}
-              <span className="t11 q">{t.what}</span>
-            </div>
-            <div className="lbl">{t.name}</div>
-            <div className="t15">{t.value}</div>
-            <div className="t13 gold">{t.cond}</div>
-            <div className="t12 q lh">{t.line}</div>
-          </div>
-        ))}
-      </div>
-      <div className="card">
-        <div className="lbl">Outlook for {monthName(nextMonth)}</div>
-        <div className="t15 lh">
-          {outlook.title}: {lowerFirst(outlook.text)}
-        </div>
-      </div>
-      <button type="button" className="btn lg ghost block" onClick={() => go('/wrapped', { m: month })}>
-        {monthName(month)}, wrapped
-      </button>
-    </div>
-  );
+/** Only the Walk's journey Wrapped stays; a month's link goes to the month's report. */
+export function WrappedPage() {
+  const { params } = useRoute();
+  useEffect(() => {
+    if (params.get('all') !== '1') go('/reports/month', params.get('m') ? { m: params.get('m')! } : undefined, { replace: true });
+  }, [params]);
+  return params.get('all') === '1' ? <JourneyWrapped /> : null;
 }
 
-/** Spotify-style: the month, or the whole journey, as a stack of bold cards. */
-export function WrappedPage() {
+function JourneyWrapped() {
   const { params } = useRoute();
   const month = useMonthParam();
   const today = useToday();

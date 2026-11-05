@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { statDeck, type Stat } from '../domain/shakeStats';
 import { prefOn } from '../domain/types';
-import { voiceFor, voiceLine } from '../domain/voice';
+import { spokenLine } from '../domain/voice';
 import { bump } from '../db/actions';
 import { db } from '../db/db';
 import { useSettings, useToday } from '../db/hooks';
@@ -83,13 +83,6 @@ export function ShakeStat() {
 
   if (!open || !settings || !deck) return null;
   const stat: Stat | undefined = deck.length ? deck[index % deck.length] : undefined;
-  const v = voiceFor(settings.voice, prefOn(settings.prefs, 'shuffleVoices'), today);
-  const lines: Record<typeof v, string> = {
-    zen: 'A small fact, for perspective.',
-    coach: 'NUMBERS DON’T LIE! Look at you go!',
-    comm: 'And a statistic from the scorers’ box!',
-    gremlin: "I don't make the rules. I just count them. Obsessively.",
-  };
 
   return createPortal(
     <>
@@ -116,7 +109,7 @@ export function ShakeStat() {
           <div className="t15 q lh">Log a few days and this fills with facts about you.</div>
         )}
         <div className="voice" style={{ fontSize: 15 }}>
-          {lines[v] ?? voiceLine(v, 'day', today)}
+          {spokenLine(settings, today, 'day', today)}
         </div>
         <div className="row" style={{ gap: 10 }}>
           <button type="button" className="btn grow" onClick={() => trigger()}>

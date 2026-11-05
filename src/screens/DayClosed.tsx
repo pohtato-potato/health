@@ -10,7 +10,7 @@ import { findSession, realSets } from '../domain/plan';
 import { placeFor } from '../domain/places';
 import { tonightTarget, usualWake } from '../domain/sleepRegularity';
 import type { DaySummary } from '../domain/usualDay';
-import { voiceFor, voiceLine } from '../domain/voice';
+import { spokenLine } from '../domain/voice';
 import { kmFromSteps, positionAt } from '../domain/walk';
 import { back } from '../router';
 import { nextStopLine } from '../walk/lines';
@@ -49,7 +49,7 @@ export function DayClosed({ date, summary: s, onDone }: { date: string; summary:
   const up = nextUp(settings, sessions, sets, days);
   const upName = up && settings.plan ? findSession(settings.plan, up.sessionId)?.name : undefined;
   const bed = tonightTarget(usualWake(days, tomorrowPlace.id, date) ?? 450, targetsFor(settings, date).sleepMin);
-  const line = voiceLine(voiceFor(settings.voice, false, date), rings.perfect ? 'perfect' : done.length ? 'trained' : 'evening', date, {});
+  const line = spokenLine(settings, date, rings.perfect ? 'perfect' : done.length ? 'trained' : 'evening', date);
   const month = MONTHS[parseDay(date).getMonth()];
   const restingOn = creatureById(firstVisitor(sightings ?? [], date)?.creatureId);
 
@@ -91,7 +91,7 @@ export function DayClosed({ date, summary: s, onDone }: { date: string; summary:
         {s.checklist.total > 0 && row('Checklist', `${s.checklist.done} of ${s.checklist.total}${meds.length ? ` · ${doses.onTime} on time` : ''}`)}
         <DayWalker d={dayWalk(date, stepsByDay(days))} line={`${walkedToday !== undefined ? `${walkedToday.toFixed(1)} km today` : 'no steps logged'}${pos.to ? ` · ${nextStopLine(pos.to.name, pos.to.km - total, typicalKm)}` : ''}`} />
       </div>
-      <div className="voice center">“{line}”</div>
+      {line && <div className="voice center">“{line}”</div>}
       <div className="card" style={{ gap: 2 }}>
         <span className="t15">
           Tomorrow · {tomorrowPlace.name}

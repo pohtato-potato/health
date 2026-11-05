@@ -138,8 +138,8 @@ a('start', 'Tutorial complete', 'Log weight, steps, food and a workout on the sa
   s.daily.some((d) => d.day?.weightKg !== undefined && d.steps !== undefined && d.entries.length > 0 && d.trained),
 );
 a('start', 'First light', 'Complete your first morning log.', 'b', (s) => s.daily.some((d) => d.day?.morning));
-a('start', 'Voice of reason', 'Try all four voices.', 'b', (s) => (s.counters.get('voices')?.values?.length ?? 0) >= 4, {
-  progress: (s) => [s.counters.get('voices')?.values?.length ?? 0, 4],
+a('start', 'Voice of reason', 'Quieten the Gremlin, then let it back.', 'b', (s) => (s.counters.get('voices')?.values?.length ?? 0) >= 2, {
+  progress: (s) => [Math.min(s.counters.get('voices')?.values?.length ?? 0, 2), 2],
 });
 
 // Steps

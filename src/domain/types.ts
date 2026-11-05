@@ -136,7 +136,7 @@ export interface Prefs {
   confirmSteps: boolean;
   /** Added after launch, so older saves may not have them: read through prefOn(). Old saves may also carry retired keys (ticker); they are ignored. */
   shake?: boolean;
-  shuffleVoices?: boolean;
+  gremlin?: boolean;
   seasonal?: boolean;
   tempoCoach?: boolean;
   blurPhotos?: boolean;
@@ -153,12 +153,6 @@ export interface Prefs {
   moments?: boolean;
   /** No confetti or buzz from 10 pm to 7 am, or while the app is in the background. */
   quietPublic?: boolean;
-  /** A larger floor for small text and bigger set inputs. Off by default: the owner reads with the Android magnifier, where bigger type means more panning. */
-  largeText?: boolean;
-  /** Low vision: quiet and dim text close to full brightness, firmer borders. */
-  highContrast?: boolean;
-  /** Every set entered with the big dial and chips, never the small fields. */
-  bigSetControls?: boolean;
 }
 
 const PREF_DEFAULTS: Required<Prefs> = {
@@ -168,7 +162,7 @@ const PREF_DEFAULTS: Required<Prefs> = {
   buzz: true,
   confirmSteps: true,
   shake: true,
-  shuffleVoices: false,
+  gremlin: true,
   seasonal: true,
   tempoCoach: true,
   blurPhotos: true,
@@ -180,9 +174,6 @@ const PREF_DEFAULTS: Required<Prefs> = {
   mirrorCheckIn: false,
   moments: true,
   quietPublic: true,
-  largeText: false,
-  highContrast: false,
-  bigSetControls: false,
 };
 
 export function prefOn(prefs: Prefs, key: keyof Prefs): boolean {
@@ -234,6 +225,16 @@ export interface Settings {
   prefs: Prefs;
   backup: { lastQuick?: number; lastFull?: number; lastFullBytes?: number; nudgeDays: number };
   plan?: PlanDef;
+  /** Up to three question ids kept on the You page. */
+  youQuestions?: string[];
+  /** Questions kept on Insights. They answer afresh each time. */
+  keptAsks?: { id: string; q: string; at: number }[];
+  /** Check-up findings you said are right. */
+  checkupOk?: string[];
+  /** Up to six trophy ids chosen for the case; with none, the case chooses. */
+  trophyPicks?: string[];
+  /** Titles already offered, so a new one offers "Wear it" once. */
+  titlesSeen?: string[];
   /** Choices made while following the plan: harder variants and band levels. */
   planState: { variants: Record<string, number>; band: Record<string, number> };
   /** The session picked to start the loop at import; holds until a rotation session is done after `at`. */
@@ -328,6 +329,8 @@ export interface Day {
   nightOut?: boolean;
   /** The day after a night out: a gentler step goal, and no shield spent if it's missed. */
   eased?: boolean;
+  /** Answered "No drinks" for this day. Blank stays not logged. */
+  noDrinks?: boolean;
   /** Custom track values live in trackValues; notes for the day live here. */
   note?: string;
   /** v2: the place the day starts at (replaces home). */

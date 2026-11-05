@@ -1,5 +1,8 @@
+import type { Correction } from '../domain/corrections';
+import type { Moment } from '../domain/earned';
 import type { Sighting } from '../domain/creatures';
 import Dexie, { type EntityTable } from 'dexie';
+import type { Snapshot } from './snapshots';
 import type {
   CheckIn,
   Clip,
@@ -58,6 +61,9 @@ export class HealthDB extends Dexie {
   songs!: EntityTable<SongRecord, 'id'>;
   useful!: EntityTable<Seen, 'id'>;
   sightings!: EntityTable<Sighting, 'id'>;
+  moments!: EntityTable<Moment, 'id'>;
+  corrections!: EntityTable<Correction, 'id'>;
+  snapshots!: EntityTable<Snapshot, 'id'>;
 
   constructor(name = 'health') {
     super(name);
@@ -99,6 +105,15 @@ export class HealthDB extends Dexie {
     this.version(5).stores({
       sightings: 'id, date, creatureId',
     });
+    this.version(6).stores({
+      moments: 'id, at, date, kind',
+    });
+    this.version(7).stores({
+      corrections: 'id, date, at',
+    });
+    this.version(8).stores({
+      snapshots: 'id, at, kind',
+    });
   }
 }
 
@@ -130,6 +145,8 @@ export const TABLES = [
   'songs',
   'useful',
   'sightings',
+  'moments',
+  'corrections',
 ] as const;
 export type TableName = (typeof TABLES)[number];
 

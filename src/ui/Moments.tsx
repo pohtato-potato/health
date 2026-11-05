@@ -2,8 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { createPortal } from 'react-dom';
 import { buzz } from '../audio';
 import { fmtInt } from '../domain/format';
-import { prefOn, type VoiceId } from '../domain/types';
-import { voiceFor, voiceLine, type Moment } from '../domain/voice';
+import { prefOn, type Settings } from '../domain/types';
+import { spokenLine, type Moment } from '../domain/voice';
 import { db } from '../db/db';
 import { useSettings, useToday } from '../db/hooks';
 import { go } from '../router';
@@ -118,7 +118,7 @@ export function MomentsProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={{ show, busy: !!current }}>
       {children}
-      {current && settings && createPortal(<MomentView key={current.key} m={current} onClose={close} voice={settings.voice} shuffle={prefOn(settings.prefs, 'shuffleVoices')} special={special} quiet={quiet} />, document.body)}
+      {current && settings && createPortal(<MomentView key={current.key} m={current} onClose={close} settings={settings} special={special} quiet={quiet} />, document.body)}
     </Ctx.Provider>
   );
 }
@@ -126,10 +126,9 @@ export function MomentsProvider({ children }: { children: ReactNode }) {
 const ALL = ['var(--apricot)', 'var(--lavender)', 'var(--sage)', 'var(--gold)', 'var(--pearl)'];
 const GOLD = ['var(--gold)', '#f0d79e', '#c9a85a', 'var(--gold)'];
 
-function MomentView({ m, onClose, voice, shuffle, special, quiet }: { m: MomentData; onClose: () => void; voice: VoiceId; shuffle: boolean; special?: string[]; quiet?: boolean }) {
+function MomentView({ m, onClose, settings, special, quiet }: { m: MomentData; onClose: () => void; settings: Settings; special?: string[]; quiet?: boolean }) {
   const today = useToday();
-  const v = voiceFor(voice, shuffle, today);
-  const line = (moment: Moment, vars = {}) => voiceLine(v, moment, `${today}${m.key}`, vars);
+  const line = (moment: Moment, vars = {}) => spokenLine(settings, today, moment, `${today}${m.key}`, vars);
 
   const closeBtn = (
     <button type="button" className="icon-btn" aria-label="Close" onClick={onClose} style={{ position: 'absolute', top: 'calc(14px + var(--safe-top))', right: 14, zIndex: 2 }}>

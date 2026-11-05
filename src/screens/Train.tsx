@@ -18,6 +18,7 @@ import { creatureById } from '../domain/creatureRoster';
 import { recordFrames } from '../domain/creatures';
 import { stageNow } from '../ui/creatures/Payoffs';
 import { go, openSheet, useRoute } from '../router';
+import { Icon } from '../ui/Icon';
 import { dayRings, doneSessions, nextUp, triggersMet, weeksFor } from '../state/derived';
 import { TrainNextUp } from './train/TrainNextUp';
 import { sessionStats } from './SessionDone';
@@ -109,6 +110,7 @@ export function Train() {
             {Math.min(weeks.thisWeek, weeks.perWeek)} of {weeks.perWeek} this week
           </span>
         </div>
+        <button type="button" className="icon-btn" aria-label="Session settings" onClick={() => openSheet('session-settings')}><Icon name="more" size={22} /></button>
       </div>
 
       {triggers.map((t) => (

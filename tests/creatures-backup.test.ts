@@ -54,3 +54,43 @@ describe('storing who came', () => {
     expect((await db.days.get('2026-11-05'))?.revealedAt).toBe(1000);
   });
 });
+
+describe('moments in the data', () => {
+  beforeEach(async () => {
+    await Promise.all(db.tables.map((t) => t.clear()));
+  });
+  it('are backed up, and a backup from before them restores with none', async () => {
+    expect(TABLES).toContain('moments');
+    await db.moments.put({ id: 'm', at: 1, kind: 'title', date: '2026-11-05', payload: { text: 'x' } });
+    const data = await exportData();
+    const file = JSON.stringify(data);
+    await db.moments.clear();
+    await restoreData(parseBackup(file));
+    expect(await db.moments.count()).toBe(1);
+    delete data.tables.moments;
+    await restoreData(parseBackup(JSON.stringify(data)));
+    expect(await db.moments.count()).toBe(0);
+  });
+});
+
+describe('corrections in a backup', () => {
+  beforeEach(async () => {
+    await Promise.all(db.tables.map((x) => x.clear()));
+  });
+  const fix = { id: '2026-10-05:1', at: 1, date: '2026-10-05', what: 'Steps', was: '100', now: '9000', note: 'Phone died' };
+  it('survive a round trip', async () => {
+    await db.corrections.put(fix);
+    const file = JSON.stringify(await exportData());
+    await db.corrections.clear();
+    await restoreData(parseBackup(file));
+    expect(await db.corrections.get(fix.id)).toEqual(fix);
+  });
+  it('an older backup without them restores to none', async () => {
+    await db.days.put({ date: '2026-11-01', steps: 100 });
+    const old = await exportData();
+    delete old.tables.corrections;
+    await restoreData(parseBackup(JSON.stringify(old)));
+    expect(await db.days.get('2026-11-01')).toMatchObject({ steps: 100 });
+    expect(await db.corrections.count()).toBe(0);
+  });
+});

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { headlineFor, strengthByExercise } from '../../domain/trackRules';
+import { ConeCard } from './views';
 import { benchmarkProgress } from '../../domain/benchmark';
 import { addDays } from '../../domain/dates';
 import { fmt1, fmtDayMonth } from '../../domain/format';
@@ -6,12 +8,11 @@ import { autoMarkers } from '../../domain/markers';
 import { weightTrend } from '../../domain/streaks';
 import { recompVerdict } from '../../domain/trackStats';
 import { go, openSheet } from '../../router';
-import { strengthIndex } from '../../domain/strength';
 import { BenchmarkCard } from '../BenchmarkCard';
 import { WeightInsights } from '../MaintenanceCards';
 import { nextCheckInDate } from '../Photos';
 import { WaistExtras } from '../TrackExtras';
-import { dayLabel, spanDays, type Span, type TrackData } from './data';
+import { dayLabel, headInput, spanDays, type Span, type TrackData } from './data';
 import { HeroChart, TrackShell } from './Template';
 
 const VERDICT: Record<NonNullable<ReturnType<typeof recompVerdict>>, string> = {
@@ -40,21 +41,19 @@ export function ShapeTrack({ data }: { data: TrackData }) {
   const wThen = at<(typeof trend)[number]>(trend, monthAgo);
   const waistNow = waist[waist.length - 1];
   const waistThen = at<(typeof waist)[number]>(waist, monthAgo);
-  const strengthNow = strengthIndex(data.sets, today);
-  const strengthThen = strengthIndex(data.sets.filter((s) => s.date <= monthAgo), monthAgo);
+  const lifts = strengthByExercise(data.sets, today).flatMap((r) => (r.pct === undefined ? [] : [r.pct]));
   const verdict = recompVerdict({
     weightKg: wNow && wThen && wThen !== wNow ? wNow.trend - wThen.trend : undefined,
     waistIn: waistNow && waistThen && waistThen !== waistNow ? waistNow.waistStanding! - waistThen.waistStanding! : undefined,
-    strengthPct: strengthNow - strengthThen,
+    strengthPct: lifts.length ? lifts.reduce((a, b) => a + b, 0) / lifts.length : undefined,
   });
-  const sessionDays = new Set(data.sessions.filter((x) => x.status === 'done').map((x) => x.date));
   const due = nextCheckInDate(data.checkins);
   const last = data.checkins.map((c) => c.date).sort().pop();
 
   return (
     <TrackShell
-      title="Shape"
-      color="var(--pearl)"
+      track="shape"
+      head={headlineFor('shape', headInput(data))}
       value={b ? b.current.toFixed(2) : wNow ? `${fmt1(wNow.trend)} kg` : '—'}
       sub={b ? `waist ÷ height · goal ${b.goal.toFixed(2)}` : wNow ? 'weight trend' : 'Log a weigh-in or a waist measure to begin'}
       span={span}
@@ -65,20 +64,21 @@ export function ShapeTrack({ data }: { data: TrackData }) {
           mode="dots"
           color="var(--pearl)"
           secondColor="var(--apricot)"
-          thirdColor="var(--protein)"
           fmt={(n) => fmt1(n)}
-          points={range.map((d) => ({ label: label(d), value: byDate.get(d)?.kg ?? null, trend: byDate.get(d)?.trend ?? null, second: waistOn.get(d) ?? null, third: sessionDays.has(d) ? strengthIndex(data.sets.filter((x) => x.date <= d), d) : null, marker: markers.get(d) }))}
+          points={range.map((d) => ({ label: label(d), value: byDate.get(d)?.kg ?? null, trend: byDate.get(d)?.trend ?? null, second: waistOn.get(d) ?? null, marker: markers.get(d) }))}
         />
       }
       insights={[
         verdict && VERDICT[verdict],
-        wNow && wThen && wThen !== wNow && `Weight ${fmt1(wNow.trend)} kg, ${Math.abs(wNow.trend - wThen.trend) < 0.3 ? 'steady' : `${wNow.trend < wThen.trend ? '−' : '+'}${fmt1(Math.abs(wNow.trend - wThen.trend))} kg`} in four weeks; waist${waistNow && waistThen && waistThen !== waistNow ? ` ${waistNow.waistStanding! <= waistThen.waistStanding! ? '−' : '+'}${fmt1(Math.abs(waistNow.waistStanding! - waistThen.waistStanding!))} in` : ' not re-measured'}; strength ${strengthNow - strengthThen >= 0 ? '+' : '−'}${Math.abs(strengthNow - strengthThen)}%.`,
+        wNow && wThen && wThen !== wNow && `Weight ${fmt1(wNow.trend)} kg, ${Math.abs(wNow.trend - wThen.trend) < 0.3 ? 'steady' : `${wNow.trend < wThen.trend ? '−' : '+'}${fmt1(Math.abs(wNow.trend - wThen.trend))} kg`} in four weeks; waist${waistNow && waistThen && waistThen !== waistNow ? ` ${waistNow.waistStanding! <= waistThen.waistStanding! ? '−' : '+'}${fmt1(Math.abs(waistNow.waistStanding! - waistThen.waistStanding!))} in` : ' not re-measured'}.`,
       ]}
       history={{
         title: 'Measurements',
         rows: [...data.measurements].reverse().slice(0, 20).map((m) => [fmtDayMonth(m.date), [m.waistStanding !== undefined && `${m.waistStanding} in waist`, m.shoulders !== undefined && `shoulders ${m.shoulders} in`].filter(Boolean).join(' · ') || '—']),
       }}
-    >
+      views={[
+        { label: 'Forecast', hero: true, el: (
+          <>
       <div className="place-key t12 q">
         <span>
           <i className="key-dot" style={{ borderColor: 'var(--pearl)' }} /> weight
@@ -87,14 +87,28 @@ export function ShapeTrack({ data }: { data: TrackData }) {
           <i className="key-dot solid" style={{ background: 'var(--apricot)' }} /> waist
         </span>
         <span>
-          <i className="key-dot solid" style={{ background: 'var(--protein)' }} /> strength
-        </span>
-        <span>
           <i className="key-dot solid" style={{ background: 'var(--gold)' }} /> marker
         </span>
       </div>
+            <ConeCard trend={trend} today={today} />
+          </>
+        ) },
+        { label: 'Reasons', el: (
+          <>
+      <WeightInsights settings={settings} days={[...data.days.values()]} entries={data.entries} measurements={data.measurements} today={today} />
+          </>
+        ) },
+        { label: 'Tape', el: (
+          <>
       {settings.heightCm ? <BenchmarkCard measurements={data.measurements} heightCm={settings.heightCm} today={today} /> : null}
       <WaistExtras measurements={data.measurements} settings={settings} checkins={data.checkins} />
+      <button type="button" className="btn block" onClick={() => openSheet('waist')}>
+        Measure now
+      </button>
+          </>
+        ) },
+        { label: 'Photos', el: (
+          <>
       <button type="button" className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }} onClick={() => go('/photos')}>
         <span className="col gap2 grow" style={{ textAlign: 'left' }}>
           <span className="t16">Compare photos</span>
@@ -105,10 +119,9 @@ export function ShapeTrack({ data }: { data: TrackData }) {
         </span>
         <span className="btn sm">Open</span>
       </button>
-      <WeightInsights settings={settings} days={[...data.days.values()]} entries={data.entries} measurements={data.measurements} today={today} />
-      <button type="button" className="btn block" onClick={() => openSheet('waist')}>
-        Measure now
-      </button>
-    </TrackShell>
+          </>
+        ) },
+      ]}
+    />
   );
 }

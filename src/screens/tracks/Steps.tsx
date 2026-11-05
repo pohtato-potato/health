@@ -1,11 +1,16 @@
 import { useState } from 'react';
+import { headlineFor } from '../../domain/trackRules';
+import { addDays } from '../../domain/dates';
+import { sortedDays } from '../../domain/trackRules';
+import { WalkChart } from '../../walk/ui/WalkChart';
+import { HabitView, SortedDays } from './views';
 import { fmtDayShort, fmtInt } from '../../domain/format';
 import { bestWeekday, eveningTopUps, placeSplit, todayAndChange, usualRange } from '../../domain/trackStats';
 import { openSheet } from '../../router';
 import { stepStreakFor, targetsFor } from '../../state/derived';
 import { loadedSteps } from '../../walk/lines';
 import { StepsExtras } from '../TrackExtras';
-import { dayLabel, kindOn, placeMarkOn, spanDays, type Span, type TrackData } from './data';
+import { dayLabel, headInput, kindOn, placeMarkOn, spanDays, type Span, type TrackData } from './data';
 import { changeText, HeroChart, TrackShell } from './Template';
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -32,8 +37,8 @@ export function StepsTrack({ data }: { data: TrackData }) {
 
   return (
     <TrackShell
-      title="Steps"
-      color="var(--sage)"
+      track="steps"
+      head={headlineFor('steps', headInput(data))}
       value={avg !== undefined ? fmtInt(avg) : '—'}
       sub={`daily average · ${logged.length} of ${range.length} days`}
       change={changeText(ch.delta, fmtInt, true)}
@@ -55,7 +60,12 @@ export function StepsTrack({ data }: { data: TrackData }) {
         best && logged.length >= 7 && `Best weekday: ${WEEKDAYS[best.weekday]}, about ${fmtInt(best.avg)}.`,
       ]}
       history={{ title: 'Day by day', rows: [...logged].reverse().slice(0, 30).map((d) => [fmtDayShort(d), `${fmtInt(steps.get(d)!)}${loaded.get(d) ? ` · ${fmtInt(loaded.get(d)!)} loaded` : ''}`]) }}
-    >
+      views={[
+        { label: 'Road', el: <WalkChart from={addDays(today, -39)} to={today} days={all} usual={t.steps} strideM={settings.strideM} /> },
+        { label: 'Sorted days', el: <SortedDays values={sortedDays(all, today)} goal={t.steps} /> },
+        { label: 'Habit', el: <HabitView days={all} today={today} goal={t.steps} /> },
+        { label: 'Day by day', hero: true, el: (
+          <>
       {[...loaded.keys()].some((d) => d >= range[0]) && <div className="t13 q lh">Gold on a bar: steps walked carrying weight, which count extra on the Walk.</div>}
       <div className="card">
         <div className="row t15">
@@ -74,6 +84,9 @@ export function StepsTrack({ data }: { data: TrackData }) {
       <button type="button" className="btn block" onClick={() => openSheet('steps')}>
         Log steps
       </button>
-    </TrackShell>
+          </>
+        ) },
+      ]}
+    />
   );
 }

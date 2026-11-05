@@ -1,4 +1,7 @@
-import type { ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
+import type { Headline, TrackKey } from '../../domain/trackRules';
+import { Ambient } from '../../ui/you/Ambient';
+import { TRACK_LOOK } from './look';
 import { back } from '../../router';
 import { Seg } from '../../ui/controls';
 import { Icon } from '../../ui/Icon';
@@ -66,8 +69,8 @@ export function HeroChart({
   const H = height;
   const top = 14;
   const glyphs = points.length <= 31 && points.some((p) => p.place);
-  const bottom = glyphs ? 36 : 22;
-  const right = 34;
+  const bottom = glyphs ? 40 : 26;
+  const right = 58;
   const vals = points.flatMap((p) => [p.value, p.trend, p.extra !== undefined && p.value !== null ? p.value : null]).filter((v): v is number => v !== null && v !== undefined);
   if (!vals.length) return <div className="t14 q" style={{ padding: '28px 0' }}>Nothing logged in this range yet.</div>;
   const lo = mode === 'bars' ? 0 : Math.min(...vals, band?.[0] ?? Infinity);
@@ -86,7 +89,7 @@ export function HeroChart({
   const secPad = mode === 'dots' ? (secHi - secLo) * 0.2 || 1 : secHi * 0.1;
   const ys = (v: number) => top + (1 - (v - (secLo - (mode === 'dots' ? secPad : 0))) / (secHi + secPad - (secLo - (mode === 'dots' ? secPad : 0)) || 1)) * (H - top - bottom);
   const trend = points.map((p, i) => ({ i, v: p.trend })).filter((p): p is { i: number; v: number } => p.v !== null && p.v !== undefined);
-  const every = Math.ceil(points.length / 7);
+  const every = Math.ceil(points.length / 5);
   const base = H - bottom;
   const places = [...new Set(points.map((p) => p.place).filter((p): p is PlaceMark => !!p))];
 
@@ -102,10 +105,10 @@ export function HeroChart({
         {band && (
           <>
             <rect x={0} y={y(band[1])} width={plotW} height={Math.max(1, y(band[0]) - y(band[1]))} fill={color} fillOpacity="0.09" />
-            <text x={W} y={y(band[1]) + 3.5} textAnchor="end" fill="var(--dim)" fontSize="10" fontFamily="var(--sans)">
+            <text x={W} y={y(band[1]) + 3.5} textAnchor="end" fill="var(--dim)" fontSize="17" fontFamily="var(--sans)">
               {fmt(band[1])}
             </text>
-            <text x={W} y={y(band[0]) + 3.5} textAnchor="end" fill="var(--dim)" fontSize="10" fontFamily="var(--sans)">
+            <text x={W} y={y(band[0]) + 3.5} textAnchor="end" fill="var(--dim)" fontSize="17" fontFamily="var(--sans)">
               {fmt(band[0])}
             </text>
           </>
@@ -114,7 +117,7 @@ export function HeroChart({
           <>
             <line x1="0" x2={plotW} y1={y(target)} y2={y(target)} stroke={color} strokeOpacity="0.55" strokeDasharray="3 4" />
             {!band && (
-              <text x={W} y={y(target) + 3.5} textAnchor="end" fill="var(--dim)" fontSize="10" fontFamily="var(--sans)">
+              <text x={W} y={y(target) + 3.5} textAnchor="end" fill="var(--dim)" fontSize="17" fontFamily="var(--sans)">
                 {fmt(target)}
               </text>
             )}
@@ -175,7 +178,7 @@ export function HeroChart({
           ))}
         {points.map((p, i) =>
           i % every === 0 ? (
-            <text key={`l${i}`} x={cx(i)} y={H - 4} textAnchor="middle" fill="var(--dim)" fontSize="10" fontFamily="var(--sans)">
+            <text key={`l${i}`} x={i === 0 ? 0 : cx(i)} y={H - 4} textAnchor={i === 0 ? 'start' : 'middle'} fill="var(--dim)" fontSize="17" fontFamily="var(--sans)">
               {p.label}
             </text>
           ) : null,
@@ -213,28 +216,29 @@ export function HeroChart({
   );
 }
 
+export interface TrackView { label: string; el: ReactNode; /** Shows the figure, the range and the main chart. */ hero?: boolean }
+
+/** A track's own ground, behind everything and outside any animated block. */
+export function TrackGround({ track }: { track: TrackKey }) {
+  return <div className="yu-tbg" style={{ '--g': TRACK_LOOK[track].ground } as CSSProperties}><Ambient t={track} /></div>;
+}
+
+export function Changed({ head }: { head: Headline }) {
+  const rows: [string, string | undefined][] = [['Changed', head.changed], ['Why', head.why], ['Next', head.next]];
+  const shown = rows.filter((r): r is [string, string] => !!r[1]);
+  if (!shown.length) return null;
+  return <div className="yu-cwn">{shown.map(([a, b]) => <div key={a}><span>{a}</span>{b}</div>)}</div>;
+}
+
 /**
- * The shared Tracks page: today's value and the change against last week, a range switch,
- * the hero chart, two or three plain insights, the page's extras, then its history.
+ * Every Tracks page's shape: the headline sentence; changed, why, next; the page's own views;
+ * insights; history. The ground fills the screen behind it all.
  */
-export function TrackShell({
-  title,
-  color,
-  value,
-  sub,
-  change,
-  span,
-  spans = ['7', '30', '90'],
-  unit = 'd',
-  onSpan,
-  hero,
-  insights,
-  children,
-  history,
-}: {
-  title: string;
-  color: string;
-  value: ReactNode;
+export function TrackShell({ track, head, title, value, sub, change, span, spans = ['7', '30', '90'], unit = 'd', onSpan, hero, views, insights, children, history }: {
+  track: TrackKey;
+  head: Headline;
+  title?: string;
+  value?: ReactNode;
   sub?: ReactNode;
   change?: { text: string; good?: boolean };
   span?: string;
@@ -242,71 +246,57 @@ export function TrackShell({
   unit?: string;
   onSpan?: (s: string) => void;
   hero?: ReactNode;
+  views?: TrackView[];
   insights?: (string | undefined | false)[];
   children?: ReactNode;
   history?: { title: string; rows: [string, string][]; onRow?: (i: number) => void };
 }) {
+  const [on, setOn] = useState(0);
+  const look = TRACK_LOOK[track];
   const lines = (insights ?? []).filter((x): x is string => !!x).slice(0, 3);
+  const view = views?.[Math.min(on, views.length - 1)];
+  const showHero = !views || view?.hero;
   return (
-    <div className="page bare">
-      <button type="button" className="backlink" onClick={() => back('/tracks')}>
-        <Icon name="left" size={20} stroke={1.8} />
-        Tracks
-      </button>
-      <div className="row top">
-        <h1 className="h1" style={{ color }}>
-          {title}
-        </h1>
-        {span && onSpan && (
-          <div style={{ width: 150 }}>
-            <Seg options={spans.map((s) => ({ id: s, label: s === 'all' ? 'All' : `${s} ${unit}` }))} value={span} onChange={onSpan} />
+    <>
+      <TrackGround track={track} />
+      <div className="page bare yu-page yu-track" style={{ '--c': look.accent, '--g': look.ground } as CSSProperties}>
+        <button type="button" className="backlink yu-cl" onClick={() => back('/tracks')}>
+          <Icon name="left" size={20} stroke={1.8} />
+          Tracks
+        </button>
+        <div className="yu-track-name">{title ?? look.name}</div>
+        <h1>{head.say}</h1>
+        <Changed head={head} />
+        {views && views.length > 1 && (
+          <div className="yu-views" role="group" aria-label="Views">
+            {views.map((v, i) => <button key={v.label} type="button" aria-pressed={v === view} className={v === view ? 'on' : undefined} onClick={() => setOn(i)}>{v.label}</button>)}
+          </div>
+        )}
+        {showHero && (value !== undefined || (span && onSpan)) && (
+          <div className="yu-card yu-stat">
+            {value !== undefined && <div className="yu-stat-v">{value}</div>}
+            {(sub || change) && <span className="yu-q">{sub}{sub && change ? ' · ' : ''}{change?.text}</span>}
+            {span && onSpan && <Seg options={spans.map((s) => ({ id: s, label: s === 'all' ? 'All' : `${s} ${unit}` }))} value={span} onChange={onSpan} />}
+          </div>
+        )}
+        {showHero && hero && <div className="card">{hero}</div>}
+        {view?.el}
+        {children}
+        {lines.length > 0 && <div className="yu-sec"><h2>Worth knowing</h2><div className="yu-card">{lines.map((l) => <span key={l}>{l}</span>)}</div></div>}
+        {history && history.rows.length > 0 && (
+          <div className="card" style={{ gap: 0 }}>
+            <div className="lbl" style={{ paddingBottom: 6 }}>{history.title}</div>
+            {history.rows.map(([a, b], i) =>
+              history.onRow ? (
+                <button key={i} type="button" className="sess" style={{ minHeight: 44 }} onClick={() => history.onRow!(i)}><span className="t14">{a}</span><span className="t14 q tn">{b}</span></button>
+              ) : (
+                <div key={i} className="sess" style={{ minHeight: 44 }}><span className="t14">{a}</span><span className="t14 q tn">{b}</span></div>
+              ),
+            )}
           </div>
         )}
       </div>
-      <div className="col gap6">
-        <div className="num" style={{ fontSize: 44 }}>
-          {value}
-        </div>
-        {(sub || change) && (
-          <div className="t14 q lh">
-            {sub}
-            {sub && change ? ' · ' : ''}
-            {change && <span className={change.good === undefined ? '' : change.good ? 'sage' : 'apri'}>{change.text}</span>}
-          </div>
-        )}
-      </div>
-      {hero && <div className="card">{hero}</div>}
-      {lines.length > 0 && (
-        <div className="insights">
-          {lines.map((l) => (
-            <div key={l} className="t14 lh">
-              {l}
-            </div>
-          ))}
-        </div>
-      )}
-      {children}
-      {history && history.rows.length > 0 && (
-        <div className="card" style={{ gap: 0 }}>
-          <div className="lbl" style={{ paddingBottom: 6 }}>
-            {history.title}
-          </div>
-          {history.rows.map(([a, b], i) =>
-            history.onRow ? (
-              <button key={i} type="button" className="sess" style={{ minHeight: 44 }} onClick={() => history.onRow!(i)}>
-                <span className="t14">{a}</span>
-                <span className="t14 q tn">{b}</span>
-              </button>
-            ) : (
-              <div key={i} className="sess" style={{ minHeight: 44 }}>
-                <span className="t14">{a}</span>
-                <span className="t14 q tn">{b}</span>
-              </div>
-            ),
-          )}
-        </div>
-      )}
-    </div>
+    </>
   );
 }
 

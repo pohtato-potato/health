@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
+import { headlineFor, newMedicine } from '../domain/trackRules';
+import { TRACK_LOOK } from './tracks/look';
+import { Changed, TrackGround } from './tracks/Template';
 import { addDays, dayKey } from '../domain/dates';
 import { fmtDayShort, fmtTime } from '../domain/format';
 import { courseOn, dayDoses, dayTone, DEFAULT_MED_REWARDS, keptCount, refillBy } from '../domain/medicines';
@@ -23,7 +26,11 @@ export function MedicinesPage() {
   const settings = useSettings();
   const days = useAllDays();
   const today = useToday();
+  const [adding, setAdding] = useState(false);
+  const [draftName, setDraftName] = useState('');
+  const [draftSlot, setDraftSlot] = useState('8 am');
   if (!settings || !days) return <div className="page bare" />;
+  const head = headlineFor('meds', { today, settings, days, entries: [], sessions: [], sets: [], measurements: [] });
   const meds = settings.checklist.filter((i) => i.active && i.med);
   const rewards = settings.medRewards ?? DEFAULT_MED_REWARDS;
   const week = Array.from({ length: 7 }, (_, i) => addDays(today, i - 7));
@@ -32,24 +39,37 @@ export function MedicinesPage() {
   const appts = (settings.appointments ?? []).filter((a) => a.date >= today).sort((a, b) => a.date.localeCompare(b.date));
 
   return (
-    <div className="page bare">
-      <button type="button" className="backlink" onClick={() => back('/you')}>
+    <>
+    <TrackGround track="meds" />
+    <div className="page bare yu-page yu-track" style={{ '--c': TRACK_LOOK.meds.accent, '--g': TRACK_LOOK.meds.ground } as CSSProperties}>
+      <button type="button" className="backlink yu-cl" onClick={() => back('/tracks')}>
         <Icon name="left" size={20} stroke={1.8} />
-        You
+        Tracks
       </button>
       <div className="row base">
-        <h1 className="h1">Medicines</h1>
-        <button
-          type="button"
-          className="chip sm"
-          onClick={() => void patchSettings((st) => ({ checklist: [...st.checklist, { id: `m${Date.now()}`, name: 'New medicine', slots: ['8 am'], active: true, med: { kind: 'medicine' } }] }))}
-        >
-          + Add
-        </button>
+        <div className="yu-track-name">Medicines</div>
+        <button type="button" className="chip sm" onClick={() => setAdding(true)}>+ Add</button>
       </div>
-      <div className="t14 q">{sum.planned ? `The last 7 days: ${sum.onTime} of ${sum.planned} on time` : 'Nothing logged in the last 7 days yet'}</div>
 
-      {meds.length === 0 && (
+      <h1>{head.say}</h1>
+      <Changed head={head} />
+      <div className="t14 q">{sum.planned ? `The last 7 days: ${sum.onTime} of ${sum.planned} on time` : 'Nothing logged in the last 7 days yet'}</div>
+      {adding && (
+        <div className="yu-card yu-form">
+          <label>Name<input autoFocus value={draftName} onChange={(e) => setDraftName(e.target.value)} /></label>
+          <label>When<input value={draftSlot} onChange={(e) => setDraftSlot(e.target.value)} /></label>
+          <div className="row" style={{ gap: 8 }}>
+            <button type="button" className="btn ghost sm grow" onClick={() => { setAdding(false); setDraftName(''); }}>Cancel</button>
+            <button type="button" className="btn sm grow" disabled={!draftName.trim()} onClick={async () => {
+              const item = newMedicine(draftName, draftSlot, Date.now());
+              if (item) await patchSettings((st) => ({ checklist: [...st.checklist, item] }));
+              setAdding(false);
+              setDraftName('');
+            }}>Save</button>
+          </div>
+        </div>
+      )}
+      {meds.length === 0 && !adding && (
         <div className="card">
           <div className="t15 lh">Add a medicine or supplement to the checklist, then mark it as one here to track its course, stock and on-time doses.</div>
           <button type="button" className="btn sm" onClick={() => openSheet('checklist')}>
@@ -88,6 +108,7 @@ export function MedicinesPage() {
       </div>
       <div className="t12 d lh">Reminders stay in the app: the next dose shows on Today two hours ahead. No phone notifications.</div>
     </div>
+    </>
   );
 }
 

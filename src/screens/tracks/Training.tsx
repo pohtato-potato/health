@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useState } from 'react';
+import { headlineFor, strengthByExercise } from '../../domain/trackRules';
+import { CallsView, StrengthView } from './views';
 import { db } from '../../db/db';
 import { addDays } from '../../domain/dates';
 import { fmt1, fmtDayMonth, fmtDayShort } from '../../domain/format';
@@ -10,26 +11,22 @@ import { formTrend, liftLine } from '../../domain/trackStats';
 import { go } from '../../router';
 import { songAt } from '../../sources/lastfm';
 import { doneSessions } from '../../state/derived';
-import { strengthIndex } from '../../domain/strength';
 import { StrengthCard } from '../TrackExtras';
-import { spanDays, type TrackData } from './data';
-import { HeroChart, TrackShell } from './Template';
+import { headInput, spanDays, type TrackData } from './data';
+import { TrackShell } from './Template';
 
 const formInk = (f: number) => (f >= 4 ? 'var(--sage)' : f >= 3 ? 'var(--gold)' : 'var(--rose)');
 
 /** Training: the strength index with records marked, each lift's ladder and form, the clean-rep trend and fading faults, records with songs, then sessions. */
 export function TrainingTrack({ data }: { data: TrackData }) {
-  const [span, setSpan] = useState('30');
+  const span = '30';
   const { settings, today } = data;
   const songs = useLiveQuery(() => db.songs.toArray(), []) ?? [];
   const range = spanDays(today, span);
   const sets = realSets(data.sets);
   const done = doneSessions(data.sessions);
-  const inRange = done.filter((s) => s.date >= range[0]);
   const recordsOn = new Map<string, string>();
   for (const s of sets) if (s.mark === '!!' && s.date >= range[0]) recordsOn.set(s.date, `Record: ${s.exercise}`);
-  const dates = [...new Set(inRange.map((s) => s.date))];
-  const idx = strengthIndex(data.sets, today);
   const records = sets.filter((s) => s.mark === '!!').sort((a, b) => b.at - a.at);
   const form = formTrend(sets, today);
   const recentFaults = new Map<string, number>();
@@ -56,24 +53,8 @@ export function TrainingTrack({ data }: { data: TrackData }) {
 
   return (
     <TrackShell
-      title="Training"
-      color="var(--text)"
-      value={`${idx >= 0 ? '+' : '−'}${Math.abs(idx)}%`}
-      sub={`strength index · ${inRange.length} session${inRange.length === 1 ? '' : 's'}${recordsOn.size ? ` · ${recordsOn.size} record day${recordsOn.size === 1 ? '' : 's'}` : ''}`}
-      span={span}
-      onSpan={setSpan}
-      hero={
-        <HeroChart
-          label="Strength index by session, with records marked"
-          mode="dots"
-          color="var(--lavender)"
-          fmt={(n) => `${Math.round(n)}%`}
-          points={dates.map((d) => {
-            const v = strengthIndex(data.sets.filter((s) => s.date <= d), d);
-            return { label: fmtDayMonth(d), value: v, trend: v, marker: recordsOn.get(d) };
-          })}
-        />
-      }
+      track="training"
+      head={headlineFor('training', headInput(data))}
       insights={[
         form.now !== undefined && `${Math.round(form.now * 100)}% of reps clean${form.before !== undefined && form.before !== form.now ? `, ${form.now > form.before ? 'up' : 'down'} from ${Math.round(form.before * 100)}%` : ''}.`,
         fading && `Fading fault: ${FAULTS.find((f) => f.id === fading[0].split('|')[0])?.name.toLowerCase() ?? fading[0].split('|')[0]} on ${fading[0].split('|')[1].toLowerCase()}.`,
@@ -84,7 +65,10 @@ export function TrainingTrack({ data }: { data: TrackData }) {
         rows: [...done].reverse().slice(0, 20).map((s) => [fmtDayShort(s.date), `Session ${s.session}${s.short ? ' · short' : ''}${s.quality !== undefined ? ` · quality ${s.quality}` : ''}`]),
         onRow: (i) => go('/session/view', { id: [...done].reverse()[i].id }),
       }}
-    >
+      views={[
+        { label: 'Strength', el: (
+          <>
+            <StrengthView rows={strengthByExercise(data.sets, today)} />
       {lifts.length > 0 && (
         <div className="card" style={{ gap: 0 }}>
           <div className="lbl" style={{ paddingBottom: 6 }}>
@@ -110,6 +94,12 @@ export function TrainingTrack({ data }: { data: TrackData }) {
           ))}
         </div>
       )}
+      <StrengthCard sets={data.sets} today={today} />
+          </>
+        ) },
+        { label: 'Readiness calls', el: <CallsView sessions={data.sessions} /> },
+        { label: 'Form', el: (
+          <>
       {records.length > 0 && (
         <div className="card" style={{ gap: 0 }}>
           <div className="lbl gold" style={{ paddingBottom: 6 }}>
@@ -132,7 +122,9 @@ export function TrainingTrack({ data }: { data: TrackData }) {
           })}
         </div>
       )}
-      <StrengthCard sets={data.sets} today={today} />
-    </TrackShell>
+          </>
+        ) },
+      ]}
+    />
   );
 }

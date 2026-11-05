@@ -27,7 +27,6 @@ import { useNow } from '../../db/hooks';
 import { go } from '../../router';
 import { useToast } from '../../ui/Toasts';
 import { resumeRest, type ActiveRest } from '../../domain/rest';
-import { prefOn } from '../../domain/types';
 import { askConfirm } from '../../ui/Confirm';
 import { fmtDayMonth } from '../../domain/format';
 import { db } from '../../db/db';
@@ -325,7 +324,7 @@ export function useRunner(session: TrainingSession, settings: Settings, plan: Pl
   setRestRunning(restLeft > 0);
   const nextGroup = groups[gi + 1];
   const groupDone = complete(gi);
-  const tired = session.tiredHands ?? (prefOn(settings.prefs, 'bigSetControls') || groups.slice(0, gi).some((g) => g.some((e) => e.tiredHands)));
+  const tired = session.tiredHands ?? (groups.slice(0, gi).some((g) => g.some((e) => e.tiredHands)));
   const offerFor = group
     .map((ex) => ({ ex, offer: heavierOffer(statuses.get(ex.id)!) }))
     .find(({ ex, offer }) => offer && !session.heavier?.[ex.id] && !mine.some((m) => m.exerciseId === ex.id));

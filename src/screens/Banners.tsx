@@ -125,7 +125,7 @@ export function Banners() {
   if (checkinDue)
     candidates.push({ id: 'checkin', priority: BANNER_PRIORITY.checkin, icon: <Icon name="camera" size={20} color="var(--pearl)" />, title: lastCheck ? 'Your monthly check-in is due.' : 'Time for your first check-in.', sub: lastCheck ? undefined : 'Photos and a tape measure.', actions: [{ label: 'Start', run: () => go('/checkin') }] });
   if (recapReady)
-    candidates.push({ id: 'recap', priority: BANNER_PRIORITY.recap, icon: <Icon name="calendar" size={20} color="var(--pearl)" />, title: `Your week, ${fmtDayMonth(lastWeek)}–${fmtDayMonth(addDays(lastWeek, 6))}, is ready.`, sub: 'The receipt is printed.', actions: [{ label: 'Open', run: () => go('/week') }] });
+    candidates.push({ id: 'recap', priority: BANNER_PRIORITY.recap, icon: <Icon name="calendar" size={20} color="var(--pearl)" />, title: `Your week, ${fmtDayMonth(lastWeek)}–${fmtDayMonth(addDays(lastWeek, 6))}, is ready.`, sub: 'The road, who came by, and what is next.', actions: [{ label: 'Open', run: () => go('/reports/week') }] });
   if (settings.reviewDay !== undefined && weekdayNow === settings.reviewDay)
     candidates.push({ id: 'review-day', priority: BANNER_PRIORITY.review, icon: <Icon name="save" size={20} color="var(--protein)" />, title: 'Review day.', sub: 'Export the audit pack and ask Claude what to change.', actions: [{ label: 'Open', run: () => go('/settings', { at: 'data' }) }] });
 

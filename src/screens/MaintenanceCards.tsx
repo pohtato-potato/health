@@ -66,7 +66,7 @@ export function MaintenanceCard({ m }: { m: MaintenanceModel }) {
       </div>
       {m.status === 'updating' && (
         <details>
-          <summary className="t13" style={{ minHeight: 40, display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+          <summary className="t13" style={{ minHeight: 44, display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
             How this is worked out
           </summary>
           <div className="t13 q lh">{m.method}</div>

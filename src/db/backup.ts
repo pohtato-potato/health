@@ -1,4 +1,5 @@
-import { dayKey } from '../domain/dates';
+import { dayKey, daysBetween, type DayKey } from '../domain/dates';
+import { fmtDayMonth } from '../domain/format';
 import { validatePlan } from '../domain/plan';
 import type { Settings } from '../domain/types';
 import { bump, defaultSettings, patchSettings } from './actions';
@@ -42,7 +43,7 @@ export function parseBackup(text: string): BackupFile {
 export function summarise(b: BackupFile): string {
   const n = (t: TableName) => b.tables[t]?.length ?? 0;
   const parts = [
-    `${n('days')} days`,
+    `${n('days')} day${n('days') === 1 ? '' : 's'}`,
     `${n('entries')} food entries`,
     `${n('foods')} saved foods`,
     `${n('sessions')} sessions`,
@@ -66,6 +67,48 @@ export async function restoreData(b: BackupFile) {
   await migrateToV2(db);
 }
 
+export type ReadBack = { ok: true } | { ok: false; why: string };
+
+/** Reads the finished file back and counts every table against what was meant to go in. */
+export async function confirmReadBack(file: File, expected: BackupFile): Promise<ReadBack> {
+  try {
+    const back = parseBackup(await file.text());
+    for (const t of TABLES) {
+      if ((back.tables[t]?.length ?? 0) !== (expected.tables[t]?.length ?? 0)) return { ok: false, why: `The backup came back short: ${t} didn't match, so it wasn't saved.` };
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, why: `The backup couldn't be read back, so it wasn't saved. ${(e as Error).message}` };
+  }
+}
+
+export type FileCheck = { ok: true; exportedAt: string; summary: string; newestDay?: DayKey } | { ok: false; why: string };
+
+/** Looks inside a backup file without restoring anything. */
+export function checkBackup(b: BackupFile): FileCheck {
+  if (!TABLES.some((t) => t !== 'settings' && (b.tables[t]?.length ?? 0) > 0)) return { ok: false, why: 'This file opens but has nothing in it. Restoring it would wipe your numbers.' };
+  const dates = ((b.tables.days ?? []) as { date: DayKey }[]).map((d) => d.date).sort();
+  return { ok: true, exportedAt: b.exportedAt, summary: summarise(b), newestDay: dates[dates.length - 1] };
+}
+
+export async function checkBackupFile(file: File): Promise<FileCheck> {
+  try {
+    return checkBackup(parseBackup(await file.text()));
+  } catch (e) {
+    return { ok: false, why: (e as Error).message };
+  }
+}
+
+/** Where the backups stand, in words. */
+export function backupWords(settings: Settings, today: DayKey): string {
+  const last = Math.max(settings.backup.lastQuick ?? 0, settings.backup.lastFull ?? 0);
+  if (!last) return 'No backup yet.';
+  const saved = dayKey(new Date(last));
+  const gap = daysBetween(saved, today);
+  if (gap <= 0) return 'Backed up today. Everything is safe.';
+  return `Safe up to ${fmtDayMonth(saved)}. ${gap} day${gap === 1 ? '' : 's'} since then.`;
+}
+
 export function backupFileName(d = new Date()): string {
   return `health-backup-${dayKey(d)}.json`;
 }
@@ -74,10 +117,12 @@ export function backupFileName(d = new Date()): string {
  * Hands the backup to Android's share sheet, so it can go straight to Google
  * Drive. Falls back to a download where sharing files isn't available.
  */
-export async function saveBackup(): Promise<'shared' | 'downloaded' | 'cancelled'> {
+export async function saveBackup(deps: { share?: (f: File) => Promise<'shared' | 'downloaded' | 'cancelled'>; readBack?: (f: File, data: BackupFile) => Promise<ReadBack> } = {}): Promise<'shared' | 'downloaded' | 'cancelled'> {
   const data = await exportData();
-  const name = backupFileName();
-  const result = await shareFile(new File([JSON.stringify(data)], name, { type: 'application/json' }));
+  const file = new File([JSON.stringify(data)], backupFileName(), { type: 'application/json' });
+  const check = await (deps.readBack ?? confirmReadBack)(file, data);
+  if (!check.ok) throw new Error(check.why);
+  const result = await (deps.share ?? shareFile)(file);
   if (result !== 'cancelled') {
     await patchSettings((s) => ({ backup: { ...s.backup, lastQuick: Date.now() } }));
     await bump('backup', { day: dayKey() });

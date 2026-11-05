@@ -1,3 +1,5 @@
+import { useSettings, useToday } from '../../db/hooks';
+import { spokenLine } from '../../domain/voice';
 import type { CSSProperties, ReactNode } from 'react';
 import { regionAt } from '../../domain/regions';
 import { back, useRoute } from '../../router';
@@ -28,11 +30,14 @@ function RoadPage({ km, children }: { km: number; children: ReactNode }) {
 /** A stretch's long page, at #/stretch?id=… */
 export function StretchPage() {
   const id = useRoute().params.get('id');
+  const settings = useSettings();
+  const today = useToday();
   const s = STRETCHES.find((x) => x.id === id);
   if (!s) return <div className="page walk3">That stretch isn't written yet.</div>;
   return (
     <RoadPage km={s.fromKm}>
       <StretchView stretch={s} onBack={() => back('/walk')} />
+      {settings && <div className="voice">{spokenLine(settings, today, 'stretch', s.id + today)}</div>}
     </RoadPage>
   );
 }

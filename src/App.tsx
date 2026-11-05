@@ -1,6 +1,5 @@
 import { TrainProto } from './screens/proto/TrainLiving';
 import { SessionProto } from './screens/proto/SessionLiving';
-import { prefOn } from './domain/types';
 import { Suspense, lazy, useEffect, type ComponentType, type ReactNode } from 'react';
 import { RegionRoot } from './ui/live/RegionFrame';
 import { findSession } from './domain/plan';
@@ -29,12 +28,17 @@ import { Train } from './screens/Train';
 import { Tracks, TrackPage } from './screens/Tracks';
 import { Journey } from './screens/Journey';
 import { You } from './screens/You';
+import { Insights } from './screens/Insights';
+import { Earned } from './screens/Earned';
 import { Setup } from './screens/Setup';
 import { FoodToday } from './screens/FoodToday';
 import { SessionScreen } from './screens/Session';
 import { SessionDone } from './screens/SessionDone';
 import { clock } from './screens/NextUpCard';
 import { LogSheet, MoreSheet } from './sheets/LogSheet';
+import { SessionSettingsSheet } from './sheets/SessionSettings';
+import { dailySnapshot } from './db/snapshots';
+import { Checkup, EditHistory, Snapshots } from './screens/DataPages';
 import { MorningLog } from './sheets/MorningLog';
 import { AddFood } from './sheets/AddFood';
 import { EntrySheet, FoodForm, QuickKcal } from './sheets/FoodForms';
@@ -48,15 +52,17 @@ import { PlanEditor } from './screens/PlanEditor';
 import { RecordsWall } from './screens/RecordsWall';
 import { MuscleMapPage } from './screens/MuscleMap';
 import { ShortSessionSheet } from './sheets/ShortSession';
-import { WeeklyReviewPage } from './screens/WeeklyReview';
 import { WalkTab } from './screens/WalkTab';
 import { NightSkyPage } from './screens/NightSky';
 import { MedicinesPage } from './screens/Medicines';
 import { ExerciseGuidePage } from './screens/ExerciseGuide';
 import { MonthlyFilmPage } from './screens/MonthlyFilm';
-import { ExperimentsPage } from './screens/Experiments';
+import { Moved } from './screens/reports/Moved';
 
 /** A page loaded when first opened, from its module's named export. */
+const YearPage = lazy(() => import('./screens/Year').then((m) => ({ default: m.YearPage })));
+const EXPERIMENTS_MOVED = { k: 'compare' };
+
 function page<K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K) {
   return lazy(() => load().then((m) => ({ default: m[name] })));
 }
@@ -83,9 +89,11 @@ const RevealPage = page(() => import('./screens/Reveal'), 'RevealPage');
 const SessionView = page(() => import('./screens/SessionView'), 'SessionView');
 const Replay = page(() => import('./screens/live/Replay'), 'Replay');
 const SettingsScreen = page(() => import('./screens/Settings'), 'SettingsScreen');
-const ReceiptPage = page(() => import('./screens/Week'), 'ReceiptPage');
-const WeekRecap = page(() => import('./screens/Week'), 'WeekRecap');
-const ClimatePage = page(() => import('./screens/Reports'), 'ClimatePage');
+const ReportsHome = page(() => import('./screens/reports/ReportsHome'), 'ReportsHome');
+const WeeklyStory = page(() => import('./screens/reports/WeeklyStory'), 'WeeklyStory');
+const MonthPage = page(() => import('./screens/reports/MonthPage'), 'MonthPage');
+const Archive = page(() => import('./screens/reports/Archive'), 'Archive');
+const Corrections = page(() => import('./screens/reports/Corrections'), 'Corrections');
 const DawnPage = page(() => import('./screens/Dawn'), 'DawnPage');
 const DexPage = page(() => import('./screens/Dex'), 'DexPage');
 const CreatureBoard = lazy(() => import('./screens/proto/CreatureBoard').then((m) => ({ default: m.CreatureBoard })));
@@ -93,6 +101,7 @@ const WrappedPage = page(() => import('./screens/Reports'), 'WrappedPage');
 
 const SHEETS: Record<string, () => ReactNode> = {
   log: () => <LogSheet />,
+  'session-settings': () => <SessionSettingsSheet />,
   more: () => <MoreSheet />,
   morning: () => <MorningLog />,
   addfood: () => <AddFood />,
@@ -123,7 +132,11 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/medicines': { el: () => <MedicinesPage /> },
   '/guide': { el: () => <ExerciseGuidePage /> },
   '/film': { el: () => <MonthlyFilmPage /> },
-  '/experiments': { el: () => <ExperimentsPage /> },
+  '/year': { el: () => <Suspense fallback={null}><YearPage /></Suspense>, tab: 'you' },
+  '/checkup': { el: () => <Checkup /> },
+  '/history': { el: () => <EditHistory /> },
+  '/snapshots': { el: () => <Snapshots /> },
+  '/experiments': { el: () => <Moved to="/track" params={EXPERIMENTS_MOVED} /> },
   '/track': { el: () => <TrackPage /> },
   '/food': { el: () => <FoodToday /> },
   '/close': { el: () => <CloseDay /> },
@@ -131,7 +144,9 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/records': { el: () => <RecordsWall /> },
   '/muscles': { el: () => <MuscleMapPage /> },
   '/you': { el: () => <You />, tab: 'you' },
-  '/review': { el: () => <WeeklyReviewPage /> },
+  '/insights': { el: () => <Insights />, tab: 'you' },
+  '/earned': { el: () => <Earned /> },
+  '/review': { el: () => <Moved to="/reports/week" /> },
   '/settings': { el: () => <SettingsScreen /> },
   '/session': { el: () => <SessionScreen /> },
   '/session/done': { el: () => <SessionDone /> },
@@ -141,8 +156,13 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/readiness': { el: () => <ReadinessPage /> },
   '/checkin': { el: () => <CheckInScreen /> },
   '/photos': { el: () => <PhotosPage /> },
-  '/week': { el: () => <WeekRecap /> },
-  '/receipt': { el: () => <ReceiptPage /> },
+  '/reports': { el: () => <ReportsHome />, tab: 'you' },
+  '/reports/week': { el: () => <WeeklyStory />, tab: 'you' },
+  '/reports/month': { el: () => <MonthPage />, tab: 'you' },
+  '/reports/archive': { el: () => <Archive />, tab: 'you' },
+  '/reports/corrections': { el: () => <Corrections />, tab: 'you' },
+  '/week': { el: () => <Moved to="/reports/week" /> },
+  '/receipt': { el: () => <Moved to="/reports/week" /> },
   '/map': { el: () => <MapPage /> },
   '/postcard': { el: () => <PostcardPage /> },
   '/stretch': { el: () => <StretchPage /> },
@@ -157,7 +177,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/finish': { el: () => <FinishPage /> },
   '/diary': { el: () => <DiaryPage /> },
   '/departures': { el: () => <DeparturesPage /> },
-  '/climate': { el: () => <ClimatePage /> },
+  '/climate': { el: () => <Moved to="/reports/month" /> },
   '/wrapped': { el: () => <WrappedPage /> },
   '/character': { el: () => <CharacterPage /> },
   '/physio': { el: () => <PhysioPage /> },
@@ -173,12 +193,10 @@ export function App() {
   const settings = useSettings();
   const route = useRoute();
   const today = useToday();
-  const largeText = settings ? prefOn(settings.prefs, 'largeText') : false;
-  const contrast = settings ? prefOn(settings.prefs, 'highContrast') : false;
+  const hasSettings = !!settings?.setupDone;
   useEffect(() => {
-    document.documentElement.classList.toggle('large-text', largeText);
-    document.documentElement.classList.toggle('contrast', contrast);
-  }, [largeText, contrast]);
+    if (hasSettings) void dailySnapshot(today).catch(() => undefined);
+  }, [hasSettings, today]);
   useThemeClass(settings, today);
 
   // Design prototypes use sample data only, so they open without setup (handy on a fresh phone).

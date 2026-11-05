@@ -1,3 +1,4 @@
+import { spokenLine } from '../domain/voice';
 import { db } from '../db/db';
 import { useSettings, useSightings, useToday, useAllDays } from '../db/hooks';
 import { CREATURES, creatureById, nameAt, noteAt, stageWord, tierWord } from '../domain/creatureRoster';
@@ -94,6 +95,7 @@ export function DexPage() {
   return (
     <RegionFrame>
       <h1 className="h1">{view === 'cards' ? 'Cards' : 'Your night sky'}</h1>
+      <div className="voice">{spokenLine(settings, today, 'creature', today)}</div>
       {nav}
       {!rows.length && <p className="t15">Nothing has visited yet. The first come after a morning log with sleep in it.</p>}
       <DexGrid rows={rows} cards={view === 'cards'} onOpen={(id) => go('/dex', { c: id })} />

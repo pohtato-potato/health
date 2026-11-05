@@ -26,7 +26,7 @@ export function defaultSettings(): Settings {
     id: 'app',
     setupDone: false,
     name: '',
-    voice: 'zen',
+    voice: 'gremlin',
     targets: [],
     checklist: [],
     homes: [

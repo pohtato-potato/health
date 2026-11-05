@@ -4,6 +4,7 @@ import { useAllDays, useAllEntries, useAllSets, useMeasurements, useSessions, us
 import { addDays, dayRange, type DayKey } from '../../domain/dates';
 import { fmtDayMonth, fmtDayShort } from '../../domain/format';
 import { homePlace, placeFor } from '../../domain/places';
+import type { HeadInput } from '../../domain/trackRules';
 import type { PlaceMarkKind } from '../../ui/PlaceIcon';
 import type { CheckIn, Day, FoodEntry, Measurement, SetEntry, Settings, TrainingSession } from '../../domain/types';
 
@@ -61,3 +62,8 @@ export function placeMarkOn(data: Pick<TrackData, 'settings' | 'days'>, date: Da
 }
 
 export const kindOn = (data: Pick<TrackData, 'settings' | 'days'>) => (date: DayKey) => placeFor(data.days.get(date), data.settings).kind;
+
+/** What the headline rules read. */
+export function headInput(data: TrackData): HeadInput {
+  return { today: data.today, settings: data.settings, days: [...data.days.values()], entries: data.entries, sessions: data.sessions, sets: data.sets, measurements: data.measurements };
+}

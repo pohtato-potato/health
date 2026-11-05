@@ -1,11 +1,13 @@
 import { useState } from 'react';
+import { headlineFor } from '../../domain/trackRules';
+import { ProteinClock } from './views';
 import { fmtDayShort, fmtInt } from '../../domain/format';
 import { MEAL_NAMES, MEALS } from '../../domain/types';
 import { lateShare, placeSplit, proteinByMeal, todayAndChange, usualRange } from '../../domain/trackStats';
 import { targetsFor } from '../../state/derived';
 import { MaintenanceCard, modelFor, WeekGapCard } from '../MaintenanceCards';
 import { SourcesCard } from '../TrackExtras';
-import { dayLabel, foodByDay, kindOn, placeMarkOn, spanDays, type Span, type TrackData } from './data';
+import { headInput, dayLabel, foodByDay, kindOn, placeMarkOn, spanDays, type Span, type TrackData } from './data';
 import { changeText, HeroChart, TrackShell } from './Template';
 import { weekBudget } from '../../domain/budgets';
 import { weekStart } from '../../domain/dates';
@@ -34,8 +36,8 @@ export function FoodTrack({ data }: { data: TrackData }) {
 
   return (
     <TrackShell
-      title="Food"
-      color="var(--apricot)"
+      track="food"
+      head={headlineFor('food', headInput(data))}
       value={
         avgK !== undefined ? (
           <>
@@ -71,7 +73,9 @@ export function FoodTrack({ data }: { data: TrackData }) {
         title: 'Day by day',
         rows: [...logged].reverse().slice(0, 30).map((d) => [fmtDayShort(d), `${fmtInt(food.get(d)!.kcal)} kcal · ${Math.round(food.get(d)!.protein)} g`]),
       }}
-    >
+      views={[
+        { label: 'Week', hero: true, el: (
+          <>
       {(() => {
         const b = weekBudget(t, data.days, data.entries, weekStart(today), today);
         return (
@@ -91,6 +95,11 @@ export function FoodTrack({ data }: { data: TrackData }) {
         );
       })()}
       <WeekGapCard entries={data.entries} today={today} />
+          </>
+        ) },
+        { label: 'Protein clock', el: (
+          <>
+            <ProteinClock entries={inRange} kindOf={kindOn(data)} />
       {totalP > 0 && (
         <div className="card">
           <div className="lbl lav">Protein by meal</div>
@@ -107,8 +116,15 @@ export function FoodTrack({ data }: { data: TrackData }) {
           ))}
         </div>
       )}
+          </>
+        ) },
+        { label: 'All foods', el: (
+          <>
       <SourcesCard entries={data.entries} range={range} kind="protein" />
       <MaintenanceCard m={model} />
-    </TrackShell>
+          </>
+        ) },
+      ]}
+    />
   );
 }
