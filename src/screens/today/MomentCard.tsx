@@ -20,9 +20,9 @@ export interface MomentActions {
 }
 
 /** The one lit card on Today. Its kind comes from momentFor; it keeps its place on the page whatever it shows. */
-export function MomentCard({ kind, data, actions }: { kind: MomentKind; data: MomentData; actions: MomentActions }) {
+export function MomentCard({ kind, data, actions, sheen }: { kind: MomentKind; data: MomentData; actions: MomentActions; sheen?: boolean }) {
   const card = (title: string, sub: string, acts: ReactNode, gold = false) => (
-    <section className={`td-moment${gold ? ' gold' : ''}`} data-section="moment">
+    <section className={`td-moment${gold ? ' gold' : ''}${gold && sheen ? ' sheen' : ''}`} data-section="moment">
       <h2 className="td-moment-title">{title}</h2>
       {sub && <p className="td-moment-sub">{sub}</p>}
       {acts && <div className="td-moment-acts">{acts}</div>}

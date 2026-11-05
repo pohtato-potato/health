@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef } from 'react';
-import { addDays, dayRange, daysBetween, weekStart, type DayKey } from '../domain/dates';
+import { addDays, daysBetween, weekStart, type DayKey } from '../domain/dates';
 import { fmt1, fmtDayMonth, fmtInt, weekdayName } from '../domain/format';
 import { CHAPTERS, arrivals, chapterAt, kmFromSteps } from '../domain/walk';
 import { arrivalToPlay, canPlayArrivalAt, stateLineToPlay } from '../walk/arrivals';
@@ -80,21 +80,9 @@ export function CelebrationWatcher() {
     };
     const yesterday = addDays(today, -1);
 
-    // A perfect day, today.
+    // A perfect day plays in Today's own sky (useRingMoment), not here.
     const dayOf = (d: DayKey) => days.find((x) => x.date === d);
     const ringsOn = (d: DayKey) => dayRings(settings, d, dayOf(d), week.filter((e) => e.date === d));
-    const { totals, rings } = ringsOn(today);
-    if (rings.perfect) {
-      const nth = dayRange(ws, today).filter((d) => ringsOn(d).rings.perfect).length;
-      push({
-        kind: 'perfect',
-        key: `perfect:${today}`,
-        kcal: totals.kcal,
-        protein: totals.protein,
-        steps: totals.steps,
-        sub: nth > 1 ? `All three rings closed, your ${ordinal(nth)} this week.` : 'All three rings closed.',
-      });
-    }
 
     // Step streak milestones, dated to the day they were reached.
     const streak = stepStreakFor(settings, days, today);

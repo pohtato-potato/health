@@ -61,6 +61,27 @@ export function scheduleDing(delaySec: number): () => void {
   };
 }
 
+/** A ring's chime: two short rising bell notes, clearly not the rest timer's single ding. */
+export function chime(bright = false) {
+  if (!ctx) unlockAudio();
+  const c = ctx;
+  if (!c) return;
+  (bright ? [659, 880, 1319] : [880, 1319]).forEach((f, i) => {
+    const t = c.currentTime + 0.02 + i * 0.13;
+    const out = c.createGain();
+    out.connect(c.destination);
+    out.gain.setValueAtTime(0.0001, t);
+    out.gain.exponentialRampToValueAtTime(0.2, t + 0.012);
+    out.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+    const o = c.createOscillator();
+    o.type = 'sine';
+    o.frequency.value = f;
+    o.connect(out);
+    o.start(t);
+    o.stop(t + 0.75);
+  });
+}
+
 export function buzz(pattern: number | number[]) {
   try {
     navigator.vibrate?.(pattern);
