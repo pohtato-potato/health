@@ -88,6 +88,7 @@ const WeekRecap = page(() => import('./screens/Week'), 'WeekRecap');
 const ClimatePage = page(() => import('./screens/Reports'), 'ClimatePage');
 const DawnPage = page(() => import('./screens/Dawn'), 'DawnPage');
 const DexPage = page(() => import('./screens/Dex'), 'DexPage');
+const YouProto = lazy(() => import('./screens/proto/YouLiving').then((m) => ({ default: m.YouProto })));
 const CreatureBoard = lazy(() => import('./screens/proto/CreatureBoard').then((m) => ({ default: m.CreatureBoard })));
 const WrappedPage = page(() => import('./screens/Reports'), 'WrappedPage');
 
@@ -165,6 +166,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/dawn': { el: () => <DawnPage /> },
   '/dex': { el: () => <DexPage /> },
   ...(import.meta.env.DEV ? { '/proto/creatures': { el: () => <Suspense fallback={null}><CreatureBoard /></Suspense> } } : {}),
+  ...(import.meta.env.DEV ? { '/proto/you': { el: () => <Suspense fallback={null}><YouProto /></Suspense> } } : {}),
   '/proto/session': { el: () => <SessionProto /> },
   '/proto/train': { el: () => <TrainProto /> },
 };
