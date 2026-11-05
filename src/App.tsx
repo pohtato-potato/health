@@ -56,9 +56,10 @@ import { MedicinesPage } from './screens/Medicines';
 import { ExerciseGuidePage } from './screens/ExerciseGuide';
 import { MonthlyFilmPage } from './screens/MonthlyFilm';
 import { Moved } from './screens/reports/Moved';
-import { ExperimentsPage } from './screens/Experiments';
 
 /** A page loaded when first opened, from its module's named export. */
+const EXPERIMENTS_MOVED = { k: 'compare' };
+
 function page<K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K) {
   return lazy(() => load().then((m) => ({ default: m[name] })));
 }
@@ -128,7 +129,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/medicines': { el: () => <MedicinesPage /> },
   '/guide': { el: () => <ExerciseGuidePage /> },
   '/film': { el: () => <MonthlyFilmPage /> },
-  '/experiments': { el: () => <ExperimentsPage /> },
+  '/experiments': { el: () => <Moved to="/track" params={EXPERIMENTS_MOVED} /> },
   '/track': { el: () => <TrackPage /> },
   '/food': { el: () => <FoodToday /> },
   '/close': { el: () => <CloseDay /> },

@@ -278,3 +278,29 @@
 .yu-track .seg button { font-size: 14px; min-height: 44px; }
 .yu-track .btn.sm { min-height: 44px; }
 .yu-track .t11 { font-size: 14px; }
+
+/* Insights and Diary */
+.yu-ask { display: flex; gap: 8px; align-items: stretch; }
+.yu-ask input { flex: 1; min-width: 0; }
+.yu-ask .btn { flex: none; }
+.yu-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.yu-chips button { font: inherit; font-size: 14px; color: var(--text); background: none; border: 1px solid var(--edge); border-radius: 999px; min-height: 44px; padding: 4px 12px; text-align: left; }
+.yu-why-row { display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left; font: inherit; color: inherit; background: none; border: 0; border-top: 1px solid var(--edge); padding: 10px 0; min-height: 48px; touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.yu-why-row:first-child { border-top: 0; }
+.yu-why-row > span:first-child { display: flex; justify-content: space-between; gap: 10px; }
+.yu-why { touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.yu-big { font-family: var(--serif); font-size: 32px; line-height: 1.1; }
+.yu-diary-row { display: grid; grid-template-columns: 76px 1fr; gap: 10px; width: 100%; align-items: center; min-height: 48px; padding: 8px 0; background: none; border: 0; border-top: 1px solid var(--edge); color: inherit; font: inherit; font-size: 15px; text-align: left; }
+.yu-diary-row:first-child { border-top: 0; }
+.yu-diary-row > span:first-child { color: var(--q); font-size: 14px; }
+.yu-diary-row em { font-style: normal; color: var(--q); }
+.yu-page .day-pill span { font-size: 14px; }
+.yu-page .day-pill { min-height: 56px; }
+.yu-month { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.yu-month span { text-align: center; font-size: 14px; color: var(--q); padding-bottom: 2px; }
+.yu-month button { position: relative; min-height: 44px; font: inherit; font-size: 15px; color: var(--q); background: none; border: 1px solid transparent; border-radius: 10px; padding: 0; }
+.yu-month button.has { color: var(--text); font-weight: 600; background: var(--glass2); border-color: var(--edge); }
+.yu-month button.has::after { content: ''; position: absolute; left: 50%; bottom: 5px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: currentColor; }
+.yu-month button.on { background: var(--text); color: #0e1020; }
+.yu-month-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.yu-page .chip.sm { min-height: 44px; font-size: 14px; }

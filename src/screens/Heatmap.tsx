@@ -56,8 +56,7 @@ export function Heatmap({ settings, today, days, entries, sessions, sets }: { se
   return (
     <div className="card">
       <div className="row base">
-        <div className="lbl">Every day</div>
-        <div className="t12 q">{fmtDayMonth(start)} to today</div>
+        <div className="yu-q">{fmtDayMonth(start)} to today</div>
       </div>
       <div className="chiprow" role="radiogroup" aria-label="Measure">
         {METRICS.map((m) => (
@@ -80,7 +79,7 @@ export function Heatmap({ settings, today, days, entries, sessions, sets }: { se
           );
         })}
       </div>
-      <div className="t12 q">Outlined squares: not logged. A dot: an office or status day.</div>
+      <div className="yu-q">Outlined squares: not logged. A dot: an office or status day.</div>
     </div>
   );
 }

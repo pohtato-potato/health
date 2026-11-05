@@ -236,6 +236,8 @@ export interface Settings {
   plan?: PlanDef;
   /** Up to three question ids kept on the You page. */
   youQuestions?: string[];
+  /** Questions kept on Insights. They answer afresh each time. */
+  keptAsks?: { id: string; q: string; at: number }[];
   /** Up to six trophy ids chosen for the case; with none, the case chooses. */
   trophyPicks?: string[];
   /** Titles already offered, so a new one offers "Wear it" once. */
