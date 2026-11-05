@@ -86,6 +86,7 @@ const SettingsScreen = page(() => import('./screens/Settings'), 'SettingsScreen'
 const ReceiptPage = page(() => import('./screens/Week'), 'ReceiptPage');
 const WeekRecap = page(() => import('./screens/Week'), 'WeekRecap');
 const ClimatePage = page(() => import('./screens/Reports'), 'ClimatePage');
+const DawnPage = page(() => import('./screens/Dawn'), 'DawnPage');
 const WrappedPage = page(() => import('./screens/Reports'), 'WrappedPage');
 
 const SHEETS: Record<string, () => ReactNode> = {
@@ -159,6 +160,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/character': { el: () => <CharacterPage /> },
   '/physio': { el: () => <PhysioPage /> },
   '/reveal': { el: () => <RevealPage /> },
+  '/dawn': { el: () => <DawnPage /> },
   '/proto/session': { el: () => <SessionProto /> },
   '/proto/train': { el: () => <TrainProto /> },
 };

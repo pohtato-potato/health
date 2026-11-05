@@ -1,6 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef } from 'react';
-import { addDays, daysBetween, weekStart, type DayKey } from '../domain/dates';
+import { addDays, dayKey, daysBetween, weekStart, type DayKey } from '../domain/dates';
+import { revealDue } from '../domain/creatures';
+import { prefOn } from '../domain/types';
 import { fmt1, fmtDayMonth, fmtInt, weekdayName } from '../domain/format';
 import { CHAPTERS, arrivals, chapterAt, kmFromSteps } from '../domain/walk';
 import { arrivalToPlay, canPlayArrivalAt, stateLineToPlay } from '../walk/arrivals';
@@ -72,6 +74,8 @@ export function CelebrationWatcher() {
 
   useEffect(() => {
     if (!settings?.setupDone || !days || !week || !sessions || !sets || !measurements || !seen || !runs) return;
+    // Nothing plays inside the morning reveal, or in the moment before it opens: an arrival waits and plays after.
+    if (path === '/dawn' || revealDue({ day: days.find((d) => d.date === today), logDay: today, calendarDay: dayKey(new Date()), momentsOn: prefOn(settings.prefs, 'moments') })) return;
     const fresh = (key: string) => !seen.has(key) && !queued.current.has(key);
     const push = (m: MomentData) => {
       if (!fresh(m.key)) return;

@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
-import { addDays, logHour, partOfDay, weekStart } from '../domain/dates';
+import { useEffect, useMemo, useState } from 'react';
+import { addDays, dayKey, logHour, partOfDay, weekStart } from '../domain/dates';
+import { revealDue } from '../domain/creatures';
 import { fmtDuration, fmtInt, fmtTime } from '../domain/format';
 import { findSession } from '../domain/plan';
 import { sleepMinutes, stepsGoal } from '../domain/rings';
@@ -113,6 +114,11 @@ export function Today() {
     buzzOn: !!settings?.prefs.buzz,
     quiet: !!settings && prefOn(settings.prefs, 'quietPublic'),
   });
+  // The morning reveal opens right after the morning log is saved, once the sheet has closed.
+  const dawnDue = !!settings && !!days && !active && !route.params.get('sheet') && revealDue({ day, logDay: today, calendarDay: dayKey(new Date()), momentsOn: prefOn(settings.prefs, 'moments') });
+  useEffect(() => {
+    if (dawnDue) go('/dawn');
+  }, [dawnDue]);
 
   if (!settings || !days || !entries || !sessions || !sets || active === undefined || !foods || !weekEntries || !monthEntries) {
     return <div className="page" />;

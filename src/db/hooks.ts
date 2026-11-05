@@ -24,6 +24,11 @@ export function useDays(from: DayKey, to: DayKey): Day[] | undefined {
   return useLiveQuery(() => db.days.where('date').between(from, to, true, true).toArray(), [from, to]);
 }
 
+/** Every creature sighting, in the order they came. */
+export function useSightings() {
+  return useLiveQuery(() => db.sightings.orderBy('date').toArray(), []);
+}
+
 export function useAllDays(): Day[] | undefined {
   return useLiveQuery(() => db.days.toArray(), []);
 }

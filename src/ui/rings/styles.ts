@@ -2,13 +2,13 @@
  * Ring styles for theme days. A theme changes a ring's SHAPE or its CONTENT, never its
  * colour, order or how full it is: calories, protein and steps keep their inks on every day.
  */
-export const RING_STYLES = ['plain', 'scallop', 'kite', 'lantern', 'thrown', 'blossom', 'ripple', 'stars', 'marigold', 'cane', 'sparks', 'digits', 'candles'] as const;
+export const RING_STYLES = ['plain', 'scallop', 'kite', 'lantern', 'thrown', 'blossom', 'ripple', 'stars', 'marigold', 'cane', 'sparks', 'digits', 'candles', 'spots', 'rays', 'ticks', 'leaves', 'claws', 'waves', 'forks', 'hen'] as const;
 export type RingStyle = (typeof RING_STYLES)[number];
 
 /** Styles that reshape the ring's outline. */
 export const SHAPE_STYLES: RingStyle[] = ['plain', 'scallop', 'kite', 'lantern', 'thrown', 'blossom', 'ripple'];
 /** Styles that fill the ring with marks instead of a stroke. */
-export const CONTENT_STYLES: RingStyle[] = ['stars', 'marigold', 'cane', 'sparks', 'digits', 'candles'];
+export const CONTENT_STYLES: RingStyle[] = ['stars', 'marigold', 'cane', 'sparks', 'digits', 'candles', 'spots', 'rays', 'ticks', 'leaves', 'claws', 'waves', 'forks', 'hen'];
 
 /** The fixed metric inks, outer to inner. */
 export const RING_INKS = ['var(--kcal)', 'var(--protein)', 'var(--steps)'] as const;

@@ -42,6 +42,30 @@ function Glyph({ style, m, ink, i, ring, arc }: { style: RingStyle; m: Mark; ink
           {m.filled && <path d="M0 -8.5C1.6 -6.5 1.6 -4.6 0 -4.2C-1.6 -4.6 -1.6 -6.5 0 -8.5Z" fill="#fff4d6" />}
         </g>
       );
+    // The marks of a legend or a completed guest: each ring fills mark by mark.
+    case 'spots':
+      return <circle transform={at} r="4" fill={ink} opacity={o} />;
+    case 'rays':
+      return <path transform={at} d="M0 -7 L0 7 M-3.5 -3 L0 -7 L3.5 -3" fill="none" stroke={ink} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" opacity={o} />;
+    case 'ticks':
+      return <line transform={at} x1="0" y1="-6.5" x2="0" y2="6.5" stroke={ink} strokeWidth="2.6" strokeLinecap="round" opacity={o} />;
+    case 'leaves':
+      return <path transform={at} d="M0 -7.5 Q4.5 0 0 7.5 Q-4.5 0 0 -7.5 Z" fill={ink} opacity={o} />;
+    case 'claws':
+      return (
+        <g transform={at} fill={ink} opacity={o}>
+          <circle cy="1.6" r="3" />
+          <circle cx="-3.4" cy="-3.2" r="1.4" />
+          <circle cy="-4.6" r="1.4" />
+          <circle cx="3.4" cy="-3.2" r="1.4" />
+        </g>
+      );
+    case 'waves':
+      return <path transform={at} d="M-5 2 Q-2.5 -4 0 0 T5 -2" fill="none" stroke={ink} strokeWidth="2.4" strokeLinecap="round" opacity={o} />;
+    case 'forks':
+      return <path transform={at} d="M0 7 L0 -1 M0 -1 L-4 -7 M0 -1 L4 -7" fill="none" stroke={ink} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" opacity={o} />;
+    case 'hen':
+      return <path transform={at} d="M0 7 L0 -1 L-4.5 -6 M0 -1 L0 -7 M0 -1 L4.5 -6" fill="none" stroke={ink} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity={o} />;
     default:
       return null;
   }
