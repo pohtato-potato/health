@@ -86,6 +86,9 @@ const SettingsScreen = page(() => import('./screens/Settings'), 'SettingsScreen'
 const ReceiptPage = page(() => import('./screens/Week'), 'ReceiptPage');
 const WeekRecap = page(() => import('./screens/Week'), 'WeekRecap');
 const ClimatePage = page(() => import('./screens/Reports'), 'ClimatePage');
+const DawnPage = page(() => import('./screens/Dawn'), 'DawnPage');
+const DexPage = page(() => import('./screens/Dex'), 'DexPage');
+const CreatureBoard = lazy(() => import('./screens/proto/CreatureBoard').then((m) => ({ default: m.CreatureBoard })));
 const WrappedPage = page(() => import('./screens/Reports'), 'WrappedPage');
 
 const SHEETS: Record<string, () => ReactNode> = {
@@ -159,6 +162,9 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/character': { el: () => <CharacterPage /> },
   '/physio': { el: () => <PhysioPage /> },
   '/reveal': { el: () => <RevealPage /> },
+  '/dawn': { el: () => <DawnPage /> },
+  '/dex': { el: () => <DexPage /> },
+  ...(import.meta.env.DEV ? { '/proto/creatures': { el: () => <Suspense fallback={null}><CreatureBoard /></Suspense> } } : {}),
   '/proto/session': { el: () => <SessionProto /> },
   '/proto/train': { el: () => <TrainProto /> },
 };

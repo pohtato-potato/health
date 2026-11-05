@@ -1,12 +1,16 @@
-import { useMemo, useState } from 'react';
-import { addDays, logHour, partOfDay, weekStart } from '../domain/dates';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { addDays, dayKey, logHour, partOfDay, weekStart } from '../domain/dates';
+import { companionFor, creatureThemeOn, revealDue, stepsCreature } from '../domain/creatures';
+import { CREATURES } from '../domain/creatureRoster';
+import { called, SkyTouch } from '../ui/creatures/Payoffs';
+import { creatureById } from '../domain/creatureRoster';
 import { fmtDuration, fmtInt, fmtTime } from '../domain/format';
 import { findSession } from '../domain/plan';
 import { sleepMinutes, stepsGoal } from '../domain/rings';
 import { pinnedLine, voiceLine, plainFlagLine, type Moment } from '../domain/voice';
 import { addEntries, bump, deleteEntry, setSteps, setTick } from '../db/actions';
 import { useKonami } from '../ui/useKonami';
-import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useSessions, useNow, useSettings, useToday } from '../db/hooks';
+import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useSessions, useNow, useSettings, useSightings, useToday } from '../db/hooks';
 import { prefOn } from '../domain/types';
 import { voiceFor } from '../domain/voice';
 import { kmFromSteps } from '../domain/walk';
@@ -23,6 +27,10 @@ import { positionAt } from '../domain/walk';
 import { StampTemplate } from './walk/Arrival';
 import { WalkTop } from './today/WalkTop';
 import { RingsNumbers } from './today/RingsNumbers';
+import { LiveRings } from './today/LiveRings';
+import { RingMomentFx } from './today/RingMomentFx';
+import { useRingMoment } from './today/useRingMoment';
+import { RING_WORD, ringsGold } from '../domain/ringMoments';
 import { TodayLayout } from './today/TodayLayout';
 import { DrawerHandle, TodayDrawer } from './today/TodayDrawer';
 import { proteinState } from '../domain/proteinState';
@@ -45,7 +53,7 @@ import { proteinGap } from '../domain/proteinGap';
 import { go, openSheet, useRoute } from '../router';
 import { devGlow, regionTint } from '../ui/live/regionTint';
 import { dayGlow } from '../domain/dayGlow';
-import { Rings } from '../ui/Rings';
+import { useMoments } from '../ui/Moments';
 import { useToast } from '../ui/Toasts';
 import {
   dayRings,
@@ -67,13 +75,13 @@ import { tonight } from '../domain/trainView';
 import { fmtSet } from '../domain/setText';
 import { regionAt } from '../domain/regions';
 import { themeDayOn } from '../domain/calendar';
-import { ThemedRings } from '../ui/rings/ThemedRings';
 import { journeyStart as journeyStartOf } from './Journey';
 import { seasonalThemeOn } from '../domain/themes';
 import type { Festive } from '../walk/art/festive';
 
 export function Today() {
   const unlocked = useUnlockedIds();
+  const sightings = useSightings();
   const settings = useSettings();
   const today = useToday();
   const days = useAllDays();
@@ -98,6 +106,25 @@ export function Today() {
   const gapAdd = useGapAdd(today, foods);
   const addUsualNow = useAddUsual();
   const route = useRoute();
+  const { busy: momentShowing } = useMoments();
+  const [ringSpin, setRingSpin] = useState(0);
+  const [ringPlay, setRingPlay] = useState(0);
+  const ringDay = settings && days && entries ? dayRings(settings, today, days.find((d) => d.date === today), entries).rings : undefined;
+  const { playing, goldCount, perfectPlayed } = useRingMoment({
+    date: today,
+    closed: { kcal: !!ringDay?.kcal.closed, protein: !!ringDay?.protein.closed, steps: !!ringDay?.steps.closed },
+    hold: !ringDay || !!route.params.get('sheet') || momentShowing,
+    rest: day?.status === 'sick' || day?.status === 'injured' || day?.status === 'break',
+    momentsOn: !settings || prefOn(settings.prefs, 'moments'),
+    ding: !!settings?.prefs.ding,
+    buzzOn: !!settings?.prefs.buzz,
+    quiet: !!settings && prefOn(settings.prefs, 'quietPublic'),
+  });
+  // The morning reveal opens right after the morning log is saved, once the sheet has closed.
+  const dawnDue = !!settings && !!days && !active && !route.params.get('sheet') && revealDue({ day, logDay: today, calendarDay: dayKey(new Date()), momentsOn: prefOn(settings.prefs, 'moments') });
+  useEffect(() => {
+    if (dawnDue) go('/dawn');
+  }, [dawnDue]);
 
   if (!settings || !days || !entries || !sessions || !sets || active === undefined || !foods || !weekEntries || !monthEntries) {
     return <div className="page" />;
@@ -141,7 +168,10 @@ export function Today() {
       });
 
   const walkKm = kmFromSteps(days.reduce((n, d) => n + (d.steps ?? 0), 0));
-  const themeDay = themeDayOn(today, regionAt(walkKm), { birthday: settings.birthday });
+  const calendarOn = (d: string) => themeDayOn(d, regionAt(walkKm), { birthday: settings.birthday });
+  const themeCreature = creatureById(creatureThemeOn({ date: today, worn: day?.theme, sightings: sightings ?? [], hasOtherTheme: (d) => !!calendarOn(d) }));
+  const themeDay = themeCreature?.theme ?? calendarOn(today);
+  const wornRing = creatureById(settings.ringStyle)?.ring?.style;
   // The voice speaks only at moments; otherwise the plain glance line.
   const recordsTonight = tonight(sessions, sets, today)?.records ?? [];
   const voiceNow = moment === 'perfect' || moment === 'proteinClosed' || (moment === 'trained' && recordsTonight.length > 0);
@@ -188,8 +218,14 @@ export function Today() {
   const slots = checklistSlots(settings, today);
   return (
     <TodayLayout
-      tint={regionTint(walkKm, glow)}
-      glow={!!glow}
+      tint={themeCreature && !glow ? ({ ...regionTint(walkKm), '--lv-glow': themeCreature.sky[0], '--lv-accent': themeCreature.main } as CSSProperties) : regionTint(walkKm, glow)}
+      glow={!!glow || !!themeCreature}
+      fx={
+        <>
+          {themeCreature && <SkyTouch c={themeCreature} />}
+          <RingMomentFx playing={playing} />
+        </>
+      }
       overlays={
         <>
           {drawerOpen && (
@@ -208,23 +244,34 @@ export function Today() {
       }
       walk={<WalkTop caption={caption} scene={scene} stamp={stamp} onOpen={() => go('/walk')} />}
       banner={<Banners />}
-      line={<TodayLine text={lineText} kind={lineKind} gold={moment === 'perfect'} clock={fmtTime(nowMs)} why={themeDay ? { name: themeDay.name, text: themeDay.why } : undefined} />}
+      line={<TodayLine text={playing?.kind === 'ring' ? `${RING_WORD[playing.ring]} closed` : lineText} kind={playing?.kind === 'ring' ? 'voice' : lineKind} gold={moment === 'perfect'} clock={fmtTime(nowMs)} why={themeDay ? { name: themeDay.name, text: themeDay.why } : undefined} />}
       season={<SeasonStrip settings={settings} today={today} />}
       rings={
         <RingsNumbers
         rows={[
-          { key: 'kcal', name: 'Calories', value: fmtInt(totals.kcal), unit: 'kcal', target: `${fmtInt(targets.kcalMin)}–${fmtInt(targets.kcalMax)} kcal`, ink: 'var(--kcal)', known: true },
-          { key: 'protein', name: 'Protein', value: String(Math.round(totals.protein)), unit: 'g', target: `of ${targets.proteinG} g`, ink: 'var(--protein)', known: true },
-          { key: 'steps', name: 'Steps', value: day?.steps !== undefined ? fmtInt(totals.steps) : '—', unit: 'steps', target: `${totals.eased ? 'eased to ' : 'of '}${fmtInt(stepsGoal(targets, totals.eased))}`, ink: 'var(--steps)', known: day?.steps !== undefined },
+          { key: 'kcal', name: 'Calories', value: fmtInt(totals.kcal), unit: 'kcal', target: `${fmtInt(targets.kcalMin)}–${fmtInt(targets.kcalMax)} kcal`, ink: rings.perfect ? 'var(--gold)' : 'var(--kcal)', known: true },
+          { key: 'protein', name: 'Protein', value: String(Math.round(totals.protein)), unit: 'g', target: `of ${targets.proteinG} g`, ink: rings.perfect ? 'var(--gold)' : 'var(--protein)', known: true },
+          { key: 'steps', name: 'Steps', value: day?.steps !== undefined ? fmtInt(totals.steps) : '—', unit: 'steps', target: `${totals.eased ? 'eased to ' : 'of '}${fmtInt(stepsGoal(targets, totals.eased))}`, ink: rings.perfect ? 'var(--gold)' : 'var(--steps)', known: day?.steps !== undefined },
         ]}
         closed={rings.closed}
+        play={ringPlay}
         rings={
           <div className="td-ringfig" onPointerDown={konami.onPointerDown} onPointerUp={konami.onPointerUp} onClickCapture={konami.onClickCapture} style={konami.style}>
-            {themeDay ? (
-              <ThemedRings style={themeDay.ring} progress={[rings.kcal.progress, rings.protein.progress, rings.steps.progress]} label={`Rings for ${themeDay.name}: ${rings.closed} of 3 closed`} center={`${rings.closed}/3`} />
-            ) : (
-              <Rings progress={[rings.kcal.progress, rings.protein.progress, rings.steps.progress]} label={`Rings: ${rings.closed} of 3 closed`} gold={!!unlocked && hasReward(unlocked, 'Gold rings') && prefOn(settings.prefs, 'goldRings')} center={`${rings.closed}/3`} />
-            )}
+            <LiveRings
+              progress={[rings.kcal.progress, rings.protein.progress, rings.steps.progress]}
+              label={themeDay ? `Rings for ${themeDay.name}: ${rings.closed} of 3 closed` : `Rings: ${rings.closed} of 3 closed`}
+              center={`${rings.closed}/3`}
+              style={themeDay?.ring ?? wornRing}
+              goldClosed={!!unlocked && hasReward(unlocked, 'Gold rings') && prefOn(settings.prefs, 'goldRings')}
+              goldCount={ringsGold({ counting: goldCount, perfect: rings.perfect, played: perfectPlayed })}
+              chain={rings.perfect ? (playing?.kind === 'perfect' ? 'draw' : 'still') : undefined}
+              spin={ringSpin + (playing?.kind === 'perfect' ? playing.id : 0)}
+              play={ringPlay}
+              onTap={() => {
+                setRingSpin((n) => n + 1);
+                setRingPlay((n) => n + 1);
+              }}
+            />
           </div>
         }
         onLogFood={() => go('/food')}
@@ -234,6 +281,7 @@ export function Today() {
       }
       moment={
         <MomentCard
+        sheen={playing?.kind === 'perfect'}
         kind={momentFor({ minutes: logMinutes(nowMs), status: day?.status, morningDone: !!day?.morning, perfect: rings.perfect, dayClosed: !!day?.foodDone, proteinGapG: gap.gapG, stepsLeft: Math.max(0, stepsLeft), stepsKnown: day?.steps !== undefined })}
         data={{
           closedRings: rings.closed,
@@ -241,6 +289,8 @@ export function Today() {
           gapFoods: gap.picks.map((p) => p.name).join(' and '),
           addLabel: `${gap.picks.length === 1 ? 'Add it' : gap.picks.length === 2 ? 'Add both' : 'Add them'} · ${Math.round(gap.picks.reduce((n, p) => n + p.proteinG, 0))} g`,
           stepsLeft: Math.max(0, stepsLeft),
+          companion: called(companionFor(sightings ?? [], CREATURES, today), sightings ?? []),
+          stepsCreature: called(stepsCreature(sightings ?? [], CREATURES, regionAt(walkKm), today), sightings ?? []),
           laps: loop ? fmtInt(Math.ceil(Math.max(stepsLeft, 0) / loop)) : undefined,
           easedTo: totals.eased ? stepsGoal(targets, true) : undefined,
         }}

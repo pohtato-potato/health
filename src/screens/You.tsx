@@ -25,6 +25,7 @@ const DOORS: { label: string; sub: string; path: string; icon: IconName }[] = [
   { label: 'Diary', sub: 'Every day', path: '/diary', icon: 'calendar' },
 ];
 const MORE: { label: string; sub: string; path: string }[] = [
+  { label: 'Visitors', sub: 'Who has come by in the morning', path: '/dex' },
   { label: 'Achievements', sub: 'Sets and progress', path: '/achievements' },
   { label: 'Character', sub: 'Stats, titles and the wardrobe', path: '/character' },
   { label: 'Journey clock', sub: 'The whole journey as one day', path: '/journey' },

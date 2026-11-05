@@ -1,3 +1,4 @@
+import type { Sighting } from '../domain/creatures';
 import Dexie, { type EntityTable } from 'dexie';
 import type {
   CheckIn,
@@ -56,6 +57,7 @@ export class HealthDB extends Dexie {
   themesSeen!: EntityTable<ThemeSeen, 'id'>;
   songs!: EntityTable<SongRecord, 'id'>;
   useful!: EntityTable<Seen, 'id'>;
+  sightings!: EntityTable<Sighting, 'id'>;
 
   constructor(name = 'health') {
     super(name);
@@ -94,6 +96,9 @@ export class HealthDB extends Dexie {
     this.version(4).stores({
       routes: 'id',
     });
+    this.version(5).stores({
+      sightings: 'id, date, creatureId',
+    });
   }
 }
 
@@ -124,6 +129,7 @@ export const TABLES = [
   'themesSeen',
   'songs',
   'useful',
+  'sightings',
 ] as const;
 export type TableName = (typeof TABLES)[number];
 

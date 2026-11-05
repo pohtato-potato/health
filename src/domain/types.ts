@@ -249,6 +249,8 @@ export interface Settings {
   /** A worn title, by achievement id. */
   title?: string;
   theme?: string;
+  /** The worn creature ring style, by creature id; absent means the plain rings. */
+  ringStyle?: string;
   confetti?: string;
   /** 'MM-DD', for the birthday theme. */
   birthday?: string;
@@ -341,6 +343,10 @@ export interface Day {
   energy?: number;
   stomach?: boolean;
   soreness?: Partial<Record<MuscleId, 1 | 2 | 3>>;
+  /** The morning reveal played for this day. */
+  revealedAt?: number;
+  /** A creature's earned theme worn on this day, by creature id. */
+  theme?: string;
 }
 
 export type FoodUnit = 'g' | 'ml' | 'piece' | 'serving';

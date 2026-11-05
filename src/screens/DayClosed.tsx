@@ -1,4 +1,8 @@
-import { useAllDays, useAllSets, useEntries, useSessions, useSettings } from '../db/hooks';
+import { useAllDays, useAllSets, useEntries, useSessions, useSettings, useSightings } from '../db/hooks';
+import { creatureById } from '../domain/creatureRoster';
+import { firstVisitor } from '../domain/creatures';
+import { CreatureSvg } from '../ui/creatures/Figure';
+import { called, stageNow } from '../ui/creatures/Payoffs';
 import { addDays, parseDay } from '../domain/dates';
 import { fmtInt } from '../domain/format';
 import { dayDoses } from '../domain/medicines';
@@ -20,6 +24,7 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 
 /** Day closed (s19): the totals against targets, training and the walk, a Gremlin line, tomorrow, and a star for a perfect day. */
 export function DayClosed({ date, summary: s, onDone }: { date: string; summary: DaySummary; onDone: () => void }) {
+  const sightings = useSightings();
   const settings = useSettings();
   const days = useAllDays();
   const sessions = useSessions();
@@ -46,6 +51,7 @@ export function DayClosed({ date, summary: s, onDone }: { date: string; summary:
   const bed = tonightTarget(usualWake(days, tomorrowPlace.id, date) ?? 450, targetsFor(settings, date).sleepMin);
   const line = voiceLine(voiceFor(settings.voice, false, date), rings.perfect ? 'perfect' : done.length ? 'trained' : 'evening', date, {});
   const month = MONTHS[parseDay(date).getMonth()];
+  const restingOn = creatureById(firstVisitor(sightings ?? [], date)?.creatureId);
 
   const stat = (big: string, small: string, color: string, good: boolean) => (
     <span className="col" style={{ alignItems: 'center', gap: 2 }}>
@@ -69,6 +75,12 @@ export function DayClosed({ date, summary: s, onDone }: { date: string; summary:
         <h1 className="h1">{WEEKDAYS[parseDay(date).getDay()]}, closed</h1>
         <div className="t14 q">{rings.perfect ? `A perfect day. Its star is in ${month}’s sky.` : 'Closed and counted. The week evens it out.'}</div>
       </div>
+      {restingOn && (
+        <div className="col" style={{ alignItems: 'center', gap: 2 }}>
+          <div className="closed-creature" aria-hidden="true"><CreatureSvg c={restingOn} stage={stageNow(restingOn, sightings ?? [])} /></div>
+          <div className="t14 q">{(called(restingOn.id, sightings ?? []) ?? '').replace(/^./, (x) => x.toUpperCase())} rests in tonight’s sky.</div>
+        </div>
+      )}
       <div className="grid3" style={{ padding: '6px 0' }}>
         {stat(fmtInt(s.kcal), s.kcalInRange ? 'kcal · in range' : 'kcal', 'var(--kcal)', s.kcalInRange)}
         {stat(`${s.protein} g`, s.proteinClosed ? 'protein · met' : 'protein', 'var(--protein)', s.proteinClosed)}
