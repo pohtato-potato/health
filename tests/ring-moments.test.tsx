@@ -1,4 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
+import { ThemedRings } from '../src/ui/rings/ThemedRings';
+import { RING_STYLES } from '../src/ui/rings/styles';
 import { describe, expect, it } from 'vitest';
 import { ringMomentKey, ringMomentMarks, ringMomentsDue, ringsGold } from '../src/domain/ringMoments';
 import { LiveRings } from '../src/screens/today/LiveRings';
@@ -58,5 +60,19 @@ describe('ringsGold', () => {
     expect(ringsGold({ counting: null, perfect: true, played: true })).toBe(3);
     expect(ringsGold({ counting: null, perfect: true, played: undefined })).toBe(3);
     expect(ringsGold({ counting: null, perfect: false, played: true })).toBe(0);
+  });
+});
+
+describe('a worn ring style on a perfect day', () => {
+  it('turns gold ring by ring, in every style', () => {
+    for (const style of RING_STYLES) {
+      const html = (gold: boolean[]) => renderToStaticMarkup(<ThemedRings style={style} progress={[1, 1, 1]} label="" gold={gold} />);
+      expect(html([false, false, false])).not.toContain('var(--gold)');
+      const one = html([true, false, false]);
+      expect(one).toContain('var(--gold)');
+      expect(one).toContain('var(--steps)');
+      const all = html([true, true, true]);
+      for (const ink of ['var(--kcal)', 'var(--protein)', 'var(--steps)']) expect(all).not.toContain(ink);
+    }
   });
 });

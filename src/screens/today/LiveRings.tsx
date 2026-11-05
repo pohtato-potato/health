@@ -76,7 +76,7 @@ export function LiveRings({ progress, label, center, style, goldClosed, goldCoun
     <button type="button" className="lr" aria-label={`${label}. Tap to spin them.`} onClick={onTap}>
       <div ref={group} className="lr-spin">
         {style ? (
-          <ThemedRings style={style} progress={shown} size={140} label="" center={center} />
+          <ThemedRings style={style} progress={shown} size={140} label="" center={center} gold={RADII.map((_, i) => i < goldCount || (!!goldClosed && progress[i] >= 1))} />
         ) : (
           <svg width={140} height={140} viewBox="0 0 200 200" aria-hidden="true">
             {RADII.map((r, i) => {
@@ -89,7 +89,7 @@ export function LiveRings({ progress, label, center, style, goldClosed, goldCoun
                 <g key={r}>
                   <circle cx="100" cy="100" r={r} fill="none" stroke={ink} strokeOpacity={0.16} strokeWidth="13" />
                   <circle
-                    className={`lr-arc${closed && p >= 1 ? ' closed' : ''}`}
+                    className={`lr-arc${closed && p >= 1 ? ' closed' : ''}${gold ? ' lr-gold' : ''}`}
                     cx="100"
                     cy="100"
                     r={r}
@@ -101,6 +101,7 @@ export function LiveRings({ progress, label, center, style, goldClosed, goldCoun
                     strokeOpacity={p > 0 ? 1 : 0}
                     transform="rotate(-90 100 100)"
                   />
+                  {gold && p > 0 && <circle className="lr-gold-core" cx="100" cy="100" r={r} fill="none" strokeWidth="3" strokeLinecap="round" strokeDasharray={`${p * c} ${c}`} transform="rotate(-90 100 100)" />}
                 </g>
               );
             })}
