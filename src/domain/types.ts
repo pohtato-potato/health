@@ -153,12 +153,6 @@ export interface Prefs {
   moments?: boolean;
   /** No confetti or buzz from 10 pm to 7 am, or while the app is in the background. */
   quietPublic?: boolean;
-  /** A larger floor for small text and bigger set inputs. Off by default: the owner reads with the Android magnifier, where bigger type means more panning. */
-  largeText?: boolean;
-  /** Low vision: quiet and dim text close to full brightness, firmer borders. */
-  highContrast?: boolean;
-  /** Every set entered with the big dial and chips, never the small fields. */
-  bigSetControls?: boolean;
 }
 
 const PREF_DEFAULTS: Required<Prefs> = {
@@ -180,9 +174,6 @@ const PREF_DEFAULTS: Required<Prefs> = {
   mirrorCheckIn: false,
   moments: true,
   quietPublic: true,
-  largeText: false,
-  highContrast: false,
-  bigSetControls: false,
 };
 
 export function prefOn(prefs: Prefs, key: keyof Prefs): boolean {
@@ -238,6 +229,8 @@ export interface Settings {
   youQuestions?: string[];
   /** Questions kept on Insights. They answer afresh each time. */
   keptAsks?: { id: string; q: string; at: number }[];
+  /** Check-up findings you said are right. */
+  checkupOk?: string[];
   /** Up to six trophy ids chosen for the case; with none, the case chooses. */
   trophyPicks?: string[];
   /** Titles already offered, so a new one offers "Wear it" once. */

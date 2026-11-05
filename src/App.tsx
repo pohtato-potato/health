@@ -1,6 +1,5 @@
 import { TrainProto } from './screens/proto/TrainLiving';
 import { SessionProto } from './screens/proto/SessionLiving';
-import { prefOn } from './domain/types';
 import { Suspense, lazy, useEffect, type ComponentType, type ReactNode } from 'react';
 import { RegionRoot } from './ui/live/RegionFrame';
 import { findSession } from './domain/plan';
@@ -37,6 +36,9 @@ import { SessionScreen } from './screens/Session';
 import { SessionDone } from './screens/SessionDone';
 import { clock } from './screens/NextUpCard';
 import { LogSheet, MoreSheet } from './sheets/LogSheet';
+import { SessionSettingsSheet } from './sheets/SessionSettings';
+import { dailySnapshot } from './db/snapshots';
+import { Checkup, EditHistory, Snapshots } from './screens/DataPages';
 import { MorningLog } from './sheets/MorningLog';
 import { AddFood } from './sheets/AddFood';
 import { EntrySheet, FoodForm, QuickKcal } from './sheets/FoodForms';
@@ -99,6 +101,7 @@ const WrappedPage = page(() => import('./screens/Reports'), 'WrappedPage');
 
 const SHEETS: Record<string, () => ReactNode> = {
   log: () => <LogSheet />,
+  'session-settings': () => <SessionSettingsSheet />,
   more: () => <MoreSheet />,
   morning: () => <MorningLog />,
   addfood: () => <AddFood />,
@@ -129,6 +132,9 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/medicines': { el: () => <MedicinesPage /> },
   '/guide': { el: () => <ExerciseGuidePage /> },
   '/film': { el: () => <MonthlyFilmPage /> },
+  '/checkup': { el: () => <Checkup /> },
+  '/history': { el: () => <EditHistory /> },
+  '/snapshots': { el: () => <Snapshots /> },
   '/experiments': { el: () => <Moved to="/track" params={EXPERIMENTS_MOVED} /> },
   '/track': { el: () => <TrackPage /> },
   '/food': { el: () => <FoodToday /> },
@@ -187,12 +193,10 @@ export function App() {
   const settings = useSettings();
   const route = useRoute();
   const today = useToday();
-  const largeText = settings ? prefOn(settings.prefs, 'largeText') : false;
-  const contrast = settings ? prefOn(settings.prefs, 'highContrast') : false;
+  const hasSettings = !!settings?.setupDone;
   useEffect(() => {
-    document.documentElement.classList.toggle('large-text', largeText);
-    document.documentElement.classList.toggle('contrast', contrast);
-  }, [largeText, contrast]);
+    if (hasSettings) void dailySnapshot(today).catch(() => undefined);
+  }, [hasSettings, today]);
   useThemeClass(settings, today);
 
   // Design prototypes use sample data only, so they open without setup (handy on a fresh phone).

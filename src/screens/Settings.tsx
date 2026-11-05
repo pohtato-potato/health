@@ -1,20 +1,18 @@
 import { useEffect, useRef, useState, type ReactNode, createContext, useContext } from 'react';
-import { scheduleDing, unlockAudio } from '../audio';
 import { fmtDayMonth, fmtDuration, fmtInt, fmtLitres } from '../domain/format';
 import { dayKey } from '../domain/dates';
-import { loadOptions, fmtKg } from '../domain/loads';
-import { upgradePlan, validatePlan, type PlanDef } from '../domain/plan';
 import { DEFAULT_MEAL_TIMES, MEAL_NAMES, MEALS, prefOn, type ChecklistItem, type Place, type PlaceKind, type Settings, type Targets } from '../domain/types';
 import { homePlace } from '../domain/places';
 import { bump, patchSettings, setTargets } from '../db/actions';
-import { saveBackup, summarise } from '../db/backup';
-import { readBackupFile, restoreAll, saveFullBackup, type ParsedBackup } from '../db/fullBackup';
+import { backupWords, saveBackup, summarise, type FileCheck } from '../db/backup';
+import { spokenLine } from '../domain/voice';
+import { checkFullBackupFile, readBackupFile, restoreAll, saveFullBackup, type ParsedBackup } from '../db/fullBackup';
 import { canUseFingerprint, registerFingerprint } from '../checkin/lock';
 import { saveWorkbook } from '../export/saveWorkbook';
 import { db, uid } from '../db/db';
 import { useSettings, useToday } from '../db/hooks';
 import { askPersist, usePwa } from '../pwa';
-import { back, go, useRoute } from '../router';
+import { back, go, openSheet, useRoute } from '../router';
 import { DecField, IntField, LinkRow, Seg, SwitchRow, TimeTile } from '../ui/controls';
 import { Icon } from '../ui/Icon';
 import { Sheet } from '../ui/Sheet';
@@ -26,10 +24,8 @@ import { themeById } from '../domain/themes';
 import { askConfirm } from '../ui/Confirm';
 import { setupGaps } from '../domain/setupCheck';
 import { saveAuditPack } from '../export/saveAuditPack';
-import { undoImport, undoOnOffer } from '../domain/planImport';
-import { PlanImportSheet } from '../sheets/PlanImportSheet';
 
-type Editor = null | 'targets' | 'item' | 'homes' | 'you' | 'plates' | 'theme' | 'review';
+type Editor = null | 'targets' | 'item' | 'homes' | 'you' | 'theme' | 'review';
 
 export function SettingsScreen() {
   const settings = useSettings();
@@ -39,17 +35,20 @@ export function SettingsScreen() {
   const toast = useToast();
   const [editor, setEditor] = useState<Editor>(null);
   const [item, setItem] = useState<ChecklistItem | null>(null);
-  const [pending, setPending] = useState<{ kind: 'backup'; parsed: ParsedBackup } | { kind: 'plan'; plan: PlanDef } | null>(null);
+  const [pending, setPending] = useState<{ kind: 'backup'; parsed: ParsedBackup } | null>(null);
   const backupInput = useRef<HTMLInputElement>(null);
-  const planInput = useRef<HTMLInputElement>(null);
+  const checkInput = useRef<HTMLInputElement>(null);
+  const [checked, setChecked] = useState<FileCheck>();
+  const [savedLine, setSavedLine] = useState('');
   const unlocked = useUnlockedIds();
 
   const [open, setOpen] = useState<string | null>(params.get('at'));
   useEffect(() => {
     const at = params.get('at');
     if (at) {
-      setOpen(at === 'data' ? 'export' : at === 'backup' ? 'backups' : at);
-      requestAnimationFrame(() => document.getElementById(`s-${at === 'data' ? 'export' : at === 'backup' ? 'backups' : at}`)?.scrollIntoView({ block: 'start' }));
+      const id = at === 'data' || at === 'backup' || at === 'export' || at === 'storage' ? 'backups' : at === 'walk' ? 'walking' : at;
+      setOpen(id);
+      requestAnimationFrame(() => document.getElementById(`s-${id}`)?.scrollIntoView({ block: 'start' }));
     }
   }, [params, settings === undefined]);
 
@@ -66,41 +65,22 @@ export function SettingsScreen() {
       toast({ text: (e as Error).message });
     }
   };
-  const pickPlan = async (f: File | undefined) => {
-    if (!f) return;
-    try {
-      const data = JSON.parse(await f.text());
-      const plan = (data.format === 'health-plan' ? data : data.plan) as PlanDef;
-      const errs = validatePlan(plan);
-      if (errs.length) throw new Error(`This plan has problems: ${errs.slice(0, 2).join(' ')}`);
-      setPending({ kind: 'plan', plan: upgradePlan(plan) });
-    } catch (e) {
-      toast({ text: e instanceof SyntaxError ? "That file isn't a plan: it couldn't be read." : (e as Error).message });
-    }
-  };
-
-  const undo = undoOnOffer(settings);
   const last = settings.backup.lastQuick;
-  const plates = settings.equipment.plates;
   const meds = settings.checklist.filter((i) => i.active && i.med).length;
   const summary: Record<string, string> = {
     you: [settings.name, settings.heightCm ? `${settings.heightCm} cm` : '', settings.goalDate ? `reveal ${fmtDayMonth(settings.goalDate)}` : ''].filter(Boolean).join(' · '),
     targets: `${fmtInt(t.kcalMin)}–${fmtInt(t.kcalMax)} · ${t.proteinG} g · ${fmtInt(t.steps)}`,
     walking: `${settings.places?.length ?? 0} places · meal times`,
     checklist: `${settings.checklist.filter((i) => i.active).length} items${meds ? ` · ${meds} medicine${meds === 1 ? '' : 's'}` : ''}`,
-    training: settings.plan ? `${settings.plan.name} · editor` : 'No plan yet',
-    'food-categories': `${settings.foodCategories?.length ?? 0} categories`,
-    backups: `${last ? `last ${fmtDayMonth(dayKey(new Date(last)))}` : 'never'} · nudge after ${settings.backup.nudgeDays} days`,
-    export: `Audit pack · review day ${settings.reviewDay !== undefined ? ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][settings.reviewDay] : 'not set'}`,
-    lastfm: settings.lastfm?.key ? `connected · ${settings.lastfm.users.length} user${settings.lastfm.users.length === 1 ? '' : 's'}` : 'not connected',
-    storage: pwa.persisted ? 'protected' : 'not protected yet',
-    feel: `${prefOn(p, 'largeText') ? 'larger text' : 'standard text'}${prefOn(p, 'highContrast') ? ' · high contrast' : ''}`,
-    home: 'shortcuts',
+    'food-categories': `${settings.foodCategories?.length ?? 0} categor${settings.foodCategories?.length === 1 ? 'y' : 'ies'}`,
+    backups: backupWords(settings, today),
+    lastfm: settings.lastfm?.key ? `Last.fm connected · ${settings.lastfm.users.length} user${settings.lastfm.users.length === 1 ? '' : 's'}` : 'Last.fm not connected',
+    moments: `Gremlin ${prefOn(p, 'gremlin') ? 'on' : 'off'} · ${themeById(settings.theme)?.name ?? 'Dusk'}`,
     privacy: `photos ${prefOn(p, 'blurPhotos') ? 'blurred' : 'shown'}${prefOn(p, 'lockPhotos') && settings.photoKey ? ' · locked' : ''}`,
   };
 
   return (
-    <div className="page bare" style={{ gap: 10 }}>
+    <div className="page bare yu-set-page" style={{ gap: 10 }}>
       <button type="button" className="backlink" onClick={() => back('/you')}>
         <Icon name="left" size={20} stroke={1.8} />
         You
@@ -111,17 +91,11 @@ export function SettingsScreen() {
       <SetupCard settings={settings} />
 
       <OpenGroup.Provider value={{ open, toggle: (id) => setOpen(open === id ? null : id), summary }}>
-      <h2 className="settings-part">Your plan</h2>
-
-      <Group id="you" title="You">
+      <Group id="you" title="About you">
         <LinkRow title="Name" value={settings.name || 'Not set'} onClick={() => setEditor('you')} />
         <LinkRow title="Height" value={settings.heightCm ? `${settings.heightCm} cm` : 'Not set'} onClick={() => setEditor('you')} />
         <LinkRow title="Goal date" value={settings.goalDate ? fmtDayMonth(settings.goalDate) + ` ${settings.goalDate.slice(0, 4)}` : 'Not set'} onClick={() => setEditor('you')} />
         <LinkRow title="Birthday" sub="For a theme on the day" value={settings.birthday ? fmtDayMonth(`2000-${settings.birthday}`) : 'Not set'} onClick={() => setEditor('you')} />
-        <div className="li">
-          <span>Units</span>
-          <span className="v">kg and inches</span>
-        </div>
       </Group>
 
       <Group id="targets" title="Targets">
@@ -140,7 +114,7 @@ export function SettingsScreen() {
         <SwitchRow title="Suggest target changes" sub="Only ever more food or more steps, and only when you tap to accept" checked={prefOn(p, 'suggestTargets')} onChange={(v) => setPref('suggestTargets', v)} />
       </Group>
 
-      <Group id="walking" title="Places">
+      <Group id="walking" title="Places and the walk">
         <div className="li" style={{ minHeight: 64 }}>
           <span className="s">
             <span>Your loop at home</span>
@@ -160,10 +134,10 @@ export function SettingsScreen() {
           </div>
         </div>
         <SwitchRow title="Confirm yesterday's steps each morning" sub="Samsung Health has the final count by then" checked={p.confirmSteps} onChange={(v) => setPref('confirmSteps', v)} />
-        <LinkRow title="Places" sub="Each brings its meal times, step goal and the foods shown first" value={(settings.places?.length ? settings.places : settings.homes).map((h) => h.name).join(', ')} onClick={() => setEditor('homes')} />
+        <LinkRow title="Places and the walk" sub="Each brings its meal times, step goal and the foods shown first" value={(settings.places?.length ? settings.places : settings.homes).map((h) => h.name).join(', ')} onClick={() => setEditor('homes')} />
       </Group>
 
-      <Group id="checklist" title="Checklist and medicines">
+      <Group id="checklist" title="Checklist">
         <LinkRow title="Medicines" sub="Courses, stock, appointments and rewards" onClick={() => go('/medicines')} />
         {settings.checklist.map((i) => (
           <div key={i.id} className="li">
@@ -186,76 +160,6 @@ export function SettingsScreen() {
         <div className="li" style={{ minHeight: 44 }}>
           <small className="t12 d">No streaks or confetti here. It's a plain record you can show your doctor.</small>
         </div>
-      </Group>
-
-      <Group id="training" title="Training plan">
-        <LinkRow
-          title="Plan"
-          sub={settings.plan ? `${settings.plan.sessions.length} sessions · ${settings.plan.flags.length} joint checks` : 'None yet'}
-          value={settings.plan ? `${settings.plan.name}, from ${fmtDayMonth(settings.plan.from)}` : 'Import'}
-          onClick={() => (settings.plan ? go('/plan') : planInput.current?.click())}
-        />
-        {settings.plan && (
-          <button type="button" className="li q" onClick={() => planInput.current?.click()}>
-            Import a plan from a file
-          </button>
-        )}
-        {undo && (
-          <button
-            type="button"
-            className="li q"
-            onClick={async () => {
-              const ok = await askConfirm({ title: `Undo importing “${undo.name}”?`, body: `${undo.plan ? `“${undo.plan.name}” comes back` : 'The plan is removed'}, with its variants and where the loop stood. Sessions logged since stay.`, yes: 'Undo import' });
-              const back = ok && undoImport(settings);
-              if (!back) return;
-              await patchSettings(back);
-              toast({ text: undo.plan ? `${undo.plan.name} is your plan again` : 'Import undone' });
-            }}
-          >
-            Undo import of {undo.name}
-          </button>
-        )}
-        <input ref={planInput} type="file" accept="application/json,.json" hidden onChange={(e) => (pickPlan(e.target.files?.[0]), (e.target.value = ''))} />
-        {plates.map((pl) => (
-          <SwitchRow
-            key={pl.kg}
-            title={`${fmtKg(pl.kg)} kg plates × ${pl.count}`}
-            sub={pl.owned ? undefined : 'Switch on when they arrive. Suggested loads then use them.'}
-            checked={pl.owned}
-            onChange={(v) => {
-              void patchSettings((s) => ({ equipment: { ...s.equipment, plates: s.equipment.plates.map((x) => (x.kg === pl.kg ? { ...x, owned: v } : x)) } }));
-              if (v) void bump('plates-on');
-            }}
-          />
-        ))}
-        <LinkRow
-          title="Plates and dumbbells"
-          sub={
-            plates.length
-              ? `Pairs: ${loadOptions(settings.equipment, 'pair').map(fmtKg).join(', ')} kg · one dumbbell: ${loadOptions(settings.equipment, 'single').map(fmtKg).join(', ')} kg`
-              : 'Tell Health what you have, and it suggests loads you can actually make.'
-          }
-          onClick={() => setEditor('plates')}
-        />
-        <SwitchRow title="Resistance band" checked={settings.equipment.band} onChange={(v) => patchSettings((s) => ({ equipment: { ...s.equipment, band: v } }))} />
-        <SwitchRow title="Soft ding when rest ends" sub="Plays in your headphones over your music" checked={p.ding} onChange={(v) => setPref('ding', v)} />
-        <button
-          type="button"
-          className="li"
-          onClick={() => {
-            unlockAudio();
-            scheduleDing(0.05);
-          }}
-        >
-          <span className="s">
-            <span>Test the ding</span>
-            <small>Play music first, then tap: it should sound over it</small>
-          </span>
-          <Icon name="play" size={18} stroke={1.8} color="var(--quiet)" />
-        </button>
-        <SwitchRow title="Keep the screen on during sessions" sub="So the timer and ding stay on time" checked={p.wakeLock} onChange={(v) => setPref('wakeLock', v)} />
-        <SwitchRow title="Buzz on records" checked={p.buzz} onChange={(v) => setPref('buzz', v)} />
-        <SwitchRow title="Tempo coach" sub="A Coach button on slow-lowering sets: the phone buzzes 3 seconds down, 1 up" checked={prefOn(p, 'tempoCoach')} onChange={(v) => setPref('tempoCoach', v)} />
       </Group>
 
       <Group id="food-categories" title="Food categories">
@@ -288,14 +192,45 @@ export function SettingsScreen() {
         </div>
       </Group>
 
-      <h2 className="settings-part">Your data</h2>
+      <div className="list">
+        <LinkRow title="Session settings" sub="Plan, plates, rest ding and buzz. Also on Train." onClick={() => openSheet('session-settings')} />
+      </div>
 
-      <Group id="backups" title="Backup" plain>
+      <Group id="moments" title="Moments and themes">
+        <SwitchRow title="The Gremlin" sub="Its lines around the app. Off, the app just gives you the facts." checked={prefOn(p, 'gremlin')} onChange={(v) => { setPref('gremlin', v); void bump('voices', { value: v ? 'on' : 'off' }); }} />
+        <LinkRow title="Theme" value={themeById(settings.theme)?.name ?? 'Dusk'} onClick={() => setEditor('theme')} />
+        <SwitchRow title="Moments" sub="Full-screen celebrations for records, firsts and perfect days" checked={prefOn(p, 'moments')} onChange={(v) => setPref('moments', v)} />
+        <SwitchRow title="Seasonal themes" sub="Diwali, Holi and your birthday take over for the day" checked={prefOn(p, 'seasonal')} onChange={(v) => setPref('seasonal', v)} />
+        <SwitchRow title="Quiet in public" sub="No confetti or buzz from 10 pm to 7 am, or while a session runs in the background" checked={prefOn(p, 'quietPublic')} onChange={(v) => setPref('quietPublic', v)} />
+        <SwitchRow title="Shake for a stat" sub="Shake the phone anywhere in the app" checked={prefOn(p, 'shake')} onChange={(v) => setPref('shake', v)} />
+      </Group>
+
+      <Group id="privacy" title="Privacy">
+        <SwitchRow title="Blur photos until tapped" checked={prefOn(p, 'blurPhotos')} onChange={(v) => setPref('blurPhotos', v)} />
+        {canUseFingerprint() && (
+          <SwitchRow
+            title="Fingerprint to open photos"
+            sub="Uses the phone's own screen lock. A gate for casual eyes: the photos never leave this phone either way."
+            checked={prefOn(p, 'lockPhotos') && !!settings.photoKey}
+            onChange={async (v) => {
+              if (!v) return setPref('lockPhotos', false);
+              try {
+                const key = await registerFingerprint();
+                await patchSettings((s) => ({ photoKey: key, prefs: { ...s.prefs, lockPhotos: true } }));
+              } catch {
+                toast({ text: 'The fingerprint wasn’t set up. Try again, or keep the blur on.' });
+              }
+            }}
+          />
+        )}
+      </Group>
+
+      <Group id="backups" title="Data and backups" plain>
         <div className="col gap12" style={{ padding: '18px 18px 6px', background: 'var(--surface)', border: '1px solid var(--hairline)', borderRadius: 20 }}>
           <div className="row" style={{ justifyContent: 'flex-start', alignItems: 'flex-start' }}>
             <div style={{ width: 10, height: 10, borderRadius: 5, marginTop: 5, flexShrink: 0, background: last && Date.now() - last < 3 * 86_400_000 ? 'var(--sage)' : 'var(--gold)' }} />
             <div className="col gap2">
-              <div className="t15">{last ? `Last backup: ${fmtDayMonth(dayKey(new Date(last)))}` : 'No backup yet'}</div>
+              <div className="t15">{backupWords(settings, today)}</div>
               <div className="t12 q">Everything you've logged, in one small file.</div>
             </div>
           </div>
@@ -303,8 +238,12 @@ export function SettingsScreen() {
             type="button"
             className="btn"
             onClick={async () => {
-              const r = await saveBackup();
-              if (r !== 'cancelled') toast({ kicker: 'Backup', text: r === 'shared' ? 'Handed over. Pick Drive to keep it safe.' : 'Saved to Downloads.', tone: 'sage' });
+              try {
+                const r = await saveBackup();
+                if (r !== 'cancelled') { toast({ kicker: 'Backup', text: r === 'shared' ? 'Handed over. Pick Drive to keep it safe.' : 'Saved to Downloads.', tone: 'sage' }); setSavedLine(spokenLine(settings, today, 'backup', String(Date.now()))); }
+              } catch (e) {
+                toast({ text: (e as Error).message });
+              }
             }}
           >
             Back up now
@@ -341,12 +280,23 @@ export function SettingsScreen() {
               ))}
             </select>
           </div>
-          <LinkRow title="Restore from a backup" onClick={() => backupInput.current?.click()} />
+          {savedLine && <div className="voice" role="status">{savedLine}</div>}
+          <LinkRow title="Check a backup file" sub="Looks inside without restoring" onClick={() => checkInput.current?.click()} />
+          <input ref={checkInput} type="file" accept="application/json,.json,application/zip,.zip" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void checkFullBackupFile(f).then(setChecked); }} />
+          {checked && (
+            <div className="yu-card" role="status">
+              <b>{checked.ok ? 'This file is safe to restore from.' : 'This file has a problem.'}</b>
+              <span className="yu-q">{checked.ok ? `${checked.newestDay ? `Up to ${fmtDayMonth(checked.newestDay)}. ` : ''}${checked.summary}.` : checked.why}</span>
+            </div>
+          )}
+          <LinkRow title="Restore from a backup" sub="A snapshot of this phone is taken first" onClick={() => backupInput.current?.click()} />
           <input ref={backupInput} type="file" accept="application/json,.json,application/zip,.zip" hidden onChange={(e) => (pickBackup(e.target.files?.[0]), (e.target.value = ''))} />
         </div>
-      </Group>
-
-      <Group id="export" title="Audit pack and Claude review" plain>
+        <div className="list">
+          <LinkRow title="Data check-up" sub="Slips in your data, each with a fix" onClick={() => go('/checkup')} />
+          <LinkRow title="Edit history" sub="Every change by day, with undo" onClick={() => go('/history')} />
+          <LinkRow title="Snapshots" sub="Seven daily copies, and one before any big change" onClick={() => go('/snapshots')} />
+        </div>
         <div className="col gap12" style={{ padding: 18, background: 'var(--surface)', border: '1px solid var(--hairline)', borderRadius: 20 }}>
           <div className="col gap2">
             <div className="t15">Export workbook (.xlsx)</div>
@@ -431,13 +381,7 @@ export function SettingsScreen() {
           <div className="t12 q lh">Make a Project in Claude for your monthly reviews and paste these in, so every month is read against the last.</div>
           <div className="t13 lh prompt-box">{PROJECT_INSTRUCTIONS}</div>
         </div>
-      </Group>
-
-      <Group id="lastfm" title="Last.fm">
-        <LastfmFields settings={settings} />
-      </Group>
-
-      <Group id="storage" title="Storage">
+        <div className="list">
         <div className="li" style={{ minHeight: 64 }}>
           <span className="s">
             <span>{pwa.persisted ? 'Protected storage is on' : 'Protected storage is off'}</span>
@@ -462,26 +406,6 @@ export function SettingsScreen() {
         >
           Erase everything on this phone
         </button>
-      </Group>
-
-      <h2 className="settings-part">The feel</h2>
-
-      <Group id="feel" title="Feel">
-        <SwitchRow title="Larger text" sub="Small labels and set inputs get bigger" checked={prefOn(p, 'largeText')} onChange={(v) => setPref('largeText', v)} />
-        <SwitchRow title="High contrast" sub="Quiet text and borders close to full brightness" checked={prefOn(p, 'highContrast')} onChange={(v) => setPref('highContrast', v)} />
-        <SwitchRow title="Big dials for every set" sub="Reps on a dial and loads as chips, no small fields to aim at" checked={prefOn(p, 'bigSetControls')} onChange={(v) => setPref('bigSetControls', v)} />
-        <SwitchRow title="The Gremlin" sub="Its lines around the app. Off, the app just gives you the facts." checked={prefOn(p, 'gremlin')} onChange={(v) => { setPref('gremlin', v); void bump('voices', { value: v ? 'on' : 'off' }); }} />
-        <SwitchRow title="Shake for a stat" sub="Shake the phone anywhere in the app" checked={prefOn(p, 'shake')} onChange={(v) => setPref('shake', v)} />
-        <LinkRow title="Theme" value={themeById(settings.theme)?.name ?? 'Dusk'} onClick={() => setEditor('theme')} />
-      </Group>
-
-      <Group id="moments" title="Moments and themes">
-        <SwitchRow title="Moments" sub="Full-screen celebrations for records, firsts and perfect days" checked={prefOn(p, 'moments')} onChange={(v) => setPref('moments', v)} />
-        <SwitchRow title="Seasonal themes" sub="Diwali, Holi and your birthday take over for the day" checked={prefOn(p, 'seasonal')} onChange={(v) => setPref('seasonal', v)} />
-        <SwitchRow title="Quiet in public" sub="No confetti or buzz from 10 pm to 7 am, or while a session runs in the background" checked={prefOn(p, 'quietPublic')} onChange={(v) => setPref('quietPublic', v)} />
-      </Group>
-
-      <Group id="home" title="Home screen">
         <div className="li" style={{ minHeight: 64 }}>
           <span className="s">
             <span>Shortcuts</span>
@@ -496,28 +420,12 @@ export function SettingsScreen() {
             </span>
           </div>
         )}
+        </div>
       </Group>
 
-      <Group id="privacy" title="Privacy">
-        <SwitchRow title="Blur photos until tapped" checked={prefOn(p, 'blurPhotos')} onChange={(v) => setPref('blurPhotos', v)} />
-        {canUseFingerprint() && (
-          <SwitchRow
-            title="Fingerprint to open photos"
-            sub="Uses the phone's own screen lock. A gate for casual eyes: the photos never leave this phone either way."
-            checked={prefOn(p, 'lockPhotos') && !!settings.photoKey}
-            onChange={async (v) => {
-              if (!v) return setPref('lockPhotos', false);
-              try {
-                const key = await registerFingerprint();
-                await patchSettings((s) => ({ photoKey: key, prefs: { ...s.prefs, lockPhotos: true } }));
-              } catch {
-                toast({ text: 'The fingerprint wasn’t set up. Try again, or keep the blur on.' });
-              }
-            }}
-          />
-        )}
+      <Group id="lastfm" title="Connections">
+        <LastfmFields settings={settings} />
       </Group>
-
       </OpenGroup.Provider>
 
       <div className="t12 d center" style={{ paddingTop: 18 }}>
@@ -528,7 +436,6 @@ export function SettingsScreen() {
       {editor === 'item' && <ItemEditor item={item} onClose={() => setEditor(null)} />}
       {editor === 'homes' && <HomesEditor settings={settings} onClose={() => setEditor(null)} />}
       {editor === 'you' && <YouEditor settings={settings} onClose={() => setEditor(null)} />}
-      {editor === 'plates' && <PlatesEditor settings={settings} onClose={() => setEditor(null)} />}
       {editor === 'review' && <ReviewSheet onClose={() => setEditor(null)} />}
       {editor === 'theme' && unlocked && <ThemeSheet settings={settings} unlocked={unlocked} today={today} onClose={() => setEditor(null)} />}
       {pending?.kind === 'backup' && (
@@ -551,7 +458,6 @@ export function SettingsScreen() {
           </button>
         </Sheet>
       )}
-      {pending?.kind === 'plan' && <PlanImportSheet plan={pending.plan} settings={settings} onClose={() => setPending(null)} />}
     </div>
   );
 }
@@ -567,7 +473,7 @@ function Group({ id, title, children, plain }: { id: string; title: string; chil
       <button type="button" className="set-row" aria-expanded={isOpen} onClick={() => toggle(id)}>
         <span className="col gap2" style={{ minWidth: 0, textAlign: 'left' }}>
           <span className="t15">{title}</span>
-          {summary[id] && <span className="t12 q">{summary[id]}</span>}
+          {summary[id] && !isOpen && <span className="t12 q">{summary[id]}</span>}
         </span>
         <Icon name={isOpen ? 'up' : 'down'} size={16} stroke={1.8} color="var(--dim)" />
       </button>
@@ -807,71 +713,6 @@ function YouEditor({ settings, onClose }: { settings: Settings; onClose: () => v
       </button>
     </Sheet>
   );
-}
-
-function PlatesEditor({ settings, onClose }: { settings: Settings; onClose: () => void }) {
-  const [plates, setPlates] = useState(settings.equipment.plates.map((p) => ({ ...p })));
-  const [fixed, setFixed] = useState(settings.equipment.fixed.join(', '));
-  const [sleeve, setSleeve] = useState<number | undefined>(settings.equipment.sleeveMm);
-  const eq = { ...settings.equipment, plates, fixed: parseList(fixed), sleeveMm: sleeve };
-  return (
-    <Sheet title="Plates and dumbbells" sub="Loads are per dumbbell. Plates go on in matching pairs." onClose={onClose} tall>
-      {plates.map((p, i) => (
-        <div key={i} className="col gap6">
-        <div className="grid3" style={{ alignItems: 'end' }}>
-          <label className="flabel">
-            <span className="lbl">Plate kg</span>
-            <DecField value={p.kg} onChange={(v) => setPlates(plates.map((x, j) => (j === i ? { ...x, kg: v ?? 0 } : x)))} />
-          </label>
-          <label className="flabel">
-            <span className="lbl">How many</span>
-            <IntField value={p.count} onChange={(v) => setPlates(plates.map((x, j) => (j === i ? { ...x, count: v ?? 0 } : x)))} />
-          </label>
-          <label className="row" style={{ height: 48, gap: 8 }}>
-            <span className="t14">Have them</span>
-            <input type="checkbox" className="sw" checked={p.owned} onChange={(e) => setPlates(plates.map((x, j) => (j === i ? { ...x, owned: e.target.checked } : x)))} />
-          </label>
-        </div>
-          <label className="flabel">
-            <span className="lbl">Width of one plate, mm (optional)</span>
-            <DecField value={p.thicknessMm} onChange={(v) => setPlates(plates.map((x, j) => (j === i ? { ...x, thicknessMm: v || undefined } : x)))} placeholder="e.g. 30 for PVC, 18 for cast iron" />
-          </label>
-        </div>
-      ))}
-      <button type="button" className="link" onClick={() => setPlates([...plates, { kg: 2.5, count: 4, owned: true }])}>
-        + Add a plate size
-      </button>
-      <label className="flabel">
-        <span className="lbl">Handle sleeve, mm each side (optional)</span>
-        <DecField value={sleeve} onChange={(v) => setSleeve(v || undefined)} placeholder="Collar to the end of the handle" />
-        <span className="t13 q lh">With plate widths and this set, loads only count when the plates fit on the handle.</span>
-      </label>
-      <label className="flabel">
-        <span className="lbl">Fixed dumbbells, kg each</span>
-        <input className="field" value={fixed} onChange={(e) => setFixed(e.target.value)} placeholder="e.g. 1, 2.5, 5" />
-      </label>
-      <div className="t13 q lh">
-        Pairs you can make: {loadOptions(eq, 'pair').map(fmtKg).join(', ') || 'none'} kg. One dumbbell: {loadOptions(eq, 'single').map(fmtKg).join(', ') || 'none'} kg.
-      </div>
-      <button
-        type="button"
-        className="btn lg block"
-        onClick={async () => {
-          await patchSettings((s) => ({ equipment: { ...s.equipment, plates: plates.filter((p) => p.kg > 0 && p.count > 0), fixed: parseList(fixed), sleeveMm: sleeve } }));
-          onClose();
-        }}
-      >
-        Save
-      </button>
-    </Sheet>
-  );
-}
-
-function parseList(s: string): number[] {
-  return s
-    .split(/[,\s]+/)
-    .map((x) => parseFloat(x))
-    .filter((x) => Number.isFinite(x) && x > 0);
 }
 
 /** Username and API key, typed here and kept only on this phone. */

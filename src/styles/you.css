@@ -307,3 +307,13 @@
 
 /* Gremlin: a switched-off line leaves no gap */
 .voice:empty { display: none; }
+
+/* Settings and data */
+.yu-set-page .t11, .yu-set-page .t12, .yu-set-page .t13, .yu-set-page .lbl, .yu-set-page small, .yu-set-page .li .s small, .yu-set-page .li small { font-size: 14px; }
+.yu-set-page .chip, .yu-set-page .chip.sm, .yu-set-page .seg button { min-height: 44px; font-size: 14px; }
+.yu-set-page .li { min-height: 52px; }
+.yu-set-page .btn.sm, .yu-set-page .field.sm { min-height: 44px; }
+.yu-set-page .yu-card b { font-weight: 500; }
+.lv-tr-head { flex-wrap: wrap; }
+.lv-tr-head .icon-btn { order: 1; margin-left: auto; }
+.lv-tr-head .lv-tr-week { order: 2; width: 100%; }

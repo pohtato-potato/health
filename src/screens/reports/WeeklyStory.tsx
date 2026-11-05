@@ -203,8 +203,12 @@ export function WeeklyStory() {
             <div className="yu-card">
               <span>{backup.text}</span>
               {line && <button type="button" className="btn sm" onClick={async () => {
-                const r = await saveBackup();
-                if (r !== 'cancelled') toast({ text: 'Backup saved', tone: 'sage' });
+                try {
+                  const r = await saveBackup();
+                  if (r !== 'cancelled') toast({ text: 'Backup saved', tone: 'sage' });
+                } catch (e) {
+                  toast({ text: (e as Error).message });
+                }
               }}>Back up now</button>}
             </div>
           </section>

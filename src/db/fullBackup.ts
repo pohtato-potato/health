@@ -2,8 +2,9 @@ import { dayKey } from '../domain/dates';
 import type { Clip, Photo } from '../domain/types';
 import { zip } from '../export/xlsx';
 import { bump, patchSettings } from './actions';
-import { exportData, parseBackup, restoreData, shareFile, type BackupFile } from './backup';
+import { checkBackup, exportData, parseBackup, restoreData, shareFile, type BackupFile, type FileCheck } from './backup';
 import { db } from './db';
+import { takeSnapshot } from './snapshots';
 
 type PhotoMeta = Omit<Photo, 'blob'> & { file: string };
 type ClipMeta = Omit<Clip, 'blob'> & { file: string };
@@ -41,7 +42,10 @@ export async function buildFullBackup(): Promise<{ bytes: Uint8Array; name: stri
 
 export async function saveFullBackup(): Promise<'shared' | 'downloaded' | 'cancelled'> {
   const { bytes, name } = await buildFullBackup();
-  const result = await shareFile(new File([bytes as BlobPart], name, { type: 'application/zip' }));
+  const file = new File([bytes as BlobPart], name, { type: 'application/zip' });
+  const check = await checkFullBackupFile(file);
+  if (!check.ok) throw new Error(`The backup couldn't be read back, so it wasn't saved. ${check.why}`);
+  const result = await shareFile(file);
   if (result !== 'cancelled') {
     await patchSettings((s) => ({ backup: { ...s.backup, lastQuick: Date.now(), lastFull: Date.now(), lastFullBytes: bytes.length } }));
     await bump('backup', { day: dayKey() });
@@ -102,7 +106,17 @@ export async function readBackupFile(f: File): Promise<ParsedBackup> {
   return { file, media: { photos: file.media?.photos ?? [], clips: file.media?.clips ?? [], blobs: files } };
 }
 
+/** Reads a quick or full backup file back, without restoring it. */
+export async function checkFullBackupFile(f: File): Promise<FileCheck> {
+  try {
+    return checkBackup((await readBackupFile(f)).file);
+  } catch (e) {
+    return { ok: false, why: (e as Error).message };
+  }
+}
+
 export async function restoreAll(b: ParsedBackup) {
+  await takeSnapshot('before', 'Before restoring a backup');
   await restoreData(b.file);
   if (!b.media) return;
   await db.transaction('rw', db.photos, db.clips, async () => {

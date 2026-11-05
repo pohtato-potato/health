@@ -2,6 +2,7 @@ import type { Correction } from '../domain/corrections';
 import type { Moment } from '../domain/earned';
 import type { Sighting } from '../domain/creatures';
 import Dexie, { type EntityTable } from 'dexie';
+import type { Snapshot } from './snapshots';
 import type {
   CheckIn,
   Clip,
@@ -62,6 +63,7 @@ export class HealthDB extends Dexie {
   sightings!: EntityTable<Sighting, 'id'>;
   moments!: EntityTable<Moment, 'id'>;
   corrections!: EntityTable<Correction, 'id'>;
+  snapshots!: EntityTable<Snapshot, 'id'>;
 
   constructor(name = 'health') {
     super(name);
@@ -108,6 +110,9 @@ export class HealthDB extends Dexie {
     });
     this.version(7).stores({
       corrections: 'id, date, at',
+    });
+    this.version(8).stores({
+      snapshots: 'id, at, kind',
     });
   }
 }

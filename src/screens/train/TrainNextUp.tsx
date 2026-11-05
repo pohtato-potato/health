@@ -3,7 +3,7 @@ import { lowerFirst, weekdayName } from '../../domain/format';
 import { findSession } from '../../domain/plan';
 import type { Settings, TrainingSession } from '../../domain/types';
 import { useAllSets, useNow } from '../../db/hooks';
-import { go } from '../../router';
+import { go, openSheet } from '../../router';
 import { recordShot } from '../../domain/strengthForecast';
 import type { NextUp } from '../../state/derived';
 import { logHour } from '../../domain/dates';
@@ -55,7 +55,7 @@ export function TrainNextUp({
       <div className="card" style={{ gap: 12 }}>
         <div className="lbl">Training</div>
         <div className="t15 lh">No training plan yet. Add one from Settings, and Train will run it: the A/B rotation, loads and every rule.</div>
-        <button type="button" className="btn ghost" onClick={() => go('/settings', { at: 'training' })}>
+        <button type="button" className="btn ghost" onClick={() => openSheet('session-settings')}>
           Add a plan
         </button>
       </div>
