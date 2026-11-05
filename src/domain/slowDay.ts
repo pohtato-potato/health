@@ -1,3 +1,4 @@
+import { spokenLine } from './gremlin';
 import { seeded, type Sighting } from './creatures';
 import { dayKey, daysBetween, parseDay, weekStart, type DayKey } from './dates';
 import { fmtDayMonth, fmtInt } from './format';
@@ -18,12 +19,7 @@ const GAP_DAYS = 3;
 const MIN_WEEKS = 3;
 const MIN_MORNINGS = 2;
 
-/** Stand-ins until Part 6 writes the Gremlin's lines. */
-const GREMLIN: Record<Mood, string> = {
-  tired: 'Sit down. The road has waited longer than this.',
-  off: 'Plans are guesses anyway. Yours was a nice guess.',
-  bored: 'Here. Something to chew on.',
-};
+const GREMLIN_MOOD = { tired: 'slowTired', off: 'slowOff', bored: 'slowBored' } as const;
 
 function monthAgo(today: DayKey): DayKey | undefined {
   const d = parseDay(today);
@@ -102,7 +98,7 @@ function aheadLine(today: DayKey, i: SlowInput): string {
 }
 
 export function moodCard(mood: Mood, today: DayKey, i: SlowInput, stat?: Stat): { title: string; line: string; gremlin: string } {
-  const gremlin = GREMLIN[mood];
+  const gremlin = spokenLine(i.settings, today, GREMLIN_MOOD[mood], today);
   if (mood === 'tired') return { title: 'Tired', line: `Nothing is owed today. ${aheadLine(today, i)}`, gremlin };
   if (mood === 'bored') return { title: 'Bored', line: stat?.text ?? 'Not enough logged for a good fact yet. Give it a few days.', gremlin };
   const c = comebacks(i.days, today);
@@ -113,4 +109,10 @@ export function moodCard(mood: Mood, today: DayKey, i: SlowInput, stat?: Stat): 
     line: `You've come back ${c.count} time${c.count === 1 ? '' : 's'}. Your longest gap was ${c.longestGap} days.${back}`,
     gremlin,
   };
+}
+
+/** You've come back: the last logged day before today was a while ago. A first day has nothing to come back from. */
+export function returnedAfterGap(days: Pick<Day, 'date' | 'steps' | 'sleep'>[], today: DayKey): boolean {
+  const last = days.filter((d) => d.date < today && (d.steps !== undefined || d.sleep)).map((d) => d.date).sort().pop();
+  return !!last && daysBetween(last, today) >= GAP_DAYS;
 }

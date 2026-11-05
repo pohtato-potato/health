@@ -7,12 +7,11 @@ import { creatureById } from '../domain/creatureRoster';
 import { fmtDuration, fmtInt, fmtTime } from '../domain/format';
 import { findSession } from '../domain/plan';
 import { sleepMinutes, stepsGoal } from '../domain/rings';
-import { pinnedLine, voiceLine, plainFlagLine, type Moment } from '../domain/voice';
+import { pinnedLine, spokenLine, plainFlagLine, type Moment } from '../domain/voice';
 import { addEntries, bump, deleteEntry, setSteps, setTick } from '../db/actions';
 import { useKonami } from '../ui/useKonami';
 import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useSessions, useNow, useSettings, useSightings, useToday } from '../db/hooks';
 import { prefOn } from '../domain/types';
-import { voiceFor } from '../domain/voice';
 import { kmFromSteps } from '../domain/walk';
 import { scenePlace, todayWalkLine, walkCaption } from '../domain/walkCaption';
 import { arrivedToday, nearestPlace, restLine, stoneFor, stopLine, tomorrowLine, usualAndBig, whereLine, whereNow } from '../walk/page';
@@ -159,7 +158,7 @@ export function Today() {
 
   const line = flag
     ? plainFlagLine(flag.flag.group, swapSentence(settings.plan, flag.flag.swap))
-    : voiceLine(voiceFor(settings.voice, prefOn(settings.prefs, 'shuffleVoices'), today), moment, today, {
+    : spokenLine(settings, today, moment, today, {
         session: sessionName,
         steps: fmtInt(Math.max(stepsLeft, 0)),
         laps: loop ? fmtInt(Math.ceil(Math.max(stepsLeft, 0) / loop)) : 'a few',
@@ -174,7 +173,7 @@ export function Today() {
   const wornRing = creatureById(settings.ringStyle)?.ring?.style;
   // The voice speaks only at moments; otherwise the plain glance line.
   const recordsTonight = tonight(sessions, sets, today)?.records ?? [];
-  const voiceNow = moment === 'perfect' || moment === 'proteinClosed' || (moment === 'trained' && recordsTonight.length > 0);
+  const voiceNow = !!line && (moment === 'perfect' || moment === 'proteinClosed' || (moment === 'trained' && recordsTonight.length > 0));
   const sessionTonight = up && !active && !trainedToday.length && weeks.thisWeek < weeks.perWeek ? sessionName : undefined;
   const lineKind: 'glance' | 'voice' | 'flag' = flag ? 'flag' : voiceNow ? 'voice' : 'glance';
   const lineText = flag ? line : voiceNow ? lineForTheDay(today, moment, line) : glanceLine({ minutes: logMinutes(nowMs), closedRings: rings.closed, dayClosed: !!day?.foodDone, sessionTonight, nextSession: day?.foodDone && up ? sessionName : undefined, morningDone: !!day?.morning });

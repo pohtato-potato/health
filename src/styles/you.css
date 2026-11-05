@@ -304,3 +304,6 @@
 .yu-month button.on { background: var(--text); color: #0e1020; }
 .yu-month-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .yu-page .chip.sm { min-height: 44px; font-size: 14px; }
+
+/* Gremlin: a switched-off line leaves no gap */
+.voice:empty { display: none; }

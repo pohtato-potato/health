@@ -1,4 +1,5 @@
-import { useAllDays, useSessions, useToday } from '../../db/hooks';
+import { useAllDays, useSessions, useSettings, useToday } from '../../db/hooks';
+import { spokenLine } from '../../domain/voice';
 import { fmtDayMonth } from '../../domain/format';
 import { addDays } from '../../domain/dates';
 import { monthLabel } from '../../domain/goTo';
@@ -12,6 +13,7 @@ import { HUE } from '../../ui/you/palette';
 import type { CSSProperties } from 'react';
 
 export function ReportsHome() {
+  const settings = useSettings();
   const today = useToday();
   const days = useAllDays();
   const sessions = useSessions();
@@ -23,6 +25,7 @@ export function ReportsHome() {
       <div className="yu-stack">
         <button type="button" className="backlink" onClick={() => back('/you')}><Icon name="left" size={20} stroke={1.8} />You</button>
         <h1>Reports</h1>
+        {settings && <div className="voice">{spokenLine(settings, today, 'report', today)}</div>}
         {!week && !month && <div className="yu-card"><b>Nothing to report yet</b><span className="yu-q">Your first story comes after your first full week.</span></div>}
         {week && (
           <button type="button" className="yu-card yu-tint yu-open" style={{ '--c': HUE.food } as CSSProperties} onClick={() => go('/reports/week', { w: week })}>

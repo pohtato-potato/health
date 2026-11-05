@@ -470,7 +470,7 @@ export function SettingsScreen() {
         <SwitchRow title="Larger text" sub="Small labels and set inputs get bigger" checked={prefOn(p, 'largeText')} onChange={(v) => setPref('largeText', v)} />
         <SwitchRow title="High contrast" sub="Quiet text and borders close to full brightness" checked={prefOn(p, 'highContrast')} onChange={(v) => setPref('highContrast', v)} />
         <SwitchRow title="Big dials for every set" sub="Reps on a dial and loads as chips, no small fields to aim at" checked={prefOn(p, 'bigSetControls')} onChange={(v) => setPref('bigSetControls', v)} />
-        <LinkRow title="Voice" value={settings.voice === 'comm' ? 'Commentator' : settings.voice.charAt(0).toUpperCase() + settings.voice.slice(1)} onClick={() => back('/you')} />
+        <SwitchRow title="The Gremlin" sub="Its lines around the app. Off, the app just gives you the facts." checked={prefOn(p, 'gremlin')} onChange={(v) => { setPref('gremlin', v); void bump('voices', { value: v ? 'on' : 'off' }); }} />
         <SwitchRow title="Shake for a stat" sub="Shake the phone anywhere in the app" checked={prefOn(p, 'shake')} onChange={(v) => setPref('shake', v)} />
         <LinkRow title="Theme" value={themeById(settings.theme)?.name ?? 'Dusk'} onClick={() => setEditor('theme')} />
       </Group>

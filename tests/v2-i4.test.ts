@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { ACH_SETS, ACHIEVEMENTS, RETIRED_ACHIEVEMENTS, visibleAchievements } from '../src/domain/achievements';
 import { constellationFor, skyStars } from '../src/domain/nightSky';
 import { shakeIgnored } from '../src/state/restState';
-import { voiceFor } from '../src/domain/voice';
 import type { Settings } from '../src/domain/types';
 
 describe('achievements v2', () => {
@@ -40,12 +39,6 @@ describe('shake', () => {
   });
 });
 
-describe('voice', () => {
-  it('voice is gremlin regardless of stored voice', () => {
-    expect(voiceFor('zen', false, 'x')).toBe('gremlin');
-    expect(voiceFor('coach', true, 'y')).toBe('gremlin');
-  });
-});
 
 describe('night sky', () => {
   it('a star for every perfect day, and a named constellation per month', () => {

@@ -23,6 +23,8 @@ import { Doors } from './you/Doors';
 import { DueLines, readStorySeen } from './you/DueLines';
 import { FilmPoster } from './you/FilmPoster';
 import { FindingCard } from './you/FindingCard';
+import { returnedAfterGap } from '../domain/slowDay';
+import { spokenLine } from '../domain/voice';
 import { GoToBox } from './you/GoToBox';
 import { HowsToday } from './you/HowsToday';
 import { MomentumPanel } from './you/MomentumPanel';
@@ -96,6 +98,7 @@ export function You() {
         {settings.goalDate && <ClockCard start={start} end={settings.goalDate} today={today} />}
         <MomentumPanel today={today} input={momentum} />
         <DueLines items={due} today={today} />
+        {returnedAfterGap(days, today) && <div className="voice">{spokenLine(settings, today, 'returned', today)}</div>}
         <FindingCard finding={finding} />
         <TrophyCase trophies={trophies} />
         <Doors subs={subs} />

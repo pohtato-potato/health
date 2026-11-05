@@ -2,8 +2,8 @@ import { useRef, useState, type ReactNode } from 'react';
 import { dayKey } from '../domain/dates';
 import { fmtDuration, fmtInt, fmtLitres } from '../domain/format';
 import type { Settings, Targets } from '../domain/types';
-import { VOICES } from '../domain/voice';
-import { bump, patchDay, patchSettings, saveMeasurement, setTargets } from '../db/actions';
+import { GREMLIN_HELLO } from '../domain/voice';
+import { patchDay, patchSettings, saveMeasurement, setTargets } from '../db/actions';
 import { parseBackup, restoreData, summarise } from '../db/backup';
 import { useMeasurements, useSettings, useAllDays } from '../db/hooks';
 import { askPersist, promptInstall, usePwa } from '../pwa';
@@ -170,7 +170,6 @@ function Ready({ settings, onEdit }: { settings: Settings; onEdit: () => void })
   const t = targetsFor(settings, dayKey());
   const lastW = days?.filter((d) => d.weightKg !== undefined).sort((a, b) => b.date.localeCompare(a.date))[0]?.weightKg;
   const lastWaist = ms?.filter((m) => m.waistStanding !== undefined).pop();
-  const voice = VOICES.find((v) => v.id === settings.voice) ?? VOICES[0];
   const rows: [string, string][] = [
     ...(settings.heightCm ? ([['Height', `${settings.heightCm} cm`]] as [string, string][]) : []),
     ...(lastW ? ([['Weight', `${lastW} kg`]] as [string, string][]) : []),
@@ -201,28 +200,7 @@ function Ready({ settings, onEdit }: { settings: Settings; onEdit: () => void })
       </div>
       <div className="t15 q lh">Check the numbers below, then you're ready.</div>
 
-      <div className="col gap10">
-        <div className="lbl">Pick a voice</div>
-        <div className="grid2" style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }}>
-          {VOICES.map((v) => (
-            <button
-              key={v.id}
-              type="button"
-              className="chip"
-              style={settings.voice === v.id ? { background: v.color, borderColor: v.color, color: '#15121f', fontWeight: 600, padding: 0, fontSize: 13 } : { color: v.color, padding: 0, fontSize: v.id === 'comm' ? 12 : 13 }}
-              onClick={() => {
-                void patchSettings({ voice: v.id });
-                void bump('voices', { value: v.id });
-              }}
-            >
-              {v.name}
-            </button>
-          ))}
-        </div>
-        <div className="voice" style={{ fontSize: 15 }}>
-          {voice.hello}
-        </div>
-      </div>
+      <div className="voice" style={{ fontSize: 15 }}>{GREMLIN_HELLO}</div>
 
       <div className="list" style={{ padding: '16px 20px 6px' }}>
         <div className="row" style={{ paddingBottom: 4 }}>

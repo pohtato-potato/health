@@ -136,7 +136,7 @@ export interface Prefs {
   confirmSteps: boolean;
   /** Added after launch, so older saves may not have them: read through prefOn(). Old saves may also carry retired keys (ticker); they are ignored. */
   shake?: boolean;
-  shuffleVoices?: boolean;
+  gremlin?: boolean;
   seasonal?: boolean;
   tempoCoach?: boolean;
   blurPhotos?: boolean;
@@ -168,7 +168,7 @@ const PREF_DEFAULTS: Required<Prefs> = {
   buzz: true,
   confirmSteps: true,
   shake: true,
-  shuffleVoices: false,
+  gremlin: true,
   seasonal: true,
   tempoCoach: true,
   blurPhotos: true,

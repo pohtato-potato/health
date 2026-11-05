@@ -16,7 +16,7 @@ export function HowsToday({ today, input, stat }: { today: string; input: SlowIn
       {card && (
         <div key={mood} className="yu-card yu-card-in">
           <span>{card.line}</span>
-          <i className="yu-grem">"{card.gremlin}"</i>
+          {card.gremlin && <i className="yu-grem">"{card.gremlin}"</i>}
         </div>
       )}
     </section>
