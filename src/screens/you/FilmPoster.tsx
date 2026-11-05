@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { lastMonth, monthlyFilm } from '../../domain/film';
+import { lastMonth, monthlyFilm, posterLine } from '../../domain/film';
 import type { Day, SetEntry, TrainingSession } from '../../domain/types';
 import { go } from '../../router';
 
@@ -17,7 +17,7 @@ export function FilmPoster({ today, days, sessions, sets }: { today: string; day
       <span className="yu-poster-glow" />
       <span className="yu-q">{film.month} is finished</span>
       <span className="yu-poster-t">Your {film.month} film</span>
-      <span className="yu-poster-row"><span>{km.big} km · {done.big} sessions · {records.big} records</span><u>Play</u></span>
+      <span className="yu-poster-row"><span>{posterLine(km.big, done.big, records.big)}</span><u>Play</u></span>
     </button>
   );
 }

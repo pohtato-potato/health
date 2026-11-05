@@ -62,10 +62,10 @@ function Chapter({ c, sightings, end }: { c: StoryChapter; sightings: { creature
       return (
         <section className="yu-sec"><h2>The tally</h2>
           <Reveal className="yu-spread">
-            <div><b style={{ color: HUE.steps }}>{fmtInt(c.steps)}</b><span>steps</span></div>
-            <div><b style={{ color: HUE.train }}>{c.sessions}</b><span>session{c.sessions === 1 ? '' : 's'}</span></div>
-            <div><b style={{ color: GOLD }}>{c.records}</b><span>record{c.records === 1 ? '' : 's'}</span></div>
-            <div><b style={{ color: GOLD }}>{c.perfect}</b><span>perfect day{c.perfect === 1 ? '' : 's'}</span></div>
+            {c.steps !== undefined && <div><b style={{ color: HUE.steps }}>{fmtInt(c.steps)}</b><span>steps</span></div>}
+            {c.sessions > 0 && <div><b style={{ color: HUE.train }}>{c.sessions}</b><span>session{c.sessions === 1 ? '' : 's'}</span></div>}
+            {c.records > 0 && <div><b style={{ color: GOLD }}>{c.records}</b><span>record{c.records === 1 ? '' : 's'}</span></div>}
+            {c.perfect > 0 && <div><b style={{ color: GOLD }}>{c.perfect}</b><span>perfect day{c.perfect === 1 ? '' : 's'}</span></div>}
           </Reveal>
         </section>
       );

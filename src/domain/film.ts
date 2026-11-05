@@ -89,3 +89,10 @@ export function surpriseRecord(month: string, sets: FilmSet[]): { exercise: stri
   }
   return out;
 }
+
+/** The poster's one line. What has nothing to show is left out, never shown as zero. */
+export function posterLine(km: string, sessions: string, records: string): string {
+  const has = (v: string) => Number(v.replace(/,/g, '')) > 0;
+  const of = (v: string, one: string) => `${v} ${one}${v === '1' ? '' : 's'}`;
+  return [has(km) ? `${km} km` : '', has(sessions) ? of(sessions, 'session') : '', has(records) ? of(records, 'record') : ''].filter(Boolean).join(' · ');
+}

@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
+import { patchDay } from '../db/actions';
 import { db } from '../db/db';
 import { undoEdit } from '../db/edits';
 import { useAllDays, useAllEntries, useAllSets, useSessions, useSettings, useToday } from '../db/hooks';
@@ -7,7 +8,9 @@ import type { AskInput } from '../domain/askData';
 import { addDays, dayRange, type DayKey } from '../domain/dates';
 import { dayCard, searchDiary } from '../domain/dayCard';
 import { fmtDayMonth, fmtInt, fmtTime } from '../domain/format';
+import { drinksAnswer } from '../domain/trackRules';
 import { back, go, openSheet, useRoute } from '../router';
+import { useToast } from '../ui/Toasts';
 import { checklistSlots } from '../state/derived';
 import { Icon } from '../ui/Icon';
 
@@ -58,6 +61,16 @@ function MonthGrid({ month, date, today, has, pick }: { month: string; date: Day
   );
 }
 
+/** A past day can still answer "none", so a blank never has to stand in for it. */
+function NoDrinksDay({ date, answer }: { date: DayKey; answer: ReturnType<typeof drinksAnswer> }) {
+  if (typeof answer === 'number') return null;
+  return (
+    <div className="yu-seg">
+      <button type="button" aria-pressed={answer === 'none'} onClick={() => void patchDay(date, { noDrinks: answer !== 'none' })}>No drinks this day</button>
+    </div>
+  );
+}
+
 /** Every day, in words: what was logged, what wasn't, and a way to add it. Every edit can be undone. */
 export function DiaryPage() {
   const settings = useSettings();
@@ -66,6 +79,7 @@ export function DiaryPage() {
   const sessions = useSessions();
   const sets = useAllSets();
   const today = useToday();
+  const toast = useToast();
   const { params } = useRoute();
   const edits = useLiveQuery(async () => (await db.edits.toArray()).sort((a, b) => b.at - a.at).slice(0, 6), []);
   const asked = params.get('d');
@@ -170,6 +184,7 @@ export function DiaryPage() {
               </div>
             </section>
           )}
+          <NoDrinksDay date={date} answer={drinksAnswer(date, days.find((d) => d.date === date), entries)} />
           <NoteBox date={date} />
         </>
       )}
@@ -184,7 +199,9 @@ export function DiaryPage() {
               return (
                 <div key={x.id} className="yu-diary-row" style={{ gridTemplateColumns: '1fr auto' }}>
                   <span className="yu-q">{verb} {r?.name ?? r?.exercise ?? x.table}<br />{r?.date ? `${fmtDayMonth(r.date)}, ` : ''}{fmtTime(x.at)}</span>
-                  <button type="button" className="btn ghost sm" onClick={() => x.id !== undefined && void undoEdit(x.id)}>Undo</button>
+                  <button type="button" className="btn ghost sm" onClick={async () => {
+                    if (x.id !== undefined && !(await undoEdit(x.id))) toast({ text: 'That was changed again since, so it stays as it is.' });
+                  }}>Undo</button>
                 </div>
               );
             })}

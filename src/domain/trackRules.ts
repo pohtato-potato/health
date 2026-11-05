@@ -129,7 +129,8 @@ export function headlineFor(k: TrackKey, i: HeadInput): Headline {
       const prev = addDays(`${m}-01`, -1).slice(0, 7);
       const was = ofMonth(prev);
       if (now) return { say: `${nights(now)} this month${was ? `, ${now > was ? 'up' : now < was ? 'down' : 'level'}${now === was ? ' with' : ' from'} ${was}` : ''}` };
-      return i.days.some((d) => d.date.startsWith(m) && d.noDrinks) ? { say: 'No drinks this month so far' } : { say: 'Not logged this month' };
+      const answered = i.days.filter((d) => d.date.startsWith(m) && d.noDrinks).length;
+      return answered ? { say: `No drinks on the ${answered} day${answered === 1 ? '' : 's'} you answered` } : { say: 'Not logged this month' };
     }
     case 'meds': {
       const meds = settings.checklist.filter((c) => c.active && c.med);

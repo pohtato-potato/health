@@ -3,7 +3,7 @@ import { fmtDayMonth, fmtInt } from './format';
 import type { Day, FoodEntry, Settings, TrainingSession } from './types';
 
 export type CheckupKind = 'empty-day' | 'double-entry' | 'weight-off' | 'unfinished-session' | 'steps-high' | 'double-dose';
-export interface CheckupFix { label: string; table: 'days' | 'entries' | 'sessions'; rowId: string; remove?: true; patch?: Record<string, unknown> }
+export interface CheckupFix { label: string; table: 'days' | 'entries' | 'sessions'; rowId: string; remove?: true; patch?: Record<string, unknown>; tick?: { date: DayKey; key: string } }
 export interface CheckupFinding { id: string; kind: CheckupKind; date: DayKey; text: string; fix: CheckupFix }
 export interface CheckupInput { today: DayKey; settings: Settings; days: Day[]; entries: FoodEntry[]; sessions: TrainingSession[] }
 
@@ -75,11 +75,9 @@ function doubleDoses(i: CheckupInput): CheckupFinding[] {
     const ticks = Object.entries(d.ticks ?? {}).filter(([k]) => k.startsWith(`${m.id}:`)).sort((a, b) => a[1] - b[1]);
     const second = ticks.find(([, at], n) => n > 0 && at - ticks[n - 1][1] <= DOUBLE_DOSE_MS);
     if (!second) return [];
-    const rest = { ...d.ticks };
-    delete rest[second[0]];
     return [{
-      id: `double-dose:${d.date}:${m.id}`, kind: 'double-dose', date: d.date, text: `${m.name} was ticked twice within minutes on ${fmtDayMonth(d.date)}.`,
-      fix: { label: 'Remove the second tick', table: 'days', rowId: d.date, patch: { ticks: rest } },
+      id: `double-dose:${d.date}:${m.id}`, kind: 'double-dose', date: d.date, text: `Two doses of ${m.name} were ticked within minutes on ${fmtDayMonth(d.date)}.`,
+      fix: { label: 'Remove the second tick', table: 'days', rowId: d.date, tick: { date: d.date, key: second[0] } },
     }];
   }));
 }

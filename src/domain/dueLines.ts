@@ -5,7 +5,7 @@ import { fmtDayMonth } from './format';
 import type { Day, Settings } from './types';
 import { lastFullWeek } from './weekly';
 
-export interface DueItem { id: 'year' | 'story' | 'checkin' | 'backup'; text: string; action: string; path: string }
+export interface DueItem { id: 'year' | 'story' | 'checkin' | 'backup' | 'checkup'; text: string; action: string; path: string }
 
 const BACKUP_DAYS = 10;
 const FIRST_CHECKIN_AFTER = 3;
@@ -20,7 +20,7 @@ export function backupLine(settings: Settings, today: DayKey, days: Day[]): stri
   return gap >= BACKUP_DAYS ? `Backup safe up to ${fmtDayMonth(saved)} · ${gap} days not saved` : undefined;
 }
 
-export function dueItems(i: { today: DayKey; settings: Settings; days: Day[]; lastCheckIn?: DayKey; storySeenWeek?: DayKey }): DueItem[] {
+export function dueItems(i: { today: DayKey; settings: Settings; days: Day[]; lastCheckIn?: DayKey; storySeenWeek?: DayKey; checkupCount?: number }): DueItem[] {
   const out: DueItem[] = [];
   if (yearOffered(i.settings, i.today)) out.push({ id: 'year', text: 'A year of this. Your year is ready', action: 'Open', path: '/year' });
   const week = lastFullWeek(i.today);
@@ -34,5 +34,7 @@ export function dueItems(i: { today: DayKey; settings: Settings; days: Day[]; la
   if (checkIn) out.push({ id: 'checkin', text: 'Your check-in is due', action: 'Open', path: '/checkin' });
   const backup = backupLine(i.settings, i.today, i.days);
   if (backup) out.push({ id: 'backup', text: backup, action: 'Save', path: '/settings' });
+  const off = i.checkupCount ?? 0;
+  if (off > 0) out.push({ id: 'checkup', text: off === 1 ? '1 thing in your data looks off' : `${off} things in your data look off`, action: 'Check', path: '/checkup' });
   return out;
 }

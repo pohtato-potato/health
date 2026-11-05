@@ -52,6 +52,7 @@ export function CheckInScreen() {
   if (live && !frozen.current) frozen.current = live;
   const last = frozen.current;
   const toast = useToast();
+  const [savingFull, setSavingFull] = useState(false);
   const [step, setStep] = useState<Step>('photos');
   const [shots, setShots] = useState<Partial<Record<Pose, Shot>>>({});
   const [pose, setPose] = useState<Pose>('front');
@@ -278,9 +279,17 @@ export function CheckInScreen() {
         <button
           type="button"
           className="btn"
+          disabled={savingFull}
           onClick={async () => {
-            const r = await saveFullBackup();
-            if (r !== 'cancelled') toast({ kicker: 'Full backup', text: r === 'shared' ? 'Handed over. Pick Drive to keep it safe.' : 'Saved to Downloads.', tone: 'sage' });
+            setSavingFull(true);
+            try {
+              const r = await saveFullBackup();
+              if (r !== 'cancelled') toast({ kicker: 'Full backup', text: r === 'shared' ? 'Handed over. Pick Drive to keep it safe.' : 'Saved to Downloads.', tone: 'sage' });
+            } catch (e) {
+              toast({ text: (e as Error).message });
+            } finally {
+              setSavingFull(false);
+            }
           }}
         >
           Full backup now

@@ -2,9 +2,9 @@ import { dayKey } from '../domain/dates';
 import type { Clip, Photo } from '../domain/types';
 import { zip } from '../export/xlsx';
 import { bump, patchSettings } from './actions';
-import { checkBackup, exportData, parseBackup, restoreData, shareFile, type BackupFile, type FileCheck } from './backup';
+import { checkBackup, confirmReadBack, exportData, parseBackup, restoreData, shareFile, type BackupFile, type FileCheck, type ReadBack } from './backup';
 import { db } from './db';
-import { takeSnapshot } from './snapshots';
+import { safetyCopy } from './snapshots';
 
 type PhotoMeta = Omit<Photo, 'blob'> & { file: string };
 type ClipMeta = Omit<Clip, 'blob'> & { file: string };
@@ -16,7 +16,7 @@ export interface FullBackupJson extends BackupFile {
 const ext = (type: string) => (type.includes('mp4') ? 'mp4' : type.includes('webm') ? 'webm' : type.includes('png') ? 'png' : 'jpg');
 
 /** Everything, photos and form clips included, as one .zip. */
-export async function buildFullBackup(): Promise<{ bytes: Uint8Array; name: string }> {
+export async function buildFullBackup(): Promise<{ bytes: Uint8Array; name: string; data: BackupFile; media: Map<string, number> }> {
   const data = await exportData();
   const photos = await db.photos.toArray();
   const clips = await db.clips.toArray();
@@ -37,15 +37,31 @@ export async function buildFullBackup(): Promise<{ bytes: Uint8Array; name: stri
   }
   const json: FullBackupJson = { ...data, media: { photos: photoMeta, clips: clipMeta } };
   files.unshift({ name: 'backup.json', data: new TextEncoder().encode(JSON.stringify(json)) });
-  return { bytes: zip(files), name: `health-full-backup-${dayKey()}.zip` };
+  const media = new Map(files.filter((f) => f.name !== 'backup.json').map((f) => [f.name, f.data.length]));
+  return { bytes: zip(files), name: `health-full-backup-${dayKey()}.zip`, data, media };
 }
 
-export async function saveFullBackup(): Promise<'shared' | 'downloaded' | 'cancelled'> {
-  const { bytes, name } = await buildFullBackup();
+/** Reads the finished zip back: every table counted, every photo and clip there at its full size. */
+export async function confirmFullReadBack(file: File, expected: { data: BackupFile; media: Map<string, number> }): Promise<ReadBack> {
+  try {
+    const back = await readBackupFile(file);
+    const tables = await confirmReadBack(new File([JSON.stringify(back.file)], 'backup.json'), expected.data);
+    if (!tables.ok) return tables;
+    for (const [name, size] of expected.media) {
+      if (back.media?.blobs.get(name)?.length !== size) return { ok: false, why: `The backup came back short: ${name} didn't match, so it wasn't saved.` };
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, why: `The backup couldn't be read back, so it wasn't saved. ${(e as Error).message}` };
+  }
+}
+
+export async function saveFullBackup(deps: { share?: typeof shareFile; readBack?: typeof confirmFullReadBack } = {}): Promise<'shared' | 'downloaded' | 'cancelled'> {
+  const { bytes, name, data, media } = await buildFullBackup();
   const file = new File([bytes as BlobPart], name, { type: 'application/zip' });
-  const check = await checkFullBackupFile(file);
-  if (!check.ok) throw new Error(`The backup couldn't be read back, so it wasn't saved. ${check.why}`);
-  const result = await shareFile(file);
+  const check = await (deps.readBack ?? confirmFullReadBack)(file, { data, media });
+  if (!check.ok) throw new Error(check.why);
+  const result = await (deps.share ?? shareFile)(file);
   if (result !== 'cancelled') {
     await patchSettings((s) => ({ backup: { ...s.backup, lastQuick: Date.now(), lastFull: Date.now(), lastFullBytes: bytes.length } }));
     await bump('backup', { day: dayKey() });
@@ -106,31 +122,40 @@ export async function readBackupFile(f: File): Promise<ParsedBackup> {
   return { file, media: { photos: file.media?.photos ?? [], clips: file.media?.clips ?? [], blobs: files } };
 }
 
+const missingMedia = (b: ParsedBackup) => (b.media ? [...b.media.photos, ...b.media.clips].filter((m) => !b.media!.blobs.has(m.file)).length : 0);
+const missingWords = (n: number) => `${n} photo${n === 1 ? ' or clip is' : 's or clips are'} missing from this file`;
+
 /** Reads a quick or full backup file back, without restoring it. */
 export async function checkFullBackupFile(f: File): Promise<FileCheck> {
   try {
-    return checkBackup((await readBackupFile(f)).file);
+    const b = await readBackupFile(f);
+    const missing = missingMedia(b);
+    if (missing) return { ok: false, why: `${missingWords(missing)}.` };
+    const check = checkBackup(b.file);
+    if (!check.ok || !b.media) return check;
+    const [photos, clips] = [b.media.photos.length, b.media.clips.length];
+    return { ...check, summary: `${check.summary}, ${photos} photo${photos === 1 ? '' : 's'}, ${clips} clip${clips === 1 ? '' : 's'}` };
   } catch (e) {
     return { ok: false, why: (e as Error).message };
   }
 }
 
 export async function restoreAll(b: ParsedBackup) {
-  await takeSnapshot('before', 'Before restoring a backup');
+  const missing = missingMedia(b);
+  if (missing) throw new Error(`${missingWords(missing)}, so nothing was changed.`);
+  await safetyCopy('Before restoring a backup');
   await restoreData(b.file);
   if (!b.media) return;
   await db.transaction('rw', db.photos, db.clips, async () => {
     await db.photos.clear();
     await db.clips.clear();
     for (const m of b.media!.photos) {
-      const data = b.media!.blobs.get(m.file);
-      if (!data) continue;
+      const data = b.media!.blobs.get(m.file)!;
       const { file: _file, ...meta } = m;
       await db.photos.put({ ...meta, blob: new Blob([data as BlobPart], { type: 'image/jpeg' }) });
     }
     for (const m of b.media!.clips) {
-      const data = b.media!.blobs.get(m.file);
-      if (!data) continue;
+      const data = b.media!.blobs.get(m.file)!;
       const { file: _file, ...meta } = m;
       await db.clips.put({ ...meta, blob: new Blob([data as BlobPart], { type: m.type }) });
     }

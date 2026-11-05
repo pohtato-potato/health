@@ -86,6 +86,7 @@ export type FileCheck = { ok: true; exportedAt: string; summary: string; newestD
 
 /** Looks inside a backup file without restoring anything. */
 export function checkBackup(b: BackupFile): FileCheck {
+  if (!TABLES.some((t) => t !== 'settings' && (b.tables[t]?.length ?? 0) > 0)) return { ok: false, why: 'This file opens but has nothing in it. Restoring it would wipe your numbers.' };
   const dates = ((b.tables.days ?? []) as { date: DayKey }[]).map((d) => d.date).sort();
   return { ok: true, exportedAt: b.exportedAt, summary: summarise(b), newestDay: dates[dates.length - 1] };
 }

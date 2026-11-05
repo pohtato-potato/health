@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo } from 'react';
 import { dailyFinding } from '../domain/dailyFinding';
 import { addDays, dayKey, daysBetween } from '../domain/dates';
+import { dataCheckup } from '../domain/checkup';
 import { dueItems } from '../domain/dueLines';
 import { fmtInt } from '../domain/format';
 import { todaysLift } from '../domain/slowDay';
@@ -70,7 +71,8 @@ export function You() {
   const total = settings.goalDate ? daysBetween(start, settings.goalDate) + 1 : undefined;
 
   const lastCheckIn = checkins.map((c) => c.date).sort().pop();
-  const due = dueItems({ today, settings, days, lastCheckIn, storySeenWeek: readStorySeen() });
+  const checkupCount = dataCheckup({ today, settings, days, entries: momentum.entries, sessions: momentum.sessions }).length;
+  const due = dueItems({ today, settings, days, lastCheckIn, storySeenWeek: readStorySeen(), checkupCount });
   const steps = trendRows(today, momentum).find((r) => r.area === 'steps');
   const yesterday = days.find((d) => d.date === addDays(today, -1));
   const months = [...new Set(days.map((d) => d.date.slice(0, 7)))].sort().reverse();

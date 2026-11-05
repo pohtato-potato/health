@@ -51,13 +51,15 @@ export function MonthPage() {
         {!empty && (
           <>
             <Reveal className="yu-spread">
-              <div className="yu-sp1">
-                <div className="yu-sp-big"><CountUp to={s.sets} fmt={fmtInt} /></div>
-                <span>sets, across {s.sessions} session{s.sessions === 1 ? '' : 's'}</span>
-                <div className="yu-wk" role="img" aria-label={`Sessions by weekday: ${s.perWeekday.join(', ')}, Monday first`}>
-                  {s.perWeekday.map((n, i) => <span key={i} style={{ '--h': `${Math.round((n / peak) * BAR_MAX)}px`, '--i': i } as CSSProperties}><i /><small>{DAYS[i]}</small></span>)}
+              {s.sets > 0 && (
+                <div className="yu-sp1">
+                  <div className="yu-sp-big"><CountUp to={s.sets} fmt={fmtInt} /></div>
+                  <span>sets, across {s.sessions} session{s.sessions === 1 ? '' : 's'}</span>
+                  <div className="yu-wk" role="img" aria-label={`Sessions by weekday: ${s.perWeekday.join(', ')}, Monday first`}>
+                    {s.perWeekday.map((n, i) => <span key={i} style={{ '--h': `${Math.round((n / peak) * BAR_MAX)}px`, '--i': i } as CSSProperties}><i /><small>{DAYS[i]}</small></span>)}
+                  </div>
                 </div>
-              </div>
+              )}
               {s.stepsAvg !== undefined && <Stat value={fmtInt(s.stepsAvg)} label="steps a day" c={HUE.steps} c2={HUE.walk} vals={s.stepsSeries} />}
               {s.proteinAvg !== undefined && <Stat value={`${fmtInt(s.proteinAvg)} g`} label="protein a day" c={HUE.food} c2="#ff7db8" vals={s.proteinSeries} />}
               {s.sleepAvg !== undefined && <Stat value={fmtDuration(s.sleepAvg)} label="asleep a night" c={HUE.sleep} c2={HUE.train} vals={s.sleepSeries} />}

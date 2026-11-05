@@ -17,6 +17,15 @@ export async function takeSnapshot(kind: Snapshot['kind'], reason?: string, day:
   return id;
 }
 
+/** The copy taken before anything is replaced. If it can't be saved, nothing goes ahead. */
+export async function safetyCopy(reason: string): Promise<void> {
+  try {
+    await takeSnapshot('before', reason);
+  } catch {
+    throw new Error("Couldn't save a copy first, so nothing was changed.");
+  }
+}
+
 export async function dailySnapshot(today: DayKey): Promise<void> {
   const dailies = await db.snapshots.where('kind').equals('daily').toArray();
   if (!dailies.some((s) => s.day === today)) await takeSnapshot('daily', undefined, today);
@@ -29,6 +38,6 @@ export async function listSnapshots(): Promise<Snapshot[]> {
 export async function restoreSnapshot(id: string): Promise<void> {
   const snap = await db.snapshots.get(id);
   if (!snap) throw new Error('That snapshot is no longer here.');
-  await takeSnapshot('before', 'Before going back to a snapshot');
+  await safetyCopy('Before going back to a snapshot');
   await restoreData(parseBackup(snap.data));
 }

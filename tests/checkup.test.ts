@@ -76,7 +76,7 @@ describe('applyFix', () => {
     const f = dataCheckup(input({ entries: await db.entries.toArray() }))[0];
     const edit = await applyFix(f);
     expect(await db.entries.get('b')).toBeUndefined();
-    await undoEdit(edit);
+    await undoEdit(edit!);
     expect(await db.entries.get('b')).toBeDefined();
   });
   it('clears a field without touching the rest of the day, and undo restores it', async () => {
@@ -87,7 +87,7 @@ describe('applyFix', () => {
     const d = await db.days.get(TODAY);
     expect(d?.steps).toBeUndefined();
     expect(d?.note).toBe('keep');
-    await undoEdit(edit);
+    await undoEdit(edit!);
     expect((await db.days.get(TODAY))?.steps).toBe(60000);
   });
   it('finishes a session left open', async () => {

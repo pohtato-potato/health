@@ -1,4 +1,4 @@
-import { addDays, type DayKey } from './dates';
+import { addDays, dayKey, type DayKey } from './dates';
 import { fmtInt } from './format';
 import { sleepMinutes } from './rings';
 import type { Day, FoodEntry, Settings, TrainingSession } from './types';
@@ -52,6 +52,11 @@ function sessionsIn(date: DayKey, p: Prepared): number {
   return p.done.filter((s) => s.date >= from && s.date < date).length;
 }
 
+/** The first day training could have been logged: nothing before it counts as none. */
+function firstUse(p: Prepared): DayKey {
+  return p.done.reduce((first, s) => (s.date < first ? s.date : first), dayKey(new Date(p.i.settings.createdAt)));
+}
+
 function scoresOf(date: DayKey, p: Prepared): Partial<Record<MomentumArea, number>> {
   const out: Partial<Record<MomentumArea, number>> = {};
   const t = tallies(date, p);
@@ -59,7 +64,8 @@ function scoresOf(date: DayKey, p: Prepared): Partial<Record<MomentumArea, numbe
     if (t[a][0] >= MIN_LOGGED) out[a] = t[a][1] / t[a][0];
   }
   const perWeek = targetsFor(p.i.settings, date).sessionsPerWeek;
-  if (p.i.settings.plan && perWeek > 0) out.training = Math.min(1, sessionsIn(date, p) / (perWeek * 2));
+  const done = sessionsIn(date, p);
+  if (p.i.settings.plan && perWeek > 0 && (done > 0 || date >= addDays(firstUse(p), WINDOW))) out.training = Math.min(1, done / (perWeek * 2));
   return out;
 }
 

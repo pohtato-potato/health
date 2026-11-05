@@ -80,11 +80,12 @@ export function assessment(month: string, i: MonthInput): Grade[] {
   }
   const drinkNights = (m: string) => new Set(i.entries.filter((e) => e.kind === 'drink' && e.date.startsWith(m)).map((e) => e.date)).size;
   const [now, was] = [drinkNights(month), drinkNights(previousMonth(month))];
-  if (now || was) {
+  const answeredNone = i.days.filter((d) => d.date.startsWith(month) && d.noDrinks).length;
+  if (now || (was && answeredNone)) {
     const n = `${now} night${now === 1 ? '' : 's'}`;
     out.push(now > was
       ? { area: 'Drinks', word: was ? 'Slipped' : 'Usual', why: was ? `${n}, up from ${was}` : n }
-      : { area: 'Drinks', word: 'Good', why: now === was ? `${n}, the same as last month` : `${n}, down from ${was}` });
+      : { area: 'Drinks', word: 'Good', why: !now ? `No drinks on the ${answeredNone} day${answeredNone === 1 ? '' : 's'} you answered, down from ${was} night${was === 1 ? '' : 's'}` : now === was ? `${n}, the same as last month` : `${n}, down from ${was}` });
   }
   return out;
 }

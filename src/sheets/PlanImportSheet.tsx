@@ -15,6 +15,7 @@ export function PlanImportSheet({ plan, settings, onClose }: { plan: PlanDef; se
   const sets = useAllSets();
   const sessions = useSessions();
   const toast = useToast();
+  const [applying, setApplying] = useState(false);
   const diff = useMemo(() => (sets && sessions ? diffPlans(settings.plan, plan, { ...settings, sets, sessions }) : undefined), [plan, settings, sets, sessions]);
   const [start, setStart] = useState<string | null>(null);
   const [skipReset, setSkipReset] = useState<Set<string>>(new Set());
@@ -72,12 +73,20 @@ export function PlanImportSheet({ plan, settings, onClose }: { plan: PlanDef; se
       <button
         type="button"
         className="btn lg block"
+        disabled={applying}
         onClick={async () => {
-          const resets = diff.loads.filter((c) => c.forced || !skipReset.has(c.id)).map((c) => c.id);
-          await patchSettings((s) => applyImport(s, plan, { resets, start: startAt, at: Date.now() }));
-          await bump('plan-import');
-          onClose();
-          toast({ text: `${plan.name} is your plan now. Next: ${name(startAt)}.` });
+          setApplying(true);
+          try {
+            const resets = diff.loads.filter((c) => c.forced || !skipReset.has(c.id)).map((c) => c.id);
+            await patchSettings((s) => applyImport(s, plan, { resets, start: startAt, at: Date.now() }));
+            await bump('plan-import');
+            onClose();
+            toast({ text: `${plan.name} is your plan now. Next: ${name(startAt)}.` });
+          } catch (e) {
+            toast({ text: `The plan wasn't changed. ${(e as Error).message}` });
+          } finally {
+            setApplying(false);
+          }
         }}
       >
         Use this plan

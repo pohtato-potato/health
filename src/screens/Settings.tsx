@@ -33,6 +33,7 @@ export function SettingsScreen() {
   const { params } = useRoute();
   const pwa = usePwa();
   const toast = useToast();
+  const [busy, setBusy] = useState(false);
   const [editor, setEditor] = useState<Editor>(null);
   const [item, setItem] = useState<ChecklistItem | null>(null);
   const [pending, setPending] = useState<{ kind: 'backup'; parsed: ParsedBackup } | null>(null);
@@ -251,9 +252,17 @@ export function SettingsScreen() {
           <button
             type="button"
             className="btn ghost"
+            disabled={busy}
             onClick={async () => {
-              const r = await saveFullBackup();
-              if (r !== 'cancelled') toast({ kicker: 'Full backup', text: r === 'shared' ? 'Handed over. Pick Drive to keep it safe.' : 'Saved to Downloads.', tone: 'sage' });
+              setBusy(true);
+              try {
+                const r = await saveFullBackup();
+                if (r !== 'cancelled') toast({ kicker: 'Full backup', text: r === 'shared' ? 'Handed over. Pick Drive to keep it safe.' : 'Saved to Downloads.', tone: 'sage' });
+              } catch (e) {
+                toast({ text: (e as Error).message });
+              } finally {
+                setBusy(false);
+              }
             }}
           >
             Full backup, with photos
@@ -285,11 +294,11 @@ export function SettingsScreen() {
           <input ref={checkInput} type="file" accept="application/json,.json,application/zip,.zip" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void checkFullBackupFile(f).then(setChecked); }} />
           {checked && (
             <div className="yu-card" role="status">
-              <b>{checked.ok ? 'This file is safe to restore from.' : 'This file has a problem.'}</b>
+              <b>{checked.ok ? 'This file opens and reads correctly.' : 'This file has a problem.'}</b>
               <span className="yu-q">{checked.ok ? `${checked.newestDay ? `Up to ${fmtDayMonth(checked.newestDay)}. ` : ''}${checked.summary}.` : checked.why}</span>
             </div>
           )}
-          <LinkRow title="Restore from a backup" sub="A snapshot of this phone is taken first" onClick={() => backupInput.current?.click()} />
+          <LinkRow title="Restore from a backup" sub="A snapshot of your numbers is taken first" onClick={() => backupInput.current?.click()} />
           <input ref={backupInput} type="file" accept="application/json,.json,application/zip,.zip" hidden onChange={(e) => (pickBackup(e.target.files?.[0]), (e.target.value = ''))} />
         </div>
         <div className="list">
@@ -448,10 +457,18 @@ export function SettingsScreen() {
           <button
             type="button"
             className="btn lg block"
+            disabled={busy}
             onClick={async () => {
-              await restoreAll(pending.parsed);
-              setPending(null);
-              toast({ kicker: 'Restored', text: summarise(pending.parsed.file), tone: 'sage' });
+              setBusy(true);
+              try {
+                await restoreAll(pending.parsed);
+                setPending(null);
+                toast({ kicker: 'Restored', text: summarise(pending.parsed.file), tone: 'sage' });
+              } catch (e) {
+                toast({ text: (e as Error).message });
+              } finally {
+                setBusy(false);
+              }
             }}
           >
             Replace and restore

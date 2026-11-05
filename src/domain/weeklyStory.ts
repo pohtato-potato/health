@@ -20,7 +20,7 @@ export interface StoryInput {
 export type StoryChapter =
   | { id: 'road'; km: number; toKm: number; reached: string; ahead?: string; aheadKm?: number }
   | { id: 'visitors'; ids: string[] }
-  | { id: 'tally'; steps: number; sessions: number; records: number; perfect: number }
+  | { id: 'tally'; steps?: number; sessions: number; records: number; perfect: number }
   | { id: 'swing'; what: string; now: string; was: string; up: boolean }
   | { id: 'food'; proteinAvg?: number; foodDays: number; inRange: number }
   | { id: 'sleep'; avg: string; nights: number }
@@ -70,7 +70,7 @@ export function storyChapters(week: DayKey, i: StoryInput): StoryChapter[] {
   const met = metBetween(i.sightings, week, end);
   if (met.length) out.push({ id: 'visitors', ids: met });
 
-  if (w.steps || w.sessions || w.records.length || w.perfect) out.push({ id: 'tally', steps: w.steps, sessions: w.sessions, records: w.records.length, perfect: w.perfect });
+  if (w.steps || w.sessions || w.records.length || w.perfect) out.push({ id: 'tally', steps: w.steps || undefined, sessions: w.sessions, records: w.records.length, perfect: w.perfect });
   const s = swing(w, prev);
   if (s) out.push(s);
   if (w.foodDays > 0) out.push({ id: 'food', proteinAvg: w.proteinAvg, foodDays: w.foodDays, inRange: w.inRange });

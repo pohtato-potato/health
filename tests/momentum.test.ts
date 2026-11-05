@@ -10,6 +10,7 @@ const TARGETS = { kcalMin: 2000, kcalMax: 2400, proteinG: 140, steps: 10000, wat
 
 const settings = (plan = false): Settings => ({
   ...defaultSettings(),
+  createdAt: new Date(2020, 0, 1).getTime(),
   targets: [{ from: '2020-01-01', targets: TARGETS }],
   plan: plan ? PLAN : undefined,
 });

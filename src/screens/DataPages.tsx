@@ -33,8 +33,13 @@ export function Checkup() {
   if (!settings || !days || !entries || !sessions) return <div className="page bare" />;
   const list = dataCheckup({ today, settings, days, entries, sessions });
   const fix = async (f: CheckupFinding) => {
-    const id = await applyFix(f);
-    toast({ text: 'Fixed', action: { label: 'Undo', run: () => void undoEdit(id) } });
+    try {
+      const id = await applyFix(f);
+      if (id === undefined) toast({ text: 'Fixed. You can tick it again from the checklist.' });
+      else toast({ text: 'Fixed', action: { label: 'Undo', run: () => void undoEdit(id) } });
+    } catch (e) {
+      toast({ text: (e as Error).message });
+    }
   };
   return (
     <Frame title="Data check-up">
@@ -58,6 +63,10 @@ const SHOWN_AT_FIRST = 100;
 export function EditHistory() {
   const edits = useLiveQuery(async () => (await db.edits.toArray()).sort((a, b) => b.at - a.at), []);
   const [all, setAll] = useState(false);
+  const toast = useToast();
+  const undo = async (id: number) => {
+    if (!(await undoEdit(id))) toast({ text: 'That was changed again since, so it stays as it is.' });
+  };
   if (!edits) return <div className="page bare" />;
   const shown = all ? edits : edits.slice(0, SHOWN_AT_FIRST);
   const byDay = new Map<string, typeof edits>();
@@ -78,7 +87,7 @@ export function EditHistory() {
               return (
                 <div key={x.id} className="yu-diary-row" style={{ gridTemplateColumns: '1fr auto' }}>
                   <span>{verb} {r?.name ?? r?.exercise ?? x.table}<br /><span className="yu-q">{r?.date ? `for ${fmtDayMonth(r.date)}, ` : ''}{fmtTime(x.at)}</span></span>
-                  <button type="button" className="btn ghost sm" onClick={() => x.id !== undefined && void undoEdit(x.id)}>Undo</button>
+                  <button type="button" className="btn ghost sm" onClick={() => x.id !== undefined && void undo(x.id)}>Undo</button>
                 </div>
               );
             })}
@@ -97,8 +106,12 @@ export function Snapshots() {
   if (!list) return <div className="page bare" />;
   const restore = async (id: string, when: string) => {
     if (!(await askConfirm({ title: `Go back to ${when}?`, body: "Your numbers return to how they were then. A snapshot of today is taken first, so you can come back.", yes: 'Go back' }))) return;
-    await restoreSnapshot(id);
-    toast({ text: `Back to ${when}`, tone: 'sage' });
+    try {
+      await restoreSnapshot(id);
+      toast({ text: `Back to ${when}`, tone: 'sage' });
+    } catch (e) {
+      toast({ text: (e as Error).message });
+    }
   };
   return (
     <Frame title="Snapshots">
