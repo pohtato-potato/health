@@ -7,3 +7,5 @@
 - Blank never reads as zero: months say "Not logged.", a comparison says "not logged", a bare stitch stays bare.
 - Removes `#/proto/you`, `YouLiving.tsx` and `you-proto.css`.
 - Tests: `tests/year-page.test.ts`.
+
+**Later change:** the blanket was removed before shipping, on the owner's word. The app has no weather data, so it could only show steps under a weather name.

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultSettings } from '../src/db/actions';
 import { dueItems } from '../src/domain/dueLines';
 import type { MonthInput } from '../src/domain/monthReport';
-import { almanac, blanket, blanketKey, dayOneAgainstToday, mostOf, yearOffered, yearReplay } from '../src/domain/yearPage';
+import { almanac, dayOneAgainstToday, mostOf, yearOffered, yearReplay } from '../src/domain/yearPage';
 import { addDays } from '../src/domain/dates';
 import type { Day, FoodEntry, SetEntry, TrainingSession } from '../src/domain/types';
 
@@ -88,25 +88,6 @@ describe('dayOneAgainstToday', () => {
     const sleep = rows.find((r) => r.label === 'Sleep a night')!;
     expect(sleep.then).toBe('not logged');
     expect(sleep.now).toBe('not logged');
-  });
-});
-
-describe('blanket', () => {
-  const s = defaultSettings();
-  const at = (steps: number | undefined) => blanket(input({ settings: { ...s, createdAt: new Date(2026, 10, 2, 12).getTime() }, today: '2026-11-02', days: steps === undefined ? [] : [{ date: '2026-11-02', steps }] }))[0].days.find((d) => d.date === '2026-11-02')!;
-  it('a blank day has no band, and is never the coldest', () => {
-    expect(at(undefined).band).toBeUndefined();
-  });
-  it('a logged day of any size has a band', () => {
-    expect(at(1).band).toBe('frost');
-    expect(at(1000000).band).toBe('blaze');
-  });
-  it('weeks are complete rows of seven', () => {
-    const b = blanket(input({ days: [{ date: '2026-09-01', steps: 1 }] }));
-    for (const w of b) expect(w.days).toHaveLength(7);
-  });
-  it('every band is named in words', () => {
-    expect(blanketKey.map((k) => k.word)).toEqual(['Frost', 'Cool', 'Mild', 'Warm', 'Blaze']);
   });
 });
 

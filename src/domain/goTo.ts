@@ -21,7 +21,7 @@ export const GO_TO: (GoToHit & { words?: string[] })[] = [
   { label: 'Medicines', path: '/medicines', words: ['pills'] },
   { label: 'Night sky', path: '/sky', words: ['stars'] },
   { label: 'Reveal day', path: '/reveal' },
-  { label: 'Your year', path: '/year', words: ['almanac', 'blanket', 'anniversary'] },
+  { label: 'Your year', path: '/year', words: ['almanac', 'anniversary'] },
   { label: 'Settings', path: '/settings', words: ['targets', 'preferences'] },
   { label: 'Backup', path: '/settings', words: ['save', 'restore', 'export'] },
 ];

@@ -322,11 +322,6 @@
 .yu-almanac { display: flex; flex-direction: column; gap: 8px; }
 .yu-almanac li { list-style: none; }
 .yu-almanac b { font-family: var(--serif); font-weight: 400; font-size: 20px; }
-.yu-blanket { display: flex; flex-direction: column; gap: 2px; }
-.yu-blanket > div { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; height: 16px; align-items: center; }
-.yu-blanket i { display: block; border-radius: 3px; background: var(--b, transparent); height: var(--t, 100%); }
-.yu-blanket i.none { height: 4px; background: none; border-top: 1px dotted var(--edge); }
-.yu-blanket i.future { visibility: hidden; }
 .yu-key-list { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
 .yu-key-list span { display: grid; grid-template-columns: 34px 58px 1fr; gap: 8px; align-items: center; min-height: 20px; }
 .yu-key-list i { display: block; border-radius: 3px; background: var(--b); height: var(--t, 100%); min-height: 3px; }

@@ -1,10 +1,9 @@
-import { addDays, dayKey, dayRange, daysBetween, weekStart, type DayKey } from './dates';
+import { addDays, dayKey, daysBetween, type DayKey } from './dates';
 import { fmtDayMonth, fmtDuration, fmtInt } from './format';
 import { monthLabel } from './goTo';
 import type { MonthInput } from './monthReport';
 import { sleepMinutes } from './rings';
 import type { Settings } from './types';
-import { targetsFor } from '../state/derived';
 import { kmFromSteps, setStride } from './walk';
 
 const OFFER_DAYS = 7;
@@ -113,43 +112,6 @@ export function dayOneAgainstToday(i: MonthInput): ThenNow[] {
     row('Protein a day', (n) => `${fmtInt(n)} g`, [...byDayFood].map(([date, v]) => ({ date, v }))),
     row('Weight', (n) => `${n.toFixed(1)} kg`, i.days.filter((d) => d.weightKg !== undefined).map((d) => ({ date: d.date, v: d.weightKg! }))),
   ];
-}
-
-export type BlanketBand = 'frost' | 'cool' | 'mild' | 'warm' | 'blaze';
-export const blanketKey: { band: BlanketBand; word: string; note: string }[] = [
-  { band: 'frost', word: 'Frost', note: 'under half your step goal' },
-  { band: 'cool', word: 'Cool', note: 'under three quarters' },
-  { band: 'mild', word: 'Mild', note: 'nearly there' },
-  { band: 'warm', word: 'Warm', note: 'at your goal' },
-  { band: 'blaze', word: 'Blaze', note: 'a third over' },
-];
-
-function bandFor(steps: number, target: number): BlanketBand {
-  const r = steps / Math.max(target, 1);
-  if (r < 0.5) return 'frost';
-  if (r < 0.75) return 'cool';
-  if (r < 1) return 'mild';
-  return r < 4 / 3 ? 'warm' : 'blaze';
-}
-
-export interface BlanketWeek { week: DayKey; days: { date: DayKey; band?: BlanketBand }[] }
-
-/** A temperature blanket of your own days, a row a week. Each stitch is how the day ran against your goal, and a day not logged stays bare. */
-export function blanket(i: MonthInput): BlanketWeek[] {
-  const first = firstMonth(i) ? [...i.days.filter(isLogged).map((d) => d.date), ...i.entries.map((e) => e.date)].sort()[0] : undefined;
-  const from = first ?? (i.settings.createdAt ? dayKey(new Date(i.settings.createdAt)) : i.today);
-  const by = new Map(i.days.map((d) => [d.date, d]));
-  const weeks: BlanketWeek[] = [];
-  for (let w = weekStart(from); w <= i.today; w = addDays(w, 7)) {
-    weeks.push({
-      week: w,
-      days: dayRange(w, addDays(w, 6)).map((date) => {
-        const steps = date <= i.today ? by.get(date)?.steps : undefined;
-        return steps === undefined ? { date } : { date, band: bandFor(steps, targetsFor(i.settings, date).steps) };
-      }),
-    });
-  }
-  return weeks;
 }
 
 export interface ReplayFrame { title: string; lines: string[] }

@@ -1,20 +1,10 @@
-import { useState, type CSSProperties } from 'react';
-import { almanac, blanket, blanketKey, dayOneAgainstToday, mostOf, yearReplay, type BlanketBand, type ReplayFrame } from '../domain/yearPage';
+import { useState } from 'react';
+import { almanac, dayOneAgainstToday, mostOf, yearReplay, type ReplayFrame } from '../domain/yearPage';
 import { spokenLine } from '../domain/voice';
 import { back } from '../router';
 import { Icon } from '../ui/Icon';
 import { RegionFrameView } from '../ui/live/RegionFrame';
 import { useMonthInput } from './reports/useMonthInput';
-
-/** Colour and height both carry the band, so it reads without colour too. */
-const BAND: Record<BlanketBand, { c: string; t: string }> = {
-  frost: { c: '#7fb4ff', t: '30%' },
-  cool: { c: '#7fe0d4', t: '48%' },
-  mild: { c: '#e8e27a', t: '66%' },
-  warm: { c: '#ffb05c', t: '84%' },
-  blaze: { c: '#ff6f6f', t: '100%' },
-};
-const bandStyle = (b: BlanketBand) => ({ '--b': BAND[b].c, '--t': BAND[b].t }) as CSSProperties;
 
 function Replay({ frames, onClose }: { frames: ReplayFrame[]; onClose: () => void }) {
   const [n, setN] = useState(0);
@@ -29,7 +19,7 @@ function Replay({ frames, onClose }: { frames: ReplayFrame[]; onClose: () => voi
   );
 }
 
-/** The year at a glance: by month, the most-ofs, a replay, day one against today, and a blanket of your days. */
+/** The year at a glance: by month, the most-ofs, a replay, and day one against today. */
 export function YearPage() {
   const input = useMonthInput();
   const [playing, setPlaying] = useState(false);
@@ -37,7 +27,6 @@ export function YearPage() {
   const months = almanac(input);
   const lists = mostOf(input);
   const compare = dayOneAgainstToday(input);
-  const weeks = blanket(input);
   const frames = yearReplay(input);
   const line = spokenLine(input.settings, input.today, 'milestone', `year${input.today}`);
   if (playing && frames.length) return <Replay frames={frames} onClose={() => setPlaying(false)} />;
@@ -81,22 +70,6 @@ export function YearPage() {
             </div>
           </section>
         ))}
-        {months.length > 0 && (
-          <section className="yu-sec">
-            <h2>The blanket</h2>
-            <span className="yu-q">A row a week, Monday to Sunday. Each stitch is how a day ran against your step goal, and a day not logged stays bare.</span>
-            <div className="yu-blanket" role="img" aria-label={`${weeks.length} weeks of days, by how they ran against your step goal`}>
-              {weeks.map((w) => (
-                <div key={w.week}>
-                  {w.days.map((d) => (d.date > input.today ? <i key={d.date} className="future" /> : d.band ? <i key={d.date} style={bandStyle(d.band)} /> : <i key={d.date} className="none" />))}
-                </div>
-              ))}
-            </div>
-            <div className="yu-key-list">
-              {blanketKey.map((k) => <span key={k.band}><span style={{ display: 'flex', alignItems: 'center' }}><i style={{ ...bandStyle(k.band), width: '100%' }} /></span><b style={{ fontWeight: 500 }}>{k.word}</b><em>{k.note}</em></span>)}
-            </div>
-          </section>
-        )}
       </div>
     </RegionFrameView>
   );
