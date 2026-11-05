@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { addDays, dayKey, logHour, partOfDay, weekStart } from '../domain/dates';
-import { revealDue } from '../domain/creatures';
+import { creatureThemeOn, revealDue } from '../domain/creatures';
+import { creatureById } from '../domain/creatureRoster';
 import { fmtDuration, fmtInt, fmtTime } from '../domain/format';
 import { findSession } from '../domain/plan';
 import { sleepMinutes, stepsGoal } from '../domain/rings';
 import { pinnedLine, voiceLine, plainFlagLine, type Moment } from '../domain/voice';
 import { addEntries, bump, deleteEntry, setSteps, setTick } from '../db/actions';
 import { useKonami } from '../ui/useKonami';
-import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useSessions, useNow, useSettings, useToday } from '../db/hooks';
+import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useSessions, useNow, useSettings, useSightings, useToday } from '../db/hooks';
 import { prefOn } from '../domain/types';
 import { voiceFor } from '../domain/voice';
 import { kmFromSteps } from '../domain/walk';
@@ -77,6 +78,7 @@ import type { Festive } from '../walk/art/festive';
 
 export function Today() {
   const unlocked = useUnlockedIds();
+  const sightings = useSightings();
   const settings = useSettings();
   const today = useToday();
   const days = useAllDays();
@@ -162,7 +164,10 @@ export function Today() {
       });
 
   const walkKm = kmFromSteps(days.reduce((n, d) => n + (d.steps ?? 0), 0));
-  const themeDay = themeDayOn(today, regionAt(walkKm), { birthday: settings.birthday });
+  const calendarOn = (d: string) => themeDayOn(d, regionAt(walkKm), { birthday: settings.birthday });
+  const themeCreature = creatureById(creatureThemeOn({ date: today, worn: day?.theme, sightings: sightings ?? [], hasOtherTheme: (d) => !!calendarOn(d) }));
+  const themeDay = themeCreature?.theme ?? calendarOn(today);
+  const wornRing = creatureById(settings.ringStyle)?.ring?.style;
   // The voice speaks only at moments; otherwise the plain glance line.
   const recordsTonight = tonight(sessions, sets, today)?.records ?? [];
   const voiceNow = moment === 'perfect' || moment === 'proteinClosed' || (moment === 'trained' && recordsTonight.length > 0);
@@ -247,7 +252,7 @@ export function Today() {
               progress={[rings.kcal.progress, rings.protein.progress, rings.steps.progress]}
               label={themeDay ? `Rings for ${themeDay.name}: ${rings.closed} of 3 closed` : `Rings: ${rings.closed} of 3 closed`}
               center={`${rings.closed}/3`}
-              style={themeDay?.ring}
+              style={themeDay?.ring ?? wornRing}
               goldClosed={!!unlocked && hasReward(unlocked, 'Gold rings') && prefOn(settings.prefs, 'goldRings')}
               goldCount={goldCount ?? (rings.perfect ? 3 : 0)}
               chain={rings.perfect ? (playing?.kind === 'perfect' ? 'draw' : 'still') : undefined}
