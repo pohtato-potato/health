@@ -30,7 +30,7 @@ import { RingsNumbers } from './today/RingsNumbers';
 import { LiveRings } from './today/LiveRings';
 import { RingMomentFx } from './today/RingMomentFx';
 import { useRingMoment } from './today/useRingMoment';
-import { RING_WORD } from '../domain/ringMoments';
+import { RING_WORD, ringsGold } from '../domain/ringMoments';
 import { TodayLayout } from './today/TodayLayout';
 import { DrawerHandle, TodayDrawer } from './today/TodayDrawer';
 import { proteinState } from '../domain/proteinState';
@@ -110,7 +110,7 @@ export function Today() {
   const [ringSpin, setRingSpin] = useState(0);
   const [ringPlay, setRingPlay] = useState(0);
   const ringDay = settings && days && entries ? dayRings(settings, today, days.find((d) => d.date === today), entries).rings : undefined;
-  const { playing, goldCount } = useRingMoment({
+  const { playing, goldCount, perfectPlayed } = useRingMoment({
     date: today,
     closed: { kcal: !!ringDay?.kcal.closed, protein: !!ringDay?.protein.closed, steps: !!ringDay?.steps.closed },
     hold: !ringDay || !!route.params.get('sheet') || momentShowing,
@@ -263,7 +263,7 @@ export function Today() {
               center={`${rings.closed}/3`}
               style={themeDay?.ring ?? wornRing}
               goldClosed={!!unlocked && hasReward(unlocked, 'Gold rings') && prefOn(settings.prefs, 'goldRings')}
-              goldCount={goldCount ?? (rings.perfect ? 3 : 0)}
+              goldCount={ringsGold({ counting: goldCount, perfect: rings.perfect, played: perfectPlayed })}
               chain={rings.perfect ? (playing?.kind === 'perfect' ? 'draw' : 'still') : undefined}
               spin={ringSpin + (playing?.kind === 'perfect' ? playing.id : 0)}
               play={ringPlay}

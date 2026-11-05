@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { ringMomentKey, ringMomentMarks, ringMomentsDue } from '../src/domain/ringMoments';
+import { ringMomentKey, ringMomentMarks, ringMomentsDue, ringsGold } from '../src/domain/ringMoments';
 import { LiveRings } from '../src/screens/today/LiveRings';
 import { RingsNumbers } from '../src/screens/today/RingsNumbers';
 
@@ -48,5 +48,15 @@ describe('the living rings', () => {
   it('the numbers start at their true value before they count up', () => {
     const html = renderToStaticMarkup(<RingsNumbers rows={[{ key: 'kcal', name: 'Calories', value: '1,640', unit: 'kcal', target: 't', ink: 'x', known: true }]} rings={null} closed={0} onLogFood={() => {}} onSaveSteps={() => {}} showCopyHint={false} />);
     expect(html).toContain('1,640');
+  });
+});
+
+describe('ringsGold', () => {
+  it('stays plain until the perfect day has played, then stays gold', () => {
+    expect(ringsGold({ counting: null, perfect: true, played: false })).toBe(0);
+    expect(ringsGold({ counting: 2, perfect: true, played: true })).toBe(2);
+    expect(ringsGold({ counting: null, perfect: true, played: true })).toBe(3);
+    expect(ringsGold({ counting: null, perfect: true, played: undefined })).toBe(3);
+    expect(ringsGold({ counting: null, perfect: false, played: true })).toBe(0);
   });
 });

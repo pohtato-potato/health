@@ -23,3 +23,12 @@ export function ringMomentsDue(date: DayKey, closed: Record<RingKey, boolean>, s
 export function ringMomentMarks(date: DayKey, m: RingMoment): string[] {
   return m.kind === 'perfect' ? [ringMomentKey(date, 'perfect'), ...RINGS.map((r) => ringMomentKey(date, r))] : [ringMomentKey(date, m.ring)];
 }
+
+/**
+ * How many rings show gold. A playing perfect day counts them in itself; otherwise they stay plain until its moment
+ * has been played, so a save that closes the last ring doesn't flash gold first. `played` is undefined while loading.
+ */
+export function ringsGold(i: { counting: number | null; perfect: boolean; played: boolean | undefined }): number {
+  if (i.counting !== null) return i.counting;
+  return i.perfect && i.played !== false ? 3 : 0;
+}

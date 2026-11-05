@@ -1,8 +1,9 @@
+import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef, useState } from 'react';
 import { buzz, chime } from '../../audio';
 import { db } from '../../db/db';
 import type { DayKey } from '../../domain/dates';
-import { ringMomentMarks, ringMomentsDue, type RingKey, type RingMoment } from '../../domain/ringMoments';
+import { ringMomentKey, ringMomentMarks, ringMomentsDue, type RingKey, type RingMoment } from '../../domain/ringMoments';
 import { quietNow } from '../../ui/quiet';
 
 export const RING_MS = 3600;
@@ -14,6 +15,7 @@ export type PlayingMoment = RingMoment & { id: number };
 export function useRingMoment(i: { date: DayKey; closed: Record<RingKey, boolean>; hold: boolean; rest: boolean; momentsOn: boolean; ding: boolean; buzzOn: boolean; quiet: boolean }) {
   const [playing, setPlaying] = useState<PlayingMoment | null>(null);
   const [goldCount, setGoldCount] = useState<number | null>(null);
+  const perfectPlayed = useLiveQuery(async () => !!(await db.seen.get(ringMomentKey(i.date, 'perfect'))), [i.date]);
   const busy = useRef(false);
   const nextId = useRef(1);
   const key = `${i.date}|${i.closed.kcal}|${i.closed.protein}|${i.closed.steps}|${i.hold}|${i.rest}|${i.momentsOn}`;
@@ -52,5 +54,5 @@ export function useRingMoment(i: { date: DayKey; closed: Record<RingKey, boolean
     };
   }, [key, playing]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { playing, goldCount };
+  return { playing, goldCount, perfectPlayed };
 }
