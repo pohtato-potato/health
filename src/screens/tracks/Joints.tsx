@@ -1,3 +1,6 @@
+import { headlineFor } from '../../domain/trackRules';
+import { JointCalendarView } from './views';
+import { headInput } from './data';
 import { daysBetween } from '../../domain/dates';
 import { discomfortByExercise } from '../../domain/trackStats';
 import { realSets } from '../../domain/plan';
@@ -17,13 +20,21 @@ export function JointsTrack({ data, title }: { data: TrackData; title: string })
   const tags = discomfortByExercise(realSets(data.sets));
   return (
     <TrackShell
+      track="joints"
+      head={headlineFor('joints', headInput(data))}
       title={title}
-      color="var(--apricot)"
       value={since === undefined ? 'All clear' : since === 0 ? 'Flagged today' : `Clear ${since} day${since === 1 ? '' : 's'}`}
       sub={last ? `${events.length} flag${events.length === 1 ? '' : 's'} so far` : 'Nothing flagged yet'}
       insights={[tags.length > 0 && `Discomfort tags came from ${tags.length} exercise${tags.length === 1 ? '' : 's'}; the list is below.`]}
-    >
+      views={[
+        { label: 'Calendar', el: <JointCalendarView data={data} /> },
+        { label: 'Flags', el: (
+          <>
       <JointsBody settings={settings} sessions={data.sessions} days={[...data.days.values()]} today={today} />
+          </>
+        ) },
+        { label: 'Swaps', el: (
+          <>
       {plan && (() => {
         const up = nextUp(settings, data.sessions, data.sets, [...data.days.values()]);
         const swaps = up?.swaps ?? [];
@@ -60,6 +71,9 @@ export function JointsTrack({ data, title }: { data: TrackData; title: string })
           ))}
         </div>
       )}
-    </TrackShell>
+          </>
+        ) },
+      ]}
+    />
   );
 }

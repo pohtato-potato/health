@@ -334,6 +334,8 @@ export interface Day {
   nightOut?: boolean;
   /** The day after a night out: a gentler step goal, and no shield spent if it's missed. */
   eased?: boolean;
+  /** Answered "No drinks" for this day. Blank stays not logged. */
+  noDrinks?: boolean;
   /** Custom track values live in trackValues; notes for the day live here. */
   note?: string;
   /** v2: the place the day starts at (replaces home). */

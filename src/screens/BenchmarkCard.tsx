@@ -76,7 +76,7 @@ function BenchmarkChart({ measurements, heightCm, today, reveal, b }: { measurem
       {WHTR_GOALS.filter((g) => g > lo && g < hi).map((g) => (
         <g key={g}>
           <line x1="0" x2={W} y1={y(g)} y2={y(g)} stroke="var(--steps)" strokeOpacity="0.5" strokeDasharray="3 4" />
-          <text x={W - 2} y={y(g) - 4} textAnchor="end" fontSize="10" fill="var(--steps)" fontFamily="var(--sans)">
+          <text x={W - 2} y={y(g) - 4} textAnchor="end" fontSize="16" fill="var(--steps)" fontFamily="var(--sans)">
             {g.toFixed(2)}
           </text>
         </g>
@@ -96,13 +96,13 @@ function BenchmarkChart({ measurements, heightCm, today, reveal, b }: { measurem
         <circle key={p.date} cx={x(p.date)} cy={y(p.r)} r="3" fill="var(--steps)" />
       ))}
       <line x1={x(today)} x2={x(today)} y1="4" y2={H - 14} stroke="var(--dim)" strokeOpacity="0.5" />
-      <text x={x(today)} y={H - 2} textAnchor="middle" fontSize="10" fill="var(--dim)" fontFamily="var(--sans)">
+      <text x={x(today)} y={H - 2} textAnchor="middle" fontSize="16" fill="var(--dim)" fontFamily="var(--sans)">
         today
       </text>
       {reveal && reveal > today && (
         <>
           <line x1={x(reveal) - 0.5} x2={x(reveal) - 0.5} y1="4" y2={H - 14} stroke="var(--gold)" strokeOpacity="0.7" />
-          <text x={x(reveal) - 2} y={H - 2} textAnchor="end" fontSize="10" fill="var(--gold)" fontFamily="var(--sans)">
+          <text x={x(reveal) - 2} y={H - 2} textAnchor="end" fontSize="16" fill="var(--gold)" fontFamily="var(--sans)">
             reveal
           </text>
         </>

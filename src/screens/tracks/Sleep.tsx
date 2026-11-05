@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { headlineFor } from '../../domain/trackRules';
+import { BalanceView } from './views';
 import { addDays } from '../../domain/dates';
 import { fmtDayShort, fmtDuration } from '../../domain/format';
 import { sleepMinutes } from '../../domain/rings';
@@ -6,7 +8,7 @@ import { sri } from '../../domain/sleepRegularity';
 import { bedDrift, todayAndChange, usualRange } from '../../domain/trackStats';
 import { targetsFor } from '../../state/derived';
 import { SleepExtras } from '../TrackExtras';
-import { dayLabel, kindOn, placeMarkOn, spanDays, type TrackData } from './data';
+import { headInput, dayLabel, kindOn, placeMarkOn, spanDays, type TrackData } from './data';
 import { changeText, HeroChart, TrackShell } from './Template';
 import { sleepWindows } from '../../domain/insights';
 import { usualWake } from '../../domain/sleepRegularity';
@@ -33,8 +35,8 @@ export function SleepTrack({ data }: { data: TrackData }) {
 
   return (
     <TrackShell
-      title="Sleep"
-      color="var(--blue)"
+      track="sleep"
+      head={headlineFor('sleep', headInput(data))}
       value={avg !== undefined ? fmtDuration(Math.round(avg)) : '—'}
       sub={`average · need ${fmtDuration(t.sleepMin)}`}
       change={changeText(ch.delta, (n) => fmtDuration(Math.round(n)), true)}
@@ -49,7 +51,11 @@ export function SleepTrack({ data }: { data: TrackData }) {
         'Steady times help as much as long nights: going to bed within the same half hour matters more than the odd lie-in.',
       ]}
       history={{ title: 'Night by night', rows: [...logged].reverse().slice(0, 30).map((d) => [fmtDayShort(d), fmtDuration(mins.get(d)!)]) }}
-    >
+      views={[
+        { label: 'Each night', hero: true, el: null },
+        { label: 'Balance', el: <BalanceView days={all} today={today} target={t.sleepMin} /> },
+        { label: 'Profile', el: (
+          <>
       <div className="card">
         <div className="lbl" style={{ color: 'var(--sleep)' }}>
           Hours a night
@@ -64,7 +70,10 @@ export function SleepTrack({ data }: { data: TrackData }) {
         />
       </div>
       <SleepExtras days={all} today={today} settings={settings} />
-    </TrackShell>
+          </>
+        ) },
+      ]}
+    />
   );
 }
 
@@ -75,19 +84,19 @@ function SleepBands({ days, range, officeWake }: { days: TrackData['days'] exten
   const start = -180;
   const end = 660;
   const W = 320;
-  const row = 11;
-  const left = 30;
-  const H = dates.length * row + 18;
+  const row = 18;
+  const left = 26;
+  const H = dates.length * row + 22;
   const x = (m: number) => left + ((Math.min(Math.max(m, start), end) - start) / (end - start)) * (W - left - 4);
   return (
     <div className="col gap8">
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="When you slept, night by night">
-        {officeWake !== undefined && <rect x={x(officeWake) - 3} y="0" width="6" height={H - 14} fill="var(--gold)" opacity="0.28" rx="2" />}
+        {officeWake !== undefined && <rect x={x(officeWake) - 3} y="0" width="6" height={H - 18} fill="var(--gold)" opacity="0.28" rx="2" />}
         {[-180, 0, 180, 360, 540].map((m) => (
           <g key={m}>
-            <line x1={x(m)} x2={x(m)} y1="0" y2={H - 14} stroke="var(--divider)" />
-            <text x={x(m)} y={H - 3} textAnchor="middle" fontSize="8.5" fill="var(--dim)" fontFamily="var(--sans)">
-              {m === -180 ? '9 pm' : m === 0 ? '12 am' : m === 180 ? '3 am' : m === 360 ? '6 am' : '9 am'}
+            <line x1={x(m)} x2={x(m)} y1="0" y2={H - 18} stroke="var(--divider)" />
+            <text x={x(m)} y={H - 2} textAnchor="middle" fontSize="16" fill="var(--dim)" fontFamily="var(--sans)">
+              {m === -180 ? '9 pm' : m === 0 ? '12' : m === 180 ? '3 am' : m === 360 ? '6 am' : '9 am'}
             </text>
           </g>
         ))}
@@ -96,7 +105,7 @@ function SleepBands({ days, range, officeWake }: { days: TrackData['days'] exten
           const y = i * row + 2;
           return (
             <g key={date}>
-              <text x="0" y={y + 7.5} fontSize="7.5" fill="var(--dim)" fontFamily="var(--sans)">
+              <text x="0" y={y + 12} fontSize="16" fill="var(--dim)" fontFamily="var(--sans)">
                 {Number(date.slice(8))}
               </text>
               {n ? (

@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { addDays, dayRange, daysBetween, weekday, weekStart, type DayKey } from '../domain/dates';
-import { fmt1, fmtClock, fmtDayMonth, fmtDayShort, fmtDuration, fmtInt, fmtLitres } from '../domain/format';
+import { fmt1, fmtClock, fmtDayMonth, fmtDayShort, fmtDuration, fmtInt } from '../domain/format';
 import { WEEKDAYS, WEEKDAY_NAMES, bedtimeFor, drinkNights, morningAfter, raceLastWeek, sleepPayoff, sleepWindows, sources, strengthScores, tshirtVsLast, weekdayPattern, type Strength } from '../domain/insights';
 import type { CheckIn, Day, FoodEntry, Measurement, SetEntry, Settings, TrainingSession } from '../domain/types';
 import { flagEvents, targetsFor } from '../state/derived';
@@ -100,7 +100,7 @@ function RaceChart({ now, last }: { now: number[]; last: number[] }) {
       {now.length > 1 && <path d={path(now)} fill="none" stroke="var(--sage)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />}
       {now.length > 0 && <circle cx={x(now.length - 1)} cy={y(now[now.length - 1])} r="4" fill="var(--sage)" />}
       {WEEKDAYS.map((w, i) => (
-        <text key={w} x={x(i)} y={H - 3} textAnchor="middle" fontSize="9" fill="var(--dim)" fontFamily="var(--sans)">
+        <text key={w} x={x(i)} y={H - 3} textAnchor="middle" fontSize="16" fill="var(--dim)" fontFamily="var(--sans)">
           {w.slice(0, 1)}
         </text>
       ))}
@@ -172,7 +172,7 @@ function SleepWindowChart({ nights, bed }: { nights: ReturnType<typeof sleepWind
       {[-180, 0, 180, 360, 540].map((m) => (
         <g key={m}>
           <line x1={x(m)} x2={x(m)} y1="0" y2={H - 14} stroke="var(--divider)" />
-          <text x={x(m)} y={H - 3} textAnchor="middle" fontSize="8.5" fill="var(--dim)" fontFamily="var(--sans)">
+          <text x={x(m)} y={H - 3} textAnchor="middle" fontSize="16" fill="var(--dim)" fontFamily="var(--sans)">
             {m === -180 ? '9p' : m === 0 ? '12a' : m === 180 ? '3a' : m === 360 ? '6a' : '9a'}
           </text>
         </g>
@@ -184,7 +184,7 @@ function SleepWindowChart({ nights, bed }: { nights: ReturnType<typeof sleepWind
           <g key={i}>
             {n && (
               <>
-                <text x="0" y={y + 8} fontSize="8" fill="var(--dim)" fontFamily="var(--sans)">
+                <text x="0" y={y + 8} fontSize="16" fill="var(--dim)" fontFamily="var(--sans)">
                   {fmtDayMonth(n.date).split(' ')[0]}
                 </text>
                 <rect x={x(n.from)} y={y} width={Math.max(2, x(n.to) - x(n.from))} height={row - 4} rx="3" fill="var(--blue)" opacity={n.rested !== undefined ? 0.45 + n.rested * 0.11 : 0.75} />
@@ -254,42 +254,6 @@ export function SourcesCard({ entries, range, kind }: { entries: FoodEntry[]; ra
 
 /* ── Water ─────────────────────────────────────────────────────────── */
 
-export function WaterExtras({ days, range }: { days: Day[]; range: DayKey[] }) {
-  const byDate = new Map(days.map((d) => [d.date, d]));
-  // Only days logged since the app started noting the time of day.
-  const logged = range.map((d) => byDate.get(d)).filter((d): d is Day => !!d && (d.waterMl ?? 0) > 0 && d.waterParts !== undefined);
-  if (logged.length < 3) return null;
-  const parts = [
-    { bit: 1, name: 'Morning' },
-    { bit: 2, name: 'Afternoon' },
-    { bit: 4, name: 'Evening' },
-  ].map((p) => ({ ...p, n: logged.filter((d) => ((d.waterParts ?? 0) & p.bit) !== 0).length }));
-  const spread = logged.filter((d) => (d.waterParts ?? 0) === 7).length;
-  const avg = logged.reduce((n, d) => n + (d.waterMl ?? 0), 0) / logged.length;
-  return (
-    <Card title="Across the day" color="var(--blue)">
-      {parts.map((p) => (
-        <div key={p.name} className="col gap4">
-          <div className="row base t14">
-            <span>{p.name}</span>
-            <span className="tn q">
-              {p.n} of {logged.length} days
-            </span>
-          </div>
-          <div className="bar">
-            <i style={{ width: `${(p.n / logged.length) * 100}%`, background: 'var(--blue)' }} />
-          </div>
-        </div>
-      ))}
-      <div className="t13 q lh">
-        Water in all three parts of the day on {spread} of {logged.length} days, {fmtLitres(Math.round(avg / 50) * 50)} L on average. Spread out, it’s easier to reach the target without a late-night catch-up.
-      </div>
-    </Card>
-  );
-}
-
-/* ── Drinks ────────────────────────────────────────────────────────── */
-
 export function DrinksExtras({ entries, days, today }: { entries: FoodEntry[]; days: Day[]; today: DayKey }) {
   const [offset, setOffset] = useState(0);
   const nights = drinkNights(entries);
@@ -342,7 +306,7 @@ export function DrinksExtras({ entries, days, today }: { entries: FoodEntry[]; d
                 disabled={d > today}
                 aria-label={`Add drinks to ${fmtDayMonth(d)}`}
                 onClick={() => openSheet('drink', d === today ? {} : { d })}
-                style={{ alignItems: 'center', gap: 2, padding: '4px 0', minHeight: 40, borderRadius: 8, background: n ? 'var(--gold-bg)' : undefined, opacity: d > today ? 0.35 : 1 }}
+                style={{ alignItems: 'center', gap: 2, padding: '4px 0', minHeight: 44, borderRadius: 8, background: n ? 'var(--gold-bg)' : undefined, opacity: d > today ? 0.35 : 1 }}
               >
                 <span className={`t12 ${n ? 'gold' : 'q'}`}>{Number(d.slice(8))}</span>
                 <span style={{ height: 6, display: 'flex', gap: 2 }}>
