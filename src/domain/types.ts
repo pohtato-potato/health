@@ -234,6 +234,8 @@ export interface Settings {
   prefs: Prefs;
   backup: { lastQuick?: number; lastFull?: number; lastFullBytes?: number; nudgeDays: number };
   plan?: PlanDef;
+  /** Up to three question ids kept on the You page. */
+  youQuestions?: string[];
   /** Choices made while following the plan: harder variants and band levels. */
   planState: { variants: Record<string, number>; band: Record<string, number> };
   /** The session picked to start the loop at import; holds until a rotation session is done after `at`. */
