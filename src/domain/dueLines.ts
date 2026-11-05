@@ -1,10 +1,11 @@
+import { yearOffered } from './yearPage';
 import { checkInDue } from './checkinSchedule';
 import { addDays, dayKey, daysBetween, type DayKey } from './dates';
 import { fmtDayMonth } from './format';
 import type { Day, Settings } from './types';
 import { lastFullWeek } from './weekly';
 
-export interface DueItem { id: 'story' | 'checkin' | 'backup'; text: string; action: string; path: string }
+export interface DueItem { id: 'year' | 'story' | 'checkin' | 'backup'; text: string; action: string; path: string }
 
 const BACKUP_DAYS = 10;
 const FIRST_CHECKIN_AFTER = 3;
@@ -21,6 +22,7 @@ export function backupLine(settings: Settings, today: DayKey, days: Day[]): stri
 
 export function dueItems(i: { today: DayKey; settings: Settings; days: Day[]; lastCheckIn?: DayKey; storySeenWeek?: DayKey }): DueItem[] {
   const out: DueItem[] = [];
+  if (yearOffered(i.settings, i.today)) out.push({ id: 'year', text: 'A year of this. Your year is ready', action: 'Open', path: '/year' });
   const week = lastFullWeek(i.today);
   const end = addDays(week, 6);
   if (i.storySeenWeek !== week && i.days.some((d) => d.date >= week && d.date <= end)) {

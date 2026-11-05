@@ -60,6 +60,7 @@ import { MonthlyFilmPage } from './screens/MonthlyFilm';
 import { Moved } from './screens/reports/Moved';
 
 /** A page loaded when first opened, from its module's named export. */
+const YearPage = lazy(() => import('./screens/Year').then((m) => ({ default: m.YearPage })));
 const EXPERIMENTS_MOVED = { k: 'compare' };
 
 function page<K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K) {
@@ -95,7 +96,6 @@ const Archive = page(() => import('./screens/reports/Archive'), 'Archive');
 const Corrections = page(() => import('./screens/reports/Corrections'), 'Corrections');
 const DawnPage = page(() => import('./screens/Dawn'), 'DawnPage');
 const DexPage = page(() => import('./screens/Dex'), 'DexPage');
-const YouProto = lazy(() => import('./screens/proto/YouLiving').then((m) => ({ default: m.YouProto })));
 const CreatureBoard = lazy(() => import('./screens/proto/CreatureBoard').then((m) => ({ default: m.CreatureBoard })));
 const WrappedPage = page(() => import('./screens/Reports'), 'WrappedPage');
 
@@ -132,6 +132,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/medicines': { el: () => <MedicinesPage /> },
   '/guide': { el: () => <ExerciseGuidePage /> },
   '/film': { el: () => <MonthlyFilmPage /> },
+  '/year': { el: () => <Suspense fallback={null}><YearPage /></Suspense>, tab: 'you' },
   '/checkup': { el: () => <Checkup /> },
   '/history': { el: () => <EditHistory /> },
   '/snapshots': { el: () => <Snapshots /> },
@@ -184,7 +185,6 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/dawn': { el: () => <DawnPage /> },
   '/dex': { el: () => <DexPage /> },
   ...(import.meta.env.DEV ? { '/proto/creatures': { el: () => <Suspense fallback={null}><CreatureBoard /></Suspense> } } : {}),
-  ...(import.meta.env.DEV ? { '/proto/you': { el: () => <Suspense fallback={null}><YouProto /></Suspense> } } : {}),
   '/proto/session': { el: () => <SessionProto /> },
   '/proto/train': { el: () => <TrainProto /> },
 };

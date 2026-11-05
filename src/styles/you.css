@@ -317,3 +317,25 @@
 .lv-tr-head { flex-wrap: wrap; }
 .lv-tr-head .icon-btn { order: 1; margin-left: auto; }
 .lv-tr-head .lv-tr-week { order: 2; width: 100%; }
+
+/* The year */
+.yu-almanac { display: flex; flex-direction: column; gap: 8px; }
+.yu-almanac li { list-style: none; }
+.yu-almanac b { font-family: var(--serif); font-weight: 400; font-size: 20px; }
+.yu-blanket { display: flex; flex-direction: column; gap: 2px; }
+.yu-blanket > div { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; height: 16px; align-items: center; }
+.yu-blanket i { display: block; border-radius: 3px; background: var(--b, transparent); height: var(--t, 100%); }
+.yu-blanket i.none { height: 4px; background: none; border-top: 1px dotted var(--edge); }
+.yu-blanket i.future { visibility: hidden; }
+.yu-key-list { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.yu-key-list span { display: grid; grid-template-columns: 34px 58px 1fr; gap: 8px; align-items: center; min-height: 20px; }
+.yu-key-list i { display: block; border-radius: 3px; background: var(--b); height: var(--t, 100%); min-height: 3px; }
+.yu-key-list em { font-style: normal; color: var(--q); }
+.yu-key-list span > span { display: block; height: 16px; }
+.yu-thennow { display: grid; grid-template-columns: 1fr auto auto; gap: 8px 14px; font-size: 15px; }
+.yu-thennow b { font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
+.yu-thennow span { color: var(--q); font-size: 14px; }
+.yu-thennow .head { text-align: right; }
+.yu-replay-full { position: fixed; inset: 0; z-index: 60; background: #14163a; color: #fff; display: flex; flex-direction: column; justify-content: center; gap: 12px; padding: 24px; text-align: left; font: inherit; border: 0; width: 100%; }
+.yu-replay-full h2 { font-family: var(--serif); font-weight: 400; font-size: 36px; line-height: 1.1; margin: 0; color: #ffe27a; text-wrap: balance; animation: yu-rise .5s cubic-bezier(.16,1,.3,1) both; }
+.yu-replay-full p { margin: 0; font-size: 18px; animation: yu-rise .6s cubic-bezier(.16,1,.3,1) both; }
