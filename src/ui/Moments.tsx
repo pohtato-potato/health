@@ -54,9 +54,11 @@ export type MomentData =
 
 interface MomentsApi {
   show: (m: MomentData) => void;
+  /** A full-screen moment is showing, or waiting its turn. */
+  busy: boolean;
 }
 
-const Ctx = createContext<MomentsApi>({ show: () => {} });
+const Ctx = createContext<MomentsApi>({ show: () => {}, busy: false });
 
 export function useMoments() {
   return useContext(Ctx);
@@ -114,7 +116,7 @@ export function MomentsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <Ctx.Provider value={{ show }}>
+    <Ctx.Provider value={{ show, busy: !!current }}>
       {children}
       {current && settings && createPortal(<MomentView key={current.key} m={current} onClose={close} voice={settings.voice} shuffle={prefOn(settings.prefs, 'shuffleVoices')} special={special} quiet={quiet} />, document.body)}
     </Ctx.Provider>

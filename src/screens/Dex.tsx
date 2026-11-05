@@ -4,7 +4,7 @@ import { CREATURES, creatureById, nameAt, noteAt, stageWord, tierWord } from '..
 import { dexRows, earnedRingStyles, grownOn, maxStage, notesSoFar, oddsFor } from '../domain/creatures';
 import { go, useRoute } from '../router';
 import '../styles/creatures.css';
-import { CreatureFigure, CreatureSvg, StageDots } from '../ui/creatures/Figure';
+import { CreatureFigure, StageDots } from '../ui/creatures/Figure';
 import { DexGrid } from '../ui/creatures/DexGrid';
 import { RegionFrame } from '../ui/live/RegionFrame';
 
@@ -33,6 +33,7 @@ export function DexPage() {
     return (
       <RegionFrame>
         <h1 className="h1">{nameAt(c, open.stage)}</h1>
+        {nav}
         <CreatureFigure c={c} stage={open.stage} draw={false} burst={false} />
         <span className="t14">{tierWord(c)} · {open.visits} visit{open.visits === 1 ? '' : 's'}</span>
         <StageDots c={c} stage={open.stage} of={maxStage(c.tier)} word={stageWord(c, open.stage)} />
@@ -40,7 +41,6 @@ export function DexPage() {
           {(c.tier === 'rare' ? [noteAt(c, open.visits)] : notesSoFar(c.notes, open.visits)).map((n) => <p key={n} className="t15">{n}</p>)}
         </div>
         <button type="button" className="btn lg block" onClick={() => go('/dawn', { replay: c.id })}>Replay</button>
-        {nav}
       </RegionFrame>
     );
   }
@@ -51,6 +51,7 @@ export function DexPage() {
     return (
       <RegionFrame>
         <h1 className="h1">How it works</h1>
+        {nav}
         <div className="card">
           <p className="t15">After 7 hours of sleep or more, 3 visitors come. After 6 to 7 hours, 2. Under 6, 1.</p>
           <p className="t15">On an ordinary night: a medium-rare visitor {pct(odds.medium)}, a rare guest {pct(odds.rare)}.</p>
@@ -58,7 +59,6 @@ export function DexPage() {
           <p className="t15">With no rare guest in 45 days, the next perfect day brings one.</p>
           <p className="t15">So far: {(['everyday', 'medium', 'rare'] as const).map((t) => `${rows.filter((r) => r.tier === t).length} ${t === 'medium' ? 'medium-rare' : t}`).join(', ')}.</p>
         </div>
-        {nav}
       </RegionFrame>
     );
   }
@@ -69,6 +69,7 @@ export function DexPage() {
     return (
       <RegionFrame>
         <h1 className="h1">Themes</h1>
+        {nav}
         {!themes.length && !styles.length && <p className="t15">Nothing earned yet. A grown creature gives a theme day; a legend or a completed guest gives a ring style.</p>}
         {themes.map((c) => (
           <div key={c.id} className="card">
@@ -87,16 +88,15 @@ export function DexPage() {
             </button>
           </div>
         ))}
-        {nav}
       </RegionFrame>
     );
   }
   return (
     <RegionFrame>
       <h1 className="h1">{view === 'cards' ? 'Cards' : 'Your night sky'}</h1>
+      {nav}
       {!rows.length && <p className="t15">Nothing has visited yet. The first come after a morning log with sleep in it.</p>}
       <DexGrid rows={rows} cards={view === 'cards'} onOpen={(id) => go('/dex', { c: id })} />
-      {nav}
     </RegionFrame>
   );
 }

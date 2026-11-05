@@ -195,7 +195,7 @@ export function DawnPage() {
   const card = cards[Math.min(i, cards.length - 1)];
   const last = i >= cards.length - 1;
   return (
-    <div className="dawn lv" role="dialog" aria-label="The morning reveal" style={card.sky ?? (auroraFor(regionAt(km)) as CSSProperties)}>
+    <div className="dawn lv" role="dialog" aria-label="The morning reveal" style={card.sky ?? (auroraFor(regionAt(km)) as CSSProperties)} onClick={() => !last && setI(i + 1)}>
       <Aurora />
       <div className="dawn-bar">
         <span className="dawn-pips" aria-hidden="true">
@@ -203,12 +203,12 @@ export function DawnPage() {
         </span>
         <span className="sr-only">Card {i + 1} of {cards.length}</span>
         {!last && (
-          <button type="button" className="dawn-skip" onClick={leave}>
+          <button type="button" className="dawn-skip" onClick={(e) => { e.stopPropagation(); leave(); }}>
             Skip
           </button>
         )}
       </div>
-      <div className="dawn-card" key={card.id} aria-live="polite" onClick={() => !last && setI(i + 1)}>
+      <div className="dawn-card" key={card.id} aria-live="polite">
         {card.body}
       </div>
       <div className="dawn-foot">

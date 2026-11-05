@@ -53,6 +53,7 @@ import { proteinGap } from '../domain/proteinGap';
 import { go, openSheet, useRoute } from '../router';
 import { devGlow, regionTint } from '../ui/live/regionTint';
 import { dayGlow } from '../domain/dayGlow';
+import { useMoments } from '../ui/Moments';
 import { useToast } from '../ui/Toasts';
 import {
   dayRings,
@@ -105,13 +106,14 @@ export function Today() {
   const gapAdd = useGapAdd(today, foods);
   const addUsualNow = useAddUsual();
   const route = useRoute();
+  const { busy: momentShowing } = useMoments();
   const [ringSpin, setRingSpin] = useState(0);
   const [ringPlay, setRingPlay] = useState(0);
   const ringDay = settings && days && entries ? dayRings(settings, today, days.find((d) => d.date === today), entries).rings : undefined;
   const { playing, goldCount } = useRingMoment({
     date: today,
     closed: { kcal: !!ringDay?.kcal.closed, protein: !!ringDay?.protein.closed, steps: !!ringDay?.steps.closed },
-    hold: !ringDay || !!route.params.get('sheet'),
+    hold: !ringDay || !!route.params.get('sheet') || momentShowing,
     rest: day?.status === 'sick' || day?.status === 'injured' || day?.status === 'break',
     momentsOn: !settings || prefOn(settings.prefs, 'moments'),
     ding: !!settings?.prefs.ding,

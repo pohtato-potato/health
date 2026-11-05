@@ -151,7 +151,7 @@
 .rm-flush { inset: 0; opacity: 0; animation: rm-flush 3.4s ease both; }
 .rm-flush.gold { animation: rm-flush-gold 5s ease both; }
 @keyframes rm-flush { 0% { opacity: 0; } 18% { opacity: 0.55; } 60% { opacity: 0.4; } 100% { opacity: 0; } }
-@keyframes rm-flush-gold { 0%, 25% { opacity: 0; } 45% { opacity: 0.65; } 75% { opacity: 0.45; } 100% { opacity: 0; } }
+@keyframes rm-flush-gold { 0%, 25% { opacity: 0; } 45% { opacity: 0.34; } 75% { opacity: 0.26; } 100% { opacity: 0; } }
 .rm-ripple { width: 150px; height: 150px; margin: -75px; border-radius: 50%; border: 3px solid var(--rm-ink); opacity: 0; animation: rm-ripple 2s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
 @keyframes rm-ripple { 0% { opacity: 0.9; transform: scale(0.6); } 100% { opacity: 0; transform: scale(6); } }
 .rm-spark { width: 7px; height: 7px; margin: -3.5px; border-radius: 50%; background: var(--rm-ink); box-shadow: 0 0 10px var(--rm-ink); opacity: 0; animation: rm-spark 1.3s cubic-bezier(0.2, 0.7, 0.3, 1) both; }

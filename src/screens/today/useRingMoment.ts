@@ -21,7 +21,8 @@ export function useRingMoment(i: { date: DayKey; closed: Record<RingKey, boolean
   useEffect(() => {
     if (i.hold || busy.current) return;
     let cancelled = false;
-    void (async () => {
+    // A beat first: a save that also earns a full-screen moment queues it now, and this one waits for it to close.
+    const start = window.setTimeout(async () => {
       const seen = new Set((await db.seen.toArray()).map((s) => s.id));
       if (cancelled || busy.current) return;
       const due = ringMomentsDue(i.date, i.closed, (k) => seen.has(k));
@@ -44,9 +45,10 @@ export function useRingMoment(i: { date: DayKey; closed: Record<RingKey, boolean
         setPlaying(null);
         setGoldCount(null);
       }, m.kind === 'perfect' ? PERFECT_MS : RING_MS);
-    })();
+    }, 350);
     return () => {
       cancelled = true;
+      window.clearTimeout(start);
     };
   }, [key, playing]); // eslint-disable-line react-hooks/exhaustive-deps
 

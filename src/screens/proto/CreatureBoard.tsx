@@ -18,7 +18,7 @@ export function CreatureBoard() {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
             {Array.from({ length: maxStage(c.tier) }, (_, i) => (
               <figure key={i} style={{ margin: 0, width: 150 }}>
-                <CreatureFigure c={c} stage={i + 1} width={150} burst={false} />
+                <CreatureFigure c={c} stage={i + 1} width={150} burst={false} draw={false} />
                 <figcaption className="t14">{stageWord(c, i + 1)}</figcaption>
               </figure>
             ))}
