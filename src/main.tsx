@@ -10,6 +10,7 @@ import './styles/components.css';
 import './styles/access.css';
 import './styles/living.css';
 import './styles/walk.css';
+import './styles/you.css';
 import './styles/live.css';
 import './styles/region.css';
 import { StrictMode } from 'react';

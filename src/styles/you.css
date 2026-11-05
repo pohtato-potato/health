@@ -1,0 +1,14 @@
+/* The You family. Only transform, opacity and stroke offset move. Every arrival rests in its true place. */
+.yu-line { display: block; width: 100%; overflow: visible; }
+.yu-draw { stroke-dasharray: 1; stroke-dashoffset: 0; }
+.yu-armed:not(.yu-in) .yu-draw { stroke-dashoffset: 1; }
+.yu-armed:not(.yu-in) .yu-fill, .yu-armed:not(.yu-in) .yu-dot { opacity: 0; }
+.yu-armed.yu-in .yu-line:not(.yu-tip) .yu-draw { animation: yu-draw 1.4s cubic-bezier(.3,.7,.2,1) both; }
+.yu-armed.yu-in .yu-fill { animation: yu-fade 1.1s .4s ease-out both; }
+.yu-armed.yu-in .yu-dot { animation: yu-fade .3s 1.2s both; }
+.yu-rider circle { transform-box: fill-box; transform-origin: center; }
+.yu-landed .yu-rider circle { animation: yu-pulse 1.1s ease-in-out 2; }
+@keyframes yu-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes yu-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes yu-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.55); } }
+@keyframes yu-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
