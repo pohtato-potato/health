@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { addDays, dayKey, logHour, partOfDay, weekStart } from '../domain/dates';
 import { companionFor, creatureThemeOn, revealDue, stepsCreature } from '../domain/creatures';
 import { CREATURES } from '../domain/creatureRoster';
@@ -78,6 +78,9 @@ import { themeDayOn } from '../domain/calendar';
 import { journeyStart as journeyStartOf } from './Journey';
 import { seasonalThemeOn } from '../domain/themes';
 import type { Festive } from '../walk/art/festive';
+
+// Football's card loads with Football's data, apart from Today's own bundle.
+const FootballCard = lazy(() => import('./today/FootballCard').then((m) => ({ default: m.FootballCard })));
 
 export function Today() {
   const unlocked = useUnlockedIds();
@@ -297,6 +300,7 @@ export function Today() {
         actions={{ logMorning: () => openSheet('morning'), closeDay: () => go('/close'), addGap, typeSteps: () => openSheet('steps') }}
       />
       }
+      football={<Suspense fallback={null}><FootballCard now={nowMs} /></Suspense>}
       next={recordsTonight.length ? (
         <RecordsStrip records={recordsTonight.map((r) => `${r.exercise} ${fmtSet(r)}`)} onFinale={() => { const tn = tonight(sessions, sets, today); if (tn) go('/session/replay', { id: tn.session.id }); }} />
       ) : (

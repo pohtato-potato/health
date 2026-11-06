@@ -8,7 +8,7 @@ const FLAG: Record<string, string> = { 'no-data': 'no data', 'not-logged': 'not 
 
 const pts = (p: Pt[], c: number, r: number) => p.map(([x, y]) => `${(c + x * r).toFixed(1)},${(c + y * r).toFixed(1)}`).join(' ');
 
-export function Radar({ values, flags = {}, side, reach, captain, size = 300, label = 'Tonight’s shape' }: { values: AxisValues; flags?: AxisFlags; side?: Side; reach?: number; captain?: Axis; size?: number; label?: string }) {
+export function Radar({ values, flags = {}, side, reach, captain, size = 300, label = 'Tonight’s shape', bare = false }: { values: AxisValues; flags?: AxisFlags; side?: Side; reach?: number; captain?: Axis; size?: number; label?: string; bare?: boolean }) {
   const vb = 320, c = vb / 2, r = 92;
   const rs = side ? radii(values, side) : AXES.map((a) => Math.max(0.03, Math.min(1, values[a] / 20)));
   const shape = pts(polygon(rs), c, r);
@@ -17,7 +17,7 @@ export function Radar({ values, flags = {}, side, reach, captain, size = 300, la
   const summary = AXES.map((a) => `${a} ${values[a]}${flags[a] ? ` (${FLAG[flags[a]!]})` : ''}${captain === a ? ', captain' : ''}`).join(', ');
   return (
     <figure className="fb-radar" style={{ width: size, maxWidth: '100%' }}>
-      <svg viewBox={`0 0 ${vb} ${vb}`} role="img" aria-label={`${label}: ${summary}`}>
+      <svg viewBox={bare ? `60 60 200 200` : `0 0 ${vb} ${vb}`} role="img" aria-label={`${label}: ${summary}`}>
         <polygon points={rim} className="rim" />
         <polygon points={mid} className="grid" />
         {AXES.map((_, i) => {
@@ -29,7 +29,7 @@ export function Radar({ values, flags = {}, side, reach, captain, size = 300, la
           <polygon points={shape} className="glow" />
           <polygon points={shape} className="shape" />
         </g>
-        {AXES.map((a, i) => {
+        {!bare && AXES.map((a, i) => {
           const [x, y] = polygon([1, 1, 1, 1, 1, 1])[i];
           const lx = c + x * (r + 22), ly = c + y * (r + 22);
           const anchor = Math.abs(x) < 0.2 ? 'middle' : x > 0 ? 'start' : 'end';

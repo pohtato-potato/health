@@ -1,3 +1,4 @@
+import { Suspense, lazy } from 'react';
 import { useAllDays, useAllSets, useEntries, useSessions, useSettings, useSightings } from '../db/hooks';
 import { creatureById } from '../domain/creatureRoster';
 import { firstVisitor } from '../domain/creatures';
@@ -18,6 +19,9 @@ import { dayWalk } from '../walk/dayWalk';
 import { stepsByDay } from '../walk/runs';
 import { DayWalker } from './walk/DayWalker';
 import { dayRings, nextUp, targetsFor } from '../state/derived';
+
+// Football's kick-off loads with Football's data.
+const DayKickOff = lazy(() => import('./today/FootballCard').then((m) => ({ default: m.DayKickOff })));
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -99,6 +103,7 @@ export function DayClosed({ date, summary: s, onDone }: { date: string; summary:
         </span>
         <span className="t13 q">{bed.text}</span>
       </div>
+      <Suspense fallback={null}><DayKickOff date={date} /></Suspense>
       <div className="row" style={{ gap: 10 }}>
         <button type="button" className="btn ghost grow" onClick={onDone}>
           Edit the day

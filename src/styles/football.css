@@ -235,3 +235,13 @@ svg.fb-crest { filter: drop-shadow(0 0 6px rgba(255,122,26,.55)); }
 .fb-review .fb-av { width: 64px; height: 64px; flex: none; }
 .fb-review p { margin: 0; display: flex; flex-direction: column; gap: 2px; font-size: 15px; }
 .fb-review b { font: 600 14px var(--sans); color: var(--fb-or-text); }
+
+/* ---- Today's card and the kick-off card ---- */
+.fb-todaywrap { border-radius: 20px; overflow: hidden; min-height: 0; }
+.fb-todaycard { display: flex; flex-direction: column; gap: 8px; width: 100%; padding: 14px; border: 2px solid var(--fb-or); border-radius: 20px; box-shadow: 0 0 18px -6px var(--fb-or); background: transparent; color: var(--fb-ink); text-align: left; font: inherit; min-height: 44px; }
+button.fb-todaycard { cursor: pointer; }
+.fb-duel.sm { gap: 14px; }
+.fb-sealed { font: 600 15px var(--sans); color: var(--fb-cream); border: 1.5px dashed var(--fb-cream); border-radius: 999px; padding: 4px 12px; align-self: flex-start; }
+.fb-ht { display: flex; align-items: center; gap: 12px; }
+.fb-ht > svg, .fb-ht .fb-radar { flex: none; }
+.fb-ht b { font-size: 17px; }
