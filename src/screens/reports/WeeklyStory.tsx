@@ -21,6 +21,7 @@ import { Reveal } from '../../ui/you/Reveal';
 import { WalkVista } from '../../walk/WalkVista';
 import { STORY_SEEN_KEY } from '../you/DueLines';
 import { CorrectionNotes } from './CorrectionNotes';
+import { WeekLine } from '../football/HabitLine';
 
 const km = (n: number) => `${fmtInt(n)} km`;
 
@@ -172,6 +173,7 @@ export function WeeklyStory() {
         <span className="yu-q">{fmtDayMonth(week)} to {fmtDayMonth(end)}</span>
         {!chapters.length && <div className="yu-card"><b>Nothing was logged that week</b><span className="yu-q">A story needs at least one day.</span></div>}
         {chapters.map((c) => <Chapter key={c.id} c={c} sightings={sightings} end={end} />)}
+        <WeekLine start={week} />
         {note?.oneThing && (
           <section className="yu-sec"><h2>The one thing you picked</h2>
             <div className="yu-card">

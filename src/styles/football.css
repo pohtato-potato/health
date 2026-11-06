@@ -472,3 +472,9 @@ button.fb-todaycard { cursor: pointer; }
 .fb-wdots button { width: 44px; height: 44px; border: 0; background: transparent; display: grid; place-items: center; cursor: pointer; }
 .fb-wdots i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--fb-ink); }
 .fb-wdots .on i { background: var(--fb-or); border-color: var(--fb-or); width: 28px; border-radius: 6px; }
+
+/* The thin football line on other tabs (Task 5.4): an orange outline, a "Football" label, never colour alone. */
+.fb-hline { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; row-gap: 2px; align-items: center; width: 100%; min-height: 44px; padding: 8px 14px; border-radius: 14px; border: 1.5px solid #ff7a1a; background: rgba(20,13,26,.55); color: #f3eee6; font: 500 15px/1.3 var(--sans); text-align: left; cursor: pointer; }
+.fb-hline-k { font: 700 14px var(--sans); letter-spacing: .04em; text-transform: uppercase; color: #ffa25c; }
+.fb-hline-t { font-variant-numeric: tabular-nums; }
+.fb-hline-s { grid-column: 2; font-size: 14px; color: rgba(243,238,230,.8); }

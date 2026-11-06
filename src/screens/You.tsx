@@ -29,6 +29,7 @@ import { spokenLine } from '../domain/voice';
 import { GoToBox } from './you/GoToBox';
 import { HowsToday } from './you/HowsToday';
 import { MomentumPanel } from './you/MomentumPanel';
+import { LeagueLine } from './football/HabitLine';
 import { TodaysLift } from './you/TodaysLift';
 import { TrophyCase } from './you/TrophyCase';
 
@@ -99,6 +100,7 @@ export function You() {
         <FilmPoster today={today} days={days} sessions={browse.sessions} sets={browse.sets} />
         {settings.goalDate && <ClockCard start={start} end={settings.goalDate} today={today} />}
         <MomentumPanel today={today} input={momentum} />
+        <LeagueLine />
         <DueLines items={due} today={today} />
         {returnedAfterGap(days, today) && <div className="voice">{spokenLine(settings, today, 'returned', today)}</div>}
         <FindingCard finding={finding} />
