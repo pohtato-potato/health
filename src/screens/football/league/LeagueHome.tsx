@@ -5,6 +5,10 @@ import { loadLeague, type League } from '../../../football/store/league';
 import { OWN } from '../../../football/store/season';
 import type { Tier } from '../../../football/types';
 import { go, useRoute } from '../../../router';
+import { TIER_CUP } from '../../../football/cups';
+import { Calendar } from './Calendar';
+import { Cup } from './Cups';
+import { Events, eventRows } from './Events';
 import { Pyramid } from './Pyramid';
 import { Table } from './Table';
 
@@ -38,7 +42,22 @@ export function LeagueView({ l, view, tier, extra }: { l: League; view: LeagueVi
         </>
       )}
       {view === 'pyramid' && <Pyramid tierOf={l.season.tierOf} rating={l.rating} onTier={(x) => set({ tier: String(x) })} />}
-      {view !== 'table' && view !== 'pyramid' && (extra?.[view] ?? null)}
+      {view === 'calendar' && (
+        <Calendar
+          season={l.save.season}
+          today={l.save.phase === 'season' ? l.save.day : 0}
+          matches={l.matches}
+          events={eventRows(l.matches).map((r, i) => ({ day: i + 1, label: `${r.label}: ${r.text}`, result: r.result }))}
+        />
+      )}
+      {view === 'cups' && (
+        <>
+          <Events event={l.save.phase === 'event' ? l.save.event : undefined} matches={l.matches} />
+          <Cup b={l.season.bigcup} tierOf={l.season.tierOf} />
+          {l.season.tiercups[TIER_CUP[mine].id] && <Cup b={l.season.tiercups[TIER_CUP[mine].id]} tierOf={l.season.tierOf} />}
+        </>
+      )}
+      {extra?.[view] ?? null}
     </>
   );
 }
