@@ -15,6 +15,7 @@ import { ANTIGOON, rivalTwist } from '../rivals';
 import { hashSeed, rng, pick } from '../rng';
 import { contractDay, keptOn, PROMOTE_AT, intake, youthStatus, newContract } from '../contracts';
 import { YOUTH_POOL } from '../data/load';
+import { crestStepFor } from '../kits';
 import { dodgyCollapse, incomeFor, offers as offersFor, type Slot } from '../money';
 import { HABITS, habitById, armbandHarmony, averageOf, awakeningsAfter, momentsOf, TRAIT } from '../squad';
 import { abilityFor, braboAbilities } from '../data/abilities';
@@ -187,6 +188,8 @@ function endSeason(w: World, date: DayKey) {
   turn.headlines.forEach((x, i) => w.news.push({ id: `${date}:world:${i}`, date, kind: 'world', text: x.text, clubId: x.clubId }));
   refreshOldSelves(w, date);
   seasonMoney(w, date, tables, moves.up);
+  const nowTier = tierOf[OWN];
+  if (moves.up[w.season.tierOf[OWN]]?.includes(OWN) && crestStepFor(nowTier) > w.save.crest.step) w.save.crestPending = crestStepFor(nowTier);
   for (const y of w.squad) if (y.season === w.save.season && y.status === 'growing' && youthStatus(y.logged.length, true) === 'leaves') y.status = 'left';
   const ev = nextEvent(w.save.season, w.save.eventState, rng(hashSeed('event', String(w.save.season))));
   w.save.eventState = ev.state;

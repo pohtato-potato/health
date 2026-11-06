@@ -34,6 +34,7 @@ export async function foundClub(date: DayKey, choices: { shirt: string; crest: C
     budget: 0.05, buzz: true, crest: { step: 1, opt: choices.crest }, shirt: choices.shirt,
     rivals: [{ clubId: ANTIGOON, how: 'legend', since: date }], met: [], physioRoom: false, awakenings: {}, firstRunDone: true,
     contracts: contractsFor(date), sold: [], sponsors: [], offers: [], staff: [],
+    crestHistory: [{ step: 1, opt: choices.crest, season: 1 }],
   };
   await db.transaction('rw', [db.fbSave, db.fbClubs, db.fbSeasons, db.fbMatches, db.fbNews, db.fbSquad, db.fbBundles], async () => {
     for (const t of FB_TABLES) await db.table(t).clear();
@@ -137,3 +138,16 @@ export const acceptOffer = (o: Offer) =>
 /** Your own sponsor, typed in, in any slot. */
 export const setOwnSponsor = (name: string, slot: Slot) =>
   editSave((s) => (name.trim() ? { ...s, ownSponsor: { name: name.trim().slice(0, 40), slot } } : { ...s, ownSponsor: undefined }));
+
+/** Launch day: pick a design for a slot, for the coming season. */
+export const pickKit = (season: number, slot: 'home' | 'away' | 'third', id: string) =>
+  editSave((s) => ({ ...s, kits: [...(s.kits ?? []).filter((k) => !(k.season === season && k.slot === slot)), { season, slot, id }] }));
+export const setSponsorStyle = (sp: 'A' | 'B' | 'C' | 'R') => editSave((s) => ({ ...s, sponsorStyle: sp }));
+/** The crest level-up: one of five new options, or keep the old crest. */
+export const levelUpCrest = (opt: CrestOpt | 'keep') =>
+  editSave((s) => {
+    const step = s.crestPending;
+    if (!step) return undefined;
+    const history = [...(s.crestHistory ?? []), { step, opt, season: s.season }];
+    return { ...s, crestPending: undefined, crestHistory: history, crest: opt === 'keep' ? s.crest : { step, opt } };
+  });

@@ -3,7 +3,8 @@ import type { ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { tierName } from '../../../football/data/load';
 import { loadClub, type Club } from '../../../football/store/club';
-import { acceptOffer, equipAbility, keepHabit, renewContract, sellHabit, setCaptain, setOwnSponsor } from '../../../football/store/save';
+import { acceptOffer, equipAbility, keepHabit, pickKit, renewContract, sellHabit, setCaptain, setOwnSponsor, setSponsorStyle } from '../../../football/store/save';
+import { KitsView } from './Kits';
 import { DealsView } from './Deals';
 import { MoneyView } from './Money';
 import { go, useRoute } from '../../../router';
@@ -32,7 +33,8 @@ export function ClubView({ c, view, extra }: { c: Club; view: ClubViewId; extra?
       {view === 'squad' && <SquadView c={c} onCaptain={(a) => void setCaptain(a)} onEquip={(id, i) => void equipAbility(id, i)} />}
       {view === 'deals' && <DealsView c={c} act={{ renew: (h) => void renewContract(h, c.today!), keep: (h) => void keepHabit(h, c.today!), sell: (h) => void sellHabit(h) }} />}
       {view === 'money' && <MoneyView c={c} onAccept={(o) => void acceptOffer(o)} onOwn={(n, s) => void setOwnSponsor(n, s)} />}
-      {view !== 'squad' && view !== 'deals' && view !== 'money' && (extra?.[view] ?? null)}
+      {view === 'kits' && <KitsView c={c} act={{ pick: (s, sl, id) => void pickKit(s, sl, id), style: (sp) => void setSponsorStyle(sp) }} />}
+      {view === 'ground' && (extra?.ground ?? null)}
     </>
   );
 }

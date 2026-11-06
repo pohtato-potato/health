@@ -6,7 +6,8 @@ import type { StoredMatch } from '../../football/store/tables';
 import { go } from '../../router';
 import { CatchUp } from './CatchUp';
 import { SeasonChangeView } from './moments/SeasonChange';
-import { markAwakeSeen, markSeasonSeen } from '../../football/store/save';
+import { levelUpCrest, markAwakeSeen, markSeasonSeen } from '../../football/store/save';
+import { LevelUpView } from './moments/LevelUp';
 import { AwakeningView } from './moments/Awakening';
 import { FullTime } from './FullTime';
 import { Radar } from './Radar';
@@ -35,7 +36,8 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
   const catchUp = (
     <>
       {t.change && <SeasonChangeView c={t.change} onDone={() => void markSeasonSeen(t.change!.season)} />}
-      {!t.change && awake && <AwakeningView axis={awake.axis} at={awake.band} values={t.liveValues} onDone={() => void markAwakeSeen(t.save.awakeLog!.length)} />}
+      {!t.change && t.save.crestPending && <LevelUpView from={t.save.crest} step={t.save.crestPending} onPick={(o) => void levelUpCrest(o)} />}
+      {!t.change && !t.save.crestPending && awake && <AwakeningView axis={awake.axis} at={awake.band} values={t.liveValues} onDone={() => void markAwakeSeen(t.save.awakeLog!.length)} />}
       {away.length > 0 && <CatchUp ms={away} />}
     </>
   );

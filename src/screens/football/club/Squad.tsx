@@ -43,7 +43,7 @@ export function SquadView({ c, onCaptain, onEquip }: { c: Club; onCaptain?: (a: 
         <span className="fb-lb">The armband · this week</span>
         <div className="fb-chips">
           {c.members.map((m) => (
-            <button key={m.axis} type="button" className={`fb-chip${c.save.captain === m.axis ? ' on' : ''}`} aria-pressed={c.save.captain === m.axis} onClick={() => onCaptain?.(m.axis)}>{m.label}</button>
+            <button key={m.axis} type="button" className={`fb-chip cap${c.save.captain === m.axis ? ' on' : ''}`} aria-pressed={c.save.captain === m.axis} onClick={() => onCaptain?.(m.axis)}>{m.label}</button>
           ))}
         </div>
         <p className="fb-s">Four different captains in four weeks earns Harmony: +1 on every axis for one match. The same captain two weeks running restarts the count.</p>

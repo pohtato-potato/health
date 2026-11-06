@@ -57,6 +57,12 @@ export interface FbSave {
   staff?: string[];
   /** Last season's income, line by line (millions). */
   income?: { season: number; lines: { name: string; amount: number }[] };
+  /** Kits picked on launch day, by season and slot. */
+  kits?: { season: number; slot: 'home' | 'away' | 'third'; id: string }[];
+  sponsorStyle?: 'A' | 'B' | 'C' | 'R';
+  /** A crest step earned by promotion, waiting for its level-up moment. */
+  crestPending?: 1 | 2 | 3 | 4 | 5;
+  crestHistory?: { step: 1 | 2 | 3 | 4 | 5; opt: CrestOpt | 'keep'; season: number }[];
 }
 export interface FbClub { id: string; tier: Tier; rating: number; style: string; old?: OldSelf; folded?: boolean }
 export interface FbSeason {

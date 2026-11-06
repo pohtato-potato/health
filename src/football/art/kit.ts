@@ -6,7 +6,7 @@ const WH = '#f3eee6';
 const BK = '#141414';
 
 export type Collar = 'crew' | 'v' | 'polo' | 'wrap';
-export type Pattern = 'plain' | 'pin' | 'pinsparse' | 'bands' | 'geo' | 'sash' | 'hoops' | 'hoop1' | 'wave' | 'anniv' | 'weeks';
+export type Pattern = 'plain' | 'pin' | 'pinsparse' | 'bands' | 'geo' | 'sash' | 'hoops' | 'hoop1' | 'wave' | 'anniv' | 'weeks' | 'halves' | 'fade' | 'chevron' | 'tonal' | 'stripes' | 'yoke';
 export type SponsorStyle = 'A' | 'B' | 'C' | 'R';
 export interface KitDef {
   base: string;
@@ -78,6 +78,12 @@ function body(p: Pattern, base: string, a: KitDef['a'], b = BK): string {
       }
       break;
     }
+    case 'halves': s += `<rect x="100" width="100" height="210" fill="${A}"/>`; break;
+    case 'fade': s += `<defs><linearGradient id="fd-${n}" x2="0" y2="1"><stop offset=".35" stop-color="${base}"/><stop offset="1" stop-color="${A}"/></linearGradient></defs><rect width="200" height="210" fill="url(#fd-${n})"/>`; break;
+    case 'chevron': s += `<path d="M40 70 L100 104 L160 70 V86 L100 120 L40 86 Z" fill="${A}"/>`; break;
+    case 'tonal': s += range(52, 150, 16).map((x) => `<rect x="${x}" width="8" height="210" fill="#fff" opacity=".09"/>`).join(''); break;
+    case 'stripes': s += range(58, 146, 24).map((x) => `<rect x="${x}" width="12" height="210" fill="${A}"/>`).join(''); break;
+    case 'yoke': s += `<path d="M0 0 H200 V58 Q100 74 0 58 Z" fill="${A}"/><path d="M0 58 Q100 74 200 58 V63 Q100 79 0 63 Z" fill="${b}"/>`; break;
     case 'plain': break;
   }
   return s;
