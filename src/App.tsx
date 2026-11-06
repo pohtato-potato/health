@@ -8,7 +8,7 @@ import { addWater } from './db/actions';
 import { db } from './db/db';
 import { useActiveSession, useNow, useSettings, useToday } from './db/hooks';
 import { clearParam, go, useRoute } from './router';
-import { TabBar } from './ui/TabBar';
+import { PlusButton, TabBar } from './ui/TabBar';
 import { useToast } from './ui/Toasts';
 import { ShelfPage } from './screens/walk/ShelfPage';
 import { RouteScreen } from './screens/walk/RouteScreen';
@@ -69,6 +69,7 @@ function page<K extends string>(load: () => Promise<Record<K, ComponentType>>, n
 
 // Pages opened now and then load on demand; the tabs, sessions and sheets stay in the main bundle.
 const AchievementsPage = page(() => import('./screens/AchievementsPage'), 'AchievementsPage');
+const Football = page(() => import('./screens/football/Football'), 'Football');
 const ReadinessPage = page(() => import('./screens/Readiness'), 'ReadinessPage');
 const CheckInScreen = page(() => import('./screens/CheckIn'), 'CheckInScreen');
 const PhotosPage = page(() => import('./screens/Photos'), 'PhotosPage');
@@ -127,6 +128,17 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/tracks': { el: () => <Tracks />, tab: 'you' },
   '/journey': { el: () => <Journey /> },
   '/walk': { el: () => <WalkTab />, tab: 'walk' },
+  '/football': { el: () => <Football />, tab: 'football' },
+  '/football/club': { el: () => <Football />, tab: 'football' },
+  '/football/league': { el: () => <Football />, tab: 'football' },
+  '/football/story': { el: () => <Football />, tab: 'football' },
+  '/football/match': { el: () => <Football />, tab: 'football' },
+  '/football/player': { el: () => <Football />, tab: 'football' },
+  '/football/club-page': { el: () => <Football />, tab: 'football' },
+  '/football/rival': { el: () => <Football />, tab: 'football' },
+  '/football/wrapped': { el: () => <Football />, tab: 'football' },
+  '/football/cups': { el: () => <Football />, tab: 'football' },
+  '/football/settings': { el: () => <Football />, tab: 'football' },
   '/arrival': { el: () => <ArrivalRedirect /> },
   '/sky': { el: () => <NightSkyPage /> },
   '/medicines': { el: () => <MedicinesPage /> },
@@ -196,6 +208,8 @@ export function App() {
   const hasSettings = !!settings?.setupDone;
   useEffect(() => {
     if (hasSettings) void dailySnapshot(today).catch(() => undefined);
+    // Days left unclosed play themselves (at 4 am, or on the next open after it). Football's code loads only for this.
+    if (hasSettings) void import('./football/store/play').then((m) => m.playDue()).catch((e) => console.error('football catch-up', e));
   }, [hasSettings, today]);
   useThemeClass(settings, today);
 
@@ -211,6 +225,7 @@ export function App() {
       <RegionRoot />
       <Suspense fallback={<div className="page" />}>{page.el()}</Suspense>
       {page.tab && <TabBar active={page.tab} />}
+      {page.tab && page.tab !== 'today' && route.path !== '/football/match' && <PlusButton />}
       {page.tab && <ResumePill />}
       {sheet && SHEETS[sheet]?.()}
       <DeepLinks />

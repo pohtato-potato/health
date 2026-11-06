@@ -351,9 +351,10 @@ export async function moveEntry(id: string, meal: FoodEntry['meal']) {
   await updateEntry(id, { meal });
 }
 
-/** Marks a day's food complete (or not). Works for any date. */
+/** Marks a day's food complete (or not). Works for any date. Closing a day kicks off its football match. */
 export async function closeDay(date: DayKey, done: boolean) {
   await patchDay(date, { foodDone: done });
+  if (done) await import('../football/store/play').then((m) => m.kickOff(date)).catch((e) => console.error('football kick-off', e));
 }
 
 /** Puts a status on every day from..to, or takes it off when status is undefined. */

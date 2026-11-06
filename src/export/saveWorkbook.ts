@@ -20,6 +20,7 @@ export async function saveWorkbook() {
     measurements: (tables.measurements ?? []) as ExportData['measurements'],
     trackValues: (tables.trackValues ?? []) as ExportData['trackValues'],
     routes: (tables.routes ?? []) as ExportData['routes'],
+    matches: (tables.fbMatches ?? []).length ? (await import('../football/store/exportRows')).matchRows(tables.fbMatches as never) : undefined,
   };
   const bytes = buildXlsx(workbookSheets(data));
   void bump('export', { day: dayKey() });

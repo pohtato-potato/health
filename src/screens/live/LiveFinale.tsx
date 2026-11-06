@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { pagesFor, trackArt, type FinaleData } from '../../domain/finale';
 import { LiveFrame, Primary } from './Frame';
 
@@ -20,6 +20,8 @@ interface Props {
   onDiscard: () => void;
   onDone: () => void;
   rings: [string, string, string];
+  /** A thin line above Done on the last page (the football line). */
+  footer?: ReactNode;
 }
 
 const min = (ms: number) => Math.round(ms / 60_000);
@@ -276,9 +278,12 @@ export function LiveFinale(p: Props) {
             {p.saving ? 'Saving…' : `Save · ${p.picked.length ? `Flag ${p.flags.filter((f) => p.picked.includes(f.id)).map((f) => f.label.toLowerCase()).join(', ')}` : 'Nothing to flag'}`}
           </Primary>
         ) : last ? (
+          <>
+          {p.footer && <div style={{ marginBottom: 12 }}>{p.footer}</div>}
           <Primary tone={page === 'best' ? 'gold' : undefined} onClick={p.onDone}>
             Done
           </Primary>
+          </>
         ) : (
           <Primary tone={page === 'records' ? 'gold' : undefined} onClick={() => p.onStep(p.step + 1)}>
             {pages[p.step + 1] === 'best' ? 'And the best part' : 'Next'}

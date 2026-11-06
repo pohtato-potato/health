@@ -1,0 +1,1 @@
+<path d="M34 12 V4 H42 V12 M46 12 V2 H54 V12 M58 12 V4 H66 V12" class="cz"/>

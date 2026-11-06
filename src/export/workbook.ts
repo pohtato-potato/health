@@ -28,7 +28,11 @@ export interface ExportData {
   trackValues?: TrackValue[];
   /** Challenges and expeditions joined. */
   routes?: RouteRun[];
+  /** Football matches, one row each, opponent names already resolved. */
+  matches?: MatchRow[];
 }
+export interface MatchRow { date: DayKey; season: number; round: string; competition: string; opponent: string; homeAway: 'Home' | 'Away' | 'Neutral'; score: string; result: string; values: Record<'Pace' | 'Power' | 'Fuel' | 'Rest' | 'Routine' | 'Shape', number> }
+export const MATCH_HEADERS = ['Date', 'Season', 'Matchday', 'Competition', 'Opponent', 'Home/Away', 'Score', 'Result', 'Pace', 'Power', 'Fuel', 'Rest', 'Routine', 'Shape'];
 
 const measuredSteps = (day: Day | undefined) => (day?.stepsEstimated ? undefined : day?.steps);
 const r1 = (n: number | undefined | null) => (n === undefined || n === null ? null : Math.round(n * 10) / 10);
@@ -361,6 +365,7 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
     { name: 'Targets history', rows: targets },
     { name: 'Plan', rows: planRows },
     ...(routeRows.length > 1 ? [{ name: 'Routes', rows: routeRows }] : []),
+    ...(d.matches?.length ? [{ name: 'Matches', rows: [MATCH_HEADERS, ...d.matches.map((m) => [m.date, m.season, m.round, m.competition, m.opponent, m.homeAway, m.score, m.result, m.values.Pace, m.values.Power, m.values.Fuel, m.values.Rest, m.values.Routine, m.values.Shape] as Cell[])] }] : []),
     ...(slots.length
       ? [
           {

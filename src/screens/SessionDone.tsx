@@ -22,6 +22,7 @@ import { usualLength } from '../domain/sessionEdges';
 import { useLiveTheme } from '../ui/live/useLiveTheme';
 import { LiveFinale } from './live/LiveFinale';
 import { finaleData } from './live/finaleData';
+import { HabitLine } from './football/HabitLine';
 
 export function SessionDone() {
   const settings = useSettings();
@@ -197,6 +198,7 @@ function LiveDone({ session, plan, days, sets, withSkips, sessions, settings }: 
       onDiscard={discard}
       onDone={() => go('/train', undefined, { replace: true })}
       rings={RINGS[theme]}
+      footer={<HabitLine axis="Power" />}
     />
   );
 }

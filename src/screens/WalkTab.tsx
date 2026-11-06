@@ -33,6 +33,7 @@ import { stripFor } from '../walk/strip';
 import { NewsBannerView } from './walk/NewsBanner';
 import { skyLine } from '../walk/sky';
 import { useRoadNews } from './walk/useRoadNews';
+import { HabitLine } from './football/HabitLine';
 
 /** "1 challenge place free", or both kinds, in words. */
 function freeLine(free: { challenge: number; expedition: number }): string {
@@ -107,6 +108,7 @@ export function WalkTab() {
         <StatusLines
           today={`${steps.has(today) ? `Today ${todayKm.toFixed(1)} km` : 'Today: no steps logged yet'}${stretch ? ` · ${fmtInt(Math.round(km))} km from Delhi` : ''}`}
           lines={lines} onOpen={(path) => go(path.split('?')[0], Object.fromEntries(new URLSearchParams(path.split('?')[1] ?? '')))} tomorrow={days.some((d) => d.steps !== undefined) ? tomorrow : "Log today's steps and you'll set off from Delhi."} />
+        <HabitLine axis="Pace" />
 
         {news?.banner && <NewsBannerView banner={news.banner} kmById={news.kmById} onOpen={news.open} onDismiss={news.dismiss} />}
 

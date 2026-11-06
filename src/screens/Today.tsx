@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { addDays, dayKey, logHour, partOfDay, weekStart } from '../domain/dates';
 import { companionFor, creatureThemeOn, revealDue, stepsCreature } from '../domain/creatures';
 import { CREATURES } from '../domain/creatureRoster';
@@ -32,6 +32,7 @@ import { useRingMoment } from './today/useRingMoment';
 import { RING_WORD, ringsGold } from '../domain/ringMoments';
 import { TodayLayout } from './today/TodayLayout';
 import { DrawerHandle, TodayDrawer } from './today/TodayDrawer';
+import { PlusButton } from '../ui/TabBar';
 import { proteinState } from '../domain/proteinState';
 import { ChecklistChips, MealTiles, UsualChips, mealTotals } from './today/LogBelow';
 import { LogSearch } from '../sheets/LogSearch';
@@ -77,6 +78,9 @@ import { themeDayOn } from '../domain/calendar';
 import { journeyStart as journeyStartOf } from './Journey';
 import { seasonalThemeOn } from '../domain/themes';
 import type { Festive } from '../walk/art/festive';
+
+// Football's card loads with Football's data, apart from Today's own bundle.
+const FootballCard = lazy(() => import('./today/FootballCard').then((m) => ({ default: m.FootballCard })));
 
 export function Today() {
   const unlocked = useUnlockedIds();
@@ -296,6 +300,7 @@ export function Today() {
         actions={{ logMorning: () => openSheet('morning'), closeDay: () => go('/close'), addGap, typeSteps: () => openSheet('steps') }}
       />
       }
+      football={<Suspense fallback={null}><FootballCard now={nowMs} /></Suspense>}
       next={recordsTonight.length ? (
         <RecordsStrip records={recordsTonight.map((r) => `${r.exercise} ${fmtSet(r)}`)} onFinale={() => { const tn = tonight(sessions, sets, today); if (tn) go('/session/replay', { id: tn.session.id }); }} />
       ) : (
@@ -321,7 +326,12 @@ export function Today() {
         )}
       </section>
       }
-      handle={<DrawerHandle ready={ready.known ? ready.score : undefined} protein={proteinState({ gapG: gap.gapG, closed: rings.protein.closed, dayClosed: !!day?.foodDone })} closeLabel={day?.foodDone ? 'Day closed' : 'Close the day'} onOpen={() => setDrawerOpen(true)} />}
+      handle={
+        <div className="td-dock">
+          <DrawerHandle ready={ready.known ? ready.score : undefined} protein={proteinState({ gapG: gap.gapG, closed: rings.protein.closed, dayClosed: !!day?.foodDone })} closeLabel={day?.foodDone ? 'Day closed' : 'Close the day'} onOpen={() => setDrawerOpen(true)} />
+          <PlusButton docked />
+        </div>
+      }
     />
   );
 }

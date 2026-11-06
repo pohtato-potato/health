@@ -96,6 +96,9 @@
 .page.td-page { padding-bottom: calc(var(--tab-h) + var(--safe-bottom) + 104px); }
 
 /* The drawer handle: a pill above the tab bar that says what's inside. */
+/* Today's dock: the handle and the plus in one row, so they never overlap. */
+.td-dock { position: fixed; z-index: 19; left: 50%; transform: translateX(-50%); width: min(calc(100% - 24px), 520px); bottom: calc(var(--tab-h) + var(--safe-bottom) + 10px); display: flex; align-items: center; gap: 8px; }
+.td-dock .td-handle { position: static; transform: none; width: auto; flex: 1; min-width: 0; }
 .td-handle { position: fixed; z-index: 19; left: 50%; transform: translateX(-50%); width: min(calc(100% - 24px), 520px); bottom: calc(var(--tab-h) + var(--safe-bottom) + 10px); display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 14px 12px; min-height: 56px; border-radius: 20px; border: 1px solid var(--hairline); background: color-mix(in srgb, var(--tabbar) 92%, transparent); color: var(--quiet); font: inherit; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7); }
 .td-handle i { width: 40px; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--text) 45%, transparent); }
 .td-handle-row { display: flex; justify-content: space-between; gap: 10px; width: 100%; font-size: 14px; }

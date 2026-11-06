@@ -3,10 +3,10 @@ import { Aurora } from '../../ui/live/Aurora';
 
 /**
  * Today in the spec's order: the walk, the banner slot, the line (and the season strip), the rings, the moment card,
- * Next up, then logging below the fold. The drawer handle rides above the tab bar after them. The page sits on the aurora
+ * Football's one card, Next up, then logging below the fold. The drawer handle rides above the tab bar after them. The page sits on the aurora
  * tinted by the region the walk is in, as every Walk page does.
  */
-export function TodayLayout(p: { walk: ReactNode; banner: ReactNode; line: ReactNode; season?: ReactNode; rings: ReactNode; moment: ReactNode; next: ReactNode; fx?: ReactNode; log: ReactNode; handle: ReactNode; overlays?: ReactNode; before?: ReactNode; tint?: CSSProperties; glow?: boolean }) {
+export function TodayLayout(p: { walk: ReactNode; banner: ReactNode; line: ReactNode; season?: ReactNode; rings: ReactNode; moment: ReactNode; football?: ReactNode; next: ReactNode; fx?: ReactNode; log: ReactNode; handle: ReactNode; overlays?: ReactNode; before?: ReactNode; tint?: CSSProperties; glow?: boolean }) {
   return (
     <>
       {p.before}
@@ -21,6 +21,7 @@ export function TodayLayout(p: { walk: ReactNode; banner: ReactNode; line: React
         {p.season}
         {p.rings}
         {p.moment}
+        {p.football}
         {p.next}
         {p.log}
       </div>

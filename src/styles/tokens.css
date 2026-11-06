@@ -81,4 +81,4 @@
   background: currentColor;
   margin: 2px auto 0;
 }
-.tabbar .plus span { box-shadow: 0 8px 18px -6px rgba(0, 0, 0, 0.7); }
+.fab-plus { box-shadow: 0 8px 18px -6px rgba(0, 0, 0, 0.7); }
