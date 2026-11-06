@@ -3,6 +3,7 @@ import type { Moment } from '../domain/earned';
 import type { Sighting } from '../domain/creatures';
 import Dexie, { type EntityTable } from 'dexie';
 import type { Snapshot } from './snapshots';
+import type { FbBundle, FbClub, FbNews, FbSave, FbSeason, FbSquadRow, StoredMatch } from '../football/store/tables';
 import type {
   CheckIn,
   Clip,
@@ -64,6 +65,13 @@ export class HealthDB extends Dexie {
   moments!: EntityTable<Moment, 'id'>;
   corrections!: EntityTable<Correction, 'id'>;
   snapshots!: EntityTable<Snapshot, 'id'>;
+  fbSave!: EntityTable<FbSave, 'id'>;
+  fbClubs!: EntityTable<FbClub, 'id'>;
+  fbMatches!: EntityTable<StoredMatch, 'id'>;
+  fbSeasons!: EntityTable<FbSeason, 'id'>;
+  fbSquad!: EntityTable<FbSquadRow, 'id'>;
+  fbNews!: EntityTable<FbNews, 'id'>;
+  fbBundles!: EntityTable<FbBundle, 'id'>;
 
   constructor(name = 'health') {
     super(name);
@@ -114,6 +122,15 @@ export class HealthDB extends Dexie {
     this.version(8).stores({
       snapshots: 'id, at, kind',
     });
+    this.version(9).stores({
+      fbSave: 'id',
+      fbClubs: 'id, tier',
+      fbMatches: 'id, date, season, comp',
+      fbSeasons: 'id',
+      fbSquad: 'id',
+      fbNews: 'id, date, kind',
+      fbBundles: 'id',
+    });
   }
 }
 
@@ -147,6 +164,13 @@ export const TABLES = [
   'sightings',
   'moments',
   'corrections',
+  'fbSave',
+  'fbClubs',
+  'fbMatches',
+  'fbSeasons',
+  'fbSquad',
+  'fbNews',
+  'fbBundles',
 ] as const;
 export type TableName = (typeof TABLES)[number];
 
