@@ -136,7 +136,7 @@ const RAW: Record<string, string[]> = {
   world: [
     'The world tournament! | Every nation, one trophy. | Every nation plus my scarf.',
     'Called up? | Your form earned it. | I was always going to be called up. I am very loud.',
-    'Group stage nerves? | It is normal. | I am not nervous. My knees are.',
+    'Group stage nerves? | It is normal. | I am not nervous. My hands are.',
     'Who are we cheering for? | Your chosen nation. | And the gremlin nation, secretly.',
     'How long does this go on? | A few nights. | I will need snacks for a few nights.',
     'Big stage, big lights. | Bigger pressure. | Bigger snacks.',
