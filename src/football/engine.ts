@@ -1,6 +1,6 @@
 // One match from stored inputs to stored events (spec §7.2–7.3). Pure and seeded.
 import type { AbilityDef } from './data/load';
-import type { Opponent } from './opponent';
+import { CAL, type Opponent } from './opponent';
 import { coverage, edgeDistance, hexagon, inside, polygon, radii, randomIn, LIT, type Pt } from './radar';
 import { rng, shuffle } from './rng';
 import { clamp, type Axis, type AxisValues, type BraboAbility, type ChanceEvent, type Comp, type MatchEvents, type Mod, type RivalTwist, type Side } from './types';
@@ -37,11 +37,46 @@ export const GOAL_LINE = 7 / 112;
 const FULL = hexagon(1);
 
 export const chanceCount = (atkAvg: number, coin: number) => clamp(5 + Math.floor((atkAvg - 10) / 4) + coin, 5, 8);
-export const splitChances = (total: number, atkAvg: number, reach: number) =>
-  clamp(Math.round(total * (0.5 + (atkAvg - 13) / 30 - (reach - 0.75))), 2, total - 2);
+/** Your share of the chances. `coin` in [0, 1) rounds the share up or down fairly (0.5 = ordinary rounding). */
+export const splitChances = (total: number, atkAvg: number, reach: number, coin = 0.5) =>
+  clamp(Math.floor(total * (0.5 + (atkAvg - 13) / 30 - (reach - 0.75)) + coin), 2, total - 2);
 const shapeOf = (v: AxisValues, side: Side) => polygon(radii(v, side));
+
+/** Your night as a club rating: typical tier values against each tier's middle rating. */
+export function parityRating(v: AxisValues): number {
+  const PARITY: [number, number][] = [[1, 10], [6, 28], [8, 37.5], [10, 48], [12, 56], [14, 66], [16, 76], [18, CAL.top], [20, CAL.top + 10]];
+  const x = (v.Pace + v.Power + v.Fuel + v.Rest + v.Routine + v.Shape) / 6;
+  for (let i = 1; i < PARITY.length; i++) if (x <= PARITY[i][0]) {
+    const [x0, y0] = PARITY[i - 1], [x1, y1] = PARITY[i];
+    return y0 + ((y1 - y0) * (x - x0)) / (x1 - x0);
+  }
+  return 95;
+}
+/** The region radius at which your shape covers `target` of it. */
+export function evenRegion(v: AxisValues, side: Side, target: number): number {
+  const shape = shapeOf(v, side);
+  let lo = 0.02, hi = 1.6;
+  for (let k = 0; k < 26; k++) { const mid = (lo + hi) / 2; if (coverage(hexagon(mid), shape) > target) lo = mid; else hi = mid; }
+  return (lo + hi) / 2;
+}
+/**
+ * Landing regions and modifier size for this opponent against this night (Task 1.7 ruling).
+ * At an even match each side converts CAL.t of its chances; the rating gap widens both regions.
+ */
+export function matchup(v: AxisValues, opp: Opponent): { gap: number; atk: number; def: number; k: number } {
+  const raw = opp.rating - parityRating(v);
+  const bent = raw > 0 && CAL.C ? (raw * raw) / CAL.C : raw;
+  const gap = CAL.G ? CAL.G * Math.tanh(bent / CAL.G) : bent;
+  return {
+    gap,
+    atk: clamp(evenRegion(v, 'atk', CAL.t) * (1 + CAL.s * gap), 0.1, 1.6),
+    def: clamp(evenRegion(v, 'def', 1 - CAL.t) * (1 + CAL.s * gap), 0.1, 1.6),
+    k: CAL.floor + CAL.per * Math.max(0, gap),
+  };
+}
+/** Share of the landing region (a hexagon of radius reach; the full radar when null) inside your shape. */
 export const pctOf = (v: AxisValues, side: Side, reach: number | null) =>
-  coverage(side === 'atk' ? FULL : hexagon(reach ?? 0.75), shapeOf(v, side));
+  coverage(reach == null ? FULL : hexagon(reach), shapeOf(v, side));
 
 interface Live { mine: number; theirs: number; lastMiss: boolean; afterGoal: number; defCount: number; atkCount: number; theyConceded: boolean; iScored: boolean; used: Set<string> }
 
@@ -143,9 +178,18 @@ export function playMatch(m: MatchInput): MatchEvents {
   if (has('Mistral') && conds.has('windy')) [base.Pace, base.Power] = [base.Power, base.Pace];
   const atkAvg = (base.Pace + base.Power + base.Fuel) / 3;
   const total = chanceCount(atkAvg, r() < 0.5 ? 1 : 0);
-  let reach0 = m.opp.reach;
+  const mu = matchup(base, m.opp);
+  let reach0 = mu.def;
   if (has('Slow and Sure')) reach0 = Math.min(reach0, 0.6);
-  const yours = splitChances(total, atkAvg, reach0);
+  // the club's modifiers keep their shape (weights) and take their size from the gap
+  const weights = (t: Partial<AxisValues>) => {
+    const tot = Object.values(t).reduce((a, b) => a + Math.abs(b ?? 0), 0) || 1;
+    const o: Partial<AxisValues> = {};
+    for (const [a, d] of Object.entries(t) as [Axis, number][]) o[a] = (Math.abs(d) / tot) * 3;
+    return o;
+  };
+  const wS = weights(m.opp.shrinks), wP = weights(m.opp.presses);
+  const yours = splitChances(total, atkAvg, m.opp.reach, r());
   const mins = new Set<number>();
   while (mins.size < total) mins.add(3 + Math.floor(r() * 87));
   const minutes = [...mins].sort((a, b) => a - b);
@@ -181,41 +225,45 @@ export function playMatch(m: MatchInput): MatchEvents {
     // 3. youth sub from 60'
     if (minute >= 60) for (const b of m.bench) if (LIT[side].includes(b.axis)) add({ axis: b.axis, d: b.plus, why: 'Off the bench', kind: 'sub' });
     // 4. the opponent's shrinks and presses
-    const table = side === 'atk' ? m.opp.shrinks : m.opp.presses;
-    for (const a of LIT[side]) { const d = table[a]; if (d) add({ axis: a, d: Math.round(d * 4) / 4, why: m.opp.id.toUpperCase(), kind: 'opp' }); }
+    const w = side === 'atk' ? wS : wP;
+    for (const a of LIT[side]) {
+      const d = -(w[a] ?? 0) * mu.k * (CAL.ref ? v[a] / CAL.ref : 1) - (m.opp.extra ?? 0);
+      const q = Math.round(d * 4) / 4;
+      if (q) add({ axis: a, d: q, why: m.opp.id.toUpperCase(), kind: 'opp' });
+    }
     // 5. hidden, known and rivalry abilities
-    let reach: number | null = side === 'def' ? reach0 : null;
+    let reach: number = side === 'def' ? reach0 : mu.atk;
     for (const a of m.opp.abilities) {
       const fx = abilityFx(a, side, minute, type, m.home, live, ctx, conds, r);
       for (const mod of fx.mods) add({ ...mod, kind: isHidden(m, a) ? 'hidden' : 'opp' });
-      if (reach != null) reach += fx.reach;
+      if (side === 'def') reach += fx.reach;
     }
     if (m.rival) for (const mod of m.rival.mods(minute, side, Boolean(ctx.auto))) if (LIT[side].includes(mod.axis)) add({ ...mod, kind: 'rival' });
     // 6. late tiredness
     if (minute >= 75 && base.Rest < 15) for (const a of LIT[side]) add({ axis: a, d: -1, why: 'Tired legs', kind: 'tired' });
     // 7. the weekly stack, capped at 15 points of chance
     if (side === 'atk' && m.stack > 0) {
-      const before = pctOf(v, side, null);
+      const before = pctOf(v, side, reach);
       let lift = 0;
       for (let k = 0; k < Math.min(m.stack, STACK_STEPS.length); k++) {
         const next = lift + STACK_STEPS[k];
         const trial = { ...v };
         for (const a of LIT.atk) trial[a] = clamp(trial[a] + next, 1, 20);
-        if (pctOf(trial, side, null) - before > 0.15) break;
+        if (pctOf(trial, side, reach) - before > 0.15) break;
         lift = next;
       }
       if (lift) for (const a of LIT.atk) add({ axis: a, d: lift, why: 'Weekly stack', kind: 'stack' });
     }
-    if (reach != null) reach = clamp(eruption >= 0 && side === 'def' && live.defCount === eruption ? 1 : reach, 0.3, 1);
+    reach = clamp(eruption >= 0 && side === 'def' && live.defCount === eruption ? 1.6 : reach, 0.1, 1.6);
     if (side === 'atk' && foul === live.atkCount) {
-      while (pctOf(v, side, null) > 0.4 && LIT.atk.some((a) => v[a] > 1)) for (const a of LIT.atk) v[a] = clamp(v[a] - 0.5, 1, 20);
+      while (pctOf(v, side, reach) > 0.4 && LIT.atk.some((a) => v[a] > 1)) for (const a of LIT.atk) v[a] = clamp(v[a] - 0.5, 1, 20);
       mods.push({ axis: 'Pace', d: 0, why: has('Dirty Leeds') ? 'Dirty Leeds: fouled down to 40%' : 'Dark arts', kind: 'opp' });
       foul = -1;
     }
     const pctF = pctOf(v, side, reach);
     const pct = Math.round(pctF * 100);
     const shape = shapeOf(v, side);
-    const region = side === 'atk' ? FULL : hexagon(reach!);
+    const region = hexagon(reach);
     let land = randomIn(region, r) as Pt;
     let ok = inside(land, shape);
     const ev: ChanceEvent = { minute, side, type, mods, values: v, reach, pct, land, ok, glDist: null };

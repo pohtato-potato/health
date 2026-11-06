@@ -22,8 +22,8 @@ export interface ChanceEvent {
   mods: Mod[];
   /** Values after every modifier, the shape the ball meets. */
   values: AxisValues;
-  /** Opponent reach on defence; null on attack. */
-  reach: number | null;
+  /** Radius of the landing hexagon: the keeper's reach on attack, the shooter's on defence. */
+  reach: number;
   /** 0–100, whole percent. */
   pct: number;
   land: [number, number];
