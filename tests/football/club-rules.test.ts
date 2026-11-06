@@ -137,3 +137,25 @@ describe('the world and money', () => {
   });
   it('axes list is intact', () => { expect(AXES).toHaveLength(6); });
 });
+
+import { momentsOf } from '../../src/football/squad';
+import type { ChanceEvent } from '../../src/football/types';
+
+describe('moments', () => {
+  const ch = (minute: number, side: 'atk' | 'def', ok: boolean, tag?: ChanceEvent['tag']) =>
+    ({ minute, side, ok, tag, type: 'x', mods: [], values: {} as never, reach: 0.5, pct: 50, land: [0, 0], glDist: null }) as ChanceEvent;
+  const base = { home: true, derby: false, vsHigher: false, finalWon: false, last4: [] as ('W' | 'D' | 'L')[], auto: false };
+
+  it('a late comeback away earns comeback, late winner and away win', () => {
+    const events = { seed: 1, score: [2, 1] as [number, number], xg: [1, 1] as [number, number], moments: [],
+      chances: [ch(20, 'def', false), ch(60, 'atk', true), ch(85, 'atk', true, 'SCREAMER')] };
+    const m = momentsOf({ ...base, events, result: 'W', home: false });
+    expect(m).toEqual(expect.arrayContaining(['comeback', 'late-winner', 'away-win', 'screamer']));
+    expect(m).not.toContain('clean-sheet');
+  });
+
+  it('a goalless draw is a clean sheet and nothing else', () => {
+    const events = { seed: 1, score: [0, 0] as [number, number], xg: [0, 0] as [number, number], moments: [], chances: [ch(10, 'atk', false), ch(30, 'def', true)] };
+    expect(momentsOf({ ...base, events, result: 'D' })).toEqual(['clean-sheet']);
+  });
+});

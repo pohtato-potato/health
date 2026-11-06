@@ -13,7 +13,8 @@ import { simResult } from '../otherMatches';
 import { applyMoves, playoffPairs, seasonEnd } from '../promotion';
 import { ANTIGOON, rivalTwist } from '../rivals';
 import { hashSeed, rng, pick } from '../rng';
-import { armbandHarmony } from '../squad';
+import { armbandHarmony, momentsOf } from '../squad';
+import { abilityFor, braboAbilities } from '../data/abilities';
 import { standings, type Row } from '../table';
 import { applyChanges, worldTurn } from '../world';
 import { AXES, TIERS, type AxisValues, type Comp, type Mod, type Result, type Tier } from '../types';
@@ -263,7 +264,7 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
     seed, values, opp, home: braboHome,
     captain: slots.has('armband') ? w.save.captain : undefined,
     stack: slots.has('stack') ? w.save.earned.filter((e) => e.date > addDays(date, -7)).length : 0,
-    abilities: slots.has('second-wind') ? [{ id: 'second-wind', name: 'Second wind' }] : [],
+    abilities: braboAbilities(w.save.slots),
     bench: [], pre, conds, ctx,
     rival: rival ? rivalTwist(oppId, rival.how, rival.best) : oppId === ANTIGOON ? rivalTwist(ANTIGOON, 'legend') : undefined,
   });
@@ -277,6 +278,12 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
     watched: false, rotation, auto, leg, derby, big: derby || comp !== 'league' || plan.matchday === 34,
   };
   if (!w.save.met.includes(oppId)) w.save.met = [...w.save.met, oppId];
+  const last4 = [...w.past, ...w.matches].filter((x) => x.date < date).slice(-4).map((x) => x.result);
+  const finalWon = m.result === 'W' && round === 'Final';
+  for (const mo of momentsOf({ events, result: m.result, home: braboHome, derby, vsHigher: Boolean(ctx.vsHigher), finalWon, last4, auto })) {
+    const ab = abilityFor(mo);
+    if (ab && !w.save.earned.some((e) => e.id === ab.id)) w.save.earned = [...w.save.earned, { id: ab.id, date }];
+  }
   w.matches.push(m);
   return { ...m, score: score, pens: pens && home !== OWN ? [pens[1], pens[0]] : pens };
 }

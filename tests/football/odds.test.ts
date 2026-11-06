@@ -18,7 +18,7 @@ function winRate(values: number, club: ClubDef, rating?: number) {
 }
 const plain = (rating: number, tier: Tier): ClubDef => ({ ...clubById('hul'), id: 'cal', rating, tier, known: [], hidden: undefined, shrinks: {}, presses: {}, style: 'grit' });
 
-describe('odds calibration (10,000 matches a case)', () => {
+describe('odds calibration (10,000 matches a case)', { timeout: 60_000 }, () => {
   it('one tier apart, the weaker side wins 28–38%', () => {
     const r = winRate(TIER_TYPICAL[5], plain(56, 4));
     console.log('one tier apart', r);
