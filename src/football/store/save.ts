@@ -69,3 +69,8 @@ export async function answerPress(matchId: string, i: 0 | 1 | 2): Promise<string
     return headline;
   });
 }
+
+/** The season-end screens for this season have been seen. */
+export async function markSeasonSeen(season: number) {
+  await db.fbSave.update('save', { seenSeasonEnd: season });
+}

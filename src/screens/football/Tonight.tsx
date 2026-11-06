@@ -5,6 +5,8 @@ import type { Tonight as TonightData } from '../../football/store/hooks';
 import type { StoredMatch } from '../../football/store/tables';
 import { go } from '../../router';
 import { CatchUp } from './CatchUp';
+import { SeasonChangeView } from './moments/SeasonChange';
+import { markSeasonSeen } from '../../football/store/save';
 import { FullTime } from './FullTime';
 import { Radar } from './Radar';
 
@@ -28,7 +30,12 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
   const watch = onWatch ?? ((id: string) => go('/football/match', { id }));
   const f = t.fixture;
   const away = t.unwatchedAuto.filter((m) => m.date !== t.date);
-  const catchUp = away.length > 0 && <CatchUp ms={away} />;
+  const catchUp = (
+    <>
+      {t.change && <SeasonChangeView c={t.change} onDone={() => void markSeasonSeen(t.change!.season)} />}
+      {away.length > 0 && <CatchUp ms={away} />}
+    </>
+  );
   if (t.played.length) return <>{catchUp}{t.played.map((m) => <FullTime key={m.id} m={m} save={t.save} onWatch={() => watch(m.id)} />)}</>;
   return (
     <>

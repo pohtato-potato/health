@@ -380,3 +380,17 @@ button.fb-todaycard { cursor: pointer; }
 .fb-backpage { display: flex; flex-direction: column; gap: 6px; border: 2px solid var(--fb-cream); border-radius: 8px; padding: 12px; background: rgba(243,231,211,.07); }
 .fb-bphl { font: 700 26px/1.05 var(--fb-cond); color: var(--fb-cream); text-transform: uppercase; letter-spacing: .01em; }
 .fb-backpage .fb-btn { align-self: flex-start; }
+
+/* ---- season change and Old Selves ---- */
+.fb-moment { position: fixed; inset: 0; z-index: 60; overflow-y: auto; }
+.fb-moment .fb-page { padding-bottom: calc(32px + var(--safe-bottom)); }
+.fb-momtitle { margin: 0; font: 300 56px/1 var(--serif); text-shadow: 0 0 24px var(--fb-or); }
+.fb-seasonend.down .fb-momtitle { text-shadow: 0 0 24px #6fb8ff; }
+.fb-moments li.me { font-weight: 700; color: var(--fb-or-text); }
+.fb-drops { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.fb-drops li { display: grid; grid-template-columns: 1fr 34px 18px 34px auto; gap: 8px; align-items: center; min-height: 36px; font-size: 16px; }
+.fb-drops .fb-num { font-size: 22px; text-align: right; }
+.fb-olds { display: flex; flex-direction: column; gap: 10px; }
+.fb-oldlist { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.fb-oldself { display: flex; flex-direction: column; gap: 6px; border: 1.5px solid var(--fb-pu-soft); border-radius: 16px; padding: 10px 12px; box-shadow: 0 0 14px -6px var(--fb-pu-soft); }
+.fb-oldself .fb-radar { align-self: center; }

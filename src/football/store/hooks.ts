@@ -7,6 +7,8 @@ import type { AxisFlags, AxisValues, Mod } from '../types';
 import { loadHealth, nightFor } from './gather';
 import type { FbSave, StoredMatch } from './tables';
 import { fixtureFor, tonightKnocks, type Fixture } from './tonight';
+import { monthAverage } from '../oldSelves';
+import { seasonChange, type SeasonChange } from '../seasonChange';
 
 export const useSave = () => useLiveQuery(async () => {
   const save = (await db.fbSave.get('save')) ?? null;
@@ -35,6 +37,8 @@ export interface Tonight {
   played: StoredMatch[];
   /** Matches played automatically and not yet watched. */
   unwatchedAuto: StoredMatch[];
+  /** A finished season whose end screens are still to be seen. */
+  change?: SeasonChange;
 }
 
 export async function loadTonight(date: DayKey): Promise<Tonight | null> {
@@ -56,7 +60,16 @@ export async function loadTonight(date: DayKey): Promise<Tonight | null> {
     stack: save.earned.filter((e) => e.date > addDays(date, -7)).length,
     knocks: tonightKnocks(h, date, save.physioRoom),
     played, unwatchedAuto,
+    change: await pendingChange(save),
   };
+}
+
+async function pendingChange(save: FbSave): Promise<SeasonChange | undefined> {
+  const done = (await db.fbSeasons.toArray()).filter((s) => s.final && s.id > (save.seenSeasonEnd ?? 0)).sort((a, b) => b.id - a.id)[0];
+  if (!done) return undefined;
+  const recent = (await db.fbMatches.orderBy('date').toArray()).filter((m) => m.season <= done.id).slice(-7);
+  if (!recent.length) return undefined;
+  return seasonChange(done, monthAverage(recent.map((m) => m.values))) ?? undefined;
 }
 
 export function useTonight(now = Date.now()): Tonight | null | undefined {

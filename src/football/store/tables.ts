@@ -36,6 +36,10 @@ export interface FbSave {
   physioRoom: boolean;
   awakenings: Partial<Record<Axis, number[]>>;
   firstRunDone: boolean;
+  /** Old Selves retired at a season's end: they play on in the Old Selves Cup. */
+  retired?: OldSelf[];
+  /** The last season whose end screens were seen. */
+  seenSeasonEnd?: number;
 }
 export interface FbClub { id: string; tier: Tier; rating: number; style: string; old?: OldSelf; folded?: boolean }
 export interface FbSeason {

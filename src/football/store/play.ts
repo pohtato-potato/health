@@ -7,7 +7,7 @@ import { clubById, rememberClubs } from '../data/load';
 import { cards, physio, redCardMod, rotationShape, usesRotation } from '../discipline';
 import { playMatch, type MatchCtx } from '../engine';
 import { EVENTS, nextEvent } from '../events';
-import { fillSlots } from '../oldSelves';
+import { rollOldSelves } from '../oldSelves';
 import { opponentFor } from '../opponent';
 import { simResult } from '../otherMatches';
 import { applyMoves, playoffPairs, seasonEnd } from '../promotion';
@@ -191,10 +191,10 @@ function endSeason(w: World, date: DayKey) {
 
 /** The newest finished month joins the Old Selves; the weakest retires. */
 function refreshOldSelves(w: World, date: DayKey) {
-  const months = monthsBefore(w, date);
-  const slots = [...w.clubs.values()].filter((c) => c.old).map((c) => ({ id: c.id, tier: c.tier }));
-  const filled = fillSlots(months, slots.sort((a, b) => a.tier - b.tier));
+  const olds = [...w.clubs.values()].filter((c) => c.old);
+  const { filled, retired } = rollOldSelves(olds.map((c) => c.old!), monthsBefore(w, date), olds.map((c) => ({ id: c.id, tier: c.tier })));
   for (const o of filled) { const c = w.clubs.get(o.id)!; w.clubs.set(o.id, { ...c, rating: o.rating, old: o }); }
+  if (retired.length) w.save.retired = [...(w.save.retired ?? []), ...retired.map((o) => ({ ...o, id: `retired:${o.month ?? o.name}` }))];
 }
 export function monthsFromHealth(h: Health, before: DayKey) {
   const cur = before.slice(0, 7);

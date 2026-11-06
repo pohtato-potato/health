@@ -9,6 +9,7 @@ import { Aurora, FootballHome, type FbSection } from './FootballHome';
 import { TonightView } from './Tonight';
 import { LeagueHome } from './league/LeagueHome';
 import { ClubPage } from './league/ClubPage';
+import { StoryHome } from './story/StoryHome';
 import { FullTime } from './FullTime';
 import { FirstRun } from './FirstRun';
 import { keyChances } from './CatchUp';
@@ -61,5 +62,5 @@ export function Football() {
   }
   if (path === '/football/club-page') return <FootballHome section="league"><ClubPage id={params.get('id') ?? ''} wiki={params.get('wiki') === '1'} /></FootballHome>;
   const section = SECTION[path] ?? 'tonight';
-  return <FootballHome section={section}>{section === 'tonight' ? <TonightSection /> : section === 'league' ? <LeagueHome /> : null}</FootballHome>;
+  return <FootballHome section={section}>{section === 'tonight' ? <TonightSection /> : section === 'league' ? <LeagueHome /> : section === 'story' ? <StoryHome /> : null}</FootballHome>;
 }
