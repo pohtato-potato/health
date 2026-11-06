@@ -19,13 +19,14 @@ import { standings, type Row } from '../table';
 import { applyChanges, worldTurn } from '../world';
 import { AXES, TIERS, type AxisValues, type Comp, type Mod, type Result, type Tier } from '../types';
 import { bestAxis, conditions, loadHealth, medsTaken, nightFor, type Health } from './gather';
+import { factsFor, matchLines, situationOf } from './lines';
 import { newSeason, OWN } from './season';
 import type { FbClub, FbNews, FbSave, FbSeason, StoredMatch } from './tables';
 
 export const CATCH_UP_CAP = 42;
 const resultOf = (s: [number, number], pens?: [number, number]): Result => (s[0] > s[1] || (pens && pens[0] > pens[1]) ? 'W' : s[0] < s[1] || (pens && pens[0] < pens[1]) ? 'L' : 'D');
 
-interface World { save: FbSave; season: FbSeason; oldSeasons: FbSeason[]; clubs: Map<string, FbClub>; matches: StoredMatch[]; news: FbNews[]; h: Health; past: StoredMatch[] }
+interface World { save: FbSave; season: FbSeason; oldSeasons: FbSeason[]; clubs: Map<string, FbClub>; matches: StoredMatch[]; news: FbNews[]; h: Health; past: StoredMatch[]; used: { id: string; date: DayKey }[] }
 
 /** Plays every unplayed day up to and including `date`, in order. Days before `date` count as auto-played. */
 export async function kickOff(date: DayKey): Promise<StoredMatch[]> {
@@ -47,6 +48,7 @@ async function playThrough(until: DayKey, closed: DayKey | null): Promise<Stored
   const w: World = {
     save: { ...save }, season: (await db.fbSeasons.get(save.season))!, oldSeasons: [], clubs: new Map((await db.fbClubs.toArray()).map((c) => [c.id, c])),
     matches: [], news: [], h: await loadHealth(), past: await db.fbMatches.orderBy('date').toArray(),
+    used: (await db.fbNews.where('date').aboveOrEqual(addDays(start, -31)).toArray()).filter((n) => n.lineId).map((n) => ({ id: n.lineId!, date: n.date })),
   };
   for (let d = start; d <= until; d = addDays(d, 1)) playDay(w, d, d !== closed);
   w.save.lastPlayed = until;
@@ -285,5 +287,12 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
     if (ab && !w.save.earned.some((e) => e.id === ab.id)) w.save.earned = [...w.save.earned, { id: ab.id, date }];
   }
   w.matches.push(m);
+  const run = [...w.past, ...w.matches].filter((x) => !x.rotation);
+  let streak = 0;
+  for (let k = run.length - 1; k >= 0 && run[k].result === m.result; k--) streak++;
+  const situation = situationOf(m, { rival: Boolean(rival) || oppId === ANTIGOON, oldSelf: Boolean(club?.old), streak });
+  const lines = matchLines(m, factsFor(m, braboTier, streak, situation), w.used);
+  w.news.push(...lines);
+  w.used.push(...lines.map((n) => ({ id: n.lineId!, date: m.date })));
   return { ...m, score: score, pens: pens && home !== OWN ? [pens[1], pens[0]] : pens };
 }

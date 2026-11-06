@@ -81,5 +81,5 @@ export interface StoredMatch {
   big?: boolean;
 }
 export interface FbSquadRow { id: string; kind: 'youth'; name: string; axis: Axis; potential: 3 | 4 | 5; what: string; exercise: boolean; season: number; logged: DayKey[]; status: 'growing' | 'promoted' | 'left' }
-export interface FbNews { id: string; date: DayKey; kind: 'back' | 'world' | 'roundup' | 'club' | 'press'; text: string; clubId?: string; lineId?: string }
+export interface FbNews { id: string; date: DayKey; kind: 'back' | 'world' | 'roundup' | 'club' | 'press' | 'studio'; text: string; clubId?: string; lineId?: string; matchId?: string; answered?: number }
 export interface FbBundle { id: string; progress: number; done?: DayKey }

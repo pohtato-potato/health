@@ -4,6 +4,7 @@ import { OWN } from '../../football/store/season';
 import type { Tonight as TonightData } from '../../football/store/hooks';
 import type { StoredMatch } from '../../football/store/tables';
 import { go } from '../../router';
+import { FullTime } from './FullTime';
 import { Radar } from './Radar';
 
 /** Our own SVG strings (crests, kits): built from data we ship, escaped where text goes in. */
@@ -19,33 +20,13 @@ export const scoreLine = (m: StoredMatch) => {
   const s = homeFirst(m), p = pensHomeFirst(m);
   return `${nameOf(m.home)} ${s[0]}–${s[1]} ${nameOf(m.away)}${p ? ` (${p[0]}–${p[1]} on penalties)` : ''}`;
 };
-const RESULT = { W: 'Won', D: 'Drew', L: 'Lost' } as const;
+export const RESULT = { W: 'Won', D: 'Drew', L: 'Lost' } as const;
 
 export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: string) => void }) {
   const own = { step: t.save.crest.step, opt: t.save.crest.opt };
   const watch = onWatch ?? ((id: string) => go('/football/match', { id }));
   const f = t.fixture;
-  if (t.played.length) {
-    return (
-      <>
-        <div className="fb-row"><span className="fb-lb">Full time</span><span className="fb-s">{t.played[0].round ?? ''}</span></div>
-        {t.played.map((m) => (
-          <article key={m.id} className={`fb-card hot fb-result r-${m.result}`}>
-            <div className="fb-duel">
-              <Art svg={m.home === OWN ? crestSvg(own.step, own.opt, 52) : clubCrest(clubById(m.home), 52)} />
-              <b className="fb-score" aria-label={scoreLine(m)}>{homeFirst(m)[0]}–{homeFirst(m)[1]}</b>
-              <Art svg={m.away === OWN ? crestSvg(own.step, own.opt, 52) : clubCrest(clubById(m.away), 52)} />
-            </div>
-            <p className="fb-s fb-ctr">{scoreLine(m)}</p>
-            <span className={`fb-tag ${m.result === 'W' ? 'or' : 'pu'} fb-ctrself`}>{RESULT[m.result]}</span>
-            <div className="fb-btns">
-              <button type="button" className="fb-btn pri" onClick={() => watch(m.id)}>{m.watched ? 'Watch again' : 'Watch the match'}</button>
-            </div>
-          </article>
-        ))}
-      </>
-    );
-  }
+  if (t.played.length) return <>{t.played.map((m) => <FullTime key={m.id} m={m} save={t.save} onWatch={() => watch(m.id)} />)}</>;
   return (
     <>
       <div className="fb-row">

@@ -198,3 +198,19 @@ export const PRESS: PressItem[] = [
     'Only the headlines I wrote. / I read the weather. It is more honest. / No. But I like the crosswords. I never finish them, like our chances.',
     'Manager reads own headlines / Weather "more honest" than papers / Unfinished crosswords and chances'),
 ];
+
+/** The gremlin reviews tomorrow's headline. */
+export const REVIEWS: string[] = [
+  'Bold. Wrong. Perfect.',
+  'I have printed it out and stuck it on the fridge.',
+  'The pundit is furious. Ten out of ten.',
+  'That is going straight in the scrapbook.',
+  'Nobody will understand it. Everybody will remember it.',
+  'I laughed so hard my scarf fell off.',
+  'Legally I cannot say I wrote that. I wrote that.',
+  'The papers will love it. The papers are me.',
+  'Iconic. Slightly unhinged. Very us.',
+  'I would have said it louder, but fine.',
+  'The board will want a word. The board is also me.',
+  'Frame it. Frame it twice.',
+];

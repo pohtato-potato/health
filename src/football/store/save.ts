@@ -1,11 +1,14 @@
 // Founding the club, settings and choices.
 import { db } from '../../db/db';
+import { addDays } from '../../domain/dates';
+import { pressHeadline } from '../news';
 import type { DayKey } from '../../domain/dates';
 import { CLUBS } from '../data/load';
 import { fillSlots, SLOTS } from '../oldSelves';
 import { ANTIGOON } from '../rivals';
 import type { Axis } from '../types';
 import { loadHealth } from './gather';
+import { factsFor } from './lines';
 import { monthsFromHealth } from './play';
 import { newSeason } from './season';
 import type { CrestOpt, FbClub, FbSave } from './tables';
@@ -48,4 +51,20 @@ export async function resetFootball() {
 }
 export async function markWatched(id: string) {
   await db.fbMatches.update(id, { watched: true });
+}
+
+/** The answer picked at the press conference becomes tomorrow's back page (one answer per match). */
+export async function answerPress(matchId: string, i: 0 | 1 | 2): Promise<string | undefined> {
+  return db.transaction('rw', [db.fbNews, db.fbMatches, db.fbSeasons], async () => {
+    const q = await db.fbNews.get(`${matchId}:press`);
+    const m = await db.fbMatches.get(matchId);
+    if (!q?.lineId || !m || q.answered !== undefined) return undefined;
+    const tier = (await db.fbSeasons.get(m.season))?.tierOf.bra ?? 6;
+    const facts = factsFor(m, tier, 1, 'press');
+    const headline = pressHeadline(q.lineId, i, facts);
+    if (!headline) return undefined;
+    await db.fbNews.put({ ...q, answered: i });
+    await db.fbNews.put({ id: `${matchId}:back`, date: addDays(m.date, 1), kind: 'back', text: headline, lineId: q.lineId, matchId });
+    return headline;
+  });
 }
