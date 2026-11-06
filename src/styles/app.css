@@ -750,16 +750,27 @@ textarea.field {
 .tabbar .on {
   color: var(--text);
 }
-.tabbar .plus span {
-  width: 52px;
-  height: 52px;
-  border-radius: 26px;
+/* The plus, out of the bar: floats bottom right above it, or docks beside Today's handle. */
+.fab-plus {
+  position: fixed;
+  z-index: 21;
+  right: max(12px, calc(50% - 240px + 12px));
+  bottom: calc(var(--tab-h) + var(--safe-bottom) + 10px);
+  width: 56px;
+  height: 56px;
+  border-radius: 28px;
+  border: 0;
   background: var(--text);
   color: var(--ink);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
 }
+.fab-plus.docked { position: static; flex: none; }
+.tabbar a.fb { color: #ffc79a; }
+.tabbar a.fb.on { color: #ffd9b8; }
+.fb-tabmark { display: grid; place-items: center; width: 44px; height: 44px; margin-top: -16px; border-radius: 50%; border: 2.5px solid #ff7a1a; background: #140d1a; color: #ffa25c; box-shadow: 0 0 14px -2px #ff7a1a, 0 0 22px -6px #6c3fc4; animation: fb-mark 3s ease-in-out infinite; }
+@keyframes fb-mark { 50% { box-shadow: 0 0 22px 0 #ff7a1a, 0 0 30px -4px #6c3fc4; } }
 .resume {
   position: fixed;
   left: 50%;
@@ -1601,13 +1612,13 @@ textarea.field {
   --gold-border: #7a5626;
   --gold-rule: #4a3518;
 }
-:root.theme-diwali .tabbar .plus span {
+:root.theme-diwali .fab-plus {
   background: #f5b94a;
 }
-:root.theme-holi .tabbar .plus span {
+:root.theme-holi .fab-plus {
   background: #ff7aa8;
 }
-:root.theme-birthday .tabbar .plus span {
+:root.theme-birthday .fab-plus {
   background: #f7c96b;
 }
 :root.theme-holi {
@@ -1876,3 +1887,6 @@ textarea.field {
   font-size: 16px;
   line-height: 1.45;
 }
+
+/* With the plus floating bottom right, the last row scrolls clear of it. */
+.app:has(> .fab-plus:not(.docked)) .page { padding-bottom: calc(var(--tab-h) + 36px + 66px + var(--safe-bottom)); }

@@ -32,6 +32,7 @@ import { useRingMoment } from './today/useRingMoment';
 import { RING_WORD, ringsGold } from '../domain/ringMoments';
 import { TodayLayout } from './today/TodayLayout';
 import { DrawerHandle, TodayDrawer } from './today/TodayDrawer';
+import { PlusButton } from '../ui/TabBar';
 import { proteinState } from '../domain/proteinState';
 import { ChecklistChips, MealTiles, UsualChips, mealTotals } from './today/LogBelow';
 import { LogSearch } from '../sheets/LogSearch';
@@ -321,7 +322,12 @@ export function Today() {
         )}
       </section>
       }
-      handle={<DrawerHandle ready={ready.known ? ready.score : undefined} protein={proteinState({ gapG: gap.gapG, closed: rings.protein.closed, dayClosed: !!day?.foodDone })} closeLabel={day?.foodDone ? 'Day closed' : 'Close the day'} onOpen={() => setDrawerOpen(true)} />}
+      handle={
+        <div className="td-dock">
+          <DrawerHandle ready={ready.known ? ready.score : undefined} protein={proteinState({ gapG: gap.gapG, closed: rings.protein.closed, dayClosed: !!day?.foodDone })} closeLabel={day?.foodDone ? 'Day closed' : 'Close the day'} onOpen={() => setDrawerOpen(true)} />
+          <PlusButton docked />
+        </div>
+      }
     />
   );
 }
