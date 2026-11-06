@@ -12,7 +12,7 @@ export function situationOf(m: StoredMatch, opts: { rival: boolean; oldSelf: boo
   if (tags.includes('SCREAMER') && m.result !== 'L') return 'screamer';
   if (tags.includes('HEARTBREAK') && m.result !== 'W') return 'heartbreak';
   if (opts.rival || m.derby) return 'rival';
-  if (m.comp === 'bigcup' || m.comp === 'tiercup' || m.comp === 'playoff') return 'cup';
+  if (m.comp === 'bigcup' || m.comp === 'tiercup' || m.comp === 'playoff' || m.comp === 'continental' || m.comp === 'clubworld') return 'cup';
   if (m.comp === 'event' || m.comp === 'worldcup') return 'world';
   if (opts.oldSelf) return 'oldself';
   if (m.rotation) return 'rotation';

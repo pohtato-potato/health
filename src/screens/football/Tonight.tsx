@@ -72,6 +72,7 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
           </div>
           <h2 className="fb-hl">{t.opp ? `Tonight: ${t.opp.name}` : f.round ?? 'Tonight'}</h2>
           <p className="fb-s fb-ctr">{[f.round, f.opp ? (f.braboHome ? 'Home' : 'Away') : undefined].filter(Boolean).join(' · ')}</p>
+          {t.also && <p className="fb-s fb-ctr"><b>{t.also}</b></p>}
         </>
       )}
       <Radar values={t.liveValues} flags={t.flags} captain={t.save.slots.includes('armband') ? t.save.captain : undefined} />

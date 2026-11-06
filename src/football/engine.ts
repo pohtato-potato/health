@@ -98,7 +98,7 @@ function whenOk(when: string, side: Side, minute: number, type: string, home: bo
     case 'until-score': return !live.iScored;
     case 'after-their-goal': return live.afterGoal > 0;
     case 'after-miss': return live.lastMiss && side === 'def';
-    case 'cup': return ctx.comp === 'bigcup' || ctx.comp === 'tiercup' || ctx.comp === 'playoff' || ctx.comp === 'event';
+    case 'cup': return ctx.comp === 'bigcup' || ctx.comp === 'tiercup' || ctx.comp === 'playoff' || ctx.comp === 'event' || ctx.comp === 'continental' || ctx.comp === 'clubworld';
     case 'derby': return Boolean(ctx.derby);
     case 'vs-higher': return Boolean(ctx.vsHigher);
     case 'last5': return Boolean(ctx.last5);

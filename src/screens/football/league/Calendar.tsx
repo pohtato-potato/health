@@ -16,7 +16,7 @@ export function resultsByDay(matches: StoredMatch[], season: number): Map<number
   return out;
 }
 
-export function Calendar({ season, today, matches, events = [] }: { season: number; today: number; matches: StoredMatch[]; events?: { day: number; label: string; result?: Result }[] }) {
+export function Calendar({ season, today, matches, events = [], cont = false }: { season: number; today: number; matches: StoredMatch[]; events?: { day: number; label: string; result?: Result }[]; cont?: boolean }) {
   const res = resultsByDay(matches, season);
   const counts = { W: 0, D: 0, L: 0 };
   for (const r of res.values()) counts[r]++;
@@ -27,10 +27,11 @@ export function Calendar({ season, today, matches, events = [] }: { season: numb
         {seasonDays().map((p) => {
           const r = res.get(p.day);
           const fin = p.kind === 'finals1' || p.kind === 'finals2';
-          const label = `Day ${p.day}, ${KIND[p.kind]}${p.round ? `: ${p.round}` : ''}${r ? `, ${WORD[r]}` : p.day === today ? ', today' : ''}`;
+          const ct = cont && p.cont;
+          const label = `Day ${p.day}, ${KIND[p.kind]}${ct ? ' and the Continental Cup' : ''}${p.round ? `: ${p.round}` : ''}${r ? `, ${WORD[r]}` : p.day === today ? ', today' : ''}`;
           return (
             <li key={p.day} className={`fb-calday${p.day === today ? ' now' : ''}${r ? ' played' : ''}`} aria-label={label}>
-              <span className={`fb-res ${shapeOf(p)}${r ? ` r-${r}` : ' todo'}${fin ? ' fin' : ''}`} aria-hidden="true"><b>{r ?? p.day}</b></span>
+              <span className={`fb-res ${shapeOf(p)}${r ? ` r-${r}` : ' todo'}${fin ? ' fin' : ''}${ct ? ' ct' : ''}`} aria-hidden="true"><b>{r ?? p.day}</b></span>
               {r && <i aria-hidden="true">{p.day}</i>}
             </li>
           );
@@ -53,7 +54,7 @@ export function Calendar({ season, today, matches, events = [] }: { season: numb
         <span><span className="fb-res c r-W"><b>W</b></span>Won</span><span><span className="fb-res c r-D"><b>D</b></span>Drew</span><span><span className="fb-res c r-L"><b>L</b></span>Lost</span>
       </div>
       <div className="fb-calkey">
-        <span><i className="fb-sh c" />League</span><span><i className="fb-sh d" />Big Cup</span><span><i className="fb-sh s" />Trophy</span><span><i className="fb-sh h" />Event</span><span><i className="fb-sh c fin" />Finals</span>
+        <span><i className="fb-sh c" />League</span><span><i className="fb-sh d" />Big Cup</span><span><i className="fb-sh s" />Trophy</span><span><i className="fb-sh h" />Event</span><span><i className="fb-sh c fin" />Finals</span>{cont && <span><i className="fb-sh c ct" />Continental night (two matches)</span>}
       </div>
     </section>
   );

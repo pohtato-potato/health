@@ -6,7 +6,7 @@ import { clubById, rememberClubs, type AbilityDef, type ClubDef } from '../data/
 import type { AxisFlags, AxisValues, Mod } from '../types';
 import { loadHealth, nightFor } from './gather';
 import type { FbSave, StoredMatch } from './tables';
-import { fixtureFor, tonightKnocks, type Fixture } from './tonight';
+import { contTonight, fixtureFor, tonightKnocks, type Fixture } from './tonight';
 import { monthAverage } from '../oldSelves';
 import { seasonChange, type SeasonChange } from '../seasonChange';
 
@@ -37,6 +37,8 @@ export interface Tonight {
   played: StoredMatch[];
   /** Matches played automatically and not yet watched. */
   unwatchedAuto: StoredMatch[];
+  /** The continental match on a double-header night. */
+  also?: string;
   /** A finished season whose end screens are still to be seen. */
   change?: SeasonChange;
 }
@@ -61,6 +63,7 @@ export async function loadTonight(date: DayKey): Promise<Tonight | null> {
     knocks: tonightKnocks(h, date, save.physioRoom),
     played, unwatchedAuto,
     change: await pendingChange(save),
+    also: season ? contTonight(save, season, (id) => clubById(id).name) : undefined,
   };
 }
 

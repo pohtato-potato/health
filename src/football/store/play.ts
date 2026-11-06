@@ -6,6 +6,8 @@ import { advance, penalties, type Bracket } from '../cups';
 import { clubById, rememberClubs } from '../data/load';
 import { cards, physio, redCardMod, rotationShape, usesRotation } from '../discipline';
 import { playMatch, type MatchCtx } from '../engine';
+import { CONT_NAME, CWC_DAYS, CWC_NAME, contPrize, koFromTable, newClubWorld, phaseTable, reachOf } from '../continental';
+import { WORLD_CHAMPS } from '../data/continental';
 import { calledUp, EVENTS, NATIONS, nationBar, nextEvent, worldCupGroups, worldCupRun } from '../events';
 import { rollOldSelves } from '../oldSelves';
 import { opponentFor } from '../opponent';
@@ -20,7 +22,7 @@ import { BUNDLES, bundleDay, capacityOf, dayCounts, groundAbilities, isOpen, TEN
 import { dodgyCollapse, incomeFor, offers as offersFor, type Slot } from '../money';
 import { HABITS, habitById, armbandHarmony, averageOf, awakeningsAfter, momentsOf, TRAIT } from '../squad';
 import { abilityFor, braboAbilities } from '../data/abilities';
-import { standings, type Row } from '../table';
+import { standings, type Played, type Row } from '../table';
 import { applyChanges, worldTurn } from '../world';
 import { AXES, TIERS, type AxisValues, type Comp, type Mod, type Result, type Tier } from '../types';
 import { axisInputFor, bestAxis, conditions, loadHealth, medsTaken, nightFor, type Health } from './gather';
@@ -100,6 +102,7 @@ function playDay(w: World, date: DayKey, auto: boolean) {
       const s = brabo(w, date, plan, m.comp, m.home, m.away, auto, m.round);
       w.season.results[braboTier].push({ home: m.home, away: m.away, score: s.score });
     }
+    if (plan.cont) continentalNight(w, date, plan, auto, mine.length);
   } else if (plan.kind === 'bigcup' || plan.kind === 'tiercup' || plan.kind === 'finals1' || plan.kind === 'finals2') {
     let played = 0;
     const brackets: [Bracket, (b: Bracket) => void, Comp][] = [];
@@ -232,6 +235,7 @@ function playEventDay(w: World, date: DayKey, auto: boolean) {
   if (w.save.day === 1) w.squad.push(...youthIntake(w.save.season + 1, date, w.save.youthSlots ?? 0, doneBundles(w).includes('academy-2')));
   const plan: DayPlan = { day: w.save.day, kind: 'event', event: ev.id, round: `${EVENTS[ev.id].name}, day ${w.save.day} of ${ev.days}` };
   if (ev.id === 'worldcup') worldCupDay(w, date, plan, auto);
+  else if (ev.id === 'clubworld') clubWorldDay(w, date, plan, auto);
   else {
     const pool = [...w.clubs.values()].filter((c) => c.id !== OWN && !c.folded && (ev.id !== 'oldselves' || c.old));
     const opp = pick(rng(hashSeed(date, 'event', ev.id)), pool.length ? pool : [...w.clubs.values()].filter((c) => c.id !== OWN)).id;
@@ -242,7 +246,7 @@ function playEventDay(w: World, date: DayKey, auto: boolean) {
     const next = w.save.season + 1;
     const ded = w.season.nextDeductions ?? {};
     w.oldSeasons.push(w.season);
-    w.season = newSeason(next, addDays(date, 1), [...w.clubs.values()], ded);
+    w.season = newSeason(next, addDays(date, 1), [...w.clubs.values()], ded, w.season.final?.tables[1].slice(0, 4).map((r) => r.id));
     w.save.season = next;
     w.save.phase = 'season';
     w.save.event = undefined;
@@ -307,7 +311,7 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
   const score: [number, number] = home === OWN ? events.score : [events.score[1], events.score[0]];
   const mineScore = events.score;
   let pens: [number, number] | undefined;
-  if (mineScore[0] === mineScore[1] && comp !== 'league' && comp !== 'friendly' && comp !== 'event' && !(comp === 'worldcup' && leg)) pens = penalties(values.Routine * 5, opp.rating, rng(hashSeed(String(seed), 'pens')));
+  if (mineScore[0] === mineScore[1] && comp !== 'league' && comp !== 'friendly' && comp !== 'event' && !(comp === 'worldcup' && leg) && !(comp === 'continental' && round?.includes('league phase'))) pens = penalties(values.Routine * 5, opp.rating, rng(hashSeed(String(seed), 'pens')));
   const m: StoredMatch = {
     id: `${date}:${leg ?? 1}`, date, season: w.save.season, day: plan.day, comp, round, home, away, opp: oppId, braboHome,
     values, flags, events, score: mineScore, pens, result: resultOf(mineScore, pens),
@@ -406,8 +410,10 @@ function seasonMoney(w: World, date: DayKey, tables: Record<Tier, Row[]>, up: Pa
   const shop = (done.includes('shop-2') ? 0.1 : 0) + (done.includes('shop-3') ? 0.1 : 0);
   const total = incomeFor(tier, pos, promoted, sponsorMoney, (w.save.moved ? capacityOf(true, done) / TENANT_CAPACITY : 1) * (1 + shop));
   const prizeMoney = Math.round((total - sponsorMoney) * 1000) / 1000;
-  w.save.income = { season: w.save.season, lines: [{ name: 'TV, gate and prize money', amount: prizeMoney }, { name: 'Sponsors', amount: Math.round(sponsorMoney * 1000) / 1000 }] };
-  w.save.budget = Math.round((w.save.budget + total) * 1000) / 1000;
+  const reach = reachOf(w.season.continental, OWN);
+  const cont = reach ? contPrize(reach) : 0;
+  w.save.income = { season: w.save.season, lines: [{ name: 'TV, gate and prize money', amount: prizeMoney }, { name: 'Sponsors', amount: Math.round(sponsorMoney * 1000) / 1000 }, ...(cont ? [{ name: 'The Continental Cup', amount: cont }] : [])] };
+  w.save.budget = Math.round((w.save.budget + total + cont) * 1000) / 1000;
   const nextTier = (promoted ? tier - 1 : tier) as Tier;
   const taken = new Set(w.save.sponsors.map((s) => s.slot));
   const partners = w.save.sponsors.filter((s) => s.slot === 'partner').length;
@@ -507,4 +513,89 @@ function worldCupDay(w: World, date: DayKey, plan: DayPlan, auto: boolean) {
   if (after.winner) lines.push(`${name(after.winner)} win the World Cup.`);
   const text = lines.filter(Boolean).join(' ');
   if (text) w.news.push({ id: `${date}:wc`, date, kind: 'world', text: `The World Cup, ${day?.label ?? `day ${dayNo}`}. ${text}` });
+}
+
+// ---- The Continental Cup and the Club World Cup ----
+/** One continental night, the second match of a league night's double-header. */
+function continentalNight(w: World, date: DayKey, plan: DayPlan, auto: boolean, before: number) {
+  const c = w.season.continental;
+  const night = plan.cont;
+  if (!c || !night) return;
+  const leg = (before + 1) as 1 | 2;
+  const name = (id: string) => clubById(id).name;
+  if (night.stage === 'phase') {
+    const results: Played[] = [];
+    for (const [h, a] of c.rounds[night.round - 1] ?? []) {
+      const round = `${CONT_NAME}, league phase ${night.round} of 8`;
+      const score = h === OWN || a === OWN ? brabo(w, date, plan, 'continental', h, a, auto, round, leg).score : otherResult(w, h, a, `${date}:ct`);
+      results.push({ home: h, away: a, score });
+    }
+    c.results[night.round - 1] = results;
+    if (night.round === 8) {
+      c.ko = koFromTable(c);
+      const table = phaseTable(c);
+      const pos = table.findIndex((r) => r.id === OWN) + 1;
+      if (pos) w.news.push({ id: `${date}:ct:phase`, date, kind: 'club', text: pos <= 8 ? `${ordinalOf(pos)} in the league phase: Brabo United are in the Continental Cup quarter-finals.` : `${ordinalOf(pos)} in the league phase. The Continental Cup ends there for Brabo United.` });
+    }
+    return;
+  }
+  if (!c.ko) return;
+  const ri = night.stage === 'qf' ? 0 : night.stage === 'sf' ? 1 : 2;
+  c.ko = koRound(w, date, plan, auto, c.ko, ri, 'continental', leg);
+  if (c.ko.winner) {
+    const won = c.ko.winner === OWN;
+    if (won) w.save.eventState = { ...w.save.eventState, clubWorldDue: true };
+    w.news.push({ id: `${date}:ct:winner`, date, kind: won ? 'club' : 'world', clubId: c.ko.winner, text: won ? 'Brabo United win the Continental Cup! The Club World Cup is next.' : `${name(c.ko.winner)} win the Continental Cup.` });
+  }
+}
+const ordinalOf = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th')}`;
+/** Play one knockout round of a bracket: Brabo's tie for real, the rest simulated, drawn ties on penalties. */
+function koRound(w: World, date: DayKey, plan: DayPlan, auto: boolean, b: Bracket, ri: number, comp: Comp, leg?: 1 | 2): Bracket {
+  const r = b.rounds[ri];
+  const neutral = r.name === 'Final' || comp === 'clubworld';
+  const res: Record<string, { score: [number, number]; pens?: [number, number] }> = {};
+  for (const t of r.ties) {
+    if (!t.away || t.winner) continue;
+    let score: [number, number], pens: [number, number] | undefined;
+    if (t.home === OWN || t.away === OWN) {
+      const m = brabo(w, date, plan, comp, t.home, t.away, auto, `${b.name}, ${r.name}`, leg, neutral);
+      score = m.score; pens = m.pens;
+    } else {
+      score = otherResult(w, t.home, t.away, `${date}:${b.id}:${ri}`, neutral);
+      if (score[0] === score[1]) pens = penalties(rating(w, t.home), rating(w, t.away), rng(hashSeed(date, 'pens', t.home, t.away)));
+    }
+    res[`${t.home}-${t.away}`] = { score, pens };
+  }
+  return advance(b, ri, res);
+}
+/** The Club World Cup over four event days: quarter-final, semi-final, a third night, the final. Brabo play every night. */
+function clubWorldDay(w: World, date: DayKey, plan: DayPlan, auto: boolean) {
+  const day = w.save.day;
+  if (!w.season.clubworld) w.season.clubworld = newClubWorld(w.save.season);
+  let b = w.season.clubworld;
+  const label = (x: string) => `${CWC_NAME}, ${x}`;
+  const inRound = (ri: number) => b.rounds[ri]?.ties.some((t) => t.home === OWN || t.away === OWN);
+  const champs = WORLD_CHAMPS.map((c) => c.id);
+  const friendly = (why: string) => {
+    const met = new Set([...w.matches, ...w.past].filter((m) => m.comp === 'clubworld' || m.round?.startsWith(CWC_NAME)).map((m) => m.opp));
+    const opp = pick(rng(hashSeed(date, 'cwc-friendly')), champs.filter((id) => !met.has(id)).length ? champs.filter((id) => !met.has(id)) : champs);
+    brabo(w, date, plan, 'friendly', OWN, opp, auto, label(why));
+  };
+  if (day === CWC_DAYS.qf) b = koRound(w, date, plan, auto, b, 0, 'clubworld');
+  else if (day === CWC_DAYS.sf) {
+    const out = !inRound(1);
+    b = koRound(w, date, plan, auto, b, 1, 'clubworld');
+    if (out) friendly('a friendly');
+  } else if (day === CWC_DAYS.third) {
+    const semis = b.rounds[1].ties;
+    const lostSemi = semis.find((t) => (t.home === OWN || t.away === OWN) && t.winner !== OWN);
+    if (lostSemi) brabo(w, date, plan, 'clubworld', OWN, semis.map((t) => (t.winner === t.home ? t.away! : t.home)).find((id) => id !== OWN)!, auto, label('third-place match'), undefined, true);
+    else friendly(inRound(2) ? 'a warm-up before the final' : 'a friendly');
+  } else if (day === CWC_DAYS.final) {
+    const out = !inRound(2);
+    b = koRound(w, date, plan, auto, b, 2, 'clubworld');
+    if (out) friendly('a friendly');
+    if (b.winner) w.news.push({ id: `${date}:cwc:winner`, date, kind: b.winner === OWN ? 'club' : 'world', clubId: b.winner, text: b.winner === OWN ? 'Brabo United are champions of the world.' : `${clubById(b.winner).name} win the Club World Cup.` });
+  }
+  w.season.clubworld = b;
 }

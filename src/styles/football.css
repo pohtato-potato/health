@@ -478,3 +478,13 @@ button.fb-todaycard { cursor: pointer; }
 .fb-hline-k { font: 700 14px var(--sans); letter-spacing: .04em; text-transform: uppercase; color: #ffa25c; }
 .fb-hline-t { font-variant-numeric: tabular-nums; }
 .fb-hline-s { grid-column: 2; font-size: 14px; color: rgba(243,238,230,.8); }
+
+/* The Continental Cup: the phase table, and continental nights on the calendar (a double ring: shape, not colour). */
+.fb-ctab { margin: 0; padding: 4px 6px; list-style: none; border: 1.5px solid rgba(255,255,255,.4); border-radius: 16px; }
+.fb-ctab li { display: grid; grid-template-columns: 26px minmax(0,1fr) auto auto; gap: 10px; align-items: center; min-height: 44px; padding: 4px 8px; font-size: 15px; border-top: 1px solid rgba(255,255,255,.14); }
+.fb-ctab li:first-child { border-top: 0; }
+.fb-ctab li.cut { border-bottom: 2px dashed rgba(255,255,255,.55); }
+.fb-ctab li.me { border: 2px solid var(--k); border-radius: 14px; box-shadow: 0 0 14px -4px var(--k); }
+.fb-ctn { display: flex; align-items: center; gap: 8px; min-width: 0; overflow-wrap: anywhere; }
+.fb-res.ct, .fb-sh.ct { outline: 2px solid currentColor; outline-offset: 2px; }
+.fb-sh.ct { color: var(--fb-ink); }

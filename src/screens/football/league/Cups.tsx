@@ -5,6 +5,8 @@ import { bracketFrom16, type Bracket, type Round, type Tie } from '../../../foot
 import { clubColour } from '../../../football/store/league';
 import { OWN } from '../../../football/store/season';
 import type { Tier } from '../../../football/types';
+import { CONT, CONT_NAME, phaseTable, type Continental } from '../../../football/continental';
+import { ordinal } from '../../../football/habitLines';
 
 const short = (id: string) => (id === OWN ? 'BRA' : clubById(id).short);
 const nm = (id: string) => (id === OWN ? 'Brabo United' : clubById(id).name);
@@ -114,5 +116,59 @@ export function Cup({ b, tierOf }: { b: Bracket; tierOf: Record<string, Tier> })
         </>
       )}
     </section>
+  );
+}
+
+/** The Continental Cup: Brabo's eight phase nights and the phase table while it runs, then the knockout bracket. */
+export function ContinentalView({ c, tierOf }: { c: Continental; tierOf: Record<string, Tier> }) {
+  const mine = c.field.includes(OWN);
+  const table = phaseTable(c);
+  const played = c.results.length;
+  const pos = table.findIndex((r) => r.id === OWN);
+  const status = c.ko ? (pos >= 0 ? `Finished ${ordinal(pos + 1)}` : 'Finished') : played ? `League phase, ${played} of 8 played` : 'Starts on day 2';
+  const rows = table.slice(0, 8).concat(mine && pos >= 8 ? [table[pos]] : []);
+  return (
+    <>
+      {c.ko && <Cup b={c.ko} tierOf={tierOf} />}
+      <section className="fb-cup" aria-label={c.ko ? `${CONT_NAME}, league phase` : CONT_NAME}>
+        <div className="fb-row"><span className="fb-t">{c.ko ? 'League phase' : CONT_NAME}</span><span className="fb-s">{status}</span></div>
+        {!mine && <p className="fb-s">Last season’s Crown League top four play it, with twelve clubs from abroad. Reach the top four to get in.</p>}
+        {mine && !c.ko && (
+          <ol className="fb-rounds">
+            {c.rounds.map((r, i) => {
+              const p = r.find(([h, a]) => h === OWN || a === OWN)!;
+              const opp = p[0] === OWN ? p[1] : p[0];
+              const res = c.results[i]?.find((x) => x.home === OWN || x.away === OWN);
+              const s = res && (res.home === OWN ? res.score : [res.score[1], res.score[0]]);
+              const word = s ? (s[0] > s[1] ? 'Won' : s[0] < s[1] ? 'Lost' : 'Drew') : '';
+              return (
+                <li key={i} className={`fb-rd ${s ? (s[0] > s[1] ? 'w' : s[0] < s[1] ? 'l' : '') : i === played ? 'n' : ''}`}>
+                  <i aria-hidden="true" />
+                  <span className="fb-col"><b>Night {i + 1} · day {CONT.phase[i]}</b><span className="fb-s">{s ? `${word} ${s[0]}–${s[1]} v ${nm(opp)}` : `${p[0] === OWN ? 'Home to' : 'Away at'} ${nm(opp)}`}</span></span>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+        {played > 0 && (
+          <>
+            <span className="fb-lb">League phase table · top 8 go through</span>
+            <ol className="fb-ctab" aria-label="League phase table">
+              {rows.map((r) => {
+                const n = table.indexOf(r) + 1;
+                return (
+                  <li key={r.id} className={`${r.id === OWN ? 'me' : ''}${n === 8 ? ' cut' : ''}`} style={{ '--k': clubColour(r.id) } as React.CSSProperties}>
+                    <b className="fb-num">{n}</b>
+                    <span className="fb-ctn">{nm(r.id)}{r.id === OWN && <span className="fb-tag">You</span>}</span>
+                    <span className="fb-s fb-num">{r.p} pl</span>
+                    <b className="fb-num">{r.pts} pts</b>
+                  </li>
+                );
+              })}
+            </ol>
+          </>
+        )}
+      </section>
+    </>
   );
 }

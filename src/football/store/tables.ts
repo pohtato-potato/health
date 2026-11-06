@@ -9,6 +9,7 @@ import type { Offer } from '../money';
 import type { HabitId } from '../squad';
 import type { Played, Row } from '../table';
 import type { Axis, AxisFlags, AxisValues, Comp, MatchEvents, Result, Tier } from '../types';
+import type { Continental } from '../continental';
 
 export type CrestOpt = 'a' | 'b' | 'c' | 'd' | 'e';
 export interface FbSave {
@@ -87,6 +88,10 @@ export interface FbSeason {
   deductions: Record<string, number>;
   bigcup: Bracket;
   tiercups: Record<string, Bracket>;
+  /** The Continental Cup this season (every season; Brabo play only when in the field). */
+  continental?: Continental;
+  /** The Club World Cup, played in the event days after this season, when Brabo won the Continental Cup. */
+  clubworld?: Bracket;
   playoffs: Partial<Record<Tier, { semis: [string, string][]; semiWinners?: string[]; final?: [string, string]; winner?: string }>>;
   final?: { tables: Record<Tier, Row[]>; up: Partial<Record<Tier, string[]>>; down: Partial<Record<Tier, string[]>> };
   dates: Record<number, DayKey>;

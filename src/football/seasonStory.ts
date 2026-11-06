@@ -1,6 +1,7 @@
 // The story of each season: its finish, cup runs, upsets both ways, and Season Wrapped (spec §5.6–5.7).
 import { tierName } from './data/load';
 import type { Bracket } from './cups';
+import { CONT_NAME } from './continental';
 import { AXES, type Axis, type Tier } from './types';
 import type { FbSeason, StoredMatch } from './store/tables';
 
@@ -51,7 +52,9 @@ export function summarise(s: FbSeason, matches: StoredMatch[], all: FbSeason[]):
   const count = new Map<string, number>();
   for (const m of ms) for (const x of m.events.moments) count.set(x, (count.get(x) ?? 0) + 1);
   const moments = [...count].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([x, n]) => (n > 1 ? `${x} ×${n}` : x));
-  const cups = [cupRun(s.bigcup), ...Object.values(s.tiercups).map(cupRun)].filter(Boolean) as string[];
+  const ct = s.continental;
+  const contLine = ct?.ko ? cupRun(ct.ko) : ct?.field.includes(OWN) && ct.results.length === 8 ? `${CONT_NAME}: out in the league phase` : ct?.field.includes(OWN) && ct.results.length ? `${CONT_NAME}: league phase, ${ct.results.length} of 8 played` : undefined;
+  const cups = [contLine, cupRun(s.clubworld), cupRun(s.bigcup), ...Object.values(s.tiercups).map(cupRun)].filter(Boolean) as string[];
   const verdict = move === 'up' ? 'Up we go. Told you. I always said this squad had it.'
     : move === 'down' ? 'Down. Fine. We regroup, we sulk for a day, we go again.'
       : !s.final ? 'Too early to judge. I’m judging anyway: promising.'

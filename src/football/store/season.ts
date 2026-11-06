@@ -2,12 +2,14 @@
 import type { DayKey } from '../../domain/dates';
 import { leagueFixtures } from '../calendar';
 import { drawBigCup, drawTierCup, TIER_CUP, type CupClub } from '../cups';
+import { newContinental } from '../continental';
 import { hashSeed, rng } from '../rng';
 import { TIERS, type Tier } from '../types';
 import type { FbClub, FbSeason } from './tables';
 
 export const OWN = 'bra';
-export function newSeason(no: number, start: DayKey, clubs: FbClub[], deductions: Record<string, number> = {}): FbSeason {
+/** `top4` is last season's Crown League top four, for the Continental Cup; season 1 takes the four best-rated. */
+export function newSeason(no: number, start: DayKey, clubs: FbClub[], deductions: Record<string, number> = {}, top4?: string[]): FbSeason {
   const live = clubs.filter((c) => !c.folded);
   const fixtures = {} as FbSeason['fixtures'];
   const results = {} as FbSeason['results'];
@@ -21,5 +23,6 @@ export function newSeason(no: number, start: DayKey, clubs: FbClub[], deductions
   const r = rng(hashSeed('cups', String(no)));
   const tiercups: FbSeason['tiercups'] = {};
   for (const t of [2, 4, 6] as Tier[]) tiercups[TIER_CUP[t].id] = drawTierCup(t, cc, OWN, r);
-  return { id: no, start, fixtures, results, tierOf, deductions, bigcup: drawBigCup(cc, r), tiercups, playoffs: {}, dates: {} };
+  return { id: no, start, fixtures, results, tierOf, deductions, bigcup: drawBigCup(cc, r), tiercups, playoffs: {}, dates: {},
+    continental: newContinental(no, top4 ?? live.filter((c) => c.tier === 1).sort((a, b) => b.rating - a.rating || a.id.localeCompare(b.id)).map((c) => c.id).slice(0, 4)) };
 }
