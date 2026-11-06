@@ -6,7 +6,8 @@ import type { StoredMatch } from '../../football/store/tables';
 import { go } from '../../router';
 import { CatchUp } from './CatchUp';
 import { SeasonChangeView } from './moments/SeasonChange';
-import { markSeasonSeen } from '../../football/store/save';
+import { markAwakeSeen, markSeasonSeen } from '../../football/store/save';
+import { AwakeningView } from './moments/Awakening';
 import { FullTime } from './FullTime';
 import { Radar } from './Radar';
 
@@ -29,10 +30,12 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
   const own = { step: t.save.crest.step, opt: t.save.crest.opt };
   const watch = onWatch ?? ((id: string) => go('/football/match', { id }));
   const f = t.fixture;
+  const awake = (t.save.awakeLog ?? [])[t.save.awakeSeen ?? 0];
   const away = t.unwatchedAuto.filter((m) => m.date !== t.date);
   const catchUp = (
     <>
       {t.change && <SeasonChangeView c={t.change} onDone={() => void markSeasonSeen(t.change!.season)} />}
+      {!t.change && awake && <AwakeningView axis={awake.axis} at={awake.band} values={t.liveValues} onDone={() => void markAwakeSeen(t.save.awakeLog!.length)} />}
       {away.length > 0 && <CatchUp ms={away} />}
     </>
   );

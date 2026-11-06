@@ -6,6 +6,8 @@ import type { DayKey } from '../../domain/dates';
 import { CLUBS, rememberClubs } from '../data/load';
 import { fillSlots, SLOTS } from '../oldSelves';
 import { ANTIGOON } from '../rivals';
+import { BUILT_INS } from '../data/abilities';
+import { equip } from '../squad';
 import type { Axis } from '../types';
 import { loadHealth } from './gather';
 import { factsFor } from './lines';
@@ -73,4 +75,23 @@ export async function answerPress(matchId: string, i: 0 | 1 | 2): Promise<string
 /** The season-end screens for this season have been seen. */
 export async function markSeasonSeen(season: number) {
   await db.fbSave.update('save', { seenSeasonEnd: season });
+}
+
+/** This week's captain. Picking the same one as last week restarts the Harmony count. */
+export async function setCaptain(axis: Axis) {
+  await setFbSetting('captain', axis);
+}
+/** Put an owned ability in slot 0–2. A fourth slot is refused. */
+export async function equipAbility(id: string, slot: number) {
+  await db.transaction('rw', db.fbSave, async () => {
+    const s = await db.fbSave.get('save');
+    if (!s) return;
+    const owned = [...BUILT_INS.map((b) => b.id), ...s.earned.map((e) => e.id)];
+    const slots = equip(s.slots, id, slot, owned);
+    if (slots !== s.slots) await db.fbSave.put({ ...s, slots });
+  });
+}
+/** The newest awakening has been shown. */
+export async function markAwakeSeen(n: number) {
+  await db.fbSave.update('save', { awakeSeen: n });
 }

@@ -8,7 +8,7 @@ const FLAG: Record<string, string> = { 'no-data': 'no data', 'not-logged': 'not 
 
 const pts = (p: Pt[], c: number, r: number) => p.map(([x, y]) => `${(c + x * r).toFixed(1)},${(c + y * r).toFixed(1)}`).join(' ');
 
-export function Radar({ values, flags = {}, side, reach, captain, size = 300, label = 'Tonight’s shape', bare = false }: { values: AxisValues; flags?: AxisFlags; side?: Side; reach?: number; captain?: Axis; size?: number; label?: string; bare?: boolean }) {
+export function Radar({ values, flags = {}, side, reach, captain, size = 300, label = 'Tonight’s shape', bare = false, gold }: { gold?: Axis; values: AxisValues; flags?: AxisFlags; side?: Side; reach?: number; captain?: Axis; size?: number; label?: string; bare?: boolean }) {
   const vb = 320, c = vb / 2, r = 92;
   const rs = side ? radii(values, side) : AXES.map((a) => Math.max(0.03, Math.min(1, values[a] / 20)));
   const shape = pts(polygon(rs), c, r);
@@ -36,7 +36,7 @@ export function Radar({ values, flags = {}, side, reach, captain, size = 300, la
           const dy = y < -0.5 ? -8 : y > 0.5 ? 18 : 4;
           const f = flags[a];
           return (
-            <text key={a} x={lx} y={ly + dy} textAnchor={anchor} className={`lab ${band(values[a])}${f ? ' flagged' : ''}`} aria-hidden="true">
+            <text key={a} x={lx} y={ly + dy} textAnchor={anchor} className={`lab ${band(values[a])}${f ? ' flagged' : ''}${gold === a ? ' gold' : ''}`} aria-hidden="true">
               <tspan className="ax">{a}</tspan>
               <tspan className="v" dx="6">{values[a]}</tspan>
               {captain === a && <tspan className="cap" dx="6">[C]</tspan>}

@@ -13,7 +13,7 @@ import { simResult } from '../otherMatches';
 import { applyMoves, playoffPairs, seasonEnd } from '../promotion';
 import { ANTIGOON, rivalTwist } from '../rivals';
 import { hashSeed, rng, pick } from '../rng';
-import { armbandHarmony, momentsOf } from '../squad';
+import { armbandHarmony, averageOf, awakeningsAfter, momentsOf, TRAIT } from '../squad';
 import { abilityFor, braboAbilities } from '../data/abilities';
 import { standings, type Row } from '../table';
 import { applyChanges, worldTurn } from '../world';
@@ -229,6 +229,11 @@ function playEventDay(w: World, date: DayKey, auto: boolean) {
   }
 }
 
+/** Each awakened axis plays with its trait: +1 on its own chance type. */
+const awakenedTraits = (save: FbSave) => (Object.keys(save.awakenings) as (keyof typeof save.awakenings)[])
+  .filter((a) => save.awakenings[a]?.length)
+  .map((a) => ({ id: `trait:${a}`, name: TRAIT[a], axis: a, d: 1, when: 'own-type' as const }));
+
 /** One Brabo match: build the input from Health, play it, store it. */
 function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, away: string, auto: boolean, round?: string, leg?: 1 | 2, neutral = false): StoredMatch {
   const oppId = home === OWN ? away : home;
@@ -269,7 +274,7 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
     seed, values, opp, home: braboHome,
     captain: slots.has('armband') ? w.save.captain : undefined,
     stack: slots.has('stack') ? w.save.earned.filter((e) => e.date > addDays(date, -7)).length : 0,
-    abilities: braboAbilities(w.save.slots),
+    abilities: [...braboAbilities(w.save.slots), ...awakenedTraits(w.save)],
     bench: [], pre, conds, ctx,
     rival: rival ? rivalTwist(oppId, rival.how, rival.best) : oppId === ANTIGOON ? rivalTwist(ANTIGOON, 'legend') : undefined,
   });
@@ -289,7 +294,17 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
     const ab = abilityFor(mo);
     if (ab && !w.save.earned.some((e) => e.id === ab.id)) w.save.earned = [...w.save.earned, { id: ab.id, date }];
   }
+  const window28 = (list: StoredMatch[]) => list.filter((x) => !x.rotation && x.date > addDays(date, -28) && x.date <= date).map((x) => x.values);
+  const before = window28([...w.past, ...w.matches]);
   w.matches.push(m);
+  if (!rotation && before.length >= 7) {
+    const { done, fresh } = awakeningsAfter(w.save.awakenings, averageOf(before), averageOf(window28([...w.past, ...w.matches])), date);
+    if (fresh.length) {
+      w.save.awakenings = done;
+      w.save.awakeLog = [...(w.save.awakeLog ?? []), ...fresh];
+      fresh.forEach((a) => w.news.push({ id: `${date}:awaken:${a.axis}:${a.band}`, date, kind: 'club', text: `${a.axis} awakens: the 28-day average reaches ${a.band}. New trait, ${TRAIT[a.axis]}.` }));
+    }
+  }
   const run = [...w.past, ...w.matches].filter((x) => !x.rotation);
   let streak = 0;
   for (let k = run.length - 1; k >= 0 && run[k].result === m.result; k--) streak++;

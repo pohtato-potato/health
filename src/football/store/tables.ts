@@ -40,6 +40,9 @@ export interface FbSave {
   retired?: OldSelf[];
   /** The last season whose end screens were seen. */
   seenSeasonEnd?: number;
+  /** Every awakening, oldest first, and how many of them have been shown. */
+  awakeLog?: { axis: Axis; band: 11 | 16 | 18; date: DayKey }[];
+  awakeSeen?: number;
 }
 export interface FbClub { id: string; tier: Tier; rating: number; style: string; old?: OldSelf; folded?: boolean }
 export interface FbSeason {

@@ -1,5 +1,5 @@
 // The squad: six habits, the armband and awakening (spec §8.1–8.2).
-import type { Axis, MatchEvents, Result } from './types';
+import { AXES, type Axis, type AxisValues, type MatchEvents, type Result } from "./types";
 import type { FbMoment } from './data/abilities';
 
 export type HabitId = 'steps' | 'training' | 'food' | 'sleep' | 'checklist' | 'body';
@@ -63,3 +63,34 @@ export function momentsOf(m: MomentInput): FbMoment[] {
   if (win && m.auto) out.push('night-shift');
   return out;
 }
+
+export const MAX_SLOTS = 3;
+/** Equip an ability in slot 0–2. A fourth slot, or an ability not owned, changes nothing. */
+export function equip(slots: string[], id: string, slot: number, owned: string[]): string[] {
+  if (slot < 0 || slot >= MAX_SLOTS || !owned.includes(id)) return slots;
+  const next = slots.filter((s) => s !== id).slice(0, MAX_SLOTS);
+  if (slot >= next.length) return [...next, id].slice(0, MAX_SLOTS);
+  next[slot] = id;
+  return next;
+}
+
+/** Each axis's average over a set of radars (the last 28 days of matches). */
+export function averageOf(values: AxisValues[]): AxisValues {
+  const out = {} as AxisValues;
+  for (const a of AXES) out[a] = values.length ? Math.round((values.reduce((s, v) => s + v[a], 0) / values.length) * 10) / 10 : 0;
+  return out;
+}
+
+export interface Awakening { axis: Axis; band: 11 | 16 | 18; date: string }
+/** Bands newly reached between two 28-day averages. Each band awakens once per axis, ever. */
+export function awakeningsAfter(done: Partial<Record<Axis, number[]>>, prev: AxisValues, now: AxisValues, date: string): { done: Partial<Record<Axis, number[]>>; fresh: Awakening[] } {
+  const next = { ...done };
+  const fresh: Awakening[] = [];
+  for (const a of AXES) {
+    const b = awakens(prev[a], now[a], next[a] ?? []);
+    if (b) { next[a] = [...(next[a] ?? []), b]; fresh.push({ axis: a, band: b, date }); }
+  }
+  return { done: next, fresh };
+}
+/** The trait an awakened axis gains: +1 on its own chance type. */
+export const TRAIT: Record<Axis, string> = { Pace: 'Burst', Power: 'Thunder', Fuel: 'Engine', Rest: 'Fresh legs', Routine: 'Clockwork', Shape: 'Frame' };
