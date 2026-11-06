@@ -43,3 +43,5 @@ export function offers(slot: Slot, tier: Tier, r: () => number): Offer[] {
 }
 /** Dodgy sponsors collapse 1 season in 4. */
 export const dodgyCollapse = (r: () => number) => r() < 0.25;
+/** Millions in words people read: €820k under a million, €1.25m above. */
+export const euros = (m: number) => (Math.abs(m) >= 1 ? `€${m.toFixed(2)}m` : `€${Math.round(m * 1000)}k`);

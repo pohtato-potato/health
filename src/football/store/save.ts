@@ -7,11 +7,13 @@ import { CLUBS, rememberClubs } from '../data/load';
 import { fillSlots, SLOTS } from '../oldSelves';
 import { ANTIGOON } from '../rivals';
 import { BUILT_INS } from '../data/abilities';
-import { equip } from '../squad';
+import { equip, type HabitId } from '../squad';
+import { bidFor, letRun, renew } from '../contracts';
+import type { Offer, Slot } from '../money';
 import type { Axis } from '../types';
 import { loadHealth } from './gather';
 import { factsFor } from './lines';
-import { monthsFromHealth } from './play';
+import { contractsFor, monthsFromHealth, youthIntake } from './play';
 import { newSeason } from './season';
 import type { CrestOpt, FbClub, FbSave } from './tables';
 
@@ -31,6 +33,7 @@ export async function foundClub(date: DayKey, choices: { shirt: string; crest: C
     captain: choices.captain, captains: choices.captain ? [choices.captain] : [], slots: ['armband', 'second-wind', 'stack'], earned: [],
     budget: 0.05, buzz: true, crest: { step: 1, opt: choices.crest }, shirt: choices.shirt,
     rivals: [{ clubId: ANTIGOON, how: 'legend', since: date }], met: [], physioRoom: false, awakenings: {}, firstRunDone: true,
+    contracts: contractsFor(date), sold: [], sponsors: [], offers: [], staff: [],
   };
   await db.transaction('rw', [db.fbSave, db.fbClubs, db.fbSeasons, db.fbMatches, db.fbNews, db.fbSquad, db.fbBundles], async () => {
     for (const t of FB_TABLES) await db.table(t).clear();
@@ -38,6 +41,7 @@ export async function foundClub(date: DayKey, choices: { shirt: string; crest: C
     rememberClubs(clubs);
     await db.fbSeasons.put(newSeason(1, date, clubs));
     await db.fbSave.put(save);
+    await db.fbSquad.bulkPut(youthIntake(1, date));
   });
 }
 export async function setFbSetting<K extends 'buzz' | 'wcCountry' | 'ownSponsor' | 'captain' | 'slots'>(k: K, v: FbSave[K]) {
@@ -95,3 +99,41 @@ export async function equipAbility(id: string, slot: number) {
 export async function markAwakeSeen(n: number) {
   await db.fbSave.update('save', { awakeSeen: n });
 }
+
+async function editSave(f: (s: FbSave) => FbSave | undefined) {
+  await db.transaction('rw', db.fbSave, async () => {
+    const s = await db.fbSave.get('save');
+    const next = s && f(s);
+    if (next) await db.fbSave.put(next);
+  });
+}
+const onContract = (s: FbSave, habit: HabitId, f: (c: NonNullable<FbSave['contracts']>[number]) => NonNullable<FbSave['contracts']>[number]) =>
+  ({ ...s, contracts: (s.contracts ?? []).map((c) => (c.habit === habit ? f(c) : c)) });
+
+/** The renewal tap on a contract that's due. */
+export const renewContract = (habit: HabitId, today: DayKey) =>
+  editSave((s) => onContract(s, habit, (c) => (c.state === 'due' ? renew(c, today) : c)));
+/** Keep a due or listed habit on the same terms for four more weeks. */
+export const keepHabit = (habit: HabitId, today: DayKey) =>
+  editSave((s) => onContract(s, habit, (c) => (c.state !== 'running' ? letRun(c, today) : c)));
+/** Sell a listed habit. Football stops tracking it; its matches stay; Health's own settings are never touched. */
+export const sellHabit = (habit: HabitId) =>
+  editSave((s) => {
+    const c = (s.contracts ?? []).find((x) => x.habit === habit);
+    if (!c || c.state !== 'listed') return undefined;
+    const { fee } = bidFor(habit, s.season);
+    return {
+      ...s,
+      contracts: (s.contracts ?? []).filter((x) => x.habit !== habit),
+      sold: [...(s.sold ?? []), habit],
+      budget: fee.kind === 'money' ? Math.round((s.budget + fee.amount) * 1000) / 1000 : s.budget,
+      youthSlots: (s.youthSlots ?? 0) + (fee.kind === 'youth' ? 1 : 0),
+      staff: fee.kind === 'staff' ? [...(s.staff ?? []), fee.role] : s.staff,
+    };
+  });
+/** Sign an offer: it fills its slot from this season. */
+export const acceptOffer = (o: Offer) =>
+  editSave((s) => ({ ...s, sponsors: [...(s.sponsors ?? []).filter((x) => x.slot !== o.slot || o.slot === 'partner'), { ...o, since: s.season }], offers: (s.offers ?? []).filter((x) => x.slot !== o.slot || (o.slot === 'partner' && x !== o && x.brand !== o.brand)) }));
+/** Your own sponsor, typed in, in any slot. */
+export const setOwnSponsor = (name: string, slot: Slot) =>
+  editSave((s) => (name.trim() ? { ...s, ownSponsor: { name: name.trim().slice(0, 40), slot } } : { ...s, ownSponsor: undefined }));

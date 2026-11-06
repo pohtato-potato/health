@@ -13,20 +13,23 @@ import { simResult } from '../otherMatches';
 import { applyMoves, playoffPairs, seasonEnd } from '../promotion';
 import { ANTIGOON, rivalTwist } from '../rivals';
 import { hashSeed, rng, pick } from '../rng';
-import { armbandHarmony, averageOf, awakeningsAfter, momentsOf, TRAIT } from '../squad';
+import { contractDay, keptOn, PROMOTE_AT, intake, youthStatus, newContract } from '../contracts';
+import { YOUTH_POOL } from '../data/load';
+import { dodgyCollapse, incomeFor, offers as offersFor, type Slot } from '../money';
+import { HABITS, habitById, armbandHarmony, averageOf, awakeningsAfter, momentsOf, TRAIT } from '../squad';
 import { abilityFor, braboAbilities } from '../data/abilities';
 import { standings, type Row } from '../table';
 import { applyChanges, worldTurn } from '../world';
 import { AXES, TIERS, type AxisValues, type Comp, type Mod, type Result, type Tier } from '../types';
-import { bestAxis, conditions, loadHealth, medsTaken, nightFor, type Health } from './gather';
+import { axisInputFor, bestAxis, conditions, loadHealth, medsTaken, nightFor, type Health } from './gather';
 import { factsFor, matchLines, situationOf } from './lines';
 import { newSeason, OWN } from './season';
-import type { FbClub, FbNews, FbSave, FbSeason, StoredMatch } from './tables';
+import type { FbClub, FbNews, FbSave, FbSeason, FbSquadRow, StoredMatch } from './tables';
 
 export const CATCH_UP_CAP = 42;
 const resultOf = (s: [number, number], pens?: [number, number]): Result => (s[0] > s[1] || (pens && pens[0] > pens[1]) ? 'W' : s[0] < s[1] || (pens && pens[0] < pens[1]) ? 'L' : 'D');
 
-interface World { save: FbSave; season: FbSeason; oldSeasons: FbSeason[]; clubs: Map<string, FbClub>; matches: StoredMatch[]; news: FbNews[]; h: Health; past: StoredMatch[]; used: { id: string; date: DayKey }[] }
+interface World { squad: FbSquadRow[]; save: FbSave; season: FbSeason; oldSeasons: FbSeason[]; clubs: Map<string, FbClub>; matches: StoredMatch[]; news: FbNews[]; h: Health; past: StoredMatch[]; used: { id: string; date: DayKey }[] }
 
 /** Plays every unplayed day up to and including `date`, in order. Days before `date` count as auto-played. */
 export async function kickOff(date: DayKey): Promise<StoredMatch[]> {
@@ -48,13 +51,14 @@ async function playThrough(until: DayKey, closed: DayKey | null): Promise<Stored
   let start = from;
   if (daysBetween(from, until) + 1 > CATCH_UP_CAP) start = addDays(until, -(CATCH_UP_CAP - 1));
   const w: World = {
+    squad: await db.fbSquad.toArray(),
     save: { ...save }, season: (await db.fbSeasons.get(save.season))!, oldSeasons: [], clubs: new Map(stored.map((c) => [c.id, c])),
     matches: [], news: [], h: await loadHealth(), past: await db.fbMatches.orderBy('date').toArray(),
     used: (await db.fbNews.where('date').aboveOrEqual(addDays(start, -31)).toArray()).filter((n) => n.lineId).map((n) => ({ id: n.lineId!, date: n.date })),
   };
-  for (let d = start; d <= until; d = addDays(d, 1)) playDay(w, d, d !== closed);
+  for (let d = start; d <= until; d = addDays(d, 1)) { clubDay(w, d); playDay(w, d, d !== closed); }
   w.save.lastPlayed = until;
-  await db.transaction('rw', [db.fbSave, db.fbSeasons, db.fbClubs, db.fbMatches, db.fbNews], async () => {
+  await db.transaction('rw', [db.fbSave, db.fbSeasons, db.fbClubs, db.fbMatches, db.fbNews, db.fbSquad], async () => {
     const cur = await db.fbSave.get('save');
     if (cur?.lastPlayed && cur.lastPlayed >= until) return; // another tab played first
     await db.fbSave.put(w.save);
@@ -63,6 +67,7 @@ async function playThrough(until: DayKey, closed: DayKey | null): Promise<Stored
     rememberClubs([...w.clubs.values()]);
     if (w.matches.length) await db.fbMatches.bulkPut(w.matches);
     if (w.news.length) await db.fbNews.bulkPut(w.news);
+    if (w.squad.length) await db.fbSquad.bulkPut(w.squad);
   });
   return w.matches;
 }
@@ -181,6 +186,8 @@ function endSeason(w: World, date: DayKey) {
   for (const c of moved) w.clubs.set(c.id, { ...c, tier: tierOf[c.id] ?? c.tier, style: turn.styles[c.id] ?? c.style });
   turn.headlines.forEach((x, i) => w.news.push({ id: `${date}:world:${i}`, date, kind: 'world', text: x.text, clubId: x.clubId }));
   refreshOldSelves(w, date);
+  seasonMoney(w, date, tables, moves.up);
+  for (const y of w.squad) if (y.season === w.save.season && y.status === 'growing' && youthStatus(y.logged.length, true) === 'leaves') y.status = 'left';
   const ev = nextEvent(w.save.season, w.save.eventState, rng(hashSeed('event', String(w.save.season))));
   w.save.eventState = ev.state;
   w.save.phase = 'event';
@@ -212,6 +219,7 @@ const monthsBefore = (w: World, date: DayKey) => monthsFromHealth(w.h, date);
 
 function playEventDay(w: World, date: DayKey, auto: boolean) {
   const ev = w.save.event!;
+  if (w.save.day === 1) w.squad.push(...youthIntake(w.save.season + 1, date, w.save.youthSlots ?? 0));
   const plan: DayPlan = { day: w.save.day, kind: 'event', event: ev.id, round: `${EVENTS[ev.id].name}, day ${w.save.day} of ${ev.days}` };
   const pool = [...w.clubs.values()].filter((c) => c.id !== OWN && !c.folded && (ev.id !== 'oldselves' || c.old));
   const opp = pick(rng(hashSeed(date, 'event', ev.id)), pool.length ? pool : [...w.clubs.values()].filter((c) => c.id !== OWN)).id;
@@ -241,7 +249,11 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
   const day = w.h.days.get(date);
   const rotation = usesRotation(day?.status);
   const recent = [...w.past, ...w.matches].filter((m) => !m.rotation && m.date > addDays(date, -28) && m.date < date);
-  const values = rotation ? rotationShape(recent.map((m) => m.values)) : night.values;
+  const raw = rotation ? rotationShape(recent.map((m) => m.values)) : night.values;
+  const values = { ...raw };
+  const flags = rotation ? {} : { ...night.flags };
+  for (const c of w.save.contracts ?? []) { const a = habitById(c.habit).axis; values[a] = Math.min(20, Math.round(values[a] * c.weight)); }
+  for (const hb of w.save.sold ?? []) { const a = habitById(hb).axis; values[a] = 10; flags[a] = 'no-data'; }
   const pre: Mod[] = [];
   const meds = Array.from({ length: 5 }, (_, i) => addDays(date, -(i + 1))).map((d) => ({ date: d, allTaken: medsTaken(w.h, d) }));
   pre.push(...physio(meds, date, w.save.physioRoom).mods);
@@ -275,7 +287,7 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
     captain: slots.has('armband') ? w.save.captain : undefined,
     stack: slots.has('stack') ? w.save.earned.filter((e) => e.date > addDays(date, -7)).length : 0,
     abilities: [...braboAbilities(w.save.slots), ...awakenedTraits(w.save)],
-    bench: [], pre, conds, ctx,
+    bench: benchFor(w, date), pre, conds, ctx,
     rival: rival ? rivalTwist(oppId, rival.how, rival.best) : oppId === ANTIGOON ? rivalTwist(ANTIGOON, 'legend') : undefined,
   });
   const score: [number, number] = home === OWN ? events.score : [events.score[1], events.score[0]];
@@ -284,7 +296,7 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
   if (mineScore[0] === mineScore[1] && comp !== 'league' && comp !== 'friendly' && comp !== 'event') pens = penalties(values.Routine * 5, opp.rating, rng(hashSeed(String(seed), 'pens')));
   const m: StoredMatch = {
     id: `${date}:${leg ?? 1}`, date, season: w.save.season, day: plan.day, comp, round, home, away, opp: oppId, braboHome,
-    values, flags: rotation ? {} : night.flags, events, score: mineScore, pens, result: resultOf(mineScore, pens),
+    values, flags, events, score: mineScore, pens, result: resultOf(mineScore, pens),
     watched: false, rotation, auto, leg, derby, big: derby || comp !== 'league' || plan.matchday === 34,
   };
   if (!w.save.met.includes(oppId)) w.save.met = [...w.save.met, oppId];
@@ -314,3 +326,62 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
   w.used.push(...lines.map((n) => ({ id: n.lineId!, date: m.date })));
   return { ...m, score: score, pens: pens && home !== OWN ? [pens[1], pens[0]] : pens };
 }
+
+// ---- The club between matches (Part 4) ----
+const youthDone = (w: World, y: FbSquadRow, date: DayKey) => {
+  const day = w.h.days.get(date);
+  const item = (w.h.settings.checklist ?? []).find((i) => i.active && i.name.toLowerCase() === y.name.toLowerCase());
+  if (item) return item.slots.some((_, k) => day?.ticks?.[`${item.id}:${k}`] != null);
+  return nightFor(w.h, date).values[y.axis] >= 13;
+};
+/** Promoted youngsters whose habit was done that day come off the bench at 60'. */
+function benchFor(w: World, date: DayKey) {
+  return w.squad.filter((y) => y.status === 'promoted' && youthDone(w, y, date)).slice(0, 2).map((y) => ({ axis: y.axis, plus: 2 }));
+}
+/** Every day: contracts count kept days; youngsters count logged days and may reach the bench. */
+function clubDay(w: World, date: DayKey) {
+  const input = axisInputFor(w.h, date);
+  // A save from before contracts existed starts them now, for every habit still at the club.
+  if (!w.save.contracts) w.save.contracts = contractsFor(date).filter((c) => !(w.save.sold ?? []).includes(c.habit));
+  if (w.save.contracts) w.save.contracts = w.save.contracts.map((c) => {
+    const next = contractDay(c, date, keptOn(c.habit, input));
+    if (next.state !== c.state) w.news.push({ id: `${date}:contract:${c.habit}`, date, kind: 'club', text: next.state === 'due' ? `${habitById(c.habit).label} has earned a new contract. Renew it on the Deals page.` : `${habitById(c.habit).label} missed its contract line and is transfer-listed. No penalty in matches.` });
+    return next;
+  });
+  for (const y of w.squad) {
+    if (y.status !== 'growing' || y.logged.includes(date) || !youthDone(w, y, date)) continue;
+    y.logged = [...y.logged, date];
+    if (y.exercise) continue; // exercise youngsters wait for the coach's plan
+    if (y.logged.length >= PROMOTE_AT) { y.status = 'promoted'; w.news.push({ id: `${date}:youth:${y.id}`, date, kind: 'club', text: `${y.name} joins the bench after ${PROMOTE_AT} logged days.` }); }
+  }
+}
+/** Three youngsters for a season, at most one exercise, plus one per youth slot won in a trade. */
+export function youthIntake(season: number, date: DayKey, extra = 0): FbSquadRow[] {
+  const r = rng(hashSeed('youth', String(season)));
+  const picked = intake(YOUTH_POOL, r, true);
+  const more = extra ? intake(YOUTH_POOL.filter((y) => !picked.includes(y) && y.kind === 'habit'), r, false).slice(0, extra) : [];
+  return [...picked, ...more].map((y, i) => ({ id: `s${season}:y${i}`, kind: 'youth' as const, name: y.name, axis: y.axis, potential: y.potential, what: y.what, exercise: y.kind === 'exercise', season, logged: [], status: 'growing' as const })).map((y) => ({ ...y, id: `${y.id}:${date}` }));
+}
+const OPEN: { slot: Slot; from?: Tier }[] = [{ slot: 'shirt' }, { slot: 'kit' }, { slot: 'sleeve', from: 4 }, { slot: 'partner' }];
+/** Season end: income in, dodgy sponsors may fold, offers arrive for open slots. */
+function seasonMoney(w: World, date: DayKey, tables: Record<Tier, Row[]>, up: Partial<Record<Tier, string[]>>) {
+  const tier = w.season.tierOf[OWN];
+  const pos = tables[tier].findIndex((r) => r.id === OWN) + 1;
+  const promoted = Boolean(up[tier]?.includes(OWN));
+  const r = rng(hashSeed('money', String(w.save.season)));
+  const live = (w.save.sponsors ?? []).filter((s) => w.save.season - s.since < s.seasons);
+  const folded = live.filter((s) => s.risk === 'dodgy' && dodgyCollapse(r));
+  folded.forEach((s) => w.news.push({ id: `${date}:fold:${s.slot}`, date, kind: 'club', text: `${s.brand} have folded. The ${s.slot} slot is open again.` }));
+  w.save.sponsors = live.filter((s) => !folded.includes(s));
+  const sponsorMoney = w.save.sponsors.reduce((t, s) => t + s.perSeason, 0);
+  const total = incomeFor(tier, pos, promoted, sponsorMoney);
+  const prizeMoney = Math.round((total - sponsorMoney) * 1000) / 1000;
+  w.save.income = { season: w.save.season, lines: [{ name: 'TV, gate and prize money', amount: prizeMoney }, { name: 'Sponsors', amount: Math.round(sponsorMoney * 1000) / 1000 }] };
+  w.save.budget = Math.round((w.save.budget + total) * 1000) / 1000;
+  const nextTier = (promoted ? tier - 1 : tier) as Tier;
+  const taken = new Set(w.save.sponsors.map((s) => s.slot));
+  const partners = w.save.sponsors.filter((s) => s.slot === 'partner').length;
+  w.save.offers = OPEN.filter((o) => (o.from === undefined || nextTier <= o.from) && (o.slot === 'partner' ? partners < 3 : !taken.has(o.slot)))
+    .flatMap((o) => offersFor(o.slot, nextTier, r));
+}
+export const contractsFor = (date: DayKey) => HABITS.map((h) => newContract(h.id, date));

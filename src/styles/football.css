@@ -420,3 +420,11 @@ button.fb-todaycard { cursor: pointer; }
 .fb-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .fb-awake { display: grid; place-items: center; }
 .fb-radar .lab.gold .ax, .fb-radar .lab.gold .v { fill: var(--fb-gold); font-weight: 700; }
+.fb-deal { display: flex; flex-direction: column; gap: 6px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.12); }
+.fb-btns.two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fb-bar { height: 10px; border-radius: 999px; border: 1.5px solid rgba(255,255,255,.5); overflow: hidden; }
+.fb-bar i { display: block; height: 100%; background: var(--fb-or); }
+.fb-right { text-align: right; }
+.fb-offer.stable { --k: #9fd8a8; } .fb-offer.flashy { --k: #ffd36b; } .fb-offer.dodgy { --k: #ff6464; }
+.fb-input { min-height: 44px; border-radius: 12px; border: 1.5px solid rgba(255,255,255,.5); background: var(--fb-night); color: var(--fb-ink); font: 500 16px var(--sans); padding: 0 12px; }
+.fb-t.sm { font-size: 20px; }

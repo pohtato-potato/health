@@ -12,6 +12,7 @@ export const HABITS: { id: HabitId; axis: Axis; label: string; contract: string 
   { id: 'body', axis: 'Shape', label: 'Body logs', contract: 'A weigh-in on 5 days in 7' },
 ];
 export const habitFor = (axis: Axis) => HABITS.find((h) => h.axis === axis)!;
+export const habitById = (id: HabitId) => HABITS.find((h) => h.id === id)!;
 
 /**
  * Harmony: four different captains over the last four weeks (newest last).

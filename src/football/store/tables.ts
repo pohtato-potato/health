@@ -4,6 +4,9 @@ import type { Bracket } from '../cups';
 import type { EventId, EventState } from '../events';
 import type { OldSelf } from '../oldSelves';
 import type { Rival } from '../rivals';
+import type { Contract } from '../contracts';
+import type { Offer } from '../money';
+import type { HabitId } from '../squad';
 import type { Played, Row } from '../table';
 import type { Axis, AxisFlags, AxisValues, Comp, MatchEvents, Result, Tier } from '../types';
 
@@ -43,6 +46,17 @@ export interface FbSave {
   /** Every awakening, oldest first, and how many of them have been shown. */
   awakeLog?: { axis: Axis; band: 11 | 16 | 18; date: DayKey }[];
   awakeSeen?: number;
+  /** One contract per squad member still at the club. */
+  contracts?: Contract[];
+  /** Habits sold: Football stops tracking them; Health never does. */
+  sold?: HabitId[];
+  sponsors?: (Offer & { since: number })[];
+  /** Offers waiting between seasons. */
+  offers?: Offer[];
+  youthSlots?: number;
+  staff?: string[];
+  /** Last season's income, line by line (millions). */
+  income?: { season: number; lines: { name: string; amount: number }[] };
 }
 export interface FbClub { id: string; tier: Tier; rating: number; style: string; old?: OldSelf; folded?: boolean }
 export interface FbSeason {
