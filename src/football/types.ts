@@ -46,3 +46,8 @@ export const axisIndex = (a: Axis) => AXES.indexOf(a);
 export const allAxes = (n: number): AxisValues => ({ Pace: n, Power: n, Fuel: n, Rest: n, Routine: n, Shape: n });
 export const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 export type { DayKey };
+
+/** A rival's twist on a match (built in rivals.ts). */
+export interface RivalTwist { id: string; name: string; text: string; mods: (minute: number, side: Side, autoPlayed: boolean) => Mod[] }
+/** One of Brabo's equipped abilities, from the catalogue. */
+export interface BraboAbility { id: string; name: string; axis?: Axis; d?: number; when?: 'always' | 'long' | 'late' | 'home' | 'away' | 'first-half' | 'after-concede' | 'level' | 'own-type' }

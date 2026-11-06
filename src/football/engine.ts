@@ -1,0 +1,262 @@
+// One match from stored inputs to stored events (spec §7.2–7.3). Pure and seeded.
+import type { AbilityDef } from './data/load';
+import type { Opponent } from './opponent';
+import { coverage, edgeDistance, hexagon, inside, polygon, radii, randomIn, LIT, type Pt } from './radar';
+import { rng, shuffle } from './rng';
+import { clamp, type Axis, type AxisValues, type BraboAbility, type ChanceEvent, type Comp, type MatchEvents, type Mod, type RivalTwist, type Side } from './types';
+
+export interface MatchCtx {
+  comp?: Comp; derby?: boolean; vsHigher?: boolean; last5?: boolean; matchday?: number; auto?: boolean;
+  firstMeeting?: boolean; familiarAxis?: Axis; prevBest?: Axis;
+}
+export interface MatchInput {
+  seed: number;
+  values: AxisValues;
+  opp: Opponent;
+  home: boolean;
+  captain?: Axis;
+  /** Abilities earned this week (0–4) feed the weekly stack. */
+  stack: number;
+  abilities: BraboAbility[];
+  /** Promoted youngsters whose habit was done today. */
+  bench: { axis: Axis; plus: number }[];
+  /** Knocks, cards and Harmony: applied to the whole match before kick-off. */
+  pre: Mod[];
+  rival?: RivalTwist;
+  /** Data conditions true today, e.g. 'protein-hit'. */
+  conds: string[];
+  ctx?: MatchCtx;
+}
+
+export const TYPES: Record<Side, [string, Axis | null][]> = {
+  atk: [['Counter-attack', 'Pace'], ['Set piece', 'Power'], ['Through ball', 'Fuel'], ['Long shot', null]],
+  def: [['Cross into the box', 'Rest'], ['Corner', 'Routine'], ['Break through the middle', 'Shape'], ['Long-range effort', null]],
+};
+export const STACK_STEPS = [1, 0.75, 0.5, 0.25];
+export const GOAL_LINE = 7 / 112;
+const FULL = hexagon(1);
+
+export const chanceCount = (atkAvg: number, coin: number) => clamp(5 + Math.floor((atkAvg - 10) / 4) + coin, 5, 8);
+export const splitChances = (total: number, atkAvg: number, reach: number) =>
+  clamp(Math.round(total * (0.5 + (atkAvg - 13) / 30 - (reach - 0.75))), 2, total - 2);
+const shapeOf = (v: AxisValues, side: Side) => polygon(radii(v, side));
+export const pctOf = (v: AxisValues, side: Side, reach: number | null) =>
+  coverage(side === 'atk' ? FULL : hexagon(reach ?? 0.75), shapeOf(v, side));
+
+interface Live { mine: number; theirs: number; lastMiss: boolean; afterGoal: number; defCount: number; atkCount: number; theyConceded: boolean; iScored: boolean; used: Set<string> }
+
+function whenOk(when: string, side: Side, minute: number, type: string, home: boolean, live: Live, ctx: MatchCtx): boolean {
+  const oppHome = !home;
+  const m = when.match(/^(home-|)(first|after)-(\d+)$/);
+  if (m) {
+    if (m[1] && !oppHome) return false;
+    return m[2] === 'first' ? minute <= +m[3] : minute >= +m[3];
+  }
+  switch (when) {
+    case 'always': return true;
+    case 'home': return oppHome;
+    case 'away': return !oppHome;
+    case 'first-half': return minute <= 45;
+    case 'level': return live.mine === live.theirs;
+    case 'they-lead': return live.theirs > live.mine;
+    case 'until-concede': return !live.theyConceded;
+    case 'until-score': return !live.iScored;
+    case 'after-their-goal': return live.afterGoal > 0;
+    case 'after-miss': return live.lastMiss && side === 'def';
+    case 'cup': return ctx.comp === 'bigcup' || ctx.comp === 'tiercup' || ctx.comp === 'playoff' || ctx.comp === 'event';
+    case 'derby': return Boolean(ctx.derby);
+    case 'vs-higher': return Boolean(ctx.vsHigher);
+    case 'last5': return Boolean(ctx.last5);
+    case 'crosses': return type === 'Cross into the box';
+    case 'corners': return type === 'Corner';
+    case 'counters': return type === 'Counter-attack';
+    case 'long': return type === 'Long shot' || type === 'Long-range effort';
+    default: return false;
+  }
+}
+
+/** Opponent ability effects for one chance: axis mods plus a reach change. */
+function abilityFx(a: AbilityDef, side: Side, minute: number, type: string, home: boolean, live: Live, ctx: MatchCtx, conds: Set<string>, r: () => number): { mods: Mod[]; reach: number } {
+  const out = { mods: [] as Mod[], reach: 0 };
+  const push = (axis: Axis, d: number) => { if (LIT[side].includes(axis)) out.mods.push({ axis, d, why: a.name, kind: 'opp' }); };
+  if (a.special) {
+    switch (a.name) {
+      case 'Familiar': if (ctx.familiarAxis) push(ctx.familiarAxis, -2); return out;
+      case 'Projection': if (ctx.prevBest) push(ctx.prevBest, -2); return out;
+      case 'Data department': if (ctx.prevBest) push(ctx.prevBest, -1); return out;
+      case 'Man-marking': push(LIT[side][Math.floor(r() * 3)], -1); return out;
+      case 'Every Door': if (side === 'def') push(LIT.def[live.defCount % 3], -1); return out;
+      case 'Switchbacks': if (side === 'def') push(live.defCount % 2 ? 'Shape' : 'Rest', -1); return out;
+      case 'Windmills': if (side === 'atk' && live.atkCount >= 3) for (const x of LIT.atk) push(x, -0.5 * (live.atkCount - 2)); return out;
+      case 'Remontada': if (side === 'def' && minute >= 70 && live.theirs < live.mine) out.reach += 0.05; return out;
+      case 'Spursy': if (side === 'def' && minute >= 80 && live.theirs > live.mine) out.reach -= 0.05; return out;
+      case 'Fragile nights': if (side === 'def' && live.theyConceded && whenOk('cup', side, minute, type, home, live, ctx)) out.reach -= 0.05; return out;
+      case 'Siesta': for (const x of LIT[side]) push(x, minute < 60 ? 1 : -2); return out;
+      case 'Two Lakes': if (side === 'def' && minute <= 45) out.reach += 0.08; if (side === 'atk' && minute > 45) for (const x of LIT.atk) push(x, -2); return out;
+      case 'Echolocation': if (side === 'def' && minute > 45) out.reach += 0.1; return out;
+      case 'Slow and Sure': if (side === 'atk') for (const x of LIT.atk) push(x, -2); return out;
+      case 'Peloton': case 'Gegenpress': if (side === 'def' && live.lastMiss) out.reach += 0.06; return out;
+      case 'Marching On': if (side === 'def' && minute >= 70) out.reach += 0.06; return out;
+      case 'Rondo': if (live.theirs > live.mine) push('Fuel', -1); return out;
+      case 'Three-Four Time': if (side === 'def' && live.defCount % 3 === 2) out.reach += 0.1; return out;
+      case 'Gambit': if (side === 'def' && live.defCount === 1) out.reach += 0.1; return out;
+      default: break;
+    }
+  }
+  const fx = a.fx;
+  if (!fx) return out;
+  if (fx.cond && !(conds.has(fx.cond) && !(conds.has('midnight-sun') && fx.cond.startsWith('bed')))) return out;
+  if (fx.side && fx.side !== side) return out;
+  if (!whenOk(fx.when, side, minute, type, home, live, ctx)) return out;
+  for (const m of fx.mods) push(m.axis, m.d);
+  if (fx.all) {
+    const theirTests = /they take|their/.test(a.text);
+    if (!theirTests || side === 'def') for (const x of LIT[side]) push(x, fx.all);
+  }
+  if (side === 'def') out.reach += fx.reach;
+  return out;
+}
+
+const braboOk = (b: BraboAbility, side: Side, minute: number, type: string, home: boolean, live: Live) => {
+  switch (b.when ?? 'always') {
+    case 'always': return true;
+    case 'long': return type === 'Long shot' || type === 'Long-range effort';
+    case 'late': return minute >= 75;
+    case 'home': return home;
+    case 'away': return !home;
+    case 'first-half': return minute <= 45;
+    case 'after-concede': return live.theirs > 0;
+    case 'level': return live.mine === live.theirs;
+    case 'own-type': return TYPES[side].some(([t, ax]) => t === type && ax === b.axis);
+    default: return false;
+  }
+};
+
+export function playMatch(m: MatchInput): MatchEvents {
+  const r = rng(m.seed);
+  const ctx = m.ctx ?? {};
+  const conds = new Set(m.conds);
+  if (m.opp.abilities.some((a) => a.name === 'Midnight Sun')) conds.add('midnight-sun');
+  const has = (n: string) => m.opp.abilities.some((a) => a.name === n);
+  const base = { ...m.values };
+  for (const p of m.pre) base[p.axis] = clamp(base[p.axis] + p.d, 1, 20);
+  if (has('Mistral') && conds.has('windy')) [base.Pace, base.Power] = [base.Power, base.Pace];
+  const atkAvg = (base.Pace + base.Power + base.Fuel) / 3;
+  const total = chanceCount(atkAvg, r() < 0.5 ? 1 : 0);
+  let reach0 = m.opp.reach;
+  if (has('Slow and Sure')) reach0 = Math.min(reach0, 0.6);
+  const yours = splitChances(total, atkAvg, reach0);
+  const mins = new Set<number>();
+  while (mins.size < total) mins.add(3 + Math.floor(r() * 87));
+  const minutes = [...mins].sort((a, b) => a - b);
+  if (has('The Edge') && minutes[minutes.length - 1] < 88) { minutes[minutes.length - 1] = 88 + (r() < 0.5 ? 1 : 0); }
+  const order = shuffle(r, [...Array(yours).fill('atk'), ...Array(total - yours).fill('def')] as Side[]);
+  if (has('Echolocation')) { // no attacks from them in the first half
+    const firstHalf = minutes.filter((x) => x <= 45).length;
+    const defs = order.filter((s) => s === 'def').length;
+    const lateSlots = total - firstHalf;
+    if (defs <= lateSlots) for (let i = 0; i < total; i++) order[i] = i < firstHalf ? 'atk' : i - firstHalf < lateSlots - defs ? 'atk' : 'def';
+  }
+  const live: Live = { mine: 0, theirs: 0, lastMiss: false, afterGoal: 0, defCount: 0, atkCount: 0, theyConceded: false, iScored: false, used: new Set() };
+  const chances: ChanceEvent[] = [];
+  const moments: string[] = [];
+  const xg: [number, number] = [0, 0];
+  let wind = m.abilities.some((a) => a.id === 'second-wind');
+  let scrappy = has('Scrappy') || has('Rekordmeister');
+  let flip = has('Beach Wind') ? Math.floor(r() * total) : -1;
+  let foul = has('Dirty Leeds') || has('Dark arts') ? Math.floor(r() * Math.max(1, yours)) : -1;
+  const eruption = has('Eruption') && r() < 0.1 ? Math.floor(r() * Math.max(1, total - yours)) : -1;
+
+  for (let i = 0; i < total; i++) {
+    const side = order[i], minute = minutes[i];
+    const [type, boost] = TYPES[side][Math.floor(r() * 4)];
+    const v = { ...base };
+    const mods: Mod[] = m.pre.map((p) => ({ ...p }));
+    const add = (mod: Mod) => { v[mod.axis] = clamp(v[mod.axis] + mod.d, 1, 20); mods.push(mod); };
+    // 1. chance type
+    if (boost) add({ axis: boost, d: 2, why: type, kind: 'type' });
+    // 2. captain and equipped abilities
+    if (m.captain && LIT[side].includes(m.captain)) add({ axis: m.captain, d: 2, why: 'Captain', kind: 'captain' });
+    for (const b of m.abilities) if (b.axis && b.d && LIT[side].includes(b.axis) && braboOk(b, side, minute, type, m.home, live)) add({ axis: b.axis, d: b.d, why: b.name, kind: 'ability' });
+    // 3. youth sub from 60'
+    if (minute >= 60) for (const b of m.bench) if (LIT[side].includes(b.axis)) add({ axis: b.axis, d: b.plus, why: 'Off the bench', kind: 'sub' });
+    // 4. the opponent's shrinks and presses
+    const table = side === 'atk' ? m.opp.shrinks : m.opp.presses;
+    for (const a of LIT[side]) { const d = table[a]; if (d) add({ axis: a, d: Math.round(d * 4) / 4, why: m.opp.id.toUpperCase(), kind: 'opp' }); }
+    // 5. hidden, known and rivalry abilities
+    let reach: number | null = side === 'def' ? reach0 : null;
+    for (const a of m.opp.abilities) {
+      const fx = abilityFx(a, side, minute, type, m.home, live, ctx, conds, r);
+      for (const mod of fx.mods) add({ ...mod, kind: isHidden(m, a) ? 'hidden' : 'opp' });
+      if (reach != null) reach += fx.reach;
+    }
+    if (m.rival) for (const mod of m.rival.mods(minute, side, Boolean(ctx.auto))) if (LIT[side].includes(mod.axis)) add({ ...mod, kind: 'rival' });
+    // 6. late tiredness
+    if (minute >= 75 && base.Rest < 15) for (const a of LIT[side]) add({ axis: a, d: -1, why: 'Tired legs', kind: 'tired' });
+    // 7. the weekly stack, capped at 15 points of chance
+    if (side === 'atk' && m.stack > 0) {
+      const before = pctOf(v, side, null);
+      let lift = 0;
+      for (let k = 0; k < Math.min(m.stack, STACK_STEPS.length); k++) {
+        const next = lift + STACK_STEPS[k];
+        const trial = { ...v };
+        for (const a of LIT.atk) trial[a] = clamp(trial[a] + next, 1, 20);
+        if (pctOf(trial, side, null) - before > 0.15) break;
+        lift = next;
+      }
+      if (lift) for (const a of LIT.atk) add({ axis: a, d: lift, why: 'Weekly stack', kind: 'stack' });
+    }
+    if (reach != null) reach = clamp(eruption >= 0 && side === 'def' && live.defCount === eruption ? 1 : reach, 0.3, 1);
+    if (side === 'atk' && foul === live.atkCount) {
+      while (pctOf(v, side, null) > 0.4 && LIT.atk.some((a) => v[a] > 1)) for (const a of LIT.atk) v[a] = clamp(v[a] - 0.5, 1, 20);
+      mods.push({ axis: 'Pace', d: 0, why: has('Dirty Leeds') ? 'Dirty Leeds: fouled down to 40%' : 'Dark arts', kind: 'opp' });
+      foul = -1;
+    }
+    const pctF = pctOf(v, side, reach);
+    const pct = Math.round(pctF * 100);
+    const shape = shapeOf(v, side);
+    const region = side === 'atk' ? FULL : hexagon(reach!);
+    let land = randomIn(region, r) as Pt;
+    let ok = inside(land, shape);
+    const ev: ChanceEvent = { minute, side, type, mods, values: v, reach, pct, land, ok, glDist: null };
+    // second wind, and rebounds for Scrappy-type clubs
+    if (side === 'atk' && !ok && wind && pct >= 30) {
+      wind = false;
+      land = randomIn(region, r); ok = inside(land, shape);
+      ev.retake = { land, ok, why: 'Second wind' };
+    } else if (side === 'def' && ok && scrappy) {
+      scrappy = false;
+      land = randomIn(region, r); ok = inside(land, shape);
+      ev.retake = { land, ok, why: has('Scrappy') ? 'Scrappy' : 'Rekordmeister' };
+    }
+    if (flip === i) { ok = !ok; ev.retake = { land, ok, why: 'Beach Wind' }; flip = -1; }
+    if (side === 'atk' && ok && has('Iron') && live.mine >= 3) { ok = false; ev.retake = { land, ok, why: 'Iron' }; }
+    if (side === 'def' && ok && has('Homing') && !m.home && live.theirs === 0 && order.slice(i + 1).every((s) => s === 'atk')) { ok = false; ev.retake = { land, ok, why: 'Homing' }; }
+    ev.ok = ok;
+    const d = edgeDistance(land, shape);
+    ev.glDist = d < GOAL_LINE ? d : null;
+    if (side === 'atk') {
+      xg[0] += pctF;
+      live.atkCount++;
+      if (ok) { live.mine++; live.iScored = true; live.theyConceded = true; if (pct <= 20) { ev.tag = 'SCREAMER'; moments.push(`SCREAMER: ${pct}% and in, ${minute}'`); } }
+      else if (pct >= 70) { ev.tag = 'HEARTBREAK'; moments.push(`HEARTBREAK: ${pct}% and missed, ${minute}'`); }
+      live.lastMiss = !ok;
+      if (live.afterGoal > 0) live.afterGoal--;
+    } else {
+      xg[1] += 1 - pctF;
+      live.defCount++;
+      if (ok) { if (pct <= 25) { ev.tag = 'WONDER SAVE'; moments.push(`WONDER SAVE: ${pct}% to stop it, ${minute}'`); } }
+      else { live.theirs++; live.afterGoal = 2; if (pct >= 70) moments.push(`Conceded with ${pct}% to save, ${minute}'`); }
+      live.lastMiss = false;
+    }
+    chances.push(ev);
+  }
+  const hidden = m.opp.abilities.find((a) => isHidden(m, a));
+  return {
+    seed: m.seed, chances, score: [live.mine, live.theirs],
+    xg: [Math.round(xg[0] * 100) / 100, Math.round(xg[1] * 100) / 100], moments,
+    revealed: ctx.firstMeeting && hidden ? hidden.name : undefined,
+  };
+}
+/** The last ability of a quirky or Old Self club is its hidden one. */
+function isHidden(m: MatchInput, a: AbilityDef) { return m.opp.hidden === a.name; }
