@@ -7,7 +7,7 @@ import { averageOf, HABITS, TRAIT, type HabitId } from '../squad';
 import { AXES, type Axis, type Tier } from '../types';
 import { loadHealth } from './gather';
 import { OWN } from './season';
-import type { FbSave, FbSquadRow, StoredMatch } from './tables';
+import type { FbBundle, FbSave, FbSquadRow, StoredMatch } from './tables';
 import { tonightKnocks } from './tonight';
 
 export interface Member {
@@ -26,7 +26,7 @@ export interface Member {
   awakened: number[];
   trait?: string;
 }
-export interface Club { save: FbSave; tier: Tier; members: Member[]; bench: FbSquadRow[]; matches: StoredMatch[]; youth?: FbSquadRow[]; today?: DayKey }
+export interface Club { save: FbSave; tier: Tier; members: Member[]; bench: FbSquadRow[]; matches: StoredMatch[]; youth?: FbSquadRow[]; today?: DayKey; bundles?: FbBundle[] }
 
 /** Pure: the six members from the save and recent matches (newest last). */
 export function membersOf(save: FbSave, matches: StoredMatch[], tier: Tier, today: DayKey, knock?: 'knock' | 'injury'): Member[] {
@@ -61,6 +61,6 @@ export async function loadClub(now = Date.now()): Promise<Club | null> {
   const squad = await db.fbSquad.toArray();
   const bench = squad.filter((y) => y.status === 'promoted');
   const youth = squad.filter((y) => y.status === 'growing');
-  return { save, tier, members: membersOf(save, matches, tier, today, knock), bench, matches, youth, today };
+  return { save, tier, members: membersOf(save, matches, tier, today, knock), bench, matches, youth, today, bundles: await db.fbBundles.toArray() };
 }
 export const axisOrder = AXES;

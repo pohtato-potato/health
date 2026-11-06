@@ -158,6 +158,7 @@ const braboOk = (b: BraboAbility, side: Side, minute: number, type: string, home
     case 'long': return type === 'Long shot' || type === 'Long-range effort';
     case 'late': return minute >= 75;
     case 'home': return home;
+    case 'home-late': return home && minute >= 75;
     case 'away': return !home;
     case 'first-half': return minute <= 45;
     case 'after-concede': return live.theirs > 0;

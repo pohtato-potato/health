@@ -6,7 +6,8 @@ import type { StoredMatch } from '../../football/store/tables';
 import { go } from '../../router';
 import { CatchUp } from './CatchUp';
 import { SeasonChangeView } from './moments/SeasonChange';
-import { levelUpCrest, markAwakeSeen, markSeasonSeen } from '../../football/store/save';
+import { levelUpCrest, markAwakeSeen, markOpened, markSeasonSeen } from '../../football/store/save';
+import { OpeningNightView } from './moments/OpeningNight';
 import { LevelUpView } from './moments/LevelUp';
 import { AwakeningView } from './moments/Awakening';
 import { FullTime } from './FullTime';
@@ -32,12 +33,14 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
   const watch = onWatch ?? ((id: string) => go('/football/match', { id }));
   const f = t.fixture;
   const awake = (t.save.awakeLog ?? [])[t.save.awakeSeen ?? 0];
+  const opening = t.save.openings?.[0];
   const away = t.unwatchedAuto.filter((m) => m.date !== t.date);
   const catchUp = (
     <>
       {t.change && <SeasonChangeView c={t.change} onDone={() => void markSeasonSeen(t.change!.season)} />}
       {!t.change && t.save.crestPending && <LevelUpView from={t.save.crest} step={t.save.crestPending} onPick={(o) => void levelUpCrest(o)} />}
-      {!t.change && !t.save.crestPending && awake && <AwakeningView axis={awake.axis} at={awake.band} values={t.liveValues} onDone={() => void markAwakeSeen(t.save.awakeLog!.length)} />}
+      {!t.change && !t.save.crestPending && opening && <OpeningNightView id={opening} onDone={() => void markOpened(opening)} />}
+      {!t.change && !t.save.crestPending && !opening && awake && <AwakeningView axis={awake.axis} at={awake.band} values={t.liveValues} onDone={() => void markAwakeSeen(t.save.awakeLog!.length)} />}
       {away.length > 0 && <CatchUp ms={away} />}
     </>
   );

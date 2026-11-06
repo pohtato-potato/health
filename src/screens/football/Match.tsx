@@ -15,6 +15,8 @@ import { Pitch, type PitchState } from './match/Pitch';
 import { lengthOf, timeline, type Step } from './match/Replay';
 import { Takeover } from './match/Takeover';
 import { WAVE_NAMES } from './match/Shockwave';
+import { attendance, homeGround, TENANT_CAPACITY } from '../../football/ground';
+import { hashSeed } from '../../football/rng';
 
 export interface View {
   minute: number;
@@ -93,6 +95,7 @@ export function MatchPlayer({ m, save, onEnd, at, paused = false }: { m: StoredM
   const left = m.braboHome ? 'Brabo United' : opp.name, right = m.braboHome ? opp.name : 'Brabo United';
   const shown: [number, number] = m.braboHome ? v.score : [v.score[1], v.score[0]];
   const wave = v.pitch.wave;
+  const ground = m.braboHome ? { name: homeGround(Boolean(save.moved)), crowd: attendance(save.moved ? 2500 : TENANT_CAPACITY, 6, 0.5, hashSeed(m.id)) } : undefined;
   return (
     <Aurora className={`fb-match ${v.phase?.side ?? ''}`}>
       <main className="fb-page fb-matchpage">
@@ -108,7 +111,7 @@ export function MatchPlayer({ m, save, onEnd, at, paused = false }: { m: StoredM
         <div className="fb-stage">
           <Pitch s={v.pitch} />
           {v.goalline && <GoalLineCaption ok={v.goalline.ok} decided={false} side={v.phase?.side ?? 'atk'} />}
-          {v.bookend && <Bookend kind={v.bookend} score={shown} home={left} away={right} />}
+          {v.bookend && <Bookend kind={v.bookend} score={shown} home={left} away={right} ground={ground} />}
         </div>
         <section className="fb-call" aria-live="polite">
           {v.banner && <AbilityBanner text={v.banner} />}

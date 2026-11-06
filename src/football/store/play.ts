@@ -16,6 +16,7 @@ import { hashSeed, rng, pick } from '../rng';
 import { contractDay, keptOn, PROMOTE_AT, intake, youthStatus, newContract } from '../contracts';
 import { YOUTH_POOL } from '../data/load';
 import { crestStepFor } from '../kits';
+import { BUNDLES, bundleDay, capacityOf, dayCounts, groundAbilities, isOpen, TENANT_CAPACITY } from '../ground';
 import { dodgyCollapse, incomeFor, offers as offersFor, type Slot } from '../money';
 import { HABITS, habitById, armbandHarmony, averageOf, awakeningsAfter, momentsOf, TRAIT } from '../squad';
 import { abilityFor, braboAbilities } from '../data/abilities';
@@ -25,12 +26,12 @@ import { AXES, TIERS, type AxisValues, type Comp, type Mod, type Result, type Ti
 import { axisInputFor, bestAxis, conditions, loadHealth, medsTaken, nightFor, type Health } from './gather';
 import { factsFor, matchLines, situationOf } from './lines';
 import { newSeason, OWN } from './season';
-import type { FbClub, FbNews, FbSave, FbSeason, FbSquadRow, StoredMatch } from './tables';
+import type { FbBundle, FbClub, FbNews, FbSave, FbSeason, FbSquadRow, StoredMatch } from './tables';
 
 export const CATCH_UP_CAP = 42;
 const resultOf = (s: [number, number], pens?: [number, number]): Result => (s[0] > s[1] || (pens && pens[0] > pens[1]) ? 'W' : s[0] < s[1] || (pens && pens[0] < pens[1]) ? 'L' : 'D');
 
-interface World { squad: FbSquadRow[]; save: FbSave; season: FbSeason; oldSeasons: FbSeason[]; clubs: Map<string, FbClub>; matches: StoredMatch[]; news: FbNews[]; h: Health; past: StoredMatch[]; used: { id: string; date: DayKey }[] }
+interface World { bundles: Map<string, FbBundle>; squad: FbSquadRow[]; save: FbSave; season: FbSeason; oldSeasons: FbSeason[]; clubs: Map<string, FbClub>; matches: StoredMatch[]; news: FbNews[]; h: Health; past: StoredMatch[]; used: { id: string; date: DayKey }[] }
 
 /** Plays every unplayed day up to and including `date`, in order. Days before `date` count as auto-played. */
 export async function kickOff(date: DayKey): Promise<StoredMatch[]> {
@@ -53,13 +54,14 @@ async function playThrough(until: DayKey, closed: DayKey | null): Promise<Stored
   if (daysBetween(from, until) + 1 > CATCH_UP_CAP) start = addDays(until, -(CATCH_UP_CAP - 1));
   const w: World = {
     squad: await db.fbSquad.toArray(),
+    bundles: new Map((await db.fbBundles.toArray()).map((b) => [b.id, b])),
     save: { ...save }, season: (await db.fbSeasons.get(save.season))!, oldSeasons: [], clubs: new Map(stored.map((c) => [c.id, c])),
     matches: [], news: [], h: await loadHealth(), past: await db.fbMatches.orderBy('date').toArray(),
     used: (await db.fbNews.where('date').aboveOrEqual(addDays(start, -31)).toArray()).filter((n) => n.lineId).map((n) => ({ id: n.lineId!, date: n.date })),
   };
   for (let d = start; d <= until; d = addDays(d, 1)) { clubDay(w, d); playDay(w, d, d !== closed); }
   w.save.lastPlayed = until;
-  await db.transaction('rw', [db.fbSave, db.fbSeasons, db.fbClubs, db.fbMatches, db.fbNews, db.fbSquad], async () => {
+  await db.transaction('rw', [db.fbSave, db.fbSeasons, db.fbClubs, db.fbMatches, db.fbNews, db.fbSquad, db.fbBundles], async () => {
     const cur = await db.fbSave.get('save');
     if (cur?.lastPlayed && cur.lastPlayed >= until) return; // another tab played first
     await db.fbSave.put(w.save);
@@ -69,6 +71,7 @@ async function playThrough(until: DayKey, closed: DayKey | null): Promise<Stored
     if (w.matches.length) await db.fbMatches.bulkPut(w.matches);
     if (w.news.length) await db.fbNews.bulkPut(w.news);
     if (w.squad.length) await db.fbSquad.bulkPut(w.squad);
+    if (w.bundles.size) await db.fbBundles.bulkPut([...w.bundles.values()]);
   });
   return w.matches;
 }
@@ -188,6 +191,7 @@ function endSeason(w: World, date: DayKey) {
   turn.headlines.forEach((x, i) => w.news.push({ id: `${date}:world:${i}`, date, kind: 'world', text: x.text, clubId: x.clubId }));
   refreshOldSelves(w, date);
   seasonMoney(w, date, tables, moves.up);
+  tenancyAtSeasonEnd(w, date, tables);
   const nowTier = tierOf[OWN];
   if (moves.up[w.season.tierOf[OWN]]?.includes(OWN) && crestStepFor(nowTier) > w.save.crest.step) w.save.crestPending = crestStepFor(nowTier);
   for (const y of w.squad) if (y.season === w.save.season && y.status === 'growing' && youthStatus(y.logged.length, true) === 'leaves') y.status = 'left';
@@ -222,7 +226,7 @@ const monthsBefore = (w: World, date: DayKey) => monthsFromHealth(w.h, date);
 
 function playEventDay(w: World, date: DayKey, auto: boolean) {
   const ev = w.save.event!;
-  if (w.save.day === 1) w.squad.push(...youthIntake(w.save.season + 1, date, w.save.youthSlots ?? 0));
+  if (w.save.day === 1) w.squad.push(...youthIntake(w.save.season + 1, date, w.save.youthSlots ?? 0, doneBundles(w).includes('academy-2')));
   const plan: DayPlan = { day: w.save.day, kind: 'event', event: ev.id, round: `${EVENTS[ev.id].name}, day ${w.save.day} of ${ev.days}` };
   const pool = [...w.clubs.values()].filter((c) => c.id !== OWN && !c.folded && (ev.id !== 'oldselves' || c.old));
   const opp = pick(rng(hashSeed(date, 'event', ev.id)), pool.length ? pool : [...w.clubs.values()].filter((c) => c.id !== OWN)).id;
@@ -282,14 +286,15 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
   const conds = conditions(w.h, date, night.input, auto);
   if ((plan.matchday ?? 0) % 7 === 0 && plan.matchday) conds.push('every-7th');
   if ([...w.past, ...w.matches].some((m) => m.opp === oppId && m.result === 'L')) conds.push('beat-them-before');
-  const braboHome = neutral ? home === OWN : oppId === 'zur' ? false : home === OWN;
+  let braboHome = neutral ? home === OWN : oppId === 'zur' && !w.save.moved ? false : home === OWN;
+  if (braboHome && lockedOutTonight(w, plan, date)) braboHome = false;
   const seed = hashSeed(date, home, away, comp, String(leg ?? 0));
   const slots = new Set(w.save.slots);
   const events = playMatch({
     seed, values, opp, home: braboHome,
     captain: slots.has('armband') ? w.save.captain : undefined,
     stack: slots.has('stack') ? w.save.earned.filter((e) => e.date > addDays(date, -7)).length : 0,
-    abilities: [...braboAbilities(w.save.slots), ...awakenedTraits(w.save)],
+    abilities: [...braboAbilities(w.save.slots), ...awakenedTraits(w.save), ...groundAbilities(doneBundles(w))],
     bench: benchFor(w, date), pre, conds, ctx,
     rival: rival ? rivalTwist(oppId, rival.how, rival.best) : oppId === ANTIGOON ? rivalTwist(ANTIGOON, 'legend') : undefined,
   });
@@ -351,19 +356,21 @@ function clubDay(w: World, date: DayKey) {
     if (next.state !== c.state) w.news.push({ id: `${date}:contract:${c.habit}`, date, kind: 'club', text: next.state === 'due' ? `${habitById(c.habit).label} has earned a new contract. Renew it on the Deals page.` : `${habitById(c.habit).label} missed its contract line and is transfer-listed. No penalty in matches.` });
     return next;
   });
+  groundDay(w, date, input);
   for (const y of w.squad) {
     if (y.status !== 'growing' || y.logged.includes(date) || !youthDone(w, y, date)) continue;
     y.logged = [...y.logged, date];
     if (y.exercise) continue; // exercise youngsters wait for the coach's plan
-    if (y.logged.length >= PROMOTE_AT) { y.status = 'promoted'; w.news.push({ id: `${date}:youth:${y.id}`, date, kind: 'club', text: `${y.name} joins the bench after ${PROMOTE_AT} logged days.` }); }
+    const need = doneBundles(w).includes('training-2') ? Math.ceil(PROMOTE_AT * 0.75) : PROMOTE_AT;
+    if (y.logged.length >= need) { y.status = 'promoted'; w.news.push({ id: `${date}:youth:${y.id}`, date, kind: 'club', text: `${y.name} joins the bench after ${need} logged days.` }); }
   }
 }
 /** Three youngsters for a season, at most one exercise, plus one per youth slot won in a trade. */
-export function youthIntake(season: number, date: DayKey, extra = 0): FbSquadRow[] {
+export function youthIntake(season: number, date: DayKey, extra = 0, academy = false): FbSquadRow[] {
   const r = rng(hashSeed('youth', String(season)));
   const picked = intake(YOUTH_POOL, r, true);
   const more = extra ? intake(YOUTH_POOL.filter((y) => !picked.includes(y) && y.kind === 'habit'), r, false).slice(0, extra) : [];
-  return [...picked, ...more].map((y, i) => ({ id: `s${season}:y${i}`, kind: 'youth' as const, name: y.name, axis: y.axis, potential: y.potential, what: y.what, exercise: y.kind === 'exercise', season, logged: [], status: 'growing' as const })).map((y) => ({ ...y, id: `${y.id}:${date}` }));
+  return [...picked, ...more].map((y, i) => ({ id: `s${season}:y${i}`, kind: 'youth' as const, name: y.name, axis: y.axis, potential: (academy ? Math.min(5, y.potential + 1) : y.potential) as 3 | 4 | 5, what: y.what, exercise: y.kind === 'exercise', season, logged: [], status: 'growing' as const })).map((y) => ({ ...y, id: `${y.id}:${date}` }));
 }
 const OPEN: { slot: Slot; from?: Tier }[] = [{ slot: 'shirt' }, { slot: 'kit' }, { slot: 'sleeve', from: 4 }, { slot: 'partner' }];
 /** Season end: income in, dodgy sponsors may fold, offers arrive for open slots. */
@@ -377,7 +384,9 @@ function seasonMoney(w: World, date: DayKey, tables: Record<Tier, Row[]>, up: Pa
   folded.forEach((s) => w.news.push({ id: `${date}:fold:${s.slot}`, date, kind: 'club', text: `${s.brand} have folded. The ${s.slot} slot is open again.` }));
   w.save.sponsors = live.filter((s) => !folded.includes(s));
   const sponsorMoney = w.save.sponsors.reduce((t, s) => t + s.perSeason, 0);
-  const total = incomeFor(tier, pos, promoted, sponsorMoney);
+  const done = doneBundles(w);
+  const shop = (done.includes('shop-2') ? 0.1 : 0) + (done.includes('shop-3') ? 0.1 : 0);
+  const total = incomeFor(tier, pos, promoted, sponsorMoney, (w.save.moved ? capacityOf(true, done) / TENANT_CAPACITY : 1) * (1 + shop));
   const prizeMoney = Math.round((total - sponsorMoney) * 1000) / 1000;
   w.save.income = { season: w.save.season, lines: [{ name: 'TV, gate and prize money', amount: prizeMoney }, { name: 'Sponsors', amount: Math.round(sponsorMoney * 1000) / 1000 }] };
   w.save.budget = Math.round((w.save.budget + total) * 1000) / 1000;
@@ -388,3 +397,60 @@ function seasonMoney(w: World, date: DayKey, tables: Record<Tier, Row[]>, up: Pa
     .flatMap((o) => offersFor(o.slot, nextTier, r));
 }
 export const contractsFor = (date: DayKey) => HABITS.map((h) => newContract(h.id, date));
+
+// ---- The ground (Task 4.4) ----
+const doneBundles = (w: World) => [...w.bundles.values()].filter((b) => b.done).map((b) => b.id);
+function usualBedtime(w: World, date: DayKey): number | undefined {
+  const xs: number[] = [];
+  for (let d = addDays(date, -28); d < date; d = addDays(d, 1)) { const a = w.h.days.get(d)?.sleep?.asleep; if (a !== undefined) xs.push((a + 720) % 1440); }
+  if (xs.length < 7) return undefined;
+  xs.sort((a, b) => a - b);
+  return (xs[Math.floor(xs.length / 2)] + 720) % 1440;
+}
+/** Every day: open bundles take the day's totals; a finished one is paid for and opens from the next match. */
+function groundDay(w: World, date: DayKey, input: ReturnType<typeof axisInputFor>) {
+  const done = doneBundles(w);
+  const g = { tier: w.season.tierOf[OWN], moved: Boolean(w.save.moved), done, budget: w.save.budget };
+  const youthDays = w.squad.filter((y) => (y.status === 'growing' || y.status === 'promoted') && youthDone(w, y, date)).length;
+  const counts = dayCounts({ input, medsKept: medsTaken(w.h, date), youthDays, usualBedtime: usualBedtime(w, date) });
+  for (const b of BUNDLES) {
+    if (!isOpen(b, g)) continue;
+    const cur = w.bundles.get(b.id) ?? { id: b.id, progress: {} };
+    const { state, spent } = bundleDay(b, cur, counts, w.save.budget, date);
+    w.bundles.set(b.id, state);
+    if (!state.done) continue;
+    w.save.budget = Math.round((w.save.budget - spent) * 1000) / 1000;
+    g.done = [...g.done, b.id];
+    if (b.id === 'physio') w.save.physioRoom = true;
+    w.save.openings = [...(w.save.openings ?? []), b.id];
+    w.news.push({ id: `${date}:built:${b.id}`, date, kind: 'club', text: `${b.name} is built. ${b.effect}` });
+  }
+}
+/** Once a season, while tenants, the first home league match of one week is played as if away. */
+function lockedOutTonight(w: World, plan: DayPlan, date: DayKey): boolean {
+  if (w.save.moved || plan.kind !== 'league' || (w.save.lockedOut ?? []).includes(w.save.season)) return false;
+  const week = 1 + (hashSeed('locked', String(w.save.season)) % 5);
+  if (Math.ceil(plan.day / 7) !== week) return false;
+  w.save.lockedOut = [...(w.save.lockedOut ?? []), w.save.season];
+  w.news.push({ id: `${date}:locked`, date, kind: 'back', text: 'Locked out! The landlords say the good dressing room is “unavailable”. Brabo change in the corridor and play tonight as if away.' });
+  return true;
+}
+/** The rent rise the first season Brabo finish above the landlords, and moving day at the break. */
+function tenancyAtSeasonEnd(w: World, date: DayKey, tables: Record<Tier, Row[]>) {
+  if (!w.save.moved && !w.save.rentRaised) {
+    const t = w.season.tierOf[OWN], zt = w.season.tierOf['zur'];
+    const pos = (id: string, tier: Tier) => tables[tier].findIndex((r) => r.id === id);
+    const above = zt === undefined ? false : t < zt || (t === zt && pos(OWN, t) < pos('zur', zt));
+    if (above) {
+      w.save.rentRaised = true;
+      w.save.budget = Math.round((w.save.budget - 0.02) * 1000) / 1000;
+      w.news.push({ id: `${date}:rent`, date, kind: 'back', text: 'Rent rise! Zurenborg Athletic put the rent up the season their tenants finish above them. €20k a season, and a lot of muttering.' });
+    }
+  }
+  if (!w.save.moved && w.save.moveAtBreak && doneBundles(w).includes('kaai-stand')) {
+    w.save.moved = true;
+    w.save.moveAtBreak = false;
+    w.save.openings = [...(w.save.openings ?? []), 'moving-day'];
+    w.news.push({ id: `${date}:farewell`, date, kind: 'club', text: 'Farewell, Stadion aan de Stroom. Moving day: next season starts at Kaai 42.' });
+  }
+}

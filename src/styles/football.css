@@ -445,3 +445,20 @@ button.fb-todaycard { cursor: pointer; }
 .fb-newcrest { filter: drop-shadow(0 0 10px #7fe0a8); animation: fb-trace 1.8s ease-out both; }
 @keyframes fb-trace { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 .fb-keep { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 12px; border: 2px dashed var(--fb-ink); font: 600 15px var(--sans); }
+.fb-tiles { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; }
+.fb-tiles i { aspect-ratio: 1; border-radius: 3px; border: 1.5px solid rgba(255,255,255,.4); }
+.fb-tiles i.f { background: var(--fb-or); border-color: var(--fb-or); }
+.fb-sealed { border-style: dashed; }
+.fb-qmap { width: 100%; height: auto; }
+.fb-qmap .rv { fill: none; stroke: #6fb8ff; stroke-width: 3; opacity: .7; } .fb-qmap .rv.b { opacity: .4; }
+.fb-qmap .rk { stroke: rgba(255,255,255,.35); stroke-width: 2; stroke-dasharray: 6 6; }
+.fb-qmap .qp rect { fill: none; stroke: rgba(255,255,255,.55); stroke-width: 2; stroke-dasharray: 5 4; }
+.fb-qmap .qp.on rect { stroke: var(--fb-or); stroke-dasharray: none; fill: rgba(255,122,26,.18); filter: drop-shadow(0 0 6px var(--fb-or)); }
+.fb-qmap .qp text { font: 700 18px var(--fb-cond); fill: var(--fb-ink); text-anchor: middle; }
+.fb-qlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.fb-opening { width: 100%; height: auto; }
+.fb-opening .base { stroke: rgba(255,255,255,.4); stroke-width: 2; }
+.fb-opening .trace { fill: none; stroke: #7fe0a8; stroke-width: 3; stroke-dasharray: 100; stroke-dashoffset: 100; filter: drop-shadow(0 0 8px #7fe0a8); animation: fb-draw 2.4s ease-out forwards; }
+.fb-opening .trace.late { animation-delay: .8s; }
+@keyframes fb-draw { to { stroke-dashoffset: 0; } }
+.fb-groundline { color: var(--fb-or-text); }

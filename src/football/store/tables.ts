@@ -63,6 +63,14 @@ export interface FbSave {
   /** A crest step earned by promotion, waiting for its level-up moment. */
   crestPending?: 1 | 2 | 3 | 4 | 5;
   crestHistory?: { step: 1 | 2 | 3 | 4 | 5; opt: CrestOpt | 'keep'; season: number }[];
+  /** Playing at Kaai 42 (moving day done), and whether the move is booked for the next break. */
+  moved?: boolean;
+  moveAtBreak?: boolean;
+  /** Buildings finished but not yet shown on their opening night. */
+  openings?: string[];
+  /** Seasons in which the landlords locked us out once, and the rent rise. */
+  lockedOut?: number[];
+  rentRaised?: boolean;
 }
 export interface FbClub { id: string; tier: Tier; rating: number; style: string; old?: OldSelf; folded?: boolean }
 export interface FbSeason {
@@ -109,4 +117,4 @@ export interface StoredMatch {
 }
 export interface FbSquadRow { id: string; kind: 'youth'; name: string; axis: Axis; potential: 3 | 4 | 5; what: string; exercise: boolean; season: number; logged: DayKey[]; status: 'growing' | 'promoted' | 'left' }
 export interface FbNews { id: string; date: DayKey; kind: 'back' | 'world' | 'roundup' | 'club' | 'press' | 'studio'; text: string; clubId?: string; lineId?: string; matchId?: string; answered?: number }
-export interface FbBundle { id: string; progress: number; done?: DayKey }
+export interface FbBundle { id: string; progress: Record<string, number>; done?: DayKey }

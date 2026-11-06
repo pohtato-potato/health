@@ -151,3 +151,8 @@ export const levelUpCrest = (opt: CrestOpt | 'keep') =>
     const history = [...(s.crestHistory ?? []), { step, opt, season: s.season }];
     return { ...s, crestPending: undefined, crestHistory: history, crest: opt === 'keep' ? s.crest : { step, opt } };
   });
+
+/** Book moving day for the next season break (once the Kaai Stand is built). */
+export const bookMove = (on: boolean) => editSave((s) => ({ ...s, moveAtBreak: on }));
+/** An opening night has been shown. */
+export const markOpened = (id: string) => editSave((s) => ({ ...s, openings: (s.openings ?? []).filter((x) => x !== id) }));
