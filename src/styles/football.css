@@ -245,3 +245,24 @@ button.fb-todaycard { cursor: pointer; }
 .fb-ht { display: flex; align-items: center; gap: 12px; }
 .fb-ht > svg, .fb-ht .fb-radar { flex: none; }
 .fb-ht b { font-size: 17px; }
+
+/* ---- first run and catch-up ---- */
+.fb-btns.stack { flex-direction: column; }
+.fb-first { display: flex; flex-direction: column; gap: 14px; }
+.fb-story { margin: 0; font: 400 20px/1.4 var(--serif); }
+.fb-dots { display: flex; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.fb-dots li { flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,.25); }
+.fb-dots li.on { background: var(--fb-or); }
+.fb-pick { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.fb-pickone { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 88px; min-height: 44px; padding: 10px; border: 2px solid rgba(255,255,255,.45); border-radius: 16px; background: transparent; color: var(--fb-ink); font: 600 15px var(--sans); cursor: pointer; }
+.fb-pickone.on { border-color: var(--fb-or); box-shadow: 0 0 16px -4px var(--fb-or); }
+.fb-map { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.fb-maprow { width: 100%; min-height: 48px; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 14px; border: 1.5px solid rgba(255,255,255,.45); border-radius: 14px; background: transparent; color: var(--fb-ink); font: 400 15px var(--sans); text-align: right; cursor: pointer; }
+.fb-maprow b { font-weight: 600; font-size: 16px; text-align: left; }
+.fb-maprow.on { border-color: var(--fb-or); }
+.fb-btn:disabled { opacity: .45; cursor: default; }
+/* A page-level aurora fills the screen even when the page is short. */
+.fb-au:has(> .fb-page) { min-height: 100dvh; }
+.fb-pick.three { flex-wrap: nowrap; gap: 8px; }
+.fb-pick.three > .fb-pickone { flex: 1 1 0; min-width: 0; padding: 8px 4px; }
+.fb-pick.three .fb-art svg { max-width: 100%; height: auto; }

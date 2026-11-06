@@ -2,13 +2,17 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { addDays, dayOfLogging, type DayKey } from '../../domain/dates';
-import { clubById, type AbilityDef, type ClubDef } from '../data/load';
+import { clubById, rememberClubs, type AbilityDef, type ClubDef } from '../data/load';
 import type { AxisFlags, AxisValues, Mod } from '../types';
 import { loadHealth, nightFor } from './gather';
 import type { FbSave, StoredMatch } from './tables';
 import { fixtureFor, tonightKnocks, type Fixture } from './tonight';
 
-export const useSave = () => useLiveQuery(async () => (await db.fbSave.get('save')) ?? null, []);
+export const useSave = () => useLiveQuery(async () => {
+  const save = (await db.fbSave.get('save')) ?? null;
+  if (save) rememberClubs(await db.fbClubs.toArray());
+  return save;
+}, []);
 
 export function useMatches(from: DayKey, to: DayKey) {
   return useLiveQuery(() => db.fbMatches.where('date').between(from, to, true, true).toArray(), [from, to]);
@@ -36,6 +40,7 @@ export interface Tonight {
 export async function loadTonight(date: DayKey): Promise<Tonight | null> {
   const save = await db.fbSave.get('save');
   if (!save) return null;
+  rememberClubs(await db.fbClubs.toArray());
   const season = await db.fbSeasons.get(save.season);
   const h = await loadHealth();
   const night = nightFor(h, date);

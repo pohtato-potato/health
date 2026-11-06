@@ -25,8 +25,17 @@ const priv = import.meta.glob('/private/football-youth.json', { eager: true, imp
 export const YOUTH_POOL: YouthDef[] = [...(league.youth as unknown as YouthDef[]), ...Object.values(priv).flat()];
 
 const byId = new Map(CLUBS.map((c) => [c.id, c]));
+const named = new Map<string, ClubDef>();
+/** Old-self clubs take their names from the save (built from the owner's past months), not the placeholder in league.json. */
+export function rememberClubs(clubs: { id: string; old?: { name: string; nickname: string } }[]) {
+  for (const c of clubs) {
+    const def = byId.get(c.id);
+    if (def && c.old) named.set(c.id, { ...def, name: c.old.name, nickname: c.old.nickname });
+    else named.delete(c.id);
+  }
+}
 export function clubById(id: string): ClubDef {
-  const c = byId.get(id);
+  const c = named.get(id) ?? byId.get(id);
   if (!c) throw new Error(`unknown club ${id}`);
   return c;
 }

@@ -21,7 +21,7 @@ describe('tab bar A', () => {
     const today = readFileSync('src/screens/Today.tsx', 'utf8');
     expect(today).toMatch(/<div className="td-dock">[\s\S]*<DrawerHandle[\s\S]*<PlusButton docked \/>[\s\S]*<\/div>/);
     const app = readFileSync('src/App.tsx', 'utf8');
-    expect(app).toContain("page.tab !== 'today' && <PlusButton />");
+    expect(app).toContain("page.tab !== 'today' && route.path !== '/football/match' && <PlusButton />");
     expect(html(<PlusButton docked />)).toContain('class="fab-plus docked"');
     expect(html(<PlusButton />)).toContain('class="fab-plus"');
   });

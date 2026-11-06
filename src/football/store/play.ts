@@ -3,7 +3,7 @@ import { db } from '../../db/db';
 import { addDays, dayOfLogging, daysBetween, type DayKey } from '../../domain/dates';
 import { seasonDays, SEASON_DAYS, type DayPlan } from '../calendar';
 import { advance, penalties, type Bracket } from '../cups';
-import { clubById } from '../data/load';
+import { clubById, rememberClubs } from '../data/load';
 import { cards, physio, redCardMod, rotationShape, usesRotation } from '../discipline';
 import { playMatch, type MatchCtx } from '../engine';
 import { EVENTS, nextEvent } from '../events';
@@ -41,12 +41,14 @@ export async function playDue(now = Date.now()): Promise<StoredMatch[]> {
 async function playThrough(until: DayKey, closed: DayKey | null): Promise<StoredMatch[]> {
   const save = await db.fbSave.get('save');
   if (!save) return [];
+  const stored = await db.fbClubs.toArray();
+  rememberClubs(stored);
   const from = save.lastPlayed ? addDays(save.lastPlayed, 1) : save.founded;
   if (until < from) return [];
   let start = from;
   if (daysBetween(from, until) + 1 > CATCH_UP_CAP) start = addDays(until, -(CATCH_UP_CAP - 1));
   const w: World = {
-    save: { ...save }, season: (await db.fbSeasons.get(save.season))!, oldSeasons: [], clubs: new Map((await db.fbClubs.toArray()).map((c) => [c.id, c])),
+    save: { ...save }, season: (await db.fbSeasons.get(save.season))!, oldSeasons: [], clubs: new Map(stored.map((c) => [c.id, c])),
     matches: [], news: [], h: await loadHealth(), past: await db.fbMatches.orderBy('date').toArray(),
     used: (await db.fbNews.where('date').aboveOrEqual(addDays(start, -31)).toArray()).filter((n) => n.lineId).map((n) => ({ id: n.lineId!, date: n.date })),
   };
@@ -58,6 +60,7 @@ async function playThrough(until: DayKey, closed: DayKey | null): Promise<Stored
     await db.fbSave.put(w.save);
     await db.fbSeasons.bulkPut([...w.oldSeasons, w.season]);
     await db.fbClubs.bulkPut([...w.clubs.values()]);
+    rememberClubs([...w.clubs.values()]);
     if (w.matches.length) await db.fbMatches.bulkPut(w.matches);
     if (w.news.length) await db.fbNews.bulkPut(w.news);
   });

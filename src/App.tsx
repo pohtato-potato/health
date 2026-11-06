@@ -206,6 +206,8 @@ export function App() {
   const hasSettings = !!settings?.setupDone;
   useEffect(() => {
     if (hasSettings) void dailySnapshot(today).catch(() => undefined);
+    // Days left unclosed play themselves (at 4 am, or on the next open after it). Football's code loads only for this.
+    if (hasSettings) void import('./football/store/play').then((m) => m.playDue()).catch((e) => console.error('football catch-up', e));
   }, [hasSettings, today]);
   useThemeClass(settings, today);
 
@@ -221,7 +223,7 @@ export function App() {
       <RegionRoot />
       <Suspense fallback={<div className="page" />}>{page.el()}</Suspense>
       {page.tab && <TabBar active={page.tab} />}
-      {page.tab && page.tab !== 'today' && <PlusButton />}
+      {page.tab && page.tab !== 'today' && route.path !== '/football/match' && <PlusButton />}
       {page.tab && <ResumePill />}
       {sheet && SHEETS[sheet]?.()}
       <DeepLinks />

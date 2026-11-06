@@ -3,7 +3,7 @@ import { db } from '../../db/db';
 import { addDays } from '../../domain/dates';
 import { pressHeadline } from '../news';
 import type { DayKey } from '../../domain/dates';
-import { CLUBS } from '../data/load';
+import { CLUBS, rememberClubs } from '../data/load';
 import { fillSlots, SLOTS } from '../oldSelves';
 import { ANTIGOON } from '../rivals';
 import type { Axis } from '../types';
@@ -33,6 +33,7 @@ export async function foundClub(date: DayKey, choices: { shirt: string; crest: C
   await db.transaction('rw', [db.fbSave, db.fbClubs, db.fbSeasons, db.fbMatches, db.fbNews, db.fbSquad, db.fbBundles], async () => {
     for (const t of FB_TABLES) await db.table(t).clear();
     await db.fbClubs.bulkPut(clubs);
+    rememberClubs(clubs);
     await db.fbSeasons.put(newSeason(1, date, clubs));
     await db.fbSave.put(save);
   });

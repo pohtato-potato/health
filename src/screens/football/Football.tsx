@@ -5,9 +5,13 @@ import { db } from '../../db/db';
 import { useSave, useTonight } from '../../football/store/hooks';
 import { MatchPlayer } from './Match';
 import { useRoute } from '../../router';
-import { FootballHome, type FbSection } from './FootballHome';
+import { Aurora, FootballHome, type FbSection } from './FootballHome';
 import { TonightView } from './Tonight';
 import { FullTime } from './FullTime';
+import { FirstRun } from './FirstRun';
+import { keyChances } from './CatchUp';
+import { go } from '../../router';
+import type { StoredMatch } from '../../football/store/tables';
 
 const SECTION: Record<string, FbSection> = { '/football': 'tonight', '/football/club': 'club', '/football/league': 'league', '/football/story': 'story' };
 
@@ -28,8 +32,25 @@ function MatchRoute({ id, at, paused }: { id: string | null; at?: number; paused
   return <MatchPlayer key={`${m.id}:${at ?? ''}`} m={m} save={save} at={at} paused={paused} onEnd={() => { setEnded(true); window.scrollTo(0, 0); }} />;
 }
 
+/** The catch-up reel: every unwatched auto-played match, key chances only, one after another. */
+function ReelRoute() {
+  const save = useSave();
+  const [list, setList] = useState<StoredMatch[] | null>(null);
+  const [i, setI] = useState(0);
+  const found = useLiveQuery(() => db.fbMatches.orderBy('date').filter((m) => !!m.auto && !m.watched).toArray(), []);
+  if (list === null && found) setList(found);
+  if (save === undefined || list === null) return null;
+  const m = list[i];
+  if (!save || !m) return <FootballHome section="tonight"><p className="fb-s">Nothing to catch up on.</p></FootballHome>;
+  return <MatchPlayer key={m.id} m={keyChances(m)} save={save} onEnd={() => (i + 1 < list.length ? setI(i + 1) : go('/football', undefined, { replace: true }))} />;
+}
+
 export function Football() {
   const { path, params } = useRoute();
+  const save = useSave();
+  if (save === undefined) return null;
+  if (save === null) return <Aurora><main className="fb-page"><FirstRun /></main></Aurora>;
+  if (path === '/football/match' && params.get('reel') === '1') return <ReelRoute />;
   if (path === '/football/match') {
     // Dev only: ?at=<ms>&pause=1 freezes the replay at a moment, for checking each visual.
     const dev = import.meta.env.DEV;
