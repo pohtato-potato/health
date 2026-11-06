@@ -12,7 +12,13 @@ export function Art({ svg, className }: { svg: string; className?: string }) {
 }
 
 const nameOf = (id: string) => (id ? clubById(id).name : '');
-export const scoreLine = (m: StoredMatch) => `${nameOf(m.home)} ${m.score[0]}–${m.score[1]} ${nameOf(m.away)}${m.pens ? ` (${m.pens[0]}–${m.pens[1]} on penalties)` : ''}`;
+/** Stored scores are Brabo first; shown home first. */
+export const homeFirst = (m: StoredMatch): [number, number] => (m.home === OWN ? m.score : [m.score[1], m.score[0]]);
+const pensHomeFirst = (m: StoredMatch) => (m.pens ? (m.home === OWN ? m.pens : [m.pens[1], m.pens[0]]) : undefined);
+export const scoreLine = (m: StoredMatch) => {
+  const s = homeFirst(m), p = pensHomeFirst(m);
+  return `${nameOf(m.home)} ${s[0]}–${s[1]} ${nameOf(m.away)}${p ? ` (${p[0]}–${p[1]} on penalties)` : ''}`;
+};
 const RESULT = { W: 'Won', D: 'Drew', L: 'Lost' } as const;
 
 export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: string) => void }) {
@@ -27,7 +33,7 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
           <article key={m.id} className={`fb-card hot fb-result r-${m.result}`}>
             <div className="fb-duel">
               <Art svg={m.home === OWN ? crestSvg(own.step, own.opt, 52) : clubCrest(clubById(m.home), 52)} />
-              <b className="fb-score" aria-label={scoreLine(m)}>{m.score[0]}–{m.score[1]}</b>
+              <b className="fb-score" aria-label={scoreLine(m)}>{homeFirst(m)[0]}–{homeFirst(m)[1]}</b>
               <Art svg={m.away === OWN ? crestSvg(own.step, own.opt, 52) : clubCrest(clubById(m.away), 52)} />
             </div>
             <p className="fb-s fb-ctr">{scoreLine(m)}</p>

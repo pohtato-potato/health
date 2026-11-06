@@ -1,5 +1,9 @@
 // Football's routes. Each screen is filled in by its own task; the shell is shared.
-import { useTonight } from '../../football/store/hooks';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../../db/db';
+import { useSave, useTonight } from '../../football/store/hooks';
+import { go } from '../../router';
+import { MatchPlayer } from './Match';
 import { useRoute } from '../../router';
 import { FootballHome, type FbSection } from './FootballHome';
 import { TonightView } from './Tonight';
@@ -13,8 +17,22 @@ function TonightSection() {
   return <TonightView t={t} />;
 }
 
+function MatchRoute({ id, at, paused }: { id: string | null; at?: number; paused?: boolean }) {
+  const save = useSave();
+  const m = useLiveQuery(async () => (id ? db.fbMatches.get(id) : (await db.fbMatches.orderBy('date').last())) ?? null, [id]);
+  if (save === undefined || m === undefined) return null;
+  if (!save || !m) return <FootballHome section="tonight"><p className="fb-s">No match to show yet.</p></FootballHome>;
+  return <MatchPlayer key={`${m.id}:${at ?? ''}`} m={m} save={save} at={at} paused={paused} onEnd={() => go('/football', undefined, { replace: true })} />;
+}
+
 export function Football() {
-  const { path } = useRoute();
+  const { path, params } = useRoute();
+  if (path === '/football/match') {
+    // Dev only: ?at=<ms>&pause=1 freezes the replay at a moment, for checking each visual.
+    const dev = import.meta.env.DEV;
+    const at = dev && params.get('at') ? Number(params.get('at')) : undefined;
+    return <MatchRoute id={params.get('id')} at={at} paused={dev && params.get('pause') === '1'} />;
+  }
   const section = SECTION[path] ?? 'tonight';
   return <FootballHome section={section}>{section === 'tonight' ? <TonightSection /> : null}</FootballHome>;
 }
