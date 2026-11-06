@@ -1,6 +1,7 @@
 // Typed access to the generated league data, plus the private youth entries when present.
 import { NATIONS } from '../events';
 import league from './league.json';
+import { ABROAD } from './continental';
 import type { Axis, AxisValues, Tier } from '../types';
 
 export type When = string; // 'always' | 'home' | 'away' | 'first-15' | 'after-70' | 'home-first-20' | 'level' | 'cup' | …
@@ -25,7 +26,7 @@ export const TIER_BANDS = league.tierBands as unknown as Record<string, [number,
 const priv = import.meta.glob('/private/football-youth.json', { eager: true, import: 'default' }) as Record<string, YouthDef[]>;
 export const YOUTH_POOL: YouthDef[] = [...(league.youth as unknown as YouthDef[]), ...Object.values(priv).flat()];
 
-const byId = new Map(CLUBS.map((c) => [c.id, c]));
+const byId = new Map([...CLUBS, ...ABROAD].map((c) => [c.id, c]));
 const named = new Map<string, ClubDef>();
 /** Old-self clubs take their names from the save (built from the owner's past months), not the placeholder in league.json. */
 export function rememberClubs(clubs: { id: string; old?: { name: string; nickname: string } }[]) {

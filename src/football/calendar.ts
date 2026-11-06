@@ -1,8 +1,9 @@
 // The 42-day season (spec §9.2) and the league fixtures.
+import { contNight, type ContNight } from './continental';
 import { rng, shuffle } from './rng';
 
 export type DayKind = 'league' | 'bigcup' | 'tiercup' | 'finals1' | 'finals2' | 'event';
-export interface DayPlan { day: number; kind: DayKind; matchday?: number; round?: string; double?: boolean; window?: boolean; event?: string }
+export interface DayPlan { day: number; kind: DayKind; matchday?: number; round?: string; double?: boolean; window?: boolean; event?: string; cont?: ContNight }
 
 /** Big Cup rounds by day (two rounds on a double-header), and the tier cups. */
 export const BIGCUP_DAYS: Record<number, string[]> = { 5: ['Last 128', 'Last 64'], 16: ['Last 32', 'Last 16'], 28: ['Quarter-final'], 34: ['Semi-final'], 41: ['Final'] };
@@ -19,7 +20,7 @@ export function seasonDays(): DayPlan[] {
     else if (day === 42) out.push({ day, kind: 'finals2', round: 'Playoff final, tier-cup final and awards night' });
     else if (BIGCUP_DAYS[day]) out.push({ day, kind: 'bigcup', round: BIGCUP_DAYS[day].join(' and '), double: BIGCUP_DAYS[day].length > 1 || undefined, window });
     else if (TIERCUP_DAYS[day]) out.push({ day, kind: 'tiercup', round: TIERCUP_DAYS[day].join(' and '), double: TIERCUP_DAYS[day].length > 1 || undefined, window });
-    else out.push({ day, kind: 'league', matchday: ++md, window });
+    else out.push({ day, kind: 'league', matchday: ++md, window, ...(contNight(day) ? { cont: contNight(day) } : {}) });
   }
   return out;
 }

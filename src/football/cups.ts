@@ -67,7 +67,7 @@ export function advance(b: Bracket, roundIdx: number, results: Record<string, { 
   return out;
 }
 /** The rounds from the last 16 on, the part drawn as a bracket. */
-export const bracketFrom16 = (b: Bracket) => b.rounds.slice(b.rounds.findIndex((x) => x.name === 'Last 16'));
+export const bracketFrom16 = (b: Bracket) => b.rounds.slice(Math.max(0, b.rounds.findIndex((x) => x.name === 'Last 16')));
 /** A drawn tie goes to penalties; the stronger side is a little likelier to win them. */
 export function penalties(ra: number, rb: number, r: () => number): [number, number] {
   const a = 3 + Math.floor(r() * 3), b = 3 + Math.floor(r() * 3);

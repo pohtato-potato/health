@@ -7,7 +7,7 @@ import type { Tier } from '../../../football/types';
 import { go, useRoute } from '../../../router';
 import { TIER_CUP } from '../../../football/cups';
 import { Calendar } from './Calendar';
-import { Cup } from './Cups';
+import { ContinentalView, Cup } from './Cups';
 import { Events, eventRows } from './Events';
 import { BackPageCard, NewsView, useNews } from './News';
 import { Pyramid } from './Pyramid';
@@ -49,6 +49,7 @@ export function LeagueView({ l, view, tier, extra, n }: { l: League; view: Leagu
         <Calendar
           season={l.save.season}
           today={l.save.phase === 'season' ? l.save.day : 0}
+          cont={Boolean(l.season.continental?.field.includes(OWN))}
           matches={l.matches}
           events={eventRows(l.matches).map((r, i) => ({ day: i + 1, label: `${r.label}: ${r.text}`, result: r.result }))}
         />
@@ -56,6 +57,7 @@ export function LeagueView({ l, view, tier, extra, n }: { l: League; view: Leagu
       {view === 'cups' && (
         <>
           <Events event={l.save.phase === 'event' ? l.save.event : undefined} matches={l.matches} />
+          {l.season.continental && (l.season.continental.field.includes(OWN) || mine === 1) && <ContinentalView c={l.season.continental} tierOf={l.season.tierOf} />}
           <Cup b={l.season.bigcup} tierOf={l.season.tierOf} />
           {l.season.tiercups[TIER_CUP[mine].id] && <Cup b={l.season.tiercups[TIER_CUP[mine].id]} tierOf={l.season.tierOf} />}
         </>

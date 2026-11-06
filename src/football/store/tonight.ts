@@ -1,6 +1,7 @@
 // What Brabo plays next, read from the save and the season (no writes).
 import { addDays, type DayKey } from '../../domain/dates';
 import { seasonDays, SEASON_DAYS } from '../calendar';
+import { contNight } from '../continental';
 import { EVENTS } from '../events';
 import { physio, cards } from '../discipline';
 import type { Comp, Mod, Tier } from '../types';
@@ -19,6 +20,24 @@ export interface Fixture {
   away: string;
   opp: string;
   braboHome: boolean;
+}
+
+/** The continental match on a double-header night, when Brabo are in the field: "The Continental Cup, league phase 3 of 8, away at Benfica". */
+export function contTonight(save: FbSave, season: FbSeason, name: (id: string) => string): string | undefined {
+  if (save.phase !== 'season') return undefined;
+  const night = contNight(save.day), c = season.continental;
+  if (!night || !c?.field.includes(OWN)) return undefined;
+  let pair: [string, string] | undefined, label = '';
+  if (night.stage === 'phase') { pair = c.rounds[night.round - 1]?.find(([h, a]) => h === OWN || a === OWN); label = `league phase ${night.round} of 8`; }
+  else {
+    const r = c.ko?.rounds[night.stage === 'qf' ? 0 : night.stage === 'sf' ? 1 : 2];
+    const t = r?.ties.find((x) => (x.home === OWN || x.away === OWN) && x.away);
+    if (t) pair = [t.home, t.away!];
+    label = r?.name.toLowerCase() ?? '';
+  }
+  if (!pair) return undefined;
+  const opp = pair[0] === OWN ? pair[1] : pair[0];
+  return `Also tonight: The Continental Cup, ${label}, ${night.stage === 'final' ? 'v' : pair[0] === OWN ? 'home to' : 'away at'} ${name(opp)}.`;
 }
 
 export function fixtureFor(save: FbSave, season: FbSeason): Fixture | undefined {
