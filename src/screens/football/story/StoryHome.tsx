@@ -14,6 +14,7 @@ import { go, useRoute } from '../../../router';
 import { OldSelves } from './OldSelves';
 import { RivalsView } from './Rivals';
 import { RivalryView } from './Rivalry';
+import { SettingsView } from './Settings';
 
 export const STORY_VIEWS = [
   { id: 'rivals', label: 'Rivals' },
@@ -43,6 +44,7 @@ export function StoryView({ s, view, extra }: { s: Story; view: StoryViewId; ext
       {view === 'seasons' && <SeasonsView list={s.seasons.map((x) => summarise(x, s.all, s.seasons))} kitOf={(n) => kitName(s, n)} crestOf={(n) => crestName(s, n)} />}
       {view === 'moments' && <MomentsView upsets={upsets(s.all, s.seasons)} seasons={s.seasons.map((x) => summarise(x, s.all, s.seasons))} />}
       {view === 'olds' && <OldSelves clubs={[...s.l.clubs.values()]} tierOf={s.l.season.tierOf} retired={s.l.save.retired} />}
+      {view === 'settings' && <SettingsView s={s.l.save} />}
       {extra?.[view] ?? null}
     </>
   );

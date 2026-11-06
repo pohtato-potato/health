@@ -1,4 +1,5 @@
 // Typed access to the generated league data, plus the private youth entries when present.
+import { NATIONS } from '../events';
 import league from './league.json';
 import type { Axis, AxisValues, Tier } from '../types';
 
@@ -34,8 +35,19 @@ export function rememberClubs(clubs: { id: string; old?: { name: string; nicknam
     else named.delete(c.id);
   }
 }
+/** World Cup nations play as opponents under `nat:<id>`, so Brazil never collides with Brabo. */
+export const nationId = (id: string) => `nat:${id}`;
+function nationClub(id: string): ClubDef | undefined {
+  const n = id.startsWith('nat:') ? NATIONS.find((x) => x.id === id.slice(4)) : undefined;
+  if (!n) return undefined;
+  return {
+    id, name: n.name, short: n.name.slice(0, 3).toUpperCase(), nickname: n.name, city: '', country: n.id, founded: '', ground: 'A World Cup stadium',
+    colours: ['#f3eee6', '#141414'], crest: '', tier: 1, rating: n.strength, elite: false, style: 'possession', kind: 'quirky', lore: '',
+    sponsor: '', kitMaker: '', sponsorReal: false, kitReal: false, known: [], shrinks: {}, presses: {},
+  };
+}
 export function clubById(id: string): ClubDef {
-  const c = named.get(id) ?? byId.get(id);
+  const c = named.get(id) ?? byId.get(id) ?? nationClub(id);
   if (!c) throw new Error(`unknown club ${id}`);
   return c;
 }

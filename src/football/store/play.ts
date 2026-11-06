@@ -6,7 +6,7 @@ import { advance, penalties, type Bracket } from '../cups';
 import { clubById, rememberClubs } from '../data/load';
 import { cards, physio, redCardMod, rotationShape, usesRotation } from '../discipline';
 import { playMatch, type MatchCtx } from '../engine';
-import { EVENTS, nextEvent } from '../events';
+import { calledUp, EVENTS, NATIONS, nationBar, nextEvent, worldCupGroups } from '../events';
 import { rollOldSelves } from '../oldSelves';
 import { opponentFor } from '../opponent';
 import { simResult } from '../otherMatches';
@@ -14,7 +14,7 @@ import { applyMoves, playoffPairs, seasonEnd } from '../promotion';
 import { afterMatch, ANTIGOON, HOW_TEXT, rivalTwist, type Meeting } from '../rivals';
 import { hashSeed, rng, pick } from '../rng';
 import { contractDay, keptOn, PROMOTE_AT, intake, youthStatus, newContract } from '../contracts';
-import { YOUTH_POOL } from '../data/load';
+import { nationId, YOUTH_POOL } from '../data/load';
 import { crestStepFor } from '../kits';
 import { BUNDLES, bundleDay, capacityOf, dayCounts, groundAbilities, isOpen, TENANT_CAPACITY } from '../ground';
 import { dodgyCollapse, incomeFor, offers as offersFor, type Slot } from '../money';
@@ -228,9 +228,12 @@ function playEventDay(w: World, date: DayKey, auto: boolean) {
   const ev = w.save.event!;
   if (w.save.day === 1) w.squad.push(...youthIntake(w.save.season + 1, date, w.save.youthSlots ?? 0, doneBundles(w).includes('academy-2')));
   const plan: DayPlan = { day: w.save.day, kind: 'event', event: ev.id, round: `${EVENTS[ev.id].name}, day ${w.save.day} of ${ev.days}` };
-  const pool = [...w.clubs.values()].filter((c) => c.id !== OWN && !c.folded && (ev.id !== 'oldselves' || c.old));
-  const opp = pick(rng(hashSeed(date, 'event', ev.id)), pool.length ? pool : [...w.clubs.values()].filter((c) => c.id !== OWN)).id;
-  brabo(w, date, plan, ev.id === 'worldcup' ? 'friendly' : 'event', OWN, opp, auto, plan.round);
+  if (ev.id === 'worldcup') worldCupDay(w, date, plan, auto);
+  else {
+    const pool = [...w.clubs.values()].filter((c) => c.id !== OWN && !c.folded && (ev.id !== 'oldselves' || c.old));
+    const opp = pick(rng(hashSeed(date, 'event', ev.id)), pool.length ? pool : [...w.clubs.values()].filter((c) => c.id !== OWN)).id;
+    brabo(w, date, plan, 'event', OWN, opp, auto, plan.round);
+  }
   w.save.day++;
   if (w.save.day > ev.days) {
     const next = w.save.season + 1;
@@ -301,7 +304,7 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
   const score: [number, number] = home === OWN ? events.score : [events.score[1], events.score[0]];
   const mineScore = events.score;
   let pens: [number, number] | undefined;
-  if (mineScore[0] === mineScore[1] && comp !== 'league' && comp !== 'friendly' && comp !== 'event') pens = penalties(values.Routine * 5, opp.rating, rng(hashSeed(String(seed), 'pens')));
+  if (mineScore[0] === mineScore[1] && comp !== 'league' && comp !== 'friendly' && comp !== 'event' && !(comp === 'worldcup' && leg)) pens = penalties(values.Routine * 5, opp.rating, rng(hashSeed(String(seed), 'pens')));
   const m: StoredMatch = {
     id: `${date}:${leg ?? 1}`, date, season: w.save.season, day: plan.day, comp, round, home, away, opp: oppId, braboHome,
     values, flags, events, score: mineScore, pens, result: resultOf(mineScore, pens),
@@ -463,5 +466,22 @@ function tenancyAtSeasonEnd(w: World, date: DayKey, tables: Record<Tier, Row[]>)
     w.save.moveAtBreak = false;
     w.save.openings = [...(w.save.openings ?? []), 'moving-day'];
     w.news.push({ id: `${date}:farewell`, date, kind: 'club', text: 'Farewell, Stadion aan de Stroom. Moving day: next season starts at Kaai 42.' });
+  }
+}
+
+// ---- The World Cup (Task 5.3) ----
+/** Called up: play for your country on group day 1 (a double-header) and day 2. Otherwise you follow it as news. */
+function worldCupDay(w: World, date: DayKey, plan: DayPlan, auto: boolean) {
+  const country = w.save.wcCountry ? NATIONS.find((n) => n.id === w.save.wcCountry) : undefined;
+  const wc = worldCupGroups(NATIONS, rng(hashSeed('wc', String(w.save.season))), country?.id);
+  const day = wc.days[w.save.day - 1];
+  const avg = averageOf([...w.past, ...w.matches].filter((m) => !m.rotation && m.date > addDays(date, -28) && m.date < date).map((m) => m.values));
+  const avg28 = AXES.reduce((t, a) => t + avg[a], 0) / AXES.length;
+  const called = Boolean(country) && calledUp(avg28, country!.strength);
+  const mine = called && day ? day.matches.filter(([a, b]) => a === country!.id || b === country!.id) : [];
+  mine.slice(0, 2).forEach(([a, b], i) => brabo(w, date, { ...plan, round: `World Cup, ${day!.label}` }, 'worldcup', OWN, nationId(a === country!.id ? b : a), auto, `World Cup, ${day!.label}`, (i + 1) as 1 | 2, true));
+  if (!mine.length) {
+    const why = !country ? 'Pick a country in settings to be in with a shout.' : called ? '' : `${avg28.toFixed(1)} of the ${nationBar(country.strength).toFixed(1)} a call-up needs.`;
+    w.news.push({ id: `${date}:wc`, date, kind: 'world', text: `The World Cup, ${day?.label ?? 'day ' + w.save.day}. You follow it from the sofa.${why ? ' ' + why : ''}` });
   }
 }

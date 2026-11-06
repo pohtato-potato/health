@@ -66,7 +66,7 @@ export function viewAt(steps: Step[], chances: ChanceEvent[], i: number): View {
   return v;
 }
 
-function buzz(on: boolean, pattern: number | number[]) {
+export function buzz(on: boolean, pattern: number | number[]) {
   if (on && typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(pattern);
 }
 
