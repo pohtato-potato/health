@@ -9,7 +9,7 @@ import { Aurora, FootballHome, type FbSection } from './FootballHome';
 import { TonightView } from './Tonight';
 import { LeagueHome } from './league/LeagueHome';
 import { ClubPage } from './league/ClubPage';
-import { RivalRoute, StoryHome } from './story/StoryHome';
+import { RivalRoute, StoryHome, WrappedRoute } from './story/StoryHome';
 import { ClubHome, PlayerRoute } from './club/ClubHome';
 import { FullTime } from './FullTime';
 import { FirstRun } from './FirstRun';
@@ -62,6 +62,7 @@ export function Football() {
     return <MatchRoute id={params.get('id')} at={at} paused={dev && params.get('pause') === '1'} />;
   }
   if (path === '/football/club-page') return <FootballHome section="league"><ClubPage id={params.get('id') ?? ''} wiki={params.get('wiki') === '1'} /></FootballHome>;
+  if (path === '/football/wrapped') return <WrappedRoute season={Number(params.get('season') ?? 1)} />;
   if (path === '/football/rival') return <FootballHome section="story"><RivalRoute id={params.get('id') ?? ''} /></FootballHome>;
   if (path === '/football/player') return <FootballHome section="club"><PlayerRoute axis={params.get('axis') ?? ''} /></FootballHome>;
   const section = SECTION[path] ?? 'tonight';
