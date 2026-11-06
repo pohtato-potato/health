@@ -109,7 +109,7 @@ It still opens the log sheet. Tapping the Football tab while on Football returns
 - **Haptics:** goals, saves and conceded goals buzz when "Buzz on goals" is on.
 
 ### 3.4 Shelf, backup and export (board 13)
-- **Shelf:** Health's day card gains one optional field, `football`: `{ comp, opp, score, result }`. Logbook shows it as one line. The card stays `health.day v2`, because the field is optional (to check against Logbook's reader; see open question 3).
+- **Shelf:** nothing for now (owner, 6 Nov). The match line on Health's day card for Logbook comes later (section 13).
 - **Backup:** the full backup file carries every Football store.
 - **Export:** the spreadsheet export gets one Matches sheet: date, season, matchday, competition, opponent, home or away, score, result, and the six axis values.
 
@@ -422,7 +422,7 @@ Every night all 108 clubs play. Matches without Brabo are resolved from ratings,
 
 ### 8.4 Day statuses (board 13 notes)
 - **Travelling:** nothing changes; half the matches are away anyway.
-- **Sick, injured, a break or an occasion:** the rotated squad and youth play. The match counts for points, but plays from a rotation shape: your 28-day median on each axis, minus 2, instead of the day's data. The report says "Rotation XI". See open question 2.
+- **Sick, injured, a break or an occasion:** the rotated squad and youth play. The match counts for points, but plays from a rotation shape: your 28-day median on each axis, minus 2, instead of the day's data. The report says "Rotation XI".
 
 ### 8.5 Squad, contracts, youth and transfers
 These come from `league.md` (Contracts, Youth intake), with the targets moved to the board 13 mapping.
@@ -484,7 +484,7 @@ These come from the kit, crest and stadium design.
 - **The one-night patch** is a cream circle with the day, placed in the middle of the chest between the badges and the sponsor, for finals and derbies. It stays on that shirt on the kit wall.
 - **Other clubs' crests:**
   - Made-up clubs use the crest kit of parts: six outlines, a symbol from their name or town, and the club colour.
-  - Real clubs get simplified outlines of their real badges. This needs settling before shipping; see open question 1.
+  - Real clubs get simplified outlines of their real badges (owner, 6 Nov: kept, since the app is personal and non-commercial).
 - **Real clubs** wear their real colours, sponsors and kit makers as plain wordmarks, re-checked at build time.
 
 ### 8.9 The ground and the Kaai quarter
@@ -594,6 +594,7 @@ New IndexedDB stores, all inside the full backup:
 - Group chat and fanzine (the concepts were liked, the designs weren't).
 - Walk-out song and mascot (skipped in the kit chat).
 - Weather beyond the one roof effect.
+- The match line on Health's day card for Logbook (the shelf field).
 
 ## 14. Build order
 
@@ -619,7 +620,7 @@ Five parts, each shipping on its own, each with a plan, native execution, a brow
    - the first run
 3. **League:**
    - table, pyramid, calendar
-   - club pages with crests (kit of parts, and real outlines pending open question 1)
+   - club pages with crests (kit of parts for made-up clubs, real outlines for real clubs)
    - grounds, news and the back page, wiki
    - cups and the bracket
    - promotion, relegation and the playoffs, and the new-division page
@@ -640,7 +641,6 @@ Five parts, each shipping on its own, each with a plan, native execution, a brow
    - events and the World Cup
    - settings
    - the small lines on Train, Walk and You
-   - the shelf field
    - the Matches export sheet
 
 ## 15. Testing
@@ -683,9 +683,9 @@ Five parts, each shipping on its own, each with a plan, native execution, a brow
 | Quirks that read close-of-day time (Herring Fleet, Night Owls, Midnattssol) | Already rewritten in `league.md` to day totals or values you enter; the build uses `league.md` |
 | Board 1 "Football if it fits, otherwise Club" | "Football", which fits at 360 px in the centre slot |
 
-## 17. Open questions
+## 17. Decided after review (6 Nov)
 
-1. **Real club badges in a public repo.** Outlines of real badges are still badges, so it's a trademark question. A · Real clubs use the kit-of-parts crests in their real colours (safe; my pick). B · Real outlines anyway, since the app is non-commercial and personal. C · Real outlines only in a private build.
-2. **Occasion days.** Sick, injured and break days have the rotation squad play for points. An occasion (a wedding, a festival) could do the same, A, my pick, or be a friendly that doesn't count, B, with the league fixture moved to a double-header.
-3. **The shelf field.** A · Add the optional `football` field and keep `health.day v2`, if Logbook ignores unknown fields (my pick, to check in Part 1). B · Bump to v3.
-4. **Football home.** You pinned B (four top tabs) but left the letter question blank. I've written B. Say if you meant A.
+1. **Real club badges:** B. Real clubs get simplified outlines of their real badges, since the app is personal and non-commercial. The trademark risk is accepted.
+2. **Occasion days:** A. The rotated squad and youth play for points, as on sick, injured and break days.
+3. **The shelf field:** dropped for now, moved to section 13.
+4. **Football home:** B, four tabs along the top.
