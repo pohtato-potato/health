@@ -11,7 +11,7 @@ import { rollOldSelves } from '../oldSelves';
 import { opponentFor } from '../opponent';
 import { simResult } from '../otherMatches';
 import { applyMoves, playoffPairs, seasonEnd } from '../promotion';
-import { ANTIGOON, rivalTwist } from '../rivals';
+import { afterMatch, ANTIGOON, HOW_TEXT, rivalTwist, type Meeting } from '../rivals';
 import { hashSeed, rng, pick } from '../rng';
 import { contractDay, keptOn, PROMOTE_AT, intake, youthStatus, newContract } from '../contracts';
 import { YOUTH_POOL } from '../data/load';
@@ -313,6 +313,17 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
   for (const mo of momentsOf({ events, result: m.result, home: braboHome, derby, vsHigher: Boolean(ctx.vsHigher), finalWon, last4, auto })) {
     const ab = abilityFor(mo);
     if (ab && !w.save.earned.some((e) => e.id === ab.id)) w.save.earned = [...w.save.earned, { id: ab.id, date }];
+  }
+  const meeting = (x: StoredMatch): Meeting => ({ clubId: x.opp, result: x.result, comp: x.comp, final: /Final$|Playoff final/.test(x.round ?? ''), derby: x.derby, lastDay: x.comp === 'league' && plan.matchday === 34 && x.id === m.id, auto: x.auto });
+  if (comp !== 'friendly') {
+    const hist = [...w.past, ...w.matches].filter((x) => x.comp !== 'friendly' && x.date < date).map(meeting);
+    const r = afterMatch(w.save.rivals, hist, meeting(m), date, bestAxis(m.values));
+    if (r.rivals !== w.save.rivals) w.save.rivals = r.rivals;
+    if (r.born) {
+      w.save.rivalMoments = [...(w.save.rivalMoments ?? []), r.born.clubId];
+      w.news.push({ id: `${date}:rival:${r.born.clubId}`, date, kind: 'back', clubId: r.born.clubId, text: `A rival is born. ${clubById(r.born.clubId).name}: ${HOW_TEXT[r.born.how].toLowerCase()}` });
+    }
+    if (r.faded) w.news.push({ id: `${date}:fade:${r.faded}`, date, kind: 'club', clubId: r.faded, text: `Five wins in a row: the rivalry with ${clubById(r.faded).name} fades.` });
   }
   const window28 = (list: StoredMatch[]) => list.filter((x) => !x.rotation && x.date > addDays(date, -28) && x.date <= date).map((x) => x.values);
   const before = window28([...w.past, ...w.matches]);

@@ -71,6 +71,8 @@ export interface FbSave {
   /** Seasons in which the landlords locked us out once, and the rent rise. */
   lockedOut?: number[];
   rentRaised?: boolean;
+  /** Rivals born and not yet shown as a moment. */
+  rivalMoments?: string[];
 }
 export interface FbClub { id: string; tier: Tier; rating: number; style: string; old?: OldSelf; folded?: boolean }
 export interface FbSeason {

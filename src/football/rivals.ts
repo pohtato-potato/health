@@ -62,3 +62,21 @@ export function addRival(rivals: Rival[], r: Rival): Rival[] {
   if (rivals.filter((x) => x.clubId !== ANTIGOON).length >= MAX_EARNED) return rivals;
   return [...rivals, r];
 }
+
+/** After a match: a loss may start a rivalry (if there's room), five wins running fade one. */
+export function afterMatch(rivals: Rival[], history: Meeting[], m: Meeting, date: string, best?: Axis): { rivals: Rival[]; born?: Rival; faded?: string } {
+  const all = [...history, m];
+  const existing = rivals.find((r) => r.clubId === m.clubId);
+  if (existing && fades(all, m.clubId)) return { rivals: rivals.filter((r) => r.clubId !== m.clubId), faded: m.clubId };
+  if (existing || m.clubId === ANTIGOON) return { rivals };
+  const how = rivalBorn(history, m);
+  if (!how) return { rivals };
+  const r: Rival = { clubId: m.clubId, how, since: date, best };
+  const next = addRival(rivals, r);
+  return next === rivals ? { rivals } : { rivals: next, born: r };
+}
+/** The rivals shown: Antigoon first, always, then the earned ones (never more than three). */
+export function rivalList(rivals: Rival[]): Rival[] {
+  const ant = rivals.find((r) => r.clubId === ANTIGOON) ?? { clubId: ANTIGOON, how: 'legend' as const, since: '' };
+  return [ant, ...rivals.filter((r) => r.clubId !== ANTIGOON).slice(0, MAX_EARNED)];
+}

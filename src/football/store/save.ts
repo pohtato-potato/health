@@ -156,3 +156,6 @@ export const levelUpCrest = (opt: CrestOpt | 'keep') =>
 export const bookMove = (on: boolean) => editSave((s) => ({ ...s, moveAtBreak: on }));
 /** An opening night has been shown. */
 export const markOpened = (id: string) => editSave((s) => ({ ...s, openings: (s.openings ?? []).filter((x) => x !== id) }));
+
+/** A rival's birth moment has been shown. */
+export const markRivalSeen = (id: string) => editSave((s) => ({ ...s, rivalMoments: (s.rivalMoments ?? []).filter((x) => x !== id) }));
