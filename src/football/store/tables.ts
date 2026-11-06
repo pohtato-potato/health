@@ -30,6 +30,8 @@ export interface FbSave {
   earned: { id: string; date: DayKey }[];
   budget: number;
   buzz: boolean;
+  /** Monday of the week the armband was last picked (Harmony counts weeks, not taps). */
+  captainWeek?: DayKey;
   wcCountry?: string;
   ownSponsor?: { name: string; slot: string };
   crest: { step: 1 | 2 | 3 | 4 | 5; opt: CrestOpt };

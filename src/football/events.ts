@@ -1,5 +1,5 @@
 // Event nights between seasons (spec §9.3–9.4), and the World Cup.
-import { shuffle } from './rng';
+import { hashSeed, rng, shuffle } from './rng';
 
 export type EventId = 'worldcup' | 'nations' | 'clubworld' | 'tour' | 'supercup' | 'oldselves' | 'lostclubs' | 'fivenations' | 'derbyweek'
   | 'legends' | 'floodlit' | 'island' | 'night108' | 'testimonial' | 'centenary';
@@ -68,4 +68,55 @@ export function worldCupGroups(nations: NationDef[], r: () => number, own?: stri
       ...['Last 32', 'Last 16', 'Quarter-final', 'Semi-final', 'Final'].map((label, i) => ({ day: 3 + i, label, matches: [] as [string, string][] })),
     ],
   };
+}
+
+export type WcResult = 'W' | 'D' | 'L';
+export interface WorldCupRun {
+  /** Each group's nations, best first, once both group days are in. */
+  tables: string[][];
+  /** Knockout rounds played so far: day 3 is the last 32. */
+  rounds: { day: number; label: string; ties: [string, string][]; winners: string[] }[];
+  /** The ties for the next day still to play (empty after the final). */
+  next: [string, string][];
+  winner?: string;
+}
+const KO = ['Last 32', 'Last 16', 'Quarter-final', 'Semi-final', 'Final'];
+/**
+ * The whole tournament up to day `through`, deterministic from `seed`. `own(day, opp)` gives the result of a
+ * match the player actually played for `ownId` (stored, from their side); every other match is drawn by strength.
+ */
+export function worldCupRun(plan: WorldCupPlan, nations: NationDef[], seed: string, through: number, ownId?: string, own: (day: number, opp: string) => WcResult | undefined = () => undefined): WorldCupRun {
+  const str = new Map(nations.map((n) => [n.id, n.strength]));
+  const sim = (day: number, a: string, b: string, knockout: boolean): WcResult => {
+    if (a === ownId || b === ownId) {
+      const r = own(day, a === ownId ? b : a);
+      if (r) return a === ownId ? r : r === 'W' ? 'L' : r === 'L' ? 'W' : 'D';
+    }
+    const x = rng(hashSeed(seed, String(day), a, b))();
+    const pa = (str.get(a) ?? 60) ** 3 / ((str.get(a) ?? 60) ** 3 + (str.get(b) ?? 60) ** 3);
+    if (!knockout && x < 0.22) return 'D';
+    const y = knockout ? x : (x - 0.22) / 0.78;
+    return y < pa ? 'W' : 'L';
+  };
+  const out: WorldCupRun = { tables: [], rounds: [], next: [] };
+  if (through < 2) return out;
+  const pts = new Map<string, number>();
+  for (const d of plan.days.slice(0, 2)) for (const [a, b] of d.matches) {
+    const r = sim(d.day, a, b, false);
+    pts.set(a, (pts.get(a) ?? 0) + (r === 'W' ? 3 : r === 'D' ? 1 : 0));
+    pts.set(b, (pts.get(b) ?? 0) + (r === 'L' ? 3 : r === 'D' ? 1 : 0));
+  }
+  out.tables = plan.groups.map((g) => [...g].sort((a, b) => (pts.get(b) ?? 0) - (pts.get(a) ?? 0) || (str.get(b) ?? 0) - (str.get(a) ?? 0)));
+  // Last 32: each group winner meets the runner-up of the group across the draw.
+  let ties: [string, string][] = out.tables.map((t, g) => [t[0], out.tables[15 - g][1]]);
+  for (let i = 0; i < KO.length; i++) {
+    const day = 3 + i;
+    if (day > through) { out.next = ties; return out; }
+    const winners = ties.map(([a, b]) => (sim(day, a, b, true) === 'L' ? b : a));
+    out.rounds.push({ day, label: KO[i], ties, winners });
+    ties = [];
+    for (let k = 0; k + 1 < winners.length; k += 2) ties.push([winners[k], winners[k + 1]]);
+  }
+  out.winner = out.rounds[out.rounds.length - 1].winners[0];
+  return out;
 }

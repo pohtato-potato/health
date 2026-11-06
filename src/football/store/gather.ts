@@ -32,9 +32,17 @@ export async function loadHealth(): Promise<Health> {
     measures: measures.map((m) => ({ date: m.date, waist: m.waistStanding })),
   };
 }
+const firsts = new WeakMap<Map<DayKey, unknown>, DayKey>();
+function firstDay(h: Health): DayKey {
+  let f = firsts.get(h.days);
+  if (!f) { f = [...h.days.keys()].reduce((a, b) => (b < a ? b : a)); firsts.set(h.days, f); }
+  return f;
+}
 const medItems = (c: ChecklistItem[]) => c.filter((i) => i.active && i.med);
 /** All of the day's medicines ticked (true when there are none). */
 export function medsTaken(h: Health, date: DayKey): boolean {
+  // Days before the first logged day (before the app was installed) are unknown, never missed.
+  if (!h.days.size || date < firstDay(h)) return true;
   const day = h.days.get(date);
   return medItems(h.settings.checklist ?? []).every((i) => i.slots.every((_, k) => day?.ticks?.[`${i.id}:${k}`] != null));
 }

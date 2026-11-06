@@ -1,6 +1,6 @@
 // Founding the club, settings and choices.
 import { db } from '../../db/db';
-import { addDays } from '../../domain/dates';
+import { addDays, dayOfLogging, weekStart } from '../../domain/dates';
 import { pressHeadline } from '../news';
 import type { DayKey } from '../../domain/dates';
 import { CLUBS, rememberClubs } from '../data/load';
@@ -50,7 +50,6 @@ export async function setFbSetting<K extends 'buzz' | 'wcCountry' | 'ownSponsor'
     const s = await db.fbSave.get('save');
     if (!s) return;
     const next = { ...s, [k]: v };
-    if (k === 'captain' && v) next.captains = [...s.captains, v as Axis];
     await db.fbSave.put(next);
   });
 }
@@ -83,8 +82,14 @@ export async function markSeasonSeen(season: number) {
 }
 
 /** This week's captain. Picking the same one as last week restarts the Harmony count. */
-export async function setCaptain(axis: Axis) {
-  await setFbSetting('captain', axis);
+export async function setCaptain(axis: Axis, now = Date.now()) {
+  const week = weekStart(dayOfLogging(now));
+  await editSave((s) => {
+    if (s.captain === axis) return s;
+    // One captain per week: a second pick in the same week replaces that week's pick.
+    const same = s.captainWeek === week && s.captains.length > 0;
+    return { ...s, captain: axis, captainWeek: week, captains: [...(same ? s.captains.slice(0, -1) : s.captains), axis] };
+  });
 }
 /** Put an owned ability in slot 0–2. A fourth slot is refused. */
 export async function equipAbility(id: string, slot: number) {
@@ -132,9 +137,9 @@ export const sellHabit = (habit: HabitId) =>
       staff: fee.kind === 'staff' ? [...(s.staff ?? []), fee.role] : s.staff,
     };
   });
-/** Sign an offer: it fills its slot from this season. */
+/** Sign an offer: it fills its slot from the coming season when signed between seasons, else from this one. */
 export const acceptOffer = (o: Offer) =>
-  editSave((s) => ({ ...s, sponsors: [...(s.sponsors ?? []).filter((x) => x.slot !== o.slot || o.slot === 'partner'), { ...o, since: s.season }], offers: (s.offers ?? []).filter((x) => x.slot !== o.slot || (o.slot === 'partner' && x !== o && x.brand !== o.brand)) }));
+  editSave((s) => ({ ...s, sponsors: [...(s.sponsors ?? []).filter((x) => x.slot !== o.slot || o.slot === 'partner'), { ...o, since: s.phase === 'event' ? s.season + 1 : s.season }], offers: (s.offers ?? []).filter((x) => x.slot !== o.slot || (o.slot === 'partner' && x !== o && x.brand !== o.brand)) }));
 /** Your own sponsor, typed in, in any slot. */
 export const setOwnSponsor = (name: string, slot: Slot) =>
   editSave((s) => (name.trim() ? { ...s, ownSponsor: { name: name.trim().slice(0, 40), slot } } : { ...s, ownSponsor: undefined }));

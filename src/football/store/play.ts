@@ -6,7 +6,7 @@ import { advance, penalties, type Bracket } from '../cups';
 import { clubById, rememberClubs } from '../data/load';
 import { cards, physio, redCardMod, rotationShape, usesRotation } from '../discipline';
 import { playMatch, type MatchCtx } from '../engine';
-import { calledUp, EVENTS, NATIONS, nationBar, nextEvent, worldCupGroups } from '../events';
+import { calledUp, EVENTS, NATIONS, nationBar, nextEvent, worldCupGroups, worldCupRun } from '../events';
 import { rollOldSelves } from '../oldSelves';
 import { opponentFor } from '../opponent';
 import { simResult } from '../otherMatches';
@@ -43,6 +43,7 @@ export async function playDue(now = Date.now()): Promise<StoredMatch[]> {
   return playThrough(yesterday, null);
 }
 
+const USER_KEYS = ['buzz', 'wcCountry', 'ownSponsor', 'captain', 'captains', 'captainWeek', 'slots', 'sponsorStyle', 'awakeSeen', 'seenSeasonEnd'] as const satisfies readonly (keyof FbSave)[];
 async function playThrough(until: DayKey, closed: DayKey | null): Promise<StoredMatch[]> {
   const save = await db.fbSave.get('save');
   if (!save) return [];
@@ -64,6 +65,8 @@ async function playThrough(until: DayKey, closed: DayKey | null): Promise<Stored
   await db.transaction('rw', [db.fbSave, db.fbSeasons, db.fbClubs, db.fbMatches, db.fbNews, db.fbSquad, db.fbBundles], async () => {
     const cur = await db.fbSave.get('save');
     if (cur?.lastPlayed && cur.lastPlayed >= until) return; // another tab played first
+    // Settings the player changed while the days were playing win over the copy read at the start.
+    if (cur) for (const k of USER_KEYS) if (JSON.stringify(cur[k]) !== JSON.stringify(save[k])) (w.save as unknown as Record<string, unknown>)[k] = cur[k];
     await db.fbSave.put(w.save);
     await db.fbSeasons.bulkPut([...w.oldSeasons, w.season]);
     await db.fbClubs.bulkPut([...w.clubs.values()]);
@@ -125,7 +128,7 @@ function playDay(w: World, date: DayKey, auto: boolean) {
       set(b);
     }
     if (plan.kind === 'finals1') played += playoffSemis(w, date, plan, auto, played);
-    if (plan.kind === 'finals2') played += playoffFinals(w, date, plan, auto);
+    if (plan.kind === 'finals2') played += playoffFinals(w, date, plan, auto, played);
     if (!played) friendly(w, date, plan, auto);
   }
   save.day++;
@@ -153,14 +156,14 @@ function playoffSemis(w: World, date: DayKey, plan: DayPlan, auto: boolean, befo
   }
   return n;
 }
-function playoffFinals(w: World, date: DayKey, plan: DayPlan, auto: boolean): number {
+function playoffFinals(w: World, date: DayKey, plan: DayPlan, auto: boolean, before: number): number {
   let n = 0;
   for (const t of TIERS.filter((x) => x > 1)) {
     const po = w.season.playoffs[t];
     if (!po?.final) continue;
     const [h, a] = po.final;
     let score: [number, number], pens: [number, number] | undefined;
-    if (h === OWN || a === OWN) { const m = brabo(w, date, plan, 'playoff', h, a, auto, 'Playoff final', (++n) as 1 | 2, true); score = m.score; pens = m.pens; }
+    if (h === OWN || a === OWN) { const m = brabo(w, date, plan, 'playoff', h, a, auto, 'Playoff final', (before + ++n) as 1 | 2, true); score = m.score; pens = m.pens; }
     else { score = otherResult(w, h, a, `${date}:pof`, true); if (score[0] === score[1]) pens = penalties(rating(w, h), rating(w, a), rng(hashSeed(date, 'pofpens', h))); }
     po.winner = resultOf(score, pens) === 'L' ? a : h;
   }
@@ -262,7 +265,7 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
   const raw = rotation ? rotationShape(recent.map((m) => m.values)) : night.values;
   const values = { ...raw };
   const flags = rotation ? {} : { ...night.flags };
-  for (const c of w.save.contracts ?? []) { const a = habitById(c.habit).axis; values[a] = Math.min(20, Math.round(values[a] * c.weight)); }
+  for (const c of w.save.contracts ?? []) { const a = habitById(c.habit).axis; if (!flags[a]) values[a] = Math.min(20, Math.round(values[a] * c.weight)); }
   for (const hb of w.save.sold ?? []) { const a = habitById(hb).axis; values[a] = 10; flags[a] = 'no-data'; }
   const pre: Mod[] = [];
   const meds = Array.from({ length: 5 }, (_, i) => addDays(date, -(i + 1))).map((d) => ({ date: d, allTaken: medsTaken(w.h, d) }));
@@ -318,7 +321,8 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
     if (ab && !w.save.earned.some((e) => e.id === ab.id)) w.save.earned = [...w.save.earned, { id: ab.id, date }];
   }
   const meeting = (x: StoredMatch): Meeting => ({ clubId: x.opp, result: x.result, comp: x.comp, final: /Final$|Playoff final/.test(x.round ?? ''), derby: x.derby, lastDay: x.comp === 'league' && plan.matchday === 34 && x.id === m.id, auto: x.auto });
-  if (comp !== 'friendly') {
+  // Rivals are clubs you keep meeting: never friendlies, event nights or World Cup nations.
+  if (comp !== 'friendly' && comp !== 'event' && comp !== 'worldcup') {
     const hist = [...w.past, ...w.matches].filter((x) => x.comp !== 'friendly' && x.date < date).map(meeting);
     const r = afterMatch(w.save.rivals, hist, meeting(m), date, bestAxis(m.values));
     if (r.rivals !== w.save.rivals) w.save.rivals = r.rivals;
@@ -473,15 +477,34 @@ function tenancyAtSeasonEnd(w: World, date: DayKey, tables: Record<Tier, Row[]>)
 /** Called up: play for your country on group day 1 (a double-header) and day 2. Otherwise you follow it as news. */
 function worldCupDay(w: World, date: DayKey, plan: DayPlan, auto: boolean) {
   const country = w.save.wcCountry ? NATIONS.find((n) => n.id === w.save.wcCountry) : undefined;
+  const seed = `wc:${w.save.season}`;
   const wc = worldCupGroups(NATIONS, rng(hashSeed('wc', String(w.save.season))), country?.id);
-  const day = wc.days[w.save.day - 1];
-  const avg = averageOf([...w.past, ...w.matches].filter((m) => !m.rotation && m.date > addDays(date, -28) && m.date < date).map((m) => m.values));
+  const dayNo = w.save.day;
+  const day = wc.days[dayNo - 1];
+  const label = `World Cup, ${day?.label ?? `day ${dayNo}`}`;
+  const all = [...w.past, ...w.matches];
+  // The player's own World Cup results, from Brabo's stored matches (Brabo stands in for the nation).
+  const own = (d: number, opp: string) => all.find((m) => m.comp === 'worldcup' && m.season === w.save.season && m.opp === nationId(opp) && m.round === `World Cup, ${wc.days[d - 1].label}`)?.result;
+  const ties = dayNo <= 2 ? day?.matches ?? [] : worldCupRun(wc, NATIONS, seed, dayNo - 1, country?.id, own).next;
+  const avg = averageOf(all.filter((m) => !m.rotation && m.date > addDays(date, -28) && m.date < date).map((m) => m.values));
   const avg28 = AXES.reduce((t, a) => t + avg[a], 0) / AXES.length;
   const called = Boolean(country) && calledUp(avg28, country!.strength);
-  const mine = called && day ? day.matches.filter(([a, b]) => a === country!.id || b === country!.id) : [];
-  mine.slice(0, 2).forEach(([a, b], i) => brabo(w, date, { ...plan, round: `World Cup, ${day!.label}` }, 'worldcup', OWN, nationId(a === country!.id ? b : a), auto, `World Cup, ${day!.label}`, (i + 1) as 1 | 2, true));
-  if (!mine.length) {
-    const why = !country ? 'Pick a country in settings to be in with a shout.' : called ? '' : `${avg28.toFixed(1)} of the ${nationBar(country.strength).toFixed(1)} a call-up needs.`;
-    w.news.push({ id: `${date}:wc`, date, kind: 'world', text: `The World Cup, ${day?.label ?? 'day ' + w.save.day}. You follow it from the sofa.${why ? ' ' + why : ''}` });
+  const mine = country ? ties.filter(([a, b]) => a === country.id || b === country.id) : [];
+  if (called) mine.slice(0, 2).forEach(([a, b], i) => brabo(w, date, { ...plan, round: label }, 'worldcup', OWN, nationId(a === country!.id ? b : a), auto, label, dayNo === 1 ? ((i + 1) as 1 | 2) : undefined, true));
+  const name = (id: string) => NATIONS.find((n) => n.id === id)?.name ?? id;
+  const after = worldCupRun(wc, NATIONS, seed, dayNo, country?.id, own);
+  const lines: string[] = [];
+  if (!country) lines.push('You follow it from the sofa. Pick a country in settings to be in with a shout.');
+  else if (mine.length && !called) lines.push(`${name(country.id)} play without you: ${avg28.toFixed(1)} of the ${nationBar(country.strength).toFixed(1)} a call-up needs.`);
+  else if (!mine.length) {
+    // Not in today's ties: day 2 is the group's other match; from day 3 it means they are out.
+    lines.push(dayNo === 2 ? `${name(country.id)} rest today; their group finishes without them.` : `${name(country.id)} are out. You follow the rest from the sofa.`);
   }
+  if (dayNo === 2) {
+    const through = after.tables.some((t) => t.slice(0, 2).includes(country?.id ?? ''));
+    if (country) lines.push(through ? `${name(country.id)} are through to the last 32.` : `${name(country.id)} go out in the group.`);
+  }
+  if (after.winner) lines.push(`${name(after.winner)} win the World Cup.`);
+  const text = lines.filter(Boolean).join(' ');
+  if (text) w.news.push({ id: `${date}:wc`, date, kind: 'world', text: `The World Cup, ${day?.label ?? `day ${dayNo}`}. ${text}` });
 }
