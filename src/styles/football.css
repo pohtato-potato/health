@@ -357,3 +357,26 @@ button.fb-todaycard { cursor: pointer; }
 .fb-evrow { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 10px; align-items: center; min-height: 48px; border-top: 1px solid rgba(255,255,255,.14); }
 .fb-evrow:first-child { border-top: 0; }
 .fb-evlabel { font: 600 15px var(--sans); white-space: nowrap; } .fb-evtext { font-size: 15px; }
+
+/* ---- League: club page, wiki, news, grounds ---- */
+.fb-club, .fb-wiki { display: flex; flex-direction: column; gap: 12px; }
+.fb-clubhd { display: flex; gap: 14px; align-items: center; }
+.fb-clubhd .fb-t { margin: 0; color: var(--fb-ink); text-shadow: 0 0 14px var(--k); }
+.fb-swatches { display: flex; gap: 6px; } .fb-swatches i { width: 28px; height: 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,.5); }
+.fb-groundart svg, .fb-ground { width: 100%; height: auto; display: block; }
+.fb-ground .st { fill: none; stroke: var(--fb-ink); stroke-width: 3; stroke-linejoin: round; filter: drop-shadow(0 0 5px var(--k, #fff)) drop-shadow(0 0 2px var(--k, #fff)); }
+.fb-ground .rk { fill: none; stroke: rgba(255,255,255,.45); stroke-width: 2; }
+.fb-ground .ms { stroke: var(--fb-ink); stroke-width: 3; stroke-linecap: round; }
+.fb-ground .pt { stroke: rgba(255,255,255,.4); stroke-width: 2; }
+.fb-quirk b { color: var(--fb-ink); }
+.fb-h2h { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+.fb-h2h > div { display: flex; flex-direction: column; gap: 2px; }
+.fb-h2h b { font: 300 34px/1 var(--serif); font-variant-numeric: lining-nums tabular-nums; }
+.fb-h2h span { font-size: 14px; color: var(--fb-quiet); }
+.fb-meet { display: flex; align-items: center; gap: 10px; min-height: 44px; background: transparent; border: 0; color: var(--fb-ink); font: 400 15px var(--sans); text-align: left; padding: 0; cursor: pointer; }
+.fb-wikitext { margin: 0; font: 400 18px/1.45 var(--serif); }
+.fb-facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; font-size: 15px; }
+.fb-facts dt { color: var(--fb-quiet); } .fb-facts dd { margin: 0; }
+.fb-backpage { display: flex; flex-direction: column; gap: 6px; border: 2px solid var(--fb-cream); border-radius: 8px; padding: 12px; background: rgba(243,231,211,.07); }
+.fb-bphl { font: 700 26px/1.05 var(--fb-cond); color: var(--fb-cream); text-transform: uppercase; letter-spacing: .01em; }
+.fb-backpage .fb-btn { align-self: flex-start; }
