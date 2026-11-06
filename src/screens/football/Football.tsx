@@ -7,6 +7,7 @@ import { MatchPlayer } from './Match';
 import { useRoute } from '../../router';
 import { Aurora, FootballHome, type FbSection } from './FootballHome';
 import { TonightView } from './Tonight';
+import { LeagueHome } from './league/LeagueHome';
 import { FullTime } from './FullTime';
 import { FirstRun } from './FirstRun';
 import { keyChances } from './CatchUp';
@@ -58,5 +59,5 @@ export function Football() {
     return <MatchRoute id={params.get('id')} at={at} paused={dev && params.get('pause') === '1'} />;
   }
   const section = SECTION[path] ?? 'tonight';
-  return <FootballHome section={section}>{section === 'tonight' ? <TonightSection /> : null}</FootballHome>;
+  return <FootballHome section={section}>{section === 'tonight' ? <TonightSection /> : section === 'league' ? <LeagueHome /> : null}</FootballHome>;
 }
