@@ -104,7 +104,7 @@ function LiveScreens({ r, session, settings, plan }: LiveProps) {
           <Icon name="down" size={22} stroke={1.8} />
         </button>
         <span className="lv-title">
-          <span className="t13">{r.def?.name ?? `Session ${session.session}`}</span>
+          <span className="t14">{r.def?.name ?? `Session ${session.session}`}</span>
           <b className="num tn">{clock(r.now - session.startedAt)}</b>
         </span>
         <span className="row" style={{ gap: 6 }}>

@@ -18,10 +18,16 @@ export function useFitText<T extends HTMLElement>(max: number, min: number, dep:
     const box = el?.parentElement;
     if (!el || !box) return;
     const fit = () => {
-      el.style.fontSize = `${max}px`;
       const cs = getComputedStyle(box);
       const avail = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-      el.style.fontSize = `${fitFontSize({ max, min, avail, natural: el.scrollWidth })}px`;
+      // Text doesn't scale exactly with its size (glyph rounding, the unit's spacing): measure again until it fits.
+      let size = max;
+      for (let i = 0; i < 4; i++) {
+        el.style.fontSize = `${size}px`;
+        const next = fitFontSize({ max: size, min, avail, natural: el.scrollWidth });
+        if (next === size) break;
+        size = next;
+      }
     };
     fit();
     // Fonts arrive after the first paint: measure again once they're in.

@@ -11,6 +11,8 @@ import { useToast } from '../ui/Toasts';
 
 const per = (f: Pick<Food, 'unit' | 'per' | 'unitName'>) => (f.unit === 'g' || f.unit === 'ml' ? `per ${fmtInt(f.per)} ${f.unit}` : `per ${f.unitName ?? f.unit}`);
 const nums = (kcal: number, protein: number) => `${fmtInt(Math.round(kcal))} kcal · ${Math.round(protein * 10) / 10} g protein`;
+/** Sums over many entries: whole numbers, with thousands marked. */
+const sums = (kcal: number, protein: number) => `${fmtInt(Math.round(kcal))} kcal · ${fmtInt(Math.round(protein))} g protein`;
 
 /**
  * Food fixes from a file: each one offered once. Use it changes the saved food; past entries
@@ -61,9 +63,9 @@ export function FoodFixSheet({ fixes, from, onClose }: { fixes: FoodFix[]; from?
     return (
       <Sheet title={`Past ${asking.food.name} entries`} onClose={onClose}>
         <p className="t15 lh">
-          {list.length} past entr{list.length === 1 ? 'y was' : 'ies were'} logged at the old numbers: {nums(sum('kcal', true), sum('protein', true))} in all.
+          {list.length} past entr{list.length === 1 ? 'y was' : 'ies were'} logged at the old numbers: {sums(sum('kcal', true), sum('protein', true))} in all.
         </p>
-        <p className="t15 lh">At the new numbers: {nums(sum('kcal', false), sum('protein', false))}.</p>
+        <p className="t15 lh">At the new numbers: {sums(sum('kcal', false), sum('protein', false))}.</p>
         <p className="t14 q lh">Entries you gave their own numbers keep them. Nothing changes unless you say so.</p>
         <button type="button" className="btn lg block" disabled={busy} onClick={() => void past(asking.fix, asking.food, true)}>
           Fix past entries
@@ -82,7 +84,7 @@ export function FoodFixSheet({ fixes, from, onClose }: { fixes: FoodFix[]; from?
         const food = findFoodFor(fix, foods);
         const next = food && fixFood(food, fix);
         return (
-          <div key={fix.id} className="yu-card col gap8">
+          <div key={fix.id} className="card col gap8">
             <b className="t17">{food?.name ?? fix.food}</b>
             {food && next ? (
               <>

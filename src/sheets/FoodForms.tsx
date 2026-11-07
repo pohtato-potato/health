@@ -216,7 +216,7 @@ function FoodFormInner({ existing, initialName, homes, meal, categories }: { exi
           <div className="t14 q lh" role="status">
             {fromTotal ? (
               <>
-                Saved as <span className="apri">{fmtInt(fromTotal.kcal)} kcal</span> · <span className="lav">{fromTotal.protein} g protein</span> per 100 {unit}.
+                Saves as <span className="apri">{fmtInt(fromTotal.kcal)} kcal</span> · <span className="lav">{fromTotal.protein} g protein</span> per 100 {unit}.
               </>
             ) : (
               `Type the amount and its totals; the app works out per 100 ${unit}.`
