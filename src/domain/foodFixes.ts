@@ -66,6 +66,7 @@ export function fixFood(food: Food, fix: FoodFix): Food {
     ...nums,
     // A fix for a set serving ("per 300 g") makes that serving the usual amount.
     defaultAmount: byWeight && fix.per !== 100 ? fix.per : food.defaultAmount,
+    presets: byWeight && fix.per !== 100 ? [100, fix.per, fix.per * 2] : food.presets,
     ...(fix.weighed ? { weighed: fix.weighed } : {}),
     ...(fix.note !== undefined ? { note: fix.note || undefined } : {}),
   };

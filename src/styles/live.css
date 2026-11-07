@@ -37,7 +37,7 @@
 .lv .blob { position: absolute; width: 70vmax; height: 70vmax; opacity: 0.85; }
 /* The soft edge the old 60 px blur gave, drawn as a gradient reaching about 8vmax past the light. */
 .lv .blob::before { content: ''; position: absolute; inset: -8vmax; background: radial-gradient(closest-side, var(--lvx-a) 63%, color-mix(in srgb, var(--lvx-a) 50%, transparent) 81%, transparent 99%); }
-.lv .b4::before { background: radial-gradient(closest-side, var(--lvx-accent) 44%, color-mix(in srgb, var(--lvx-accent) 50%, transparent) 71%, transparent 99%); }
+.lv .blob.b4::before { background: radial-gradient(closest-side, var(--lvx-accent) 44%, color-mix(in srgb, var(--lvx-accent) 50%, transparent) 71%, transparent 99%); }
 .lv .b1 { left: -30vmax; top: -10vmax; animation: lv-drift1 9s ease-in-out infinite alternate; }
 .lv .b2 { right: -35vmax; top: 25vmax; animation: lv-drift2 11s ease-in-out infinite alternate; }
 .lv .b3 { left: -10vmax; bottom: -45vmax; animation: lv-drift3 13s ease-in-out infinite alternate; opacity: 0.6; }

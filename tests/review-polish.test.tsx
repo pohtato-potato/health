@@ -126,7 +126,7 @@ describe('6 · food fixes from the coach', () => {
   it('stores a per-serving fix per 100 g, as usual', () => {
     const fx = parseFoodFixes(fileJson) as Exclude<ReturnType<typeof parseFoodFixes>, string>;
     const s = fixFood(salad, fx[1]);
-    expect(s).toMatchObject({ unit: 'g', per: 100, kcal: 56.7, protein: 1.7, defaultAmount: 300 });
+    expect(s).toMatchObject({ unit: 'g', per: 100, kcal: 56.7, protein: 1.7, defaultAmount: 300, presets: [100, 300, 600] });
     expect(valuesFor(s, 300)).toEqual({ kcal: 170, protein: 5.1 });
     expect(fixFood(chicken, fx[0])).toMatchObject({ kcal: 120, protein: 22.5, weighed: 'raw', note: 'raw', defaultAmount: 125 });
   });
