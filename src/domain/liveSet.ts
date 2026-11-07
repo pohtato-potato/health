@@ -4,18 +4,24 @@ import type { LiveCounter, SetEntry } from './types';
 /** How long a press has to last to mark the burn. */
 export const HOLD_MS = 450;
 
-export type CounterAction = { t: 'tap'; at: number } | { t: 'hold'; at: number } | { t: 'undo' } | { t: 'cancel' };
+export type CounterAction = { t: 'start'; at: number } | { t: 'tap'; at: number } | { t: 'hold'; at: number } | { t: 'undo' } | { t: 'cancel' };
 
-/** Tap: one more rep. Hold: the burn starts here. −1: one fewer, and the burn never above the count. */
+/**
+ * Start: the set's clock runs from now, before any rep. Tap: one more rep (and the clock starts,
+ * if Start wasn't tapped). Hold: the burn starts here. −1: one fewer, and the burn never above
+ * the count. Taking back every rep keeps a set started with Start running from that tap.
+ */
 export function counter(c: LiveCounter, a: CounterAction): LiveCounter {
   switch (a.t) {
+    case 'start':
+      return c.startedAt !== undefined ? c : { ...c, startedAt: a.at, started: true };
     case 'tap':
       return { ...c, taps: [...c.taps, a.at], startedAt: c.startedAt ?? a.at };
     case 'hold':
       return { ...c, burnAt: c.taps.length };
     case 'undo': {
       const taps = c.taps.slice(0, -1);
-      if (!taps.length) return { key: c.key, taps };
+      if (!taps.length) return c.started ? { key: c.key, taps, startedAt: c.startedAt, started: true } : { key: c.key, taps };
       return { ...c, taps, burnAt: c.burnAt === undefined ? undefined : Math.min(c.burnAt, taps.length) };
     }
     case 'cancel':

@@ -93,13 +93,19 @@ export function SetScreen(p: Props) {
   const up = (e: PointerEvent<HTMLElement>) => step({ t: 'up', primary: e.isPrimary });
   const cancel = () => step({ t: 'cancel' });
 
+  const started = c.startedAt !== undefined;
   const hint = p.timed
-    ? c.startedAt === undefined
-      ? 'Tap anywhere to start the clock'
+    ? !started
+      ? 'Start set, or tap anywhere, to start the clock'
       : 'Set done stops the clock'
-    : c.burnAt === undefined
-      ? 'Tap anywhere for each rep · hold when the burn starts'
-      : `Burn from rep ${c.burnAt + 1} · ${Math.max(0, reps - c.burnAt)} past it`;
+    : !started
+      ? 'Tap Start set as you begin · then tap anywhere for each rep'
+      : c.burnAt === undefined
+        ? 'Tap anywhere for each rep · hold when the burn starts'
+        : `Burn from rep ${c.burnAt + 1} · ${Math.max(0, reps - c.burnAt)} past it`;
+  /** Start set: the clock runs from this tap, so the set's time is right even when reps are tapped at the end. */
+  const start = () => (p.timed ? onTap() : act({ t: 'start', at: Date.now() }));
+  const runFor = started && !p.timed ? seconds(c, p.now) : undefined;
   const R = 118;
   const C = 2 * Math.PI * R;
 
@@ -114,6 +120,11 @@ export function SetScreen(p: Props) {
             {row.drop ? ' · drop' : ''}
           </span>
           {p.kg !== null && <span className="lv-pill">{p.kg} kg</span>}
+          {runFor !== undefined && (
+            <span className="lv-pill tn" aria-label={`Set time ${mmss(runFor)}`}>
+              ⏱ {mmss(runFor)}
+            </span>
+          )}
           {perSide && (
             <span className={`lv-side${row.side === p.leadSide ? ' lead' : ''}`}>
               {row.side === 'L' ? 'LEFT' : 'RIGHT'}
@@ -137,16 +148,16 @@ export function SetScreen(p: Props) {
         role="button"
         aria-label={p.timed ? `Timed set, ${mmss(reps)} so far` : `Count a rep. ${reps} so far. Hold to mark the burn.`}
       >
-        {perSide && (
-          <span className="lv-bigside" aria-hidden="true">
-            {row.side}
-          </span>
-        )}
-        {p.kg !== null && (
-          <span className="lv-bigkg" aria-hidden="true">
-            {p.kg}
-            <small>kg</small>
-          </span>
+        {(perSide || p.kg !== null) && (
+          <div className="lv-ghosts" aria-hidden="true">
+            <span className="lv-bigside">{perSide ? row.side : ''}</span>
+            {p.kg !== null && (
+              <span className="lv-bigkg">
+                {p.kg}
+                <small>kg</small>
+              </span>
+            )}
+          </div>
         )}
         {ripples.map((r) => (
           <svg key={r.id} className={`lv-ripple ${r.cls}`} viewBox="-50 -50 100 100" style={{ left: r.x, top: r.y }} onAnimationEnd={() => setRipples((rs) => rs.filter((x) => x.id !== r.id))} aria-hidden="true">
@@ -194,9 +205,13 @@ export function SetScreen(p: Props) {
         <button type="button" className="lv-ghost" disabled={c.taps.length === 0 && c.burnAt === undefined} onClick={() => act({ t: 'undo' })}>
           {p.timed ? 'Reset' : '−1'}
         </button>
-        <Primary disabled={reps === 0} onClick={p.onDone}>
-          Set done · {p.timed ? mmss(reps) : reps}
-        </Primary>
+        {started ? (
+          <Primary disabled={reps === 0} onClick={p.onDone}>
+            Set done · {p.timed ? mmss(reps) : reps}
+          </Primary>
+        ) : (
+          <Primary onClick={start}>Start set</Primary>
+        )}
       </div>
       {/* Kept in place after the first rep, so the buttons above never move. */}
       <button type="button" className="lv-skip" onClick={p.onSkip} disabled={reps > 0} style={reps > 0 ? { visibility: 'hidden' } : undefined}>

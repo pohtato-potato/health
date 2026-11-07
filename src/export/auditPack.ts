@@ -1,4 +1,5 @@
 import type { AuditNote, EditRecord, Settings, UsageEvent } from '../domain/types';
+import { screenSummary } from '../domain/visits';
 import { workbookSheets, type ExportData } from './workbook';
 import { buildXlsx, zip } from './xlsx';
 
@@ -14,7 +15,8 @@ export function scrubSettings(s: Settings): Settings {
 const README = `Health audit pack
 
 health-workbook.xlsx  every log, one sheet each (start with its README sheet)
-usage.json            how the app was used, for spotting friction
+usage.json            how the app was used, for spotting friction (opens, logs, ticks, screens and sheets opened)
+screens.json          each screen and sheet with its visits and the last one, most visited first
 edits.json            every edit and delete, with before and after
 notes.json            notes left while using the app ("this looked wrong")
 settings.json         targets, places, plan and preferences, with secrets removed
@@ -29,6 +31,7 @@ export function auditFiles(d: ExportData, extra: { usage: Pick<UsageEvent, 'at' 
     { name: 'README.txt', data: enc(README) },
     { name: 'health-workbook.xlsx', data: buildXlsx(workbookSheets(safe)) },
     { name: 'usage.json', data: enc(extra.usage) },
+    { name: 'screens.json', data: enc(screenSummary(extra.usage).map((x) => ({ ...x, last: new Date(x.last).toISOString() }))) },
     { name: 'edits.json', data: enc(extra.edits) },
     { name: 'notes.json', data: enc(extra.notes) },
     { name: 'settings.json', data: enc(safe.settings) },

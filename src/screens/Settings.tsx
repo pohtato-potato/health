@@ -24,6 +24,8 @@ import { themeById } from '../domain/themes';
 import { askConfirm } from '../ui/Confirm';
 import { setupGaps } from '../domain/setupCheck';
 import { saveAuditPack } from '../export/saveAuditPack';
+import { parseFoodFixes, type FoodFix } from '../domain/foodFixes';
+import { FoodFixSheet } from '../sheets/FoodFixSheet';
 
 type Editor = null | 'targets' | 'item' | 'homes' | 'you' | 'theme' | 'review';
 
@@ -38,6 +40,8 @@ export function SettingsScreen() {
   const [item, setItem] = useState<ChecklistItem | null>(null);
   const [pending, setPending] = useState<{ kind: 'backup'; parsed: ParsedBackup } | null>(null);
   const backupInput = useRef<HTMLInputElement>(null);
+  const fixesInput = useRef<HTMLInputElement>(null);
+  const [foodFixes, setFoodFixes] = useState<{ fixes: FoodFix[]; from?: string } | null>(null);
   const checkInput = useRef<HTMLInputElement>(null);
   const [checked, setChecked] = useState<FileCheck>();
   const [savedLine, setSavedLine] = useState('');
@@ -58,6 +62,18 @@ export function SettingsScreen() {
   const p = settings.prefs;
   const setPref = (k: keyof Settings['prefs'], v: boolean) => patchSettings((s) => ({ prefs: { ...s.prefs, [k]: v } }));
 
+  const pickFixes = async (f: File | undefined) => {
+    if (!f) return;
+    let raw: unknown;
+    try {
+      raw = JSON.parse(await f.text());
+    } catch {
+      return toast({ text: 'That file doesn’t open as a food fix file.' });
+    }
+    const fixes = parseFoodFixes(raw);
+    if (typeof fixes === 'string') return toast({ text: fixes });
+    setFoodFixes({ fixes, from: typeof (raw as { from?: unknown }).from === 'string' ? (raw as { from: string }).from : undefined });
+  };
   const pickBackup = async (f: File | undefined) => {
     if (!f) return;
     try {
@@ -303,6 +319,8 @@ export function SettingsScreen() {
         </div>
         <div className="list">
           <LinkRow title="Data check-up" sub="Slips in your data, each with a fix" onClick={() => go('/checkup')} />
+          <LinkRow title="Food fixes from a file" sub="Corrections the coach sends: each offered once" onClick={() => fixesInput.current?.click()} />
+          <input ref={fixesInput} type="file" accept="application/json,.json" hidden onChange={(e) => (void pickFixes(e.target.files?.[0]), (e.target.value = ''))} />
           <LinkRow title="Edit history" sub="Every change by day, with undo" onClick={() => go('/history')} />
           <LinkRow title="Snapshots" sub="Seven daily copies, and one before any big change" onClick={() => go('/snapshots')} />
         </div>
@@ -475,6 +493,7 @@ export function SettingsScreen() {
           </button>
         </Sheet>
       )}
+      {foodFixes && <FoodFixSheet fixes={foodFixes.fixes} from={foodFixes.from} onClose={() => setFoodFixes(null)} />}
     </div>
   );
 }

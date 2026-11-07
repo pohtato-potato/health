@@ -231,6 +231,8 @@ export interface Settings {
   keptAsks?: { id: string; q: string; at: number }[];
   /** Check-up findings you said are right. */
   checkupOk?: string[];
+  /** Food fixes from a file, answered once each (used or skipped): their ids. */
+  foodFixesSeen?: string[];
   /** Up to six trophy ids chosen for the case; with none, the case chooses. */
   trophyPicks?: string[];
   /** Titles already offered, so a new one offers "Wear it" once. */
@@ -400,6 +402,8 @@ export interface FoodEntry {
   /** When it was eaten (at = when it was logged). */
   eatenAt?: number;
   proteinUnknown?: boolean;
+  /** The kcal and protein were typed for this entry alone: they no longer follow the food and amount. */
+  own?: boolean;
 }
 
 export type Side = 'L' | 'R' | 'both';
@@ -508,8 +512,10 @@ export interface LiveCounter {
   key: string;
   taps: number[];
   burnAt?: number;
-  /** The first tap. */
+  /** When the set began: the Start set tap, else the first rep. */
   startedAt?: number;
+  /** Started with Start set, not by a rep. */
+  started?: boolean;
 }
 
 export type Mark = '!!' | '!' | '=';

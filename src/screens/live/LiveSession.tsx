@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { checksFor } from '../../domain/checks';
 import { RINGS } from '../../domain/liveLook';
-import { burnNudge, justTags, restoreCounter, seconds, setState } from '../../domain/liveSet';
+import { burnNudge, counter, justTags, restoreCounter, seconds, setState } from '../../domain/liveSet';
 import { newLoad, recordBar, recordHolder, recordValue } from '../../domain/marks';
 import { bottomOfRange, measureOf, sidesFor, valueOfSet, type ExerciseDef, type PlanDef } from '../../domain/plan';
 import { addSetup, afterSave, lastLoad, loadBlocks, plateChange, plateChanges, setupOn, usualLength } from '../../domain/sessionEdges';
@@ -26,7 +26,7 @@ import { fetchRecent, songAt } from '../../sources/lastfm';
 import { mmss } from './Frame';
 import { GuideScreen } from './GuideScreen';
 import { PlatesScreen } from './PlatesScreen';
-import { LiveFrame, Primary } from './Frame';
+import { LiveFrame, LiveStage, Primary } from './Frame';
 import { RestLive } from './RestLive';
 import { SetScreen } from './SetScreen';
 
@@ -37,8 +37,19 @@ const span = ([lo, hi]: [number, number]) => (lo === hi ? `${lo}` : `${lo}–${h
 const aimOf = (ex: ExerciseDef) => (ex.seconds ? `${span(ex.seconds)} s` : ex.reps && !ex.open ? span(ex.reps) : undefined);
 const sideWord = (s: Row['side']) => (s === 'L' ? ' · left' : s === 'R' ? ' · right' : '');
 
+type LiveProps = { r: Runner; session: TrainingSession; settings: Settings; plan: PlanDef };
+
+/** The live session, on one aurora that stays put from screen to screen. */
+export function LiveSession(p: LiveProps) {
+  return (
+    <LiveStage>
+      <LiveScreens {...p} />
+    </LiveStage>
+  );
+}
+
 /** The session as full screens: count the set, check it, rest, and on to the next. */
-export function LiveSession({ r, session, settings, plan }: { r: Runner; session: TrainingSession; settings: Settings; plan: PlanDef }) {
+function LiveScreens({ r, session, settings, plan }: LiveProps) {
   const theme = useLiveTheme(settings);
   const sessions = useSessions();
   const row = r.current;
@@ -320,7 +331,15 @@ export function LiveSession({ r, session, settings, plan }: { r: Runner; session
         setup={setupOn(settings, row.ex, session.date)}
         onSetup={(text) => patchSettings((s) => ({ setups: addSetup(s.setups, row.ex.id, session.date, text) }))}
         checks={checksFor(row.ex)}
-        onGo={() => patchSession(session.id, { guided: [...(session.guided ?? []), row.ex.id] })}
+        onGo={() => {
+          void patchSession(session.id, { guided: [...(session.guided ?? []), row.ex.id] });
+          // "Start set 1" starts the set's clock too. Not for a timed set: its clock is the set itself.
+          if (measureOf(row.ex) !== 'seconds') {
+            const n = counter(c.key === row.key ? c : restoreCounter(null, row.key), { t: 'start', at: Date.now() });
+            setC(n);
+            r.saveCounter(n);
+          }
+        }}
         top={top}
       />
     );

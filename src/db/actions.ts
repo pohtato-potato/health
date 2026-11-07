@@ -1,5 +1,5 @@
 import { addDays, atOn, dayKey, type DayKey, logHour, logMinutes } from '../domain/dates';
-import { eatenAtFor, mealTimesFor } from '../domain/foods';
+import { eatenAtFor, mealTimesFor, portionFor, valuesFor } from '../domain/foods';
 import { offeredPlace, placeFor } from '../domain/places';
 import type { Swap } from '../domain/plan';
 import type {
@@ -241,6 +241,18 @@ export async function saveFood(f: Omit<Food, 'id' | 'createdAt'> & { id?: string
   const food: Food = { ...f, id: f.id ?? uid(), createdAt: f.createdAt ?? Date.now() };
   await db.foods.put(food);
   return food;
+}
+
+/** Past entries put at a fixed food's numbers: each change goes into Edit history, so each can be undone. */
+export async function refixEntries(food: Food, ids: string[]): Promise<number> {
+  let n = 0;
+  for (const id of ids) {
+    const e = await db.entries.get(id);
+    if (!e || e.foodId !== food.id || e.amount === undefined || e.own) continue;
+    await updateEntry(id, { ...valuesFor(food, e.amount), portion: portionFor(food, e.amount) });
+    n++;
+  }
+  return n;
 }
 
 export async function archiveFood(id: string, archived = true) {

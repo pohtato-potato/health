@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { addDays, daysBetween } from '../domain/dates';
 import { fmtDayMonth, lowerFirst, weekdayName } from '../domain/format';
 import { fmtKg } from '../domain/loads';
-import { findExercise, findSession, type PlanDef } from '../domain/plan';
+import { findExercise, findSession, planForKit, type PlanDef } from '../domain/plan';
 import { exerciseStatus } from '../domain/progression';
 import type { Day, SetEntry, Settings, SongRecord, TrainingSession } from '../domain/types';
 import { fetchSessionTracks } from '../sources/lastfm';
@@ -48,7 +48,7 @@ export function SessionDone() {
       </div>
     );
   }
-  return <LiveDone key={session.id} session={session} plan={withTrip(settings.plan)} days={days ?? []} sets={sets} withSkips={withSkips} sessions={sessions} settings={settings} />;
+  return <LiveDone key={session.id} session={session} plan={withTrip(planForKit(settings.plan, settings.equipment))} days={days ?? []} sets={sets} withSkips={withSkips} sessions={sessions} settings={settings} />;
 }
 
 export interface RecordLine {

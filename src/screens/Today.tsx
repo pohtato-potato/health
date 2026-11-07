@@ -259,7 +259,7 @@ export function Today() {
         closed={rings.closed}
         play={ringPlay}
         rings={
-          <div className="td-ringfig" onPointerDown={konami.onPointerDown} onPointerUp={konami.onPointerUp} onClickCapture={konami.onClickCapture} style={konami.style}>
+          <div className="td-ringfig" onPointerDown={konami.onPointerDown} onPointerUp={konami.onPointerUp} onPointerCancel={konami.onPointerCancel} onClickCapture={konami.onClickCapture} style={konami.style}>
             <LiveRings
               progress={[rings.kcal.progress, rings.protein.progress, rings.steps.progress]}
               label={themeDay ? `Rings for ${themeDay.name}: ${rings.closed} of 3 closed` : `Rings: ${rings.closed} of 3 closed`}

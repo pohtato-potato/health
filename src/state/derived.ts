@@ -99,7 +99,7 @@ export function nextUp(settings: Settings, sessions: TrainingSession[], sets: Se
   const lastDone = done[done.length - 1];
   const sessionId = nextInLoop(plan, done, settings.rotationStart);
   const swaps = pendingSwaps(plan, sessions, days).filter((s) => plan.flags.find((f) => f.id === s.flag.id)?.swap?.session === sessionId);
-  const exs = buildSession(plan, sessionId, { short, swaps });
+  const exs = buildSession(plan, sessionId, { short, swaps, equipment: settings.equipment });
   return {
     sessionId,
     lastDone,

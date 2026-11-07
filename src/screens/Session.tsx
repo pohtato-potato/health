@@ -12,6 +12,7 @@ import {
   buildSession,
   findExercise,
   isSuperset,
+  planForKit,
   measureOf,
   sidesFor,
   valueOfSet,
@@ -60,7 +61,7 @@ export function SessionScreen() {
       if (start) go('/session', undefined, { replace: true });
       return;
     }
-    const plan = settings.plan ? withTrip(settings.plan) : undefined;
+    const plan = settings.plan ? withTrip(planForKit(settings.plan, settings.equipment)) : undefined;
     if (!start || !plan) {
       go('/train', undefined, { replace: true });
       return;
@@ -90,7 +91,7 @@ export function SessionScreen() {
   }, [settings, active, sessions, sets, days, start, short]);
 
   if (!settings?.plan || !active || !sets || !withSkips) return <div className="page bare" />;
-  return <Runner session={active} settings={settings} plan={withTrip(settings.plan)} allSets={withSkips} />;
+  return <Runner session={active} settings={settings} plan={withTrip(planForKit(settings.plan, settings.equipment))} allSets={withSkips} />;
 }
 
 const valueOf = valueOfSet;
