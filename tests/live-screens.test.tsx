@@ -25,10 +25,15 @@ describe('the set screen', () => {
     expect(h).toContain('new record · best was 12');
     expect(h).toMatch(/class="lv [^"]*st-record/);
   });
-  it('offers a skip instead of Set done before the first rep', () => {
+  it('offers Start set and a skip before the set starts', () => {
     const h = html({ c: counted(0) });
-    expect(h).toMatch(/<button[^>]*disabled=""[^>]*>Set done · 0/);
+    expect(h).toContain('>Start set<');
+    expect(h).not.toContain('Set done');
     expect(h).toContain('Skip this set');
+  });
+  it('a started set with no rep yet has Set done waiting', () => {
+    const h = html({ c: { key: row.key, taps: [], startedAt: NOW - 1000, started: true } });
+    expect(h).toMatch(/<button[^>]*disabled=""[^>]*>Set done · 0/);
   });
   it('badges the lead side', () => {
     const left: Row = { ...row, ex: { ...ex, perSide: true, lead: 'L' }, side: 'L', key: 'curl:2:L' };

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { barcodeSupported, lookupBarcode, scanBarcode, type ScannedFood } from '../sources/barcode';
 import { fmtInt } from '../domain/format';
-import { mealForTime, portionFor, stepFor, unitLabel, valuesFor } from '../domain/foods';
+import { mealForTime, numbersPatch, per100FromTotal, portionFor, stepFor, unitLabel, valuesFor } from '../domain/foods';
 import { impossibleDensity, isWeighedMeat, lightDishWarning, portionWarning, QUICK_PROTEIN_KCAL, similarFood } from '../domain/foodChecks';
 import { MEAL_NAMES, MEALS, type Food, type FoodEntry, type FoodUnit, type Meal, type Settings } from '../domain/types';
 import { addEntry, archiveFood, deleteEntry, mergeFoods, patchSettings, saveFood, updateEntry } from '../db/actions';
@@ -46,24 +46,36 @@ function FoodFormInner({ existing, initialName, homes, meal, categories }: { exi
   const [cats, setCats] = useState<Set<string>>(() => new Set(categories.filter((c) => existing && c.foodIds.includes(existing.id)).map((c) => c.id)));
   const [newCat, setNewCat] = useState('');
   const [weighed, setWeighed] = useState<'raw' | 'cooked' | undefined>(existing?.weighed);
+  // "For this amount": the totals for what was eaten; the app divides them into per 100.
+  const [by, setBy] = useState<'label' | 'total'>('label');
+  const [amt, setAmt] = useState<number | undefined>();
+  const [totKcal, setTotKcal] = useState<number | undefined>();
+  const [totProtein, setTotProtein] = useState<number | undefined>();
 
-  const per = unit === 'g' || unit === 'ml' ? 100 : 1;
+  const byWeight = unit === 'g' || unit === 'ml';
+  const totals = byWeight && by === 'total';
+  const fromTotal = totals && totKcal !== undefined ? per100FromTotal(amt ?? 0, totKcal, totProtein ?? 0) : undefined;
+  const kcalV = totals ? fromTotal?.kcal : kcal;
+  const proteinV = totals ? fromTotal?.protein : protein;
+  const usualV = usual ?? (totals ? amt : undefined);
+  const per = byWeight ? 100 : 1;
   const perLabel = unit === 'g' ? 'per 100 g' : unit === 'ml' ? 'per 100 ml' : unit === 'piece' ? `per ${unitName || 'piece'}` : 'per serving';
   const allFoods = useFoods();
-  const draft = { name: name.trim(), unit, per, kcal: kcal ?? 0, protein: protein ?? 0, defaultAmount: usual ?? 0 };
-  const impossible = kcal !== undefined && impossibleDensity(draft);
-  const large = kcal !== undefined && (usual ?? 0) > 0 ? portionWarning(draft) : null;
+  const draft = { name: name.trim(), unit, per, kcal: kcalV ?? 0, protein: proteinV ?? 0, defaultAmount: usualV ?? 0 };
+  const impossible = kcalV !== undefined && impossibleDensity(draft);
+  const large = kcalV !== undefined && (usualV ?? 0) > 0 ? portionWarning(draft) : null;
   const twin = name.trim() ? similarFood(name, (allFoods ?? []).filter((f) => f.id !== existing?.id)) : null;
-  const light = kcal !== undefined && lightDishWarning(draft);
+  const light = kcalV !== undefined && lightDishWarning(draft);
   const meat = isWeighedMeat(draft);
-  const ok = name.trim() && kcal !== undefined && kcal >= 0 && (protein ?? 0) >= 0 && (usual ?? 0) > 0 && !impossible && (!meat || !!weighed);
+  const ok = name.trim() && kcalV !== undefined && kcalV >= 0 && (proteinV ?? 0) >= 0 && (usualV ?? 0) > 0 && !impossible && (!meat || !!weighed);
 
   /** Turns a large gram or piece portion into one serving of the same calories. */
   const makeOneServing = () => {
     if (!large) return;
-    const p = (protein ?? 0) * ((usual ?? 0) / per);
-    setServing(portionFor({ id: '', createdAt: 0, ...draft, unitName: unitName || 'piece' } as Food, usual!));
+    const p = (proteinV ?? 0) * ((usualV ?? 0) / per);
+    setServing(portionFor({ id: '', createdAt: 0, ...draft, unitName: unitName || 'piece' } as Food, usualV!));
     setUnit('serving');
+    setBy('label');
     setKcal(large.kcal);
     setProtein(Math.round(p * 10) / 10);
     setUsual(1);
@@ -76,14 +88,14 @@ function FoodFormInner({ existing, initialName, homes, meal, categories }: { exi
       name: name.trim(),
       unit,
       per,
-      kcal: kcal!,
-      protein: protein ?? 0,
-      defaultAmount: usual!,
+      kcal: kcalV!,
+      protein: proteinV ?? 0,
+      defaultAmount: usualV!,
       unitName: unit === 'piece' ? unitName.trim() || 'piece' : undefined,
       servingDesc: unit === 'serving' ? serving.trim() || undefined : undefined,
       note: note.trim() || undefined,
       home,
-      presets: unit === 'g' || unit === 'ml' ? Array.from(new Set([100, usual!, usual! * 2])).sort((a, b) => a - b).slice(0, 3) : existing?.presets,
+      presets: byWeight ? Array.from(new Set([100, usualV!, usualV! * 2])).sort((a, b) => a - b).slice(0, 3) : existing?.presets,
       sizes: sized ? existing?.sizes ?? DEFAULT_SIZES : undefined,
       weighed: meat ? weighed : undefined,
     });
@@ -161,20 +173,72 @@ function FoodFormInner({ existing, initialName, homes, meal, categories }: { exi
         </label>
       )}
 
-      <div className="grid2">
-        <label className="flabel">
-          <span className="lbl apri">Kcal {perLabel}</span>
-          <DecField value={kcal} onChange={setKcal} placeholder="0" />
-        </label>
-        <label className="flabel">
-          <span className="lbl lav">Protein g {perLabel}</span>
-          <DecField value={protein} onChange={setProtein} placeholder="0" />
-        </label>
-      </div>
+      {byWeight && (
+        <div className="flabel">
+          <span className="lbl">The numbers you have are</span>
+          <Seg
+            options={[
+              { id: 'label', label: `Per 100 ${unit}` },
+              { id: 'total', label: 'For an amount' },
+            ]}
+            value={by}
+            onChange={(v) => {
+              setBy(v);
+              // Carry what's typed across, so switching never loses it.
+              if (v === 'total' && amt === undefined && kcal !== undefined) {
+                setAmt(100);
+                setTotKcal(kcal);
+                setTotProtein(protein);
+              } else if (v === 'label' && fromTotal) {
+                setKcal(fromTotal.kcal);
+                setProtein(fromTotal.protein);
+              }
+            }}
+          />
+        </div>
+      )}
+      {totals ? (
+        <>
+          <label className="flabel">
+            <span className="lbl">Amount you ate ({unit})</span>
+            <DecField value={amt} onChange={setAmt} placeholder="e.g. 330" />
+          </label>
+          <div className="grid2">
+            <label className="flabel">
+              <span className="lbl apri">Total kcal</span>
+              <DecField value={totKcal} onChange={setTotKcal} placeholder="0" />
+            </label>
+            <label className="flabel">
+              <span className="lbl lav">Total protein g</span>
+              <DecField value={totProtein} onChange={setTotProtein} placeholder="0" />
+            </label>
+          </div>
+          <div className="t14 q lh" role="status">
+            {fromTotal ? (
+              <>
+                Saves as <span className="apri">{fmtInt(fromTotal.kcal)} kcal</span> · <span className="lav">{fromTotal.protein} g protein</span> per 100 {unit}.
+              </>
+            ) : (
+              `Type the amount and its totals; the app works out per 100 ${unit}.`
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="grid2">
+          <label className="flabel">
+            <span className="lbl apri">Kcal {perLabel}</span>
+            <DecField value={kcal} onChange={setKcal} placeholder="0" />
+          </label>
+          <label className="flabel">
+            <span className="lbl lav">Protein g {perLabel}</span>
+            <DecField value={protein} onChange={setProtein} placeholder="0" />
+          </label>
+        </div>
+      )}
 
       <label className="flabel">
         <span className="lbl">Your usual amount ({unit === 'g' ? 'g' : unit === 'ml' ? 'ml' : unit === 'piece' ? unitName || 'pieces' : 'servings'})</span>
-        <DecField value={usual} onChange={setUsual} placeholder={unit === 'g' || unit === 'ml' ? '100' : '1'} />
+        <DecField value={usual} onChange={setUsual} placeholder={totals && amt ? String(amt) : byWeight ? '100' : '1'} />
       </label>
 
       <label className="flabel">
@@ -212,12 +276,12 @@ function FoodFormInner({ existing, initialName, homes, meal, categories }: { exi
       )}
       {light && !impossible && (
         <div className="notice warn t14 lh" role="alert">
-          {fmtInt(((kcal ?? 0) / per) * 100)} kcal per 100 {unit} is a lot for {name.trim().toLowerCase()}: most are under 250. Check it's per 100 {unit}, not per bowl.
+          {fmtInt(((kcalV ?? 0) / per) * 100)} kcal per 100 {unit} is a lot for {name.trim().toLowerCase()}: most are under 250. Check it's per 100 {unit}, not per bowl.
         </div>
       )}
       {large && !impossible && (
         <div className="notice t14 lh" role="status">
-          {name.trim() || 'This'} at {portionFor({ id: '', createdAt: 0, ...draft, unitName: unitName || 'piece' } as Food, usual!)} is {fmtInt(large.kcal)} kcal. Is that right?
+          {name.trim() || 'This'} at {portionFor({ id: '', createdAt: 0, ...draft, unitName: unitName || 'piece' } as Food, usualV!)} is {fmtInt(large.kcal)} kcal. Is that right?
           {unit !== 'serving' && (
             <button type="button" className="chip sm" style={{ marginTop: 8 }} onClick={makeOneServing}>
               Make it 1 serving
@@ -267,8 +331,8 @@ function FoodFormInner({ existing, initialName, homes, meal, categories }: { exi
 
       {ok && (
         <div className="t13 q">
-          Usual portion: {portionFor({ id: '', createdAt: 0, name, unit, per, kcal: kcal!, protein: protein ?? 0, unitName: unitName || 'piece', servingDesc: serving || undefined, note: note || undefined, defaultAmount: usual! }, usual!)} ·{' '}
-          <span className="apri">{fmtInt(((kcal ?? 0) * usual!) / per)} kcal</span> · <span className="lav">{Math.round(((protein ?? 0) * usual!) / per)} g</span>
+          Usual portion: {portionFor({ id: '', createdAt: 0, name, unit, per, kcal: kcalV!, protein: proteinV ?? 0, unitName: unitName || 'piece', servingDesc: serving || undefined, note: note || undefined, defaultAmount: usualV! }, usualV!)} ·{' '}
+          <span className="apri">{fmtInt(((kcalV ?? 0) * usualV!) / per)} kcal</span> · <span className="lav">{Math.round(((proteinV ?? 0) * usualV!) / per)} g</span>
         </div>
       )}
 
@@ -362,14 +426,22 @@ function EntryInner({ entry, food }: { entry: FoodEntry; food?: Food }) {
   const [meal, setMeal] = useState<Meal>(entry.meal);
   const [amount, setAmount] = useState<number>(entry.amount ?? 1);
   const [kcal, setKcal] = useState<number | undefined>(entry.kcal);
-  const [protein, setProtein] = useState<number | undefined>(entry.protein);
+  const [protein, setProtein] = useState<number | undefined>(entry.proteinUnknown ? undefined : entry.protein);
   const scalable = !!food && entry.kind === 'food';
-  const v = scalable ? valuesFor(food!, amount) : { kcal: kcal ?? 0, protein: protein ?? 0 };
+  // Own numbers: this entry's kcal and protein typed by hand; the saved food stays as it is.
+  const [own, setOwn] = useState(scalable && !!entry.own);
+  const v = scalable && !own ? valuesFor(food!, amount) : { kcal: kcal ?? 0, protein: protein ?? 0 };
 
   const save = async () => {
     await updateEntry(entry.id, {
       meal,
-      ...(scalable ? { amount, portion: portionFor(food!, amount), kcal: v.kcal, protein: v.protein } : { kcal: Math.round(kcal ?? 0), protein: protein ?? 0 }),
+      ...(scalable ? { amount, portion: portionFor(food!, amount) } : {}),
+      ...(scalable && !own
+        ? { kcal: v.kcal, protein: v.protein, own: undefined }
+        : // A quick add keeps "not sure" until a protein is typed.
+          entry.proteinUnknown && protein === undefined
+          ? { kcal: Math.round(kcal ?? 0) }
+          : numbersPatch(kcal ?? 0, protein ?? 0, scalable)),
     });
     closeSheet();
   };
@@ -378,6 +450,18 @@ function EntryInner({ entry, food }: { entry: FoodEntry; food?: Food }) {
     closeSheet();
     if (gone) toast({ text: `${gone.name} removed`, action: { label: 'Undo', run: () => addEntry(gone) } });
   };
+  const numbers = (
+    <div className="grid2">
+      <label className="flabel">
+        <span className="lbl apri">Kcal</span>
+        <DecField value={kcal} onChange={setKcal} />
+      </label>
+      <label className="flabel">
+        <span className="lbl lav">Protein g</span>
+        <DecField value={protein} onChange={setProtein} placeholder={entry.proteinUnknown ? 'Not sure' : undefined} />
+      </label>
+    </div>
+  );
 
   return (
     <Sheet title={entry.name} sub={entry.kind === 'free' ? 'Free meal' : entry.kind === 'drink' ? 'Drink' : entry.portion}>
@@ -385,22 +469,36 @@ function EntryInner({ entry, food }: { entry: FoodEntry; food?: Food }) {
       {scalable ? (
         <>
           <Stepper value={amount} onChange={setAmount} step={stepFor(food!)} min={0} max={5000} decimals={food!.unit === 'serving' ? 1 : 0} unit={unitLabel(food!, amount)} size={30} label="Amount" />
-          <div className="row t15 tn" style={{ justifyContent: 'center', gap: 16 }}>
-            <span className="apri">{fmtInt(v.kcal)} kcal</span>
-            <span className="lav">{Math.round(v.protein)} g protein</span>
-          </div>
+          {own ? (
+            <>
+              {numbers}
+              <span className="t14 q lh">Only this entry changes. {food!.name} in your foods stays as it is.</span>
+              <button type="button" className="link" style={{ alignSelf: 'flex-start', minHeight: 44 }} onClick={() => setOwn(false)}>
+                Use {food!.name}’s numbers again
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="row t15 tn" style={{ justifyContent: 'center', gap: 16 }}>
+                <span className="apri">{fmtInt(v.kcal)} kcal</span>
+                <span className="lav">{Math.round(v.protein)} g protein</span>
+              </div>
+              <button
+                type="button"
+                className="btn ghost block"
+                onClick={() => {
+                  setKcal(v.kcal);
+                  setProtein(v.protein);
+                  setOwn(true);
+                }}
+              >
+                Change kcal or protein for this entry
+              </button>
+            </>
+          )}
         </>
       ) : (
-        <div className="grid2">
-          <label className="flabel">
-            <span className="lbl apri">Kcal</span>
-            <DecField value={kcal} onChange={setKcal} />
-          </label>
-          <label className="flabel">
-            <span className="lbl lav">Protein g</span>
-            <DecField value={protein} onChange={setProtein} />
-          </label>
-        </div>
+        numbers
       )}
       <button type="button" className="btn lg block" onClick={save}>
         Save

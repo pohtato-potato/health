@@ -1,13 +1,15 @@
 import { TrainProto } from './screens/proto/TrainLiving';
 import { SessionProto } from './screens/proto/SessionLiving';
-import { Suspense, lazy, useEffect, type ComponentType, type ReactNode } from 'react';
+import { Suspense, lazy, useEffect, useRef, type ComponentType, type ReactNode } from 'react';
 import { RegionRoot } from './ui/live/RegionFrame';
 import { findSession } from './domain/plan';
 import { fmtLitres } from './domain/format';
 import { addWater } from './db/actions';
 import { db } from './db/db';
 import { useActiveSession, useNow, useSettings, useToday } from './db/hooks';
-import { clearParam, go, useRoute } from './router';
+import { clearParam, go, useRoute, type Route } from './router';
+import { visitsFor } from './domain/visits';
+import { logUsage } from './db/usage';
 import { PlusButton, TabBar } from './ui/TabBar';
 import { useToast } from './ui/Toasts';
 import { ShelfPage } from './screens/walk/ShelfPage';
@@ -232,6 +234,7 @@ export function App() {
       <CelebrationWatcher />
       <AchievementWatcher />
       <OpenCounters />
+      <VisitLog />
       <PlanDefault />
       <MaintenanceWatcher />
       <ChallengeWatcher />
@@ -268,6 +271,17 @@ function PlanDefault() {
       equipment: s.equipment.plates.length || s.equipment.fixed.length ? s.equipment : DEFAULT_EQUIPMENT,
     }));
   }, [missing]);
+  return null;
+}
+
+/** Notes each screen and sheet opened, on the phone only, so the next audit shows what gets read. */
+function VisitLog() {
+  const route = useRoute();
+  const prev = useRef<Route>(undefined);
+  useEffect(() => {
+    for (const v of visitsFor(prev.current, route)) void logUsage(v.kind, v.detail);
+    prev.current = route;
+  }, [route]);
   return null;
 }
 

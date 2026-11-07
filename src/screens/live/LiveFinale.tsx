@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { pagesFor, trackArt, type FinaleData } from '../../domain/finale';
+import { useFitText } from '../../ui/fitText';
 import { LiveFrame, Primary } from './Frame';
 
 interface Props {
@@ -27,6 +28,16 @@ interface Props {
 const min = (ms: number) => Math.round(ms / 60_000);
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 const TINT = { flags: 'calm', records: 'records', music: 'music', time: 'time', form: 'form', recap: 'recap', best: 'best' } as const;
+
+/** Tonight's best in one line: as big as 120 px, smaller when the number and unit need it. */
+function BestNumber({ big, unit }: { big: string; unit: string }) {
+  const ref = useFitText<HTMLDivElement>(120, 40, `${big} ${unit}`);
+  return (
+    <div ref={ref} className="lv-bloom lv-bloom-fit num tn">
+      {big} <span className="unit">{unit}</span>
+    </div>
+  );
+}
 
 /** One ring of the recap, filling to `frac`. */
 function Arc({ r, frac, cls, delay = 0 }: { r: number; frac: number; cls: string; delay?: number }) {
@@ -255,10 +266,7 @@ export function LiveFinale(p: Props) {
             ))}
           </div>
           <div className="lv-kicker gold">Tonight's best</div>
-          <div className="lv-bloom num tn" style={{ fontSize: 120 }}>
-            {d.best.big}
-            <span className="unit">{d.best.bigLabel.toLowerCase()}</span>
-          </div>
+          <BestNumber big={d.best.big} unit={d.best.bigLabel.toLowerCase()} />
           <div className="lv-bloom-sub">{d.best.name}</div>
           <div className="lv-small" style={{ textAlign: 'center' }}>
             {d.best.detail}

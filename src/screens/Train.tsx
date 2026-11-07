@@ -139,7 +139,7 @@ export function Train() {
         up &&
         (() => {
           // As the session will build it, swaps in their slots.
-          const exs = buildSession(plan, up.sessionId, { swaps: up.swaps });
+          const exs = buildSession(plan, up.sessionId, { swaps: up.swaps, equipment: settings.equipment });
           const kgOf = (ex: { id: string }) => up.exercises.find((e) => e.id === ex.id)?.status.loadKg ?? null;
           const blocks = loadBlocks(exs, kgOf);
           return (

@@ -318,7 +318,7 @@ export interface Swap {
  * The exercises for a session after the short-on-time cut and any swaps.
  * A swap whose replacement is already in the session just drops the original.
  */
-export function buildSession(plan: PlanDef, sessionId: string, opts: { short?: boolean; swaps?: Swap[] } = {}): ExerciseDef[] {
+export function buildSession(plan: PlanDef, sessionId: string, opts: { short?: boolean; swaps?: Swap[]; equipment?: { band: boolean } } = {}): ExerciseDef[] {
   const def = findSession(plan, sessionId);
   if (!def) return [];
   let list = def.exercises.slice();
@@ -330,7 +330,14 @@ export function buildSession(plan: PlanDef, sessionId: string, opts: { short?: b
     if (!replacement || list.some((e) => e.id === swap.to)) list.splice(i, 1);
     else list[i] = { ...replacement, order: list[i].order };
   }
-  return list;
+  const eq = opts.equipment;
+  return eq ? list.map((e) => effectiveExercise(e, eq)) : list;
+}
+
+/** The plan as this kit will do it: with no band, every band move is swapped (see effectiveExercise). */
+export function planForKit(plan: PlanDef, eq: { band: boolean } | undefined): PlanDef {
+  if (!eq || eq.band || !plan.sessions.some((s) => s.exercises.some((e) => e.load === 'band'))) return plan;
+  return { ...plan, sessions: plan.sessions.map((s) => ({ ...s, exercises: s.exercises.map((e) => effectiveExercise(e, eq)) })) };
 }
 
 /** Checks an imported plan and returns what's wrong with it, if anything. */
@@ -375,9 +382,21 @@ export function upgradePlan(plan: PlanDef): PlanDef {
   };
 }
 
-/** The exercise as it will be done with this kit: a band move swaps to its no-band version. */
+/**
+ * The swap for a band move whose plan names none: a dumbbell rear-delt raise, chest down on a
+ * bench or bed. It trains what most band pulls do (the back of the shoulder) with no band.
+ */
+export const NO_BAND_DEFAULT: NonNullable<ExerciseDef['noBand']> = {
+  name: 'Dumbbell rear-delt raise',
+  load: 'pair',
+  cue: 'Chest down on a bench or bed, arms hanging; lift the dumbbells out to the sides, thumbs down, and pause at the top.',
+};
+
+/** The exercise as it will be done with this kit: with no band, a band move swaps to its no-band version. */
 export function effectiveExercise(ex: ExerciseDef, eq: { band: boolean }): ExerciseDef {
-  if (ex.load !== 'band' || eq.band || !ex.noBand) return ex;
-  const { noBand, bandLevels: _levels, ...rest } = ex;
-  return { ...rest, ...noBand, id: ex.id, order: ex.order };
+  if (ex.load !== 'band' || eq.band) return ex;
+  const { noBand, bandLevels: _levels, guide: _guide, checks: _checks, ...rest } = ex;
+  const swap = noBand ?? NO_BAND_DEFAULT;
+  // The band move's guide, cue, setup and form checks describe the band, so they go with it.
+  return { ...rest, guide: undefined, checks: undefined, cue: undefined, setup: undefined, ...swap, id: ex.id, order: ex.order };
 }

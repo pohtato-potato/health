@@ -8,6 +8,22 @@ export function valuesFor(food: Food, amount: number): { kcal: number; protein: 
   return { kcal: Math.round(food.kcal * f), protein: Math.round(food.protein * f * 10) / 10 };
 }
 
+const r1 = (n: number) => Math.round(n * 10) / 10;
+
+/** "For this amount": the totals eaten, turned into the per-100 numbers a food keeps. */
+export function per100FromTotal(amount: number, kcal: number, protein: number): { kcal: number; protein: number } | undefined {
+  if (!(amount > 0)) return undefined;
+  return { kcal: r1((kcal / amount) * 100), protein: r1((protein / amount) * 100) };
+}
+
+/**
+ * New numbers for one logged entry. `own`: typed by hand for this entry only, so the saved food
+ * stays as it is. A typed protein is a real number, so the entry is no longer "not sure".
+ */
+export function numbersPatch(kcal: number, protein: number, own: boolean): Pick<FoodEntry, 'kcal' | 'protein' | 'own' | 'proteinUnknown'> {
+  return { kcal: Math.round(kcal), protein: r1(protein), own: own || undefined, proteinUnknown: undefined };
+}
+
 const num = (n: number) => (Number.isInteger(n) ? fmtInt(n) : String(Math.round(n * 100) / 100));
 
 /** "125 g, cooked", "2 pieces", "2 roti, 1 katori dal", "1.5 × (1 scoop, 1 glass milk)". */

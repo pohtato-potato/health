@@ -78,7 +78,7 @@ describe('the finale pages', () => {
   it('tonight’s best last, in gold', () => {
     const h = at(6);
     expect(h).toMatch(/class="lv [^"]*st-record/);
-    expect(h).toContain('>19<');
+    expect(h).toContain('>19 <span');
     expect(h).toContain('Done');
   });
   it('steps through only the pages that show', () => {
@@ -95,7 +95,7 @@ describe('finale review fixes', () => {
   });
   it('shows no page dots before saving, so nothing jumps', () => expect(at(0)).not.toContain('lv-steps'));
   it('says what a flag will do before it is ticked', () => expect(at(0, full, { flagNotes: ['A knee tick swaps squats for bridges in your next Session B.'] })).toContain('A knee tick swaps squats'));
-  it('gives tonight’s best its unit', () => expect(at(6)).toMatch(/>19<span class="unit">reps<\/span>/));
+  it('gives tonight’s best its unit', () => expect(at(6)).toMatch(/>19 <span class="unit">reps<\/span>/));
   it('leaves out the in-range ring with no ranges', () => {
     const h = at(5, { ...full, rings: { exercises: [2, 2], inRange: [0, 0] } });
     expect(h).not.toContain('sets in range');

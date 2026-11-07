@@ -71,10 +71,7 @@ export function BodyCard({ rows, line, onOpen }: { rows: VolumeRow[]; line?: str
           {rows.map((r) => (
             <span key={r.name} className={`lv-tr-body-row ${r.state}`}>
               <span className="grow">{r.name}</span>
-              <b className="num tn">{r.sets}</b>
-              <span className="lv-small">
-                /{r.lo}–{r.hi}
-              </span>
+              <span className="lv-tr-nums tn"><b className="num tn">{r.sets}</b> /{r.lo}–{r.hi}</span>
               <span className="lv-tr-mark">{r.state === 'ok' ? '✓' : r.state}</span>
             </span>
           ))}

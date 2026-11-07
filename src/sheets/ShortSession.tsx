@@ -24,7 +24,8 @@ export function ShortSessionSheet() {
   const [picked, setPicked] = useState<Set<string> | null>(null);
   const plan = settings?.plan;
   const sessionId = params.get('session') ?? (settings && sessions && sets && days ? nextUp(settings, sessions, sets, days)?.sessionId : undefined) ?? plan?.rotation[0];
-  const exs = useMemo(() => (plan && sessionId ? buildSession(plan, sessionId) : []), [plan, sessionId]);
+  const band = settings?.equipment.band;
+  const exs = useMemo(() => (plan && sessionId ? buildSession(plan, sessionId, band === undefined ? {} : { equipment: { band } }) : []), [plan, sessionId, band]);
   if (!settings || !plan || !sets || !sessions || !days || !sessionId) return <Sheet title="Short session">{null}</Sheet>;
   const statuses = new Map(exs.map((e) => [e.id, exerciseStatus(e, settings.planState, settings.equipment, sets, plan.bigJump)]));
   const { picks } = time === 'full' ? { picks: exs.map((e) => ({ exId: e.id, reason: 'Full session' })) } : shortPlan(exs, time, statuses);
