@@ -30,7 +30,7 @@ export const COVER = 0.9;
 /** Tonight = 70% today, 30% squad (spec §8). */
 export const TODAY_SHARE = 0.7;
 
-export interface SquadMember { id: string; unit: Unit; name: string; rating: number }
+export interface SquadMember { id: string; unit: Unit; name: string; rating: number; /** Exercises: their exercise ids. */ refs?: string[] }
 
 /**
  * The starters of one unit: your team-sheet pick (layer 2) when it names players still in the squad, else the highest

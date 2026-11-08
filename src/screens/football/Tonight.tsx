@@ -13,6 +13,7 @@ import { LevelUpView } from './moments/LevelUp';
 import { AwakeningView } from './moments/Awakening';
 import { FullTime } from './FullTime';
 import { Radar } from './Radar';
+import { TacticPicker } from './players/Rotation';
 
 /** Our own SVG strings (crests, kits): built from data we ship, escaped where text goes in. */
 export function Art({ svg, className }: { svg: string; className?: string }) {
@@ -77,6 +78,7 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
       )}
       <Radar values={t.liveValues} flags={t.flags} captain={t.save.slots.includes('armband') ? t.save.captain : undefined} />
       <p className="fb-s fb-ctr">Your shape so far. It’s fixed when you close the day.</p>
+      {t.tactic && <TacticPicker date={t.date} pick={t.tactic.pick} by={t.tactic.by} />}
       {(t.known.length > 0 || t.hiddenNote) && (
         <section className="fb-card pu" aria-label="Their abilities">
           <span className="fb-lb">Their abilities</span>

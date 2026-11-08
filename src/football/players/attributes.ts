@@ -70,12 +70,17 @@ const fmtK = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1).replace(/\.0$/
 const kg = (n: number) => `${String(Math.round(n * 10) / 10)} kg`;
 const A = (id: string, label: string, value: number, weight: number, kind: Attribute['kind'], note: string): Attribute => ({ id, label, value, weight, kind, note });
 
+/** What a player carries from its limit breaks (layer 2): the day growth measures from, and shifted weights. */
+export interface RatingExt { base?: DayKey; weights?: Record<string, number> }
+
 /** The player's rating on `date`, or null when there is nothing in its window (it keeps its last overall). */
-export function ratingOf(c: Ctx, p: PlayerDef, date: DayKey): Rating | null {
+export function ratingOf(c: Ctx, p: PlayerDef, date: DayKey, ext: RatingExt = {}): Rating | null {
   const days = windowDays(c, p, date);
   const daysIn = daysBetween(p.signed, date) + 1;
   const r = (v: number) => ramp(v, daysIn, c.rampStart?.[p.id] ?? 50);
-  const attrs = attrsOf(c, p, date, days, r);
+  const base = ext.base && ext.base > p.signed ? ext.base : p.signed;
+  const found = attrsOf(c, p, date, days, r, base);
+  const attrs = found && ext.weights ? found.map((a) => (ext.weights![a.id] != null ? { ...a, weight: ext.weights![a.id] } : a)) : found;
   // A broken log (a night with no times, say) is no data, never a NaN on a card.
   if (!attrs || attrs.some((a) => !Number.isFinite(a.value))) return null;
   let overall = overallOf(attrs);
@@ -83,12 +88,12 @@ export function ratingOf(c: Ctx, p: PlayerDef, date: DayKey): Rating | null {
   return { overall, attrs };
 }
 
-function attrsOf(c: Ctx, p: PlayerDef, date: DayKey, days: DayKey[], r: (v: number) => number): Attribute[] | null {
+function attrsOf(c: Ctx, p: PlayerDef, date: DayKey, days: DayKey[], r: (v: number) => number, base: DayKey): Attribute[] | null {
   const h = c.h;
   const day = (d: DayKey): Day | undefined => h.days.get(d);
   const goal = (d: DayKey) => stepsGoal(targetsFor(h.settings, d), Boolean(day(d)?.eased) || placeFor(day(d), h.settings).eased);
   switch (p.kind) {
-    case 'exercise': return exerciseAttrs(c, p, date, days, r);
+    case 'exercise': return exerciseAttrs(c, p, date, days, r, base);
     case 'steps': {
       const real = days.filter((d) => day(d)?.steps != null && !day(d)?.stepsEstimated);
       if (!real.length) return null;
@@ -130,8 +135,10 @@ function attrsOf(c: Ctx, p: PlayerDef, date: DayKey, days: DayKey[], r: (v: numb
       if (!all.length) return null;
       const inWin = all.filter((w) => days.includes(w.date));
       const best = Math.max(...(inWin.length ? inWin : all.slice(-1)).map((w) => w.km));
+      // Measured from the first walk since the last limit break (or the very first).
+      const ref = all.find((w) => w.date >= base) ?? all[all.length - 1];
       return [
-        A('distance', 'Distance', growth(best / all[0].km), 0.5, 'growth', `longest ${best.toFixed(1)} km, first ${all[0].km.toFixed(1)} km`),
+        A('distance', 'Distance', growth(best / ref.km), 0.5, 'growth', `longest ${best.toFixed(1)} km, from ${ref.km.toFixed(1)} km`),
         A('frequency', 'Frequency', r(rate(share(inWin.length, 4))), 0.5, 'rate', `${inWin.length} walks of ${LONG_WALK_KM} km+ in 4 weeks (one a week is full marks)`),
       ];
     }
@@ -142,12 +149,12 @@ function attrsOf(c: Ctx, p: PlayerDef, date: DayKey, days: DayKey[], r: (v: numb
       if (!route.length) return null;
       const km = (ds: DayKey[]) => ds.reduce((t, d) => t + ((day(d)?.steps ?? 0) * stride) / 1000, 0);
       const firstWeek: DayKey[] = [];
-      for (let d = p.signed; d < addDays(p.signed, 7); d = addDays(d, 1)) if (onRoute(d)) firstWeek.push(d);
-      const base = km(firstWeek) || 1;
+      for (let d = base; d < addDays(base, 7); d = addDays(d, 1)) if (onRoute(d)) firstWeek.push(d);
+      const firstKm = km(firstWeek) || 1;
       const perWeek = km(route) / Math.max(1, route.length / 7);
       const kept = route.filter((d) => day(d)!.steps! >= goal(d)).length;
       return [
-        A('km', 'km a week', growth(perWeek / base), 0.5, 'growth', `${perWeek.toFixed(1)} km a week on the route`),
+        A('km', 'km a week', growth(perWeek / firstKm), 0.5, 'growth', `${perWeek.toFixed(1)} km a week on the route`),
         A('kept', 'Days walked', r(rate(share(kept, route.length))), 0.5, 'rate', `at the goal on ${kept} of ${route.length} route days`),
       ];
     }
@@ -207,9 +214,10 @@ function attrsOf(c: Ctx, p: PlayerDef, date: DayKey, days: DayKey[], r: (v: numb
       if (!all.length) return null;
       const inWin = all.filter((m) => days.includes(m.date)).length;
       const last = all[all.length - 1].waist!;
+      const ref = (all.find((m) => m.date >= base) ?? all[all.length - 1]).waist!;
       return [
         A('frequency', 'Frequency', r(rate(share(Math.min(2, inWin), 2))), 0.5, 'rate', `${inWin} measurements in 4 weeks`),
-        A('change', 'Change', growth(all[0].waist! / last), 0.5, 'growth', `${last.toFixed(1)} in, from ${all[0].waist!.toFixed(1)} in`),
+        A('change', 'Change', growth(ref / last), 0.5, 'growth', `${last.toFixed(1)} in, from ${ref.toFixed(1)} in`),
       ];
     }
     case 'trend': {
@@ -272,12 +280,18 @@ export const clock = (m: number) => { const x = ((m % 1440) + 1440) % 1440; retu
 
 /** Best estimated single lift (load × reps) of a session from loads held in two sessions; the first session counts as it is. */
 const e1rm = (s: SetEntry) => (s.loadKg ?? 0) * (1 + (s.reps ?? 0) / 30);
-function exerciseAttrs(c: Ctx, p: PlayerDef, date: DayKey, days: DayKey[], r: (v: number) => number): Attribute[] | null {
-  const all = (c.setsBy.get(p.ref!) ?? []).filter((s) => s.date <= date && !s.drop && !c.sick.has(s.date));
+function exerciseAttrs(c: Ctx, p: PlayerDef, date: DayKey, days: DayKey[], r: (v: number) => number, base: DayKey): Attribute[] | null {
+  const refs = p.refs ?? [p.ref!];
+  const every = refs.flatMap((id) => c.setsBy.get(id) ?? []).filter((s) => s.date <= date && !s.drop && !c.sick.has(s.date)).sort((a, b) => a.at - b.at);
+  // One kit at a time (calibration §12): Strength and Endurance read only the current kit's sets, from its first one.
+  // Home sets on the old kit still count for Consistency and Technique.
+  const kit = [...refs].reverse().find((id) => every.some((s) => s.exerciseId === id)) ?? refs[0];
+  const all = every.filter((s) => s.exerciseId === kit);
   const plan = c.h.settings.plan;
-  const def = plan ? allExercises(plan).find((e) => e.id === p.ref) : undefined;
+  const def = plan ? allExercises(plan).find((e) => e.id === kit) : undefined;
   const firstDay = all[0]?.date ?? p.signed;
-  const start = profileStart(profileStarts(all, def, c.sessions, plan?.planVersion), firstDay, date);
+  const layer1 = profileStart(profileStarts(all, def, c.sessions, plan?.planVersion), firstDay, date);
+  const start = base > layer1 && base <= date ? base : layer1;
   const sets = all.filter((s) => s.date >= start);
   const win = new Set(days);
   const sessionIds: string[] = [];
@@ -324,14 +338,14 @@ function exerciseAttrs(c: Ctx, p: PlayerDef, date: DayKey, days: DayKey[], r: (v
     out.push(A('strength', 'Strength', 50, 0.35, 'growth', 'not trained yet'), A('endurance', 'Endurance', 50, 0.25, 'growth', 'not trained yet'));
   }
   // Consistency: planned sessions it appeared in (a swap away still counts for it).
-  const planned = c.h.sessions.filter((s) => win.has(s.date) && s.exercises.includes(p.ref!));
+  const planned = c.h.sessions.filter((s) => win.has(s.date) && refs.some((id) => s.exercises.includes(id)));
   // In the plan but never trained and never in a session yet: no data, it keeps its starting 50.
   if (!sessionIds.length && !planned.length) return null;
-  const appeared = planned.filter((s) => all.some((x) => x.sessionId === s.id) || s.swapped?.some((w) => w.from === p.ref)).length;
-  const cons = r(rate(share(appeared, planned.length || (all.length ? 1 : 0))));
+  const appeared = planned.filter((s) => every.some((x) => x.sessionId === s.id) || s.swapped?.some((w) => refs.includes(w.from))).length;
+  const cons = r(rate(share(appeared, planned.length || (every.length ? 1 : 0))));
   const consNote = planned.length ? `in ${appeared} of ${planned.length} planned sessions` : 'no planned sessions in 4 weeks';
   // Technique: form checks marked ok, plus tempo kept; it falls back to Consistency with no checks.
-  const winSets = sets.filter((s) => win.has(s.date));
+  const winSets = every.filter((s) => win.has(s.date) && s.date >= layer1);
   const marks = winSets.flatMap((s) => Object.values(s.checks ?? {}));
   const tempoSets = def?.tempo ? winSets : [];
   const tempoShare = tempoSets.length ? share(tempoSets.filter((s) => s.tempo).length, tempoSets.length) : 0;

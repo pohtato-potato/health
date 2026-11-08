@@ -13,6 +13,7 @@ import { RivalRoute, StoryHome, WrappedRoute } from './story/StoryHome';
 import { ClubHome, PlayerRoute } from './club/ClubHome';
 import { FullTime } from './FullTime';
 import { CardMomentRoute, PlayerPage, UnitRoute } from './players/Screens';
+import { BlendRoute, LimitBreakRoute, TeamSheetRoute } from './players/Rotation';
 import { FirstRun } from './FirstRun';
 import { BoardPage, EraMoment, EurekaMoment, ProjectsPage, StaffPage, TechPage } from './tree/TreeScreens';
 import { BoonPage, BountiesPage, TrackPage } from './tree/SeasonScreens';
@@ -87,6 +88,9 @@ export function Football() {
   if (tree[path]) return <FootballHome section="club">{tree[path]()}</FootballHome>;
   if (path === '/football/track') return <FootballHome section="story"><TrackPage /></FootballHome>;
   if (path === '/football/bounties') return <FootballHome section="story"><BountiesPage /></FootballHome>;
+  if (path === '/football/limit') return <FootballHome section="club"><LimitBreakRoute id={params.get('id') ?? ''} /></FootballHome>;
+  if (path === '/football/sheet') return <FootballHome section="club"><TeamSheetRoute /></FootballHome>;
+  if (path === '/football/blend') return <FootballHome section="tonight"><BlendRoute /></FootballHome>;
   const section = SECTION[path] ?? 'tonight';
   return <FootballHome section={section}>{section === 'tonight' ? <TonightSection /> : section === 'league' ? <LeagueHome /> : section === 'story' ? <StoryHome /> : <ClubHome />}</FootballHome>;
 }

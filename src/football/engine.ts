@@ -158,7 +158,7 @@ function abilityFx(a: AbilityDef, side: Side, minute: number, type: string, home
 export const TREE_CAP = 3;
 const CUPS_COMP = new Set(['bigcup', 'tiercup', 'playoff', 'event', 'continental', 'clubworld']);
 const braboOk = (b: BraboAbility, side: Side, minute: number, type: string, home: boolean, live: Live, ctx: MatchCtx = {}) => {
-  if (b.side && b.side !== side) return false;
+  if (b.side && b.side !== 'both' && b.side !== side) return false;
   switch (b.when ?? 'always') {
     case 'always': return true;
     case 'long': return type === 'Long shot' || type === 'Long-range effort';

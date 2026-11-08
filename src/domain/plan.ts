@@ -95,6 +95,14 @@ export interface ExerciseDef {
   overFace?: boolean;
   /** v3: why the lead side goes first. */
   leadWhy?: string;
+  /** Coach tags (calibration §13.2): the movement pattern, e.g. "hinge". Football reads them; nothing else does yet. */
+  family?: string;
+  /** What it's done with: dumbbell, barbell, machine, cable, band, bodyweight, kettlebell. */
+  kit?: string;
+  /** The same movement on new kit: the id of the exercise it replaces. Football keeps the player and its history. */
+  replaces?: string;
+  /** A harder variation the coach counts as the next step of an earlier exercise (its id). Treated like `replaces`. */
+  progressionOf?: string;
 }
 
 export interface FormCheck {

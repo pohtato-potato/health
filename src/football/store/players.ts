@@ -8,8 +8,14 @@ import { ctxFor, ratingOf, type Ctx } from '../players/attributes';
 import { cardAfter, firstCard } from '../players/cards';
 import { playersOn } from '../players/catalogue';
 import { creditsFor } from '../players/credit';
-import { benchOf, blend, elevenOf, squadValues, type SquadMember } from '../players/eleven';
-import type { FbPlayer, LimitBreak, PlayerDef, Unit, XiPlace } from '../players/types';
+import { benchOf, blend, FORMATIONS, startersOf, squadValues, type Formation, type SquadMember } from '../players/eleven';
+import type { FbPlayer, LimitBreak, PlayerDef, Rating, Unit, XiPlace } from '../players/types';
+import { ageDay, agedOverall, AGES, formOf, freshnessOn, matchRating, trailAfter } from '../rotation/condition';
+import { breakToday, shiftWeights } from '../rotation/limitBreak';
+import { applyNudges, assistantTactic, captainsOf, CHEM_MAX, chemistryAfter, defaultPool, moraleAfter, nudgesFor, setPieceOf, type Chemistry, type Morale, type NightCtx, type Nudge, type Tactic, type TeamSheet } from '../rotation/night';
+import { agentsAt } from '../rotation/freeAgents';
+import { BASE_RULES, type RotationRules } from '../rotation/rules';
+import { captainChemistry, freshnessScale, pickTrait } from '../rotation/traits';
 import { PROMOTED_START, youthDay, type YouthLink } from '../players/youth';
 import type { Health } from './gather';
 import type { FbNews, FbSave, FbSquadRow, StoredMatch } from './tables';
@@ -33,24 +39,62 @@ function newRow(d: PlayerDef, overall: number, on: DayKey): FbPlayer {
   return { id: d.id, unit: d.unit, kind: d.kind, ref: d.ref, name: d.name, art: d.art, signed: d.signed, status: 'squad', overall, on, ...firstCard(overall, on), apps: 0, goals: 0, saves: 0, seasons: [], limitBreaks: [] };
 }
 
+/** What a limit break's new baseline needs added to keep the overall (the latest one with a carry). */
+export const carryOf = (p: Pick<FbPlayer, 'limitBreaks'> | undefined) => [...(p?.limitBreaks ?? [])].reverse().find((l) => l.carry != null)?.carry ?? 0;
+const growthSum = (r: Rating | null) => { const xs = r?.attrs.filter((a) => a.kind === 'growth') ?? []; return xs.length ? xs.reduce((t, a) => t + a.value, 0) : undefined; };
+const clampO = (v: number) => Math.max(1, Math.min(100, Math.round(v)));
+
 /**
  * One day for every player: sign new ones, work out today's ratings, move cards up (never down), and keep
- * Club legend status. `quiet` (the rebuild) records step-ups in the card's history without queueing their moments.
+ * Club legend status. Layer 2 adds freshness, form, ageing and limit breaks, and keeps free agents as they left.
+ * `quiet` (the rebuild) records step-ups and limit breaks in the history without queueing their moments.
  */
-export function playersDay(roster: Roster, h: Health, c: Ctx, date: DayKey, academy: Set<string>, quiet = false): Roster {
+export function playersDay(roster: Roster, h: Health, c: Ctx, date: DayKey, academy: Set<string>, quiet = false, rules: RotationRules = BASE_RULES): Roster {
   const next: Roster = new Map(roster);
+  const sickToday = c.sick.has(date);
   for (const d of playersOn(h, date)) {
     const old = next.get(d.id);
     const def = { ...d, signed: old?.signed ?? d.signed };
-    const r = ratingOf(c, def, date);
-    const overall = r?.overall ?? old?.overall ?? c.rampStart?.[d.id] ?? 50;
-    const base = old ?? newRow(def, overall, date);
+    // A free agent stays as it left; re-added, it waits for its clause to be paid.
+    if (old?.status === 'left' && (old.freeAgent || !d.active)) {
+      next.set(d.id, old.freeAgent ? { ...old, freeAgent: { ...old.freeAgent, readded: d.active || undefined } } : old);
+      continue;
+    }
+    const r = ratingOf(c, def, date, { base: old?.base, weights: old?.weights });
+    const computed = r ? clampO(r.overall + carryOf(old)) : old?.overall ?? c.rampStart?.[d.id] ?? 50;
+    const base = old ?? newRow(def, computed, date);
     const status: FbPlayer['status'] = academy.has(d.id) ? 'academy' : d.active ? 'squad' : 'left';
-    next.set(d.id, {
-      ...base, name: d.name, art: d.art, overall, on: date, status,
+    let row: FbPlayer = {
+      ...base, name: d.name, art: d.art, overall: computed, on: date, status,
       leftOn: status === 'left' ? base.leftOn ?? date : undefined,
-      ...(old ? cardAfter(base, overall, date, quiet) : {}),
-    });
+      ...(d.refs ? { refs: d.refs } : {}),
+    };
+    // Ageing (spec §3.3): exercises and walks, never a Club legend; the clock pauses on sick days.
+    if (old && AGES.includes(d.kind) && !row.clubLegend) {
+      const age = ageDay(row, r ? growthSum(r) : undefined, date, c.sick, row.base ?? row.signed);
+      row = { ...row, peakGrowth: age.peakGrowth, grewOn: age.grewOn, pastBest: age.pastBest, overall: agedOverall(computed, row.best, age.pastBest, date, c.sick) };
+    }
+    // Limit breaks (spec §5): the baseline resets, the overall is kept plus 3, weights may shift, a trait may come.
+    const found = old && r && status === 'squad' ? breakToday(c, def, row, date, rules) : null;
+    if (found && r) {
+      const switched = found.why === 'kit' || found.why === 'profile';
+      const before = switched ? Math.max(old!.overall, row.overall) : row.overall;
+      const { weights, moved } = shiftWeights(row.weights ?? Object.fromEntries(r.attrs.map((a) => [a.id, a.weight])), found.shift);
+      const r2 = ratingOf(c, def, date, { base: date, weights });
+      const after = Math.min(100, before + 3);
+      const trait = found.why === 'kit' ? pickTrait(row, date, 'gym') ?? pickTrait(row, date) : pickTrait(row, date);
+      const lb: LimitBreak = { on: date, tier: row.card.tier, why: found.why, from: before, to: after, carry: after - (r2 ?? r).overall, what: found.what, ...(trait ? { trait } : {}), ...(moved ? { shift: moved } : {}), ...(quiet ? { seen: true } : {}) };
+      row = { ...row, overall: after, base: date, weights, limitBreaks: [...row.limitBreaks, lb], pastBest: undefined, peakGrowth: growthSum(r2), grewOn: date };
+    }
+    // Freshness (spec §3.2): only exercises tire. Sick days are days off.
+    if (d.kind === 'exercise') {
+      const refs = d.refs ?? [d.ref!];
+      const trained = (x: DayKey) => !c.sick.has(x) && refs.some((id) => c.setsBy.get(id)?.some((s) => s.date === x && !s.drop));
+      row.fresh = freshnessOn(trained, date, rules, freshnessScale(row));
+    }
+    // Form: the four-week trend of the overall; it doesn't move on a sick day.
+    if (!sickToday) { row.trail = trailAfter(row.trail, date, row.overall); row.form = formOf(row.trail, date, row.signed); }
+    next.set(d.id, { ...row, ...(old ? cardAfter(row, row.overall, date, quiet) : {}) });
   }
   // Records: the holder of each unit's best-ever overall; held for 26 weeks, it makes a Club legend.
   for (const u of AXES) {
@@ -70,15 +114,55 @@ export function playersDay(roster: Roster, h: Health, c: Ctx, date: DayKey, acad
   return next;
 }
 
-export const membersOf = (roster: Roster): SquadMember[] => [...roster.values()].filter((p) => p.status === 'squad').map((p) => ({ id: p.id, unit: p.unit, name: p.name, rating: p.overall }));
+/** Squad players with tonight's match rating: overall × freshness + form (spec §3.2). */
+export const membersOf = (roster: Roster): SquadMember[] => [...roster.values()].filter((p) => p.status === 'squad').map((p) => ({ id: p.id, unit: p.unit, name: p.name, rating: matchRating(p), ...(p.kind === 'exercise' ? { refs: p.refs ?? [p.ref!] } : {}) }));
 
-/** Tonight's eleven and axis values. A sick day plays the rotation squad: the bench at 100% squad value. */
-export function squadNight(roster: Roster, today: AxisValues, sick: boolean): { xi: XiPlace[]; values: AxisValues; squad: Partial<AxisValues> } {
+/** The eleven from the team sheet: your picks where you made them, else the best match ratings (Power: from the latest session). */
+export function sheetEleven(members: SquadMember[], sheet: TeamSheet | undefined, latest?: string[]): XiPlace[] {
+  const formation: Formation = sheet?.formation ?? '4-3-3';
+  const pool = defaultPool(members, latest);
+  return AXES.flatMap((u) => {
+    const pick = sheet?.picks?.[u];
+    return startersOf(u, pick?.length ? members : pool, FORMATIONS[formation][u], pick);
+  });
+}
+
+export interface NightOpts { sheet?: TeamSheet; latest?: string[]; night?: Omit<NightCtx, 'rules' | 'formation'>; rules?: RotationRules }
+export interface Night { xi: XiPlace[]; values: AxisValues; squad: Partial<AxisValues>; base: AxisValues; nudges: Nudge[]; total: AxisValues }
+
+/**
+ * Tonight's eleven and axis values. Base = 70% today + 30% squad; the nudges (formation, tactic, chemistry, morale,
+ * a rival holding one of ours) add up to ±3 an axis. A sick day plays the rotation squad: the bench at 100% squad
+ * value, with no chemistry (its starters rest).
+ */
+export function squadNight(roster: Roster, today: AxisValues, sick: boolean, o: NightOpts = {}): Night {
   const members = membersOf(roster);
-  const starters = elevenOf(members);
-  const xi = sick ? benchOf(members, starters) : starters;
+  const starters = sheetEleven(members, o.sheet, o.latest);
+  const formation = o.sheet?.formation ?? '4-3-3';
+  const xi = sick ? benchOf(members, starters, formation) : starters;
   const squad = squadValues(xi);
-  return { xi, squad, values: blend(today, squad, sick ? 0 : undefined) };
+  const base = blend(today, squad, sick ? 0 : undefined);
+  const nudges = nudgesFor({ ...o.night, formation, chemistry: sick ? undefined : o.night?.chemistry, rules: o.rules ?? BASE_RULES });
+  const { values, total } = applyNudges(base, nudges);
+  return { xi, squad, base, values, nudges, total };
+}
+
+/** Tonight's team sheet, tactic, captains, chemistry, morale and the rival's free agents (spec §8, §9.1). */
+export function nightOptsFor(save: FbSave, roster: Roster, h: Health, date: DayKey, oppId: string | undefined, today: AxisValues) {
+  const own = save.tactics?.[date];
+  const tactic: { pick: Tactic; by: 'you' | 'assistant' } = own ? { pick: own, by: 'you' } : { pick: assistantTactic(today), by: 'assistant' };
+  const sheet = save.sheet;
+  const latest = latestSession(h, date);
+  // Captains need tonight's starters; a captain's own trait can lift its unit's chemistry.
+  const pre = squadNight(roster, today, false, { sheet, latest });
+  const inSquad = (id: string) => roster.get(id)?.status === 'squad';
+  const captains = captainsOf(pre.xi, sheet, (id) => roster.get(id)?.apps ?? 0, inSquad);
+  const bonus = captainChemistry(captains, roster);
+  const chemistry = Object.fromEntries(AXES.map((u) => [u, Math.min(CHEM_MAX, (save.chem?.[u]?.level ?? 0) + (bonus[u] ?? 0))])) as Partial<Record<Unit, number>>;
+  return {
+    tactic, captains, setPiece: setPieceOf(pre.xi, sheet, inSquad),
+    opts: { sheet, latest, rules: BASE_RULES, night: { tactic: tactic.pick, chemistry, morale: save.morale, captain: save.slots.includes('armband') ? save.captain : undefined, agents: oppId ? agentsAt(roster.values(), oppId) : {} } } as NightOpts,
+  };
 }
 
 /** Appearances, goals, saves and seasons from one match. */
@@ -96,6 +180,15 @@ export function creditMatch(roster: Roster, m: Pick<StoredMatch, 'xi' | 'credits
 }
 export const oppName = (m: StoredMatch, name: (id: string) => string) => { try { return name(m.opp); } catch { return 'them'; } };
 
+/** The exercises of the latest finished session on or before `date` (Power's default starters come from it). */
+export function latestSession(h: Health, date: DayKey): string[] | undefined {
+  let best: Health['sessions'][number] | undefined;
+  for (const s of h.sessions) if (s.date <= date && s.status === 'done' && (!best || s.date > best.date || (s.date === best.date && s.startedAt > best.startedAt))) best = s;
+  if (!best) return undefined;
+  const trained = new Set(h.sets.filter((x) => x.sessionId === best!.id).map((x) => x.exerciseId));
+  return trained.size ? [...trained] : best.exercises;
+}
+
 /** The youngster's arrival day, from its id (`s1:y0:2026-10-10`). */
 const arrivedOn = (y: FbSquadRow): DayKey | undefined => y.id.match(/(\d{4}-\d{2}-\d{2})$/)?.[1];
 
@@ -105,7 +198,7 @@ const arrivedOn = (y: FbSquadRow): DayKey | undefined => y.id.match(/(\d{4}-\d{2
  * when it can be tied to a real habit. League position, money, ground, kits, crest and history are left as they are.
  */
 export function rebuildPlayers(h: Health, save: FbSave, squad: FbSquadRow[], matches: StoredMatch[], until: DayKey, name: (id: string) => string): {
-  players: FbPlayer[]; matches: StoredMatch[]; squad: FbSquadRow[]; news: FbNews[];
+  players: FbPlayer[]; matches: StoredMatch[]; squad: FbSquadRow[]; news: FbNews[]; chem: Chemistry; morale: Morale;
 } {
   const news: FbNews[] = [];
   // Youngsters: the old engine tied them by name to a checklist habit; that tie is kept, the rest leave kindly.
@@ -128,16 +221,20 @@ export function rebuildPlayers(h: Health, save: FbSave, squad: FbSquadRow[], mat
   for (const m of matches) byDate.set(m.date, [...(byDate.get(m.date) ?? []), m]);
   const outMatches: StoredMatch[] = [];
   let roster: Roster = new Map();
+  let chem: Chemistry = {};
+  let morale: Morale = 0;
   for (let d = start; d <= until; d = addDays(d, 1)) {
     youth = youth.map((y) => { const a = arrivedOn(y); return a && d >= a ? youthDay(h, y, d, save.bedtime ?? undefined) : y; });
     const c = ctxFor(h, save.bedtime, rampStarts(youth));
     roster = playersDay(roster, h, c, d, academyIds(youth), true);
     for (const m of byDate.get(d) ?? []) {
       const sick = h.days.get(d)?.status === 'sick';
-      const { xi } = squadNight(roster, m.values, m.rotation && sick);
+      const { xi } = squadNight(roster, m.values, m.rotation && sick, { latest: latestSession(h, d) });
       const credited: StoredMatch = { ...m, xi, credits: creditsFor(m.events, xi, oppName(m, name)) };
       roster = creditMatch(roster, credited);
       outMatches.push(credited);
+      morale = moraleAfter(morale, m.result);
+      if (!sick && !m.rotation && !outMatches.some((x) => x !== credited && x.date === d)) chem = chemistryAfter(chem, xi, BASE_RULES);
     }
   }
   // An Awakened axis: its best player at the time takes it as its first limit break.
@@ -153,5 +250,5 @@ export function rebuildPlayers(h: Health, save: FbSave, squad: FbSquadRow[], mat
     const best = [...roster.values()].filter((p) => p.unit === a).sort((x, y) => y.best - x.best)[0];
     if (best && !best.limitBreaks.length) roster.set(best.id, { ...best, limitBreaks: [{ on: until, tier: best.card.tier, why: 'awakening', trait: AWAKE_TRAIT[a] }] });
   }
-  return { players: [...roster.values()], matches: outMatches, squad: youth, news };
+  return { players: [...roster.values()], matches: outMatches, squad: youth, news, chem, morale };
 }
