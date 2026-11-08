@@ -50,4 +50,14 @@ export type { DayKey };
 /** A rival's twist on a match (built in rivals.ts). */
 export interface RivalTwist { id: string; name: string; text: string; mods: (minute: number, side: Side, autoPlayed: boolean) => Mod[] }
 /** One of Brabo's equipped abilities, from the catalogue. */
-export interface BraboAbility { id: string; name: string; axis?: Axis; d?: number; when?: 'always' | 'long' | 'late' | 'home' | 'away' | 'first-half' | 'after-concede' | 'level' | 'own-type' | 'home-late' }
+export type BraboWhen =
+  | 'always' | 'long' | 'late' | 'home' | 'away' | 'first-half' | 'after-concede' | 'level' | 'own-type' | 'home-late'
+  // engine 2, layer 3 (the tree, boons and boosts)
+  | 'second-half' | 'behind' | 'ahead' | 'set-piece' | 'derby' | 'cup' | 'final' | 'continental' | 'continental-home'
+  | 'continental-away' | 'auto' | 'first-chance' | 'after-goal' | 'after-save' | 'vs-higher' | 'international';
+/**
+ * One of Brabo's equipped abilities, from the catalogue. Layer 3 adds the tree's situational bonuses as abilities too:
+ * `side` limits one to attack or defence, `tree` puts it under the ±3-per-axis cap (spec §1), and `retake` makes it a
+ * once-a-match retake of a missed chance of 30% or more in its situation.
+ */
+export interface BraboAbility { id: string; name: string; axis?: Axis; d?: number; when?: BraboWhen; side?: Side; tree?: boolean; retake?: boolean }

@@ -12,6 +12,7 @@ import type { Axis, AxisFlags, AxisValues, Comp, MatchEvents, Result, Tier } fro
 import type { Continental } from '../continental';
 import type { Credit, XiPlace } from '../players/types';
 import type { YouthLink } from '../players/youth';
+import type { TreeEngine, TreeUser } from '../tree/types';
 
 export type CrestOpt = 'a' | 'b' | 'c' | 'd' | 'e';
 export interface FbSave {
@@ -82,6 +83,10 @@ export interface FbSave {
   engine?: 2;
   /** Bedtime target, minutes after midnight (kept = asleep by it plus 45 minutes). Unset: your usual bedtime. */
   bedtime?: number;
+  /** Engine 2, layer 3: the tree as the days played it (research earned, habit counts, track, packs, board, wages). */
+  tree?: TreeEngine;
+  /** Engine 2, layer 3: the tree as you tapped it (techs, boons, bounties, packs opened, moments seen). */
+  treeUser?: TreeUser;
 }
 export interface FbClub { id: string; tier: Tier; rating: number; style: string; old?: OldSelf; folded?: boolean }
 export interface FbSeason {

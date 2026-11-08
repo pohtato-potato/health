@@ -33,6 +33,8 @@ import { creditsFor } from '../players/credit';
 import { linkedLogged, youthDay } from '../players/youth';
 import type { Ctx } from '../players/attributes';
 import { academyIds, creditMatch, playerCtx, playersDay, rebuildPlayers, squadNight, type Roster } from './players';
+import { healNow, stageCapacity, treeAbilities, treeDay, treeMatch, treeSeasonEnd, type TreeCtx } from './tree';
+import { LEAGUE } from '../data/load';
 
 export const CATCH_UP_CAP = 42;
 const resultOf = (s: [number, number], pens?: [number, number]): Result => (s[0] > s[1] || (pens && pens[0] > pens[1]) ? 'W' : s[0] < s[1] || (pens && pens[0] < pens[1]) ? 'L' : 'D');
@@ -49,7 +51,7 @@ export async function playDue(now = Date.now()): Promise<StoredMatch[]> {
   return playThrough(yesterday, null);
 }
 
-const USER_KEYS = ['buzz', 'wcCountry', 'ownSponsor', 'captain', 'captains', 'captainWeek', 'slots', 'sponsorStyle', 'awakeSeen', 'seenSeasonEnd'] as const satisfies readonly (keyof FbSave)[];
+const USER_KEYS = ['buzz', 'wcCountry', 'ownSponsor', 'captain', 'captains', 'captainWeek', 'slots', 'sponsorStyle', 'awakeSeen', 'seenSeasonEnd', 'treeUser'] as const satisfies readonly (keyof FbSave)[];
 /**
  * Engine 2 arrives: rebuilds the players from history once (spec §16), crediting the stored matches and keeping only
  * youngsters tied to a real habit. Everything else in the save stays. Safe to call any time; it runs once.
@@ -228,7 +230,8 @@ function endSeason(w: World, date: DayKey) {
   for (const c of moved) w.clubs.set(c.id, { ...c, tier: tierOf[c.id] ?? c.tier, style: turn.styles[c.id] ?? c.style });
   turn.headlines.forEach((x, i) => w.news.push({ id: `${date}:world:${i}`, date, kind: 'world', text: x.text, clubId: x.clubId }));
   refreshOldSelves(w, date);
-  seasonMoney(w, date, tables, moves.up);
+  const base = seasonMoney(w, date, tables, moves.up);
+  treeSeasonEnd(treeCtx(w), date, tables, Boolean(moves.up[w.season.tierOf[OWN]]?.includes(OWN)), base);
   tenancyAtSeasonEnd(w, date, tables);
   const nowTier = tierOf[OWN];
   if (moves.up[w.season.tierOf[OWN]]?.includes(OWN) && crestStepFor(nowTier) > w.save.crest.step) w.save.crestPending = crestStepFor(nowTier);
@@ -311,7 +314,7 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
   for (const hb of w.save.sold ?? []) { const a = habitById(hb).axis; values[a] = 10; flags[a] = 'no-data'; }
   const pre: Mod[] = [];
   const meds = Array.from({ length: 5 }, (_, i) => addDays(date, -(i + 1))).map((d) => ({ date: d, allTaken: medsTaken(w.h, d) }));
-  pre.push(...physio(meds, date, w.save.physioRoom).mods);
+  pre.push(...physio(meds, date, w.save.physioRoom, healNow(w.save, w.bundles)).mods);
   const nightOuts = [...w.h.days.values()].filter((d) => d.nightOut).map((d) => d.date);
   if (cards(nightOuts, date).red) pre.push(redCardMod(values.Rest));
   if (armbandHarmony(w.save.captains) && w.save.harmonyAt !== w.save.captains.length) {
@@ -330,6 +333,7 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
     comp, derby, auto, firstMeeting, matchday: plan.matchday,
     last5: (plan.matchday ?? 0) >= 30, vsHigher: (club?.tier ?? 6) > braboTier,
     familiarAxis: club?.old?.best, prevBest: lastMine ? bestAxis(lastMine.values) : undefined,
+    final: /(^|, )Final$|Playoff final/.test(round ?? ''),
   };
   const conds = conditions(w.h, date, night.input, auto);
   if ((plan.matchday ?? 0) % 7 === 0 && plan.matchday) conds.push('every-7th');
@@ -337,12 +341,13 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
   let braboHome = neutral ? home === OWN : oppId === 'zur' && !w.save.moved ? false : home === OWN;
   if (braboHome && lockedOutTonight(w, plan, date)) braboHome = false;
   const seed = hashSeed(date, home, away, comp, String(leg ?? 0));
+  const tree = treeAbilities(w, ctx, braboHome);
   const slots = new Set(w.save.slots);
   const events = playMatch({
     seed, values, opp, home: braboHome,
     captain: slots.has('armband') ? w.save.captain : undefined,
     stack: slots.has('stack') ? w.save.earned.filter((e) => e.date > addDays(date, -7)).length : 0,
-    abilities: [...braboAbilities(w.save.slots), ...awakenedTraits(w.save), ...groundAbilities(doneBundles(w))],
+    abilities: [...braboAbilities(w.save.slots), ...awakenedTraits(w.save), ...groundAbilities(doneBundles(w)), ...tree.abilities],
     bench: benchFor(w, date), pre, conds, ctx,
     rival: rival ? rivalTwist(oppId, rival.how, rival.best) : oppId === ANTIGOON ? rivalTwist(ANTIGOON, 'legend') : undefined,
   });
@@ -378,6 +383,7 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
   // Engine 2 has no new Awakenings: a player's limit breaks take their place (layer 2).
   w.matches.push(m);
   w.roster = creditMatch(w.roster, m);
+  treeMatch(w, m);
   const run = [...w.past, ...w.matches].filter((x) => !x.rotation);
   let streak = 0;
   for (let k = run.length - 1; k >= 0 && run[k].result === m.result; k--) streak++;
@@ -406,6 +412,7 @@ function clubDay(w: World, date: DayKey) {
     return next;
   });
   groundDay(w, date, input);
+  treeDay(treeCtx(w), date, w.squad.filter((y) => (y.status === 'growing' || y.status === 'promoted') && youthDone(w, y, date)).length);
   // Youngsters: sessions from the linked habit, growth from kept bedtimes; both full, they join the squad.
   w.squad = w.squad.map((y) => {
     const next = youthDay(w.h, y, date, w.save.bedtime);
@@ -436,7 +443,8 @@ function seasonMoney(w: World, date: DayKey, tables: Record<Tier, Row[]>, up: Pa
   const sponsorMoney = w.save.sponsors.reduce((t, s) => t + s.perSeason, 0);
   const done = doneBundles(w);
   const shop = (done.includes('shop-2') ? 0.1 : 0) + (done.includes('shop-3') ? 0.1 : 0);
-  const total = incomeFor(tier, pos, promoted, sponsorMoney, (w.save.moved ? capacityOf(true, done) / TENANT_CAPACITY : 1) * (1 + shop));
+  const capShare = w.save.moved ? (capacityOf(true, done) + stageCapacity(done)) / TENANT_CAPACITY : 1;
+  const total = incomeFor(tier, pos, promoted, sponsorMoney, capShare * (1 + shop));
   const prizeMoney = Math.round((total - sponsorMoney) * 1000) / 1000;
   const reach = reachOf(w.season.continental, OWN);
   const cont = reach ? contPrize(reach) : 0;
@@ -447,7 +455,11 @@ function seasonMoney(w: World, date: DayKey, tables: Record<Tier, Row[]>, up: Pa
   const partners = w.save.sponsors.filter((s) => s.slot === 'partner').length;
   w.save.offers = OPEN.filter((o) => (o.from === undefined || nextTier <= o.from) && (o.slot === 'partner' ? partners < 3 : !taken.has(o.slot)))
     .flatMap((o) => offersFor(o.slot, nextTier, r));
+  const row = (LEAGUE.income as unknown as Record<string, { tv: number; gate: number }>)[String(tier)];
+  return { gate: row.gate * capShare, tv: row.tv, sponsors: sponsorMoney, shop: row.gate * capShare * shop, continental: cont };
 }
+/** The world as the tree's hooks see it (store/tree.ts). */
+const treeCtx = (w: World): TreeCtx => ({ h: w.h, save: w.save, season: w.season, bundles: w.bundles, news: w.news, clubs: w.clubs, matches: () => [...w.past, ...w.matches] });
 export const contractsFor = (date: DayKey) => HABITS.map((h) => newContract(h.id, date));
 
 // ---- The ground (Task 4.4) ----
