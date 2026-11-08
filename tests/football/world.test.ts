@@ -27,6 +27,7 @@ import { openPack } from '../../src/football/tree/packs';
 import { activeEffects, erasOpen } from '../../src/football/tree/research';
 import { emptyUser, type PackOpened } from '../../src/football/tree/types';
 import { pickTrait, traitsOf } from '../../src/football/rotation/traits';
+import { cardAfter, LEGEND_DAYS, LEGEND_HOLD } from '../../src/football/players/cards';
 
 const D0 = '2026-10-05'; // a Monday
 const settings = { targets: [], checklist: [{ id: 'brush', name: 'Brush', slots: ['am'], active: true }] } as unknown as Settings;
@@ -320,5 +321,20 @@ describe('the Continental era', () => {
   it('a loan on leave: the loan manager away means 7-day loans again', () => {
     const r = rulesFrom(activeEffects({ researched: ['c-loanmanager'], leave: ['loan-manager'], projectsDone: [], boons: [] }));
     expect(r.loan.days).toBe(7);
+  });
+});
+
+describe('Legend D build-up only on a true Legend', () => {
+  const icon = { card: { tier: 'icon' as const, step: 2 }, best: 94, bestOn: D0, versions: [], moments: [] };
+  const legendMoment = (r: ReturnType<typeof cardAfter>) => r.moments.find((m) => m.kind === 'tier' && m.tier === 'legend');
+  it('no Legend moment (so no build-up) before 12 weeks of history or 28 days held at 95+', () => {
+    const on = addDays(D0, LEGEND_DAYS + 10);
+    expect(legendMoment(cardAfter(icon, 99, on, false, { signed: addDays(on, -30), at95Since: addDays(on, -40) }))).toBeUndefined();
+    expect(legendMoment(cardAfter(icon, 99, on, false, { signed: D0, at95Since: addDays(on, -(LEGEND_HOLD - 2)) }))).toBeUndefined();
+  });
+  it('once the gate is met the card moment is a Legend tier-up, which plays bu-legend', () => {
+    const on = addDays(D0, LEGEND_DAYS + 10);
+    const m = legendMoment(cardAfter(icon, 99, on, false, { signed: D0, at95Since: addDays(on, -(LEGEND_HOLD + 1)) }));
+    expect(m).toMatchObject({ kind: 'tier', tier: 'legend', from: { tier: 'icon' } });
   });
 });

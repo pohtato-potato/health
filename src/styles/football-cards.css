@@ -268,7 +268,8 @@ button.rb8:focus-visible { outline: 3px solid #ffe27a; outline-offset: 8px; bord
 .rt-pick.st { border-color: var(--uc); background: color-mix(in srgb, var(--uc) 12%, rgba(0,0,0,.25)); box-shadow: 0 0 12px -6px var(--uc); }
 .rt-pick.st .rt-tag { background: var(--uc); border-color: var(--uc); color: #140d1a; }
 .rt-cpt { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.rt-cpt label { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: 12px; border-left: 4px solid var(--uc); background: rgba(243,238,230,.05); min-width: 0; }
+/* A full thin outline in the unit colour with a soft glow (like the eureka note), never a side stripe. */
+.rt-cpt label { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: 12px; border: 1.5px solid color-mix(in srgb, var(--uc) 60%, transparent); box-shadow: 0 0 12px -6px var(--uc); background: color-mix(in srgb, var(--uc) 5%, transparent); min-width: 0; }
 .rt-cpt b { color: var(--uc); font-size: 14px; }
 .rt-cpt .fb-select, .rt-sp .fb-select { min-height: 44px; width: 100%; font-size: 15px; }
 .rt-sp { display: flex; flex-direction: column; gap: 4px; }
