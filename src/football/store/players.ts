@@ -5,7 +5,7 @@ import { FAREWELLS } from '../content/words';
 import { hashSeed, rng } from '../rng';
 import { AXES, type Axis, type AxisValues } from '../types';
 import { ctxFor, ratingOf, type Ctx } from '../players/attributes';
-import { cardAfter, firstCard } from '../players/cards';
+import { at95After, cardAfter, firstCard } from '../players/cards';
 import { playersOn } from '../players/catalogue';
 import { creditsFor } from '../players/credit';
 import { benchOf, blend, FORMATIONS, startersOf, squadValues, type Formation, type SquadMember } from '../players/eleven';
@@ -40,7 +40,7 @@ export const rampStarts = (squad: FbSquadRow[]) => Object.fromEntries(squad.filt
 export const playerCtx = (h: Health, save: Pick<FbSave, 'bedtime'>, squad: FbSquadRow[]): Ctx => ctxFor(h, save.bedtime, rampStarts(squad));
 
 function newRow(d: PlayerDef, overall: number, on: DayKey): FbPlayer {
-  return { id: d.id, unit: d.unit, kind: d.kind, ref: d.ref, name: d.name, art: d.art, signed: d.signed, status: 'squad', overall, on, ...firstCard(overall, on), apps: 0, goals: 0, saves: 0, seasons: [], limitBreaks: [] };
+  return { id: d.id, unit: d.unit, kind: d.kind, ref: d.ref, name: d.name, art: d.art, signed: d.signed, status: 'squad', overall, on, ...firstCard(overall, on, d.signed), apps: 0, goals: 0, saves: 0, seasons: [], limitBreaks: [] };
 }
 
 /** What a limit break's new baseline needs added to keep the overall (the latest one with a carry). */
@@ -98,7 +98,9 @@ export function playersDay(roster: Roster, h: Health, c: Ctx, date: DayKey, acad
     }
     // Form: the four-week trend of the overall; it doesn't move on a sick day.
     if (!sickToday) { row.trail = trailAfter(row.trail, date, row.overall); row.form = formOf(row.trail, date, row.signed); }
-    next.set(d.id, { ...row, ...(old ? cardAfter(row, row.overall, date, quiet) : {}) });
+    // Legend's hold: a sick day never breaks the run at 95+ (the overall doesn't move then).
+    if (!sickToday) row.at95Since = at95After(row.at95Since, row.overall, date);
+    next.set(d.id, { ...row, ...(old ? cardAfter(row, row.overall, date, quiet, { signed: row.signed, at95Since: row.at95Since }) : {}) });
   }
   // Records: the holder of each unit's best-ever overall; held for 26 weeks, it makes a Club legend.
   for (const u of AXES) {

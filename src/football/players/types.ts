@@ -106,6 +106,8 @@ export interface FbPlayer {
   seasons: number[];
   /** Holder of its unit's best-ever overall since this day (Club legend after 26 weeks). */
   recordSince?: DayKey;
+  /** First day of the current run at 95+ (Legend needs 28 days held). */
+  at95Since?: DayKey;
   clubLegend?: { on: DayKey; why: 'apps' | 'record' | 'seasons' };
   limitBreaks: LimitBreak[];
   // ---- Layer 2: rotation (spec §3.2, §3.3, §6) ----
