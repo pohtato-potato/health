@@ -86,6 +86,7 @@ export function loanSvg(l: Pick<LoanDef, 'id' | 'drawing'>, size = 120): string 
   return `<svg viewBox="0 0 120 160" width="${size}" height="${(size * 4) / 3}" class="lnart" role="img" aria-label="Drawing: ${pose} pose, ${l.drawing.kit.toLowerCase()}, number ${l.drawing.number}" fill="none" stroke-linecap="round" stroke-linejoin="round">`
     + `<defs>${pat}</defs><path d="M6 156 H114" stroke="#f3eee6" stroke-opacity=".4" stroke-width="1.5"/>`
     + f.legs.map((d) => limb(d, kit.shorts === kit.shirt && lum(kit.shirt) < 0.2 ? '#2a2a2a' : '#e8d5bc', 7)).join('')
-    + torso + f.arms.map((d) => limb(d, sleeve, 7)).join('') + gloves + head + ball
+    // Arms behind the torso, so the shirt number always shows.
+    + f.arms.map((d) => limb(d, sleeve, 7)).join('') + gloves + torso + head + ball
     + '</svg>';
 }

@@ -11,7 +11,7 @@ import { loanById, LOAN_DAYS, LOAN_MENTOR, LOAN_TIER_NAME } from '../../../footb
 import { loanSvg } from '../../../football/globe/art';
 import { STYLE_WORDS } from '../../../football/globe/trials';
 import { BREAK_DAYS, DUTY_ATTR, DUTY_NEEDS } from '../../../football/globe/duty';
-import { nationName } from '../../../football/globe/nations';
+import { fromName, nationName } from '../../../football/globe/nations';
 import { UNIT_HABIT } from '../../../football/globe/scout';
 import { UNIT_COLOUR } from '../../../football/players/eleven';
 import type { LoanDef, Unit } from '../../../football/content/types';
@@ -36,8 +36,8 @@ export function WorldDoors() {
   const doors: { to: string; label: string; sub: string; c: string }[] = [
     { to: '/football/loans', label: 'Loans', sub: w.here.length ? `${plural(w.here.length, 'player')} here` : 'From packs', c: '#ffa25c' },
     { to: '/football/trials', label: 'Trials', sub: w.trials.length ? `${w.trials.length} waiting` : `Your sleep: ${STYLE_WORDS[w.week.style].name}`, c: '#ffe27a' },
-    { to: '/football/academy', label: 'Academy', sub: `${w.academy.length} of ${w.rules.academy} places`, c: '#8fdcb6' },
-    { to: '/football/duty', label: 'International duty', sub: `${Object.keys(w.g.nations).length} nations`, c: '#ff7d9c' },
+    { to: '/football/academy', label: 'Academy', sub: `${w.academy.filter((y) => y.link).length} of ${w.rules.academy} places`, c: '#8fdcb6' },
+    { to: '/football/duty', label: 'International duty', sub: w.intl ? `Break on: day ${w.intl.day} of ${BREAK_DAYS}` : 'Two breaks a season', c: '#ff7d9c' },
   ];
   return (
     <nav className="fbg-doors" aria-label="The world">
@@ -134,9 +134,10 @@ export function LoansPage() {
 
 function Moon({ stars = 16 }: { stars?: number }) {
   return (
+    // Stars stay in a band at the top right, clear of the words.
     <span className="fbg-sky" aria-hidden="true">
       <span className="fbg-moon" />
-      {Array.from({ length: stars }, (_, i) => <i key={i} className="fbg-star" style={{ left: `${(i * 37) % 96}%`, top: `${(i * 23 + 6) % 40}%`, animationDelay: `-${i % 5}s` }} />)}
+      {Array.from({ length: stars }, (_, i) => <i key={i} className="fbg-star" style={{ left: `${30 + ((i * 37) % 66)}%`, top: `${8 + ((i * 23) % 9) * 9}px`, animationDelay: `-${i % 5}s` }} />)}
     </span>
   );
 }
@@ -232,8 +233,8 @@ export function AcademyPage() {
       <Moon stars={10} />
       <TreePage>
         <Back to="/football/club" label="Club" />
-        <div className="fbt-head"><h1 className="fbt-t1">Academy</h1><span className="fbt-cap"><b className="fbt-n">{w.academy.length}</b> of {w.rules.academy} places</span></div>
-        <p className="fbt-line">They grow overnight on nights you keep your bedtime. Rest days double it. Growth pauses, never goes back. A loan in the same unit makes them grow half as fast again.</p>
+        <div className="fbt-head"><h1 className="fbt-t1">Academy</h1><span className="fbt-cap"><b className="fbt-n">{w.academy.filter((y) => y.link).length}</b> of {w.rules.academy} places</span></div>
+        <p className="fbt-line">They grow overnight on nights you keep your bedtime. Rest days double it. Growth pauses, never goes back. A loan in the same unit makes them grow half as fast again. Only youngsters tied to a habit take a place.</p>
         {w.academy.length === 0 && <p className="fbt-line">Nobody at the academy yet. Trialists come on trial days; tie one to a habit and they start here.</p>}
         <div className="fbg-acad">
           {w.academy.map((y) => {
@@ -247,6 +248,7 @@ export function AcademyPage() {
                   <span className="fbg-bar" role="img" aria-label={`${s} of ${need} sessions`}><i style={{ width: `${Math.min(100, (s / need) * 100)}%` }} /></span>
                   <span className="fbg-bar gr" role="img" aria-label={`${g} of ${PROMOTE_GROWTH} growth`}><i style={{ width: `${Math.min(100, (g / PROMOTE_GROWTH) * 100)}%` }} /></span>
                 </span>
+                {!y.link && <button type="button" className="fbt-btn sm" onClick={() => go('/football/club', { view: 'deals' })}>Tie to a habit</button>}
                 <em><b className="fbt-n">{s}</b> of {need} sessions · <b className="fbt-n">{g}</b> of {PROMOTE_GROWTH} growth{tonight ? <> · <b className="fbt-n">+{tonight}</b> last night</> : ''}</em>
               </section>
             );
@@ -301,14 +303,14 @@ export function BreakPanel({ b, full }: { b: BreakView; full?: boolean }) {
   const Title = full ? 'h1' : 'b';
   return (
     <section className={full ? 'fbg-break full' : 'fbt-card fbg-break'} style={col('#ff7d9c')}>
-      <span className="fbt-lb">International break · {BREAK_DAYS} days · day {b.day}</span>
+      <span className="fbt-lb">International break · day {b.day} of {BREAK_DAYS}</span>
       <Title className={full ? 'fbt-t1' : 'fbt-t2'}>On duty</Title>
       <span>No league games for {BREAK_DAYS} days. Log a player's habit on {DUTY_NEEDS} of the {BREAK_DAYS} days and they come back with a trait or +{DUTY_ATTR} to an attribute.</span>
       <div className="fbg-duty">
         {b.rows.map((r, i) => (
           <p key={r.player} style={col(NATION_HUES[i % NATION_HUES.length])}>
-            <span><b>{nationName(r.nation)}</b><small>{r.name}</small></span>
-            <em><b className="fbt-n">{r.days.length}</b> of {BREAK_DAYS}{r.today ? ' · logged today ✓' : ''}</em>
+            <span><b>{nationName(r.nation)}</b><small>{r.name}{fromName(r.name, r.nation) ? '' : ' · drawn for good'}</small></span>
+            <em><span><b className="fbt-n">{r.days.length}</b> of {BREAK_DAYS} days</span>{r.today && <small>✓ logged today</small>}</em>
           </p>
         ))}
       </div>

@@ -74,14 +74,14 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
               <figcaption>{t.opp ? t.opp.name : 'Drawn on the night'}</figcaption>
             </figure>
           </div>
-          <h2 className="fb-hl">{t.opp ? `Tonight: ${t.opp.name}` : f.round ?? 'Tonight'}</h2>
+          <h2 className="fb-hl">{t.opp ? `${t.morning.intl ? 'Next' : 'Tonight'}: ${t.opp.name}` : f.round ?? 'Tonight'}</h2>
           <p className="fb-s fb-ctr">{[f.round, f.opp ? (f.braboHome ? 'Home' : 'Away') : undefined].filter(Boolean).join(' · ')}</p>
           {t.also && <p className="fb-s fb-ctr"><b>{t.also}</b></p>}
         </>
       )}
       <Radar values={t.liveValues} flags={t.flags} captain={t.save.slots.includes('armband') ? t.save.captain : undefined} />
       <p className="fb-s fb-ctr">Your shape so far. It’s fixed when you close the day.</p>
-      {t.loansPlaying.length > 0 && <p className="fb-s fb-ctr">{t.xi.filter((x) => x.player.startsWith('loan:')).map((x) => x.name).join(' and ')} on loan in the eleven tonight{t.loanRested.length ? `; ${t.loanRested.length === 1 ? 'one starter rests' : `${t.loanRested.length} starters rest`} to make room` : ''}.</p>}
+      {t.loansPlaying.length > 0 && !t.morning.intl && <p className="fb-s fb-ctr">{t.xi.filter((x) => x.player.startsWith('loan:')).map((x) => x.name).join(' and ')} on loan in the eleven tonight{t.loanRested.length ? `; ${t.loanRested.length === 1 ? 'one starter rests' : `${t.loanRested.length} starters rest`} to make room` : ''}.</p>}
       {t.tactic && <TacticPicker date={t.date} pick={t.tactic.pick} by={t.tactic.by} />}
       {(t.known.length > 0 || t.hiddenNote) && (
         <section className="fb-card pu" aria-label="Their abilities">

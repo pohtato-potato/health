@@ -57,7 +57,7 @@
 .fbg-pot { color: #ffe27a; letter-spacing: .1em; font-size: 16px; }
 .fbg-bars { display: flex; flex-direction: column; gap: 5px; margin: 4px 0 2px; }
 .fbg-bar { display: block; height: 10px; border-radius: 6px; background: rgba(243,238,230,.12); overflow: hidden; }
-.fbg-bar i { display: block; height: 100%; border-radius: 6px; background: var(--c); box-shadow: 0 0 10px var(--c); }
+.fbg-bar i { display: block; height: 100%; border-radius: 6px; background: #8fdcb6; box-shadow: 0 0 10px #8fdcb6; }
 .fbg-bar.gr i { background: #ffe27a; box-shadow: 0 0 10px #ffe27a; }
 .fbg-key { display: flex; flex-wrap: wrap; gap: 14px; font-size: 14px; color: var(--fb-quiet); }
 .fbg-key span { display: inline-flex; align-items: center; gap: 6px; }
@@ -77,7 +77,9 @@
 .fbg-duty span { display: flex; flex-direction: column; min-width: 0; }
 .fbg-duty b { color: var(--c); }
 .fbg-duty small { font-size: 14px; color: var(--fb-quiet); }
-.fbg-duty em { font-style: normal; font-size: 14px; text-align: right; flex: none; }
+.fbg-duty em { font-style: normal; font-size: 14px; text-align: right; flex: none; display: flex; flex-direction: column; align-items: flex-end; }
+.fbg-duty em small { color: var(--fb-ink); }
+.fbg-duty em > span { display: block; white-space: nowrap; }
 .fbg-duty em .fbt-n { font-size: 18px; color: var(--fb-ink); }
 
 /* The morning on Tonight. */
