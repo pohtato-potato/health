@@ -6,14 +6,14 @@ import { traitById } from '../../../football/content/traits';
 import { clubById } from '../../../football/data/load';
 import { euros } from '../../../football/money';
 import { stepName, TIER_NAME } from '../../../football/players/cards';
-import { FORMATIONS, OPEN_FORMATIONS, UNIT_COLOUR, type Formation } from '../../../football/players/eleven';
+import { FORMATIONS, UNIT_COLOUR, type Formation } from '../../../football/players/eleven';
 import type { FbPlayer, LimitBreak, Unit } from '../../../football/players/types';
 import { AGE_FLOOR, AGES } from '../../../football/rotation/condition';
 import { canBuyBack } from '../../../football/rotation/freeAgents';
 import { CHEM_MAX, MORALE_NAME, TACTIC_NAME, TACTICS, tacticWords, toggleStarter, type Tactic } from '../../../football/rotation/night';
 import { traitsOf } from '../../../football/rotation/traits';
 import { useBraboTier, usePlayer, useSave, useSheet, useTonight } from '../../../football/store/hooks';
-import { buyBackPlayer, resetStarters, seeLimitBreak, setSetPiece, setStarters, setTactic, setUnitCaptain } from '../../../football/store/rotation';
+import { buyBackPlayer, resetStarters, seeLimitBreak, setFormation, setSetPiece, setStarters, setTactic, setUnitCaptain } from '../../../football/store/rotation';
 import { AXES } from '../../../football/types';
 import { go } from '../../../router';
 import { PlayerCard } from './Card';
@@ -222,7 +222,7 @@ export function TeamSheetRoute() {
   const s = useSheet();
   if (s === undefined) return null;
   if (!s) return <p className="fb-s">The team sheet opens once the club is founded.</p>;
-  const formation: Formation = s.save.sheet?.formation ?? '4-3-3';
+  const formation: Formation = s.formation;
   const byId = new Map(s.players.map((p) => [p.id, p]));
   const starting = new Set(s.xi.map((x) => x.player));
   const picked = Object.keys(s.save.sheet?.picks ?? {}).length > 0;
@@ -234,8 +234,12 @@ export function TeamSheetRoute() {
       <h2 className="fb-t">Team sheet</h2>
       <div className="rt-fm" aria-label="Formations">
         {(Object.keys(FORMATIONS) as Formation[]).map((f) => {
-          const open = OPEN_FORMATIONS.includes(f);
-          return <span key={f} className={f === formation ? 'on' : open ? undefined : 'lk'}><b>{f}</b><small>{f === formation ? 'on' : open ? 'open' : 'locked'}</small></span>;
+          const open = s.rot.formations.includes(f);
+          const cls = f === formation ? 'on' : open ? undefined : 'lk';
+          const words = <><b>{f}</b><small>{f === formation ? 'on' : open ? 'open' : 'in the tree'}</small></>;
+          return open && f !== formation
+            ? <button key={f} type="button" className={cls} onClick={() => void setFormation(f)} aria-label={`Play ${f}`}>{words}</button>
+            : <span key={f} className={cls} aria-current={f === formation ? 'true' : undefined}>{words}</span>;
         })}
       </div>
       <Pitch xi={s.xi} />
@@ -268,8 +272,9 @@ export function TeamSheetRoute() {
         );
       })}
       <section className="fb-card" aria-label="Captains">
-        <div className="fb-row"><span className="fb-lb">Captains</span><span className="fb-s">one per unit</span></div>
-        <div className="rt-cpt">
+        <div className="fb-row"><span className="fb-lb">Captains</span><span className="fb-s">{s.rot.captains ? 'one per unit' : 'not yet'}</span></div>
+        {!s.rot.captains && <p className="fb-s">Units get their own captains once Unit captains is researched in the tree.</p>}
+        {s.rot.captains && <div className="rt-cpt">
           {AXES.map((u) => {
             const unit = s.members.filter((m) => m.unit === u);
             return (
@@ -282,7 +287,7 @@ export function TeamSheetRoute() {
               </label>
             );
           })}
-        </div>
+        </div>}
         <label className="rt-sp">
           <span className="fb-lb">Set pieces</span>
           <select className="fb-select" value={s.setPiece ?? ''} onChange={(e) => void setSetPiece(e.target.value)} aria-label="Set-piece taker">

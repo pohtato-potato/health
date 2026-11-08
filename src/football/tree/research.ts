@@ -165,7 +165,7 @@ export const moneyShare = (a: Active, what: MoneyKey) =>
 
 /** Formations open (spec §7): 4-3-3 from the start, the rest from the tree. Layer 2's team sheet reads this. */
 export function formationsOpen(a: Active): Formation[] {
-  const map: [UnlockKey, Formation][] = [['formation-442', '4-4-2'], ['formation-4231', '4-2-3-1'], ['formation-352', '3-5-2']];
+  const map: [UnlockKey, Formation][] = [['formation-442', '4-4-2'], ['formation-4231', '4-2-3-1'], ['formation-352', '3-5-2'], ['formation-433-attack', '4-3-3 attack']];
   return ['4-3-3', ...map.filter(([k]) => unlocked(a, k)).map(([, f]) => f)].filter((f): f is Formation => f in FORMATIONS);
 }
 /** Extra places a unit can field, from projects like the long road ("Pace can field 3"). Layer 2's team sheet reads this. */

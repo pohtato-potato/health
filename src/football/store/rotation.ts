@@ -6,6 +6,7 @@ import { euros } from '../money';
 import { bringHome, canBuyBack } from '../rotation/freeAgents';
 import type { Tactic, TeamSheet } from '../rotation/night';
 import type { Unit } from '../players/types';
+import type { Formation } from '../players/eleven';
 import { clubById } from '../data/load';
 import { OWN } from './season';
 import type { FbSave } from './tables';
@@ -34,6 +35,8 @@ export const setStarters = (unit: Unit, ids: string[]) => editSave((s) => {
 /** Every unit back to its best match ratings. */
 export const resetStarters = () => editSave((s) => ({ ...s, sheet: { ...sheetOf(s), picks: {} } }));
 export const setUnitCaptain = (unit: Unit, id: string) => editSave((s) => ({ ...s, sheet: { ...sheetOf(s), captains: { ...sheetOf(s).captains, [unit]: id } } }));
+/** The formation for match nights. Only one the tree has opened is kept; the sheet shows the rest as locked. */
+export const setFormation = (f: Formation) => editSave((s) => ({ ...s, sheet: { ...sheetOf(s), formation: f } }));
 export const setSetPiece = (id: string) => editSave((s) => ({ ...s, sheet: { ...sheetOf(s), setPiece: id } }));
 
 /** A limit break's moment has been seen. */

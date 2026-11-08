@@ -3,11 +3,13 @@ import { AXES, clamp, type Axis, type AxisValues } from '../types';
 import type { Unit, XiPlace } from './types';
 
 /** Places per unit in each formation (spec §7). Only 4-3-3 is open at the start; the tree opens the rest (layer 3). */
-export const FORMATIONS: Record<'4-3-3' | '4-4-2' | '4-2-3-1' | '3-5-2', Record<Unit, number>> = {
+export const FORMATIONS: Record<'4-3-3' | '4-4-2' | '4-2-3-1' | '3-5-2' | '4-3-3 attack', Record<Unit, number>> = {
   '4-3-3': { Rest: 2, Shape: 2, Routine: 2, Fuel: 2, Pace: 2, Power: 1 },
   '4-4-2': { Rest: 2, Shape: 2, Routine: 2, Fuel: 1, Pace: 2, Power: 2 },
   '4-2-3-1': { Rest: 2, Shape: 2, Routine: 1, Fuel: 2, Pace: 2, Power: 2 },
   '3-5-2': { Rest: 2, Shape: 2, Routine: 1, Fuel: 2, Pace: 2, Power: 2 },
+  // The Top flight tech's attacking 4-3-3: two Power places and one in Fuel.
+  '4-3-3 attack': { Rest: 2, Shape: 2, Routine: 2, Fuel: 1, Pace: 2, Power: 2 },
 };
 export type Formation = keyof typeof FORMATIONS;
 export const OPEN_FORMATIONS: Formation[] = ['4-3-3'];

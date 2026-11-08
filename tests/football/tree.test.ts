@@ -23,6 +23,9 @@ import { projectDay, projectOpen, skyline } from '../../src/football/tree/projec
 import { activeEffects, bank, costOf, erasOpen, eurekasDue, formationsOpen, lessonFor, research, ruleValue, settle, techState } from '../../src/football/tree/research';
 import { boardFor, boonOffer, boonPickOpen, bountyOffer, bountyProgress, objectiveMet, strengthOf, trackDue, trackSteps, type SeasonFacts } from '../../src/football/tree/season';
 import { doctorLevel, healDays, payWages, wageBill } from '../../src/football/tree/staff';
+import { formationFor, sheetFor, treeRotation } from '../../src/football/tree/rotation';
+import { BASE_RULES } from '../../src/football/rotation/rules';
+import { chemistryAfter, nudgesFor } from '../../src/football/rotation/night';
 import { emptyEngine, emptyUser, type TreeEngine, type TreeUser } from '../../src/football/tree/types';
 import { AXES, type AxisValues } from '../../src/football/types';
 
@@ -384,5 +387,56 @@ describe('situational bonuses in the match', () => {
     expect(treeAbilities({ save, bundles: new Map() }, {}, true).boosts).toEqual([]);
     expect(treeAbilities({ save, bundles: new Map() }, { derby: true }, true).boosts).toEqual(['bo-derby-head']);
     expect(treeAbilities({ save, bundles: new Map() }, { derby: true }, true).boosts).toEqual([]);
+  });
+});
+
+describe('the tree wired into the rotation (layers 2 and 3 together)', () => {
+  const act = (researched: string[], extra: { leave?: string[]; boons?: string[] } = {}) =>
+    activeEffects({ researched, leave: extra.leave ?? [], projectsDone: [], boons: extra.boons ?? [], boosts: [] });
+
+  it('nothing researched: layer 2 base numbers, only 4-3-3, no unit captains', () => {
+    const r = treeRotation(act([]));
+    expect(r.rules).toEqual(BASE_RULES);
+    expect(r.formations).toEqual(['4-3-3']);
+    expect(r.captains).toBe(false);
+  });
+  it('Unit captains turns captains on', () => {
+    expect(treeRotation(act(['s-captains'])).captains).toBe(true);
+  });
+  it('the Top flight 4-3-3 tech opens the attacking 4-3-3: Power +1, Fuel −1 against plain 4-3-3', () => {
+    const r = treeRotation(act(['t-433']));
+    expect(r.formations).toContain('4-3-3 attack');
+    const n = nudgesFor({ formation: '4-3-3 attack', rules: r.rules });
+    expect(n).toEqual(expect.arrayContaining([{ axis: 'Power', d: 1, why: 'an extra place' }, { axis: 'Fuel', d: -1, why: 'one place fewer' }]));
+  });
+  it('a formation the tree has not opened falls back to 4-3-3', () => {
+    const r = treeRotation(act([]));
+    expect(formationFor({ formation: '4-4-2' }, r)).toBe('4-3-3');
+    expect(formationFor({ formation: '4-4-2' }, treeRotation(act(['s-442'])))).toBe('4-4-2');
+    expect(sheetFor({ formation: '3-5-2' }, r)?.formation).toBe('4-3-3');
+  });
+  it('techs, staff and boons change the rotation rules; the best value wins whatever the order', () => {
+    const r = treeRotation(act(['s-fiveaside', 'r-sportsscience', 't-rotation', 't-band', 'p-meals', 't-pool'], { boons: ['tight-knit'] }));
+    expect(r.rules.chemistryDays).toBe(5);
+    expect(r.rules.freshnessFloor).toBe(70);
+    expect(r.rules.chemistryChanges).toBe(3);
+    expect(r.rules.moraleCaptainUp).toBe(true);
+    expect(r.rules.fuelBreakDays).toBe(22);
+    expect(r.rules.freshnessReturn).toBe(30);
+    expect(r.rules.freshnessCost).toBe(10);
+  });
+  it('staff on leave stop changing the rules', () => {
+    const r = treeRotation(act(['p-meals'], { leave: ['nutritionist'] }));
+    expect(r.rules.fuelBreakDays).toBe(BASE_RULES.fuelBreakDays);
+  });
+  it('the cheaper chemistry from the rules reaches chemistryAfter', () => {
+    const xi = [{ unit: 'Pace' as const, player: 'a', rating: 60 }, { unit: 'Pace' as const, player: 'b', rating: 60 }];
+    const rules = treeRotation(act(['s-fiveaside'])).rules;
+    let chem = {};
+    for (let i = 0; i < 5; i++) chem = chemistryAfter(chem, xi as never, rules);
+    expect((chem as Record<string, { level: number }>).Pace.level).toBe(1);
+    let base = {};
+    for (let i = 0; i < 5; i++) base = chemistryAfter(base, xi as never, BASE_RULES);
+    expect((base as Record<string, { level?: number }>).Pace?.level ?? 0).toBe(0);
   });
 });

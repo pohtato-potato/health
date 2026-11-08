@@ -5,6 +5,7 @@
 //   treeMatch    after a match: lesson points, a pack for a final won
 //   treeSeasonEnd at the season's end: the board's verdicts, the tree's money, wages and leave, a promotion pack
 // Taps (research, boons, bounties, packs, moments seen) write save.treeUser only, in store/treeActions.ts.
+import { treeRotation } from '../tree/rotation';
 import { addDays, weekStart, type DayKey } from '../../domain/dates';
 import { BOARD, BOARD_RESEARCH, TRACK_KIT_PIECES, TRACK_THEMES } from '../content/season';
 import { BOOSTS } from '../content/packs';
@@ -280,3 +281,6 @@ export function healNow(save: FbSave, bundles: Map<string, FbBundle>): number {
 }
 /** Seats the tree's new stages add (upper tiers, corners); ground.ts counts the shipped stands. */
 export const stageCapacity = (done: string[]) => TREE_PROJECTS.filter((p) => p.capacity && done.includes(p.id)).reduce((t, p) => t + p.capacity!, 0);
+
+/** The tree's hand on tonight's rotation: rules, open formations, unit captains (see tree/rotation.ts). */
+export const rotationOf = (save: FbSave, bundles: Iterable<FbBundle>) => treeRotation(activeFor(save, bundles));

@@ -247,8 +247,9 @@ button.rb8:focus-visible { outline: 3px solid #ffe27a; outline-offset: 8px; bord
 .rt-lgd i { display: inline-block; width: 22px; height: 10px; border-radius: 5px; } .rt-lgd .rt-td { --uc: rgba(243,238,230,.9); } .rt-lgd .rt-sq { --uc: #f3eee6; }
 
 /* the team sheet */
-.rt-fm { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-.rt-fm span { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 52px; padding: 6px 0; border-radius: 14px; border: 1.5px solid rgba(243,238,230,.3); }
+.rt-fm { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.rt-fm button { font: inherit; color: inherit; background: transparent; cursor: pointer; }
+.rt-fm span, .rt-fm button { display: flex; text-align: center; flex-direction: column; align-items: center; justify-content: center; min-height: 52px; padding: 6px 0; border-radius: 14px; border: 1.5px solid rgba(243,238,230,.3); }
 .rt-fm b { font-family: var(--serif); font-size: 16px; } .rt-fm small { font-size: 14px; opacity: .85; }
 .rt-fm .on { border-color: #ff7a1a; background: rgba(255,122,26,.15); box-shadow: 0 0 12px -4px #ff7a1a; } .rt-fm .lk { opacity: .55; border-style: dashed; }
 .rt-unit { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 18px; border: 1.5px solid color-mix(in srgb, var(--uc) 55%, transparent); box-shadow: 0 0 16px -8px var(--uc); }

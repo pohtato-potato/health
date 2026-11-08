@@ -32,12 +32,12 @@ import type { FbBundle, FbClub, FbNews, FbSave, FbSeason, FbSquadRow, StoredMatc
 import { creditsFor } from '../players/credit';
 import { linkedLogged, youthDay } from '../players/youth';
 import type { Ctx } from '../players/attributes';
-import { healNow, stageCapacity, treeAbilities, treeDay, treeMatch, treeSeasonEnd, type TreeCtx } from './tree';
+import { formationFor } from '../tree/rotation';
+import { healNow, rotationOf, stageCapacity, treeAbilities, treeDay, treeMatch, treeSeasonEnd, type TreeCtx } from './tree';
 import { LEAGUE } from '../data/load';
 import { academyIds, creditMatch, nightOptsFor, playerCtx, playersDay, rebuildPlayers, squadNight, type Roster } from './players';
 import { signFreeAgents } from '../rotation/freeAgents';
 import { chemistryAfter, moraleAfter } from '../rotation/night';
-import { BASE_RULES } from '../rotation/rules';
 import { traitAbilities } from '../rotation/traits';
 
 export const CATCH_UP_CAP = 42;
@@ -309,7 +309,7 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
   const raw = rotation ? rotationShape(recent.map((m) => m.values)) : night.values;
   // Engine 2: tonight = 70% today + 30% squad. A sick day plays the rotation squad (the bench) at 100% squad value.
   // An axis with no data tonight keeps its no-data value: the squad does not paper over a blank.
-  const tonight = nightOptsFor(w.save, w.roster, w.h, date, oppId, raw);
+  const tonight = nightOptsFor(w.save, w.roster, w.h, date, oppId, raw, rotationOf(w.save, w.bundles.values()));
   const team = squadNight(w.roster, raw, sick, tonight.opts);
   const blended = rotation && !sick ? raw : team.values;
   const flags = rotation ? {} : { ...night.flags };
@@ -428,7 +428,7 @@ function clubDay(w: World, date: DayKey) {
     return next;
   });
   w.ctx = playerCtx(w.h, w.save, w.squad);
-  w.roster = playersDay(w.roster, w.h, w.ctx, date, academyIds(w.squad), false, BASE_RULES);
+  w.roster = playersDay(w.roster, w.h, w.ctx, date, academyIds(w.squad), false, rotationOf(w.save, w.bundles.values()).rules);
   // Departed players sign for a club in our division (spec §6).
   const tier = w.season.tierOf[OWN];
   const seats = Object.entries(w.season.tierOf).filter(([id, t]) => t === tier && id !== OWN && !w.clubs.get(id)?.folded).map(([id]) => ({ id, name: clubById(id).name, rating: rating(w, id) }));
@@ -441,7 +441,8 @@ function clubDay(w: World, date: DayKey) {
 function afterNight(w: World, m: StoredMatch, sick: boolean, oppName: string) {
   w.save.morale = moraleAfter(w.save.morale, m.result);
   if (!sick && !m.rotation && w.save.chemOn !== m.date && m.xi?.length) {
-    w.save.chem = chemistryAfter(w.save.chem ?? {}, m.xi, BASE_RULES, w.save.sheet?.formation);
+    const rot = rotationOf(w.save, w.bundles.values());
+    w.save.chem = chemistryAfter(w.save.chem ?? {}, m.xi, rot.rules, formationFor(w.save.sheet, rot));
     w.save.chemOn = m.date;
   }
   const theirs = m.events.chances.filter((c) => c.side === 'def' && !c.ok);

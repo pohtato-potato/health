@@ -12,6 +12,9 @@ import { monthAverage } from '../oldSelves';
 import { seasonChange, type SeasonChange } from '../seasonChange';
 import { AXES } from '../types';
 import type { FbPlayer, Unit, XiPlace } from '../players/types';
+import { rotationOf } from './tree';
+import { formationFor, type TreeRotation } from '../tree/rotation';
+import type { Formation } from '../players/eleven';
 import { membersOf, nightOptsFor, playerCtx, sheetEleven, squadNight } from './players';
 import type { SquadMember } from '../players/eleven';
 import type { Nudge, Tactic } from '../rotation/night';
@@ -70,7 +73,7 @@ export async function loadTonight(date: DayKey): Promise<Tonight | null> {
   const night = nightFor(h, date);
   const roster = new Map((await db.fbPlayers.toArray()).map((p) => [p.id, p]));
   const fixture = season ? fixtureFor(save, season) : undefined;
-  const o = nightOptsFor(save, roster, h, date, fixture?.opp, night.values);
+  const o = nightOptsFor(save, roster, h, date, fixture?.opp, night.values, rotationOf(save, await db.fbBundles.toArray()));
   const team = squadNight(roster, night.values, h.days.get(date)?.status === 'sick', o.opts);
   const liveValues = { ...team.values };
   for (const a of AXES) if (night.flags[a]) liveValues[a] = night.values[a];
@@ -129,6 +132,10 @@ export interface SheetData {
   setPiece?: string;
   /** Power's default pool: the latest session's exercises. */
   latest?: string[];
+  /** The tree's hand on the rotation: open formations, unit captains, the rules. */
+  rot: TreeRotation;
+  /** Tonight's formation (the sheet's pick while it's open). */
+  formation: Formation;
 }
 export async function loadSheet(date: DayKey): Promise<SheetData | null> {
   const save = await db.fbSave.get('save');
@@ -136,9 +143,10 @@ export async function loadSheet(date: DayKey): Promise<SheetData | null> {
   const players = await db.fbPlayers.toArray();
   const roster = new Map(players.map((p) => [p.id, p]));
   const h = await loadHealth();
-  const o = nightOptsFor(save, roster, h, date, undefined, nightFor(h, date).values);
+  const rot = rotationOf(save, await db.fbBundles.toArray());
+  const o = nightOptsFor(save, roster, h, date, undefined, nightFor(h, date).values, rot);
   const members = membersOf(roster);
-  return { save, players, members, xi: sheetEleven(members, save.sheet, o.opts.latest), captains: o.captains, setPiece: o.setPiece, latest: o.opts.latest };
+  return { save, players, members, xi: sheetEleven(members, o.opts.sheet, o.opts.latest), captains: o.captains, setPiece: o.setPiece, latest: o.opts.latest, rot, formation: formationFor(save.sheet, rot) };
 }
 export function useSheet(now = Date.now()) {
   const date = dayOfLogging(now);

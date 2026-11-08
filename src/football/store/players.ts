@@ -15,6 +15,7 @@ import { breakToday, shiftWeights } from '../rotation/limitBreak';
 import { applyNudges, assistantTactic, captainsOf, CHEM_MAX, chemistryAfter, defaultPool, moraleAfter, nudgesFor, setPieceOf, type Chemistry, type Morale, type NightCtx, type Nudge, type Tactic, type TeamSheet } from '../rotation/night';
 import { agentsAt } from '../rotation/freeAgents';
 import { BASE_RULES, type RotationRules } from '../rotation/rules';
+import { NO_TREE, sheetFor, type TreeRotation } from '../tree/rotation';
 import { captainChemistry, freshnessScale, pickTrait } from '../rotation/traits';
 import { PROMOTED_START, youthDay, type YouthLink } from '../players/youth';
 import type { Health } from './gather';
@@ -148,20 +149,21 @@ export function squadNight(roster: Roster, today: AxisValues, sick: boolean, o: 
 }
 
 /** Tonight's team sheet, tactic, captains, chemistry, morale and the rival's free agents (spec §8, §9.1). */
-export function nightOptsFor(save: FbSave, roster: Roster, h: Health, date: DayKey, oppId: string | undefined, today: AxisValues) {
+export function nightOptsFor(save: FbSave, roster: Roster, h: Health, date: DayKey, oppId: string | undefined, today: AxisValues, rot: TreeRotation = NO_TREE) {
   const own = save.tactics?.[date];
   const tactic: { pick: Tactic; by: 'you' | 'assistant' } = own ? { pick: own, by: 'you' } : { pick: assistantTactic(today), by: 'assistant' };
-  const sheet = save.sheet;
+  // The tree decides which formations are open and whether units have captains (layer 3).
+  const sheet = sheetFor(save.sheet, rot);
   const latest = latestSession(h, date);
   // Captains need tonight's starters; a captain's own trait can lift its unit's chemistry.
   const pre = squadNight(roster, today, false, { sheet, latest });
   const inSquad = (id: string) => roster.get(id)?.status === 'squad';
-  const captains = captainsOf(pre.xi, sheet, (id) => roster.get(id)?.apps ?? 0, inSquad);
+  const captains = rot.captains ? captainsOf(pre.xi, sheet, (id) => roster.get(id)?.apps ?? 0, inSquad) : {};
   const bonus = captainChemistry(captains, roster);
   const chemistry = Object.fromEntries(AXES.map((u) => [u, Math.min(CHEM_MAX, (save.chem?.[u]?.level ?? 0) + (bonus[u] ?? 0))])) as Partial<Record<Unit, number>>;
   return {
     tactic, captains, setPiece: setPieceOf(pre.xi, sheet, inSquad),
-    opts: { sheet, latest, rules: BASE_RULES, night: { tactic: tactic.pick, chemistry, morale: save.morale, captain: save.slots.includes('armband') ? save.captain : undefined, agents: oppId ? agentsAt(roster.values(), oppId) : {} } } as NightOpts,
+    opts: { sheet, latest, rules: rot.rules, night: { tactic: tactic.pick, chemistry, morale: save.morale, captain: save.slots.includes('armband') ? save.captain : undefined, agents: oppId ? agentsAt(roster.values(), oppId) : {} } } as NightOpts,
   };
 }
 
