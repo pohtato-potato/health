@@ -9,6 +9,7 @@ import { PROJECTS } from '../../src/football/content/projects';
 import { ERAS, TECHS } from '../../src/football/content/tree';
 import { WAGE_UNIT } from '../../src/football/content/money';
 import { STAFF } from '../../src/football/content/staff';
+import type { BoardObjective } from '../../src/football/content/types';
 import { physio } from '../../src/football/discipline';
 import { playMatch } from '../../src/football/engine';
 import { opponentFor } from '../../src/football/opponent';
@@ -245,10 +246,10 @@ describe('the board', () => {
     expect(strengthOf(10, [40, 50, 60, 70])).toBe('low');
   });
   it('verdicts read the season', () => {
-    const top = { id: 'x', text: '', for: ['mid'], met: '', missed: '', goal: { kind: 'position', atBest: 9 } } as const;
+    const top: BoardObjective = { id: 'x', text: '', for: ['mid'], met: '', missed: '', goal: { kind: 'position', atBest: 9 } };
     expect(objectiveMet(top, facts({ position: 8 }))).toBe(true);
     expect(objectiveMet(top, facts({ position: 10 }))).toBe(false);
-    const r3 = { ...top, goal: { kind: 'cup-round', cup: 'bigcup', round: 'r3' } } as const;
+    const r3: BoardObjective = { ...top, goal: { kind: 'cup-round', cup: 'bigcup', round: 'r3' } };
     expect(objectiveMet(r3, facts())).toBe(false);
     expect(objectiveMet(r3, facts({ bigcup: ['Last 128', 'Last 64', 'Last 32', 'Last 16'] }))).toBe(true);
   });

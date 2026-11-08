@@ -12,9 +12,11 @@ import { go, useRoute } from '../../../router';
 import { PlayerView } from './Player';
 import { SquadView } from './Squad';
 import { ElevenSection } from '../players/Screens';
+import { TreeHome } from '../tree/TreeScreens';
 
 export const CLUB_VIEWS = [
   { id: 'squad', label: 'Squad' },
+  { id: 'tree', label: 'Tree' },
   { id: 'deals', label: 'Deals' },
   { id: 'money', label: 'Money' },
   { id: 'kits', label: 'Kits' },
@@ -27,7 +29,7 @@ export const useClub = () => useLiveQuery(() => loadClub(), []);
 export function ClubView({ c, view }: { c: Club; view: ClubViewId; extra?: Partial<Record<ClubViewId, ReactNode>> }) {
   return (
     <>
-      <nav className="fb-subseg five" aria-label="Club">
+      <nav className="fb-subseg six" aria-label="Club">
         {CLUB_VIEWS.map((v) => (
           <button key={v.id} type="button" aria-pressed={view === v.id} className={view === v.id ? 'on' : undefined} onClick={() => go('/football/club', v.id === 'squad' ? undefined : { view: v.id }, { replace: true })}>{v.label}</button>
         ))}
@@ -38,6 +40,7 @@ export function ClubView({ c, view }: { c: Club; view: ClubViewId; extra?: Parti
       {view === 'money' && <MoneyView c={c} onAccept={(o) => void acceptOffer(o)} onOwn={(n, s) => void setOwnSponsor(n, s)} />}
       {view === 'kits' && <KitsView c={c} act={{ pick: (s, sl, id) => void pickKit(s, sl, id), style: (sp) => void setSponsorStyle(sp) }} />}
       {view === 'ground' && <GroundView c={c} onMove={(on) => void bookMove(on)} />}
+      {view === 'tree' && <TreeHome />}
     </>
   );
 }

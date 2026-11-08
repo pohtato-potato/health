@@ -17,6 +17,7 @@ import './styles/you.css';
 import './styles/live.css';
 import './styles/region.css';
 import './styles/football.css';
+import './styles/football-tree.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';

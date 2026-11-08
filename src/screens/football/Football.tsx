@@ -1,5 +1,5 @@
 // Football's routes. Each screen is filled in by its own task; the shell is shared.
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { useSave, useTonight } from '../../football/store/hooks';
@@ -14,6 +14,9 @@ import { ClubHome, PlayerRoute } from './club/ClubHome';
 import { FullTime } from './FullTime';
 import { CardMomentRoute, PlayerPage, UnitRoute } from './players/Screens';
 import { FirstRun } from './FirstRun';
+import { BoardPage, EraMoment, EurekaMoment, ProjectsPage, StaffPage, TechPage } from './tree/TreeScreens';
+import { BoonPage, BountiesPage, TrackPage } from './tree/SeasonScreens';
+import { AlbumPage, PacksPage } from './tree/PackScreens';
 import { keyChances } from './CatchUp';
 import { go } from '../../router';
 import type { StoredMatch } from '../../football/store/tables';
@@ -69,6 +72,21 @@ export function Football() {
   if (path === '/football/player') return <FootballHome section="club"><PlayerRoute axis={params.get('axis') ?? ''} /></FootballHome>;
   if (path === '/football/unit') return <FootballHome section="club"><UnitRoute unit={params.get('u') ?? ''} /></FootballHome>;
   if (path === '/football/card') return <FootballHome section="club"><CardMomentRoute id={params.get('id') ?? ''} /></FootballHome>;
+  // Engine 2, layer 3: the tree.
+  const tree: Record<string, () => ReactNode> = {
+    '/football/tech': () => <TechPage id={params.get('id') ?? ''} />,
+    '/football/era': () => <EraMoment e={params.get('e') ?? ''} />,
+    '/football/eureka': () => <EurekaMoment id={params.get('id') ?? ''} />,
+    '/football/projects': () => <ProjectsPage />,
+    '/football/staff': () => <StaffPage />,
+    '/football/board': () => <BoardPage />,
+    '/football/boon': () => <BoonPage />,
+    '/football/packs': () => <PacksPage />,
+    '/football/album': () => <AlbumPage />,
+  };
+  if (tree[path]) return <FootballHome section="club">{tree[path]()}</FootballHome>;
+  if (path === '/football/track') return <FootballHome section="story"><TrackPage /></FootballHome>;
+  if (path === '/football/bounties') return <FootballHome section="story"><BountiesPage /></FootballHome>;
   const section = SECTION[path] ?? 'tonight';
   return <FootballHome section={section}>{section === 'tonight' ? <TonightSection /> : section === 'league' ? <LeagueHome /> : section === 'story' ? <StoryHome /> : <ClubHome />}</FootballHome>;
 }

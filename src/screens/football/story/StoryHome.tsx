@@ -15,6 +15,7 @@ import { OldSelves } from './OldSelves';
 import { RivalsView } from './Rivals';
 import { RivalryView } from './Rivalry';
 import { SettingsView } from './Settings';
+import { SeasonDoors } from '../tree/SeasonScreens';
 
 export const STORY_VIEWS = [
   { id: 'rivals', label: 'Rivals' },
@@ -40,6 +41,7 @@ export function StoryView({ s, view, extra }: { s: Story; view: StoryViewId; ext
           <button key={v.id} type="button" aria-pressed={view === v.id} className={view === v.id ? 'on' : undefined} onClick={() => go('/football/story', v.id === 'rivals' ? undefined : { view: v.id }, { replace: true })}>{v.label}</button>
         ))}
       </nav>
+      <SeasonDoors />
       {view === 'rivals' && <RivalsView rivals={s.l.save.rivals} matches={s.all} />}
       {view === 'seasons' && <SeasonsView list={s.seasons.map((x) => summarise(x, s.all, s.seasons))} kitOf={(n) => kitName(s, n)} crestOf={(n) => crestName(s, n)} />}
       {view === 'moments' && <MomentsView upsets={upsets(s.all, s.seasons)} seasons={s.seasons.map((x) => summarise(x, s.all, s.seasons))} />}

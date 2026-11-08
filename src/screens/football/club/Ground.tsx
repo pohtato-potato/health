@@ -3,6 +3,9 @@ import { BUNDLES, capacityOf, homeGround, isOpen, isShut, PLACES, type BundleDef
 import { euros } from '../../../football/money';
 import type { Club } from '../../../football/store/club';
 import type { FbBundle } from '../../../football/store/tables';
+import { useModel } from '../tree/model';
+import { Skyline } from '../tree/Skyline';
+import { ProjectList } from '../tree/TreeScreens';
 
 const NEED: Record<Need, string> = {
   steps: 'days at the step goal', training: 'training sessions', sleep: 'nights at the sleep target', protein: 'days at the protein target',
@@ -17,6 +20,8 @@ export function GroundView({ c, onMove }: { c: Club; onMove?: (on: boolean) => v
   const open = BUNDLES.filter((b) => isOpen(b, g));
   const sealed = BUNDLES.find((b) => !done.includes(b.id) && !isOpen(b, g));
   const built = BUNDLES.filter((b) => done.includes(b.id));
+  /** The one Kaai skyline and project list, shared with the tree's Projects page. */
+  const tree = useModel();
   return (
     <>
       <section className="fb-card hot" aria-label="Home ground">
@@ -29,10 +34,19 @@ export function GroundView({ c, onMove }: { c: Club; onMove?: (on: boolean) => v
           </button>
         )}
       </section>
-      <Quarter done={done} states={states} />
-      {open.length > 0 && <h2 className="fb-t">Building now</h2>}
-      {open.map((b) => <Bundle key={b.id} b={b} st={states.get(b.id)} budget={s.budget} />)}
-      {sealed && (
+      {tree ? (
+        <>
+          <Skyline places={tree.places} progress={tree.progress} />
+          <ProjectList m={tree} />
+        </>
+      ) : (
+        <>
+          <Quarter done={done} states={states} />
+          {open.length > 0 && <h2 className="fb-t">Building now</h2>}
+          {open.map((b) => <Bundle key={b.id} b={b} st={states.get(b.id)} budget={s.budget} />)}
+        </>
+      )}
+      {!tree && sealed && (
         <section className="fb-card fb-sealed" aria-label="Sealed">
           <span className="fb-lb">Next · sealed</span>
           <b>{sealed.name}</b>

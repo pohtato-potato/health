@@ -8,7 +8,9 @@ import { PACK_ITEMS } from '../content/packs';
 import type { EraId } from '../content/types';
 import { rememberClubs } from '../data/load';
 import { openPack, recordOpen, runningLowNow, poolCounts, type PoolId } from '../tree/packs';
-import { activeFor, builtOf, engineOf, userOf } from './tree';
+import { activeFor, builtOf, engineOf, seasonFacts, userOf } from './tree';
+import { standings } from '../table';
+import type { SeasonFacts } from '../tree/season';
 import { research, ruleValue, settle } from '../tree/research';
 import { boonOffer, boonPickOpen, bountiesPicked, bountyOffer } from '../tree/season';
 import { emptyUser, type TreeUser } from '../tree/types';
@@ -73,6 +75,8 @@ export interface TreeView {
   built: string[];
   today: DayKey;
   low: PoolId[];
+  /** The season so far, as the board reads it. */
+  facts?: SeasonFacts;
 }
 export async function loadTree(now = Date.now()): Promise<TreeView | null> {
   const save = await db.fbSave.get('save');
@@ -81,6 +85,12 @@ export async function loadTree(now = Date.now()): Promise<TreeView | null> {
   const season = await db.fbSeasons.get(save.season);
   const bundles = await db.fbBundles.toArray();
   const u = userOf(save);
-  return { save, season, tier: (season?.tierOf[OWN] ?? 6) as Tier, bundles, built: builtOf(bundles), today: dayOfLogging(now), low: runningLowNow(u, engineOf(save).bountiesDone) };
+  const tier = (season?.tierOf[OWN] ?? 6) as Tier;
+  let facts: SeasonFacts | undefined;
+  if (season) {
+    const rows = standings(season.results[tier] ?? [], Object.keys(season.tierOf).filter((id) => season.tierOf[id] === tier), season.deductions);
+    facts = seasonFacts({ season, save, matches: await db.fbMatches.where('season').equals(save.season).sortBy('date') }, { [tier]: rows } as Record<Tier, typeof rows>, false);
+  }
+  return { save, season, tier, bundles, built: builtOf(bundles), today: dayOfLogging(now), low: runningLowNow(u, engineOf(save).bountiesDone), facts };
 }
 export const useTree = () => useLiveQuery(() => loadTree(), []);
