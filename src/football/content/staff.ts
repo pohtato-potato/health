@@ -1,0 +1,46 @@
+// Staff (spec §11.4, §16): each one is hired by a tech, with no staff limit. Wages come from the
+// budget in wage units a season (money.ts turns units into euros by division). Unpaid staff go on
+// leave until the budget covers them; there's no debt. No staff member ever touches a rating.
+import type { StaffDef } from './types';
+
+export const STAFF: StaffDef[] = [
+  { id: 'kit-man', name: 'Kit man', tech: 's-kitman', wageUnits: 0.5, text: 'A third kit in the kit maker, and boots that are always dry.',
+    effects: [{ kind: 'unlock', what: 'kit-third' }] },
+  { id: 'physio', name: 'Physio', tech: 'p-physio', wageUnits: 1, text: 'Knocks heal a day faster.',
+    effects: [{ kind: 'rule', rule: 'knock-days', value: -1 }] },
+  { id: 'club-doctor', name: 'Club doctor', tech: 'p-physioroom', wageUnits: 0.75,
+    text: 'Gains experience on days every medicine is kept, and shortens knocks further at each level. Never touches a rating.',
+    effects: [],
+    levels: { xp: 'meds', at: [14, 42, 90, 180], perLevel: [{ kind: 'rule', rule: 'knock-days', value: -1 }], text: 'Level {n}: knocks a day shorter for each level, up to four.' } },
+  { id: 'sleep-coach', name: 'Sleep coach', tech: 'p-sleepcoach', wageUnits: 1, text: 'Youngsters grow one more on each kept-bedtime night.',
+    effects: [{ kind: 'rule', rule: 'youth-growth-bedtime', value: 1 }] },
+  { id: 'nutritionist', name: 'Nutritionist', tech: 'p-meals', wageUnits: 1, text: 'Fuel limit breaks need 22 days in 30, not 25.',
+    effects: [{ kind: 'rule', rule: 'fuel-break-days', value: 22 }] },
+  { id: 'strength-coach', name: 'Strength coach', tech: 'r-sportsscience', wageUnits: 1.25, text: 'Freshness comes back 30% a day off, not 20%.',
+    effects: [{ kind: 'rule', rule: 'freshness-return', value: 30 }] },
+  { id: 'analyst', name: 'Analyst', tech: 'r-videoroom', wageUnits: 1, text: 'The morning also names the rival’s weakest unit.',
+    effects: [{ kind: 'rule', rule: 'scout-weak', value: 1 }] },
+  { id: 'youth-director', name: 'Youth director', tech: 'r-academy', wageUnits: 1.25, text: 'Youngsters promote after 10 sessions, not 12.',
+    effects: [{ kind: 'rule', rule: 'academy-promote-sessions', value: 10 }] },
+  { id: 'set-piece-coach', name: 'Set-piece coach', tech: 'r-setpieces', wageUnits: 1, text: 'Your set-piece taker adds 2 on set pieces.',
+    effects: [{ kind: 'axis', axis: 'Power', d: 2, side: 'atk', when: 'set-piece' }] },
+  { id: 'press-officer', name: 'Press officer', tech: 'r-pressoffice', wageUnits: 0.75, text: 'A loss brings 1 more lesson point: the press conference teaches too.',
+    effects: [{ kind: 'rule', rule: 'lesson-loss', value: 1 }] },
+  { id: 'groundsman', name: 'Groundsman', tech: 'r-kaai42', wageUnits: 0.75, text: 'The home pitch suits Pace: +1 Pace on attack at home.',
+    effects: [{ kind: 'axis', axis: 'Pace', d: 1, side: 'atk', when: 'home' }] },
+  { id: 'commercial-manager', name: 'Commercial manager', tech: 'r-commercial', wageUnits: 1, text: 'Sponsor money +10%.',
+    effects: [{ kind: 'money', what: 'sponsors', share: 0.1 }] },
+  { id: 'head-of-data', name: 'Head of data', tech: 't-datateam', wageUnits: 1.25, text: 'The habit line shows the nearest band step for every unit.',
+    effects: [{ kind: 'rule', rule: 'expected-points', value: 1 }] },
+  { id: 'hydrotherapist', name: 'Hydrotherapist', tech: 't-pool', wageUnits: 1, text: 'Back-to-back training days cost 10% freshness, not 15%.',
+    effects: [{ kind: 'rule', rule: 'freshness-cost', value: 10 }] },
+  { id: 'tour-manager', name: 'Tour manager', tech: 'n-tour', wageUnits: 1, text: 'A draw brings 1 more lesson point: every trip teaches something.',
+    effects: [{ kind: 'rule', rule: 'lesson-draw', value: 1 }] },
+  { id: 'curator', name: 'Curator', tech: 'n-museum', wageUnits: 0.75, text: 'Museum pieces from finished album sets go on show, with their story.',
+    effects: [{ kind: 'cosmetic', what: 'museum-labels' }] },
+  { id: 'head-scout', name: 'Head scout', tech: 'c-foreignscouts', wageUnits: 1.5, text: 'One more youngster at Sunday trials.',
+    effects: [{ kind: 'rule', rule: 'trials-size', value: 1 }] },
+  { id: 'loan-manager', name: 'Loan manager', tech: 'c-loanmanager', wageUnits: 1.25, text: 'Loans stay 10 days, not 7.',
+    effects: [{ kind: 'rule', rule: 'loan-days', value: 10 }] },
+];
+export const staffById = (id: string) => STAFF.find((s) => s.id === id);
