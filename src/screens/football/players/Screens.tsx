@@ -1,6 +1,6 @@
 // Engine 2's player screens: the eleven on the pitch, a unit, a player, and the card moment (tap to break, reissue).
 import { useState } from 'react';
-import { stepName, stepRange, TIER_NAME } from '../../../football/players/cards';
+import { rankOf, stepName, stepOf, stepRange, TIER_NAME } from '../../../football/players/cards';
 import { elevenOf, PLACES_433, UNIT_COLOUR, UNIT_WHERE } from '../../../football/players/eleven';
 import type { FbPlayer, Unit, XiPlace } from '../../../football/players/types';
 import { LEGEND_APPS, LEGEND_RECORD_DAYS, LEGEND_SEASONS, membersOf } from '../../../football/store/players';
@@ -120,6 +120,20 @@ function legendProgress(p: FbPlayer): string {
   return `${p.apps} of ${LEGEND_APPS} appearances · ${p.seasons.length} of ${LEGEND_SEASONS} seasons${p.recordSince ? ` · record held ${held} of ${LEGEND_RECORD_DAYS / 7} weeks` : ''}.`;
 }
 
+/** Why a card sits below its number: the top tiers need time held (owner, 9 Nov). */
+function waitNote(p: FbPlayer): string | null {
+  const today = dayOfLogging(Date.now());
+  const want = stepOf(p.overall);
+  if (rankOf(want) <= rankOf(p.card)) return null;
+  const weeks = Math.floor((daysBetween(p.signed, today) + 1) / 7);
+  if (want.tier === 'icon') return `Icon needs 8 weeks of history at 90+. ${weeks} weeks so far.`;
+  if (want.tier === 'legend') {
+    const held = p.at95Since ? daysBetween(p.at95Since, today) + 1 : 0;
+    return `Legend needs 12 weeks of history and 95+ held for 28 days. ${weeks} weeks so far, ${held} of 28 days held.`;
+  }
+  return null;
+}
+
 /** One player: the card, its number, the attributes that make it, and its story so far. */
 export function PlayerPage({ id }: { id: string }) {
   const p = usePlayer(id);
@@ -139,6 +153,7 @@ export function PlayerPage({ id }: { id: string }) {
           <span className={`pl-stepname${legend ? ' pl-legendtext' : ''}`}>{stepName(p.card)}</span>
         </div>
       </div>
+      {waitNote(p) && <p className="pl-sub">{waitNote(p)}</p>}
       <p className="pl-sub">Best {p.best} on {fmtDate(p.bestOn)}. The card keeps its best; only the number can drop.{p.status === 'academy' ? ' Waiting in the academy for its youngster.' : p.status === 'left' ? ' No longer logged.' : ''}</p>
       <section className="fb-card" aria-label="Attributes">
         <span className="fb-lb">Attributes · last 28 days</span>

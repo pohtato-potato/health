@@ -4,7 +4,7 @@ import { addDays, type DayKey } from '../../src/domain/dates';
 import type { Day, SetEntry, Settings, TrainingSession } from '../../src/domain/types';
 import { axisValues, type AxisInput } from '../../src/football/axes';
 import { bedtimeKept, ctxFor, growth, ramp, rate, ratingOf, technique } from '../../src/football/players/attributes';
-import { cardAfter, firstCard, rankOf, stepName, stepOf, tierOf } from '../../src/football/players/cards';
+import { at95After, cardAfter, firstCard, gatedStep, ICON_DAYS, LEGEND_DAYS, LEGEND_HOLD, rankOf, stepName, stepOf, tierOf } from '../../src/football/players/cards';
 import { playersOn } from '../../src/football/players/catalogue';
 import { creditsFor } from '../../src/football/players/credit';
 import { benchOf, blend, elevenOf, squadValues, type SquadMember } from '../../src/football/players/eleven';
@@ -244,6 +244,42 @@ describe('youngsters (spec §9.2 steps 2–4)', () => {
     for (const d of list) r = youthDay(h, r, d.date, 60);
     expect(r.growth).toBeGreaterThanOrEqual(PROMOTE_GROWTH);
     expect(r.status).toBe('promoted');
+  });
+});
+
+describe('the top tiers need time held (owner, 9 Nov)', () => {
+  const day = (n: number) => addDays(D0, n - 1); // day n of the player's history
+  it('Icon needs 8 weeks of history and 90+; until then the card is Prism III with the true number', () => {
+    expect(gatedStep(92, day(ICON_DAYS - 1), { signed: D0 })).toEqual({ tier: 'prism', step: 3 });
+    expect(gatedStep(92, day(ICON_DAYS), { signed: D0 })).toEqual({ tier: 'icon', step: 1 });
+    expect(gatedStep(85, day(200), { signed: D0 })).toEqual({ tier: 'prism', step: 2 });
+  });
+  it('Legend needs 12 weeks of history and 95+ held 28 days in a row; until then Icon II (or Prism III before 8 weeks)', () => {
+    const held = (n: number) => day(LEGEND_DAYS - n + 1);
+    expect(gatedStep(97, day(LEGEND_DAYS - 1), { signed: D0, at95Since: day(1) })).toEqual({ tier: 'icon', step: 2 });
+    expect(gatedStep(97, day(LEGEND_DAYS), { signed: D0, at95Since: held(LEGEND_HOLD - 1) })).toEqual({ tier: 'icon', step: 2 });
+    expect(gatedStep(97, day(LEGEND_DAYS), { signed: D0, at95Since: held(LEGEND_HOLD) })).toEqual({ tier: 'legend', step: 1 });
+    expect(gatedStep(97, day(30), { signed: D0, at95Since: day(1) })).toEqual({ tier: 'prism', step: 3 });
+  });
+  it('the run at 95+ starts on the first day at 95 and breaks below it', () => {
+    expect(at95After(undefined, 95, day(5))).toBe(day(5));
+    expect(at95After(day(5), 98, day(9))).toBe(day(5));
+    expect(at95After(day(5), 94, day(10))).toBeUndefined();
+  });
+  it('a brand-new player at 95 starts no higher than Prism III; the gated card still moves up later', () => {
+    expect(firstCard(96, D0).card).toEqual({ tier: 'prism', step: 3 });
+    const c = cardAfter(firstCard(96, D0), 96, day(LEGEND_DAYS), false, { signed: D0, at95Since: D0 });
+    expect(c.card.tier).toBe('legend');
+    expect(c.best).toBe(96);
+  });
+  it('the rebuild cannot hand out Legend early: a daily habit from history reaches it at about 12 weeks', () => {
+    const ticked = (n: number) => health({ days: days(Array.from({ length: n }, (_, i) => ({ date: addDays(D0, i), ticks: { 'brush:0': 1 } }))) });
+    const card = (n: number) => rebuildPlayers(ticked(n), { awakenings: {} } as unknown as FbSave, [], [], addDays(D0, n - 1), () => '').players.find((p) => p.id === 'habit:brush')!;
+    const early = card(LEGEND_DAYS - 1);
+    expect(early.overall).toBeGreaterThanOrEqual(95);
+    expect(early.card.tier).toBe('icon');
+    expect(card(ICON_DAYS - 1).card).toEqual({ tier: 'prism', step: 3 });
+    expect(card(LEGEND_DAYS).card.tier).toBe('legend');
   });
 });
 
