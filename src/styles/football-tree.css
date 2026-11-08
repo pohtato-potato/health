@@ -79,7 +79,7 @@
 .fbt-kv span { font-size: 14px; color: var(--fb-quiet); }
 .fbt-kv b { font-size: 26px; font-weight: 400; color: var(--fb-ink); }
 .fbt-kv small { font-size: 14px; color: var(--fb-quiet); font-family: 'Atkinson Hyperlegible Next', var(--sans); }
-.fbt-eu { border-left: 3px solid #ffe27a; padding-left: 10px; font-size: 15px; }
+.fbt-eu { border: 1.5px solid rgba(255,226,122,.6); border-radius: 12px; padding: 8px 12px; font-size: 15px; box-shadow: 0 0 12px -6px #ffe27a; }
 .fbt-eu b { color: #ffe27a; }
 .fbt-done { font-weight: 700; color: var(--fb-win); font-size: 16px; }
 
@@ -160,7 +160,7 @@
 .fbt-goals { display: flex; flex-direction: column; gap: 8px; }
 .fbt-goals > p b { font-size: 16px; }
 .fbt-goals > p span { font-size: 15px; color: var(--k); font-weight: 700; }
-.fbt-chair { border-left: 3px solid var(--fb-gold); padding: 4px 0 4px 12px; display: flex; flex-direction: column; gap: 4px; }
+.fbt-chair { border: 1.5px solid rgba(242,196,109,.55); border-radius: 16px; padding: 10px 14px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 0 14px -6px var(--fb-gold); }
 .fbt-chair b { font: italic 400 18px/1.35 var(--serif); color: var(--fb-ink); }
 
 /* The season run: boons, the track, bounties. */
