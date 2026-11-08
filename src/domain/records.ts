@@ -17,15 +17,16 @@ export interface MedalSet {
 const MEDALS: Medal[] = ['gold', 'silver', 'bronze'];
 
 /**
- * The three best sets of an exercise, by clean reps times load (bodyweight counts as 1 kg),
+ * The three best sets of an exercise, by clean reps times load (bodyweight counts as 1 kg; on an assisted machine, reps then less assist),
  * each from a different session. Skipped and placeholder sets never win.
  */
-export function medalsFor(ex: Pick<ExerciseDef, 'id'>, sets: SetEntry[]): MedalSet[] {
+export function medalsFor(ex: Pick<ExerciseDef, 'id'> & Partial<Pick<ExerciseDef, 'load'>>, sets: SetEntry[]): MedalSet[] {
   const best = new Map<string, MedalSet>();
   for (const s of realSets(sets)) {
     if (s.exerciseId !== ex.id || s.drop || isPlaceholder(s) || s.reps === undefined) continue;
     const clean = cleanOf(s);
-    const score = clean * Math.max(s.loadKg ?? 1, 1);
+    // An assisted machine: more clean reps first, then less assist.
+    const score = ex.load === 'assist' ? clean * 1000 - (s.loadKg ?? 0) : clean * Math.max(s.loadKg ?? 1, 1);
     const cur = best.get(s.sessionId);
     if (!cur || score > cur.score) best.set(s.sessionId, { medal: 'gold', loadKg: s.loadKg, reps: s.reps, clean, date: s.date, score });
   }

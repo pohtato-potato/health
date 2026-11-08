@@ -1,3 +1,4 @@
+import { isGymKind, unitLabel } from '../../domain/gym';
 import { unlockAudio } from '../../audio';
 import { fmtKg } from '../../domain/loads';
 import { CHALLENGE_NAMES, measureOf, valueOfSet, type ExerciseDef } from '../../domain/plan';
@@ -92,7 +93,7 @@ export function SetTable({
       <div className="setrow head">
         <div>Set</div>
         <div>Last time</div>
-        <div className="center">{ex.load === 'band' ? 'Band' : 'kg'}</div>
+        <div className="center">{ex.load === 'band' ? 'Band' : isGymKind(ex.load) ? unitLabel(ex.load, ex.load === 'barbell' ? 'kg' : ex.load === 'plates' ? 'plates' : ex.unit === 'lb' ? 'lb' : ex.unit === 'stack' ? 'stack' : 'kg') : 'kg'}</div>
         <div className="center">{UNIT[measure]}</div>
         <div />
         <div />

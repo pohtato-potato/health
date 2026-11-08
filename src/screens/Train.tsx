@@ -13,7 +13,7 @@ import type { SetEntry, Settings, TrainingSession } from '../domain/types';
 import { devGlow, regionTint } from '../ui/live/regionTint';
 import { dayGlow } from '../domain/dayGlow';
 import { kmFromSteps } from '../domain/walk';
-import { useActiveSession, useAllDays, useAllSets, useEntries, useSessions, useSettings, useSightings, useToday } from '../db/hooks';
+import { useActiveSession, useAllDays, useAllSets, useAllSetsWithSkips, useBody, useEntries, useSessions, useSettings, useSightings, useToday } from '../db/hooks';
 import { creatureById } from '../domain/creatureRoster';
 import { recordFrames } from '../domain/creatures';
 import { stageNow } from '../ui/creatures/Payoffs';
@@ -22,7 +22,9 @@ import { Icon } from '../ui/Icon';
 import { dayRings, doneSessions, nextUp, triggersMet, weeksFor } from '../state/derived';
 import { TrainNextUp } from './train/TrainNextUp';
 import { sessionStats } from './SessionDone';
-import { deloadCase } from '../domain/deload';
+import { HALF_RULES, HALF_TEXT, halfWhy, lighterCase, lighterOn, sickOn } from '../domain/deload';
+import { heavyFirstOffer, isDumbbellKind, weekGuide } from '../domain/gym';
+import { hasGym, type LoadKind, type Place } from '../domain/plan';
 import { placeFor } from '../domain/places';
 import { TRIP_SESSION_ID } from '../domain/trip';
 import { markSetsSkipped, patchSettings } from '../db/actions';
@@ -42,6 +44,8 @@ export function Train() {
   const active = useActiveSession();
   const entries = useEntries(today);
   const route = useRoute();
+  const withSkips = useAllSetsWithSkips();
+  const body = useBody();
   if (!settings || !sessions || !sets || !days || active === undefined || !entries) return <div className="page" />;
 
   const plan = settings.plan;
@@ -54,13 +58,20 @@ export function Train() {
     );
   }
 
-  const up = nextUp(settings, sessions, sets, days);
+  const gym = hasGym(plan);
+  // Home or gym, picked on the card; the last pick is remembered so the card opens on it.
+  const setPlacePick = (pl: Place) => void patchSettings({ lastPlace: pl });
+  const place: Place = gym ? settings.lastPlace ?? 'home' : 'home';
+  const up = nextUp(settings, sessions, sets, days, false, place);
   const weeks = weeksFor(settings, sessions, today, days);
   const done = doneSessions(sessions);
   const trainedToday = done.filter((s) => s.date === today);
   const triggers = triggersMet(plan, sets);
-  const lighter = deloadCase(sessions, today, settings.lighterWeek?.to);
-  const lighterOn = !!settings.lighterWeek && today >= settings.lighterWeek.from && today <= settings.lighterWeek.to;
+  const lighterInput = { sessions, sets: withSkips ?? sets, days, body: body ?? [], occasions: settings.occasions, lighterWeek: settings.lighterWeek };
+  const lighter = lighterCase(lighterInput, today);
+  const lighterNow = lighterOn(settings.lighterWeek, today);
+  const halfTonight = trainedToday.length ? undefined : halfWhy(lighterInput, today);
+  const sickToday = sickOn(today, days, settings.occasions);
   const todayDay = days.find((d) => d.date === today);
   const isTripDay = placeFor(todayDay, settings).kind === 'trip' || todayDay?.status === 'travelling';
   const tn = active ? undefined : tonight(sessions, sets, today);
@@ -140,8 +151,12 @@ export function Train() {
         (() => {
           // As the session will build it, swaps in their slots.
           const exs = buildSession(plan, up.sessionId, { swaps: up.swaps, equipment: settings.equipment });
-          const kgOf = (ex: { id: string }) => up.exercises.find((e) => e.id === ex.id)?.status.loadKg ?? null;
+          // Dumbbell loads only: a gym stack number is never a plate change.
+          const kgOf = (ex: { id: string; load: LoadKind }) => (isDumbbellKind(ex.load) ? up.exercises.find((e) => e.id === ex.id)?.status.loadKg ?? null : null);
           const blocks = loadBlocks(exs, kgOf);
+          const heavy = heavyFirstOffer(blocks);
+          const startArgs = (extra: Record<string, string> = {}) => ({ start: up.sessionId, ...(gym ? { place } : {}), ...extra });
+          const otherPlace: Place = place === 'home' ? 'gym' : 'home';
           return (
             <UpNextCard
               name={next?.name ?? `Session ${up.sessionId}`}
@@ -151,22 +166,43 @@ export function Train() {
               focus={formFocus(sets, plan, up.sessionId)}
               blocks={blocks.map((b) => ({ kg: b.kg, items: b.exs.map((ex) => ({ name: up.exercises.find((e) => e.id === ex.id)?.status.name ?? ex.name, light: false })) }))}
               swaps={up.swaps.length}
-              onStart={() => go('/session', { start: up.sessionId })}
+              onStart={() => go('/session', startArgs())}
+              place={
+                gym
+                  ? {
+                      value: place,
+                      home: nameOf(place === 'home' ? up.sessionId : nextUp(settings, sessions, sets, days, false, 'home')?.sessionId ?? ''),
+                      gym: nameOf(place === 'gym' ? up.sessionId : nextUp(settings, sessions, sets, days, false, 'gym')?.sessionId ?? ''),
+                      onPick: setPlacePick,
+                      guide: weekGuide(plan, sessions, today),
+                    }
+                  : undefined
+              }
+              half={halfTonight ? `${HALF_TEXT[halfTonight]}: ${HALF_RULES.toLowerCase()}` : sickToday ? `Marked sick today: the lighter version is offered when you start.` : undefined}
+              heavy={heavy ? { label: `Start with the ${fmtKg(heavy.heavyKg)} kg block?`, onClick: () => go('/session', startArgs({ heavy: '1' })) } : undefined}
               onShort={() => openSheet('short', { session: up.sessionId })}
               chips={[
                 ...(isTripDay ? [{ label: 'Trip workout instead', onClick: () => go('/session', { start: TRIP_SESSION_ID }) }] : []),
                 ...extraSessions(plan).map((x) => ({ label: `${x.name} tonight`, onClick: () => go('/session', { start: x.id }) })),
               ]}
-              note={extraSessions(plan).length ? `An extra session counts toward the week; ${next?.name ?? `Session ${up.sessionId}`} stays next.` : undefined}
+              note={
+                [
+                  heavy ? `Either order works; with the ${fmtKg(heavy.heavyKg)} kg block first, the ${fmtKg(heavy.lightKg)} kg work is kept for after it.` : '',
+                  extraSessions(plan).length ? `An extra session counts toward the week; ${next?.name ?? `Session ${up.sessionId}`} stays next.` : '',
+                  gym ? `A ${otherPlace} session never moves the ${place} rotation.` : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ') || undefined
+              }
             />
           );
         })()
       )}
 
-      {lighterOn ? (
+      {lighterNow ? (
         <div className="lv-card">
           <div className="lv-card-h">Lighter week</div>
-          <div className="lv-small">One set fewer per exercise, same weights, until {fmtDayMonth(settings.lighterWeek!.to)}.</div>
+          <div className="lv-small">Same exercises: {HALF_RULES.toLowerCase()} Until {fmtDayMonth(settings.lighterWeek!.to)}.</div>
         </div>
       ) : (
         lighter.due &&
@@ -178,7 +214,7 @@ export function Train() {
                 {e}
               </div>
             ))}
-            <div className="lv-small">Fewer sets at the same weights for a week. Your call.</div>
+            <div className="lv-small">Two of the coach’s five signs hold. A lighter week keeps the same exercises: {HALF_RULES.toLowerCase()} Your call.</div>
             <div className="lv-actions">
               <button type="button" className="lv-ghost" onClick={() => patchSettings({ lighterDismissed: today })}>
                 Not now
@@ -302,3 +338,4 @@ function TidyCards({ settings, sessions, sets }: { settings: Settings; sessions:
     </>
   );
 }
+

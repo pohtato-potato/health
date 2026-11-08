@@ -5,6 +5,7 @@ import { markFor } from '../../domain/marks';
 import { challengeRest } from '../../domain/setChallenges';
 import {
   bottomOfRange,
+  buildSession,
   findExercise,
   findSession,
   groupExercises,
@@ -20,8 +21,11 @@ import {
 } from '../../domain/plan';
 import { looksUnfinished } from '../../domain/trainingChecks';
 import { exerciseStatus, heavierOffer, historyFor, loadSoFar, loadTonight } from '../../domain/progression';
-import type { LiveCounter, SetEntry, Settings, TrainingSession } from '../../domain/types';
-import { deleteSet, discardSession, logSet, patchSession } from '../../db/actions';
+import type { BodyKind, LiveCounter, SetEntry, Settings, SkipReason, TrainingSession } from '../../domain/types';
+import { addBodyEntry, deleteSet, discardSession, logSet, patchSession, patchSettings } from '../../db/actions';
+import { halfSets } from '../../domain/deload';
+import { BODY_PARTS, heavyFirstOffer, isDumbbellKind, isGymKind, lowerIsHarder, machineKey, machineUnit, protectedLeft, SKIP_REASONS, unitFor, unitLabel } from '../../domain/gym';
+import { askChoice } from '../../ui/Confirm';
 import { setLastSetAt, setRestRunning } from '../../state/restState';
 import { useNow } from '../../db/hooks';
 import { go } from '../../router';
@@ -33,7 +37,7 @@ import { db } from '../../db/db';
 import { useMoments } from '../../ui/Moments';
 import { detectFirsts } from '../../domain/firsts';
 import { liveFields, restAfter, rowsFor, type LiveInput } from './rows';
-import { adaptiveRest, legSets } from '../../domain/sessionEdges';
+import { adaptiveRest, legSets, loadBlocks } from '../../domain/sessionEdges';
 
 const valueOf = valueOfSet;
 
@@ -47,9 +51,10 @@ export function useRunner(session: TrainingSession, settings: Settings, plan: Pl
       session.exercises
         .map((id) => findExercise(plan, id))
         .filter((e): e is ExerciseDef => !!e)
-        .map((e) => (session.lighter ? { ...e, sets: Math.max(1, e.sets - 1) } : e))
+        // Half sets (a lighter week, the first session back, a sick day); sessions from before keep the old one-fewer lighter week.
+        .map((e) => (session.half ? { ...e, sets: halfSets(e.sets) } : session.lighter ? { ...e, sets: Math.max(1, e.sets - 1) } : e))
         .map((e) => ({ ...e, sets: Math.min(e.sets, legSets(e, session.legSoreness)) })),
-    [session.exercises, plan, session.lighter, session.legSoreness],
+    [session.exercises, plan, session.lighter, session.half, session.legSoreness],
   );
   const groups = useMemo(() => groupExercises(exs), [exs]);
   const mine = useMemo(() => allSets.filter((s) => s.sessionId === session.id), [allSets, session.id]);
@@ -162,7 +167,8 @@ export function useRunner(session: TrainingSession, settings: Settings, plan: Pl
 
   const defaults = (r: Row) => {
     const st = statuses.get(r.ex.id)!;
-    const kg = r.drop ? r.ex.drop?.kg ?? null : loadSoFar(mine, r.ex.id, loadTonight(st, session.heavier?.[r.ex.id]));
+    const picked = session.loadSet?.[r.ex.id];
+    const kg = r.drop ? r.ex.drop?.kg ?? null : picked ?? loadSoFar(mine, r.ex.id, loadTonight(st, session.heavier?.[r.ex.id]));
     const last = st.last?.sets.find((s) => s.setNo === r.setNo && s.side === r.side && !!s.drop === r.drop);
     // A "1 rep, no weight" from last time (old band rows) is no target: aim from the range instead.
     let val = last && !isPlaceholder(last) ? valueOf(last) : undefined;
@@ -183,7 +189,7 @@ export function useRunner(session: TrainingSession, settings: Settings, plan: Pl
     return { kg, val, last };
   };
 
-  const kgEditable = (r: Row) => r.ex.load === 'pair' || r.ex.load === 'single' || (r.ex.load === 'body' && loadTonight(statuses.get(r.ex.id)!, session.heavier?.[r.ex.id]) !== null) || r.drop;
+  const kgEditable = (r: Row) => r.ex.load === 'pair' || r.ex.load === 'single' || isGymKind(r.ex.load) || (r.ex.load === 'body' && loadTonight(statuses.get(r.ex.id)!, session.heavier?.[r.ex.id]) !== null) || r.drop;
 
   /** Saves a row. From the live screens, `live` carries the count, timer, burn and checks. Returns the mark. */
   const save = async (r: Row, live?: LiveInput): Promise<SetEntry['mark'] | 'skipped' | 'invalid'> => {
@@ -228,11 +234,12 @@ export function useRunner(session: TrainingSession, settings: Settings, plan: Pl
       challenges: draft.challenges ?? prev?.challenges,
       faults: draft.faults ?? prev?.faults,
       discomfort: draft.discomfort ?? prev?.discomfort };
-    const base = { setNo: r.setNo, side: r.side, loadKg: asSaved.loadKg, tempo, drop: r.drop || undefined, ...(firstSide ? { firstSide } : {}), ...quality, ...liveFields(prev, live) };
+    const loadUnit = asSaved.loadKg !== null ? unitFor(r.ex, settings) : undefined;
+    const base = { setNo: r.setNo, side: r.side, loadKg: asSaved.loadKg, ...(loadUnit ? { loadUnit } : {}), tempo, drop: r.drop || undefined, ...(firstSide ? { firstSide } : {}), ...quality, ...liveFields(prev, live) };
     const measure = measured(r.ex, val);
     // A record has to beat everything before it, earlier sets tonight included.
     const before = [...history, ...mine.filter((s) => s.id !== existing?.id && (!existing || s.at < existing.at))];
-    const mark = markFor({ ...base, ...measure }, historyFor(r.ex, settings.planState, before), st.last?.sets ?? [], bottomOfRange(r.ex) ?? 1, { clean: settings.formRecordsClean !== false });
+    const mark = markFor({ ...base, ...measure }, historyFor(r.ex, settings.planState, before), st.last?.sets ?? [], bottomOfRange(r.ex) ?? 1, { clean: settings.formRecordsClean !== false, lowerIsHarder: lowerIsHarder(r.ex) });
     await logSet({
       id: existing?.id,
       sessionId: session.id,
@@ -284,13 +291,64 @@ export function useRunner(session: TrainingSession, settings: Settings, plan: Pl
   };
 
   /** Skipped sets count as done for the flow and for nothing else. */
-  const skip = async (r: Row) => {
+  const skip = async (r: Row, why?: SkipReason) => {
     const st = statuses.get(r.ex.id)!;
-    await logSet({ sessionId: session.id, date: session.date, session: session.session, exerciseId: r.ex.id, exercise: st.name, at: Date.now(), setNo: r.setNo, side: r.side, loadKg: null, drop: r.drop || undefined, skipped: true });
+    await logSet({ sessionId: session.id, date: session.date, session: session.session, exerciseId: r.ex.id, exercise: st.name, at: Date.now(), setNo: r.setNo, side: r.side, loadKg: null, drop: r.drop || undefined, skipped: true, ...(why ? { skipWhy: why } : {}) });
     setEditing(null);
     setDraft({});
     afterRow(r, false);
   };
+  /** Skip, with the coach's reasons on offer (none is fine too). Cancel keeps the set. */
+  const askSkip = async (r: Row) => {
+    const pick = await askChoice({
+      title: 'Why skip it?',
+      body: 'The coach reads this in the export, so a skip can be fixed.',
+      options: [...SKIP_REASONS.map((x) => ({ id: x.id, label: x.label })), { id: 'none', label: 'Just skip it' }],
+      cancel: 'Keep the set',
+    });
+    if (!pick) return;
+    await skip(r, pick.id === 'none' ? undefined : (pick.id as SkipReason));
+  };
+
+  /** Tonight's load for a gym exercise, typed on the set screen. For a stack, the machine's unit is set here once and remembered. */
+  const pickLoad = async (ex: ExerciseDef, current: number | null) => {
+    const unit = unitFor(ex, settings);
+    const stacky = ex.load === 'stack' || ex.load === 'assist';
+    const res = await askChoice({
+      title: ex.load === 'assist' ? 'Assist tonight' : ex.load === 'plates' ? 'Plates added' : ex.load === 'barbell' ? 'Bar total' : 'Stack number',
+      body: ex.load === 'barbell' ? 'Total kg, bar included.' : ex.load === 'plates' ? `Plates added, not the sled.${ex.sledKg ? ` The sled is ${ex.sledKg} kg.` : ''}` : ex.load === 'assist' ? 'The assist number: less assist is progress.' : 'The number this machine’s stack shows. Never compared with another machine.',
+      input: { label: `In ${unitLabel(ex.load, unit)}`, value: current?.toString() ?? '', inputMode: 'decimal' },
+      options: [
+        { id: 'save', label: 'Use this' },
+        ...(stacky ? (['kg', 'lb', 'stack'] as const).map((u) => ({ id: `unit:${u}`, label: u === 'stack' ? 'This stack shows plain numbers' : `This stack is in ${u}`, on: machineUnit(ex, settings) === u })) : []),
+      ],
+    });
+    if (!res) return;
+    if (res.id.startsWith('unit:')) {
+      const u = res.id.slice(5) as 'kg' | 'lb' | 'stack';
+      await patchSettings((s) => ({ machineUnits: { ...s.machineUnits, [machineKey(ex)]: u } }));
+    }
+    const v = parseFloat(res.text);
+    if (Number.isFinite(v) && v >= 0) await patchSession(session.id, { loadSet: { ...session.loadSet, [ex.id]: v } });
+  };
+
+  /** A pain or strain entry made during a set: it carries the exercise, side and set. */
+  const logBody = async (r: Row) => {
+    const part = await askChoice({ title: 'Where?', options: BODY_PARTS.map((p) => ({ id: p, label: p })), cancel: 'Never mind' });
+    if (!part) return;
+    const side = await askChoice({ title: `${part.id}: which side?`, options: [{ id: 'L', label: 'Left' }, { id: 'R', label: 'Right' }, { id: 'both', label: 'Both, or the middle' }], cancel: 'Never mind' });
+    if (!side) return;
+    const kind = await askChoice({
+      title: 'What kind?',
+      input: { label: 'A note (optional)', placeholder: 'e.g. sharp at the top of the rep' },
+      options: [{ id: 'pain', label: 'Pain' }, { id: 'strain', label: 'Strain' }, { id: 'sore', label: 'Sore' }, { id: 'tight', label: 'Tight' }],
+      cancel: 'Never mind',
+    });
+    if (!kind) return;
+    await addBodyEntry({ part: part.id, side: side.id as 'L' | 'R' | 'both', kind: kind.id as BodyKind, note: kind.text.trim() || undefined, exerciseId: r.ex.id, exercise: statuses.get(r.ex.id)?.name ?? r.ex.name, setNo: r.setNo, setSide: r.side, sessionId: session.id });
+    toast({ text: `Logged: ${kind.id} in the ${part.id.toLowerCase()}. If it hurts, stop this exercise.` });
+  };
+
   const undoSkip = async (r: Row) => {
     const existing = findLogged(mine, r);
     if (existing?.skipped) await deleteSet(existing.id);
@@ -314,8 +372,27 @@ export function useRunner(session: TrainingSession, settings: Settings, plan: Pl
       }
       return;
     }
+    // Heavy block first: the light work it put off can't be dropped quietly. Asked once.
+    const protect = session.heavyFirst && !session.protectAsked ? protectedLeft(heavyProtect(), mine) : [];
+    if (protect.length) {
+      void patchSession(session.id, { protectAsked: true });
+      const names = protect.map((id) => statuses.get(id)?.name ?? id).map((n) => n.toLowerCase());
+      const go2 = await askConfirm({ title: 'Shoulders first?', body: `2 sets of ${names.join(' / ')} before you finish?`, yes: 'Do 2 sets', no: 'Finish anyway' });
+      if (go2) {
+        const i = groups.findIndex((g) => g.some((e) => e.id === protect[0]));
+        if (i >= 0) setGi(i);
+        return;
+      }
+    }
     stopRest();
     go('/session/done', undefined, { replace: true });
+  };
+
+  /** The light block the heavy one jumped: the plan's order says which exercises came before it. */
+  const heavyProtect = () => {
+    const planned = buildSession(plan, session.session, { short: session.short });
+    const kgOf = (e: ExerciseDef) => (isDumbbellKind(e.load) ? statuses.get(e.id)?.loadKg ?? e.startKg ?? null : null);
+    return (heavyFirstOffer(loadBlocks(planned, kgOf))?.protect ?? []).filter((id) => exs.some((e) => e.id === id));
   };
 
   const def = findSession(plan, session.session);
@@ -325,7 +402,8 @@ export function useRunner(session: TrainingSession, settings: Settings, plan: Pl
   const nextGroup = groups[gi + 1];
   const groupDone = complete(gi);
   const tired = session.tiredHands ?? (groups.slice(0, gi).some((g) => g.some((e) => e.tiredHands)));
-  const offerFor = group
+  // Half-set nights don't chase records: no "ready for heavier?".
+  const offerFor = session.half ? undefined : group
     .map((ex) => ({ ex, offer: heavierOffer(statuses.get(ex.id)!) }))
     .find(({ ex, offer }) => offer && !session.heavier?.[ex.id] && !mine.some((m) => m.exerciseId === ex.id));
   const answer = (exId: string, v: 'yes' | 'no') => patchSession(session.id, { heavier: { ...session.heavier, [exId]: v } });
@@ -333,6 +411,6 @@ export function useRunner(session: TrainingSession, settings: Settings, plan: Pl
   return {
     toast, now, exs, groups, mine, history, statuses, extra, setExtra, groupRows, complete, gi, setGi, editing, setEditing, draft, setDraft,
     rest, watch, setWatch, swapFor, setSwapFor, coach, setCoach, group, rows, current, activeKey,
-    startRest, extendRest, stopRest, defaults, kgEditable, save, afterRow, skip, undoSkip, remove, toggleTempo, finish, def, firstIdx, restLeft,
+    startRest, extendRest, stopRest, defaults, kgEditable, save, afterRow, skip, askSkip, pickLoad, logBody, undoSkip, remove, toggleTempo, finish, def, firstIdx, restLeft,
     nextGroup, groupDone, tired, offerFor, answer, saveCounter };
 }

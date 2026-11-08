@@ -3,7 +3,7 @@ import { fmtDayMonth, fmtInt, fmtLitres, fmtTime } from '../domain/format';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { nextCheckInDate } from '../screens/Photos';
-import { findSession } from '../domain/plan';
+import { findSession, hasGym } from '../domain/plan';
 import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useMeasurements, useSessions, useSettings, useToday } from '../db/hooks';
 import { go, replaceSheet } from '../router';
 import { Icon, type IconName } from '../ui/Icon';
@@ -91,7 +91,7 @@ export function LogSheet() {
               : tile('pill', 'var(--pearl)', 'Checklist', 'Set up', () => go('/medicines'))}
             {tile('steps', 'var(--steps)', 'Steps', day?.steps !== undefined ? fmtInt(day.steps) : 'Not logged', () => replaceSheet('steps', d))}
             {plan && (active || up)
-              ? tile('train', 'var(--protein)', sessionName ?? 'Session', active ? 'In progress' : 'Start', () => (active ? go('/session') : go('/session', { start: up!.sessionId })))
+              ? tile('train', 'var(--protein)', sessionName ?? 'Session', active ? 'In progress' : 'Start', () => (active ? go('/session') : hasGym(plan) ? go('/train') : go('/session', { start: up!.sessionId })))
               : tile('train', 'var(--protein)', 'Session', 'No plan yet', () => go('/plan'))}
             {tile('check', 'var(--gold)', 'Close the day', day?.foodDone ? 'Closed' : 'Meals, checklist', () => go('/close', d))}
             {prefOn(settings.prefs, 'water') && tile('water', 'var(--blue)', 'Water', `${fmtLitres(totals.waterMl)} of ${fmtLitres(targets.waterMl)} L`, () => replaceSheet('water', d))}

@@ -16,6 +16,8 @@ interface Props {
   soreness?: number;
   onSoreness: (n: 1 | 2 | 3 | 4 | 5) => void;
   warmup?: string;
+  /** A half-set night: why, and the rule. */
+  half?: string;
   onStart: () => void;
   top?: ReactNode;
 }
@@ -31,6 +33,13 @@ export function BeforeScreen(p: Props) {
         {p.usual.fromHistory ? 'usually' : 'about'} <b>{p.usual.min} min</b> · finish about <b>{timeOfDay(p.startedAt + p.usual.min * 60_000)}</b>
         {p.changes > 0 ? ` · ${WORDS[p.changes] ?? p.changes} plate change${p.changes === 1 ? '' : 's'}` : ''}
       </p>
+
+      {p.half && (
+        <div className="lv-card">
+          <div className="lv-card-h">Half sets tonight</div>
+          <div className="lv-small">{p.half}</div>
+        </div>
+      )}
 
       {p.legs && (
         <div className="lv-card">

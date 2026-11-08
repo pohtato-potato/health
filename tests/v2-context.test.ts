@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { comparable, contextOf } from '../src/domain/context';
-import { deloadCase } from '../src/domain/deload';
+import { lighterCase } from '../src/domain/deload';
 import { estMinutes, shortPlan } from '../src/domain/plannerShort';
 import { tripSession } from '../src/domain/trip';
 import { DEFAULT_EQUIPMENT, DEFAULT_PLAN } from '../src/domain/defaultPlan';
@@ -43,17 +43,14 @@ describe('short session by time', () => {
 describe('lighter week', () => {
   const s = (date: string, readiness?: number): TrainingSession => ({ id: date, date, session: 'A', planName: 'x', startedAt: 0, status: 'done', exercises: [], readiness }) as unknown as TrainingSession;
 
-  it('deload due at 6 weeks or 2 low readiness', () => {
+  it('6 weeks alone no longer makes the case: the coach asks for 2 of 5 rules (O21)', () => {
     const steady = ['2026-09-01', '2026-09-08', '2026-09-15', '2026-09-22', '2026-09-29', '2026-10-06', '2026-10-12'].map((d) => s(d, 75));
-    expect(deloadCase(steady, '2026-10-13').due).toBe(true);
-    expect(deloadCase(steady, '2026-10-13').evidence[0]).toMatch(/6 weeks/);
-    const recent = ['2026-09-29', '2026-10-06'].map((d) => s(d, 75));
-    expect(deloadCase(recent, '2026-10-13').due).toBe(false);
-    const tired = [s('2026-10-06', 75), s('2026-10-09', 55), s('2026-10-12', 52)];
-    const t = deloadCase(tired, '2026-10-13');
-    expect(t.due).toBe(true);
-    expect(t.evidence.join(' ')).toMatch(/55.*52|readiness/i);
-    expect(deloadCase(steady, '2026-10-13', '2026-10-01').due).toBe(false);
+    const c = lighterCase({ sessions: steady, sets: [], days: [] }, '2026-10-13');
+    expect(c.evidence[0]).toMatch(/6 weeks/);
+    expect(c.due).toBe(false);
+    const sick = lighterCase({ sessions: steady, sets: [], days: [{ date: '2026-10-12', status: 'sick' }, { date: '2026-10-13', status: 'sick' }] }, '2026-10-13');
+    expect(sick.due).toBe(true);
+    expect(lighterCase({ sessions: steady, sets: [], days: [], lighterWeek: { from: '2026-09-25', to: '2026-10-01' } }, '2026-10-13').evidence).toEqual([]);
   });
 });
 

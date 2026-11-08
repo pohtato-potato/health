@@ -16,6 +16,9 @@ import { placeFor } from '../domain/places';
 import { checklistSlots } from '../state/derived';
 import { whtrWaists } from '../domain/benchmark';
 import { loggedLater } from '../domain/trainingChecks';
+import { coachTags, countsAsKg, skipLabel } from '../domain/gym';
+import { cutShort, HALF_TEXT } from '../domain/deload';
+import type { BodyEntry } from '../domain/types';
 
 export interface ExportData {
   settings: Settings;
@@ -30,6 +33,8 @@ export interface ExportData {
   routes?: RouteRun[];
   /** Football matches, one row each, opponent names already resolved. */
   matches?: MatchRow[];
+  /** The body log: pain, strain, soreness and tightness. */
+  body?: BodyEntry[];
 }
 export interface MatchRow { date: DayKey; season: number; round: string; competition: string; opponent: string; homeAway: 'Home' | 'Away' | 'Neutral'; score: string; result: string; values: Record<'Pace' | 'Power' | 'Fuel' | 'Rest' | 'Routine' | 'Shape', number> }
 export const MATCH_HEADERS = ['Date', 'Season', 'Matchday', 'Competition', 'Opponent', 'Home/Away', 'Score', 'Result', 'Pace', 'Power', 'Fuel', 'Rest', 'Routine', 'Shape'];
@@ -162,18 +167,18 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
   }
 
   // Sets: the plan's own schema, plus a few extras at the end.
-  const setsSheet: Cell[][] = [['date', 'session', 'exercise', 'set', 'side', 'load_kg', 'reps', 'seconds', 'notes', 'tempo_3s', 'drop_set', 'mark', 'exercise_id', 'steps', 'form_1_5', 'clean_reps', 'rir', 'challenges', 'faults', 'discomfort', 'skipped']];
+  const setsSheet: Cell[][] = [['date', 'session', 'exercise', 'set', 'side', 'load_kg', 'reps', 'seconds', 'notes', 'tempo_3s', 'drop_set', 'mark', 'exercise_id', 'steps', 'form_1_5', 'clean_reps', 'rir', 'challenges', 'faults', 'discomfort', 'skipped', 'load_unit', 'skip_reason']];
   const doneIds = new Set(done.map((x) => x.id));
   for (const x of [...d.sets].filter((x) => doneIds.has(x.sessionId)).sort((a, b) => a.at - b.at)) {
-    setsSheet.push([x.date, x.session, x.exercise, x.setNo, x.side, x.loadKg, x.reps ?? null, x.seconds ?? null, x.band ?? null, !!x.tempo, !!x.drop, x.mark ?? null, x.exerciseId, x.steps ?? null, x.form ?? null, x.cleanReps ?? null, x.rir ?? null, x.challenges?.join('; ') || null, x.faults?.join('; ') || null, x.discomfort ?? null, !!x.skipped]);
+    setsSheet.push([x.date, x.session, x.exercise, x.setNo, x.side, x.loadKg, x.reps ?? null, x.seconds ?? null, x.band ?? null, !!x.tempo, !!x.drop, x.mark ?? null, x.exerciseId, x.steps ?? null, x.form ?? null, x.cleanReps ?? null, x.rir ?? null, x.challenges?.join('; ') || null, x.faults?.join('; ') || null, x.discomfort ?? null, !!x.skipped, x.loadUnit ?? null, skipLabel(x.skipWhy) ?? null]);
   }
 
   // Sessions
-  const sessions: Cell[][] = [['date', 'session', 'start', 'end', 'minutes', 'short', 'sets', 'reps', 'kg_moved', 'records', 'joint_flags', 'swaps', 'notes', 'quality', 'readiness', 'context', 'lighter_week', 'logged_later']];
+  const sessions: Cell[][] = [['date', 'session', 'start', 'end', 'minutes', 'short', 'sets', 'reps', 'kg_moved', 'records', 'joint_flags', 'swaps', 'notes', 'quality', 'readiness', 'context', 'lighter_week', 'logged_later', 'place', 'half_sets', 'heavy_block_first', 'ended_early']];
   for (const x of done) {
     const mine = d.sets.filter((y) => y.sessionId === x.id);
     const later = loggedLater(mine);
-    const kg = mine.reduce((n, y) => n + (y.loadKg ?? 0) * (y.reps ?? 0) * (plan && findExercise(plan, y.exerciseId)?.load === 'pair' ? 2 : 1), 0);
+    const kg = mine.reduce((n, y) => n + (countsAsKg(y) ? (y.loadKg ?? 0) * (y.reps ?? 0) * (plan && findExercise(plan, y.exerciseId)?.load === 'pair' ? 2 : 1) : 0), 0);
     sessions.push([
       x.date,
       x.session,
@@ -193,6 +198,10 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
       x.context?.join('; ') || null,
       !!x.lighter,
       later,
+      x.place ?? null,
+      x.half ? HALF_TEXT[x.half] : null,
+      !!x.heavyFirst,
+      cutShort(x, mine),
     ]);
   }
 
@@ -279,11 +288,14 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
   for (const t of s.targets) targets.push([t.from, t.targets.kcalMin, t.targets.kcalMax, t.targets.proteinG, t.targets.steps, t.targets.waterMl, r2(t.targets.sleepMin / 60), t.targets.sessionsPerWeek]);
 
   // Plan
-  const planRows: Cell[][] = [['session', 'order', 'exercise', 'target', 'load', 'start_kg', 'rest_seconds', 'notes']];
+  const planRows: Cell[][] = [['session', 'order', 'exercise', 'target', 'load', 'start_kg', 'rest_seconds', 'notes', 'exercise_id', 'family', 'kit', 'replaces', 'progression_of', 'machine', 'rotation']];
+  const LOAD_WORDS: Record<string, string> = { single: 'one dumbbell', pair: 'pair, per dumbbell', barbell: 'barbell, total kg', stack: 'machine stack', plates: 'plates added', assist: 'assist (less is progress)' };
   if (plan) {
     for (const sess of plan.sessions) {
       for (const ex of sess.exercises) {
-        planRows.push([sess.name, ex.order, ex.name, targetText(ex), ex.load === 'single' ? 'one dumbbell' : ex.load === 'pair' ? 'pair, per dumbbell' : ex.load, ex.startKg ?? null, ex.restSec ?? null, ex.note ?? null]);
+        const tags = coachTags(ex);
+        const rot = plan.rotations ? (plan.rotations.gym.includes(sess.id) ? 'gym' : plan.rotations.home.includes(sess.id) ? 'home' : 'extra') : null;
+        planRows.push([sess.name, ex.order, ex.name, targetText(ex), LOAD_WORDS[ex.load] ?? ex.load, ex.startKg ?? null, ex.restSec ?? null, ex.note ?? null, ex.id, tags.family ?? null, tags.kit ?? null, tags.replaces ?? null, tags.progressionOf ?? null, ex.machine ?? null, rot]);
       }
     }
   }
@@ -320,7 +332,7 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
     ['training weeks in a row', weeks?.streak ?? null, weeks ? `${weeks.thisWeek} this week` : null],
     ['sessions logged', done.length, null],
     ['walk across India, km', Math.round(km), pos.to ? `Between ${pos.from.name} and ${pos.to.name}` : `At ${pos.from.name}`],
-    ['plan', plan?.name ?? null, plan ? `From ${plan.from}; next alternates ${plan.rotation.join('/')}` : null],
+    ['plan', plan?.name ?? null, plan ? (plan.rotations ? `From ${plan.from}; home ${plan.rotations.home.join('/')}, gym ${plan.rotations.gym.join('/')}` : `From ${plan.from}; next alternates ${plan.rotation.join('/')}`) : null],
   ];
 
   const readme: Cell[][] = [
@@ -331,8 +343,9 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
     ['Daily: one row per day. steps_estimated marks steps typed as a guess; step averages leave them out. Rings close when kcal lands between kcal_min and kcal_max, protein reaches its target, and steps reach theirs. trend_kg smooths daily weigh-ins.'],
     ['Food log: every entry. kind is food, quick (a typed estimate), free (the weekly free meal) or drink.'],
     ['My foods: saved foods. kcal and protein are for values_per of the measured_in unit.'],
-    ['Sets: one row per set, in the training plan’s own schema (date, session, exercise, set, side, load_kg, reps, seconds, notes). load_kg is per dumbbell. mark: !! record, ! beat last time, = matched.'],
-    ['Sessions: one row per session, with joint flags and any swaps. logged_later marks sessions typed in afterwards (sets under 30 s apart on average); their minutes are left blank.'],
+    ['Sets: one row per set, in the training plan’s own schema (date, session, exercise, set, side, load_kg, reps, seconds, notes). load_kg is per dumbbell. mark: !! record, ! beat last time, = matched. Gym loads: load_unit says what load_kg holds (kg for a barbell total or a kg stack; lb or stack for a stack’s own numbers; plates added; assist-… for an assist, where less is progress). Gym numbers are never converted or compared across machines. skip_reason: why a skipped set was skipped.'],
+    ['Sessions: one row per session, with joint flags and any swaps. logged_later marks sessions typed in afterwards (sets under 30 s apart on average); their minutes are left blank. place: home or gym. half_sets: why the night was at half sets (stop 3 reps short, no record chasing). ended_early: an exercise in the session had no set at all.'],
+    ['Body log: every pain, strain, soreness or tightness entry, with date, time, body part, side, kind and note. Entries made during a set name the exercise, set and side.'],
     ['Weekly: Monday-to-Sunday averages. Food averages count complete days when any are marked, else days with entries; food_basis says which and how many.'],
     ['Measurements: waist standing (stomach tucked), relaxed and slouched, shoulders, and the shoulder-to-waist ratio (it should rise). Waist-to-height uses the relaxed waist once there is one; waist_to_height_basis says which.'],
     ['Records: the best set per exercise id (the highest estimated one-rep max for loaded reps), the best at each load, and any older names. Skipped and placeholder sets are left out.'],
@@ -340,6 +353,12 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
     ['Plan: the training plan as it stands.'],
     ['Routes: each challenge and expedition joined, with the km walked on it, whether it is walking, set down or finished, the day it was joined and the day it was finished.'],
   ];
+
+  // Body log
+  const bodyRows: Cell[][] = [['date', 'time', 'body_part', 'side', 'kind', 'note', 'exercise', 'set', 'set_side', 'exercise_id']];
+  for (const b of [...(d.body ?? [])].sort((x, y) => x.at - y.at)) {
+    bodyRows.push([b.date, fmtTime(b.at), b.part, b.side ?? null, b.kind, b.note ?? null, b.exercise ?? null, b.setNo ?? null, b.setSide ?? null, b.exerciseId ?? null]);
+  }
 
   // Routes
   const routeSteps = stepsByDay(d.days);
@@ -364,6 +383,7 @@ export function workbookSheets(d: ExportData, now = new Date()): Sheet[] {
     { name: 'Records', rows: records },
     { name: 'Targets history', rows: targets },
     { name: 'Plan', rows: planRows },
+    { name: 'Body log', rows: bodyRows },
     ...(routeRows.length > 1 ? [{ name: 'Routes', rows: routeRows }] : []),
     ...(d.matches?.length ? [{ name: 'Matches', rows: [MATCH_HEADERS, ...d.matches.map((m) => [m.date, m.season, m.round, m.competition, m.opponent, m.homeAway, m.score, m.result, m.values.Pace, m.values.Power, m.values.Fuel, m.values.Rest, m.values.Routine, m.values.Shape] as Cell[])] }] : []),
     ...(slots.length

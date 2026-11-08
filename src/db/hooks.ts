@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
 import { dayKey, type DayKey } from '../domain/dates';
-import type { Day, Food, FoodEntry, Measurement, SetEntry, Settings, TrainingSession } from '../domain/types';
+import type { BodyEntry, Day, Food, FoodEntry, Measurement, SetEntry, Settings, TrainingSession } from '../domain/types';
 import { defaultSettings } from './actions';
 import { db } from './db';
 import { setStride } from '../domain/walk';
@@ -100,4 +100,9 @@ export function useNow(ms = 1000): number {
     };
   }, [ms]);
   return now;
+}
+
+/** The body log, oldest first. */
+export function useBody(): BodyEntry[] | undefined {
+  return useLiveQuery(async () => (await db.body.toArray()).sort((a, b) => a.at - b.at), []);
 }

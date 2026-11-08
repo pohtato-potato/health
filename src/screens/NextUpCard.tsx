@@ -1,5 +1,5 @@
 import { doneTodayLine, loggedLater, unfinishedInSession } from '../domain/trainingChecks';
-import { findSession } from '../domain/plan';
+import { findSession, hasGym } from '../domain/plan';
 import type { Settings, TrainingSession } from '../domain/types';
 import { useAllSets, useNow, useSessions } from '../db/hooks';
 import { go } from '../router';
@@ -67,7 +67,8 @@ export function NextUpCard({
       sub={`${usual.fromHistory ? 'Usually' : 'About'} ${usual.min} min${readyN ? ` · ${readyN} ready to go heavier` : ''}${up.swaps.length ? ` · ${up.swaps.length} swap${up.swaps.length === 1 ? '' : 's'} for a flag` : ''}`}
       ready={ready}
       week={week}
-      action={evening ? { label: 'Start', run: () => go('/session', { start: up.sessionId }) } : undefined}
+      // With home and gym rotations, Train asks which one first.
+      action={evening ? { label: 'Start', run: () => (plan && hasGym(plan) ? go('/train') : go('/session', { start: up.sessionId })) } : undefined}
       onOpen={() => go('/train')}
     />
   );

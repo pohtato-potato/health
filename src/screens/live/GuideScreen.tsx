@@ -13,6 +13,12 @@ interface Props {
   setup?: { text: string; from?: DayKey };
   onSetup: (text: string) => void;
   checks: FormCheck[];
+  /** The load as words, for gym kit ("stack 7 kg", "40 kg total"). */
+  kgText?: string;
+  /** Every gym exercise carries the coach's safety lines. */
+  safety?: { title: string; text: string }[];
+  /** A warm-up note, e.g. the light pair when the heavy block went first. */
+  warmup?: string;
   onGo: () => void;
   top?: ReactNode;
 }
@@ -43,7 +49,7 @@ export function GuideScreen(p: Props) {
           {p.ex.sets} × {range(p.ex)}
           {p.ex.perSide ? ' each side' : ''}
         </span>
-        {p.kg !== null && <span className="lv-pill">{p.kg} kg</span>}
+        {p.kg !== null && <span className="lv-pill">{p.kgText ?? `${p.kg} kg`}</span>}
         {p.ex.perSide && side && <span className="lv-side lead">{side.toUpperCase()} FIRST</span>}
         {p.tempo && <span className="lv-pill tempo">Tempo: lower 3 s, lift 1 s</span>}
       </div>
@@ -51,6 +57,22 @@ export function GuideScreen(p: Props) {
         <p className="lv-small">
           {side} first: {p.ex.leadWhy}.
         </p>
+      )}
+      {p.warmup && (
+        <div className="lv-card">
+          <div className="lv-card-h">Warm-up</div>
+          <div className="lv-small">{p.warmup}</div>
+        </div>
+      )}
+      {p.safety && p.safety.length > 0 && (
+        <div className="lv-guide" aria-label="Safety">
+          {p.safety.map((x) => (
+            <div key={x.title} className="stop">
+              <b>Safety · {x.title}</b>
+              {x.text}
+            </div>
+          ))}
+        </div>
       )}
       {sections.length > 0 && (
         <div className="lv-guide">

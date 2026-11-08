@@ -11,8 +11,12 @@ import {
   bottomOfRange,
   buildSession,
   findExercise,
+  hasGym,
   isSuperset,
+  placeOfSession,
   planForKit,
+  rotationOf,
+  type Place,
   measureOf,
   sidesFor,
   valueOfSet,
@@ -27,7 +31,10 @@ import type { SetEntry, Settings, TrainingSession } from '../domain/types';
 import { bump, patchSession, patchSettings, startSession } from '../db/actions';
 import { APP_START } from '../appStart';
 import { setRestRunning } from '../state/restState';
-import { useActiveSession, useAllDays, useAllSets, useAllSetsWithSkips, useSessions, useSettings } from '../db/hooks';
+import { useActiveSession, useAllDays, useAllSets, useAllSetsWithSkips, useBody, useSessions, useSettings } from '../db/hooks';
+import { HALF_RULES, halfWhy, lighterOn, sickOn } from '../domain/deload';
+import { heavyFirstOffer, heavyFirstOrder, isDumbbellKind } from '../domain/gym';
+import { loadBlocks } from '../domain/sessionEdges';
 import { dayKey } from '../domain/dates';
 import { readinessFor } from '../state/readinessFor';
 import { go, useRoute } from '../router';
@@ -55,8 +62,12 @@ export function SessionScreen() {
   const only = params.get('only')?.split(',').filter(Boolean);
   const short = params.get('short') === '1' || !!only;
 
+  const body = useBody();
+  const place = (params.get('place') as Place | null) ?? undefined;
+  const heavy = params.get('heavy') === '1';
+
   useEffect(() => {
-    if (!settings || active === undefined || !sessions || !sets || !days || starting.current) return;
+    if (!settings || active === undefined || !sessions || !sets || !days || !body || starting.current) return;
     if (active) {
       if (start) go('/session', undefined, { replace: true });
       return;
@@ -67,28 +78,52 @@ export function SessionScreen() {
       return;
     }
     starting.current = true;
-    const sessionId = start === 'next' ? nextUp(settings, sessions, sets, days)?.sessionId ?? plan.rotation[0] : start;
-    const swaps = pendingSwaps(plan, sessions, days).filter((s) => s.flag.swap?.session === sessionId);
-    const today = dayKey();
-    const exs = buildSession(plan, sessionId, { short: short && !only, swaps }).filter((e) => !only || only.includes(e.id));
-    const lighter = !!settings.lighterWeek && today >= settings.lighterWeek.from && today <= settings.lighterWeek.to;
-    const tempo = Object.fromEntries(exs.map((ex) => [ex.id, exerciseStatus(ex, settings.planState, settings.equipment, sets, plan.bigJump).tempo]));
-    const ready = readinessFor(settings, today, days, sessions, sets, flagEvents(plan, sessions, days).map((e) => e.date));
-    void startSession({
-      session: sessionId,
-      planName: plan.name,
-      planVersion: plan.planVersion,
-      exercises: exs.map((e) => e.id),
-      short,
-      swaps: swaps.map(({ from, to, reason }) => ({ from, to, reason })),
-      tempo,
-      ...readinessToStore(ready),
-      lighter }).then(() => {
+    void (async () => {
+      const sessionId = start === 'next' ? nextUp(settings, sessions, sets, days, false, place ?? 'home')?.sessionId ?? rotationOf(plan, place)[0] : start;
+      const swaps = pendingSwaps(plan, sessions, days).filter((s) => s.flag.swap?.session === sessionId);
+      const today = dayKey();
+      let exs = buildSession(plan, sessionId, { short: short && !only, swaps }).filter((e) => !only || only.includes(e.id));
+      const statusOf = (e: ExerciseDef) => exerciseStatus(e, settings.planState, settings.equipment, sets, plan.bigJump);
+      // "Start with the heavy block?": the heavy block first, the plate plan already shown on Train.
+      let heavyFirst = false;
+      if (heavy) {
+        const blocks = loadBlocks(exs, (e) => (isDumbbellKind(e.load) ? statusOf(e).loadKg : null));
+        const offer = heavyFirstOffer(blocks);
+        if (offer) {
+          const order = heavyFirstOrder(blocks, offer.heavyKg);
+          exs = order.map((id) => exs.find((e) => e.id === id)!).filter(Boolean);
+          heavyFirst = true;
+        }
+      }
+      const lighterWeek = lighterOn(settings.lighterWeek, today);
+      const input = { sessions, sets: withSkips ?? sets, days, body, occasions: settings.occasions, lighterWeek: settings.lighterWeek };
+      let half = halfWhy(input, today);
+      // On a day marked sick, the lighter version is offered, never imposed.
+      if (!half && sickOn(today, days, settings.occasions)) {
+        const yes = await askConfirm({ title: 'Marked sick today', body: `Do the lighter version? ${HALF_RULES}`, yes: 'Lighter version', no: 'Full session' });
+        if (yes) half = 'sick';
+      }
+      const tempo = Object.fromEntries(exs.map((ex) => [ex.id, statusOf(ex).tempo]));
+      const ready = readinessFor(settings, today, days, sessions, sets, flagEvents(plan, sessions, days).map((e) => e.date));
+      await startSession({
+        session: sessionId,
+        planName: plan.name,
+        planVersion: plan.planVersion,
+        exercises: exs.map((e) => e.id),
+        short,
+        swaps: swaps.map(({ from, to, reason }) => ({ from, to, reason })),
+        tempo,
+        ...readinessToStore(ready),
+        lighter: lighterWeek,
+        place: hasGym(plan) ? place ?? placeOfSession(plan, sessionId) : undefined,
+        half,
+        heavyFirst,
+      });
       starting.current = false;
       if (Date.now() - APP_START < 60_000) void bump('leeroy');
       go('/session', undefined, { replace: true });
-    });
-  }, [settings, active, sessions, sets, days, start, short]);
+    })();
+  }, [settings, active, sessions, sets, days, body, start, short]);
 
   if (!settings?.plan || !active || !sets || !withSkips) return <div className="page bare" />;
   return <Runner session={active} settings={settings} plan={withTrip(planForKit(settings.plan, settings.equipment))} allSets={withSkips} />;
@@ -99,7 +134,7 @@ const valueOf = valueOfSet;
 function Runner({ session, settings, plan, allSets }: { session: TrainingSession; settings: Settings; plan: PlanDef; allSets: SetEntry[] }) {
   const r = useRunner(session, settings, plan, allSets);
   if (session.view !== 'list') return <LiveSession r={r} session={session} settings={settings} plan={plan} />;
-  const { toast, now, exs, groups, mine, history, statuses, extra, setExtra, complete, gi, setGi, editing, setEditing, draft, setDraft, rest, watch, setWatch, swapFor, setSwapFor, coach, setCoach, group, rows, current, activeKey, extendRest, stopRest, defaults, kgEditable, save, skip, undoSkip, remove, toggleTempo, finish, def, firstIdx, restLeft, nextGroup, groupDone, tired, offerFor, answer } = r;
+  const { toast, now, exs, groups, mine, history, statuses, extra, setExtra, complete, gi, setGi, editing, setEditing, draft, setDraft, rest, watch, setWatch, swapFor, setSwapFor, coach, setCoach, group, rows, current, activeKey, extendRest, stopRest, defaults, kgEditable, save, askSkip, undoSkip, remove, toggleTempo, finish, def, firstIdx, restLeft, nextGroup, groupDone, tired, offerFor, answer } = r;
 
   return (
     <div className="page bare" style={{ gap: 16, paddingTop: 'calc(14px + var(--safe-top))' }}>
@@ -298,7 +333,7 @@ function Runner({ session, settings, plan, allSets }: { session: TrainingSession
               kgEditable={kgEditable}
               onSave={save}
               onRemove={remove}
-              onSkip={skip}
+              onSkip={(row) => void askSkip(row)}
               onUndoSkip={undoSkip}
               watch={watch}
               setWatch={setWatch}

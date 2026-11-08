@@ -1,3 +1,4 @@
+import { countsAsKg } from '../domain/gym';
 import { useEffect, useState } from 'react';
 import { addDays, daysBetween } from '../domain/dates';
 import { fmtDayMonth, lowerFirst, weekdayName } from '../domain/format';
@@ -112,7 +113,8 @@ export function sessionStats(mine: SetEntry[], plan?: PlanDef) {
   const working = mine.filter((s) => !s.drop);
   const reps = mine.reduce((n, s) => n + (s.reps ?? 0), 0);
   const hands = (id: string) => (plan && findExercise(plan, id)?.load === 'pair' ? 2 : 1);
-  const kg = mine.reduce((n, s) => n + (s.loadKg ?? 0) * (s.reps ?? 0) * hands(s.exerciseId), 0);
+  // Only real kilograms: a stack in lb or plain numbers, plates added and an assist aren't kg lifted.
+  const kg = mine.reduce((n, s) => n + (countsAsKg(s) ? (s.loadKg ?? 0) * (s.reps ?? 0) * hands(s.exerciseId) : 0), 0);
   return { sets: working.length, reps, kg: Math.round(kg), records: new Set(mine.filter((s) => s.mark === '!!').map((s) => s.exerciseId)).size };
 }
 

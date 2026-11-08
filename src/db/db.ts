@@ -6,6 +6,7 @@ import type { Snapshot } from './snapshots';
 import type { FbBundle, FbClub, FbNews, FbSave, FbSeason, FbSquadRow, StoredMatch } from '../football/store/tables';
 import type { FbPlayer } from '../football/players/types';
 import type {
+  BodyEntry,
   CheckIn,
   Clip,
   Counter,
@@ -74,6 +75,7 @@ export class HealthDB extends Dexie {
   fbNews!: EntityTable<FbNews, 'id'>;
   fbBundles!: EntityTable<FbBundle, 'id'>;
   fbPlayers!: EntityTable<FbPlayer, 'id'>;
+  body!: EntityTable<BodyEntry, 'id'>;
 
   constructor(name = 'health') {
     super(name);
@@ -136,6 +138,10 @@ export class HealthDB extends Dexie {
     this.version(10).stores({
       fbPlayers: 'id, unit, status',
     });
+    // The body log: pain, strain, soreness and tightness, by part (the coach reads it in the export).
+    this.version(11).stores({
+      body: 'id, date, at',
+    });
   }
 }
 
@@ -177,6 +183,7 @@ export const TABLES = [
   'fbNews',
   'fbBundles',
   'fbPlayers',
+  'body',
 ] as const;
 export type TableName = (typeof TABLES)[number];
 

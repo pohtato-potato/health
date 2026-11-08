@@ -57,3 +57,81 @@ export function ConfirmHost() {
     document.body,
   );
 }
+
+export interface ChoiceOptions {
+  title: string;
+  body?: string;
+  /** Each a button; with `input`, each one saves the text too. */
+  options: { id: string; label: string; on?: boolean }[];
+  /** An optional field: a note, or a number. */
+  input?: { label: string; value?: string; inputMode?: 'decimal' | 'text'; placeholder?: string };
+  cancel?: string;
+}
+
+type PendingChoice = ChoiceOptions & { resolve: (v: { id: string; text: string } | null) => void };
+let showChoice: ((p: PendingChoice) => void) | null = null;
+
+/** Asks for one of a few answers, in the app's own sheet. Resolves null on cancel, or when no host is mounted. */
+export function askChoice(o: ChoiceOptions): Promise<{ id: string; text: string } | null> {
+  return new Promise((resolve) => {
+    if (!showChoice) return resolve(null);
+    showChoice({ ...o, resolve });
+  });
+}
+
+/** Mount once near the root, beside ConfirmHost. */
+export function ChoiceHost() {
+  const [p, setP] = useState<PendingChoice | null>(null);
+  const [text, setText] = useState('');
+  useEffect(() => {
+    showChoice = (n) => {
+      setText(n.input?.value ?? '');
+      setP(n);
+    };
+    return () => {
+      showChoice = null;
+    };
+  }, []);
+  if (!p) return null;
+  const done = (v: { id: string; text: string } | null) => {
+    p.resolve(v);
+    setP(null);
+  };
+  return createPortal(
+    <>
+      <div className="scrim" style={{ zIndex: 90 }} onClick={() => done(null)} />
+      <div className="sheet confirm" style={{ zIndex: 91 }} role="dialog" aria-modal="true" aria-labelledby="choice-title">
+        <div className="sheet-body col gap12">
+          <div id="choice-title" className="h2">{p.title}</div>
+          {p.body && <p className="t15 q lh" style={{ margin: 0 }}>{p.body}</p>}
+          {p.input && (
+            <label className="col gap4">
+              <span className="t14 q">{p.input.label}</span>
+              <input
+                className="field"
+                style={{ minHeight: 48, fontSize: 18 }}
+                inputMode={p.input.inputMode ?? 'text'}
+                placeholder={p.input.placeholder}
+                value={text}
+                onChange={(e) => setText(p.input?.inputMode === 'decimal' ? e.target.value.replace(',', '.').replace(/[^\d.]/g, '') : e.target.value)}
+                autoFocus
+              />
+            </label>
+          )}
+          <div className="col gap8">
+            {p.options.map((o) => (
+              <button key={o.id} type="button" className={`btn lg block${o.on ? '' : ' ghost'}`} aria-pressed={o.on} style={{ minHeight: 48 }} onClick={() => done({ id: o.id, text })}>
+                {o.label}
+                {o.on ? ' ✓' : ''}
+              </button>
+            ))}
+          </div>
+          <button type="button" className="btn ghost lg block" onClick={() => done(null)}>
+            {p.cancel ?? 'Cancel'}
+          </button>
+        </div>
+      </div>
+    </>,
+    document.body,
+  );
+}

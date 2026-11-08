@@ -29,7 +29,7 @@ export interface PlanDiff {
   next: string;
 }
 
-const KIND_NAMES: Record<LoadKind, string> = { pair: 'a pair', single: 'one dumbbell', body: 'bodyweight', band: 'band' };
+const KIND_NAMES: Record<LoadKind, string> = { pair: 'a pair', single: 'one dumbbell', body: 'bodyweight', band: 'band', barbell: 'a barbell', stack: 'a machine stack', plates: 'a plate-loaded machine', assist: 'an assisted machine' };
 export const kindName = (k: LoadKind) => KIND_NAMES[k];
 
 /** What a plan import changes: exercises kept, renamed, new and gone, new flags, and every load that moves. */
@@ -75,7 +75,7 @@ export function applyImport(s: Pick<Settings, 'plan' | 'planState' | 'rotationSt
   return {
     plan,
     planState: { variants: drop(s.planState.variants), band: drop(s.planState.band) },
-    rotationStart: rotationOf(next).includes(opts.start) ? { session: opts.start, at: opts.at } : undefined,
+    rotationStart: rotationOf(next).includes(opts.start) || rotationOf(next, 'gym').includes(opts.start) ? { session: opts.start, at: opts.at } : undefined,
     planUndo: { at: opts.at, name: next.name, plan: s.plan, planState: s.planState, rotationStart: s.rotationStart },
   };
 }

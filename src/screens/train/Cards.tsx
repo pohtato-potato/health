@@ -16,12 +16,32 @@ interface UpNextProps {
   /** Trip workout, extra sessions. */
   chips: { label: string; onClick: () => void }[];
   note?: string;
+  /** Home and gym rotations: which one tonight, each with its own next session, and the week's guide. */
+  place?: { value: 'home' | 'gym'; home: string; gym: string; onPick: (p: 'home' | 'gym') => void; guide?: string };
+  /** Tonight is at half sets: why, and the rule. */
+  half?: string;
+  /** "Start with the 10 kg block?" */
+  heavy?: { label: string; onClick: () => void };
 }
 
 /** Before a session: the next one, how long it usually takes, and the whole plan in load blocks. */
 export function UpNextCard(p: UpNextProps) {
   return (
     <div className="lv-card lv-tr-hero">
+      {p.place && (
+        <div className="lv-place" role="group" aria-label="Home or gym tonight">
+          {(['home', 'gym'] as const).map((k) => (
+            <button key={k} type="button" className={`lv-place-btn${p.place!.value === k ? ' on' : ''}`} aria-pressed={p.place!.value === k} onClick={() => p.place!.onPick(k)}>
+              <b>
+                {p.place!.value === k ? '● ' : '○ '}
+                {k === 'home' ? 'Home' : 'Gym'}
+              </b>
+              <span>next: {k === 'home' ? p.place!.home : p.place!.gym}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {p.place?.guide && <span className="lv-small">{p.place.guide}</span>}
       <span className="lv-kicker">Up next</span>
       <span className="lv-tr-hero-title">{p.name}</span>
       <span className="lv-small">
@@ -38,6 +58,11 @@ export function UpNextCard(p: UpNextProps) {
         <BlockList blocks={p.blocks} />
       </div>
       {p.swaps > 0 && <div className="lv-small">{p.swaps} swapped out for a joint flag.</div>}
+      {p.half && (
+        <div className="lv-small">
+          <b>Half sets tonight.</b> {p.half}
+        </div>
+      )}
       <div className="lv-actions">
         <button type="button" className="lv-ghost" onClick={p.onShort}>
           30 min
@@ -46,6 +71,11 @@ export function UpNextCard(p: UpNextProps) {
           Start {p.name}
         </button>
       </div>
+      {p.heavy && (
+        <button type="button" className="lv-chipbtn" onClick={p.heavy.onClick}>
+          {p.heavy.label}
+        </button>
+      )}
       {p.chips.length > 0 && (
         <div className="lv-tr-hero-chips">
           {p.chips.map((c) => (
