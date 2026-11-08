@@ -152,7 +152,8 @@ function abilityFx(a: AbilityDef, side: Side, minute: number, type: string, home
   return out;
 }
 
-const braboOk = (b: BraboAbility, side: Side, minute: number, type: string, home: boolean, live: Live) => {
+const braboOk = (b: BraboAbility, side: Side, minute: number, type: string, home: boolean, live: Live, ctx: MatchCtx = {}) => {
+  if (b.side && b.side !== 'both' && b.side !== side) return false;
   switch (b.when ?? 'always') {
     case 'always': return true;
     case 'long': return type === 'Long shot' || type === 'Long-range effort';
@@ -164,6 +165,15 @@ const braboOk = (b: BraboAbility, side: Side, minute: number, type: string, home
     case 'after-concede': return live.theirs > 0;
     case 'level': return live.mine === live.theirs;
     case 'own-type': return TYPES[side].some(([t, ax]) => t === type && ax === b.axis);
+    // Engine 2 traits (layer 2)
+    case 'second-half': return minute > 45;
+    case 'behind': return live.theirs > live.mine;
+    case 'ahead': return live.mine > live.theirs;
+    case 'set-piece': return type === 'Set piece';
+    case 'vs-higher': return Boolean(ctx.vsHigher);
+    case 'auto': return Boolean(ctx.auto);
+    case 'derby': return Boolean(ctx.derby);
+    case 'cup': return ctx.comp === 'bigcup' || ctx.comp === 'tiercup' || ctx.comp === 'playoff' || ctx.comp === 'event' || ctx.comp === 'continental' || ctx.comp === 'clubworld';
     default: return false;
   }
 };
@@ -222,7 +232,7 @@ export function playMatch(m: MatchInput): MatchEvents {
     if (boost) add({ axis: boost, d: 2, why: type, kind: 'type' });
     // 2. captain and equipped abilities
     if (m.captain && LIT[side].includes(m.captain)) add({ axis: m.captain, d: 2, why: 'Captain', kind: 'captain' });
-    for (const b of m.abilities) if (b.axis && b.d && LIT[side].includes(b.axis) && braboOk(b, side, minute, type, m.home, live)) add({ axis: b.axis, d: b.d, why: b.name, kind: 'ability' });
+    for (const b of m.abilities) if (b.axis && b.d && LIT[side].includes(b.axis) && braboOk(b, side, minute, type, m.home, live, ctx)) add({ axis: b.axis, d: b.d, why: b.name, kind: 'ability' });
     // 3. youth sub from 60'
     if (minute >= 60) for (const b of m.bench) if (LIT[side].includes(b.axis)) add({ axis: b.axis, d: b.plus, why: 'Off the bench', kind: 'sub' });
     // 4. the opponent's shrinks and presses

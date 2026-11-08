@@ -32,7 +32,11 @@ import type { FbBundle, FbClub, FbNews, FbSave, FbSeason, FbSquadRow, StoredMatc
 import { creditsFor } from '../players/credit';
 import { linkedLogged, youthDay } from '../players/youth';
 import type { Ctx } from '../players/attributes';
-import { academyIds, creditMatch, playerCtx, playersDay, rebuildPlayers, squadNight, type Roster } from './players';
+import { academyIds, creditMatch, nightOptsFor, playerCtx, playersDay, rebuildPlayers, squadNight, type Roster } from './players';
+import { signFreeAgents } from '../rotation/freeAgents';
+import { chemistryAfter, moraleAfter } from '../rotation/night';
+import { BASE_RULES } from '../rotation/rules';
+import { traitAbilities } from '../rotation/traits';
 
 export const CATCH_UP_CAP = 42;
 const resultOf = (s: [number, number], pens?: [number, number]): Result => (s[0] > s[1] || (pens && pens[0] > pens[1]) ? 'W' : s[0] < s[1] || (pens && pens[0] < pens[1]) ? 'L' : 'D');
@@ -49,7 +53,7 @@ export async function playDue(now = Date.now()): Promise<StoredMatch[]> {
   return playThrough(yesterday, null);
 }
 
-const USER_KEYS = ['buzz', 'wcCountry', 'ownSponsor', 'captain', 'captains', 'captainWeek', 'slots', 'sponsorStyle', 'awakeSeen', 'seenSeasonEnd'] as const satisfies readonly (keyof FbSave)[];
+const USER_KEYS = ['buzz', 'wcCountry', 'ownSponsor', 'captain', 'captains', 'captainWeek', 'slots', 'sponsorStyle', 'awakeSeen', 'seenSeasonEnd', 'sheet', 'tactics', 'bedtime'] as const satisfies readonly (keyof FbSave)[];
 /**
  * Engine 2 arrives: rebuilds the players from history once (spec §16), crediting the stored matches and keeping only
  * youngsters tied to a real habit. Everything else in the save stays. Safe to call any time; it runs once.
@@ -63,7 +67,7 @@ export async function upgradeSave(): Promise<boolean> {
   return db.transaction('rw', [db.fbSave, db.fbMatches, db.fbNews, db.fbSquad, db.fbPlayers], async () => {
     const cur = await db.fbSave.get('save');
     if (!cur || cur.engine === 2) return false; // another tab upgraded first
-    await db.fbSave.put({ ...cur, engine: 2 });
+    await db.fbSave.put({ ...cur, engine: 2, chem: r.chem, morale: r.morale });
     await db.fbPlayers.clear();
     if (r.players.length) await db.fbPlayers.bulkPut(r.players);
     if (r.matches.length) await db.fbMatches.bulkPut(r.matches);
@@ -302,7 +306,8 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
   const raw = rotation ? rotationShape(recent.map((m) => m.values)) : night.values;
   // Engine 2: tonight = 70% today + 30% squad. A sick day plays the rotation squad (the bench) at 100% squad value.
   // An axis with no data tonight keeps its no-data value: the squad does not paper over a blank.
-  const team = squadNight(w.roster, raw, sick);
+  const tonight = nightOptsFor(w.save, w.roster, w.h, date, oppId, raw);
+  const team = squadNight(w.roster, raw, sick, tonight.opts);
   const blended = rotation && !sick ? raw : team.values;
   const flags = rotation ? {} : { ...night.flags };
   const values = { ...blended };
@@ -342,7 +347,8 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
     seed, values, opp, home: braboHome,
     captain: slots.has('armband') ? w.save.captain : undefined,
     stack: slots.has('stack') ? w.save.earned.filter((e) => e.date > addDays(date, -7)).length : 0,
-    abilities: [...braboAbilities(w.save.slots), ...awakenedTraits(w.save), ...groundAbilities(doneBundles(w))],
+    // Engine 2: a player's traits play while it starts (an Awakening's trait became its player's first limit break).
+    abilities: [...braboAbilities(w.save.slots), ...(w.save.engine === 2 ? traitAbilities(team.xi, w.roster) : awakenedTraits(w.save)), ...groundAbilities(doneBundles(w))],
     bench: benchFor(w, date), pre, conds, ctx,
     rival: rival ? rivalTwist(oppId, rival.how, rival.best) : oppId === ANTIGOON ? rivalTwist(ANTIGOON, 'legend') : undefined,
   });
@@ -353,7 +359,8 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
   const m: StoredMatch = {
     id: `${date}:${leg ?? 1}`, date, season: w.save.season, day: plan.day, comp, round, home, away, opp: oppId, braboHome,
     values, flags, events, score: mineScore, pens, result: resultOf(mineScore, pens),
-    xi: team.xi, credits: creditsFor(events, team.xi, def.name),
+    xi: team.xi, credits: creditsFor(events, team.xi, def.name, undefined, tonight.setPiece),
+    tactic: tonight.tactic, nudges: team.nudges.length ? team.nudges : undefined,
     watched: false, rotation, auto, leg, derby, big: derby || comp !== 'league' || plan.matchday === 34,
   };
   if (!w.save.met.includes(oppId)) w.save.met = [...w.save.met, oppId];
@@ -378,6 +385,7 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
   // Engine 2 has no new Awakenings: a player's limit breaks take their place (layer 2).
   w.matches.push(m);
   w.roster = creditMatch(w.roster, m);
+  afterNight(w, m, sick, def.name);
   const run = [...w.past, ...w.matches].filter((x) => !x.rotation);
   let streak = 0;
   for (let k = run.length - 1; k >= 0 && run[k].result === m.result; k--) streak++;
@@ -413,7 +421,28 @@ function clubDay(w: World, date: DayKey) {
     return next;
   });
   w.ctx = playerCtx(w.h, w.save, w.squad);
-  w.roster = playersDay(w.roster, w.h, w.ctx, date, academyIds(w.squad));
+  w.roster = playersDay(w.roster, w.h, w.ctx, date, academyIds(w.squad), false, BASE_RULES);
+  // Departed players sign for a club in our division (spec §6).
+  const tier = w.season.tierOf[OWN];
+  const seats = Object.entries(w.season.tierOf).filter(([id, t]) => t === tier && id !== OWN && !w.clubs.get(id)?.folded).map(([id]) => ({ id, name: clubById(id).name, rating: rating(w, id) }));
+  const fa = signFreeAgents(w.roster, date, seats);
+  w.roster = fa.roster;
+  w.news.push(...fa.news);
+}
+
+/** After a match: morale moves with the result; chemistry counts the night (not a sick night); a former player may score. */
+function afterNight(w: World, m: StoredMatch, sick: boolean, oppName: string) {
+  w.save.morale = moraleAfter(w.save.morale, m.result);
+  if (!sick && !m.rotation && w.save.chemOn !== m.date && m.xi?.length) {
+    w.save.chem = chemistryAfter(w.save.chem ?? {}, m.xi, BASE_RULES, w.save.sheet?.formation);
+    w.save.chemOn = m.date;
+  }
+  const theirs = m.events.chances.filter((c) => c.side === 'def' && !c.ok);
+  const agents = [...w.roster.values()].filter((p) => p.freeAgent?.club === m.opp);
+  if (theirs.length && agents.length) {
+    const p = agents[hashSeed(String(m.events.seed), 'agent') % agents.length];
+    w.news.push({ id: `${m.date}:${m.leg ?? 1}:agent-goal`, date: m.date, kind: 'club', clubId: m.opp, matchId: m.id, text: `${p.name} scores against us for ${oppName}, ${theirs[0].minute}′. The buy-back clause is still open.` });
+  }
 }
 /** Three youngsters for a season, at most one exercise, plus one per youth slot won in a trade. */
 export function youthIntake(season: number, date: DayKey, extra = 0, academy = false): FbSquadRow[] {

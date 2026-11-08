@@ -12,6 +12,7 @@ import type { Axis, AxisFlags, AxisValues, Comp, MatchEvents, Result, Tier } fro
 import type { Continental } from '../continental';
 import type { Credit, XiPlace } from '../players/types';
 import type { YouthLink } from '../players/youth';
+import type { Chemistry, Morale, Tactic, TeamSheet } from '../rotation/night';
 
 export type CrestOpt = 'a' | 'b' | 'c' | 'd' | 'e';
 export interface FbSave {
@@ -82,6 +83,16 @@ export interface FbSave {
   engine?: 2;
   /** Bedtime target, minutes after midnight (kept = asleep by it plus 45 minutes). Unset: your usual bedtime. */
   bedtime?: number;
+  // ---- Engine 2, layer 2: rotation ----
+  /** The team sheet: starters, unit captains, the set-piece taker (spec §9.1, §16). */
+  sheet?: TeamSheet;
+  /** The morning tactic, by the day whose match it is for. A day without one is left to the assistant. */
+  tactics?: Record<DayKey, Tactic>;
+  /** Chemistry by unit, and the last match day it counted. */
+  chem?: Chemistry;
+  chemOn?: DayKey;
+  /** 0 Settled, 1 Up, 2 High. */
+  morale?: Morale;
 }
 export interface FbClub { id: string; tier: Tier; rating: number; style: string; old?: OldSelf; folded?: boolean }
 export interface FbSeason {
@@ -132,6 +143,9 @@ export interface StoredMatch {
   /** Engine 2: who played, and who scored and saved. */
   xi?: XiPlace[];
   credits?: Credit[];
+  /** Layer 2: the tactic it played (and whether the assistant chose it), and the nudges on each axis. */
+  tactic?: { pick: Tactic; by: 'you' | 'assistant' };
+  nudges?: { axis: Axis; d: number; why: string }[];
 }
 export interface FbSquadRow {
   id: string; kind: 'youth'; name: string; axis: Axis; potential: 3 | 4 | 5; what: string; exercise: boolean; season: number;

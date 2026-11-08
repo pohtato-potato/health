@@ -50,4 +50,11 @@ export type { DayKey };
 /** A rival's twist on a match (built in rivals.ts). */
 export interface RivalTwist { id: string; name: string; text: string; mods: (minute: number, side: Side, autoPlayed: boolean) => Mod[] }
 /** One of Brabo's equipped abilities, from the catalogue. */
-export interface BraboAbility { id: string; name: string; axis?: Axis; d?: number; when?: 'always' | 'long' | 'late' | 'home' | 'away' | 'first-half' | 'after-concede' | 'level' | 'own-type' | 'home-late' }
+export interface BraboAbility {
+  id: string; name: string; axis?: Axis; d?: number;
+  when?: 'always' | 'long' | 'late' | 'home' | 'away' | 'first-half' | 'after-concede' | 'level' | 'own-type' | 'home-late'
+    // Engine 2 traits (layer 2)
+    | 'second-half' | 'behind' | 'ahead' | 'set-piece' | 'vs-higher' | 'auto' | 'derby' | 'cup';
+  /** Only on attack or only on defence; unset: either. */
+  side?: 'atk' | 'def' | 'both';
+}

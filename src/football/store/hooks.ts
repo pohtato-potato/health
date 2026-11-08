@@ -11,7 +11,8 @@ import { monthAverage } from '../oldSelves';
 import { seasonChange, type SeasonChange } from '../seasonChange';
 import { AXES } from '../types';
 import type { FbPlayer, XiPlace } from '../players/types';
-import { playerCtx, squadNight } from './players';
+import { nightOptsFor, playerCtx, squadNight } from './players';
+import type { Nudge, Tactic } from '../rotation/night';
 import { playersOn } from '../players/catalogue';
 import { ratingOf } from '../players/attributes';
 
@@ -36,6 +37,13 @@ export interface Tonight {
   flags: AxisFlags;
   /** The eleven that would start tonight. */
   xi: XiPlace[];
+  /** How tonight adds up (spec §8): today, the squad share, the blend and the capped nudges. */
+  today: AxisValues;
+  squad: Partial<AxisValues>;
+  base: AxisValues;
+  nudges: Nudge[];
+  total: AxisValues;
+  tactic: { pick: Tactic; by: 'you' | 'assistant' };
   known: AbilityDef[];
   hiddenNote: boolean;
   /** Abilities earned in the last 7 days (the weekly stack). */
@@ -59,16 +67,18 @@ export async function loadTonight(date: DayKey): Promise<Tonight | null> {
   const h = await loadHealth();
   const night = nightFor(h, date);
   const roster = new Map((await db.fbPlayers.toArray()).map((p) => [p.id, p]));
-  const team = squadNight(roster, night.values, h.days.get(date)?.status === 'sick');
+  const fixture = season ? fixtureFor(save, season) : undefined;
+  const o = nightOptsFor(save, roster, h, date, fixture?.opp, night.values);
+  const team = squadNight(roster, night.values, h.days.get(date)?.status === 'sick', o.opts);
   const liveValues = { ...team.values };
   for (const a of AXES) if (night.flags[a]) liveValues[a] = night.values[a];
-  const fixture = season ? fixtureFor(save, season) : undefined;
   const opp = fixture?.opp ? clubById(fixture.opp) : undefined;
   const played = await db.fbMatches.where('date').equals(date).toArray();
   const unwatchedAuto = (await db.fbMatches.where('date').between(addDays(date, -60), date, true, false).toArray()).filter((m) => m.auto && !m.watched);
   return {
     save, date, fixture, opp,
     liveValues, flags: night.flags, xi: team.xi,
+    today: night.values, squad: team.squad, base: team.base, nudges: team.nudges, total: team.total, tactic: o.tactic,
     known: opp?.known ?? [],
     hiddenNote: Boolean(opp?.hidden) && !save.met.includes(opp!.id),
     stack: save.earned.filter((e) => e.date > addDays(date, -7)).length,
