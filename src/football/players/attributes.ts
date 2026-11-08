@@ -76,7 +76,8 @@ export function ratingOf(c: Ctx, p: PlayerDef, date: DayKey): Rating | null {
   const daysIn = daysBetween(p.signed, date) + 1;
   const r = (v: number) => ramp(v, daysIn, c.rampStart?.[p.id] ?? 50);
   const attrs = attrsOf(c, p, date, days, r);
-  if (!attrs) return null;
+  // A broken log (a night with no times, say) is no data, never a NaN on a card.
+  if (!attrs || attrs.some((a) => !Number.isFinite(a.value))) return null;
   let overall = overallOf(attrs);
   if (p.kind === 'trend') overall = Math.min(TREND_CAP, overall);
   return { overall, attrs };
@@ -324,6 +325,8 @@ function exerciseAttrs(c: Ctx, p: PlayerDef, date: DayKey, days: DayKey[], r: (v
   }
   // Consistency: planned sessions it appeared in (a swap away still counts for it).
   const planned = c.h.sessions.filter((s) => win.has(s.date) && s.exercises.includes(p.ref!));
+  // In the plan but never trained and never in a session yet: no data, it keeps its starting 50.
+  if (!sessionIds.length && !planned.length) return null;
   const appeared = planned.filter((s) => all.some((x) => x.sessionId === s.id) || s.swapped?.some((w) => w.from === p.ref)).length;
   const cons = r(rate(share(appeared, planned.length || (all.length ? 1 : 0))));
   const consNote = planned.length ? `in ${appeared} of ${planned.length} planned sessions` : 'no planned sessions in 4 weeks';

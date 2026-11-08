@@ -11,6 +11,8 @@ import { daysBetween, dayOfLogging } from '../../../domain/dates';
 import { go } from '../../../router';
 import { PlayerCard, TiltCard } from './Card';
 
+/** Attribute colours from round 7: each bar also carries its name and number. */
+const ATTR_COLOUR = ['#ff9a76', '#ffd56a', '#c2b2ff', '#8fdcb6'];
 const uc = (u: Unit) => ({ ['--uc' as string]: UNIT_COLOUR[u] });
 const fmtDate = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 const openPlayer = (id: string) => go('/football/player', { id });
@@ -36,15 +38,16 @@ export function ElevenView({ xi, players }: { xi: XiPlace[]; players: FbPlayer[]
   const used: Record<string, number> = {};
   return (
     <section className="pl-eleven" aria-label="The eleven">
-      {waiting.map((p) => {
-        const m = p.moments.find((x) => !x.seen)!;
+      {waiting[0] && (() => {
+        const p = waiting[0];
+        const more = waiting.length - 1;
         return (
-          <button key={p.id} type="button" className="pl-banner" onClick={() => go('/football/card', { id: p.id })}>
-            <PlayerCard card={m.from} art={p.art} seed={p.id} />
-            <span><b>{p.name}</b> has a new card waiting. Tap to open it.</span>
+          <button type="button" className="pl-banner" onClick={() => go('/football/card', { id: p.id })}>
+            <PlayerCard card={p.moments.find((x) => !x.seen)!.from} art={p.art} seed={p.id} />
+            <span><b>{p.name}</b>{more ? ` and ${more} more have` : ' has'} a new card waiting. Tap to open {more ? 'the first' : 'it'}.</span>
           </button>
         );
-      })}
+      })()}
       <div className="fb-row"><h2 className="fb-t">The eleven</h2><span className="fb-s">4-3-3</span></div>
       {xi.length === 0 ? <p className="fb-s">Log a habit and it signs for the club. The eleven fills as players sign.</p> : (
         <div className="pl-pitch">
@@ -71,11 +74,11 @@ export function ElevenView({ xi, players }: { xi: XiPlace[]; players: FbPlayer[]
   );
 }
 
-function Row({ p }: { p: FbPlayer }) {
+function Row({ p, starts }: { p: FbPlayer; starts?: boolean }) {
   return (
     <button type="button" className="pl-row" style={uc(p.unit)} onClick={() => openPlayer(p.id)}>
       <PlayerCard card={p.card} art={p.art} seed={p.id} />
-      <span className="pl-col"><b>{p.name}</b><span>{stepName(p.card)}{p.status === 'academy' ? ' · in the academy' : p.status === 'left' ? ' · no longer logged' : ''}</span></span>
+      <span className="pl-col"><b>{p.name}</b><span>{p.status === 'academy' ? 'In the academy' : p.status === 'left' ? 'No longer logged' : starts ? 'Starts' : 'Bench'} · {stepName(p.card)}</span></span>
       <b className="pl-num">{p.overall}</b>
     </button>
   );
@@ -87,13 +90,14 @@ export function UnitRoute({ unit }: { unit: string }) {
   if (!players) return null;
   const u = AXES.find((a) => a === unit);
   if (!u) return <p className="fb-s">No such unit.</p>;
+  const xi = new Set(elevenOf(membersOf(new Map(players.map((p) => [p.id, p])))).map((x) => x.player));
   const list = players.filter((p) => p.unit === u).sort((a, b) => (a.status === 'left' ? 1 : 0) - (b.status === 'left' ? 1 : 0) || b.overall - a.overall);
   return (
     <div className="pl-page">
       <button type="button" className="fb-btn sm" onClick={() => go('/football/club', undefined, { replace: true })}>← The eleven</button>
       <h2 className="fb-t">{u}</h2>
       <p className="pl-sub">Plays in {UNIT_WHERE[u]}. Its best players start.</p>
-      <div className="pl-list">{list.length ? list.map((p) => <Row key={p.id} p={p} />) : <p className="fb-s">No players yet.</p>}</div>
+      <div className="pl-list">{list.length ? list.map((p) => <Row key={p.id} p={p} starts={xi.has(p.id)} />) : <p className="fb-s">No players yet.</p>}</div>
     </div>
   );
 }
@@ -116,14 +120,18 @@ export function PlayerPage({ id }: { id: string }) {
       <button type="button" className="fb-btn sm" onClick={() => go('/football/unit', { u: p.unit })}>← {p.unit}</button>
       <div className={`pl-hero${legend ? ' lg' : ''}`}>
         <TiltCard card={p.card} art={p.art} seed={p.id} label={`${p.name}, ${stepName(p.card)} card`} />
-        <h2 className="fb-t">{p.name}</h2>
-        <div className="pl-overall"><b className="pl-num">{p.overall}</b><span className={`pl-stepname${legend ? ' pl-legendtext' : ''}`}>{stepName(p.card)}</span></div>
-        <p className="pl-sub">{p.unit} · best {p.best} on {fmtDate(p.bestOn)}. The card keeps its best; only the number can drop.{p.status === 'academy' ? ' Waiting in the academy for its youngster.' : p.status === 'left' ? ' No longer logged.' : ''}</p>
+        <div className="pl-heroinfo">
+          <span className="pl-sub">{p.unit} · {UNIT_WHERE[p.unit]}</span>
+          <h2 className="fb-t">{p.name}</h2>
+          <div className="pl-overall"><b className="pl-num">{p.overall}</b><span>overall</span></div>
+          <span className={`pl-stepname${legend ? ' pl-legendtext' : ''}`}>{stepName(p.card)}</span>
+        </div>
       </div>
+      <p className="pl-sub">Best {p.best} on {fmtDate(p.bestOn)}. The card keeps its best; only the number can drop.{p.status === 'academy' ? ' Waiting in the academy for its youngster.' : p.status === 'left' ? ' No longer logged.' : ''}</p>
       <section className="fb-card" aria-label="Attributes">
         <span className="fb-lb">Attributes · last 28 days</span>
-        {r?.rating ? r.rating.attrs.map((a) => (
-          <div key={a.id} className="pl-attr">
+        {r?.rating ? r.rating.attrs.map((a, i) => (
+          <div key={a.id} className="pl-attr" style={{ ['--ac' as string]: ATTR_COLOUR[i % ATTR_COLOUR.length] }}>
             <b>{a.label}</b><b className="pl-num">{a.value}</b>
             <span className="pl-bar" aria-hidden="true"><i style={{ width: `${a.value}%` }} /></span>
             <p>{a.note}</p>
@@ -176,8 +184,12 @@ export function CardMomentRoute({ id }: { id: string }) {
   const [run, setRun] = useState(0);
   if (p === undefined) return null;
   if (!p) return <p className="fb-s">No such player.</p>;
-  const m = p.moments.find((x) => !x.seen) ?? p.moments[p.moments.length - 1];
-  if (!m) return <p className="fb-s">No card waiting.</p>;
+  // Several step-ups while away play as one: from the oldest card still waiting to the card it is now.
+  const unseen = p.moments.filter((x) => !x.seen);
+  const last = unseen[unseen.length - 1] ?? p.moments[p.moments.length - 1];
+  if (!last) return <p className="fb-s">No card waiting.</p>;
+  const from = (unseen[0] ?? last).from;
+  const m = { ...last, from, kind: from.tier !== last.tier ? 'tier' as const : last.kind };
   // Legend's own build-up arrives with the story moments (layer 4); until then it breaks straight to the new card.
   const build = m.kind === 'tier' ? BUILD[m.tier] ?? '' : '';
   const tierCls = m.tier === 'legend' ? 'legend' : m.tier === 'icon' ? 'icon' : m.tier === 'prism' ? 'prism' : 'gold';
