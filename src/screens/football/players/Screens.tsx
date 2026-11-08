@@ -4,12 +4,14 @@ import { stepName, stepRange, TIER_NAME } from '../../../football/players/cards'
 import { elevenOf, PLACES_433, UNIT_COLOUR, UNIT_WHERE } from '../../../football/players/eleven';
 import type { FbPlayer, Unit, XiPlace } from '../../../football/players/types';
 import { LEGEND_APPS, LEGEND_RECORD_DAYS, LEGEND_SEASONS, membersOf } from '../../../football/store/players';
-import { usePlayer, usePlayerRating, usePlayers } from '../../../football/store/hooks';
+import { usePlayer, usePlayerRating, usePlayers, useSheet } from '../../../football/store/hooks';
 import { seeMoment } from '../../../football/store/save';
 import { AXES } from '../../../football/types';
 import { daysBetween, dayOfLogging } from '../../../domain/dates';
 import { go } from '../../../router';
 import { PlayerCard, TiltCard } from './Card';
+import { Freshness, PlayerRotation, RotationLinks, rowWords } from './Rotation';
+import { matchRating } from '../../../football/rotation/condition';
 
 /** Attribute colours from round 7: each bar also carries its name and number. */
 const ATTR_COLOUR = ['#ff9a76', '#ffd56a', '#c2b2ff', '#8fdcb6'];
@@ -28,14 +30,34 @@ const LINES = (
 /** The Club page's eleven, from the stored players. */
 export function ElevenSection() {
   const players = usePlayers();
+  const sheet = useSheet();
   if (!players) return null;
-  return <ElevenView xi={elevenOf(membersOf(new Map(players.map((p) => [p.id, p]))))} players={players} />;
+  // The team sheet's eleven, so the club page and the sheet always agree on who starts.
+  return <ElevenView xi={sheet?.xi ?? elevenOf(membersOf(new Map(players.map((p) => [p.id, p]))))} players={players} formation={sheet?.save.sheet?.formation} />;
 }
 
 /** The eleven in 4-3-3 (round 7): every token says its rating and name; the unit list says which colour is which. */
-export function ElevenView({ xi, players }: { xi: XiPlace[]; players: FbPlayer[] }) {
-  const waiting = players.filter((p) => p.moments.some((m) => !m.seen));
+/** The pitch with every token's match rating and name (round 8: the number sits inside the circle). */
+export function Pitch({ xi }: { xi: XiPlace[] }) {
   const used: Record<string, number> = {};
+  return (
+    <div className="pl-pitch">
+      {LINES}
+      {xi.map((x) => {
+        const k = used[x.unit] = (used[x.unit] ?? -1) + 1;
+        const spot = PLACES_433[x.unit][k] ?? PLACES_433[x.unit][0];
+        return (
+          <button key={`${x.unit}${k}`} type="button" className="pl-tk" style={{ left: `${spot.x}%`, top: `${spot.y}%`, ...uc(x.unit) }} onClick={() => openPlayer(x.player)} aria-label={`${x.name}, ${x.unit}, ${spot.place}, match rating ${x.rating}`}>
+            <b>{x.rating}</b><span>{x.name}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function ElevenView({ xi, players, formation = '4-3-3' }: { xi: XiPlace[]; players: FbPlayer[]; formation?: string }) {
+  const waiting = players.filter((p) => p.moments.some((m) => !m.seen));
   return (
     <section className="pl-eleven" aria-label="The eleven">
       {waiting[0] && (() => {
@@ -48,21 +70,9 @@ export function ElevenView({ xi, players }: { xi: XiPlace[]; players: FbPlayer[]
           </button>
         );
       })()}
-      <div className="fb-row"><h2 className="fb-t">The eleven</h2><span className="fb-s">4-3-3</span></div>
-      {xi.length === 0 ? <p className="fb-s">Log a habit and it signs for the club. The eleven fills as players sign.</p> : (
-        <div className="pl-pitch">
-          {LINES}
-          {xi.map((x) => {
-            const k = used[x.unit] = (used[x.unit] ?? -1) + 1;
-            const spot = PLACES_433[x.unit][k] ?? PLACES_433[x.unit][0];
-            return (
-              <button key={`${x.unit}${k}`} type="button" className="pl-tk" style={{ left: `${spot.x}%`, top: `${spot.y}%`, ...uc(x.unit) }} onClick={() => openPlayer(x.player)} aria-label={`${x.name}, ${x.unit}, ${spot.place}, rated ${x.rating}`}>
-                <b>{x.rating}</b><span>{x.name}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
+      <RotationLinks players={players} />
+      <div className="fb-row"><h2 className="fb-t">The eleven</h2><span className="fb-s">{formation}</span></div>
+      {xi.length === 0 ? <p className="fb-s">Log a habit and it signs for the club. The eleven fills as players sign.</p> : <Pitch xi={xi} />}
       <div className="pl-units">
         {AXES.map((u) => (
           <button key={u} type="button" className="pl-unit" style={uc(u)} onClick={() => go('/football/unit', { u })}>
@@ -76,10 +86,11 @@ export function ElevenView({ xi, players }: { xi: XiPlace[]; players: FbPlayer[]
 
 function Row({ p, starts }: { p: FbPlayer; starts?: boolean }) {
   return (
-    <button type="button" className="pl-row" style={uc(p.unit)} onClick={() => openPlayer(p.id)}>
+    <button type="button" className={`pl-row${starts ? ' st' : ''}`} style={uc(p.unit)} onClick={() => openPlayer(p.id)}>
       <PlayerCard card={p.card} art={p.art} seed={p.id} />
-      <span className="pl-col"><b>{p.name}</b><span>{p.status === 'academy' ? 'In the academy' : p.status === 'left' ? 'No longer logged' : starts ? 'Starts' : 'Bench'} · {stepName(p.card)}</span></span>
-      <b className="pl-num">{p.overall}</b>
+      <span className="pl-col"><b>{p.name}</b><span>{rowWords(p, Boolean(starts))} · {stepName(p.card)}</span></span>
+      <b className="pl-num">{p.status === 'squad' ? matchRating(p) : p.overall}</b>
+      <Freshness p={p} />
     </button>
   );
 }
@@ -87,16 +98,17 @@ function Row({ p, starts }: { p: FbPlayer; starts?: boolean }) {
 /** One unit: its players, best first. */
 export function UnitRoute({ unit }: { unit: string }) {
   const players = usePlayers();
+  const sheet = useSheet();
   if (!players) return null;
   const u = AXES.find((a) => a === unit);
   if (!u) return <p className="fb-s">No such unit.</p>;
-  const xi = new Set(elevenOf(membersOf(new Map(players.map((p) => [p.id, p])))).map((x) => x.player));
+  const xi = new Set((sheet?.xi ?? elevenOf(membersOf(new Map(players.map((p) => [p.id, p]))))).map((x) => x.player));
   const list = players.filter((p) => p.unit === u).sort((a, b) => (a.status === 'left' ? 1 : 0) - (b.status === 'left' ? 1 : 0) || b.overall - a.overall);
   return (
     <div className="pl-page">
       <button type="button" className="fb-btn sm" onClick={() => go('/football/club', undefined, { replace: true })}>← The eleven</button>
       <h2 className="fb-t">{u}</h2>
-      <p className="pl-sub">Plays in {UNIT_WHERE[u]}. Its best players start.</p>
+      <p className="pl-sub">Plays in {UNIT_WHERE[u]}. Starts: the highest match ratings, or your pick on the team sheet. The number is tonight’s match rating; the bar is freshness.</p>
       <div className="pl-list">{list.length ? list.map((p) => <Row key={p.id} p={p} starts={xi.has(p.id)} />) : <p className="fb-s">No players yet.</p>}</div>
     </div>
   );
@@ -147,12 +159,7 @@ export function PlayerPage({ id }: { id: string }) {
         <span className="fb-lb">Club legend</span>
         <p className="pl-prog">{legendProgress(p)}</p>
       </section>
-      {p.limitBreaks.length > 0 && (
-        <section className="fb-card gold" aria-label="Limit breaks">
-          <span className="fb-lb">Limit breaks</span>
-          {p.limitBreaks.map((l) => <p key={`${l.on}${l.why}`} className="pl-prog">{fmtDate(l.on)} · {l.why === 'awakening' ? 'carried over from an Awakening' : l.why}{l.trait ? ` · ${l.trait}` : ''}</p>)}
-        </section>
-      )}
+      <PlayerRotation p={p} />
       <section className="fb-card" aria-label="Card history">
         <span className="fb-lb">Card history</span>
         <div className="pl-vs">

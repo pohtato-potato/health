@@ -1,5 +1,6 @@
 // Live reads for the Football screens. Football never writes from here.
 import { useLiveQuery } from 'dexie-react-hooks';
+import { OWN } from './season';
 import { db } from '../../db/db';
 import { addDays, dayOfLogging, type DayKey } from '../../domain/dates';
 import { clubById, rememberClubs, type AbilityDef, type ClubDef } from '../data/load';
@@ -10,8 +11,9 @@ import { contTonight, fixtureFor, tonightKnocks, type Fixture } from './tonight'
 import { monthAverage } from '../oldSelves';
 import { seasonChange, type SeasonChange } from '../seasonChange';
 import { AXES } from '../types';
-import type { FbPlayer, XiPlace } from '../players/types';
-import { nightOptsFor, playerCtx, squadNight } from './players';
+import type { FbPlayer, Unit, XiPlace } from '../players/types';
+import { membersOf, nightOptsFor, playerCtx, sheetEleven, squadNight } from './players';
+import type { SquadMember } from '../players/eleven';
 import type { Nudge, Tactic } from '../rotation/night';
 import { playersOn } from '../players/catalogue';
 import { ratingOf } from '../players/attributes';
@@ -113,6 +115,34 @@ export async function loadPlayerRating(id: string) {
   const h = await loadHealth();
   const date = dayOfLogging(Date.now());
   const def = playersOn(h, date).find((d) => d.id === id) ?? { ...p, active: p.status !== 'left' };
-  return { rating: ratingOf(playerCtx(h, save, squad), { ...def, signed: p.signed }, date), bedtime: save.bedtime };
+  return { rating: ratingOf(playerCtx(h, save, squad), { ...def, signed: p.signed }, date, { base: p.base, weights: p.weights }), bedtime: save.bedtime };
 }
 export const usePlayerRating = (id: string | null) => useLiveQuery(async () => (id ? loadPlayerRating(id) : null), [id]);
+
+/** The team sheet (spec §16): every squad player by unit with tonight's match rating, who starts, captains and set pieces. */
+export interface SheetData {
+  save: FbSave;
+  players: FbPlayer[];
+  members: SquadMember[];
+  xi: XiPlace[];
+  captains: Partial<Record<Unit, string>>;
+  setPiece?: string;
+  /** Power's default pool: the latest session's exercises. */
+  latest?: string[];
+}
+export async function loadSheet(date: DayKey): Promise<SheetData | null> {
+  const save = await db.fbSave.get('save');
+  if (!save) return null;
+  const players = await db.fbPlayers.toArray();
+  const roster = new Map(players.map((p) => [p.id, p]));
+  const h = await loadHealth();
+  const o = nightOptsFor(save, roster, h, date, undefined, nightFor(h, date).values);
+  const members = membersOf(roster);
+  return { save, players, members, xi: sheetEleven(members, save.sheet, o.opts.latest), captains: o.captains, setPiece: o.setPiece, latest: o.opts.latest };
+}
+export function useSheet(now = Date.now()) {
+  const date = dayOfLogging(now);
+  return useLiveQuery(() => loadSheet(date), [date]);
+}
+/** The division we play in now, for the buy-back clause. */
+export const useBraboTier = () => useLiveQuery(async () => { const s = await db.fbSave.get('save'); const season = s ? await db.fbSeasons.get(s.season) : undefined; return season?.tierOf[OWN] ?? 6; }, []);

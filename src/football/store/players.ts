@@ -93,7 +93,7 @@ export function playersDay(roster: Roster, h: Health, c: Ctx, date: DayKey, acad
       row.fresh = freshnessOn(trained, date, rules, freshnessScale(row));
     }
     // Form: the four-week trend of the overall; it doesn't move on a sick day.
-    if (!sickToday) { row.trail = trailAfter(row.trail, date, row.overall); row.form = formOf(row.trail, date); }
+    if (!sickToday) { row.trail = trailAfter(row.trail, date, row.overall); row.form = formOf(row.trail, date, row.signed); }
     next.set(d.id, { ...row, ...(old ? cardAfter(row, row.overall, date, quiet) : {}) });
   }
   // Records: the holder of each unit's best-ever overall; held for 26 weeks, it makes a Club legend.

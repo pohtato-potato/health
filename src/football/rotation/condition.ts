@@ -29,9 +29,12 @@ export function trailAfter(trail: [DayKey, number][] = [], date: DayKey, overall
   const keep = trail.filter(([d]) => d < date && d > addDays(date, -TRAIL_DAYS));
   return [...keep, [date, overall]];
 }
+/** A new signing's first four weeks are its ramp; form only reads the line after it. */
+export const FORM_RAMP = 28;
 /** Form, −3 to +3: the change in the overall over four weeks, one point of form for every two of overall. */
-export function formOf(trail: [DayKey, number][] = [], date: DayKey): number {
-  const past = trail.filter(([d]) => d <= date);
+export function formOf(trail: [DayKey, number][] = [], date: DayKey, signed?: DayKey): number {
+  const from = signed ? addDays(signed, FORM_RAMP) : undefined;
+  const past = trail.filter(([d]) => d <= date && (!from || d >= from));
   if (past.length < 2) return 0;
   const then = [...past].reverse().find(([d]) => d <= addDays(date, -28)) ?? past[0];
   const now = past[past.length - 1];

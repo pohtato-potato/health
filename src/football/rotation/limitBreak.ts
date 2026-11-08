@@ -21,7 +21,13 @@ export interface BreakFound {
  * the run of sessions covers: weekly sessions on days 0, 7, 14 and 21 cover four.
  */
 export const SCHEME_DAYS = 21;
-export const SCHEME_CHANGE = 0.3;
+/**
+ * Rep schemes are bands, so ordinary progression inside one (8 reps working up to 12) is not a new scheme:
+ * strength up to 5 reps a set, building 6 to 12, endurance 13 and over.
+ */
+export const REP_BANDS = [5, 12] as const;
+export const bandOf = (reps: number) => REP_BANDS.filter((top) => reps > top).length;
+const BAND_NAME = ['strength', 'building', 'endurance'];
 export const LOAD_UP = 1.25;
 export const LOAD_DAYS = 14;
 export const HELD_SESSIONS = 3;
@@ -69,12 +75,13 @@ function exerciseBreak(c: Ctx, d: PlayerDef, base: DayKey, date: DayKey): BreakF
   // The scheme and load it started this stretch with: the first session since the base.
   const ref = xs[0];
   if (!timed && ref.reps > 0) {
-    const off = (s: Sess) => s.reps > 0 && Math.abs(s.reps - ref.reps) / ref.reps >= SCHEME_CHANGE;
-    const run = trailing(xs.slice(1), off);
-    const steady = run.length ? run.every((s) => Math.abs(s.reps - run[0].reps) / run[0].reps < SCHEME_CHANGE) : false;
-    if (steady && run.length >= HELD_SESSIONS && daysBetween(run[0].date, date) >= SCHEME_DAYS) {
-      const fewer = run[run.length - 1].reps < ref.reps;
-      return { why: 'rep-scheme', what: `about ${run[run.length - 1].reps} reps a set held for four weeks, after ${ref.reps}`, shift: fewer ? ['strength', 'endurance', 0.1] : ['endurance', 'strength', 0.1] };
+    const was = bandOf(ref.reps);
+    const last = xs[xs.length - 1];
+    const now = last.reps > 0 ? bandOf(last.reps) : was;
+    const run = now === was ? [] : trailing(xs.slice(1), (s) => s.reps > 0 && bandOf(s.reps) === now);
+    if (run.length >= HELD_SESSIONS && daysBetween(run[0].date, date) >= SCHEME_DAYS) {
+      const fewer = now < was;
+      return { why: 'rep-scheme', what: `${BAND_NAME[now]} sets (about ${last.reps} reps) held for four weeks, after ${BAND_NAME[was]} sets of ${ref.reps}`, shift: fewer ? ['strength', 'endurance', 0.1] : ['endurance', 'strength', 0.1] };
     }
   }
   if (ref.top > 0) {

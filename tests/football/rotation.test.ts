@@ -101,6 +101,14 @@ describe('form (spec §3.2)', () => {
     expect(formOf(down, addDays(D0, 28))).toBe(-3);
     expect(formOf([[D0, 70]], D0)).toBe(0);
   });
+  it('skips a new signing\'s four-week ramp', () => {
+    let tr: [DayKey, number][] = [];
+    for (let i = 0; i <= 34; i++) tr = trailAfter(tr, addDays(D0, i), 50 + i);
+    expect(formOf(tr, addDays(D0, 34))).toBe(3);
+    expect(formOf(tr, addDays(D0, 34), D0)).toBe(3); // days 28–34 still climb 6
+    expect(formOf(tr, addDays(D0, 27), D0)).toBe(0); // still in the ramp
+    expect(formOf(tr, addDays(D0, 29), D0)).toBe(1);
+  });
   it('the trail keeps five weeks and doesn\'t move on a sick day', () => {
     let tr: [DayKey, number][] = [];
     for (let i = 0; i < 60; i++) tr = trailAfter(tr, addDays(D0, i), 70);
@@ -160,6 +168,15 @@ describe('limit breaks (spec §5, calibration §8, §12)', () => {
     const b = brk(h, exDef(), row(), addDays(D0, 7 * 6))!; // four
     expect(b.why).toBe('rep-scheme');
     expect(b.shift).toEqual(['strength', 'endurance', 0.1]);
+  });
+  it('Power: reps worked up inside one band (8 → 12) is progression, not a new scheme', () => {
+    const { sets, sessions } = weekly('rdl', D0, 9, () => 10, (w) => Math.min(12, 8 + w));
+    const h = health({ settings: settings({ plan: planOf([ex('rdl')]) }), sets, sessions });
+    expect(brk(h, exDef(), row(), addDays(D0, 7 * 8))).toBeNull();
+    const up = weekly('rdl', D0, 9, () => 10, (w) => (w < 3 ? 10 : 15));
+    const b = brk(health({ settings: settings({ plan: planOf([ex('rdl')]) }), sets: up.sets, sessions: up.sessions }), exDef(), row(), addDays(D0, 7 * 6))!;
+    expect(b.why).toBe('rep-scheme');
+    expect(b.shift).toEqual(['endurance', 'strength', 0.1]);
   });
   it('Power: load up 25% held across 3 sessions over 3 weeks; a one-off spike never fires', () => {
     const { sets, sessions } = weekly('rdl', D0, 6, (w) => (w < 2 ? 10 : 12.5), () => 8);
