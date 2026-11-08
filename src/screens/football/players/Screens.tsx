@@ -177,8 +177,11 @@ export function PlayerPage({ id }: { id: string }) {
 
 const CRACK = <svg className="ck8" viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true"><path d="M52 0 L46 30 L56 52 L42 86 L54 140" /><path d="M46 30 L18 22 M56 52 L84 44 M42 86 L12 108 M42 86 L80 112" /></svg>;
 const SHARDS: [number, number, number][] = [[-120, -60, 40], [130, -40, -30], [-90, 90, 70], [110, 120, 20], [-30, -140, 110], [40, 150, -60], [-150, 20, 15], [150, 60, 80]];
-const BUILD: Partial<Record<string, string>> = { gold: 'bu-gold', prism: 'bu-prism', icon: 'bu-icon' };
-const DONE_MS: Record<string, number> = { '': 2600, 'bu-gold': 3500, 'bu-prism': 4800, 'bu-icon': 6400 };
+const BUILD: Partial<Record<string, string>> = { gold: 'bu-gold', prism: 'bu-prism', icon: 'bu-icon', legend: 'bu-legend' };
+const DONE_MS: Record<string, number> = { '': 2600, 'bu-gold': 3500, 'bu-prism': 4800, 'bu-icon': 6400, 'bu-legend': 7800 };
+/** Legend D (round nine): molten seams spread across the old card in black glass, the rim comes alive, then it breaks. */
+const SEAMS = <svg className="sm9" viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true"><path d="M8 18 L34 30 L52 12 L70 34 L94 22" /><path d="M34 30 L28 62 L50 74 L74 58 L70 34" /><path d="M28 62 L6 84 M50 74 L46 104 L20 126 M74 58 L94 92 L66 118 M46 104 L78 132" /></svg>;
+const EMBERS: [number, number][] = [[18, 0], [32, 1.2], [50, 0.4], [64, 2], [80, 0.9], [42, 2.6], [72, 3.1], [26, 3.6], [58, 1.7]];
 
 /**
  * The card moment (round 9): the old card waits until tapped, then breaks and the new one is issued. A step up is the
@@ -197,7 +200,7 @@ export function CardMomentRoute({ id }: { id: string }) {
   if (!last) return <p className="fb-s">No card waiting.</p>;
   const from = (unseen[0] ?? last).from;
   const m = { ...last, from, kind: from.tier !== last.tier ? 'tier' as const : last.kind };
-  // Legend's own build-up arrives with the story moments (layer 4); until then it breaks straight to the new card.
+  // A tier up plays the new tier's build-up; Legend D has its own (layer 4).
   const build = m.kind === 'tier' ? BUILD[m.tier] ?? '' : '';
   const tierCls = m.tier === 'legend' ? 'legend' : m.tier === 'icon' ? 'icon' : m.tier === 'prism' ? 'prism' : 'gold';
   const play = () => {
@@ -205,20 +208,27 @@ export function CardMomentRoute({ id }: { id: string }) {
     setGo(true);
     window.setTimeout(() => { setDone(true); void seeMoment(p.id); }, DONE_MS[build]);
   };
+  const legend = build === 'bu-legend';
   return (
-    <div className={`pl-moment ${tierCls}`}>
+    <div className={`pl-moment ${tierCls}${legend && go_ ? ' lg9' : ''}${legend && done ? ' out' : ''}`}>
+      {legend && go_ && <><i className="crn9" aria-hidden="true" />{EMBERS.map(([x, dl]) => <i key={x} className="em9" aria-hidden="true" style={{ left: `${x}%`, animationDelay: `${dl}s` }} />)}</>}
       <span className="pl-kick">{m.kind === 'tier' ? `${TIER_NAME[m.tier]} card` : 'Step up'}</span>
       <h2 className="fb-t">{p.name}</h2>
-      <button key={run} type="button" className={`rb8 ${build}${go_ ? ' go' : ''}`} onClick={play} aria-label={go_ ? `${stepName(m)} card` : `Tap to break the ${stepName(m.from)} card`}>
+      {legend && done ? (
+        <div className="lgout9"><TiltCard card={m} art={p.art} seed={p.id} label={`${p.name}, ${stepName(m)} card`} /></div>
+      ) : <button key={run} type="button" className={`rb8 ${build}${go_ ? ' go' : ''}`} onClick={play} aria-label={go_ ? `${stepName(m)} card` : `Tap to break the ${stepName(m.from)} card`}>
         <div className="nw8"><PlayerCard card={m} art={p.art} seed={p.id} /></div>
         <div className="old8">
           <div className="hf8 l"><PlayerCard card={m.from} art={p.art} seed={p.id} /></div>
           <div className="hf8 r"><PlayerCard card={m.from} art={p.art} seed={p.id} /></div>
           {CRACK}
+          {legend && SEAMS}
         </div>
+        {legend && <i className="rim9" />}
         {SHARDS.map(([dx, dy, rz]) => <i key={`${dx}${dy}`} className="sd8" style={{ ['--dx' as string]: `${dx}px`, ['--dy' as string]: `${dy}px`, ['--rz' as string]: `${rz}deg` }} />)}
         <i className="fl8" />
-      </button>
+      </button>}
+      {legend && done && <p className="pl-sub">Drag across the card: the drawing steps out.</p>}
       {!go_ && <p className="pl-sub">{stepName(m.from)} · tap the card to break it.</p>}
       <div className={`pl-after${done ? ' on' : ''}`} aria-live="polite">
         {done && <>

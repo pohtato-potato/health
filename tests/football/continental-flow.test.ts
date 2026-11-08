@@ -23,7 +23,15 @@ async function intoCrown() {
   await db.fbSeasons.put(out.season);
   await db.fbClubs.bulkPut(out.clubs);
 }
-const playTo = async (day: number) => { for (let i = 0; i < day; i++) await kickOff(addDays(START, i)); };
+// Plays real days until season day `day` is done. International breaks (layer 4) pause the season for 3 days before
+// days 14 and 30, so a season day is not always START + day - 1.
+const playTo = async (day: number) => {
+  for (let i = 0; i < day + 6; i++) {
+    await kickOff(addDays(START, i));
+    const s = (await db.fbSave.get('save'))!;
+    if (s.phase !== 'season' || s.day > day) return;
+  }
+};
 
 describe('the Continental Cup in a season', () => {
   it('every season draws a 16-club field; Brabo in Division Six are not in it', async () => {

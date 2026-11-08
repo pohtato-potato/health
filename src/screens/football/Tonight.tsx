@@ -14,6 +14,7 @@ import { AwakeningView } from './moments/Awakening';
 import { FullTime } from './FullTime';
 import { Radar } from './Radar';
 import { TacticPicker } from './players/Rotation';
+import { MorningCards } from './world/WorldScreens';
 
 /** Our own SVG strings (crests, kits): built from data we ship, escaped where text goes in. */
 export function Art({ svg, className }: { svg: string; className?: string }) {
@@ -48,15 +49,17 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
       {quiet && !opening && born && <RivalBornView r={born} onDone={() => void markRivalSeen(born.clubId)} />}
       {quiet && !opening && !born && awake && <AwakeningView axis={awake.axis} at={awake.band} values={t.liveValues} onDone={() => void markAwakeSeen(t.save.awakeLog!.length)} />}
       {away.length > 0 && <CatchUp ms={away} />}
+      <MorningCards m={t.morning} />
     </>
   );
   if (t.played.length) return <>{catchUp}{t.played.map((m) => <FullTime key={m.id} m={m} save={t.save} onWatch={() => watch(m.id)} />)}</>;
   return (
     <>
       {catchUp}
+      {t.morning.intl && <p className="fb-s fb-ctr"><b>No game tonight: the season waits for the break.</b> Next up, once it's over:</p>}
       <div className="fb-row">
         <span className="fb-lb">{f?.label ?? 'Between seasons'}</span>
-        <span className="fb-s">Half-time 6 pm</span>
+        <span className="fb-s">{t.morning.intl ? 'After the break' : 'Half-time 6 pm'}</span>
       </div>
       {f && (
         <>
@@ -78,6 +81,7 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
       )}
       <Radar values={t.liveValues} flags={t.flags} captain={t.save.slots.includes('armband') ? t.save.captain : undefined} />
       <p className="fb-s fb-ctr">Your shape so far. It’s fixed when you close the day.</p>
+      {t.loansPlaying.length > 0 && <p className="fb-s fb-ctr">{t.xi.filter((x) => x.player.startsWith('loan:')).map((x) => x.name).join(' and ')} on loan in the eleven tonight{t.loanRested.length ? `; ${t.loanRested.length === 1 ? 'one starter rests' : `${t.loanRested.length} starters rest`} to make room` : ''}.</p>}
       {t.tactic && <TacticPicker date={t.date} pick={t.tactic.pick} by={t.tactic.by} />}
       {(t.known.length > 0 || t.hiddenNote) && (
         <section className="fb-card pu" aria-label="Their abilities">

@@ -11,6 +11,7 @@ import { RUNNING_LOW } from '../../../football/content/words';
 import { go } from '../../../router';
 import { useModel, type Model } from './model';
 import { Back, TreePage } from './TreeScreens';
+import { PackLoan } from '../world/WorldScreens';
 
 const RARITY_NAME: Record<Rarity, string> = { bronze: 'Bronze', silver: 'Silver', gold: 'Gold', prism: 'Prism', icon: 'Icon', legend: 'Legend' };
 const SOURCE: Record<PackEarned['source'], string> = { 'week-finished': 'A week finished', 'final-won': 'A final won', promotion: 'Promotion', tech: 'From the tree', bounty: 'A bounty', track: 'The season track', testimonial: 'A testimonial' };
@@ -90,7 +91,8 @@ function Item({ it }: { it: PackItem }) {
     return <div className="fbt-item boost"><span className="fbt-lb">{b.kind === 'kit-trim' ? 'Kit trim' : 'Boost · one match'}</span><b className="fbt-t2">{b.name}</b><span>{b.text}</span></div>;
   }
   if (it.kind === 'research') return <div className="fbt-item research"><span className="fbt-lb">Research</span><b className="fbt-t2 fbt-n">+{it.n}</b><span>Into the bank.</span></div>;
-  return null; // loans: layer 4
+  if (it.kind === 'loan' && it.id) return <PackLoan id={it.id} />;
+  return null;
 }
 
 export function AlbumPage() {

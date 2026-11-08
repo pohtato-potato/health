@@ -13,6 +13,7 @@ import { PlayerView } from './Player';
 import { SquadView } from './Squad';
 import { ElevenSection } from '../players/Screens';
 import { TreeHome } from '../tree/TreeScreens';
+import { WorldDoors } from '../world/WorldScreens';
 
 export const CLUB_VIEWS = [
   { id: 'squad', label: 'Squad' },
@@ -35,6 +36,7 @@ export function ClubView({ c, view }: { c: Club; view: ClubViewId; extra?: Parti
         ))}
       </nav>
       {view === 'squad' && <ElevenSection />}
+      {view === 'squad' && <WorldDoors />}
       {view === 'squad' && <SquadView c={c} onCaptain={(a) => void setCaptain(a)} onEquip={(id, i) => void equipAbility(id, i)} />}
       {view === 'deals' && <DealsView c={c} act={{ renew: (h) => void renewContract(h, c.today!), keep: (h) => void keepHabit(h, c.today!), sell: (h) => void sellHabit(h) }} />}
       {view === 'money' && <MoneyView c={c} onAccept={(o) => void acceptOffer(o)} onOwn={(n, s) => void setOwnSponsor(n, s)} />}

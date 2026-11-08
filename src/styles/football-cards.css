@@ -277,3 +277,30 @@ button.rb8:focus-visible { outline: 3px solid #ffe27a; outline-offset: 8px; bord
 .rt-pick .sh6, .pl-row .sh6 { display: none; }
 /* Narrow phones: one captain a row, so habit names aren't cut. */
 @media (max-width: 359px) { .rt-cpt { grid-template-columns: 1fr; } }
+
+/* Legend D's own build-up (round nine, layer 4): the old card turns to black glass, molten seams spread across it, the
+   rim comes alive in every colour and it trembles; it breaks, the crown of rays turns and embers rise, and the new
+   card arrives with the gold walker stepping out of it. */
+.rb8.bu-legend { --bu: 5.2s; --bk: #ffb000; }
+.rb8.go.bu-legend .old8 { animation: shake6b .09s linear 3.2s 22, shk8 .7s ease-in-out var(--bu); }
+.rb8.go.bu-legend .old8 .k6in { animation: dark9 2.2s ease-in forwards; }
+@keyframes dark9 { to { filter: brightness(.3) saturate(.3); box-shadow: 0 0 0 2px #ffb000, inset 0 0 0 1.5px #ffd56a; } }
+.rb8 .sm9 { position: absolute; inset: 0; z-index: 7; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.rb8 .sm9 path { fill: none; stroke: #ffc23a; stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 200; stroke-dashoffset: 200; filter: drop-shadow(0 0 3px #ff9a00); vector-effect: non-scaling-stroke; }
+.rb8.go .sm9 path { animation: drw9 2.6s ease-in-out .8s forwards, seam9 1.2s ease-in-out 3.4s infinite alternate; }
+@keyframes drw9 { to { stroke-dashoffset: 0; } }
+@keyframes seam9 { to { stroke: #fff1c2; filter: drop-shadow(0 0 6px #ffb000); } }
+.rb8.go .sm9 { animation: gone8 .01s calc(var(--bu) + 1.2s) forwards; }
+.rb8 .rim9 { position: absolute; inset: -5px; z-index: 6; border-radius: 19px; padding: 4px; pointer-events: none; opacity: 0; background: conic-gradient(from var(--ro8), #ff5ad8, #ffd56a, #7dff9a, #3fe0ff, #9b6bff, #ff5ad8); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; filter: drop-shadow(0 0 10px #ffd56a); }
+.rb8.go .rim9 { animation: ro8 2.4s linear infinite, rimon9 1.4s ease-out 1.8s forwards, gone8 .01s calc(var(--bu) + 1.15s) forwards; }
+@keyframes rimon9 { to { opacity: 1; } }
+.pl-moment.lg9::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(55% 40% at 50% 36%, rgba(255,140,0,.32), transparent 70%), radial-gradient(50% 36% at 25% 70%, rgba(108,63,196,.45), transparent 70%), radial-gradient(50% 36% at 78% 60%, rgba(26,143,106,.35), transparent 70%), linear-gradient(180deg, #120808, #050307); animation: rimon9 2.4s ease forwards; border-radius: 24px; }
+.pl-moment.lg9 > :not(.crn9):not(.em9) { position: relative; z-index: 1; }
+.pl-moment .crn9 { position: absolute; left: 50%; top: 32%; width: 760px; height: 760px; margin: -380px 0 0 -380px; pointer-events: none; opacity: 0; background: repeating-conic-gradient(from 0deg, rgba(255,241,194,.3) 0 3deg, transparent 3deg 10deg); -webkit-mask: radial-gradient(closest-side, transparent 18%, #000 30%, transparent 70%); mask: radial-gradient(closest-side, transparent 18%, #000 30%, transparent 70%); animation: rimon9 1.4s ease-out 6.6s forwards, crn9 30s linear infinite; }
+@keyframes crn9 { to { transform: rotate(360deg); } }
+.pl-moment .em9 { position: absolute; bottom: -10px; width: 5px; height: 5px; border-radius: 50%; background: #ffcf4a; box-shadow: 0 0 8px #ff9a00, 0 0 2px #fff; pointer-events: none; animation: emb9 4.5s linear infinite; }
+@keyframes emb9 { from { transform: translate(0, 0); opacity: 1; } 50% { transform: translate(14px, -300px); } to { transform: translate(-8px, -620px) scale(.3); opacity: .2; } }
+.lgout9 { width: 180px; margin: 100px auto 10px; animation: pop8 .9s cubic-bezier(.2,1.5,.4,1) both; }
+.lgout9 .k6 { width: 100%; }
+.lgout9 .tilt8 .k6.lgD .k6art { animation: glow9 6s linear infinite, out9 1.2s cubic-bezier(.2,1.4,.4,1) .3s backwards; }
+@keyframes out9 { from { top: 0; transform: scale(1); } }

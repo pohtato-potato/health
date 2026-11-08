@@ -20,6 +20,9 @@ import type { SquadMember } from '../players/eleven';
 import type { Nudge, Tactic } from '../rotation/night';
 import { playersOn } from '../players/catalogue';
 import { ratingOf } from '../players/attributes';
+import { dutyBonus } from '../globe/duty';
+import { globeNight } from './globe';
+import { morningFor, type Morning } from './globeActions';
 
 export const useSave = () => useLiveQuery(async () => {
   const save = (await db.fbSave.get('save')) ?? null;
@@ -62,6 +65,11 @@ export interface Tonight {
   also?: string;
   /** A finished season whose end screens are still to be seen. */
   change?: SeasonChange;
+  /** Layer 4: the morning (growth overnight, trialists, the scout line, loans arriving, the break). */
+  morning: Morning;
+  /** Loans in tonight's eleven, and who sits to make room. */
+  loansPlaying: string[];
+  loanRested: string[];
 }
 
 export async function loadTonight(date: DayKey): Promise<Tonight | null> {
@@ -73,8 +81,10 @@ export async function loadTonight(date: DayKey): Promise<Tonight | null> {
   const night = nightFor(h, date);
   const roster = new Map((await db.fbPlayers.toArray()).map((p) => [p.id, p]));
   const fixture = season ? fixtureFor(save, season) : undefined;
-  const o = nightOptsFor(save, roster, h, date, fixture?.opp, night.values, rotationOf(save, await db.fbBundles.toArray()));
-  const team = squadNight(roster, night.values, h.days.get(date)?.status === 'sick', o.opts);
+  const bundles = await db.fbBundles.toArray();
+  const sick = h.days.get(date)?.status === 'sick';
+  const o = nightOptsFor(save, roster, h, date, fixture?.opp, night.values, rotationOf(save, bundles));
+  const team = squadNight(roster, night.values, sick, { ...o.opts, ...globeNight(save, bundles, date, night.flags, sick) });
   const liveValues = { ...team.values };
   for (const a of AXES) if (night.flags[a]) liveValues[a] = night.values[a];
   const opp = fixture?.opp ? clubById(fixture.opp) : undefined;
@@ -91,6 +101,8 @@ export async function loadTonight(date: DayKey): Promise<Tonight | null> {
     played, unwatchedAuto,
     change: await pendingChange(save),
     also: season ? contTonight(save, season, (id) => clubById(id).name) : undefined,
+    morning: morningFor(save, await db.fbSquad.toArray(), [...roster.values()], bundles, h, date, fixture),
+    loansPlaying: team.loansPlayed ?? [], loanRested: team.loanRested ?? [],
   };
 }
 
@@ -118,7 +130,7 @@ export async function loadPlayerRating(id: string) {
   const h = await loadHealth();
   const date = dayOfLogging(Date.now());
   const def = playersOn(h, date).find((d) => d.id === id) ?? { ...p, active: p.status !== 'left' };
-  return { rating: ratingOf(playerCtx(h, save, squad), { ...def, signed: p.signed }, date, { base: p.base, weights: p.weights }), bedtime: save.bedtime };
+  return { rating: ratingOf(playerCtx(h, save, squad), { ...def, signed: p.signed }, date, { base: p.base, weights: p.weights, bonus: dutyBonus(p) }), bedtime: save.bedtime };
 }
 export const usePlayerRating = (id: string | null) => useLiveQuery(async () => (id ? loadPlayerRating(id) : null), [id]);
 

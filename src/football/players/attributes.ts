@@ -71,7 +71,7 @@ const kg = (n: number) => `${String(Math.round(n * 10) / 10)} kg`;
 const A = (id: string, label: string, value: number, weight: number, kind: Attribute['kind'], note: string): Attribute => ({ id, label, value, weight, kind, note });
 
 /** What a player carries from its limit breaks (layer 2): the day growth measures from, and shifted weights. */
-export interface RatingExt { base?: DayKey; weights?: Record<string, number> }
+export interface RatingExt { base?: DayKey; weights?: Record<string, number>; /** Layer 4: duty's +2s, by attribute id. */ bonus?: Record<string, number> }
 
 /** The player's rating on `date`, or null when there is nothing in its window (it keeps its last overall). */
 export function ratingOf(c: Ctx, p: PlayerDef, date: DayKey, ext: RatingExt = {}): Rating | null {
@@ -80,7 +80,8 @@ export function ratingOf(c: Ctx, p: PlayerDef, date: DayKey, ext: RatingExt = {}
   const r = (v: number) => ramp(v, daysIn, c.rampStart?.[p.id] ?? 50);
   const base = ext.base && ext.base > p.signed ? ext.base : p.signed;
   const found = attrsOf(c, p, date, days, r, base);
-  const attrs = found && ext.weights ? found.map((a) => (ext.weights![a.id] != null ? { ...a, weight: ext.weights![a.id] } : a)) : found;
+  const weighted = found && ext.weights ? found.map((a) => (ext.weights![a.id] != null ? { ...a, weight: ext.weights![a.id] } : a)) : found;
+  const attrs = weighted && ext.bonus ? weighted.map((a) => (ext.bonus![a.id] ? { ...a, value: Math.min(100, a.value + ext.bonus![a.id]), note: `${a.note} · +${ext.bonus![a.id]} from international duty` } : a)) : weighted;
   // A broken log (a night with no times, say) is no data, never a NaN on a card.
   if (!attrs || attrs.some((a) => !Number.isFinite(a.value))) return null;
   let overall = overallOf(attrs);

@@ -1,0 +1,96 @@
+/* Football engine 2, layer 4: the world (round seven as pinned). Loans, trials and the academy under the moon,
+   international duty, and the morning on Tonight. The aurora look with glowing outlines. Words in Atkinson
+   Hyperlegible Next, numbers and titles in Fraunces; text at least 14 px, targets at least 44 px, and every state
+   has a word beside its colour. */
+
+.fbg-doors { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-family: 'Atkinson Hyperlegible Next', var(--sans); margin: 4px 0 6px; }
+.fbg-door, .fbg-opt {
+  --k: var(--c, rgba(243,238,230,.75));
+  min-height: 64px; min-width: 0; border: 2px solid var(--k); border-radius: 18px; padding: 10px 14px; background: color-mix(in srgb, var(--k) 8%, transparent);
+  box-shadow: 0 0 16px -6px var(--k); color: var(--fb-ink); display: flex; flex-direction: column; gap: 2px; text-align: left; cursor: pointer; font: inherit;
+}
+.fbg-door b { font: 400 19px/1.2 var(--serif); color: var(--k); }
+.fbg-door small, .fbg-opt span { font-size: 14px; color: var(--fb-quiet); overflow-wrap: anywhere; }
+.fbg-door:focus-visible, .fbg-opt:focus-visible, .fbg-btnwrap:focus-visible { outline: 3px solid var(--fb-ink); outline-offset: 2px; }
+
+.fbg-q { font-size: 14px; color: var(--fb-quiet); }
+.fbg-art { display: inline-flex; flex: none; }
+.fbg-art svg { display: block; filter: drop-shadow(0 0 8px color-mix(in srgb, var(--c, #ffa25c) 70%, transparent)); }
+
+/* The loan arrival: a warm glow behind the drawing, centred story text. */
+.fbg-moment { position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: stretch; gap: 12px; padding: 18px 0 8px; font-family: 'Atkinson Hyperlegible Next', var(--sans); }
+.fbg-moment p { margin: 0; }
+.fbg-moment .c { text-align: center; }
+.fbg-moment .fbt-lb.c { color: var(--c); }
+.fbg-ray { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(60% 34% at 50% 26%, color-mix(in srgb, var(--c) 42%, transparent), transparent 70%); animation: fbg-breathe 4s ease-in-out infinite alternate; }
+@keyframes fbg-breathe { from { opacity: .7; } to { opacity: 1; } }
+.fbg-sil { position: relative; align-self: center; animation: fbg-in .9s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes fbg-in { from { opacity: 0; transform: translateY(16px) scale(.94); } }
+.fbg-say { font: 400 19px/1.35 var(--serif); color: var(--fb-ink); text-wrap: balance; }
+.fbg-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.fbg-chip { min-height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 999px; border: 1.5px solid var(--c); color: var(--c); font-size: 14px; font-weight: 700; box-shadow: 0 0 12px -4px var(--c); }
+
+/* Loans page. */
+.fbg-btnwrap { display: block; width: 100%; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; font: inherit; color: inherit; border-radius: 18px; }
+.fbg-stay { --k: var(--c); display: flex; gap: 12px; align-items: flex-start; border: 2px solid var(--k); border-radius: 18px; padding: 12px; background: color-mix(in srgb, var(--k) 7%, transparent); box-shadow: 0 0 16px -6px var(--k); color: var(--fb-ink); font-size: 15px; line-height: 1.4; }
+.fbg-st { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.fbg-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.fbg-list li { display: flex; flex-direction: column; padding: 10px 14px; border-radius: 16px; border: 1.5px solid color-mix(in srgb, var(--c) 60%, transparent); }
+.fbg-list b { color: var(--c); font-size: 16px; }
+.fbg-list small { font-size: 14px; color: var(--fb-quiet); }
+
+/* Night pages: trials and the academy under a moon and stars. */
+.fbg-night { position: relative; overflow: hidden; margin: -6px -16px 0; padding: 6px 16px 18px; border-radius: 0 0 24px 24px; background: linear-gradient(180deg, #14205a, #1a1440 45%, transparent); }
+.fbg-night > .fbt-page { position: relative; z-index: 1; }
+.fbg-sky { position: absolute; inset: 0; pointer-events: none; }
+.fbg-moon { position: absolute; right: 22px; top: 22px; width: 52px; height: 52px; border-radius: 50%; box-shadow: inset -14px -6px 0 0 #ffe27a; transform: rotate(-20deg); filter: drop-shadow(0 0 14px #ffe27a); }
+.fbg-star { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #ffe27a; box-shadow: 0 0 6px #ffe27a; animation: fbg-tw 3s ease-in-out infinite alternate; }
+@keyframes fbg-tw { from { transform: scale(.4); } }
+.fbg-sleep { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 16px; border: 1.5px solid rgba(255,226,122,.55); background: rgba(255,226,122,.07); color: var(--fb-ink); font-size: 15px; }
+.fbg-sleep > b { color: #ffe27a; }
+.fbg-sleep > span { color: var(--fb-quiet); }
+.fbg-sleep .fbt-n { color: var(--fb-ink); font-size: 18px; }
+.fbg-trials, .fbg-acad { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.fbg-trial, .fbg-young { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 18px; border: 1.5px solid var(--c); background: color-mix(in srgb, var(--c) 10%, transparent); box-shadow: 0 0 18px -6px var(--c); color: var(--fb-ink); }
+.fbg-trial small, .fbg-young small, .fbg-young em { font-size: 14px; color: var(--fb-quiet); font-style: normal; }
+.fbg-trial .fbt-btn { margin-top: 4px; }
+.fbg-pot { color: #ffe27a; letter-spacing: .1em; font-size: 16px; }
+.fbg-bars { display: flex; flex-direction: column; gap: 5px; margin: 4px 0 2px; }
+.fbg-bar { display: block; height: 10px; border-radius: 6px; background: rgba(243,238,230,.12); overflow: hidden; }
+.fbg-bar i { display: block; height: 100%; border-radius: 6px; background: var(--c); box-shadow: 0 0 10px var(--c); }
+.fbg-bar.gr i { background: #ffe27a; box-shadow: 0 0 10px #ffe27a; }
+.fbg-key { display: flex; flex-wrap: wrap; gap: 14px; font-size: 14px; color: var(--fb-quiet); }
+.fbg-key span { display: inline-flex; align-items: center; gap: 6px; }
+.fbg-key i { width: 18px; height: 8px; border-radius: 4px; background: #8fdcb6; }
+.fbg-key i.g { background: #ffe27a; }
+
+/* Tie a trialist. */
+.fbg-opts { display: flex; flex-direction: column; gap: 10px; }
+.fbg-opt b { font: 400 19px/1.25 var(--serif); color: var(--fb-ink); }
+.fbg-opt:disabled { opacity: .55; cursor: not-allowed; }
+
+/* International duty. */
+.fbg-break { display: flex; flex-direction: column; gap: 6px; color: var(--fb-ink); font-size: 15px; line-height: 1.4; }
+.fbg-break.full { gap: 10px; }
+.fbg-duty { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.fbg-duty p { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin: 0; padding: 10px 14px; border-radius: 16px; border: 1.5px solid color-mix(in srgb, var(--c) 60%, transparent); }
+.fbg-duty span { display: flex; flex-direction: column; min-width: 0; }
+.fbg-duty b { color: var(--c); }
+.fbg-duty small { font-size: 14px; color: var(--fb-quiet); }
+.fbg-duty em { font-style: normal; font-size: 14px; text-align: right; flex: none; }
+.fbg-duty em .fbt-n { font-size: 18px; color: var(--fb-ink); }
+
+/* The morning on Tonight. */
+.fbg-over { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 18px; border: 1.5px solid color-mix(in srgb, var(--c) 60%, transparent); background: linear-gradient(90deg, rgba(20,32,90,.55), transparent); color: var(--fb-ink); font-family: 'Atkinson Hyperlegible Next', var(--sans); margin: 0 0 10px; }
+.fbg-over span { display: flex; flex-direction: column; }
+.fbg-over b { font-size: 16px; }
+.fbg-over small { font-size: 14px; color: var(--fb-quiet); }
+.fbg-mo { flex: none; width: 30px; height: 30px; border-radius: 50%; box-shadow: inset -8px -3px 0 0 #ffe27a; transform: rotate(-20deg); filter: drop-shadow(0 0 8px #ffe27a); }
+.fbg-scout { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 18px; border: 2px solid var(--c); box-shadow: 0 0 16px -6px var(--c); color: var(--fb-ink); font-family: 'Atkinson Hyperlegible Next', var(--sans); margin: 0 0 10px; }
+.fbg-scout b { font: 400 19px/1.3 var(--serif); }
+.fbg-scout small { font-size: 14px; color: var(--fb-quiet); }
+.fbg-arrive, .fbg-break:not(.full) { margin: 0 0 10px; }
+
+/* A loan in a pack. */
+.fbg-pk { display: flex; gap: 10px; align-items: center; }
+.fbg-pk > span:last-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }

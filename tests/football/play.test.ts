@@ -46,7 +46,11 @@ describe('kick-off and the 4 am rule', () => {
   });
   it('caps catch-up at 42 days', async () => {
     const played = await playDue(noon(addDays('2026-10-10', 80)));
-    expect(new Set(played.map((m) => m.date)).size).toBe(CATCH_UP_CAP);
+    // Only the last 42 days are played; break days inside them (layer 4) have no matches.
+    const first = addDays('2026-10-10', 80 - CATCH_UP_CAP);
+    const breaks = ((await db.fbSave.get('save'))!.globe?.breaks ?? []).flatMap((b) => b.days).filter((d) => d >= first);
+    expect(played.every((m) => m.date >= first)).toBe(true);
+    expect(new Set(played.map((m) => m.date)).size).toBe(CATCH_UP_CAP - breaks.length);
   });
   it('a later edit never changes a played match', async () => {
     await kickOff('2026-10-12');

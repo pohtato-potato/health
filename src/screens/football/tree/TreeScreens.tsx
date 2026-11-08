@@ -196,6 +196,12 @@ export function EraMoment({ e }: { e: string }) {
         ))}
       </div>
       <div className="fbt-plates">{techs.map((t, k) => <span key={t.id} style={{ animationDelay: `${1.2 + k * 0.15}s` }}>{t.name}</span>)}</div>
+      {era.id === 'continental' && (
+        <section className="fbt-card" style={col(era.colour)}>
+          <span className="fbt-lb">Continental nights</span>
+          <span>These techs only act in the Continental Cup, on the nights Brabo plays in it: {techs.filter((t) => t.effects.some((x) => (x.kind === 'axis' && x.when.startsWith('continental')) || (x.kind === 'rule' && x.rule === 'rotation-two-fronts'))).map((t) => t.name).join(', ')}. The rest reach abroad every day: scouts, loans and a deeper squad.</span>
+        </section>
+      )}
       <div className="fbt-kv">
         <p><span>Research so far</span><b className="fbt-n">{fmtCount(m.eng.earned)}</b></p>
         <p><span>Projects built</span><b className="fbt-n">{built}</b></p>

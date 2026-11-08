@@ -128,6 +128,9 @@ export interface FbPlayer {
   freeAgent?: { club: string; on: DayKey; readded?: boolean };
   /** Exercises: every exercise id this player has been (see PlayerDef.refs). */
   refs?: string[];
+  // ---- Layer 4: the world (spec §9.4) ----
+  /** Back from international duty: a trait, or +2 to one attribute (added to what the logs give). */
+  duty?: { on: DayKey; nation: string; trait?: string; attr?: string; d?: number }[];
 }
 
 /** A named goal or save in a stored match (spec §8). */
