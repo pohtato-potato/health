@@ -15,12 +15,12 @@ import { simResult } from '../otherMatches';
 import { applyMoves, playoffPairs, seasonEnd } from '../promotion';
 import { afterMatch, ANTIGOON, HOW_TEXT, rivalTwist, type Meeting } from '../rivals';
 import { hashSeed, rng, pick } from '../rng';
-import { contractDay, keptOn, PROMOTE_AT, intake, youthStatus, newContract } from '../contracts';
+import { contractDay, keptOn, intake, youthStatus, newContract } from '../contracts';
 import { nationId, YOUTH_POOL } from '../data/load';
 import { crestStepFor } from '../kits';
 import { BUNDLES, bundleDay, capacityOf, dayCounts, groundAbilities, isOpen, TENANT_CAPACITY } from '../ground';
 import { dodgyCollapse, incomeFor, offers as offersFor, type Slot } from '../money';
-import { HABITS, habitById, armbandHarmony, averageOf, awakeningsAfter, momentsOf, TRAIT } from '../squad';
+import { HABITS, habitById, armbandHarmony, averageOf, momentsOf, TRAIT } from '../squad';
 import { abilityFor, braboAbilities } from '../data/abilities';
 import { standings, type Played, type Row } from '../table';
 import { applyChanges, worldTurn } from '../world';
@@ -29,11 +29,15 @@ import { axisInputFor, bestAxis, conditions, loadHealth, medsTaken, nightFor, ty
 import { factsFor, matchLines, situationOf } from './lines';
 import { newSeason, OWN } from './season';
 import type { FbBundle, FbClub, FbNews, FbSave, FbSeason, FbSquadRow, StoredMatch } from './tables';
+import { creditsFor } from '../players/credit';
+import { linkedLogged, youthDay } from '../players/youth';
+import type { Ctx } from '../players/attributes';
+import { academyIds, creditMatch, playerCtx, playersDay, rebuildPlayers, squadNight, type Roster } from './players';
 
 export const CATCH_UP_CAP = 42;
 const resultOf = (s: [number, number], pens?: [number, number]): Result => (s[0] > s[1] || (pens && pens[0] > pens[1]) ? 'W' : s[0] < s[1] || (pens && pens[0] < pens[1]) ? 'L' : 'D');
 
-interface World { bundles: Map<string, FbBundle>; squad: FbSquadRow[]; save: FbSave; season: FbSeason; oldSeasons: FbSeason[]; clubs: Map<string, FbClub>; matches: StoredMatch[]; news: FbNews[]; h: Health; past: StoredMatch[]; used: { id: string; date: DayKey }[] }
+interface World { bundles: Map<string, FbBundle>; squad: FbSquadRow[]; save: FbSave; season: FbSeason; oldSeasons: FbSeason[]; clubs: Map<string, FbClub>; matches: StoredMatch[]; news: FbNews[]; h: Health; past: StoredMatch[]; used: { id: string; date: DayKey }[]; roster: Roster; ctx: Ctx }
 
 /** Plays every unplayed day up to and including `date`, in order. Days before `date` count as auto-played. */
 export async function kickOff(date: DayKey): Promise<StoredMatch[]> {
@@ -46,7 +50,31 @@ export async function playDue(now = Date.now()): Promise<StoredMatch[]> {
 }
 
 const USER_KEYS = ['buzz', 'wcCountry', 'ownSponsor', 'captain', 'captains', 'captainWeek', 'slots', 'sponsorStyle', 'awakeSeen', 'seenSeasonEnd'] as const satisfies readonly (keyof FbSave)[];
+/**
+ * Engine 2 arrives: rebuilds the players from history once (spec §16), crediting the stored matches and keeping only
+ * youngsters tied to a real habit. Everything else in the save stays. Safe to call any time; it runs once.
+ */
+export async function upgradeSave(): Promise<boolean> {
+  const save = await db.fbSave.get('save');
+  if (!save || save.engine === 2) return false;
+  rememberClubs(await db.fbClubs.toArray());
+  const until = save.lastPlayed ?? addDays(save.founded, -1);
+  const r = rebuildPlayers(await loadHealth(), save, await db.fbSquad.toArray(), await db.fbMatches.orderBy('date').toArray(), until, (id) => clubById(id).name);
+  return db.transaction('rw', [db.fbSave, db.fbMatches, db.fbNews, db.fbSquad, db.fbPlayers], async () => {
+    const cur = await db.fbSave.get('save');
+    if (!cur || cur.engine === 2) return false; // another tab upgraded first
+    await db.fbSave.put({ ...cur, engine: 2 });
+    await db.fbPlayers.clear();
+    if (r.players.length) await db.fbPlayers.bulkPut(r.players);
+    if (r.matches.length) await db.fbMatches.bulkPut(r.matches);
+    if (r.squad.length) await db.fbSquad.bulkPut(r.squad);
+    if (r.news.length) await db.fbNews.bulkPut(r.news);
+    return true;
+  });
+}
+
 async function playThrough(until: DayKey, closed: DayKey | null): Promise<StoredMatch[]> {
+  await upgradeSave();
   const save = await db.fbSave.get('save');
   if (!save) return [];
   const stored = await db.fbClubs.toArray();
@@ -55,16 +83,19 @@ async function playThrough(until: DayKey, closed: DayKey | null): Promise<Stored
   if (until < from) return [];
   let start = from;
   if (daysBetween(from, until) + 1 > CATCH_UP_CAP) start = addDays(until, -(CATCH_UP_CAP - 1));
+  const h = await loadHealth();
+  const squad = await db.fbSquad.toArray();
+  const roster: Roster = new Map((await db.fbPlayers.toArray()).map((p) => [p.id, p]));
   const w: World = {
-    squad: await db.fbSquad.toArray(),
+    squad, roster, ctx: playerCtx(h, save, squad),
     bundles: new Map((await db.fbBundles.toArray()).map((b) => [b.id, b])),
     save: { ...save }, season: (await db.fbSeasons.get(save.season))!, oldSeasons: [], clubs: new Map(stored.map((c) => [c.id, c])),
-    matches: [], news: [], h: await loadHealth(), past: await db.fbMatches.orderBy('date').toArray(),
+    matches: [], news: [], h, past: await db.fbMatches.orderBy('date').toArray(),
     used: (await db.fbNews.where('date').aboveOrEqual(addDays(start, -31)).toArray()).filter((n) => n.lineId).map((n) => ({ id: n.lineId!, date: n.date })),
   };
   for (let d = start; d <= until; d = addDays(d, 1)) { clubDay(w, d); playDay(w, d, d !== closed); }
   w.save.lastPlayed = until;
-  await db.transaction('rw', [db.fbSave, db.fbSeasons, db.fbClubs, db.fbMatches, db.fbNews, db.fbSquad, db.fbBundles], async () => {
+  await db.transaction('rw', [db.fbSave, db.fbSeasons, db.fbClubs, db.fbMatches, db.fbNews, db.fbSquad, db.fbBundles, db.fbPlayers], async () => {
     const cur = await db.fbSave.get('save');
     if (cur?.lastPlayed && cur.lastPlayed >= until) return; // another tab played first
     // Settings the player changed while the days were playing win over the copy read at the start.
@@ -74,6 +105,7 @@ async function playThrough(until: DayKey, closed: DayKey | null): Promise<Stored
     await db.fbClubs.bulkPut([...w.clubs.values()]);
     rememberClubs([...w.clubs.values()]);
     if (w.matches.length) await db.fbMatches.bulkPut(w.matches);
+    if (w.roster.size) await db.fbPlayers.bulkPut([...w.roster.values()]);
     if (w.news.length) await db.fbNews.bulkPut(w.news);
     if (w.squad.length) await db.fbSquad.bulkPut(w.squad);
     if (w.bundles.size) await db.fbBundles.bulkPut([...w.bundles.values()]);
@@ -265,10 +297,16 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
   const night = nightFor(w.h, date);
   const day = w.h.days.get(date);
   const rotation = usesRotation(day?.status);
+  const sick = day?.status === 'sick';
   const recent = [...w.past, ...w.matches].filter((m) => !m.rotation && m.date > addDays(date, -28) && m.date < date);
   const raw = rotation ? rotationShape(recent.map((m) => m.values)) : night.values;
-  const values = { ...raw };
+  // Engine 2: tonight = 70% today + 30% squad. A sick day plays the rotation squad (the bench) at 100% squad value.
+  // An axis with no data tonight keeps its no-data value: the squad does not paper over a blank.
+  const team = squadNight(w.roster, raw, sick);
+  const blended = rotation && !sick ? raw : team.values;
   const flags = rotation ? {} : { ...night.flags };
+  const values = { ...blended };
+  for (const a of AXES) if (flags[a]) values[a] = raw[a];
   for (const c of w.save.contracts ?? []) { const a = habitById(c.habit).axis; if (!flags[a]) values[a] = Math.min(20, Math.round(values[a] * c.weight)); }
   for (const hb of w.save.sold ?? []) { const a = habitById(hb).axis; values[a] = 10; flags[a] = 'no-data'; }
   const pre: Mod[] = [];
@@ -315,6 +353,7 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
   const m: StoredMatch = {
     id: `${date}:${leg ?? 1}`, date, season: w.save.season, day: plan.day, comp, round, home, away, opp: oppId, braboHome,
     values, flags, events, score: mineScore, pens, result: resultOf(mineScore, pens),
+    xi: team.xi, credits: creditsFor(events, team.xi, def.name),
     watched: false, rotation, auto, leg, derby, big: derby || comp !== 'league' || plan.matchday === 34,
   };
   if (!w.save.met.includes(oppId)) w.save.met = [...w.save.met, oppId];
@@ -336,17 +375,9 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
     }
     if (r.faded) w.news.push({ id: `${date}:fade:${r.faded}`, date, kind: 'club', clubId: r.faded, text: `Five wins in a row: the rivalry with ${clubById(r.faded).name} fades.` });
   }
-  const window28 = (list: StoredMatch[]) => list.filter((x) => !x.rotation && x.date > addDays(date, -28) && x.date <= date).map((x) => x.values);
-  const before = window28([...w.past, ...w.matches]);
+  // Engine 2 has no new Awakenings: a player's limit breaks take their place (layer 2).
   w.matches.push(m);
-  if (!rotation && before.length >= 7) {
-    const { done, fresh } = awakeningsAfter(w.save.awakenings, averageOf(before), averageOf(window28([...w.past, ...w.matches])), date);
-    if (fresh.length) {
-      w.save.awakenings = done;
-      w.save.awakeLog = [...(w.save.awakeLog ?? []), ...fresh];
-      fresh.forEach((a) => w.news.push({ id: `${date}:awaken:${a.axis}:${a.band}`, date, kind: 'club', text: `${a.axis} awakens: the 28-day average reaches ${a.band}. New trait, ${TRAIT[a.axis]}.` }));
-    }
-  }
+  w.roster = creditMatch(w.roster, m);
   const run = [...w.past, ...w.matches].filter((x) => !x.rotation);
   let streak = 0;
   for (let k = run.length - 1; k >= 0 && run[k].result === m.result; k--) streak++;
@@ -358,12 +389,8 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
 }
 
 // ---- The club between matches (Part 4) ----
-const youthDone = (w: World, y: FbSquadRow, date: DayKey) => {
-  const day = w.h.days.get(date);
-  const item = (w.h.settings.checklist ?? []).find((i) => i.active && i.name.toLowerCase() === y.name.toLowerCase());
-  if (item) return item.slots.some((_, k) => day?.ticks?.[`${item.id}:${k}`] != null);
-  return nightFor(w.h, date).values[y.axis] >= 13;
-};
+/** A youngster's day counts only through the real habit it is linked to (spec §9.2): never a day nothing was done. */
+const youthDone = (w: World, y: FbSquadRow, date: DayKey) => linkedLogged(w.h, y.link, date);
 /** Promoted youngsters whose habit was done that day come off the bench at 60'. */
 function benchFor(w: World, date: DayKey) {
   return w.squad.filter((y) => y.status === 'promoted' && youthDone(w, y, date)).slice(0, 2).map((y) => ({ axis: y.axis, plus: 2 }));
@@ -379,13 +406,14 @@ function clubDay(w: World, date: DayKey) {
     return next;
   });
   groundDay(w, date, input);
-  for (const y of w.squad) {
-    if (y.status !== 'growing' || y.logged.includes(date) || !youthDone(w, y, date)) continue;
-    y.logged = [...y.logged, date];
-    if (y.exercise) continue; // exercise youngsters wait for the coach's plan
-    const need = doneBundles(w).includes('training-2') ? Math.ceil(PROMOTE_AT * 0.75) : PROMOTE_AT;
-    if (y.logged.length >= need) { y.status = 'promoted'; w.news.push({ id: `${date}:youth:${y.id}`, date, kind: 'club', text: `${y.name} joins the bench after ${need} logged days.` }); }
-  }
+  // Youngsters: sessions from the linked habit, growth from kept bedtimes; both full, they join the squad.
+  w.squad = w.squad.map((y) => {
+    const next = youthDay(w.h, y, date, w.save.bedtime);
+    if (next.status === 'promoted' && y.status !== 'promoted') w.news.push({ id: `${date}:youth:${y.id}`, date, kind: 'club', text: `${y.name} joins the squad after ${next.sessions?.length ?? 0} sessions and a run of kept bedtimes.` });
+    return next;
+  });
+  w.ctx = playerCtx(w.h, w.save, w.squad);
+  w.roster = playersDay(w.roster, w.h, w.ctx, date, academyIds(w.squad));
 }
 /** Three youngsters for a season, at most one exercise, plus one per youth slot won in a trade. */
 export function youthIntake(season: number, date: DayKey, extra = 0, academy = false): FbSquadRow[] {

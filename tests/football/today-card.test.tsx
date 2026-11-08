@@ -42,7 +42,7 @@ describe('Today’s Football card', () => {
     const out = html(<FootballCardView state="halftime" t={{ ...t, flags: {}, liveValues: { ...t.liveValues, Rest: 6 } }} last={last} />);
     expect(out).toContain('Half-time');
     expect(out).toContain("Weakest so far: Rest 6");
-    expect(out).toContain('Closing the day kicks off the match. Or it plays itself at 4 am.');
+    expect(out).toContain('The match plays in the morning, once the day is done.');
     expect(out).not.toContain('class="lab');
   });
 

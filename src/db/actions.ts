@@ -1,4 +1,4 @@
-import { addDays, atOn, dayKey, type DayKey, logHour, logMinutes } from '../domain/dates';
+import { addDays, atOn, dayKey, dayOfLogging, type DayKey, logHour, logMinutes } from '../domain/dates';
 import { eatenAtFor, mealTimesFor, portionFor, valuesFor } from '../domain/foods';
 import { offeredPlace, placeFor } from '../domain/places';
 import type { Swap } from '../domain/plan';
@@ -363,10 +363,13 @@ export async function moveEntry(id: string, meal: FoodEntry['meal']) {
   await updateEntry(id, { meal });
 }
 
-/** Marks a day's food complete (or not). Works for any date. Closing a day kicks off its football match. */
-export async function closeDay(date: DayKey, done: boolean) {
+/**
+ * Marks a day's food complete (or not). Works for any date. A day is scored at Close the day or the morning match,
+ * whichever is later (spec §16): closing today waits for the morning; closing a day already past kicks it off now.
+ */
+export async function closeDay(date: DayKey, done: boolean, now = Date.now()) {
   await patchDay(date, { foodDone: done });
-  if (done) await import('../football/store/play').then((m) => m.kickOff(date)).catch((e) => console.error('football kick-off', e));
+  if (done && date < dayOfLogging(now)) await import('../football/store/play').then((m) => m.kickOff(date)).catch((e) => console.error('football kick-off', e));
 }
 
 /** Puts a status on every day from..to, or takes it off when status is undefined. */

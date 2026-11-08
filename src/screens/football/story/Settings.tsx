@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { NATIONS, nationBar } from '../../../football/events';
 import type { Slot } from '../../../football/money';
-import { setFbSetting, setOwnSponsor } from '../../../football/store/save';
+import { setBedtime, setFbSetting, setOwnSponsor } from '../../../football/store/save';
+import { clock } from '../../../football/players/attributes';
 import type { FbSave } from '../../../football/store/tables';
 import { SLOT_NAME } from '../club/Money';
 
@@ -14,10 +15,12 @@ export const MAPPING: [string, string][] = [
   ['Routine', 'The daily checklist'],
   ['Shape', 'Weigh-ins and waist'],
 ];
+/** 9 pm to 3 am, every half hour. */
+const BEDTIMES = Array.from({ length: 13 }, (_, i) => (21 * 60 + i * 30) % 1440);
 const BY_NAME = [...NATIONS].sort((a, b) => a.name.localeCompare(b.name));
 
-export function SettingsView({ s, onBuzz = (v) => void setFbSetting('buzz', v), onCountry = (id) => void setFbSetting('wcCountry', id), onOwn = (n, sl) => void setOwnSponsor(n, sl) }: {
-  s: FbSave; onBuzz?: (v: boolean) => void; onCountry?: (id: string | undefined) => void; onOwn?: (name: string, slot: Slot) => void;
+export function SettingsView({ s, onBuzz = (v) => void setFbSetting('buzz', v), onCountry = (id) => void setFbSetting('wcCountry', id), onOwn = (n, sl) => void setOwnSponsor(n, sl), onBedtime = (m) => void setBedtime(m) }: {
+  s: FbSave; onBedtime?: (m: number | undefined) => void; onBuzz?: (v: boolean) => void; onCountry?: (id: string | undefined) => void; onOwn?: (name: string, slot: Slot) => void;
 }) {
   const [name, setName] = useState(s.ownSponsor?.name ?? '');
   const [slot, setSlot] = useState<Slot>((s.ownSponsor?.slot as Slot) ?? 'sleeve');
@@ -26,12 +29,19 @@ export function SettingsView({ s, onBuzz = (v) => void setFbSetting('buzz', v), 
     <>
       <section className="fb-card fb-setrow" aria-label="Match times">
         <span className="fb-lb">Match times</span>
-        <p className="fb-s">Closing the day kicks off that night’s match. A day not closed plays itself at 4 am and waits for you. One match a night; double-headers play two from the same night.</p>
+        <p className="fb-s">Each day’s match plays the next morning, once the day is done, and waits for you. Closing a past day plays it straight away. One match a night; double-headers play two from the same night.</p>
       </section>
       <section className="fb-card fb-setrow" aria-label="Which habit plays which axis">
         <span className="fb-lb">Which habit plays which axis</span>
         {MAPPING.map(([a, h]) => <div key={a} className="fb-row"><b>{a}</b><span className="fb-s fb-right">{h}</span></div>)}
-        <p className="fb-s">Fixed for now.</p>
+        <label className="fb-row">
+          <b>Bedtime</b>
+          <select className="fb-select" value={s.bedtime ?? ''} onChange={(e) => onBedtime(e.target.value === '' ? undefined : Number(e.target.value))} aria-label="Bedtime for Rest and the youngsters">
+            <option value="">Your usual bedtime</option>
+            {BEDTIMES.map((m) => <option key={m} value={m}>{clock(m)}</option>)}
+          </select>
+        </label>
+        <p className="fb-s">Fixed for now. A bedtime counts as kept when you are asleep by 45 minutes after it; earlier always counts.</p>
       </section>
       <section className="fb-card fb-setrow" aria-label="Buzz on goals">
         <div className="fb-row">

@@ -12,6 +12,7 @@ import { ClubPage } from './league/ClubPage';
 import { RivalRoute, StoryHome, WrappedRoute } from './story/StoryHome';
 import { ClubHome, PlayerRoute } from './club/ClubHome';
 import { FullTime } from './FullTime';
+import { CardMomentRoute, PlayerPage, UnitRoute } from './players/Screens';
 import { FirstRun } from './FirstRun';
 import { keyChances } from './CatchUp';
 import { go } from '../../router';
@@ -64,7 +65,10 @@ export function Football() {
   if (path === '/football/club-page') return <FootballHome section="league"><ClubPage id={params.get('id') ?? ''} wiki={params.get('wiki') === '1'} /></FootballHome>;
   if (path === '/football/wrapped') return <WrappedRoute season={Number(params.get('season') ?? 1)} />;
   if (path === '/football/rival') return <FootballHome section="story"><RivalRoute id={params.get('id') ?? ''} /></FootballHome>;
+  if (path === '/football/player' && params.get('id')) return <FootballHome section="club"><PlayerPage id={params.get('id')!} /></FootballHome>;
   if (path === '/football/player') return <FootballHome section="club"><PlayerRoute axis={params.get('axis') ?? ''} /></FootballHome>;
+  if (path === '/football/unit') return <FootballHome section="club"><UnitRoute unit={params.get('u') ?? ''} /></FootballHome>;
+  if (path === '/football/card') return <FootballHome section="club"><CardMomentRoute id={params.get('id') ?? ''} /></FootballHome>;
   const section = SECTION[path] ?? 'tonight';
   return <FootballHome section={section}>{section === 'tonight' ? <TonightSection /> : section === 'league' ? <LeagueHome /> : section === 'story' ? <StoryHome /> : <ClubHome />}</FootballHome>;
 }

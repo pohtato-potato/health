@@ -136,6 +136,8 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/football/story': { el: () => <Football />, tab: 'football' },
   '/football/match': { el: () => <Football />, tab: 'football' },
   '/football/player': { el: () => <Football />, tab: 'football' },
+  '/football/unit': { el: () => <Football />, tab: 'football' },
+  '/football/card': { el: () => <Football />, tab: 'football' },
   '/football/club-page': { el: () => <Football />, tab: 'football' },
   '/football/rival': { el: () => <Football />, tab: 'football' },
   '/football/wrapped': { el: () => <Football />, tab: 'football' },

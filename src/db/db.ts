@@ -4,6 +4,7 @@ import type { Sighting } from '../domain/creatures';
 import Dexie, { type EntityTable } from 'dexie';
 import type { Snapshot } from './snapshots';
 import type { FbBundle, FbClub, FbNews, FbSave, FbSeason, FbSquadRow, StoredMatch } from '../football/store/tables';
+import type { FbPlayer } from '../football/players/types';
 import type {
   CheckIn,
   Clip,
@@ -72,6 +73,7 @@ export class HealthDB extends Dexie {
   fbSquad!: EntityTable<FbSquadRow, 'id'>;
   fbNews!: EntityTable<FbNews, 'id'>;
   fbBundles!: EntityTable<FbBundle, 'id'>;
+  fbPlayers!: EntityTable<FbPlayer, 'id'>;
 
   constructor(name = 'health') {
     super(name);
@@ -131,6 +133,9 @@ export class HealthDB extends Dexie {
       fbNews: 'id, date, kind',
       fbBundles: 'id',
     });
+    this.version(10).stores({
+      fbPlayers: 'id, unit, status',
+    });
   }
 }
 
@@ -171,6 +176,7 @@ export const TABLES = [
   'fbSquad',
   'fbNews',
   'fbBundles',
+  'fbPlayers',
 ] as const;
 export type TableName = (typeof TABLES)[number];
 

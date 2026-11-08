@@ -69,7 +69,7 @@ export function FootballCardView({ state, t, last }: { state: FootballCardState;
             {presses.length > 0 && <span className="fb-s">They press on {presses.join(' and ')}</span>}
           </span>
         </span>
-        <span className="fb-s">Closing the day kicks off the match. Or it plays itself at 4 am.</span>
+        <span className="fb-s">The match plays in the morning, once the day is done.</span>
       </button>
     );
   }
@@ -113,13 +113,24 @@ export function KickOffCard({ m, save, onWatch, onLater }: { m: StoredMatch; sav
   );
 }
 
-/** Close the day's kick-off: shows once the closed day's match is stored. */
+/** Close the day's last screen: the closed day's match once it is played, else tonight's fixture waiting for the morning. */
 export function DayKickOff({ date }: { date: string }) {
   const got = useLiveQuery(async () => {
     const save = await db.fbSave.get('save');
     const m = save ? await db.fbMatches.where('date').equals(date).first() : undefined;
-    return save && m ? { save, m } : null;
+    const t = save && !m ? await loadTonight(date) : null;
+    return save ? { save, m, t } : null;
   }, [date]);
   if (!got) return null;
-  return <KickOffCard m={got.m} save={got.save} onWatch={() => go('/football/match', { id: got.m.id })} onLater={() => back('/today')} />;
+  if (got.m) return <KickOffCard m={got.m} save={got.save} onWatch={() => go('/football/match', { id: got.m!.id })} onLater={() => back('/today')} />;
+  if (!got.t?.fixture) return null;
+  return (
+    <Aurora className="fb-todaywrap fb-kickoff">
+      <div className="fb-todaycard" role="group" aria-label="Tonight’s match">
+        <span className="fb-lb">Tonight’s match</span>
+        <span className="fb-s">{got.t.fixture.label}</span>
+        <span className="fb-s">It plays in the morning, once the day is done, and waits for you on Today.</span>
+      </div>
+    </Aurora>
+  );
 }

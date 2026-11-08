@@ -15,9 +15,11 @@ import { loadHealth } from './gather';
 import { factsFor } from './lines';
 import { contractsFor, monthsFromHealth, youthIntake } from './play';
 import { newSeason } from './season';
+import { rebuildPlayers } from './players';
 import type { CrestOpt, FbClub, FbSave } from './tables';
+import type { YouthLink } from '../players/youth';
 
-export const FB_TABLES = ['fbSave', 'fbClubs', 'fbMatches', 'fbSeasons', 'fbSquad', 'fbNews', 'fbBundles'] as const;
+export const FB_TABLES = ['fbSave', 'fbClubs', 'fbMatches', 'fbSeasons', 'fbSquad', 'fbNews', 'fbBundles', 'fbPlayers'] as const;
 export const getSave = () => db.fbSave.get('save');
 
 /** Seeds the pyramid, builds the Old Selves from Health's past months, and starts Season 1 on `date`. */
@@ -34,15 +36,18 @@ export async function foundClub(date: DayKey, choices: { shirt: string; crest: C
     budget: 0.05, buzz: true, crest: { step: 1, opt: choices.crest }, shirt: choices.shirt,
     rivals: [{ clubId: ANTIGOON, how: 'legend', since: date }], met: [], physioRoom: false, awakenings: {}, firstRunDone: true,
     contracts: contractsFor(date), sold: [], sponsors: [], offers: [], staff: [],
-    crestHistory: [{ step: 1, opt: choices.crest, season: 1 }],
+    crestHistory: [{ step: 1, opt: choices.crest, season: 1 }], engine: 2,
   };
-  await db.transaction('rw', [db.fbSave, db.fbClubs, db.fbSeasons, db.fbMatches, db.fbNews, db.fbSquad, db.fbBundles], async () => {
+  // Engine 2 from day one: every logged habit is already a player, rated from its history up to founding.
+  const { players } = rebuildPlayers(h, save, [], [], addDays(date, -1), () => '');
+  await db.transaction('rw', FB_TABLES.map((t) => db.table(t)), async () => {
     for (const t of FB_TABLES) await db.table(t).clear();
     await db.fbClubs.bulkPut(clubs);
     rememberClubs(clubs);
     await db.fbSeasons.put(newSeason(1, date, clubs));
     await db.fbSave.put(save);
     await db.fbSquad.bulkPut(youthIntake(1, date));
+    if (players.length) await db.fbPlayers.bulkPut(players);
   });
 }
 export async function setFbSetting<K extends 'buzz' | 'wcCountry' | 'ownSponsor' | 'captain' | 'slots'>(k: K, v: FbSave[K]) {
@@ -164,3 +169,25 @@ export const markOpened = (id: string) => editSave((s) => ({ ...s, openings: (s.
 
 /** A rival's birth moment has been shown. */
 export const markRivalSeen = (id: string) => editSave((s) => ({ ...s, rivalMoments: (s.rivalMoments ?? []).filter((x) => x !== id) }));
+
+/** A card moment has been played (tap to break, reissue): it stops waiting. */
+export async function seeMoment(playerId: string) {
+  await db.transaction('rw', db.fbPlayers, async () => {
+    const p = await db.fbPlayers.get(playerId);
+    if (p && p.moments.some((m) => !m.seen)) await db.fbPlayers.put({ ...p, moments: p.moments.map((m) => ({ ...m, seen: true })) });
+  });
+}
+/** The bedtime the Rest players and the youngsters' growth count against, in minutes after midnight; undefined = usual. */
+export async function setBedtime(min: number | undefined) {
+  await db.transaction('rw', db.fbSave, async () => {
+    const s = await db.fbSave.get('save');
+    if (s) await db.fbSave.put({ ...s, bedtime: min });
+  });
+}
+/** Ties a youngster to a real habit (spec §9.2 step 2); only days of that habit count from now on. */
+export async function linkYouth(id: string, link: YouthLink | undefined) {
+  await db.transaction('rw', db.fbSquad, async () => {
+    const y = await db.fbSquad.get(id);
+    if (y && y.status === 'growing') await db.fbSquad.put({ ...y, link, sessions: [], growth: y.growth ?? 0, grown: y.grown ?? [], logged: [] });
+  });
+}

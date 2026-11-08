@@ -57,7 +57,13 @@ describe('Power', () => {
     expect(powerFromTraining([sess(), sess({ id: 't' })], 2, 3, 4)).toBe(18);
     expect(powerFromTraining([sess()], 4, 3, 4)).toBe(18);
     expect(powerFromTraining([], 2, 3, 4)).toBe(13);
-    expect(powerFromTraining([], 0, 3, 4)).toBe(4);
+    // Rest day (calibration): kept while the week's target is still reachable, or the last session was ≤2 days ago.
+    expect(powerFromTraining([], 0, 3, 4)).toBe(13);
+    expect(powerFromTraining([], 0, 5, 4)).toBe(4);
+    expect(powerFromTraining([], 0, 5, 4, 2)).toBe(13);
+    expect(powerFromTraining([], 0, 5, 4, 3)).toBe(4);
+    expect(powerFromTraining([], 3, 7, 4)).toBe(4);
+    expect(powerFromTraining([], 4, 7, 4)).toBe(13);
   });
 });
 describe('axisValues', () => {

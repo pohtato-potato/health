@@ -15,6 +15,8 @@ export interface AxisInput {
   weekDoneBefore: number;
   /** 1 = Monday … 7 = Sunday. */
   weekdayMon1: number;
+  /** Days since the last finished session before that day (undefined: none yet). */
+  daysSinceLast?: number;
   targets: Targets;
   checklist: ChecklistItem[];
   weighIns7: number;
@@ -57,12 +59,17 @@ export function fuelScore(kcal: number, protein: number, t: Targets): number {
   return v20(20 * (0.5 * cal + 0.5 * prot));
 }
 
-/** Done 16, extra 18, short 11, a kept rest day 13, a missed one 4. */
-export function powerFromTraining(today: TrainingSession[], weekDoneBefore: number, weekdayMon1: number, perWeek: number): number {
+/**
+ * Done 16, extra 18, short 11, a kept rest day 13, a missed one 4. A rest day is kept (calibration): the last
+ * session was 2 days ago or less, or the week's target can still be reached in the days left after today.
+ */
+export function powerFromTraining(today: TrainingSession[], weekDoneBefore: number, weekdayMon1: number, perWeek: number, daysSinceLast?: number): number {
   const done = today.filter((s) => s.status === 'done');
   if (done.length >= 2 || (done.length && weekDoneBefore >= perWeek)) return 18;
   if (done.length) return done.some((s) => !s.short) ? 16 : 11;
-  return weekDoneBefore >= Math.round((perWeek * weekdayMon1) / 7) ? 13 : 4;
+  const recent = daysSinceLast !== undefined && daysSinceLast <= 2;
+  const reachable = perWeek - weekDoneBefore <= 7 - weekdayMon1;
+  return recent || reachable ? 13 : 4;
 }
 
 export const routineFromShare = (share: number) => v20(lerp(ROUTINE_PTS, clamp(share, 0, 1)));
@@ -86,15 +93,17 @@ export function axisValues(i: AxisInput): { values: AxisValues; flags: AxisFlags
   const share = checklistShare(i.checklist, d);
   const raw: Record<Axis, number | null> = {
     Pace: d?.steps != null ? paceFromSteps(d.steps) : null,
-    Power: powerFromTraining(i.sessionsToday, i.weekDoneBefore, i.weekdayMon1, i.targets.sessionsPerWeek),
+    Power: powerFromTraining(i.sessionsToday, i.weekDoneBefore, i.weekdayMon1, i.targets.sessionsPerWeek, i.daysSinceLast),
     Fuel: i.foodLogged ? fuelScore(i.kcal, i.protein, i.targets) : null,
     Rest: d?.sleep ? restFromSleep(sleepHours(d.sleep), d.sleep.rested) : null,
     Routine: share === 'none' ? NO_DATA : share == null ? null : routineFromShare(share),
     Shape: v20(shapeFromLogs(i.weighIns7, i.waist7, Boolean(i.trendTowardGoal))),
   };
   const values = {} as AxisValues;
+  // A sick day (spec §16): every axis is "no data"; the rotation squad plays instead.
+  const sick = d?.status === 'sick';
   for (const a of AXES) {
-    if (i.history[a] < 7 || (a === 'Routine' && share === 'none')) { values[a] = NO_DATA; flags[a] = 'no-data'; continue; }
+    if (sick || i.history[a] < 7 || (a === 'Routine' && share === 'none')) { values[a] = NO_DATA; flags[a] = 'no-data'; continue; }
     const v = raw[a];
     if (v == null) { values[a] = NOT_LOGGED; flags[a] = 'not-logged'; } else values[a] = v20(v);
   }

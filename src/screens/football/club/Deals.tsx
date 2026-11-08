@@ -1,6 +1,9 @@
 // Contracts, youth and the transfer window: one line per member, the renewal tap, the trade flow.
 import { bidFor, feeWords, type Contract } from '../../../football/contracts';
-import { PROMOTE_AT } from '../../../football/contracts';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { loadHealth } from '../../../football/store/gather';
+import { linkYouth } from '../../../football/store/save';
+import { linkOptions, PROMOTE_GROWTH, PROMOTE_SESSIONS, type YouthLink } from '../../../football/players/youth';
 import { habitById } from '../../../football/squad';
 import type { Club } from '../../../football/store/club';
 import type { FbSquadRow } from '../../../football/store/tables';
@@ -64,7 +67,13 @@ function Trade({ k, season, act }: { k: Contract; season: number; act: DealsActi
   );
 }
 
-function Youth({ youth }: { youth: FbSquadRow[] }) {
+/** A youngster grows only through the real habit it is tied to: sessions from that habit, growth from kept bedtimes. */
+function Youth({ youth, onLink = (id, l) => void linkYouth(id, l) }: { youth: FbSquadRow[]; onLink?: (id: string, l: YouthLink | undefined) => void }) {
+  const options = useLiveQuery(async () => {
+    const h = await loadHealth();
+    return Object.fromEntries(youth.map((y) => [y.id, linkOptions(h, y, youth, y.id.match(/(\d{4}-\d{2}-\d{2})$/)?.[1] ?? '0000-00-00')]));
+  }, [youth.map((y) => `${y.id}:${y.link?.id ?? ''}`).join(',')]);
+  const enc = (l?: YouthLink) => (l ? `${l.kind}:${l.id}` : '');
   return (
     <>
       <div className="fb-row"><h2 className="fb-t">Youngsters</h2><span className="fb-s">{youth.length ? `intake, season ${youth[0].season}` : 'none growing'}</span></div>
@@ -72,11 +81,23 @@ function Youth({ youth }: { youth: FbSquadRow[] }) {
         <section key={y.id} className="fb-card" aria-label={y.name}>
           <div className="fb-row"><b>{y.name}</b><span className="fb-s">{'★'.repeat(y.potential)}<span className="fb-sr"> {y.potential} stars</span></span></div>
           <span className="fb-s">{y.axis} · {y.what}</span>
-          <div className="fb-bar" role="img" aria-label={`${y.logged.length} of ${PROMOTE_AT} days logged`}><i style={{ width: `${Math.min(100, (y.logged.length / PROMOTE_AT) * 100)}%` }} /></div>
-          <span className="fb-s">{y.logged.length} of {PROMOTE_AT} days logged{y.exercise ? ' · joins the bench once the coach’s plan includes it' : ''}</span>
+          {y.status === 'growing' && (
+            <label className="fb-col">
+              <span className="fb-s">Tied to</span>
+              <select className="fb-select" value={enc(y.link)} onChange={(e) => { const [kind, ...id] = e.target.value.split(':'); onLink(y.id, e.target.value ? { kind: kind as YouthLink['kind'], id: id.join(':') } : undefined); }}>
+                <option value="">Not tied yet: nothing counts</option>
+                {y.link && !(options?.[y.id] ?? []).some((o) => enc(o.link) === enc(y.link)) && <option value={enc(y.link)}>The current habit</option>}
+                {(options?.[y.id] ?? []).map((o) => <option key={enc(o.link)} value={enc(o.link)}>{o.name}</option>)}
+              </select>
+            </label>
+          )}
+          <div className="fb-bar" role="img" aria-label={`${y.sessions?.length ?? 0} of ${PROMOTE_SESSIONS} sessions`}><i style={{ width: `${Math.min(100, ((y.sessions?.length ?? 0) / PROMOTE_SESSIONS) * 100)}%` }} /></div>
+          <span className="fb-s">{y.sessions?.length ?? 0} of {PROMOTE_SESSIONS} sessions</span>
+          <div className="fb-bar" role="img" aria-label={`Growth ${y.growth ?? 0} of ${PROMOTE_GROWTH}`}><i style={{ width: `${Math.min(100, ((y.growth ?? 0) / PROMOTE_GROWTH) * 100)}%` }} /></div>
+          <span className="fb-s">Growth {y.growth ?? 0} of {PROMOTE_GROWTH}, from nights you kept your bedtime{y.status === 'promoted' ? ' · in the squad' : ''}</span>
         </section>
       ))}
-      <p className="fb-s">Twelve logged days in a season take a youngster to the bench. Fewer than four and they leave on a free.</p>
+      <p className="fb-s">Tie each youngster to a new habit. A day of that habit is a session; a kept bedtime grows them, twice as much after a rest day. Twelve of each and they join the squad. Days with nothing done never count.</p>
     </>
   );
 }

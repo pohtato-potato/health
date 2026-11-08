@@ -1,7 +1,7 @@
 // Reads Health's tables once for a date. Football reads values only, never log times.
 import { db } from '../../db/db';
 import { addDays, daysBetween, weekStart, type DayKey } from '../../domain/dates';
-import type { ChecklistItem, Day, Settings, TrainingSession } from '../../domain/types';
+import type { ChecklistItem, Day, Meal, RouteRun, SetEntry, Settings, TrainingSession } from '../../domain/types';
 import { targetsFor } from '../../state/derived';
 import { axisValues, sleepHours, type AxisInput } from '../axes';
 import { hashSeed } from '../rng';
@@ -13,23 +13,41 @@ export interface Health {
   sessions: TrainingSession[];
   kcal: Map<DayKey, { kcal: number; protein: number; n: number }>;
   measures: { date: DayKey; waist?: number }[];
+  /** Every set logged and not skipped (engine 2 players read them). */
+  sets: SetEntry[];
+  /** Calories and protein by day and meal. */
+  meals: Map<DayKey, Partial<Record<Meal, { kcal: number; protein: number }>>>;
+  /** Walk journal entries with a distance. */
+  walks: { date: DayKey; km: number }[];
+  routes: RouteRun[];
 }
 export async function loadHealth(): Promise<Health> {
-  const [settings, days, sessions, entries, measures] = await Promise.all([
+  const [settings, days, sessions, entries, measures, sets, walk, routes] = await Promise.all([
     db.settings.get('app'), db.days.toArray(), db.sessions.toArray(), db.entries.toArray(), db.measurements.toArray(),
+    db.sets.toArray(), db.walk.toArray(), db.routes.toArray(),
   ]);
   const kcal = new Map<DayKey, { kcal: number; protein: number; n: number }>();
+  const meals: Health['meals'] = new Map();
   for (const e of entries) {
     const k = kcal.get(e.date) ?? { kcal: 0, protein: 0, n: 0 };
     k.kcal += e.kcal; k.protein += e.protein; k.n++;
     kcal.set(e.date, k);
+    const m = meals.get(e.date) ?? {};
+    const x = m[e.meal] ?? { kcal: 0, protein: 0 };
+    m[e.meal] = { kcal: x.kcal + e.kcal, protein: x.protein + e.protein };
+    meals.set(e.date, m);
   }
+  const done = new Set(sessions.filter((s) => s.status === 'done').map((s) => s.id));
   return {
     settings: (settings ?? { targets: [], checklist: [] }) as Settings,
     days: new Map(days.map((d) => [d.date, d])),
     sessions: sessions.filter((s) => s.status === 'done'),
     kcal,
     measures: measures.map((m) => ({ date: m.date, waist: m.waistStanding })),
+    sets: sets.filter((x) => !x.skipped && done.has(x.sessionId)),
+    meals,
+    walks: walk.filter((w) => w.kind === 'journal' && typeof w.km === 'number').map((w) => ({ date: w.date, km: w.km! })),
+    routes,
   };
 }
 const firsts = new WeakMap<Map<DayKey, unknown>, DayKey>();
@@ -62,6 +80,12 @@ function historyDays(h: Health, date: DayKey): Record<Axis, number> {
   const power = first ? daysBetween(first, date) + 1 : 0;
   return { Pace: pace, Power: power, Fuel: fuel, Rest: rest, Routine: routine, Shape: shape };
 }
+/** Days since the last finished session before `date`; undefined when there was none. */
+function lastBefore(h: Health, date: DayKey): number | undefined {
+  let last: DayKey | undefined;
+  for (const s of h.sessions) if (s.date < date && (!last || s.date > last)) last = s.date;
+  return last ? daysBetween(last, date) : undefined;
+}
 export function axisInputFor(h: Health, date: DayKey): AxisInput {
   const day = h.days.get(date);
   const ws = weekStart(date);
@@ -76,6 +100,7 @@ export function axisInputFor(h: Health, date: DayKey): AxisInput {
     sessionsToday: h.sessions.filter((s) => s.date === date),
     weekDoneBefore: h.sessions.filter((s) => s.date >= ws && s.date < date).length,
     weekdayMon1: daysBetween(ws, date) + 1,
+    daysSinceLast: lastBefore(h, date),
     targets: targetsFor(h.settings, date),
     checklist: h.settings.checklist ?? [],
     weighIns7,

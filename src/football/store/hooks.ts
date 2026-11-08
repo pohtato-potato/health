@@ -9,6 +9,11 @@ import type { FbSave, StoredMatch } from './tables';
 import { contTonight, fixtureFor, tonightKnocks, type Fixture } from './tonight';
 import { monthAverage } from '../oldSelves';
 import { seasonChange, type SeasonChange } from '../seasonChange';
+import { AXES } from '../types';
+import type { FbPlayer, XiPlace } from '../players/types';
+import { playerCtx, squadNight } from './players';
+import { playersOn } from '../players/catalogue';
+import { ratingOf } from '../players/attributes';
 
 export const useSave = () => useLiveQuery(async () => {
   const save = (await db.fbSave.get('save')) ?? null;
@@ -26,8 +31,11 @@ export interface Tonight {
   date: DayKey;
   fixture?: Fixture;
   opp?: ClubDef;
+  /** Tonight's shape so far: 70% today, 30% squad (spec §8); an axis with no data stays as it is. */
   liveValues: AxisValues;
   flags: AxisFlags;
+  /** The eleven that would start tonight. */
+  xi: XiPlace[];
   known: AbilityDef[];
   hiddenNote: boolean;
   /** Abilities earned in the last 7 days (the weekly stack). */
@@ -50,13 +58,17 @@ export async function loadTonight(date: DayKey): Promise<Tonight | null> {
   const season = await db.fbSeasons.get(save.season);
   const h = await loadHealth();
   const night = nightFor(h, date);
+  const roster = new Map((await db.fbPlayers.toArray()).map((p) => [p.id, p]));
+  const team = squadNight(roster, night.values, h.days.get(date)?.status === 'sick');
+  const liveValues = { ...team.values };
+  for (const a of AXES) if (night.flags[a]) liveValues[a] = night.values[a];
   const fixture = season ? fixtureFor(save, season) : undefined;
   const opp = fixture?.opp ? clubById(fixture.opp) : undefined;
   const played = await db.fbMatches.where('date').equals(date).toArray();
   const unwatchedAuto = (await db.fbMatches.where('date').between(addDays(date, -60), date, true, false).toArray()).filter((m) => m.auto && !m.watched);
   return {
     save, date, fixture, opp,
-    liveValues: night.values, flags: night.flags,
+    liveValues, flags: night.flags, xi: team.xi,
     known: opp?.known ?? [],
     hiddenNote: Boolean(opp?.hidden) && !save.met.includes(opp!.id),
     stack: save.earned.filter((e) => e.date > addDays(date, -7)).length,
@@ -79,3 +91,18 @@ export function useTonight(now = Date.now()): Tonight | null | undefined {
   const date = dayOfLogging(now);
   return useLiveQuery(() => loadTonight(date), [date]);
 }
+
+/** Every player at the club, academy and departed ones included. */
+export const usePlayers = () => useLiveQuery(() => db.fbPlayers.toArray(), []);
+export const usePlayer = (id: string | null) => useLiveQuery(async (): Promise<FbPlayer | null> => (id ? (await db.fbPlayers.get(id)) ?? null : null), [id]);
+
+/** A player's attributes today, worked out live from the logs (null: nothing in its window yet). */
+export async function loadPlayerRating(id: string) {
+  const [save, p, squad] = [await db.fbSave.get('save'), await db.fbPlayers.get(id), await db.fbSquad.toArray()];
+  if (!save || !p) return null;
+  const h = await loadHealth();
+  const date = dayOfLogging(Date.now());
+  const def = playersOn(h, date).find((d) => d.id === id) ?? { ...p, active: p.status !== 'left' };
+  return { rating: ratingOf(playerCtx(h, save, squad), { ...def, signed: p.signed }, date), bedtime: save.bedtime };
+}
+export const usePlayerRating = (id: string | null) => useLiveQuery(async () => (id ? loadPlayerRating(id) : null), [id]);
