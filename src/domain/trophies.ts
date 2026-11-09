@@ -42,8 +42,6 @@ export function trophyCandidates(i: TrophyInput): Trophy[] {
   const last = lastMonth(i.today);
   const lastSteps = months.get(last);
   if (lastSteps) out.push({ id: 'lastmonth', value: fmtInt(kmFromSteps(lastSteps)), label: `km in ${LONG_MONTHS[Number(last.slice(5)) - 1]}` });
-  const met = new Set((i.sightings ?? []).map((s) => s.creatureId)).size;
-  if (met) out.push({ id: 'visitors', value: fmtInt(met), label: 'Visitors met so far' });
   return out;
 }
 

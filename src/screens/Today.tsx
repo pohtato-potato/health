@@ -1,16 +1,13 @@
-import { Suspense, lazy, useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { addDays, dayKey, logHour, partOfDay, weekStart } from '../domain/dates';
-import { companionFor, creatureThemeOn, revealDue, stepsCreature } from '../domain/creatures';
-import { CREATURES } from '../domain/creatureRoster';
-import { called, SkyTouch } from '../ui/creatures/Payoffs';
-import { creatureById } from '../domain/creatureRoster';
+import { revealDue } from '../domain/creatures';
 import { fmtDuration, fmtInt, fmtTime } from '../domain/format';
 import { findSession } from '../domain/plan';
 import { sleepMinutes, stepsGoal } from '../domain/rings';
 import { pinnedLine, spokenLine, plainFlagLine, type Moment } from '../domain/voice';
 import { addEntries, bump, deleteEntry, setSteps, setTick } from '../db/actions';
 import { useKonami } from '../ui/useKonami';
-import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useMeasurements, useSessions, useNow, useSettings, useSightings, useToday, useBody } from '../db/hooks';
+import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useMeasurements, useSessions, useNow, useSettings, useToday, useBody } from '../db/hooks';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { StatusChip } from './today/StatusChip';
@@ -86,7 +83,6 @@ const MatchToday = lazy(() => import('./today/MatchToday').then((m) => ({ defaul
 
 export function Today() {
   const unlocked = useUnlockedIds();
-  const sightings = useSightings();
   const settings = useSettings();
   const today = useToday();
   const days = useAllDays();
@@ -177,9 +173,8 @@ export function Today() {
 
   const walkKm = kmFromSteps(days.reduce((n, d) => n + (d.steps ?? 0), 0));
   const calendarOn = (d: string) => themeDayOn(d, regionAt(walkKm), { birthday: settings.birthday });
-  const themeCreature = creatureById(creatureThemeOn({ date: today, worn: day?.theme, sightings: sightings ?? [], hasOtherTheme: (d) => !!calendarOn(d) }));
-  const themeDay = themeCreature?.theme ?? calendarOn(today);
-  const wornRing = creatureById(settings.ringStyle)?.ring?.style;
+  // Creature themes and ring styles were retired with the creatures (R4-7): the calendar's theme days stay.
+  const themeDay = calendarOn(today);
   // The voice speaks only at moments; otherwise the plain glance line.
   const recordsTonight = tonight(sessions, sets, today)?.records ?? [];
   const voiceNow = !!line && (moment === 'perfect' || moment === 'proteinClosed' || (moment === 'trained' && recordsTonight.length > 0));
@@ -225,14 +220,9 @@ export function Today() {
   const slots = checklistSlots(settings, today);
   return (
     <TodayLayout
-      tint={themeCreature && !glow ? ({ ...regionTint(walkKm), '--lv-glow': themeCreature.sky[0], '--lv-accent': themeCreature.main } as CSSProperties) : regionTint(walkKm, glow)}
-      glow={!!glow || !!themeCreature}
-      fx={
-        <>
-          {themeCreature && <SkyTouch c={themeCreature} />}
-          <RingMomentFx playing={playing} />
-        </>
-      }
+      tint={regionTint(walkKm, glow)}
+      glow={!!glow}
+      fx={<RingMomentFx playing={playing} />}
       overlays={
         <>
           {drawerOpen && (
@@ -271,7 +261,7 @@ export function Today() {
               progress={[rings.kcal.progress, rings.protein.progress, rings.steps.progress]}
               label={themeDay ? `Rings for ${themeDay.name}: ${rings.closed} of 3 closed` : `Rings: ${rings.closed} of 3 closed`}
               center={`${rings.closed}/3`}
-              style={themeDay?.ring ?? wornRing}
+              style={themeDay?.ring}
               goldClosed={!!unlocked && hasReward(unlocked, 'Gold rings') && prefOn(settings.prefs, 'goldRings')}
               goldCount={ringsGold({ counting: goldCount, perfect: rings.perfect, played: perfectPlayed })}
               chain={rings.perfect ? (playing?.kind === 'perfect' ? 'draw' : 'still') : undefined}
@@ -300,8 +290,6 @@ export function Today() {
           gapFoods: gap.picks.map((p) => p.name).join(' and '),
           addLabel: `${gap.picks.length === 1 ? 'Add it' : gap.picks.length === 2 ? 'Add both' : 'Add them'} · ${Math.round(gap.picks.reduce((n, p) => n + p.proteinG, 0))} g`,
           stepsLeft: Math.max(0, stepsLeft),
-          companion: called(companionFor(sightings ?? [], CREATURES, today), sightings ?? []),
-          stepsCreature: called(stepsCreature(sightings ?? [], CREATURES, regionAt(walkKm), today), sightings ?? []),
           laps: loop ? fmtInt(Math.ceil(Math.max(stepsLeft, 0) / loop)) : undefined,
           easedTo: totals.eased ? stepsGoal(targets, true) : undefined,
         }}

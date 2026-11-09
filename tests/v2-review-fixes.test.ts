@@ -66,13 +66,14 @@ describe('nothing asks for features v2 removed', () => {
   });
 });
 
-describe('departures board labels (s39)', () => {
-  it('flight numbers read HW and carry the board category', async () => {
-    const { flightNo, boardTag } = await import('../src/domain/milestones');
-    expect(flightNo('city:Agra')).toMatch(/^HW \d{3}$/);
-    expect(boardTag({ id: 'city:Agra', kind: 'walk' })).toMatch(/^HW \d{3} · WALK$/);
-    expect(boardTag({ id: 'reveal', kind: 'date' })).toMatch(/^HW \d{3}$/);
-    expect(boardTag({ id: 'weeks:4', kind: 'training' })).toMatch(/· TRAIN$/);
+describe('Departures is cut (O8)', () => {
+  it('has no route, and its secret achievement is retired, not lost', async () => {
+    const { readFileSync, existsSync } = await import('node:fs');
+    expect(readFileSync('src/App.tsx', 'utf8')).not.toMatch(/departures/i);
+    expect(existsSync('src/screens/Departures.tsx')).toBe(false);
+    const { ACTIVE_ACHIEVEMENTS, ACHIEVEMENTS, RETIRED_ACHIEVEMENTS } = await import('../src/domain/achievements');
+    expect(ACTIVE_ACHIEVEMENTS.map((a) => a.name)).not.toContain('Moye moye');
+    expect(RETIRED_ACHIEVEMENTS).toContain(ACHIEVEMENTS.find((a) => a.name === 'Moye moye')!.id);
   });
 });
 

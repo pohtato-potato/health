@@ -1,4 +1,5 @@
 import { addDays, parseDay, type DayKey } from './dates';
+import { bedOrder } from './rings';
 import { cleanOf } from './quality';
 import type { Day, FoodEntry, PlaceKind, SetEntry, TrainingSession } from './types';
 
@@ -72,7 +73,7 @@ export function proteinByMeal(entries: Pick<FoodEntry, 'meal' | 'protein'>[]): P
 
 /** Minutes later (or earlier) asleep on office nights than on other nights. */
 export function bedDrift(days: Pick<Day, 'date' | 'sleep'>[], isOffice: (d: DayKey) => boolean): number | undefined {
-  const bed = (m: number) => (m < 720 ? m + 1440 : m);
+  const bed = bedOrder;
   const withSleep = days.filter((d) => d.sleep);
   const office = avg(withSleep.filter((d) => isOffice(d.date)).map((d) => bed(d.sleep!.asleep)));
   const other = avg(withSleep.filter((d) => !isOffice(d.date)).map((d) => bed(d.sleep!.asleep)));

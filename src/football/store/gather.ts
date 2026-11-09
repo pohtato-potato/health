@@ -1,4 +1,5 @@
 // Reads Health's tables once for a date. Football reads values only, never log times.
+import { bedOrder, NIGHT_FROM } from '../../domain/rings';
 import { db } from '../../db/db';
 import { addDays, daysBetween, weekStart, type DayKey } from '../../domain/dates';
 import type { ChecklistItem, Day, Meal, RouteRun, SetEntry, Settings, TrainingSession } from '../../domain/types';
@@ -143,9 +144,9 @@ export function conditions(h: Health, date: DayKey, i: AxisInput, auto: boolean)
     if (hrs * 60 < t.sleepMin) out.push('sleep-under-target');
     if (hrs < 6) out.push('sleep-under-6');
     if (a >= 1080 && a < 1380) out.push('bed-before-23');
-    if (a >= 0 && a < 600) out.push('bed-after-0');
+    if (a >= 0 && a < NIGHT_FROM) out.push('bed-after-0'); // after midnight, up to an afternoon bedtime after a sleepless night
   }
-  const beds = week.filter((d) => d.sleep).map((d) => ((d.sleep!.asleep + 720) % 1440));
+  const beds = week.filter((d) => d.sleep).map((d) => bedOrder(d.sleep!.asleep));
   if (beds.length >= 2 && Math.max(...beds) - Math.min(...beds) > 60) out.push('bed-moved');
   const weekDone = i.weekDoneBefore + i.sessionsToday.length;
   if (weekDone < 2) out.push('trained-under-2-week');

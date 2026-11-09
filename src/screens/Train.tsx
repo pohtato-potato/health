@@ -13,10 +13,7 @@ import type { SetEntry, Settings, TrainingSession } from '../domain/types';
 import { devGlow, regionTint } from '../ui/live/regionTint';
 import { dayGlow } from '../domain/dayGlow';
 import { kmFromSteps } from '../domain/walk';
-import { useActiveSession, useAllDays, useAllSets, useAllSetsWithSkips, useBody, useEntries, useSessions, useSettings, useSightings, useToday } from '../db/hooks';
-import { creatureById } from '../domain/creatureRoster';
-import { recordFrames } from '../domain/creatures';
-import { stageNow } from '../ui/creatures/Payoffs';
+import { useActiveSession, useAllDays, useAllSets, useAllSetsWithSkips, useBody, useEntries, useSessions, useSettings, useToday } from '../db/hooks';
 import { go, openSheet, useRoute } from '../router';
 import { Icon } from '../ui/Icon';
 import { dayRings, doneSessions, nextUp, triggersMet, weeksFor } from '../state/derived';
@@ -35,7 +32,6 @@ import { TonightCard, UpNextCard } from './train/Cards';
 import { BodyCard, FourWeeksCard, MonthCard, PlanCard, RecentCard, RecordsCard } from './train/Sections';
 
 export function Train() {
-  const sightings = useSightings();
   const settings = useSettings();
   const today = useToday();
   const sessions = useSessions();
@@ -87,11 +83,6 @@ export function Train() {
   const nextMonth = new Date(d.getFullYear(), d.getMonth() + 1, 1).toLocaleString('en-IN', { month: 'short' });
   const seen = new Set<string>();
   const allRecords = realSets(sets).filter((x) => x.mark === '!!');
-  const frames = recordFrames(sightings ?? [], new Set(allRecords.map((r) => r.date)));
-  const frameOf = (date: string) => {
-    const guest = creatureById(frames.get(date));
-    return guest ? { guest, stage: stageNow(guest, sightings ?? []) } : undefined;
-  };
   const recs = [...allRecords]
     .sort((x, y) => y.at - x.at)
     .filter((x) => !seen.has(x.exerciseId) && seen.add(x.exerciseId))
@@ -239,7 +230,7 @@ export function Train() {
 
       <BodyCard rows={volume} line={volumeLine(volume)} onOpen={() => go('/muscles')} />
 
-      <RecordsCard total={allRecords.length} rows={recs.map((r) => ({ what: fmtSet(r), name: r.exercise, when: r.date === today ? 'tonight' : fmtDayMonth(r.date), frame: frameOf(r.date) }))} onAll={() => go('/records')} />
+      <RecordsCard total={allRecords.length} rows={recs.map((r) => ({ what: fmtSet(r), name: r.exercise, when: r.date === today ? 'tonight' : fmtDayMonth(r.date) }))} onAll={() => go('/records')} />
 
       <CardsRow
         cards={[...new Map(allExercises(plan).map((e) => [e.id, e])).values()]

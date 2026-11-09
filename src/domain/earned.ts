@@ -1,10 +1,8 @@
-import { CREATURES, creatureById } from './creatureRoster';
 import type { Sighting } from './creatures';
 import type { DayKey } from './dates';
 import { fmtInt } from './format';
-import { regionAt } from './regions';
 import type { Day, SetEntry, TrainingSession } from './types';
-import { FINAL_KM, kmFromSteps, setStride } from './walk';
+import { kmFromSteps, setStride } from './walk';
 
 export interface Odometer { id: string; value: string; label: string }
 export interface Dated { id: string; date: DayKey; text: string }
@@ -44,8 +42,6 @@ export function firsts(i: { days: Day[]; sessions: TrainingSession[]; sets: SetE
   if (session) out.push({ id: 'session', date: session.date, text: 'First session' });
   const record = earliest(i.sets.filter((s) => s.mark === '!!' && !s.skipped), (s) => s.date);
   if (record) out.push({ id: 'record', date: record.date, text: 'First record' });
-  const visitor = earliest(i.sightings, (s) => s.date);
-  if (visitor) out.push({ id: 'visitor', date: visitor.date, text: `First visitor: ${creatureById(visitor.creatureId)?.short ?? 'someone new'}` });
   return out.sort((a, b) => a.date.localeCompare(b.date));
 }
 
@@ -65,23 +61,6 @@ export function milestones(i: { days: Day[]; sessions: TrainingSession[]; stride
     }
   }
   return out.sort((a, b) => b.date.localeCompare(a.date));
-}
-
-/** Visitors by stretch of road, the one you're on first. No totals and no assumed roster. */
-export function visitorsByStretch(sightings: Sighting[], km: number): Stretch[] {
-  const here = regionAt(Math.min(km, FINAL_KM));
-  const by = new Map<string, Sighting[]>();
-  for (const s of sightings) by.set(s.creatureId, [...(by.get(s.creatureId) ?? []), s]);
-  const stretches = new Map<string, Stretch>([[here, { region: here, here: true, visitors: [] }]]);
-  for (const [id, seen] of by) {
-    const c = CREATURES.find((x) => x.id === id);
-    const region = c ? (c.region ?? 'everywhere') : 'elsewhere';
-    const stretch = stretches.get(region) ?? { region, here: false, visitors: [] };
-    const latest = seen.reduce((a, b) => (b.date > a.date ? b : a));
-    stretch.visitors.push({ id, visits: seen.length, stage: latest.stageAfter });
-    stretches.set(region, stretch);
-  }
-  return [...stretches.values()];
 }
 
 /** The month's moments, newest month first. Records and achievements fill back the months before any moment was kept. */

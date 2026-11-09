@@ -25,7 +25,7 @@ describe('storyChapters', () => {
       backupText: 'No backup yet',
     });
     const got = ids(i);
-    const order = ['road', 'visitors', 'tally', 'swing', 'food', 'sleep', 'training', 'next', 'backup'];
+    const order = ['road', 'tally', 'swing', 'food', 'sleep', 'training', 'next', 'backup'];
     expect(got.filter((x) => order.includes(x))).toEqual(order);
   });
 
@@ -62,10 +62,9 @@ describe('storyChapters', () => {
     expect(storyChapters(WEEK, later)).toEqual(storyChapters(WEEK, before));
   });
 
-  it('visitors lists who came that week, and no one else', () => {
-    const i = input({ days: week(WEEK, 1), sightings: [sight(WEEK, 'peacock'), sight(addDays(WEEK, 7), 'nilgai')] });
-    const c = storyChapters(WEEK, i).find((x) => x.id === 'visitors');
-    expect(c).toMatchObject({ ids: ['peacock'] });
+  it('has no visitors chapter now the creatures are retired, even with sightings stored', () => {
+    const i = input({ days: week(WEEK, 1), sightings: [sight(WEEK, 'peacock')] });
+    expect(ids(i)).not.toContain('visitors');
   });
 });
 

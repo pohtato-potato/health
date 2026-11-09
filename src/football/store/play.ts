@@ -1,4 +1,5 @@
 // The only writer of Football's tables. Kick-off reads Health once, plays, and stores the events.
+import { bedOrder, fromBedOrder } from '../../domain/rings';
 import { db } from '../../db/db';
 import { addDays, dayOfLogging, daysBetween, type DayKey } from '../../domain/dates';
 import { seasonDays, SEASON_DAYS, type DayPlan } from '../calendar';
@@ -13,7 +14,7 @@ import { rollOldSelves } from '../oldSelves';
 import { opponentFor } from '../opponent';
 import { simResult } from '../otherMatches';
 import { applyMoves, playoffPairs, seasonEnd } from '../promotion';
-import { afterMatch, ANTIGOON, HOW_TEXT, rivalTwist, type Meeting } from '../rivals';
+import { afterMatch, ANTIGOON, howText, migrateRivals, rivalTwist, twistOf, weakestAxis, type Meeting } from '../rivals';
 import { hashSeed, rng, pick } from '../rng';
 import { contractDay, keptOn, intake, newContract } from '../contracts';
 import { nationId, YOUTH_POOL } from '../data/load';
@@ -81,8 +82,21 @@ export async function upgradeSave(): Promise<boolean> {
   });
 }
 
+/** Old saves brought up to date on load, whether or not a match plays: the retired 4 am rival (decision C3). */
+export async function migrateSave(): Promise<boolean> {
+  return db.transaction('rw', db.fbSave, async () => {
+    const cur = await db.fbSave.get('save');
+    if (!cur) return false;
+    const rivals = migrateRivals(cur.rivals);
+    if (rivals === cur.rivals) return false;
+    await db.fbSave.put({ ...cur, rivals });
+    return true;
+  });
+}
+
 async function playThrough(until: DayKey, closed: DayKey | null): Promise<StoredMatch[]> {
   await upgradeSave();
+  await migrateSave();
   const save = await db.fbSave.get('save');
   if (!save) return [];
   const stored = await db.fbClubs.toArray();
@@ -97,7 +111,7 @@ async function playThrough(until: DayKey, closed: DayKey | null): Promise<Stored
   const w: World = {
     squad, roster, ctx: playerCtx(h, save, squad),
     bundles: new Map((await db.fbBundles.toArray()).map((b) => [b.id, b])),
-    save: { ...save }, season: (await db.fbSeasons.get(save.season))!, oldSeasons: [], clubs: new Map(stored.map((c) => [c.id, c])),
+    save: { ...save, rivals: migrateRivals(save.rivals) }, season: (await db.fbSeasons.get(save.season))!, oldSeasons: [], clubs: new Map(stored.map((c) => [c.id, c])),
     matches: [], news: [], h, past: await db.fbMatches.orderBy('date').toArray(),
     used: (await db.fbNews.where('date').aboveOrEqual(addDays(start, -31)).toArray()).filter((n) => n.lineId).map((n) => ({ id: n.lineId!, date: n.date })),
   };
@@ -367,7 +381,7 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
     // Engine 2: a player's traits play while it starts (an Awakening's trait became its player's first limit break).
     abilities: [...braboAbilities(w.save.slots), ...(w.save.engine === 2 ? traitAbilities(team.xi, w.roster) : awakenedTraits(w.save)), ...groundAbilities(doneBundles(w)), ...tree.abilities, ...loanAbilities(w.save, team.loansPlayed, date, globeRules(w.save, w.bundles.values()).loan)],
     bench: benchFor(w, date), pre, conds, ctx,
-    rival: rival ? rivalTwist(oppId, rival.how, rival.best) : oppId === ANTIGOON ? rivalTwist(ANTIGOON, 'legend') : undefined,
+    rival: rival ? twistOf(rival) : oppId === ANTIGOON ? rivalTwist(ANTIGOON, 'legend') : undefined,
   });
   const score: [number, number] = home === OWN ? events.score : [events.score[1], events.score[0]];
   const mineScore = events.score;
@@ -387,15 +401,15 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
     const ab = abilityFor(mo);
     if (ab && !w.save.earned.some((e) => e.id === ab.id)) w.save.earned = [...w.save.earned, { id: ab.id, date }];
   }
-  const meeting = (x: StoredMatch): Meeting => ({ clubId: x.opp, result: x.result, comp: x.comp, final: /Final$|Playoff final/.test(x.round ?? ''), derby: x.derby, lastDay: x.comp === 'league' && plan.matchday === 34 && x.id === m.id, auto: x.auto });
+  const meeting = (x: StoredMatch): Meeting => ({ clubId: x.opp, result: x.result, comp: x.comp, final: /Final$|Playoff final/.test(x.round ?? ''), derby: x.derby, lastDay: x.comp === 'league' && plan.matchday === 34 && x.id === m.id, margin: Math.abs(x.score[0] - x.score[1]) });
   // Rivals are clubs you keep meeting: never friendlies, event nights or World Cup nations.
   if (comp !== 'friendly' && comp !== 'event' && comp !== 'worldcup') {
     const hist = [...w.past, ...w.matches].filter((x) => x.comp !== 'friendly' && x.date < date).map(meeting);
-    const r = afterMatch(w.save.rivals, hist, meeting(m), date, bestAxis(m.values));
+    const r = afterMatch(w.save.rivals, hist, meeting(m), date, bestAxis(m.values), weakestAxis(m.values));
     if (r.rivals !== w.save.rivals) w.save.rivals = r.rivals;
     if (r.born) {
       w.save.rivalMoments = [...(w.save.rivalMoments ?? []), r.born.clubId];
-      w.news.push({ id: `${date}:rival:${r.born.clubId}`, date, kind: 'back', clubId: r.born.clubId, text: `A rival is born. ${clubById(r.born.clubId).name}: ${HOW_TEXT[r.born.how].toLowerCase()}` });
+      w.news.push({ id: `${date}:rival:${r.born.clubId}`, date, kind: 'back', clubId: r.born.clubId, text: `A rival is born. ${clubById(r.born.clubId).name}: ${howText(r.born).toLowerCase()}` });
     }
     if (r.faded) w.news.push({ id: `${date}:fade:${r.faded}`, date, kind: 'club', clubId: r.faded, text: `Five wins in a row: the rivalry with ${clubById(r.faded).name} fades.` });
   }
@@ -509,10 +523,10 @@ export const contractsFor = (date: DayKey) => HABITS.map((h) => newContract(h.id
 const doneBundles = (w: World) => [...w.bundles.values()].filter((b) => b.done).map((b) => b.id);
 function usualBedtime(w: World, date: DayKey): number | undefined {
   const xs: number[] = [];
-  for (let d = addDays(date, -28); d < date; d = addDays(d, 1)) { const a = w.h.days.get(d)?.sleep?.asleep; if (a !== undefined) xs.push((a + 720) % 1440); }
+  for (let d = addDays(date, -28); d < date; d = addDays(d, 1)) { const a = w.h.days.get(d)?.sleep?.asleep; if (a !== undefined) xs.push(bedOrder(a)); }
   if (xs.length < 7) return undefined;
   xs.sort((a, b) => a - b);
-  return (xs[Math.floor(xs.length / 2)] + 720) % 1440;
+  return fromBedOrder(xs[Math.floor(xs.length / 2)]);
 }
 /** Every day: open bundles take the day's totals; a finished one is paid for and opens from the next match. */
 function groundDay(w: World, date: DayKey, input: ReturnType<typeof axisInputFor>) {

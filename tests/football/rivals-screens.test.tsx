@@ -6,6 +6,8 @@ import { afterMatch, rivalList, rivalTwist, type Meeting, type Rival } from '../
 import type { StoredMatch } from '../../src/football/store/tables';
 import { RivalsView } from '../../src/screens/football/story/Rivals';
 import { RivalryView } from '../../src/screens/football/story/Rivalry';
+import { db } from '../../src/db/db';
+import { migrateSave } from '../../src/football/store/play';
 
 const loss = (clubId: string, o: Partial<Meeting> = {}): Meeting => ({ clubId, result: 'L', comp: 'league', ...o });
 const match = (id: string, opp: string, result: 'W' | 'D' | 'L', score: [number, number]): StoredMatch => ({
@@ -25,8 +27,16 @@ describe('Rivals', () => {
     expect(r.born?.how).toBe('cup');
     expect(rivalTwist(r.born!.clubId, r.born!.how).name).toBe('Bad blood');
     expect(afterMatch([], [], loss('zur', { comp: 'bigcup', final: true }), 'd').born?.how).toBe('final');
-    expect(afterMatch([], [], loss('zur', { auto: true }), 'd').born?.how).toBe('fouram');
+    expect(afterMatch([], [], loss('zur', { margin: 1 }), 'd').born?.how).toBe('close');
     expect(afterMatch([], [], loss('zur'), 'd').born).toBeUndefined();
+  });
+  it('a saved Night shift rival shows as Found a gap on both screens (C3)', () => {
+    const old: Rival = { clubId: 'zur', how: 'fouram', since: '2026-10-08' };
+    for (const out of [html(<RivalsView rivals={[old]} matches={[]} />), html(<RivalryView r={old} matches={[]} />)]) {
+      expect(out).toContain('Found a gap');
+      expect(out).toContain('Beat you by a single goal.');
+      expect(out).not.toMatch(/Night shift|4 am/);
+    }
   });
   it('the list never goes past 1 + 3', () => {
     let rivals: Rival[] = [{ clubId: 'ant', how: 'legend', since: '' }];
@@ -51,5 +61,19 @@ describe('Rivals', () => {
     expect(out).toMatch(/>1<\/b><span class="fb-s">lost/);
     expect(out.match(/fb-meet/g)).toHaveLength(3);
     expect(out).toContain('Bad blood');
+  });
+});
+
+describe('migrating a saved Night shift rival (C3)', () => {
+  it('rewrites the stored save once, keeping everything else', async () => {
+    await db.fbSave.clear();
+    expect(await migrateSave()).toBe(false); // no club yet
+    const save = { id: 'save', season: 2, rivals: [{ clubId: 'ant', how: 'legend', since: '' }, { clubId: 'hul', how: 'fouram', since: '2026-10-30', best: 'Pace' }] };
+    await db.fbSave.put(save as never);
+    expect(await migrateSave()).toBe(true);
+    const after = await db.fbSave.get('save');
+    expect(after?.season).toBe(2);
+    expect(after?.rivals).toEqual([{ clubId: 'ant', how: 'legend', since: '' }, { clubId: 'hul', how: 'close', since: '2026-10-30', best: 'Pace', weak: 'Rest' }]);
+    expect(await migrateSave()).toBe(false); // already done
   });
 });

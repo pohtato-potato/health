@@ -5,7 +5,6 @@ import { atOn } from '../src/domain/dates';
 import { experimentValues, experimentWindows } from '../src/domain/experiments';
 import { lastMonth, monthlyFilm } from '../src/domain/film';
 import { clockAt, onThisDay, rimFraction } from '../src/domain/journeyClock';
-import { milestoneGroup } from '../src/domain/milestones';
 import { charStatsV2 } from '../src/domain/rewards';
 
 describe('character v2', () => {
@@ -47,17 +46,6 @@ describe('achievement sets', () => {
     const set = ACH_SETS[0];
     expect(setProgress(set, new Set())).toEqual({ done: 0, total: set.ids.length, complete: false });
     expect(setProgress(set, new Set(set.ids)).complete).toBe(true);
-  });
-});
-
-describe('departures filter', () => {
-  it('groups milestones by walk, steps, training and shape', () => {
-    expect(milestoneGroup('walk')).toBe('walk');
-    expect(milestoneGroup('streak')).toBe('steps');
-    expect(milestoneGroup('training')).toBe('training');
-    expect(milestoneGroup('waist')).toBe('shape');
-    expect(milestoneGroup('weight')).toBe('shape');
-    expect(milestoneGroup('date')).toBeUndefined();
   });
 });
 

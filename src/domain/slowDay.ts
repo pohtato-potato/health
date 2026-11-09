@@ -10,14 +10,12 @@ import { lastFullWeek } from './weekly';
 export type Lift =
   | { kind: 'ago'; text: string }
   | { kind: 'rank'; beat: number; of: number }
-  | { kind: 'visitor'; id: string; mornings: number }
   | { kind: 'best'; value: string; note: string };
 export type Mood = 'tired' | 'off' | 'bored';
 export interface SlowInput { days: Day[]; sightings: Sighting[]; settings: Settings }
 
 const GAP_DAYS = 3;
 const MIN_WEEKS = 3;
-const MIN_MORNINGS = 2;
 
 const GREMLIN_MOOD = { tired: 'slowTired', off: 'slowOff', bored: 'slowBored' } as const;
 
@@ -53,10 +51,6 @@ function liftCandidates(today: DayKey, i: SlowInput): Lift[] {
   if (then && then.steps) out.push({ kind: 'ago', text: `${fmtInt(then.steps)} steps, on ${fmtDayMonth(then.date)}.` });
   const rank = rankOfLastWeek(today, i.days);
   if (rank) out.push({ kind: 'rank', ...rank });
-  const visits = new Map<string, number>();
-  for (const s of i.sightings) visits.set(s.creatureId, (visits.get(s.creatureId) ?? 0) + 1);
-  const top = [...visits].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
-  if (top && top[1] >= MIN_MORNINGS) out.push({ kind: 'visitor', id: top[0], mornings: top[1] });
   const steps = i.days.flatMap((d) => (d.steps ? [d] : []));
   if (steps.length) {
     const best = steps.reduce((a, b) => (b.steps! > a.steps! || (b.steps === a.steps && b.date < a.date) ? b : a));

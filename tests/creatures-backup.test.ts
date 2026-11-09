@@ -34,24 +34,23 @@ describe('sightings in the data', () => {
   });
 });
 
-describe('storing who came', () => {
+describe('the morning reveal after the creatures (R4-7)', () => {
   beforeEach(async () => {
     await Promise.all(db.tables.map((t) => t.clear()));
     await db.settings.put({ id: 'app', setupDone: true, targets: [{ from: '2020-01-01', kcalMin: 1800, kcalMax: 2000, proteinG: 120, steps: 8000, sleepMin: 450 }], prefs: {}, checklist: [], homes: [], planState: { variants: {}, band: {} } } as never);
   });
   it('waits for sleep', async () => {
     await db.days.put({ date: '2026-11-05', morning: { at: 1 } });
-    expect(await ensureReveal('2026-11-05')).toEqual([]);
+    await ensureReveal('2026-11-05');
     expect((await db.days.get('2026-11-05'))?.revealedAt).toBeUndefined();
   });
-  it('writes once: a second call returns the same visitors and adds none', async () => {
-    await db.days.put({ date: '2026-11-05', morning: { at: 1 }, sleep: { asleep: 1380, woke: 420 } });
-    const first = await ensureReveal('2026-11-05', 1000);
-    expect(first.length).toBe(3);
-    const second = await ensureReveal('2026-11-05', 2000);
-    expect(second).toEqual(first);
-    expect(await db.sightings.count()).toBe(3);
-    expect((await db.days.get('2026-11-05'))?.revealedAt).toBe(1000);
+  it('marks the reveal seen once and draws no visitors; stored sightings are kept', async () => {
+    await db.sightings.put(s);
+    await db.days.put({ date: '2026-11-06', morning: { at: 1 }, sleep: { asleep: 1380, woke: 420 } });
+    await ensureReveal('2026-11-06', 1000);
+    await ensureReveal('2026-11-06', 2000);
+    expect((await db.days.get('2026-11-06'))?.revealedAt).toBe(1000);
+    expect(await db.sightings.toArray()).toEqual([s]);
   });
 });
 

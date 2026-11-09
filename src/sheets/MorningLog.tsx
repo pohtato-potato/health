@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { addDays } from '../domain/dates';
 import { fmtDayLong, fmtDuration, fmtInt, fmtTime } from '../domain/format';
 import { homePlace } from '../domain/places';
-import { sleepMinutes } from '../domain/rings';
+import { NIGHT_FROM, sleepMinutes, sleepWheelItems } from '../domain/rings';
 import type { Day, MuscleId, Settings } from '../domain/types';
 import { saveMorningLog } from '../db/actions';
 import { useAllDays, useAllSets, useBody, useSessions, useSettings } from '../db/hooks';
@@ -175,8 +175,9 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
           )}
         </div>
         <div className="grid2">
-          <SleepWheel label="Asleep" value={asleep} hint={lastSleep?.asleep ?? 23 * 60} from={19 * 60} to={29 * 60} onChange={editAsleep} />
-          <SleepWheel label="Woke" value={woke} hint={lastSleep?.woke ?? 7 * 60} from={4 * 60} to={13 * 60} onChange={editWoke} />
+          {/* Both ends take any time of day: a sleepless night can mean asleep at 7 am and awake at 2 pm. */}
+          <SleepWheel label="Asleep" value={asleep} hint={lastSleep?.asleep ?? 23 * 60} from={ASLEEP_FROM} onChange={editAsleep} />
+          <SleepWheel label="Woke" value={woke} hint={lastSleep?.woke ?? 7 * 60} from={WOKE_FROM} onChange={editWoke} />
         </div>
         <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
           <span className="t13 q tn" style={{ whiteSpace: 'nowrap' }}>
@@ -246,9 +247,11 @@ function fmtClock(minutes: number): string {
  * One wheel of times in five-minute steps. Last night's time sits in the middle, greyed,
  * until the wheel is touched: nothing is saved unless it is set.
  */
-function SleepWheel({ label, value, hint, from, to, onChange }: { label: string; value: number | undefined; hint: number; from: number; to: number; onChange: (m: number) => void }) {
-  const items: number[] = [];
-  for (let m = from; m <= to; m += 5) items.push(m);
+/** The Asleep wheel runs a full day from 18:00 (evening first); the Woke wheel a full day from midnight. */
+const ASLEEP_FROM = NIGHT_FROM;
+const WOKE_FROM = 0;
+function SleepWheel({ label, value, hint, from, onChange }: { label: string; value: number | undefined; hint: number; from: number; onChange: (m: number) => void }) {
+  const items = sleepWheelItems(from);
   const norm = (m: number) => (m < from ? m + 1440 : m);
   const shown = norm(value ?? hint);
   return (

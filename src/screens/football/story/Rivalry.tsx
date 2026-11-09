@@ -1,7 +1,7 @@
 // One rivalry: the record, every meeting, and the moments between you.
 import { clubCrest } from '../../../football/art/crest';
 import { clubById } from '../../../football/data/load';
-import { HOW_TEXT, rivalTwist, type Rival } from '../../../football/rivals';
+import { howText, twistOf, type Rival } from '../../../football/rivals';
 import { headToHead } from '../../../football/store/league';
 import type { StoredMatch } from '../../../football/store/tables';
 import { ResultMark } from '../league/Table';
@@ -11,13 +11,13 @@ import { Art } from '../Tonight';
 export function RivalryView({ r, matches }: { r: Rival; matches: StoredMatch[] }) {
   const c = clubById(r.clubId);
   const h = headToHead(matches, r.clubId);
-  const tw = rivalTwist(r.clubId, r.how, r.best);
+  const tw = twistOf(r);
   const moments = h.meetings.flatMap((m) => m.events.moments.map((x) => ({ date: m.date, text: x })));
   return (
     <>
       <header className="fb-clubhd">
         <Art svg={clubCrest(c, 64)} />
-        <div className="fb-col"><h2 className="fb-t">{c.name}</h2><span className="fb-s">{HOW_TEXT[r.how]}{r.since ? ` Since ${r.since}.` : ''}</span></div>
+        <div className="fb-col"><h2 className="fb-t">{c.name}</h2><span className="fb-s">{howText(r)}{r.since ? ` Since ${r.since}.` : ''}</span></div>
       </header>
       <section className="fb-card hot" aria-label="The record">
         <span className="fb-lb">The record</span>

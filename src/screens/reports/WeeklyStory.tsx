@@ -4,7 +4,6 @@ import { saveBackup } from '../../db/backup';
 import { db } from '../../db/db';
 import { saveMeasurement } from '../../db/actions';
 import { useAllDays, useAllEntries, useAllSets, useFoods, useMeasurements, useSessions, useSettings, useSightings, useToday } from '../../db/hooks';
-import { creatureById, nameAt } from '../../domain/creatureRoster';
 import { addDays, weekStart, type DayKey } from '../../domain/dates';
 import type { Measurement } from '../../domain/types';
 import { backupLine } from '../../domain/dueLines';
@@ -13,8 +12,6 @@ import { storyWeek, suggestOneThing, weekNumber, weekStats } from '../../domain/
 import { storyChapters, type StoryChapter } from '../../domain/weeklyStory';
 import { usualWake } from '../../domain/wake';
 import { back, go, useRoute } from '../../router';
-import { CreatureFigure } from '../../ui/creatures/Figure';
-import { stageNow } from '../../ui/creatures/Payoffs';
 import { Story, type StoryCard } from '../../ui/Story';
 import { RegionFrame } from '../../ui/live/RegionFrame';
 import { useToast } from '../../ui/Toasts';
@@ -27,7 +24,7 @@ import { WeekLine } from '../football/HabitLine';
 
 const km = (n: number) => `${fmtInt(n)} km`;
 
-function Chapter({ c, sightings, end }: { c: StoryChapter; sightings: { creatureId: string; date: DayKey }[]; end: DayKey }) {
+function Chapter({ c }: { c: StoryChapter }) {
   switch (c.id) {
     case 'road':
       return (
@@ -41,26 +38,6 @@ function Chapter({ c, sightings, end }: { c: StoryChapter; sightings: { creature
           </div>
         </section>
       );
-    case 'visitors': {
-      const then = sightings.filter((s) => s.date <= end);
-      return (
-        <section className="yu-sec"><h2>Who came by</h2>
-          <div className="yu-vis2">
-            {c.ids.map((id) => {
-              const k = creatureById(id);
-              if (!k) return <div key={id} className="yu-vis"><b>Someone from before</b></div>;
-              const stage = stageNow(k, then);
-              return (
-                <div key={id} className="yu-vis yu-vis-dark">
-                  <CreatureFigure c={k} stage={stage} width={120} burst={false} draw={false} />
-                  <b style={{ color: k.main }}>{nameAt(k, stage)}</b>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      );
-    }
     case 'tally':
       return (
         <section className="yu-sec"><h2>The tally</h2>
@@ -198,7 +175,7 @@ export function WeeklyStory() {
   const text = draft ?? nextNote?.oneThing ?? suggestion;
 
   const byId = (id: StoryChapter['id']) => chapters.find((c) => c.id === id);
-  const show = (c: StoryChapter | undefined) => (c ? <Chapter c={c} sightings={sightings} end={end} /> : null);
+  const show = (c: StoryChapter | undefined) => (c ? <Chapter c={c} /> : null);
   const pair = (a: StoryChapter['id'], b: StoryChapter['id']) => (byId(a) || byId(b) ? <>{show(byId(a))}{show(byId(b))}</> : null);
   const backUp = async () => {
     try {
@@ -209,7 +186,7 @@ export function WeeklyStory() {
     }
   };
 
-  // One Sunday story (R4 6): six to eight tap-through cards. Empty cards drop out; the waist sits inside, Backup is last.
+  // One Sunday story (R4 6): up to seven tap-through cards. Empty cards drop out; the waist sits inside, Backup is last.
   const cards: StoryCard[] = [];
   const add = (id: string, body: ReactNode, ground?: string) => { if (body) cards.push({ id, body, ground }); };
   add('cover', (
@@ -220,7 +197,6 @@ export function WeeklyStory() {
       <p className="ws-hint">Tap the right side to go on, the left to go back.</p>
     </>
   ), 'linear-gradient(170deg, #2a2350, #0f1022)');
-  add('visitors', show(byId('visitors')), 'linear-gradient(170deg, #1d3a3a, #0d1418)');
   add('tally', byId('tally') || byId('swing') ? <>{show(byId('tally'))}{show(byId('swing'))}<WeekLine start={week} /></> : null, 'linear-gradient(170deg, #3a2a12, #120e0a)');
   add('fuel', pair('food', 'sleep'), 'linear-gradient(170deg, #2b1f45, #0e0c1a)');
   add('training', pair('training', 'finding'), 'linear-gradient(170deg, #12304a, #0a1220)');

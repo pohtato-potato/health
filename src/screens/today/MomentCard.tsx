@@ -11,10 +11,6 @@ export interface MomentData {
   stepsLeft: number;
   laps?: string;
   easedTo?: number;
-  /** A found slow creature keeping a sick day company: "the gharial". */
-  companion?: string;
-  /** A found creature to carry the evening's steps hint: "the nilgai". */
-  stepsCreature?: string;
 }
 export interface MomentActions {
   logMorning: () => void;
@@ -39,7 +35,7 @@ export function MomentCard({ kind, data, actions, sheen }: { kind: MomentKind; d
   ) : null;
   switch (kind) {
     case 'rest':
-      return card('Rest is the plan', `${data.easedTo ? `Steps are eased to ${fmtInt(data.easedTo)}. ` : ''}Water, food, sleep. Nothing is missed.${data.companion ? ` ${data.companion.charAt(0).toUpperCase()}${data.companion.slice(1)} is keeping you company.` : ''}`, null);
+      return card('Rest is the plan', `${data.easedTo ? `Steps are eased to ${fmtInt(data.easedTo)}. ` : ''}Water, food, sleep. Nothing is missed.`, null);
     case 'closed':
       return card('Today, kept', `${data.closedRings} of 3 rings. Tap the day in Close the day to change anything.`, null);
     case 'morning':
@@ -60,7 +56,7 @@ export function MomentCard({ kind, data, actions, sheen }: { kind: MomentKind; d
     case 'protein':
       return card(`${data.proteinGapG} g protein to go`, data.gapFoods, add);
     case 'steps':
-      return card(`${fmtInt(data.stepsLeft)} steps to go`, [data.stepsCreature ? `${data.stepsCreature.charAt(0).toUpperCase()}${data.stepsCreature.slice(1)} wandered ${fmtInt(data.stepsLeft)} steps further.` : '', data.laps ? `About ${data.laps} laps of the loop.` : ''].filter(Boolean).join(' '), <button type="button" className="btn ghost td-moment-btn" onClick={actions.typeSteps}>Type steps</button>);
+      return card(`${fmtInt(data.stepsLeft)} steps to go`, data.laps ? `About ${data.laps} laps of the loop.` : '', <button type="button" className="btn ghost td-moment-btn" onClick={actions.typeSteps}>Type steps</button>);
     case 'stepsMissing':
       return card('Steps not logged yet', 'Copy today’s total from Samsung Health when you can.', <button type="button" className="btn ghost td-moment-btn" onClick={actions.typeSteps}>Type steps</button>);
     case 'glance':

@@ -38,7 +38,7 @@ describe('TITLE_DEFS', () => {
   it('ids and names are unique, and every family is there', () => {
     expect(new Set(TITLE_DEFS.map((t) => t.id)).size).toBe(TITLE_DEFS.length);
     expect(new Set(TITLE_DEFS.map((t) => t.name)).size).toBe(TITLE_DEFS.length);
-    expect(new Set(TITLE_DEFS.map((t) => t.family)).size).toBe(6);
+    expect(new Set(TITLE_DEFS.map((t) => t.family)).size).toBe(5); // Visitors retired with the creatures (R4-7)
   });
 
   it('no rule leans on a match result', () => {

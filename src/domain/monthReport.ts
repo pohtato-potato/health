@@ -1,4 +1,4 @@
-import { metBetween, type Sighting } from './creatures';
+import type { Sighting } from './creatures';
 import { parseDay, type DayKey } from './dates';
 import { lastMonth, strongestWeek, surpriseRecord } from './film';
 import { fmtInt } from './format';
@@ -24,7 +24,6 @@ export type FilmFrame =
   | { kind: 'number'; ground: string; big: string; color: string; small: string }
   | { kind: 'opening'; ground: string; title: string; small: string }
   | { kind: 'trail'; ground: string; fromKm: number; toKm: number; small: string }
-  | { kind: 'creatures'; ground: string; ids: string[]; small: string }
   | { kind: 'stars'; ground: string; dates: DayKey[]; small: string }
   | { kind: 'credits'; ground: string; lines: [string, string][] }
   | { kind: 'assessment'; ground: string; grades: Grade[] };
@@ -204,8 +203,6 @@ export function filmFrames(month: string, i: MonthInput): FilmFrame[] {
   if (strong) out.push({ kind: 'number', ground: GROUND.week, big: `${fmtInt(strong.kg)} kg`, color: '#8ff0ff', small: `moved in your strongest week, from ${Number(strong.from.slice(8))} ${name}.` });
   const surprise = surpriseRecord(month, i.sets as Parameters<typeof surpriseRecord>[1]);
   if (surprise) out.push({ kind: 'number', ground: GROUND.surprise, big: `+${surprise.pct}%`, color: '#ffd77a', small: `${surprise.exercise}, ${surprise.from} to ${surprise.to} kg. The record you didn't see coming.` });
-  const met = metBetween(i.sightings, `${month}-01`, `${month}-31`);
-  if (met.length) out.push({ kind: 'creatures', ground: GROUND.met, ids: met.slice(0, 2), small: `${met.length} met this month.` });
   const food = byDate(i.entries.filter(inMonth(month)));
   const dayBy = new Map(i.days.map((d) => [d.date, d]));
   const perfect = i.days.filter(inMonth(month)).filter((d) => d.date < i.today && food.has(d.date) && dayRings(i.settings, d.date, dayBy.get(d.date), food.get(d.date)!).rings.perfect && dosesAllowPerfect(i.settings, d)).map((d) => d.date);
@@ -216,7 +213,6 @@ export function filmFrames(month: string, i: MonthInput): FilmFrame[] {
   if (lifts[0]) lines.push(['Stunts', lifts[0].name]);
   if (top) lines.push(['Original score', top[0]]);
   if (toKm > fromKm) lines.push(['Filmed on location', positionAt(toKm).from.name]);
-  if (met.length) lines.push(['Guest stars', `${met.length} visitor${met.length === 1 ? '' : 's'}`]);
   out.push({ kind: 'credits', ground: GROUND.credits, lines });
   out.push({ kind: 'assessment', ground: GROUND.grades, grades: assessment(month, i) });
   return out;
