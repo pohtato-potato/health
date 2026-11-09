@@ -25,8 +25,16 @@ describe('Rivals', () => {
     expect(r.born?.how).toBe('cup');
     expect(rivalTwist(r.born!.clubId, r.born!.how).name).toBe('Bad blood');
     expect(afterMatch([], [], loss('zur', { comp: 'bigcup', final: true }), 'd').born?.how).toBe('final');
-    expect(afterMatch([], [], loss('zur', { auto: true }), 'd').born?.how).toBe('fouram');
+    expect(afterMatch([], [], loss('zur', { margin: 1 }), 'd').born?.how).toBe('close');
     expect(afterMatch([], [], loss('zur'), 'd').born).toBeUndefined();
+  });
+  it('a saved Night shift rival shows as Found a gap on both screens (C3)', () => {
+    const old: Rival = { clubId: 'zur', how: 'fouram', since: '2026-10-08' };
+    for (const out of [html(<RivalsView rivals={[old]} matches={[]} />), html(<RivalryView r={old} matches={[]} />)]) {
+      expect(out).toContain('Found a gap');
+      expect(out).toContain('Beat you by a single goal.');
+      expect(out).not.toMatch(/Night shift|4 am/);
+    }
   });
   it('the list never goes past 1 + 3', () => {
     let rivals: Rival[] = [{ clubId: 'ant', how: 'legend', since: '' }];

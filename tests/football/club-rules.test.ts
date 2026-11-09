@@ -4,7 +4,7 @@ import { YOUTH_POOL } from '../../src/football/data/load';
 import { cards, physio, rotationShape, usesRotation } from '../../src/football/discipline';
 import { dodgyCollapse, incomeFor, offers, prize } from '../../src/football/money';
 import { fillSlots, oldSelfFrom } from '../../src/football/oldSelves';
-import { addRival, ANTIGOON, fades, RIVAL_MODS, rivalBorn, rivalTwist, type Meeting, type Rival } from '../../src/football/rivals';
+import { addRival, afterMatch, ANTIGOON, fades, howText, migrateRivals, RIVAL_MODS, rivalBorn, rivalTwist, twistOf, weakestAxis, type Meeting, type Rival } from '../../src/football/rivals';
 import { rng } from '../../src/football/rng';
 import { armbandHarmony, awakens, HABITS } from '../../src/football/squad';
 import { allAxes, AXES } from '../../src/football/types';
@@ -76,12 +76,13 @@ describe('rivals', () => {
     expect(rivalTwist('ant', 'legend').name).toBe("Giant's hand");
     expect(rivalTwist('hul', 'cup').name).toBe('Bad blood');
     expect(rivalTwist('hul', 'three').name).toBe('In step');
-    expect(rivalTwist('hul', 'fouram').name).toBe('Night shift');
+    expect(rivalTwist('hul', 'close', 'Pace', 'Shape').name).toBe('Found a gap');
   });
-  it('is born from a big night, three running, or 4 am', () => {
+  it('is born from a big night, three running, or a one-goal loss', () => {
     expect(rivalBorn([], m('L', { comp: 'bigcup' }))).toBe('cup');
     expect(rivalBorn([m('L'), m('L')], m('L'))).toBe('three');
-    expect(rivalBorn([], m('L', { auto: true }))).toBe('fouram');
+    expect(rivalBorn([], m('L', { margin: 1 }))).toBe('close');
+    expect(rivalBorn([], m('L', { margin: 2 }))).toBeNull();
     expect(rivalBorn([], m('L'))).toBeNull();
   });
   it('caps earned rivals at three, and five wins fade one', () => {
@@ -91,10 +92,32 @@ describe('rivals', () => {
     expect(fades(Array(5).fill(m('W')), 'hul')).toBe(true);
     expect(fades(Array(5).fill(m('W', { clubId: ANTIGOON })), ANTIGOON)).toBe(false);
   });
-  it('Night shift only bites at 4 am', () => {
-    const t = rivalTwist('hul', 'fouram');
-    expect(t.mods(50, 'def', true)).toHaveLength(1);
-    expect(t.mods(50, 'def', false)).toHaveLength(0);
+  it('Found a gap reads what was logged, never when the match played (C3)', () => {
+    const t = rivalTwist('hul', 'close', 'Pace', 'Routine');
+    // Same press whether the match played itself or was watched.
+    expect(t.mods(50, 'def', true)).toEqual(t.mods(50, 'def', false));
+    expect(t.mods(50, 'def', false)).toEqual([{ axis: 'Routine', d: -2, why: 'Found a gap', kind: 'rival' }]);
+    expect(t.mods(50, 'atk', false)).toHaveLength(0);
+    expect(t.text).toContain('Routine');
+    expect(t.text).not.toMatch(/4 am|night/i);
+  });
+  it('the weakest logged axis is stored when a one-goal loss makes a rival', () => {
+    const v = { Pace: 14, Power: 12, Fuel: 9, Rest: 11, Routine: 15, Shape: 13 };
+    expect(weakestAxis(v)).toBe('Fuel');
+    const r = afterMatch([{ clubId: ANTIGOON, how: 'legend', since: '' }], [], m('L', { margin: 1 }), '2026-11-09', 'Routine', weakestAxis(v));
+    expect(r.born).toMatchObject({ clubId: 'hul', how: 'close', weak: 'Fuel' });
+    expect(twistOf(r.born!).text).toContain('Fuel');
+  });
+  it('migrates a saved Night shift rival to Found a gap on Rest', () => {
+    const old: Rival[] = [{ clubId: ANTIGOON, how: 'legend', since: '' }, { clubId: 'hul', how: 'fouram', since: '2026-10-30', best: 'Pace' }];
+    const now = migrateRivals(old);
+    expect(now[1]).toEqual({ clubId: 'hul', how: 'close', since: '2026-10-30', best: 'Pace', weak: 'Rest' });
+    expect(now[0]).toBe(old[0]);
+    expect(migrateRivals(now)).toBe(now);
+    // Screens reading an unmigrated save still show the new words.
+    expect(twistOf(old[1]).name).toBe('Found a gap');
+    expect(howText(old[1])).toBe('Beat you by a single goal.');
+    expect(RIVAL_MODS).not.toContain('fouram');
   });
 });
 describe('Old Selves', () => {
