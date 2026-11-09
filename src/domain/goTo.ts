@@ -13,7 +13,6 @@ export const GO_TO: (GoToHit & { words?: string[] })[] = [
   { label: 'Earned', path: '/earned', words: ['titles', 'trophies', 'themes'] },
   { label: 'Achievements', path: '/achievements' },
   { label: 'Records', path: '/records', words: ['best'] },
-  { label: 'Visitors', path: '/dex', words: ['creatures'] },
   { label: 'Check-in', path: '/checkin', words: ['body', 'weight', 'measure'] },
   { label: 'Photos', path: '/photos' },
   { label: 'Diary', path: '/diary', words: ['days', 'calendar'] },

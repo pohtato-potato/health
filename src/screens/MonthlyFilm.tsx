@@ -1,12 +1,9 @@
 import { useState, type CSSProperties } from 'react';
-import { creatureById, nameAt } from '../domain/creatureRoster';
 import { lastMonth } from '../domain/film';
 import { fmtInt } from '../domain/format';
 import { filmFrames, type FilmFrame } from '../domain/monthReport';
 import { constellationFor, skyStars } from '../domain/nightSky';
 import { back, go, useRoute } from '../router';
-import { CreatureFigure } from '../ui/creatures/Figure';
-import { stageNow } from '../ui/creatures/Payoffs';
 import { CountUp } from '../ui/you/CountUp';
 import { GOLD } from '../ui/you/palette';
 import { TrailDrawing } from '../walk/ui/TrailDrawing';
@@ -34,7 +31,7 @@ function Stars({ dates }: { dates: string[] }) {
   );
 }
 
-function Frame({ f, month, sightings }: { f: FilmFrame; month: string; sightings: { creatureId: string }[] }) {
+function Frame({ f, month }: { f: FilmFrame; month: string }) {
   switch (f.kind) {
     case 'opening':
       return <><div className="yu-f-big" style={{ fontSize: 46, color: '#ffc0dc' }}>{f.title}</div><div className="yu-f-s">{f.small}</div></>;
@@ -42,20 +39,6 @@ function Frame({ f, month, sightings }: { f: FilmFrame; month: string; sightings
       return <><div className="yu-f-big" style={{ color: f.color, fontSize: f.big.length > 6 ? 60 : 80 }}><BigNumber text={f.big} /></div><div className="yu-f-s">{f.small}</div></>;
     case 'trail':
       return <><div className="yu-f-trail"><TrailDrawing fromKm={f.fromKm} toKm={f.toKm} label={f.small} /></div><div className="yu-f-s">{f.small}</div></>;
-    case 'creatures':
-      return (
-        <>
-          <div className="yu-f-art">
-            {f.ids.map((id) => {
-              const c = creatureById(id);
-              if (!c) return null;
-              const stage = stageNow(c, sightings);
-              return <div key={id} className="yu-f-cr" style={{ '--k': c.main } as CSSProperties}><CreatureFigure c={c} stage={stage} width={140} burst={false} /><b>{nameAt(c, stage)}</b></div>;
-            })}
-          </div>
-          <div className="yu-f-s">{f.small}</div>
-        </>
-      );
     case 'stars':
       return <><div className="yu-f-big" style={{ fontSize: 46, color: GOLD }}>{constellationFor(month).name}</div><Stars dates={f.dates} /><div className="yu-f-s">{f.small}</div></>;
     case 'credits':
@@ -95,7 +78,7 @@ export function MonthlyFilmPage() {
       <div className="yu-film-glow" />
       <div className="yu-bars" aria-hidden="true">{frames.map((_, n) => <i key={n} className={n <= k ? 'on' : undefined} />)}</div>
       <button type="button" className="yu-close" onClick={close}>Close</button>
-      <div className="yu-film-b" key={k} aria-live="polite"><Frame f={f} month={month} sightings={input.sightings} /></div>
+      <div className="yu-film-b" key={k} aria-live="polite"><Frame f={f} month={month} /></div>
       {k > 0 && <button type="button" className="yu-film-prev" onClick={(e) => { e.stopPropagation(); setI(k - 1); }}>Back</button>}
       {k < frames.length - 1 && <span className="yu-film-hint">Tap to go on</span>}
     </div>

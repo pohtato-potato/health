@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultSettings } from '../src/db/actions';
 import { CREATURES } from '../src/domain/creatureRoster';
 import type { Sighting } from '../src/domain/creatures';
-import { firsts, milestones, odometers, shelves, visitorsByStretch } from '../src/domain/earned';
-import { regionAt } from '../src/domain/regions';
+import { firsts, milestones, odometers, shelves } from '../src/domain/earned';
 import { pickedTrophies, trophyCandidates } from '../src/domain/trophies';
 import type { Day, SetEntry, TrainingSession } from '../src/domain/types';
 
@@ -38,7 +37,7 @@ describe('firsts', () => {
       sets: [set({ date: '2026-10-07', mark: '!!' })],
       sightings: [sighting('2026-10-08', 'peacock')],
     });
-    expect(f.map((x) => x.date)).toEqual(['2026-10-01', '2026-10-03', '2026-10-07', '2026-10-08']);
+    expect(f.map((x) => x.date)).toEqual(['2026-10-01', '2026-10-03', '2026-10-07']); // a stored sighting is no first any more (R4-7)
   });
 
   it('is empty with nothing logged', () => {
@@ -58,26 +57,11 @@ describe('milestones', () => {
   });
 });
 
-describe('visitorsByStretch', () => {
-  it('lists a visitor under its own stretch, with no totals', () => {
-    const c = CREATURES.find((x) => x.region === regionAt(0))!;
-    const [first] = visitorsByStretch([sighting('2026-10-01', c.id), sighting('2026-10-02', c.id)], 0);
-    expect(first.region).toBe(regionAt(0));
-    expect(first.visitors[0]).toMatchObject({ id: c.id, visits: 2, stage: 2 });
-    expect(Object.keys(first)).not.toContain('total');
-  });
-
-  it('the stretch you are on comes first and says so, with no one met yet', () => {
-    const c = CREATURES.find((x) => x.region === regionAt(0))!;
-    const out = visitorsByStretch([sighting('2026-10-01', c.id)], 3000);
-    expect(out[0].here).toBe(true);
-    expect(out[0].region).toBe(regionAt(3000));
-    expect(out.some((s) => s.visitors.some((v) => v.id === c.id))).toBe(true);
-  });
-
-  it('a creature no longer on the roster still lists, under Elsewhere', () => {
-    const out = visitorsByStretch([sighting('2026-10-01', 'gone-now')], 0);
-    expect(out.find((s) => s.region === 'elsewhere')?.visitors[0].id).toBe('gone-now');
+describe('creatures retired (R4-7)', () => {
+  it('no visitor shows in firsts or trophies, though the sightings are still stored', () => {
+    const c = CREATURES[0];
+    const i = { days: [], sessions: [], sets: [], sightings: [sighting('2026-10-01', c.id)] };
+    expect(firsts(i).map((f) => f.id)).not.toContain('visitor');
   });
 });
 
@@ -109,7 +93,7 @@ describe('trophies', () => {
   };
 
   it('offers more than six to choose from when there is data', () => {
-    expect(trophyCandidates(i).map((t) => t.id)).toEqual(expect.arrayContaining(['steps', 'month', 'records', 'lastmonth', 'visitors']));
+    expect(trophyCandidates(i).map((t) => t.id)).toEqual(expect.arrayContaining(['steps', 'month', 'records', 'lastmonth']));
   });
 
   it('every label takes two words or more', () => {
@@ -117,8 +101,8 @@ describe('trophies', () => {
   });
 
   it('picks win, in their order, and unknown picks drop out', () => {
-    const t = pickedTrophies(trophyCandidates(i), ['visitors', 'nope', 'steps'], 6);
-    expect(t.map((x) => x.id)).toEqual(['visitors', 'steps']);
+    const t = pickedTrophies(trophyCandidates(i), ['records', 'visitors', 'nope', 'steps'], 6);
+    expect(t.map((x) => x.id)).toEqual(['records', 'steps']); // a picked Visitors trophy drops out with the creatures
   });
 
   it('no picks means automatic, up to the limit', () => {

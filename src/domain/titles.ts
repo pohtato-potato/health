@@ -20,7 +20,7 @@ export const EMPTY_STATS = {
   stretchesCleared: 0, topVisits: 0, fieldNotes: 0, bestDawnWeek: 0,
 };
 export type TitleStats = typeof EMPTY_STATS;
-export type TitleFamily = 'Football' | 'The road' | 'From Gremlin, grudgingly' | 'Doing the thing' | 'Slow days' | 'Visitors';
+export type TitleFamily = 'Football' | 'The road' | 'From Gremlin, grudgingly' | 'Doing the thing' | 'Slow days';
 export interface TitleRule { id: string; name: string; how: string; family: TitleFamily; stat: keyof TitleStats; needs: number; rule: (s: TitleStats) => boolean }
 export interface TitleInput {
   today: DayKey;
@@ -94,12 +94,6 @@ const FAMILIES: [TitleFamily, [string, string, keyof TitleStats, number][]][] = 
     ['The Returner', 'Came back after a week away', 'returns', 1],
     ['Rest Day Enforcer', 'Kept to your plan, no extra sessions, for four weeks', 'withinPlanWeeksRun', 4],
     ['Bounce Back', 'Beat your usual after a bad week', 'bounceBacks', 1],
-  ]],
-  ['Visitors', [
-    ['Friend of the Plains', "Met every visitor of a stretch you've finished", 'stretchesCleared', 1],
-    ["The Regular's Regular", 'Saw one visitor 20 times', 'topVisits', 20],
-    ['Field Researcher', 'Collected 10 field notes', 'fieldNotes', 10],
-    ['Dawn Patrol', 'Saw 5 dawn visitors in a week', 'bestDawnWeek', 5],
   ]],
 ];
 

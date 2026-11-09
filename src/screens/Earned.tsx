@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo } from 'react';
 import { ACHIEVEMENTS } from '../domain/achievements';
-import { firsts, milestones, odometers, shelves, visitorsByStretch, type Dated } from '../domain/earned';
+import { firsts, milestones, odometers, shelves, type Dated } from '../domain/earned';
 import { fmtDayMonth } from '../domain/format';
 import { titleStats } from '../domain/titles';
 import { trophyCandidates } from '../domain/trophies';
@@ -15,7 +15,6 @@ import { Rewards } from './earned/Rewards';
 import { Shelves } from './earned/Shelves';
 import { TitlesWall } from './earned/TitlesWall';
 import { TrophyShelf } from './earned/TrophyShelf';
-import { Visitors } from './earned/Visitors';
 
 function DatedList({ title, rows }: { title: string; rows: Dated[] }) {
   if (!rows.length) return null;
@@ -59,7 +58,6 @@ export function Earned() {
         <h1>Earned</h1>
         <TrophyShelf all={trophyCandidates({ today, settings, days, entries, sets, sightings })} picks={settings.trophyPicks} />
         <TitlesWall settings={settings} stats={stats} unlocked={unlocked} level={level} />
-        <Visitors stretches={visitorsByStretch(sightings, stats.km)} />
         <section className="yu-sec"><h2>Themes and rewards</h2><Rewards settings={settings} unlocked={unlocked} today={today} /></section>
         <Shelves shelves={shelfRows} />
         <DatedList title="Firsts" rows={firsts({ days, sessions, sets, sightings })} />
