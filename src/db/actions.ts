@@ -391,7 +391,7 @@ export async function closeDay(date: DayKey, done: boolean, now = Date.now(), pa
   // Closing seals tonight's shape (R5 c-lock); opening the day again lifts the seal.
   const seal = done || partial ? await sealFor(date, now) : undefined;
   await patchDay(date, { foodDone: done, partial: (!done && partial) || undefined, seal });
-  if (done && date < dayOfLogging(now)) await import('../football/store/play').then((m) => m.kickOff(date)).catch((e) => console.error('football kick-off', e));
+  if ((done || partial) && date < dayOfLogging(now)) await import('../football/store/play').then((m) => m.kickOff(date)).catch((e) => console.error('football kick-off', e));
 }
 
 /** Tonight's shape as it stands, read by Football. Undefined when Football can't read it (no save yet is fine). */
@@ -457,6 +457,11 @@ export async function carryStatus(today: DayKey) {
 export async function endStatus(today: DayKey) {
   await setStatusRange(today, today, undefined);
   await patchSettings({ activeStatus: undefined });
+}
+
+/** Takes a body log mark back off (the chart's Clear). */
+export async function deleteBodyEntry(id: string) {
+  await db.body.delete(id);
 }
 
 /** A body log entry. During a set it carries the exercise, side and set. */

@@ -5,7 +5,8 @@ import { db } from '../../db/db';
 import { addDays, dayOfLogging, type DayKey } from '../../domain/dates';
 import { clubById, rememberClubs, type AbilityDef, type ClubDef } from '../data/load';
 import type { AxisFlags, AxisValues, Mod } from '../types';
-import { loadHealth, nightFor } from './gather';
+import { comebackOn, loadHealth, nightFor } from './gather';
+import { opponentFor, type Opponent } from '../opponent';
 import type { FbSave, StoredMatch } from './tables';
 import { contTonight, fixtureFor, tonightKnocks, type Fixture } from './tonight';
 import { monthAverage } from '../oldSelves';
@@ -70,6 +71,10 @@ export interface Tonight {
   /** Loans in tonight's eleven, and who sits to make room. */
   loansPlaying: string[];
   loanRested: string[];
+  /** Tonight's opponent as the engine sizes it (rating from the save), for Today's shape and matchup bar. */
+  oppTonight?: Opponent;
+  /** Tonight earns the comeback lift (+1, first fully logged day after a gap). */
+  comeback: boolean;
 }
 
 export async function loadTonight(date: DayKey): Promise<Tonight | null> {
@@ -88,6 +93,7 @@ export async function loadTonight(date: DayKey): Promise<Tonight | null> {
   const liveValues = { ...team.values };
   for (const a of AXES) if (night.flags[a]) liveValues[a] = night.values[a];
   const opp = fixture?.opp ? clubById(fixture.opp) : undefined;
+  const oppSaved = fixture?.opp ? await db.fbClubs.get(fixture.opp) : undefined;
   const played = await db.fbMatches.where('date').equals(date).toArray();
   const unwatchedAuto = (await db.fbMatches.where('date').between(addDays(date, -60), date, true, false).toArray()).filter((m) => m.auto && !m.watched);
   return {
@@ -103,6 +109,8 @@ export async function loadTonight(date: DayKey): Promise<Tonight | null> {
     also: season ? contTonight(save, season, (id) => clubById(id).name) : undefined,
     morning: morningFor(save, await db.fbSquad.toArray(), [...roster.values()], bundles, h, date, fixture),
     loansPlaying: team.loansPlayed ?? [], loanRested: team.loanRested ?? [],
+    oppTonight: opp ? opponentFor(opp, { rating: oppSaved?.rating ?? undefined }) : undefined,
+    comeback: comebackOn(h, date),
   };
 }
 

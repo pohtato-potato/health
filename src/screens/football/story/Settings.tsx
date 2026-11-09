@@ -1,4 +1,4 @@
-// Settings: five rows only (spec §5.6). Times and the mapping are fixed and shown; three things change.
+// Settings: spec §5.6 rows plus stadium sound (release 1). Times and the mapping are fixed and shown; four things change.
 import { useState } from 'react';
 import { NATIONS, nationBar } from '../../../football/events';
 import type { Slot } from '../../../football/money';
@@ -6,11 +6,29 @@ import { setBedtime, setFbSetting, setOwnSponsor } from '../../../football/store
 import { clock } from '../../../football/players/attributes';
 import type { FbSave } from '../../../football/store/tables';
 import { SLOT_NAME } from '../club/Money';
+import { patchSettings } from '../../../db/actions';
+import { useSettings } from '../../../db/hooks';
+import { prefOn } from '../../../domain/types';
+
+/** Stadium sound (release 1): one switch, off by default. A crowd swell plays only when a log takes you ahead. */
+function StadiumRow() {
+  const settings = useSettings();
+  const on = settings ? prefOn(settings.prefs, 'stadium') : false;
+  return (
+    <section className="fb-card fb-setrow" aria-label="Stadium sound">
+      <div className="fb-row">
+        <span className="fb-lb">Stadium sound</span>
+        <button type="button" className={`fb-btn sm ${on ? 'pri' : ''}`} aria-pressed={on} disabled={!settings} onClick={() => void patchSettings((x) => ({ prefs: { ...x.prefs, stadium: !on } }))}>{on ? 'On' : 'Off'}</button>
+      </div>
+      <p className="fb-s">A crowd swell when a log on Today takes you ahead of tonight’s opponent. Off unless you turn it on.</p>
+    </section>
+  );
+}
 
 export const MAPPING: [string, string][] = [
   ['Pace', 'Your steps'],
   ['Power', 'Training sessions'],
-  ['Fuel', 'Food: calories in range, plus protein'],
+  ['Fuel', 'Food: eating in your range, plus protein'],
   ['Rest', 'Sleep'],
   ['Routine', 'The daily checklist'],
   ['Shape', 'Weigh-ins and waist'],
@@ -50,6 +68,7 @@ export function SettingsView({ s, onBuzz = (v) => void setFbSetting('buzz', v), 
         </div>
         <p className="fb-s">A long buzz when you score, a short one when they do. No sound.</p>
       </section>
+      <StadiumRow />
       <section className="fb-card fb-setrow" aria-label="World Cup country">
         <label className="fb-lb" htmlFor="fb-wc">World Cup country</label>
         <select id="fb-wc" className="fb-select" value={s.wcCountry ?? ''} onChange={(e) => onCountry(e.target.value || undefined)}>

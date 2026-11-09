@@ -1,4 +1,4 @@
-import { go, openSheet } from '../router';
+import { go } from '../router';
 import { Icon, type IconName } from './Icon';
 
 const TABS: { id: string; label: string; icon?: IconName; path: string }[] = [
@@ -44,14 +44,5 @@ export function TabBar({ active }: { active: string }) {
         </a>
       ))}
     </nav>
-  );
-}
-
-/** The plus, out of the bar: docked beside the handle on Today, floating bottom right elsewhere. */
-export function PlusButton({ docked = false }: { docked?: boolean }) {
-  return (
-    <button type="button" className={docked ? 'fab-plus docked' : 'fab-plus'} aria-label="Log something" onClick={() => openSheet('log')}>
-      <Icon name="plus" size={24} stroke={2.4} />
-    </button>
   );
 }

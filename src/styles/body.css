@@ -1,0 +1,32 @@
+/* The body log (release 1, replaces Readiness): a front and back chart, region chips, kind chips. */
+.bc { display: flex; flex-direction: column; gap: 12px; font-family: 'Atkinson Hyperlegible Next', var(--sans); }
+.bc-figs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.bc-fig { width: 100%; height: auto; max-height: 300px; overflow: visible; }
+.bc-fig text { fill: var(--quiet); font-size: 12px; font-weight: 700; text-anchor: middle; }
+.bc-sil { fill: color-mix(in srgb, var(--text) 8%, transparent); stroke: color-mix(in srgb, var(--text) 40%, transparent); stroke-width: 1; }
+.bc-rg { fill: color-mix(in srgb, var(--text) 10%, transparent); stroke: color-mix(in srgb, var(--text) 35%, transparent); stroke-width: 0.8; cursor: pointer; }
+.bc-rg.jt { stroke-dasharray: 2 1.5; }
+.bc-rg.on { fill: color-mix(in srgb, var(--sv) 70%, transparent); stroke: var(--sv); stroke-width: 1.2; stroke-dasharray: none; }
+.bc-rg.sel { stroke: var(--text); stroke-width: 2; }
+.bc-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.bc-chip { min-height: 44px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--hairline); background: none; color: var(--text); font: inherit; font-size: 15px; cursor: pointer; }
+.bc-chip.on { border: 2px solid var(--sv); background: color-mix(in srgb, var(--sv) 18%, transparent); font-weight: 700; }
+.bc-chip.sel { outline: 2px solid var(--text); outline-offset: 2px; }
+.bc-act { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 16px; border: 1px solid var(--hairline); background: var(--surface); }
+.bc-tt { margin: 0; font-size: 15px; }
+.bc-tt b { font-family: var(--serif); font-weight: 400; font-size: 20px; margin-right: 6px; }
+.bc-tt span { color: var(--quiet); }
+.bc-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.bc-kinds { display: grid; grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: 8px; }
+.bc-kind { min-height: 44px; min-width: 0; padding: 0 6px; border-radius: 14px; border: 2px solid var(--s); background: none; color: var(--text); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+.bc-kind.on { background: var(--s); color: #10121f; }
+.bc-kind.on::before { content: '✓ '; }
+
+.bl-page { font-family: 'Atkinson Hyperlegible Next', var(--sans); }
+.bl-list { display: flex; flex-direction: column; gap: 8px; padding: 0; margin: 0; list-style: none; }
+.bl-list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--hairline); background: var(--surface); font-size: 15px; }
+
+.ml-trend { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.ml-trend b { font-family: var(--serif); font-weight: 400; font-size: 34px; }
+.ml-trend small { font-size: 14px; color: var(--quiet); }
+.bl-list small { flex-basis: 100%; font-size: 14px; color: var(--quiet); }

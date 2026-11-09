@@ -71,7 +71,7 @@ export function FoodToday() {
                 </span>
               </div>
             </div>
-            <div className="bar lg">
+            <div className="bar lg fd-bar" style={{ '--ink': 'var(--apricot)' } as React.CSSProperties}>
               <i style={{ width: `${Math.min(kcalPct, 100)}%`, background: 'var(--apricot)' }} />
               <span
                 style={{ position: 'absolute', left: `${lo}%`, top: -3, bottom: -3, width: `${100 - lo}%`, borderRadius: 3, border: '1px solid var(--apricot)' }}
@@ -88,7 +88,7 @@ export function FoodToday() {
                 {Math.round(totals.protein)} g <span className="t13 q">· aim {targets.proteinG} g</span>
               </div>
             </div>
-            <div className="bar lg">
+            <div className={`bar lg fd-bar${rings.protein.closed ? ' closed' : ''}`} style={{ '--ink': 'var(--lavender)' } as React.CSSProperties}>
               <i style={{ width: `${rings.protein.progress * 100}%`, background: 'var(--lavender)' }} />
             </div>
           </div>
@@ -121,18 +121,16 @@ export function FoodToday() {
           </div>
           {totals.protein > 0 && (
             <div className="col gap8">
-              <div className="spread" role="img" aria-label={`Protein by meal: ${MEALS.map((m) => `${MEAL_NAMES[m]} ${Math.round(spread[m])} g`).join(', ')}`}>
+              <span className="t14 lav">Protein by meal</span>
+              <ul className="fd-meals" aria-label="Protein by meal">
                 {MEALS.map((m) => (
-                  <span key={m} style={{ flexGrow: spread[m] || 0.0001 }} title={`${MEAL_NAMES[m]} ${Math.round(spread[m])} g`} />
+                  <li key={m}>
+                    <span>{MEAL_NAMES[m]}</span>
+                    <span className="bar fd-bar" style={{ '--ink': 'var(--lavender)' } as React.CSSProperties} aria-hidden="true"><i style={{ width: `${Math.min(100, (spread[m] / Math.max(1, totals.protein)) * 100)}%`, background: 'var(--lavender)' }} /></span>
+                    <b className="tn">{Math.round(spread[m])} g</b>
+                  </li>
                 ))}
-              </div>
-              <div className="row t12 q">
-                {MEALS.map((m) => (
-                  <span key={m}>
-                    {MEAL_NAMES[m].slice(0, 5)} {Math.round(spread[m])} g
-                  </span>
-                ))}
-              </div>
+              </ul>
               {lateHeavy(entries) && <div className="t13 q lh">Most of today's protein landed after 9 pm. Some of it earlier in the day helps it count for more.</div>}
             </div>
           )}

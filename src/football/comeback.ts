@@ -13,7 +13,7 @@ export interface DayLogs { day?: Day; foodEntries: number }
 /** Nothing at all was logged: no steps, sleep, food, weigh-in or tick. */
 export function isGap({ day, foodEntries }: DayLogs): boolean {
   if (day?.status && RESTING.has(day.status)) return false;
-  return !foodEntries && !day?.foodDone && day?.steps == null && !day?.sleep && day?.weightKg == null && !Object.keys(day?.ticks ?? {}).length;
+  return !foodEntries && !day?.foodDone && !day?.partial && day?.steps == null && !day?.sleep && day?.weightKg == null && !Object.keys(day?.ticks ?? {}).length;
 }
 
 /** Steps, sleep, the food closed and the checklist touched: the whole day is in. */

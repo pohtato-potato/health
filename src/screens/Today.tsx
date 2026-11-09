@@ -10,7 +10,12 @@ import { sleepMinutes, stepsGoal } from '../domain/rings';
 import { pinnedLine, spokenLine, plainFlagLine, type Moment } from '../domain/voice';
 import { addEntries, bump, deleteEntry, setSteps, setTick } from '../db/actions';
 import { useKonami } from '../ui/useKonami';
-import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useSessions, useNow, useSettings, useSightings, useToday } from '../db/hooks';
+import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useMeasurements, useSessions, useNow, useSettings, useSightings, useToday, useBody } from '../db/hooks';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../db/db';
+import { StatusChip } from './today/StatusChip';
+import { DueCard, dueToday } from './today/DueCard';
+import { bodyTileWords } from '../domain/bodyLog';
 import { prefOn } from '../domain/types';
 import { kmFromSteps } from '../domain/walk';
 import { scenePlace, todayWalkLine, walkCaption } from '../domain/walkCaption';
@@ -32,7 +37,6 @@ import { useRingMoment } from './today/useRingMoment';
 import { RING_WORD, ringsGold } from '../domain/ringMoments';
 import { TodayLayout } from './today/TodayLayout';
 import { DrawerHandle, TodayDrawer } from './today/TodayDrawer';
-import { PlusButton } from '../ui/TabBar';
 import { proteinState } from '../domain/proteinState';
 import { ChecklistChips, MealTiles, UsualChips, mealTotals } from './today/LogBelow';
 import { LogSearch } from '../sheets/LogSearch';
@@ -65,8 +69,6 @@ import {
 } from '../state/derived';
 import { Banners } from './Banners';
 import '../styles/today.css';
-import { forecastData } from '../state/forecastData';
-import { readyWord } from '../domain/readiness';
 import { SeasonStrip, useUnlockedIds } from '../ui/Theme';
 import { hasReward } from '../domain/rewards';
 import { NextUpCard } from './NextUpCard';
@@ -80,7 +82,7 @@ import { seasonalThemeOn } from '../domain/themes';
 import type { Festive } from '../walk/art/festive';
 
 // Football's card loads with Football's data, apart from Today's own bundle.
-const FootballCard = lazy(() => import('./today/FootballCard').then((m) => ({ default: m.FootballCard })));
+const MatchToday = lazy(() => import('./today/MatchToday').then((m) => ({ default: m.MatchToday })));
 
 export function Today() {
   const unlocked = useUnlockedIds();
@@ -96,6 +98,9 @@ export function Today() {
   const ws = weekStart(today);
   const weekEntries = useEntriesBetween(ws, addDays(ws, 6));
   const monthEntries = useEntriesBetween(addDays(today, -60), today);
+  const measurements = useMeasurements();
+  const checkins = useLiveQuery(() => db.checkins.toArray(), []);
+  const body = useBody();
   const toast = useToast();
   const konami = useKonami(() => {
     void bump('konami');
@@ -129,7 +134,7 @@ export function Today() {
     if (dawnDue) go('/dawn');
   }, [dawnDue]);
 
-  if (!settings || !days || !entries || !sessions || !sets || active === undefined || !foods || !weekEntries || !monthEntries) {
+  if (!settings || !days || !entries || !sessions || !sets || active === undefined || !foods || !weekEntries || !monthEntries || !measurements || !checkins || !body) {
     return <div className="page" />;
   }
 
@@ -183,7 +188,6 @@ export function Today() {
   const lineText = flag ? line : voiceNow ? lineForTheDay(today, moment, line) : glanceLine({ minutes: logMinutes(nowMs), closedRings: rings.closed, dayClosed: !!day?.foodDone, sessionTonight, nextSession: day?.foodDone && up ? sessionName : undefined, morningDone: !!day?.morning });
   const gap = proteinGap({ protein: totals.protein, proteinTarget: targets.proteinG, kcal: totals.kcal, kcalMax: targets.kcalMax }, foods, monthEntries, Date.now());
   const addGap = () => void gapAdd(gap.picks);
-  const ready = forecastData(settings, today, days, monthEntries.filter((e) => e.date >= addDays(today, -2)), sessions, sets).readiness;
   // The walk at the top says what the Walk tab says: its title and one of its lines (the milestone's km when nothing else).
   const steps = stepsByDay(days);
   const startDay = journeyStartOf(settings, days);
@@ -234,10 +238,10 @@ export function Today() {
           {drawerOpen && (
       <TodayDrawer
         voice={flag ? line : lineForTheDay(today, moment, line)}
-        readiness={{ score: ready.known ? ready.score : undefined, reason: readyWord(ready) }}
+        body={bodyTileWords(body, today)}
         protein={{ text: proteinState({ gapG: gap.gapG, closed: rings.protein.closed, dayClosed: !!day?.foodDone }), foods: gap.picks.map((p) => p.name).join(' and ') }}
         dayClosed={!!day?.foodDone}
-        onReadiness={() => go('/readiness')}
+        onBody={() => go('/body')}
         onAddGap={addGap}
         onCloseDay={() => go('/close')}
         onClose={() => setDrawerOpen(false)}
@@ -246,6 +250,8 @@ export function Today() {
         </>
       }
       walk={<WalkTop caption={caption} scene={scene} stamp={stamp} onOpen={() => go('/walk')} />}
+      status={<StatusChip today={today} days={days} />}
+      due={<DueCard due={dueToday({ today, settings, checkins: checkins.map((c) => c.date), measurements })} />}
       banner={<Banners />}
       line={<TodayLine text={playing?.kind === 'ring' ? `${RING_WORD[playing.ring]} closed` : lineText} kind={playing?.kind === 'ring' ? 'voice' : lineKind} gold={moment === 'perfect'} clock={fmtTime(nowMs)} why={themeDay ? { name: themeDay.name, text: themeDay.why } : undefined} />}
       season={<SeasonStrip settings={settings} today={today} />}
@@ -255,6 +261,7 @@ export function Today() {
           { key: 'kcal', name: 'Calories', value: fmtInt(totals.kcal), unit: 'kcal', target: `${fmtInt(targets.kcalMin)}–${fmtInt(targets.kcalMax)} kcal`, ink: rings.perfect ? 'var(--gold)' : 'var(--kcal)', known: true },
           { key: 'protein', name: 'Protein', value: String(Math.round(totals.protein)), unit: 'g', target: `of ${targets.proteinG} g`, ink: rings.perfect ? 'var(--gold)' : 'var(--protein)', known: true },
           { key: 'steps', name: 'Steps', value: day?.steps !== undefined ? fmtInt(totals.steps) : '—', unit: 'steps', target: `${totals.eased ? 'eased to ' : 'of '}${fmtInt(stepsGoal(targets, totals.eased))}`, ink: rings.perfect ? 'var(--gold)' : 'var(--steps)', known: day?.steps !== undefined },
+          { key: 'sleep', name: 'Sleep', value: sleepMin !== undefined ? fmtDuration(sleepMin) : '—', unit: 'sleep', target: `last night · aim ${fmtDuration(targets.sleepMin)}`, ink: 'var(--sleep)', known: sleepMin !== undefined },
         ]}
         closed={rings.closed}
         play={ringPlay}
@@ -278,6 +285,7 @@ export function Today() {
           </div>
         }
         onLogFood={() => go('/food')}
+        onLogSleep={() => openSheet('morning')}
         onSaveSteps={(n) => void setSteps(today, n)}
         showCopyHint={logMinutes(nowMs) >= 19 * 60}
       />
@@ -300,11 +308,11 @@ export function Today() {
         actions={{ logMorning: () => openSheet('morning'), closeDay: () => go('/close'), addGap, typeSteps: () => openSheet('steps') }}
       />
       }
-      football={<Suspense fallback={null}><FootballCard now={nowMs} /></Suspense>}
+      football={<Suspense fallback={null}><MatchToday now={nowMs} /></Suspense>}
       next={recordsTonight.length ? (
         <RecordsStrip records={recordsTonight.map((r) => `${r.exercise} ${fmtSet(r)}`)} onFinale={() => { const tn = tonight(sessions, sets, today); if (tn) go('/session/replay', { id: tn.session.id }); }} />
       ) : (
-        <NextUpCard settings={settings} up={up} active={active} trainedToday={trainedToday} weeks={weeks} ready={readyWord(ready)} />
+        <NextUpCard settings={settings} up={up} active={active} trainedToday={trainedToday} weeks={weeks} />
       )}
       log={
         <section className="td-log" data-section="log" aria-label="Log">
@@ -315,6 +323,10 @@ export function Today() {
           </>
         )}
         <LogSearch foods={foods} onAction={(a) => (a.sheet ? openSheet(a.sheet) : go(a.route!))} onFood={(f) => openSheet('addfood', { food: f.id })} onQuick={() => openSheet('quick')} />
+        <button type="button" className="td-bodytile" onClick={() => go('/body')}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="4.5" r="2.5" /><path d="M12 7.5 V15 M7 10 H17 M12 15 L8.5 21.5 M12 15 L15.5 21.5" /></svg>
+          <span><b>Body log ›</b><span>{bodyTileWords(body, today)}</span></span>
+        </button>
         <h2 className="td-h">Meals today</h2>
         <MealTiles meals={MEALS.map((m) => ({ meal: m, kcal: perMeal[m]?.kcal, protein: perMeal[m]?.protein, canRepeat: sameAsYesterday(monthEntries, m, today, 0).length > 0 }))} onOpen={(m) => go('/food', { meal: m })} onRepeat={(m) => void repeat(m)} />
         {slots.length > 0 && (
@@ -328,8 +340,7 @@ export function Today() {
       }
       handle={
         <div className="td-dock">
-          <DrawerHandle ready={ready.known ? ready.score : undefined} protein={proteinState({ gapG: gap.gapG, closed: rings.protein.closed, dayClosed: !!day?.foodDone })} closeLabel={day?.foodDone ? 'Day closed' : 'Close the day'} onOpen={() => setDrawerOpen(true)} />
-          <PlusButton docked />
+          <DrawerHandle protein={proteinState({ gapG: gap.gapG, closed: rings.protein.closed, dayClosed: !!day?.foodDone })} closeLabel={day?.foodDone || day?.partial ? 'Day closed' : 'Close the day'} onOpen={() => setDrawerOpen(true)} onCloseDay={() => go('/close')} />
         </div>
       }
     />

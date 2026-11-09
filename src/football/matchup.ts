@@ -46,11 +46,11 @@ const ANSWER: Record<Axis, string> = {
  * The threat line under tonight's shape. Before anything is logged it names their strongest axis; once you are
  * logging, the axis where they lead you by most. Undefined when you lead everywhere.
  */
-export function threatLine(name: string, opp: AxisValues, mine?: Partial<AxisValues>, logged: Partial<Record<Axis, boolean>> = {}): { axis: Axis; text: string } | undefined {
+export function threatLine(name: string, opp: AxisValues, mine?: Partial<AxisValues>, logged: Partial<Record<Axis, boolean>> = {}): { axis: Axis; kind: 'strong' | 'lead'; answer: string; text: string } | undefined {
   const any = AXES.some((a) => logged[a]);
   if (!any || !mine) {
     const a = strongest(opp);
-    return { axis: a, text: `${name} are strong on ${a}. ${ANSWER[a]}` };
+    return { axis: a, kind: 'strong', answer: ANSWER[a], text: `${name} are strong on ${a}. ${ANSWER[a]}` };
   }
   let best: Axis | undefined, gap = 0;
   for (const a of AXES) {
@@ -58,7 +58,7 @@ export function threatLine(name: string, opp: AxisValues, mine?: Partial<AxisVal
     if (g > gap) { gap = g; best = a; }
   }
   if (!best) return undefined;
-  return { axis: best, text: `${name} lead you on ${best}. ${ANSWER[best]}` };
+  return { axis: best, kind: 'lead', answer: ANSWER[best], text: `${name} lead you on ${best}. ${ANSWER[best]}` };
 }
 
 /**

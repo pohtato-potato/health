@@ -1,19 +1,21 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { saveBackup } from '../../db/backup';
 import { db } from '../../db/db';
-import { useAllDays, useAllEntries, useAllSets, useFoods, useSessions, useSettings, useSightings, useToday } from '../../db/hooks';
+import { saveMeasurement } from '../../db/actions';
+import { useAllDays, useAllEntries, useAllSets, useFoods, useMeasurements, useSessions, useSettings, useSightings, useToday } from '../../db/hooks';
 import { creatureById, nameAt } from '../../domain/creatureRoster';
-import { addDays, type DayKey } from '../../domain/dates';
+import { addDays, weekStart, type DayKey } from '../../domain/dates';
+import type { Measurement } from '../../domain/types';
 import { backupLine } from '../../domain/dueLines';
 import { fmtDayMonth, fmtInt } from '../../domain/format';
-import { lastFullWeek, suggestOneThing, weekNumber, weekStats } from '../../domain/weekly';
+import { storyWeek, suggestOneThing, weekNumber, weekStats } from '../../domain/weekly';
 import { storyChapters, type StoryChapter } from '../../domain/weeklyStory';
 import { usualWake } from '../../domain/wake';
 import { back, go, useRoute } from '../../router';
 import { CreatureFigure } from '../../ui/creatures/Figure';
 import { stageNow } from '../../ui/creatures/Payoffs';
-import { Icon } from '../../ui/Icon';
+import { Story, type StoryCard } from '../../ui/Story';
 import { RegionFrame } from '../../ui/live/RegionFrame';
 import { useToast } from '../../ui/Toasts';
 import { HUE, GOLD } from '../../ui/you/palette';
@@ -125,6 +127,35 @@ function Chapter({ c, sightings, end }: { c: StoryChapter; sightings: { creature
   }
 }
 
+/** The Sunday waist, inside the story: one number in inches. The trend is shown, never a target. */
+function WaistCard({ today, week, measurements }: { today: DayKey; week: DayKey; measurements: Measurement[] }) {
+  const toast = useToast();
+  const ws = weekStart(today);
+  const thisWeek = measurements.filter((m) => m.waistStanding !== undefined && m.date >= ws && m.date <= today).sort((a, b) => b.at - a.at)[0];
+  const before = measurements.filter((m) => m.waistStanding !== undefined && m.date < (thisWeek?.date ?? ws)).sort((a, b) => b.date.localeCompare(a.date) || b.at - a.at)[0];
+  const [val, setVal] = useState<string>(thisWeek?.waistStanding !== undefined ? String(thisWeek.waistStanding) : '');
+  const n = Number(val);
+  const ok = val !== '' && Number.isFinite(n) && n >= 20 && n <= 70;
+  const save = async () => {
+    if (!ok) return;
+    await saveMeasurement({ id: thisWeek?.id, date: thisWeek?.date ?? today, waistStanding: Math.round(n * 4) / 4 });
+    toast({ text: `Waist saved · ${n} in`, tone: 'sage' });
+  };
+  return (
+    <section className="yu-sec"><h2>Sunday waist</h2>
+      <div className="yu-card ws-live">
+        <label className="ws-waist">
+          <span>Standing, stomach tucked in, at the navel</span>
+          <span className="ws-in"><input type="number" inputMode="decimal" step="0.25" min="20" max="70" value={val} placeholder="—" aria-label="Waist in inches" onChange={(e) => setVal(e.target.value)} /><em>in</em></span>
+        </label>
+        <button type="button" className="btn lg block" disabled={!ok} onClick={() => void save()}>{thisWeek && Number(val) === thisWeek.waistStanding ? 'Saved' : 'Save the waist'}</button>
+        {before?.waistStanding !== undefined && <span className="yu-q">Last time: {before.waistStanding} in on {fmtDayMonth(before.date)}. Waist moves slowly; the trend over weeks is what counts.</span>}
+        <span className="yu-q">For week {weekNumber(week)}’s story.</span>
+      </div>
+    </section>
+  );
+}
+
 /** The one weekly story. It reads that week's data only, so an old week opens as it was. */
 export function WeeklyStory() {
   const { params } = useRoute();
@@ -136,8 +167,9 @@ export function WeeklyStory() {
   const sets = useAllSets();
   const foods = useFoods();
   const sightings = useSightings();
+  const measurements = useMeasurements();
   const toast = useToast();
-  const latest = lastFullWeek(today);
+  const latest = storyWeek(today);
   const week = params.get('w') ?? latest;
   const nextWeek = addDays(week, 7);
   const note = useLiveQuery(() => db.weeks.get(week), [week]);
@@ -165,58 +197,80 @@ export function WeeklyStory() {
   const suggestion = suggestOneThing(weekStats(settings, week, days, entries, sessions, sets), settings, foods, usualWake(days, end));
   const text = draft ?? nextNote?.oneThing ?? suggestion;
 
-  return (
-    <RegionFrame className="bare yu-page">
-      <div className="yu-stack">
-        <button type="button" className="backlink" onClick={() => back('/reports')}><Icon name="left" size={20} stroke={1.8} />Reports</button>
-        <h1>Week {weekNumber(week)}, the story</h1>
-        <span className="yu-q">{fmtDayMonth(week)} to {fmtDayMonth(end)}</span>
-        {!chapters.length && <div className="yu-card"><b>Nothing was logged that week</b><span className="yu-q">A story needs at least one day.</span></div>}
-        {chapters.map((c) => <Chapter key={c.id} c={c} sightings={sightings} end={end} />)}
-        <WeekLine start={week} />
-        {note?.oneThing && (
-          <section className="yu-sec"><h2>The one thing you picked</h2>
-            <div className="yu-card">
-              <span>{note.oneThing}</span>
-              {current ? (
-                <div className="yu-choices" role="group" aria-label="Did it happen?">
-                  {[true, false].map((v) => (
-                    <button key={String(v)} type="button" aria-pressed={note.done === v} className={note.done === v ? 'on' : undefined} onClick={() => db.weeks.put({ ...note, done: v })}>{v ? 'It happened' : 'Not this time'}</button>
-                  ))}
-                </div>
-              ) : note.done !== undefined && <span className="yu-q">{note.done ? 'It happened.' : 'Not that time.'}</span>}
-            </div>
-          </section>
-        )}
-        {current && chapters.length > 0 && (
-          <section className="yu-sec"><h2>One thing for this week</h2>
-            <div className="yu-card">
-              <textarea className="yu-note" rows={2} aria-label="One thing for this week" value={text} onChange={(e) => setDraft(e.target.value)} />
-              <button type="button" className="btn sm" onClick={async () => {
-                await db.weeks.put({ ...(nextNote ?? { id: nextWeek }), oneThing: text });
-                toast({ text: 'Saved for this week', sub: "Next week's story asks how it went." });
-              }}>{nextNote?.oneThing === text ? 'Saved' : 'Keep this'}</button>
-            </div>
-          </section>
-        )}
-        <CorrectionNotes from={week} to={end} list={corrections} />
-        {backup?.id === 'backup' && (
-          <section className="yu-sec"><h2>Backup</h2>
-            <div className="yu-card">
-              <span>{backup.text}</span>
-              {line && <button type="button" className="btn sm" onClick={async () => {
-                try {
-                  const r = await saveBackup();
-                  if (r !== 'cancelled') toast({ text: 'Backup saved', tone: 'sage' });
-                } catch (e) {
-                  toast({ text: (e as Error).message });
-                }
-              }}>Back up now</button>}
-            </div>
-          </section>
-        )}
+  const byId = (id: StoryChapter['id']) => chapters.find((c) => c.id === id);
+  const show = (c: StoryChapter | undefined) => (c ? <Chapter c={c} sightings={sightings} end={end} /> : null);
+  const pair = (a: StoryChapter['id'], b: StoryChapter['id']) => (byId(a) || byId(b) ? <>{show(byId(a))}{show(byId(b))}</> : null);
+  const backUp = async () => {
+    try {
+      const r = await saveBackup();
+      if (r !== 'cancelled') toast({ text: 'Backup saved', tone: 'sage' });
+    } catch (e) {
+      toast({ text: (e as Error).message });
+    }
+  };
+
+  // One Sunday story (R4 6): six to eight tap-through cards. Empty cards drop out; the waist sits inside, Backup is last.
+  const cards: StoryCard[] = [];
+  const add = (id: string, body: ReactNode, ground?: string) => { if (body) cards.push({ id, body, ground }); };
+  add('cover', (
+    <>
+      <p className="ws-kicker">{fmtDayMonth(week)} to {fmtDayMonth(end)}</p>
+      <h1 className="ws-title">Week {weekNumber(week)}, the story</h1>
+      {!chapters.length ? <div className="yu-card"><b>Nothing was logged that week</b><span className="yu-q">A story needs at least one day.</span></div> : show(byId('road'))}
+      <p className="ws-hint">Tap the right side to go on, the left to go back.</p>
+    </>
+  ), 'linear-gradient(170deg, #2a2350, #0f1022)');
+  add('visitors', show(byId('visitors')), 'linear-gradient(170deg, #1d3a3a, #0d1418)');
+  add('tally', byId('tally') || byId('swing') ? <>{show(byId('tally'))}{show(byId('swing'))}<WeekLine start={week} /></> : null, 'linear-gradient(170deg, #3a2a12, #120e0a)');
+  add('fuel', pair('food', 'sleep'), 'linear-gradient(170deg, #2b1f45, #0e0c1a)');
+  add('training', pair('training', 'finding'), 'linear-gradient(170deg, #12304a, #0a1220)');
+  if (current) add('waist', <WaistCard today={today} week={week} measurements={measurements ?? []} />, 'linear-gradient(170deg, #173a5a, #0a1626)');
+  add('next', (
+    <>
+      {show(byId('next'))}
+      {note?.oneThing && (
+        <section className="yu-sec"><h2>The one thing you picked</h2>
+          <div className="yu-card ws-live">
+            <span>{note.oneThing}</span>
+            {current ? (
+              <div className="yu-choices" role="group" aria-label="Did it happen?">
+                {[true, false].map((v) => (
+                  <button key={String(v)} type="button" aria-pressed={note.done === v} className={note.done === v ? 'on' : undefined} onClick={() => db.weeks.put({ ...note, done: v })}>{v ? 'It happened' : 'Not this time'}</button>
+                ))}
+              </div>
+            ) : note.done !== undefined && <span className="yu-q">{note.done ? 'It happened.' : 'Not that time.'}</span>}
+          </div>
+        </section>
+      )}
+      {current && chapters.length > 0 && (
+        <section className="yu-sec"><h2>One thing for this week</h2>
+          <div className="yu-card ws-live">
+            <textarea className="yu-note" rows={4} aria-label="One thing for this week" value={text} onChange={(e) => setDraft(e.target.value)} />
+            <button type="button" className="btn sm" onClick={async () => {
+              await db.weeks.put({ ...(nextNote ?? { id: nextWeek }), oneThing: text });
+              toast({ text: 'Saved for this week', sub: "Next week's story asks how it went." });
+            }}>{nextNote?.oneThing === text ? 'Saved' : 'Keep this'}</button>
+          </div>
+        </section>
+      )}
+      <CorrectionNotes from={week} to={end} list={corrections} />
+    </>
+  ), 'linear-gradient(170deg, #1f3a2a, #0b140f)');
+  add('backup', (
+    <section className="yu-sec"><h2>{current ? 'Backup, then done' : 'That was the week'}</h2>
+      <div className="yu-card ws-live">
+        <span>{backup?.id === 'backup' ? backup.text : 'Your data stays on this phone. A backup keeps a copy safe.'}</span>
+        {current && <button type="button" className="btn lg block" onClick={() => void backUp()}>Backup</button>}
         <button type="button" className="link" onClick={() => go('/reports/archive')}>Every past week and month</button>
       </div>
-    </RegionFrame>
+    </section>
+  ), 'linear-gradient(170deg, #2a2440, #0e0d18)');
+
+  const start = params.get('card') ? Math.max(0, cards.findIndex((c) => c.id === params.get('card'))) : 0;
+  return (
+    <>
+      <RegionFrame className="bare yu-page" />
+      <Story key={`${week}:${params.get('card') ?? ''}`} cards={cards} start={start} className="yu-page ws" label={`Week ${weekNumber(week)}, the story`} onClose={() => back('/reports')} />
+    </>
   );
 }

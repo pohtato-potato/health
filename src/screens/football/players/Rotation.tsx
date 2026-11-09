@@ -62,7 +62,7 @@ function nextBreak(p: FbPlayer): string {
     case 'route-walker': return '25% more km a week on the route than when this stretch began.';
     case 'bedtime': return 'Bedtime kept 6 nights in 7, four weeks running.';
     case 'protein': return 'Protein reached on 25 of 30 days.';
-    case 'calories': return 'Inside the calorie range on 25 of 30 days.';
+    case 'calories': return 'Eating in your range on 25 of 30 days.';
     case 'habit': return 'Kept on 60 days since the last one.';
     case 'waist': return 'Waist down an inch since the last one.';
     default: return 'This player has no limit break of its own; its unit-mates do.';

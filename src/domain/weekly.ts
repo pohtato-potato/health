@@ -1,4 +1,4 @@
-import { addDays, dayRange, weekStart, type DayKey } from './dates';
+import { addDays, dayRange, weekStart, weekday, type DayKey } from './dates';
 import { fmtClock, fmtDayMonth, fmtDuration, fmtInt } from './format';
 import { valuesFor } from './foods';
 import { ringsFor, sleepMinutes, totalsFor } from './rings';
@@ -116,6 +116,9 @@ export function weekStats(settings: Settings, from: DayKey, days: Day[], entries
 export function lastFullWeek(today: DayKey): DayKey {
   return addDays(weekStart(today), -7);
 }
+
+/** The week the Sunday story tells: on Sunday, the week ending today; on any other day, the last full one. */
+export const storyWeek = (today: DayKey): DayKey => (weekday(today) === 6 ? weekStart(today) : lastFullWeek(today));
 
 const pct = (a: number, b: number) => (b > 0 ? Math.round(((a - b) / b) * 100) : 0);
 

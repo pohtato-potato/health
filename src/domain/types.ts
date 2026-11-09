@@ -153,6 +153,8 @@ export interface Prefs {
   moments?: boolean;
   /** No confetti or buzz from 10 pm to 7 am, or while the app is in the background. */
   quietPublic?: boolean;
+  /** Stadium sound on logging moments (G g-sound): one switch, off by default. */
+  stadium?: boolean;
 }
 
 const PREF_DEFAULTS: Required<Prefs> = {
@@ -174,6 +176,7 @@ const PREF_DEFAULTS: Required<Prefs> = {
   mirrorCheckIn: false,
   moments: true,
   quietPublic: true,
+  stadium: false,
 };
 
 export function prefOn(prefs: Prefs, key: keyof Prefs): boolean {

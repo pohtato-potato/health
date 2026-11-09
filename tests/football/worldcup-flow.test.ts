@@ -67,10 +67,11 @@ describe('settings', () => {
     expect(vibrate).toHaveBeenCalledWith(80);
     vi.unstubAllGlobals();
   });
-  it('settings has exactly 5 rows', async () => {
+  it('settings has the 5 spec rows plus stadium sound', async () => {
     const s = (await db.fbSave.get('save'))!;
     const out = html(createElement(SettingsView, { s }));
-    expect(out.match(/fb-setrow/g)).toHaveLength(5);
+    expect(out.match(/fb-setrow/g)).toHaveLength(6);
+    expect(out).toContain('Stadium sound');
     expect(out).not.toMatch(/water/i);
   });
 });

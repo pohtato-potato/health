@@ -136,23 +136,42 @@ export function CloseDay() {
         )}
       </div>
 
-      {day?.foodDone ? (
-        <button type="button" className="btn ghost lg block" onClick={() => void closeDay(date, false)}>
-          Day closed · open it again
-        </button>
+      {day?.foodDone || day?.partial ? (
+        <>
+          <div className="panel row cd-sealed" style={{ gap: 12 }}>
+            <Icon name="check" size={20} />
+            <span className="t15 lh grow">{day.foodDone ? 'Closed with all the food in.' : 'Closed as a partial day: averages leave its food out.'} Tonight’s shape is sealed.</span>
+          </div>
+          <button type="button" className="btn ghost lg block" onClick={() => void closeDay(date, false)}>
+            Open the day again
+          </button>
+        </>
       ) : (
-        <button
-          type="button"
-          className="btn lg block close-btn"
-          onClick={async () => {
-            await closeDay(date, true);
-            setClosed(true);
-          }}
-        >
-          <Icon name="check" size={18} /> Close the day
-        </button>
+        <section className="cd-ask" aria-labelledby="cd-ask-h">
+          <h2 className="h3" id="cd-ask-h">Is all the food in?</h2>
+          <button
+            type="button"
+            className="btn lg block close-btn"
+            onClick={async () => {
+              await closeDay(date, true);
+              setClosed(true);
+            }}
+          >
+            <Icon name="check" size={18} /> Yes, food is done
+          </button>
+          <button
+            type="button"
+            className="btn ghost lg block"
+            onClick={async () => {
+              await closeDay(date, false, Date.now(), true);
+              setClosed(true);
+            }}
+          >
+            Not all of it · close as partial
+          </button>
+          <p className="t14 q center lh">Either way, closing seals tonight’s shape. A partial day stays out of your food averages, and nothing counts against you.</p>
+        </section>
       )}
-      <div className="t12 q center lh">Closing says everything eaten is in, so averages count it as a full day.</div>
     </RegionFrame>
   );
 }
