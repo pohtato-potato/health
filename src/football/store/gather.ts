@@ -1,5 +1,5 @@
 // Reads Health's tables once for a date. Football reads values only, never log times.
-import { bedOrder, NIGHT_FROM } from '../../domain/rings';
+import { bedOrder, NIGHT_FROM, sleepMinutes } from '../../domain/rings';
 import { db } from '../../db/db';
 import { addDays, daysBetween, weekStart, type DayKey } from '../../domain/dates';
 import type { ChecklistItem, Day, Meal, RouteRun, SetEntry, Settings, TrainingSession } from '../../domain/types';
@@ -8,6 +8,7 @@ import { axisValues, sleepHours, type AxisInput } from '../axes';
 import { hashSeed } from '../rng';
 import { sealedNight } from '../seal';
 import { comebackDue } from '../comeback';
+import { conditionCap, conditionOn, type CondCap } from '../squadCare';
 import { AXES, type Axis, type AxisFlags, type AxisValues } from '../types';
 
 export interface Health {
@@ -62,7 +63,7 @@ function firstDay(h: Health): DayKey {
   if (!f) { f = [...h.days.keys()].reduce((a, b) => (b < a ? b : a)); firsts.set(h.days, f); }
   return f;
 }
-const medItems = (c: ChecklistItem[]) => c.filter((i) => i.active && i.med);
+export const medItems = (c: ChecklistItem[]) => c.filter((i) => i.active && i.med);
 /** All of the day's medicines ticked (true when there are none). */
 export function medsTaken(h: Health, date: DayKey): boolean {
   // Days before the first logged day (before the app was installed) are unknown, never missed.
@@ -169,3 +170,21 @@ export function conditions(h: Health, date: DayKey, i: AxisInput, auto: boolean)
   return out;
 }
 export const bestAxis = (v: AxisValues) => AXES.reduce((b, a) => (v[a] > v[b] ? a : b), AXES[0]);
+
+/** Release 1 (R7 q-cond A): squad condition, 50–100 %. Power reads training days, Pace big walking days; full nights refill both. */
+export function squadCondition(h: Health, date: DayKey): { Power: number; Pace: number } {
+  const trained = new Set(h.sessions.filter((x) => x.status === 'done').map((x) => x.date));
+  const t = targetsFor(h.settings, date);
+  const big = (d: DayKey) => (h.days.get(d)?.steps ?? 0) >= Math.max(12000, Math.round(t.steps * 1.5));
+  // A day's night is logged on the next day's morning.
+  const slept = (d: DayKey) => { const n = h.days.get(addDays(d, 1))?.sleep; return !!n && sleepMinutes(n.asleep, n.woke) >= t.sleepMin; };
+  return { Power: conditionOn((d) => trained.has(d), slept, date), Pace: conditionOn(big, slept, date) };
+}
+/** The caps squad condition puts on tonight's chances. Full condition caps nothing. */
+export function condCapFor(h: Health, date: DayKey): CondCap | undefined {
+  const c = squadCondition(h, date);
+  const cap: CondCap = {};
+  if (c.Power < 100) cap.Power = conditionCap(c.Power);
+  if (c.Pace < 100) cap.Pace = conditionCap(c.Pace);
+  return Object.keys(cap).length ? cap : undefined;
+}

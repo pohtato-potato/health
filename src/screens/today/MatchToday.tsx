@@ -169,6 +169,11 @@ export function TonightShape({ t, stadium, buzzOn, reel }: { t: Tonight; stadium
           <p className="tm-cv"><span>You <b className={`tn ${valueTier(t.liveValues[lead])}`}>{t.liveValues[lead]}</b></span><span>{short(oppId)} <b className={`tn ${valueTier(oppVals[lead])}`}>{oppVals[lead]}</b></span></p>
         </div>
       )}
+      {t.respond && <p className="tm-ln"><b className="tm-back">The dressing room responds.</b> After last night’s defeat, +1 tonight on <b style={{ color: AXIS_INK[t.respond] }}>{t.respond}</b>.</p>}
+      {t.lowLog && <p className="tm-ln"><b className="tm-back">Low-log week.</b> Medicines and <b style={{ color: AXIS_INK[t.lowLog] }}>{t.lowLog}</b> are all that’s needed; the rest plays at your typical level.</p>}
+      {(['Power', 'Pace'] as const).some((a) => t.condition[a] < 80) && (
+        <p className="tm-ln"><b>Squad condition:</b> {(['Power', 'Pace'] as const).filter((a) => t.condition[a] < 80).map((a) => `${a} ${t.condition[a]}%`).join(', ')}. Low condition lowers tonight’s ceiling, never your logged numbers. Rest and a full night refill it.</p>
+      )}
       {t.comeback && <p className="tm-ln"><b className="tm-back">Comeback lift.</b> A full day after a gap: +1 tonight on your weakest logged axis.</p>}
       {fog.length > 0 && <p className="tm-ln"><b className="tm-fog">{fog.join(' and ')} {fog.length === 1 ? 'is' : 'are'} in fog.</b> Not enough history yet, so {fog.length === 1 ? 'it plays' : 'they play'} as an even 10.</p>}
       {moment && oppVals && oppId && (

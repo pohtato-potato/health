@@ -1,7 +1,7 @@
 // The only writer of Football's tables. Kick-off reads Health once, plays, and stores the events.
 import { bedOrder, fromBedOrder } from '../../domain/rings';
 import { db } from '../../db/db';
-import { addDays, dayOfLogging, daysBetween, type DayKey } from '../../domain/dates';
+import { addDays, dayOfLogging, daysBetween, weekday, type DayKey } from '../../domain/dates';
 import { seasonDays, SEASON_DAYS, type DayPlan } from '../calendar';
 import { advance, penalties, type Bracket } from '../cups';
 import { clubById, rememberClubs } from '../data/load';
@@ -26,7 +26,8 @@ import { abilityFor, braboAbilities } from '../data/abilities';
 import { standings, type Played, type Row } from '../table';
 import { applyChanges, worldTurn } from '../world';
 import { AXES, TIERS, type AxisValues, type Comp, type Mod, type Result, type Tier } from '../types';
-import { axisInputFor, bestAxis, comebackOn, conditions, loadHealth, medsTaken, nightFor, type Health } from './gather';
+import { axisInputFor, bestAxis, comebackOn, condCapFor, conditions, loadHealth, medItems, medsTaken, nightFor, type Health } from './gather';
+import { backLine, cleanBill, dressingRoom, lowLogNight, lowLogOn, meetingDue, onInjuryList, typicalShape, type MedDay } from '../squadCare';
 import { comebackLift } from '../comeback';
 import { factsFor, matchLines, situationOf } from './lines';
 import { newSeason, OWN } from './season';
@@ -319,6 +320,19 @@ const awakenedTraits = (save: FbSave) => (Object.keys(save.awakenings) as (keyof
   .filter((a) => save.awakenings[a]?.length)
   .map((a) => ({ id: `trait:${a}`, name: TRAIT[a], axis: a, d: 1, when: 'own-type' as const }));
 
+/** Release 1 (C2, R3 q-meds3): the physio storyline opens on an injury and closes when you're cleared; a full week earns a clean bill. */
+function physioNews(w: World, meds: MedDay[], date: DayKey, state: 'fit' | 'knock' | 'injury', heal: number) {
+  const before = physio(meds, addDays(date, -1), w.save.physioRoom, heal).state;
+  const say = (id: string, text: string) => { if (!w.news.some((n) => n.id === id)) w.news.push({ id, date, kind: 'club', text }); };
+  if (state === 'injury' && before !== 'injury') {
+    const week = meds.filter((d) => !d.allTaken && d.date >= addDays(date, -7)).length >= 3;
+    say(`${date}:physio`, `Physio room: ${week ? 'three missed medicine days this week' : 'two missed medicine days in a row'}. Rest drops by 4 for two matches while the physio works on it.`);
+  } else if (state === 'fit' && before === 'injury') {
+    say(`${date}:cleared`, 'Cleared by the physio. Back in full training.');
+  }
+  if (weekday(date) === 6 && medItems(w.h.settings.checklist ?? []).length && cleanBill(meds, date)) say(`${date}:cleanbill`, 'A clean bill of health: every medicine kept this week. The physio has nothing to do.');
+}
+
 /** One Brabo match: build the input from Health, play it, store it. */
 function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, away: string, auto: boolean, round?: string, leg?: 1 | 2, neutral = false): StoredMatch {
   const oppId = home === OWN ? away : home;
@@ -341,11 +355,22 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
   for (const a of AXES) if (flags[a]) values[a] = raw[a];
   for (const c of w.save.contracts ?? []) { const a = habitById(c.habit).axis; if (!flags[a]) values[a] = Math.min(20, Math.round(values[a] * c.weight)); }
   for (const hb of w.save.sold ?? []) { const a = habitById(hb).axis; values[a] = 10; flags[a] = 'no-data'; }
+  // Release 1 (R3 b-lowlog): on a low-log week, with the chosen habit logged, the rest plays at your typical level.
+  if (!rotation && lowLogOn(w.save.lowLog, date)) {
+    const ll = lowLogNight(values, flags, typicalShape(recent.map((x) => x.values)), w.save.lowLog.axis);
+    if (ll.applied) { Object.assign(values, ll.values); for (const a of AXES) if (!ll.flags[a]) delete flags[a]; }
+  }
   const pre: Mod[] = [];
-  const meds = Array.from({ length: 5 }, (_, i) => addDays(date, -(i + 1))).map((d) => ({ date: d, allTaken: medsTaken(w.h, d) }));
-  pre.push(...physio(meds, date, w.save.physioRoom, healNow(w.save, w.bundles)).mods);
+  const meds = Array.from({ length: 9 }, (_, i) => addDays(date, -(i + 1))).map((d) => ({ date: d, allTaken: medsTaken(w.h, d) }));
+  const heal = healNow(w.save, w.bundles);
+  const doc = physio(meds, date, w.save.physioRoom, heal);
+  pre.push(...doc.mods);
+  physioNews(w, meds, date, doc.state, heal);
   const nightOuts = [...w.h.days.values()].filter((d) => d.nightOut).map((d) => d.date);
   if (cards(nightOuts, date).red) pre.push(redCardMod(values.Rest));
+  // Release 1 (R3 b-morale): after a defeat the dressing room responds, +1 on the axis that let you down (never on a rotation night).
+  const prevMatch = [...w.past, ...w.matches].filter((x) => x.date < date).pop();
+  if (!rotation) { const dr = dressingRoom(prevMatch); if (dr) pre.push(dr); }
   // The comeback lift: +1, at most, on the first fully logged day after a gap (never on a rotation night).
   if (!rotation && comebackOn(w.h, date)) { const lift = comebackLift(values, flags); if (lift) pre.push(lift); }
   if (armbandHarmony(w.save.captains) && w.save.harmonyAt !== w.save.captains.length) {
@@ -381,6 +406,7 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
     // Engine 2: a player's traits play while it starts (an Awakening's trait became its player's first limit break).
     abilities: [...braboAbilities(w.save.slots), ...(w.save.engine === 2 ? traitAbilities(team.xi, w.roster) : awakenedTraits(w.save)), ...groundAbilities(doneBundles(w)), ...tree.abilities, ...loanAbilities(w.save, team.loansPlayed, date, globeRules(w.save, w.bundles.values()).loan)],
     bench: benchFor(w, date), pre, conds, ctx,
+    condCap: rotation ? undefined : condCapFor(w.h, date),
     rival: rival ? twistOf(rival) : oppId === ANTIGOON ? rivalTwist(ANTIGOON, 'legend') : undefined,
   });
   const score: [number, number] = home === OWN ? events.score : [events.score[1], events.score[0]];
@@ -413,6 +439,14 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
     }
     if (r.faded) w.news.push({ id: `${date}:fade:${r.faded}`, date, kind: 'club', clubId: r.faded, text: `Five wins in a row: the rivalry with ${clubById(r.faded).name} fades.` });
   }
+  // Release 1 (C6): the first match back after Rotation XI nights reports how they did while you were away.
+  if (!rotation) {
+    const before = [...w.past, ...w.matches].filter((x) => x.date < date);
+    const away: StoredMatch[] = [];
+    for (let k = before.length - 1; k >= 0 && before[k].rotation; k--) away.unshift(before[k]);
+    const line = backLine(away);
+    if (line && !w.news.some((n) => n.id === `${date}:back`)) w.news.push({ id: `${date}:back`, date, kind: 'club', text: line });
+  }
   // Engine 2 has no new Awakenings: a player's limit breaks take their place (layer 2).
   w.matches.push(m);
   w.roster = creditMatch(w.roster, m);
@@ -441,7 +475,8 @@ function clubDay(w: World, date: DayKey) {
   const input = axisInputFor(w.h, date);
   // A save from before contracts existed starts them now, for every habit still at the club.
   if (!w.save.contracts) w.save.contracts = contractsFor(date).filter((c) => !(w.save.sold ?? []).includes(c.habit));
-  if (w.save.contracts) w.save.contracts = w.save.contracts.map((c) => {
+  // Release 1 (C6): days on the injury list (sick, injured, a break) freeze contracts, as they already freeze form.
+  if (w.save.contracts && !onInjuryList(w.h.days.get(date)?.status)) w.save.contracts = w.save.contracts.map((c) => {
     const next = contractDay(c, date, keptOn(c.habit, input));
     if (next.state !== c.state) w.news.push({ id: `${date}:contract:${c.habit}`, date, kind: 'club', text: next.state === 'due' ? `${habitById(c.habit).label} has earned a new contract. Renew it on the Deals page.` : `${habitById(c.habit).label} missed its contract line and is transfer-listed. No penalty in matches.` });
     return next;
@@ -467,6 +502,9 @@ function clubDay(w: World, date: DayKey) {
 /** After a match: morale moves with the result; chemistry counts the night (not a sick night); a former player may score. */
 function afterNight(w: World, m: StoredMatch, sick: boolean, oppName: string) {
   w.save.morale = moraleAfter(w.save.morale, m.result);
+  // Release 1 (R3 b-morale): two defeats in a row bring a dressing-room meeting. A scene, never a penalty.
+  if (meetingDue([...w.past, ...w.matches].filter((x) => x.date <= m.date).map((x) => x.result)) && !w.news.some((n) => n.id === `${m.date}:meeting`))
+    w.news.push({ id: `${m.date}:meeting`, date: m.date, kind: 'club', text: 'Dressing-room meeting after two defeats. The captain speaks first: no blame, one job each for the next match. Nothing is taken off anyone.' });
   if (!sick && !m.rotation && w.save.chemOn !== m.date && m.xi?.length) {
     const rot = rotationOf(w.save, w.bundles.values());
     w.save.chem = chemistryAfter(w.save.chem ?? {}, m.xi, rot.rules, formationFor(w.save.sheet, rot));

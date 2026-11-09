@@ -2,6 +2,7 @@
 import { addDays, type DayKey } from '../domain/dates';
 import type { Status } from '../domain/types';
 import { AXES, allAxes, clamp, type AxisValues, type Mod } from './types';
+import { weekInjury } from './squadCare';
 
 export interface MedDay { date: DayKey; allTaken: boolean }
 /** Consecutive missed medicine days ending on `end`. */
@@ -24,7 +25,8 @@ export function physio(medDays: MedDay[], date: DayKey, physioRoom: boolean, hea
   const thr = physioRoom ? 3 : 2;
   const y1 = addDays(date, -1), y2 = addDays(date, -2);
   const injuredLong = runEndingOn(m, y2) >= thr && heal < 1;
-  if (runEndingOn(m, y1) >= thr || injuredLong) {
+  // Release 1 (R3 q-meds3 A): three or more missed days in a week is an injury too, for two matches.
+  if (runEndingOn(m, y1) >= thr || injuredLong || weekInjury(medDays, date, heal)) {
     if (heal < 2) return { state: 'injury', mods: [{ axis: 'Rest', d: -4, why: 'Injury', kind: 'knock' }] };
     return { state: 'knock', mods: [{ axis: 'Rest', d: heal >= 3 ? -1 : -2, why: 'Knock', kind: 'knock' }] };
   }

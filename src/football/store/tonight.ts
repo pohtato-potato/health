@@ -72,7 +72,7 @@ export function fixtureFor(save: FbSave, season: FbSeason): Fixture | undefined 
 
 /** Knocks and cards that will play tonight (from yesterday's logs). */
 export function tonightKnocks(h: Health, date: DayKey, physioRoom: boolean): Mod[] {
-  const meds = Array.from({ length: 5 }, (_, i) => addDays(date, -(i + 1))).map((d) => ({ date: d, allTaken: medsTaken(h, d) }));
+  const meds = Array.from({ length: 9 }, (_, i) => addDays(date, -(i + 1))).map((d) => ({ date: d, allTaken: medsTaken(h, d) }));
   const out = [...physio(meds, date, physioRoom).mods];
   const nightOuts = [...h.days.values()].filter((d) => d.nightOut).map((d) => d.date);
   const c = cards(nightOuts, date);

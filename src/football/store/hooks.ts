@@ -4,8 +4,9 @@ import { OWN } from './season';
 import { db } from '../../db/db';
 import { addDays, dayOfLogging, type DayKey } from '../../domain/dates';
 import { clubById, rememberClubs, type AbilityDef, type ClubDef } from '../data/load';
-import type { AxisFlags, AxisValues, Mod } from '../types';
-import { comebackOn, loadHealth, nightFor } from './gather';
+import type { Axis, AxisFlags, AxisValues, Mod } from '../types';
+import { comebackOn, loadHealth, nightFor, squadCondition } from './gather';
+import { dressingRoom, lowLogOn } from '../squadCare';
 import { opponentFor, type Opponent } from '../opponent';
 import type { FbSave, StoredMatch } from './tables';
 import { contTonight, fixtureFor, tonightKnocks, type Fixture } from './tonight';
@@ -75,6 +76,10 @@ export interface Tonight {
   oppTonight?: Opponent;
   /** Tonight earns the comeback lift (+1, first fully logged day after a gap). */
   comeback: boolean;
+  /** Release 1: squad condition (50–100 %), the dressing room's response after a defeat, and this week's low-log axis. */
+  condition: { Power: number; Pace: number };
+  respond?: Axis;
+  lowLog?: Axis;
 }
 
 export async function loadTonight(date: DayKey): Promise<Tonight | null> {
@@ -111,6 +116,9 @@ export async function loadTonight(date: DayKey): Promise<Tonight | null> {
     loansPlaying: team.loansPlayed ?? [], loanRested: team.loanRested ?? [],
     oppTonight: opp ? opponentFor(opp, { rating: oppSaved?.rating ?? undefined }) : undefined,
     comeback: comebackOn(h, date),
+    condition: squadCondition(h, date),
+    respond: dressingRoom((await db.fbMatches.where('date').below(date).sortBy('date')).pop())?.axis,
+    lowLog: lowLogOn(save.lowLog, date) ? save.lowLog.axis : undefined,
   };
 }
 
