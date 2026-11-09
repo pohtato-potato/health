@@ -8,7 +8,6 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { Icon } from '../ui/Icon';
 import { AchievementsCard } from './AchievementsCard';
-import { DeparturesCard } from './Departures';
 import { ChallengeCard } from '../state/Challenge';
 import { OnThisDayCard } from './OnThisDay';
 import { ReviewSheet, reviewDue } from './Review';
@@ -56,8 +55,6 @@ export function Journey() {
       <OnThisDayCard />
 
       <WalkCard days={days} />
-
-      <DeparturesCard />
 
       <ChallengeCard />
 

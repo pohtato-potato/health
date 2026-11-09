@@ -85,7 +85,6 @@ const RoadSoFarPage = page(() => import('./screens/walk/RoadSoFar'), 'RoadSoFarP
 const PassportPage = page(() => import('./screens/walk/PassportPage'), 'PassportPage');
 const ArrivalRedirect = page(() => import('./screens/Postcard'), 'ArrivalRedirect');
 const DiaryPage = page(() => import('./screens/Diary'), 'DiaryPage');
-const DeparturesPage = page(() => import('./screens/Departures'), 'DeparturesPage');
 const CharacterPage = page(() => import('./screens/Character'), 'CharacterPage');
 const PhysioPage = page(() => import('./screens/Physio'), 'PhysioPage');
 const RevealPage = page(() => import('./screens/Reveal'), 'RevealPage');
@@ -212,7 +211,6 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/join': { el: () => <JoinPage /> },
   '/finish': { el: () => <FinishPage /> },
   '/diary': { el: () => <DiaryPage /> },
-  '/departures': { el: () => <DeparturesPage /> },
   '/climate': { el: () => <Moved to="/reports/month" /> },
   '/wrapped': { el: () => <WrappedPage /> },
   '/character': { el: () => <CharacterPage /> },
