@@ -290,6 +290,10 @@ export interface Settings {
   /** v2: a lighter week the owner accepted, and when the offer was last waved off. */
   lighterWeek?: { from: DayKey; to: DayKey };
   lighterDismissed?: DayKey;
+  /** Each machine's stack unit, by machine name or exercise id: set once, then remembered. Default kg. */
+  machineUnits?: Record<string, 'kg' | 'lb' | 'stack'>;
+  /** Home or gym: the last one picked on Train, so the card opens on it. */
+  lastPlace?: 'home' | 'gym';
   readinessWeights?: { at: number; weights: import('./readiness').Weights; sessions: number };
   createdAt: number;
 }
@@ -461,7 +465,44 @@ export interface TrainingSession {
   platesSeen?: string[];
   /** v3: why the rest running now is the length it is. */
   restWhy?: string;
+  /** Home or gym: which rotation this session belongs to. Absent on plans with one rotation. */
+  place?: 'home' | 'gym';
+  /** Half the sets, stopping 3 reps short, no record chasing: why (a lighter week, the first session back, a sick day). */
+  half?: HalfWhy;
+  /** "Start with the heavy block?" was taken: its exercises come first. */
+  heavyFirst?: boolean;
+  /** The "shoulders first" ask was shown, so it is asked once only. */
+  protectAsked?: boolean;
+  /** Tonight's load per exercise, picked on the set screen (gym kit has no plate table to suggest one). */
+  loadSet?: Record<string, number>;
 }
+
+/** Why a session is at half sets. */
+export type HalfWhy = 'lighter-week' | 'back' | 'sick';
+
+/** The coach's five skip reasons (reply 8 Nov §2). */
+export type SkipReason = 'pain' | 'worried' | 'no-kit' | 'time' | 'tired';
+
+/** What a gym load's number means: the stack in its machine's unit, plates added, an assist, or kg. */
+export type LoadUnit = 'kg' | 'lb' | 'stack' | 'plates' | 'assist-kg' | 'assist-lb' | 'assist-stack';
+
+/** A body log entry: where it hurts or feels off, and when. During a set it carries the exercise, side and set. */
+export interface BodyEntry {
+  id: string;
+  date: DayKey;
+  at: number;
+  part: string;
+  side?: 'L' | 'R' | 'both';
+  kind: BodyKind;
+  note?: string;
+  exerciseId?: string;
+  exercise?: string;
+  setNo?: number;
+  setSide?: 'L' | 'R' | 'both';
+  sessionId?: string;
+}
+
+export type BodyKind = 'pain' | 'strain' | 'sore' | 'tight';
 
 export interface SetEntry {
   id: string;
@@ -492,6 +533,10 @@ export interface SetEntry {
   faults?: string[];
   challenges?: string[];
   discomfort?: 'knee' | 'wrist' | 'shoulder' | 'back';
+  /** Why the set was skipped, picked when skipping (the coach reads it in the export). */
+  skipWhy?: SkipReason;
+  /** Gym loads: what the number in loadKg means. Absent: kg per dumbbell (or total kg for a barbell). */
+  loadUnit?: LoadUnit;
   /** Carries measured in steps. */
   steps?: number;
   firstSide?: 'L' | 'R';

@@ -4,7 +4,16 @@
  * file or "Import a plan" replaces it.
  */
 
-export type LoadKind = 'pair' | 'single' | 'body' | 'band';
+/**
+ * pair / single: kg per dumbbell. body: bodyweight. band: a band level.
+ * Gym kinds (coach reply 8 Nov §3): barbell = total kg, bar included; stack = the number the machine's
+ * stack shows, in that machine's unit; plates = plates added to a plate-loaded machine (not the sled);
+ * assist = an assisted machine's assist number, where less assist is progress.
+ * Gym loads are never converted, and never compared across machines.
+ */
+export type LoadKind = 'pair' | 'single' | 'body' | 'band' | 'barbell' | 'stack' | 'plates' | 'assist';
+
+export const LOAD_KINDS: LoadKind[] = ['pair', 'single', 'body', 'band', 'barbell', 'stack', 'plates', 'assist'];
 
 /** What a set counts: repetitions, a hold in seconds, or steps walked (carries). */
 export type Measure = 'reps' | 'seconds' | 'steps';
@@ -103,6 +112,12 @@ export interface ExerciseDef {
   replaces?: string;
   /** A harder variation the coach counts as the next step of an earlier exercise (its id). Treated like `replaces`. */
   progressionOf?: string;
+  /** Gym kit: the machine this is done on, e.g. "Leg press". Its stack unit is remembered per machine. Defaults to the exercise id. */
+  machine?: string;
+  /** Stack or assist work: the machine's unit when the plan knows it (kg, lb, or the stack's own numbers). Default kg. */
+  unit?: 'kg' | 'lb' | 'stack';
+  /** Plate-loaded machines: the sled's own weight, when known, as a note. */
+  sledKg?: number;
 }
 
 export interface FormCheck {
@@ -154,6 +169,15 @@ export interface PlanDef {
   name: string;
   from: string;
   rotation: string[];
+  /**
+   * Home and gym, each with its own rotation (coach reply 8 Nov §3). Train asks which at the start and offers
+   * the next session in that one; one never moves the other. When set, `rotation` is the home one.
+   */
+  rotations?: { home: string[]; gym: string[] };
+  /** A guide, not a rule: sessions a week in each place, e.g. { gym: 2, home: 2 }. Consistency counts every session. */
+  weeklyTarget?: { home?: number; gym?: number };
+  /** The coach's safety lines for every gym exercise's guide, e.g. eyes and knees. Kept in the plan file, not the app. */
+  gymSafety?: { title: string; text: string }[];
   /** Sessions outside the rotation, e.g. ["G"] for a gym night. Logged and counted, but the loop doesn't move. */
   extra?: string[];
   sessions: SessionDef[];
@@ -210,26 +234,47 @@ export function groupExercises(exs: ExerciseDef[]): ExerciseDef[][] {
   return groups;
 }
 
-export function rotationOf(plan: PlanDef): string[] {
+export type Place = 'home' | 'gym';
+
+/** The plan has a home rotation and a gym rotation. */
+export function hasGym(plan: PlanDef): boolean {
+  return !!plan.rotations && plan.rotations.gym.length > 0;
+}
+
+/** The loop for a place: with home and gym rotations, that place's; otherwise the one rotation. */
+export function rotationOf(plan: PlanDef, place: Place = 'home'): string[] {
+  if (plan.rotations) {
+    const r = plan.rotations[place];
+    if (r?.length) return r;
+  }
   const extra = new Set(plan.extra ?? []);
-  return plan.rotation.length ? plan.rotation : plan.sessions.map((s) => s.id).filter((id) => !extra.has(id));
+  const gym = new Set(plan.rotations?.gym ?? []);
+  return plan.rotation.length ? plan.rotation : plan.sessions.map((s) => s.id).filter((id) => !extra.has(id) && !gym.has(id));
+}
+
+/** Which place a session belongs to: in the gym rotation is gym, everything else home. */
+export function placeOfSession(plan: PlanDef, sessionId: string): Place {
+  return plan.rotations?.gym.includes(sessionId) ? 'gym' : 'home';
 }
 
 /** Alternate from the last rotation session logged. A session outside the loop (a trip, a gym night) never resets it. */
-export function nextSessionId(plan: PlanDef, lastDone?: string): string {
-  const rot = rotationOf(plan);
+export function nextSessionId(plan: PlanDef, lastDone?: string, place: Place = 'home'): string {
+  const rot = rotationOf(plan, place);
   const i = lastDone ? rot.indexOf(lastDone) : -1;
   return i < 0 ? rot[0] : rot[(i + 1) % rot.length];
 }
 
-/** Where the loop stands: a start picked at import holds until a rotation session is done after it. */
-export function nextInLoop(plan: PlanDef, done: { session: string; startedAt: number }[], start?: { session: string; at: number }): string {
-  const rot = rotationOf(plan);
+/**
+ * Where the loop stands: a start picked at import holds until a rotation session is done after it.
+ * With home and gym rotations, each place has its own loop: a gym session never moves the home one.
+ */
+export function nextInLoop(plan: PlanDef, done: { session: string; startedAt: number }[], start?: { session: string; at: number }, place: Place = 'home'): string {
+  const rot = rotationOf(plan, place);
   const inLoop = done.filter((s) => rot.includes(s.session) && (!start || s.startedAt >= start.at)).sort((a, b) => a.startedAt - b.startedAt);
   const last = inLoop[inLoop.length - 1];
-  if (last) return nextSessionId(plan, last.session);
+  if (last) return nextSessionId(plan, last.session, place);
   if (start && rot.includes(start.session)) return start.session;
-  return nextSessionId(plan, undefined);
+  return nextSessionId(plan, undefined, place);
 }
 
 /** Sessions that run outside the loop, such as a gym night. */
@@ -364,7 +409,8 @@ export function validatePlan(p: unknown): string[] {
       if (ids.has(e.id)) errs.push(`The exercise id "${e.id}" is used twice.`);
       ids.add(e.id);
       if (!(e.sets > 0)) errs.push(`${e.name} needs a number of sets.`);
-      if (!['pair', 'single', 'body', 'band'].includes(e.load)) errs.push(`${e.name} has an unknown load type.`);
+      if (!LOAD_KINDS.includes(e.load)) errs.push(`${e.name} has an unknown load type.`);
+      if (e.unit !== undefined && !['kg', 'lb', 'stack'].includes(e.unit)) errs.push(`${e.name} has an unknown unit "${e.unit}"; use kg, lb or stack.`);
     }
     for (const id of s.short ?? []) if (!s.exercises?.some((e) => e.id === id)) errs.push(`The short ${s.name} names "${id}", which isn't in it.`);
   }
@@ -374,6 +420,19 @@ export function validatePlan(p: unknown): string[] {
   if (!Array.isArray(plan.rotation)) errs.push('The plan is missing its rotation, e.g. ["A", "B"].');
   const sessionIds = new Set((plan.sessions ?? []).map((s) => s.id));
   for (const id of Array.isArray(plan.rotation) ? plan.rotation : []) if (!sessionIds.has(id)) errs.push(`The rotation names "${id}", which isn't a session.`);
+  if (plan.gymSafety !== undefined && !(Array.isArray(plan.gymSafety) && plan.gymSafety.every((g) => g && typeof g.title === 'string' && typeof g.text === 'string'))) errs.push('gymSafety is a list of { "title", "text" } lines.');
+  if (plan.rotations !== undefined) {
+    const r = plan.rotations as Partial<{ home: unknown; gym: unknown }>;
+    if (!Array.isArray(r.home) || !Array.isArray(r.gym)) errs.push('rotations needs a home list and a gym list, e.g. { "home": ["A", "B"], "gym": ["G1", "G2"] }.');
+    else {
+      for (const id of [...(r.home as string[]), ...(r.gym as string[])]) if (!sessionIds.has(id)) errs.push(`The rotations name "${id}", which isn't a session.`);
+      for (const id of r.gym as string[]) if ((r.home as string[]).includes(id)) errs.push(`"${id}" is in both the home and the gym rotation; it can only be one.`);
+    }
+  }
+  for (const [k, v] of Object.entries(plan.weeklyTarget ?? {})) if (!['home', 'gym'].includes(k) || !(typeof v === 'number' && v >= 0)) errs.push('weeklyTarget takes home and gym session counts, e.g. { "gym": 2, "home": 2 }.');
+  for (const e of (plan.sessions ?? []).flatMap((x) => x.exercises ?? [])) {
+    for (const k of ['replaces', 'progressionOf'] as const) if (e[k] !== undefined && typeof e[k] !== 'string') errs.push(`${e.name}: ${k} names an exercise id.`);
+  }
   for (const id of plan.extra ?? []) {
     if (!sessionIds.has(id)) errs.push(`The extra session "${id}" isn't a session.`);
     else if (plan.rotation?.includes(id)) errs.push(`"${id}" is in the rotation and in extra; it can only be one.`);

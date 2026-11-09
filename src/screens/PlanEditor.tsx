@@ -1,3 +1,4 @@
+import { isGymKind } from '../domain/gym';
 import { useState } from 'react';
 import { CHALLENGE_IDS, CHALLENGE_NAMES, groupExercises, isSuperset, targetText, validatePlan, type ExerciseDef, type Guide, type LoadKind, type Measure, type PlanDef, type SessionDef } from '../domain/plan';
 import { addExercise, moveExercise, removeExercise, setSuperset, updateExercise } from '../domain/planEdit';
@@ -182,6 +183,11 @@ function ExerciseRow({
           </div>
           <div className="flabel">
             <span className="lbl">Load</span>
+            {isGymKind(ex.load) ? (
+              <div className="t15 lh">
+                Gym kit: {ex.load === 'barbell' ? 'barbell, total kg' : ex.load === 'stack' ? 'machine stack' : ex.load === 'plates' ? 'plates added' : 'assist (less is progress)'}. Set in the plan file.
+              </div>
+            ) : (
             <Seg<LoadKind>
               options={[
                 { id: 'pair', label: 'Two dumbbells' },
@@ -192,6 +198,7 @@ function ExerciseRow({
               value={ex.load}
               onChange={(load) => onChange({ load })}
             />
+            )}
           </div>
           <div className="grid2">
             {(ex.load === 'pair' || ex.load === 'single') && (

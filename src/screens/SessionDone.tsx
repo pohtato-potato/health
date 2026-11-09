@@ -1,3 +1,5 @@
+import { loadWords } from '../domain/setText';
+import { countsAsKg } from '../domain/gym';
 import { useEffect, useState } from 'react';
 import { addDays, daysBetween } from '../domain/dates';
 import { fmtDayMonth, lowerFirst, weekdayName } from '../domain/format';
@@ -68,7 +70,7 @@ export function recordLines(mine: SetEntry[]): RecordLine[] {
     const val = best.reps !== undefined ? `${best.reps}` : `${best.seconds} s`;
     const all = sets.length > 1 && sets.every((s) => s.loadKg === best.loadKg && (s.reps ?? s.seconds) === (best.reps ?? best.seconds));
     const sided = sets.some((s) => s.side !== 'both');
-    let text = best.loadKg !== null ? `${fmtKg(best.loadKg)} kg × ${val}` : best.reps !== undefined ? `${val} reps` : val;
+    let text = best.loadKg !== null ? `${loadWords(best.loadKg, best.loadUnit)} × ${val}` : best.reps !== undefined ? `${val} reps` : val;
     if (all) text += sets.length === 3 ? ', all three sets' : `, all ${sets.length} sets`;
     else if (sided) text += best.side === 'L' ? ', left' : best.side === 'R' ? ', right' : '';
     out.push({ name: best.exercise, text });
@@ -91,7 +93,7 @@ export function recordPages(mine: SetEntry[], all: SetEntry[], plan: PlanDef, se
     const prevBest = [...prior].sort(better)[0];
     const heavier = prevBest && (best.loadKg ?? 0) > (prevBest.loadKg ?? 0);
     const unit = best.seconds !== undefined ? 'SECONDS' : 'REPS';
-    const fmtSet = (s: SetEntry) => (s.loadKg !== null ? `${fmtKg(s.loadKg)} kg × ${valueOf(s)}${s.seconds !== undefined ? ' s' : ''}` : `${valueOf(s)}${s.seconds !== undefined ? ' s' : ' reps'}`);
+    const fmtSet = (s: SetEntry) => (s.loadKg !== null ? `${loadWords(s.loadKg, s.loadUnit)} × ${valueOf(s)}${s.seconds !== undefined ? ' s' : ''}` : `${valueOf(s)}${s.seconds !== undefined ? ' s' : ' reps'}`);
     const when = prevBest ? (daysBetween(prevBest.date, today) < 7 ? `on ${weekdayName(prevBest.date)}` : `on ${fmtDayMonth(prevBest.date)}`) : '';
     const ex = findExercise(plan, best.exerciseId);
     const advice = ex ? exerciseStatus(ex, settings.planState, settings.equipment, all, plan.bigJump ?? 0.25).advice : undefined;
@@ -112,7 +114,8 @@ export function sessionStats(mine: SetEntry[], plan?: PlanDef) {
   const working = mine.filter((s) => !s.drop);
   const reps = mine.reduce((n, s) => n + (s.reps ?? 0), 0);
   const hands = (id: string) => (plan && findExercise(plan, id)?.load === 'pair' ? 2 : 1);
-  const kg = mine.reduce((n, s) => n + (s.loadKg ?? 0) * (s.reps ?? 0) * hands(s.exerciseId), 0);
+  // Only real kilograms: a stack in lb or plain numbers, plates added and an assist aren't kg lifted.
+  const kg = mine.reduce((n, s) => n + (countsAsKg(s) ? (s.loadKg ?? 0) * (s.reps ?? 0) * hands(s.exerciseId) : 0), 0);
   return { sets: working.length, reps, kg: Math.round(kg), records: new Set(mine.filter((s) => s.mark === '!!').map((s) => s.exerciseId)).size };
 }
 

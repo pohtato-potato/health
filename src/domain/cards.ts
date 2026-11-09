@@ -1,3 +1,4 @@
+import { loadWords } from './setText';
 import { checksFor, okCount, slipCount } from './checks';
 import { fmtKg } from './loads';
 import { topOfRange, valueOfSet, type ExerciseDef } from './plan';
@@ -63,7 +64,7 @@ export function cardFor(ex: ExerciseDef, sets: SetEntry[]): { tier: Tier; next: 
   return { tier, next: nextFor[tier], logged: true };
 }
 
-const fmtSet = (s: SetEntry) => `${s.loadKg !== null ? `${fmtKg(s.loadKg)} kg × ` : ''}${value(s)}${s.reps === undefined && s.seconds !== undefined ? ' s' : ''}`;
+const fmtSet = (s: SetEntry) => `${s.loadKg !== null ? `${loadWords(s.loadKg, s.loadUnit)} × ` : ''}${value(s)}${s.reps === undefined && s.seconds !== undefined ? ' s' : ''}`;
 /** Strength in one number: an estimated one-rep max for loaded work, else reps or seconds. */
 const strength = (s: SetEntry) => (s.loadKg ? s.loadKg * (1 + value(s) / 30) : value(s));
 

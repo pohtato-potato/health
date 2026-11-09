@@ -17,6 +17,7 @@ export async function saveAuditPack() {
     sets: (tables.sets ?? []) as ExportData['sets'],
     measurements: (tables.measurements ?? []) as ExportData['measurements'],
     trackValues: (tables.trackValues ?? []) as ExportData['trackValues'],
+    body: (tables.body ?? []) as ExportData['body'],
   };
   const bytes = buildAuditPack(data, { usage: await db.usage.toArray(), edits: await db.edits.toArray(), notes: await db.auditNotes.toArray() });
   return shareFile(new File([bytes as BlobPart], `health-audit-${dayKey()}.zip`, { type: 'application/zip' }));

@@ -34,7 +34,7 @@ describe('xlsx export', () => {
   });
   it('builds every sheet with the plan’s set schema', () => {
     const sheets = workbookSheets(sample(), new Date('2026-09-28T12:00:00'));
-    expect(sheets.map((s) => s.name)).toEqual(['README', 'Summary', 'Daily', 'Food log', 'My foods', 'Sets', 'Sessions', 'Weekly', 'Measurements', 'Records', 'Targets history', 'Plan']);
+    expect(sheets.map((s) => s.name)).toEqual(['README', 'Summary', 'Daily', 'Food log', 'My foods', 'Sets', 'Sessions', 'Weekly', 'Measurements', 'Records', 'Targets history', 'Plan', 'Body log']);
     const setsSheet = sheets.find((s) => s.name === 'Sets')!;
     expect(setsSheet.rows[0].slice(0, 9)).toEqual(['date', 'session', 'exercise', 'set', 'side', 'load_kg', 'reps', 'seconds', 'notes']);
     expect(setsSheet.rows[1].slice(0, 7)).toEqual(['2026-09-27', 'A', 'Row', 1, 'L', 10, 12]);

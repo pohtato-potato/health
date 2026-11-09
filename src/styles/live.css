@@ -367,3 +367,12 @@ html.contrast .lv-card-ex-next, html.contrast .lv-card-ex-hint { color: var(--te
 /* High contrast reaches the finale: every page on black, the music heading in plain text */
 html.contrast .lv[class*='fs-'] { --lv-a: #000; --lv-b: #000; --lv-accent: var(--text); }
 html.contrast .fs-music .lv-h1 { background: none; -webkit-text-fill-color: currentColor; color: var(--text); }
+
+/* Gym kit: the load pill is a button that opens the load picker. */
+.lv-pillbtn { min-height: 44px; padding: 0 14px; font-size: 15px; color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Home or gym, picked at the start: two big buttons, the picked one filled and marked with a dot (not colour alone). */
+.lv-place { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.lv-place-btn { min-height: 56px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding: 8px 12px; border-radius: 14px; text-align: left; color: var(--text); font-size: 16px; background: color-mix(in srgb, var(--lv-b) 35%, transparent); border: 1px solid color-mix(in srgb, var(--text) 22%, transparent); }
+.lv-place-btn span { font-size: 14px; opacity: 0.85; overflow-wrap: anywhere; }
+.lv-place-btn.on { background: color-mix(in srgb, var(--text) 16%, transparent); border: 2px solid var(--text); }

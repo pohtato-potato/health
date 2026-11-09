@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { LiveFrame, Primary, timeOfDay } from './Frame';
 
 const KIT = ['Chair and mat in place', 'Collars on both handles', 'Headphones in', 'Phone above 30%'];
+const GYM_KIT = ['Water and towel', 'A friend to spot, for heavy work', 'Headphones in', 'Phone above 30%'];
 const fmt = (kg: number | null) => (kg === null ? 'body' : `${kg} kg`);
 const WORDS = ['no', 'one', 'two', 'three', 'four', 'five'];
 
@@ -9,13 +10,18 @@ interface Props {
   name: string;
   usual: { min: number; fromHistory: boolean };
   startedAt: number;
-  blocks: { kg: number | null; items: { name: string; light: boolean }[] }[];
+  /** An item's `load` replaces the block's kg, for gym kit ("stack 7 kg", "machine"). */
+  blocks: { kg: number | null; items: { name: string; light: boolean; load?: string }[] }[];
   changes: number;
   /** Tonight has leg work: ask how the legs are. */
   legs: boolean;
   soreness?: number;
   onSoreness: (n: 1 | 2 | 3 | 4 | 5) => void;
   warmup?: string;
+  /** A half-set night: why, and the rule. */
+  half?: string;
+  /** A gym session: the kit check is the gym's. */
+  gym?: boolean;
   onStart: () => void;
   top?: ReactNode;
 }
@@ -31,6 +37,13 @@ export function BeforeScreen(p: Props) {
         {p.usual.fromHistory ? 'usually' : 'about'} <b>{p.usual.min} min</b> · finish about <b>{timeOfDay(p.startedAt + p.usual.min * 60_000)}</b>
         {p.changes > 0 ? ` · ${WORDS[p.changes] ?? p.changes} plate change${p.changes === 1 ? '' : 's'}` : ''}
       </p>
+
+      {p.half && (
+        <div className="lv-card">
+          <div className="lv-card-h">Half sets tonight</div>
+          <div className="lv-small">{p.half}</div>
+        </div>
+      )}
 
       {p.legs && (
         <div className="lv-card">
@@ -48,7 +61,7 @@ export function BeforeScreen(p: Props) {
 
       <div className="lv-card">
         <div className="lv-card-h">Kit check</div>
-        {KIT.map((k) => {
+        {(p.gym ? GYM_KIT : KIT).map((k) => {
           const on = kit.includes(k);
           return (
             <button key={k} type="button" className={`lv-tick${on ? ' on' : ''}`} aria-pressed={on} onClick={() => setKit(on ? kit.filter((x) => x !== k) : [...kit, k])}>
@@ -98,7 +111,7 @@ export function BlockList({ blocks }: { blocks: Blocks }) {
                 {it.name}
                 {it.light && <span className="lv-tag burn">1 set</span>}
               </span>
-              <span className="q">{fmt(b.kg)}</span>
+              <span className="q">{it.load ?? fmt(b.kg)}</span>
             </div>
           ))}
         </div>

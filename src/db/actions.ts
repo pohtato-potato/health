@@ -3,6 +3,7 @@ import { eatenAtFor, mealTimesFor, portionFor, valuesFor } from '../domain/foods
 import { offeredPlace, placeFor } from '../domain/places';
 import type { Swap } from '../domain/plan';
 import type {
+  BodyEntry,
   Day,
   Food,
   FoodEntry,
@@ -299,6 +300,9 @@ export async function startSession(opts: {
   readiness?: number;
   readinessX?: Partial<Record<string, number>>;
   lighter?: boolean;
+  place?: TrainingSession['place'];
+  half?: TrainingSession['half'];
+  heavyFirst?: boolean;
 }): Promise<TrainingSession> {
   const existing = await activeSession();
   if (existing) return existing;
@@ -317,6 +321,9 @@ export async function startSession(opts: {
     readiness: opts.readiness,
     readinessX: opts.readinessX,
     lighter: opts.lighter || undefined,
+    ...(opts.place ? { place: opts.place } : {}),
+    ...(opts.half ? { half: opts.half } : {}),
+    ...(opts.heavyFirst ? { heavyFirst: true } : {}),
   };
   await db.sessions.put(s);
   return s;
@@ -423,4 +430,12 @@ export async function carryStatus(today: DayKey) {
 export async function endStatus(today: DayKey) {
   await setStatusRange(today, today, undefined);
   await patchSettings({ activeStatus: undefined });
+}
+
+/** A body log entry. During a set it carries the exercise, side and set. */
+export async function addBodyEntry(e: Omit<BodyEntry, 'id' | 'at' | 'date'> & { at?: number; date?: DayKey }): Promise<BodyEntry> {
+  const at = e.at ?? Date.now();
+  const rec: BodyEntry = { ...e, id: uid(), at, date: e.date ?? dayOfLogging(at) };
+  await db.body.put(rec);
+  return rec;
 }

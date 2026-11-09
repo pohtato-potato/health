@@ -19,6 +19,7 @@ export async function saveWorkbook() {
     sets: (tables.sets ?? []) as ExportData['sets'],
     measurements: (tables.measurements ?? []) as ExportData['measurements'],
     trackValues: (tables.trackValues ?? []) as ExportData['trackValues'],
+    body: (tables.body ?? []) as ExportData['body'],
     routes: (tables.routes ?? []) as ExportData['routes'],
     matches: (tables.fbMatches ?? []).length ? (await import('../football/store/exportRows')).matchRows(tables.fbMatches as never) : undefined,
   };

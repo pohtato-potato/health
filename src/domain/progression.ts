@@ -1,11 +1,12 @@
 import type { DayKey } from './dates';
 import { lowerFirst } from './format';
 import { fmtKg, isBigJump, nextLoad } from './loads';
+import { isGymKind } from './gym';
 import { bandLevel, bottomOfRange, exerciseName, realSets, sinceReset, topOfRange, valueOfSet, type ExerciseDef, type PlanState, type TriggerDef } from './plan';
 import { FORM_LABELS, formScore } from './quality';
 import type { Equipment, SetEntry } from './types';
 
-export type AdviceKind = 'form-first' | 'heavier' | 'tempo-first' | 'needs-plates' | 'maxed' | 'variant' | 'add-load' | 'band';
+export type AdviceKind = 'form-first' | 'heavier' | 'tempo-first' | 'needs-plates' | 'maxed' | 'variant' | 'add-load' | 'band' | 'next-step';
 
 export interface Advice {
   kind: AdviceKind;
@@ -61,9 +62,10 @@ export function lastTime(history: SetEntry[], excludeSessionId?: string): LastTi
 
 const valueOf = (s: Pick<SetEntry, 'reps' | 'seconds' | 'steps'>) => valueOfSet(s) ?? 0;
 
-export function workingLoad(sets: SetEntry[]): number | null {
+/** The load the sets were worked at: the heaviest, or for an assisted machine the least assist. */
+export function workingLoad(sets: SetEntry[], lowerIsHarder = false): number | null {
   const loads = sets.map((s) => s.loadKg).filter((kg): kg is number => kg !== null && kg !== undefined);
-  return loads.length ? Math.max(...loads) : null;
+  return loads.length ? (lowerIsHarder ? Math.min(...loads) : Math.max(...loads)) : null;
 }
 
 /** Every planned set, on every side, reached the top of the range at one load. */
@@ -72,7 +74,7 @@ export function hitTop(ex: ExerciseDef, sets: SetEntry[]): boolean {
   if (top === undefined || !sets.length) return false;
   const rows = ex.sets * (ex.perSide ? 2 : 1);
   if (sets.length < rows) return false;
-  const load = workingLoad(sets);
+  const load = workingLoad(sets, ex.load === 'assist');
   return sets.every((s) => (s.loadKg ?? null) === load && valueOf(s) >= top);
 }
 
@@ -88,7 +90,7 @@ export function exerciseStatus(
   const band = bandLevel(ex, state);
   // A new variant starts from the load used on the old one.
   const anyLast = last ?? lastTime(sinceReset(ex, realSets(allSets)).filter((s) => s.exerciseId === ex.id && !s.drop).sort((a, b) => a.at - b.at));
-  const lastLoad = anyLast ? workingLoad(anyLast.sets) : null;
+  const lastLoad = anyLast ? workingLoad(anyLast.sets, ex.load === 'assist') : null;
   const base: ExerciseStatus = {
     name,
     last,
@@ -126,7 +128,16 @@ export function exerciseStatus(
     return base;
   }
 
-  // 3. Bodyweight work that picks up dumbbells.
+  // 3. Gym kit: no plate table says what the next step is, so the advice names it and the set screen takes the number.
+  if (isGymKind(ex.load)) {
+    if (!formGate(last.sets)) {
+      return { ...base, advice: { kind: 'form-first', title: 'Clean it up first', text: `${every}, but form slipped. Same load until every set is solid with a rep in reserve.`, tonight: 'Same load tonight, until every set is solid with a rep in reserve.' } };
+    }
+    const step = ex.load === 'assist' ? 'one step less assist' : ex.load === 'plates' ? 'the smallest plates added' : ex.load === 'barbell' ? '2.5 kg more on the bar' : 'one step up the stack';
+    return { ...base, advice: { kind: 'next-step', title: 'Ready for the next step', text: `${every}. Next time, ${step}. Still stop 1–3 reps short.`, tonight: `Ready for ${step}, if it feels right. Stop 1–3 reps short.` } };
+  }
+
+  // 4. Bodyweight work that picks up dumbbells.
   if (ex.load === 'body' && lastLoad === null) {
     if (!ex.thenLoad) return base;
     const kg = ex.thenLoad.kg;
@@ -135,7 +146,7 @@ export function exerciseStatus(
     return { ...base, advice: { kind: 'add-load', title: 'Ready for dumbbells', text, tonight: `Tonight: hold ${fmtKg(kg)} kg.`, toKg: kg } };
   }
 
-  // 4. Loaded work goes heavier, from the loading table.
+  // 5. Loaded work goes heavier, from the loading table.
   const kind = ex.load === 'body' ? ex.thenLoad?.load ?? 'pair' : (ex.load as 'pair' | 'single');
   const cur = lastLoad ?? ex.startKg ?? 0;
   const tempoDone = last.sets.every((s) => s.tempo);
@@ -287,7 +298,7 @@ export function ladder(ex: ExerciseDef, sets: SetEntry[]): { load: number | null
   const hi = topOfRange(ex);
   const hist = sinceReset(ex, realSets(sets)).filter((s) => s.exerciseId === ex.id && !s.drop);
   const last = lastTime(hist.sort((a, b) => a.at - b.at));
-  const load = last ? workingLoad(last.sets) : ex.startKg ?? null;
+  const load = last ? workingLoad(last.sets, ex.load === 'assist') : ex.startKg ?? null;
   if (lo === undefined || hi === undefined) return { load, rungs: [] };
   const atLoad = hist.filter((s) => (s.loadKg ?? null) === load);
   const bySession = new Map<string, SetEntry[]>();

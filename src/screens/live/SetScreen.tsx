@@ -26,6 +26,16 @@ interface Props {
   onCounter: (c: LiveCounter) => void;
   onDone: () => void;
   onSkip: () => void;
+  /** The load as words, for gym kit: "stack 7 kg", "40 kg total". */
+  kgText?: string;
+  /** The short unit under the big number: kg, lb, no., plates. */
+  unit?: string;
+  /** Gym kit: tap the load to set tonight's number. */
+  onLoad?: () => void;
+  /** Pain or strain during the set: a body log entry with this exercise, side and set. */
+  onBody?: () => void;
+  /** A half-set night: why, and the rule. */
+  half?: string;
   theme: ThemeId;
   buzz: boolean;
   now: number;
@@ -119,7 +129,14 @@ export function SetScreen(p: Props) {
             {row.setNo > row.ex.sets ? ' · extra' : ''}
             {row.drop ? ' · drop' : ''}
           </span>
-          {p.kg !== null && <span className="lv-pill">{p.kg} kg</span>}
+          {p.onLoad ? (
+            <button type="button" className="lv-pill lv-pillbtn" onClick={p.onLoad} aria-label={`${p.kgText ?? 'No load set'}. Change the load`}>
+              {p.kgText ?? 'Set the load'} ✎
+            </button>
+          ) : (
+            p.kg !== null && <span className="lv-pill">{p.kgText ?? `${p.kg} kg`}</span>
+          )}
+          {p.half && <span className="lv-pill">{p.half}</span>}
           {runFor !== undefined && (
             <span className="lv-pill tn" aria-label={`Set time ${mmss(runFor)}`}>
               ⏱ {mmss(runFor)}
@@ -154,7 +171,7 @@ export function SetScreen(p: Props) {
             {p.kg !== null && (
               <span className="lv-bigkg">
                 {p.kg}
-                <small>kg</small>
+                <small>{p.unit ?? 'kg'}</small>
               </span>
             )}
           </div>
@@ -214,9 +231,16 @@ export function SetScreen(p: Props) {
         )}
       </div>
       {/* Kept in place after the first rep, so the buttons above never move. */}
-      <button type="button" className="lv-skip" onClick={p.onSkip} disabled={reps > 0} style={reps > 0 ? { visibility: 'hidden' } : undefined}>
-        Skip this set
-      </button>
+      <div className="row" style={{ justifyContent: 'center', gap: 8 }}>
+        <button type="button" className="lv-skip" onClick={p.onSkip} disabled={reps > 0} style={reps > 0 ? { visibility: 'hidden' } : undefined}>
+          Skip this set
+        </button>
+        {p.onBody && (
+          <button type="button" className="lv-skip" onClick={p.onBody}>
+            Pain or strain
+          </button>
+        )}
+      </div>
     </LiveFrame>
   );
 }
