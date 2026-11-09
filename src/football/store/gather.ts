@@ -5,6 +5,8 @@ import type { ChecklistItem, Day, Meal, RouteRun, SetEntry, Settings, TrainingSe
 import { targetsFor } from '../../state/derived';
 import { axisValues, sleepHours, type AxisInput } from '../axes';
 import { hashSeed } from '../rng';
+import { sealedNight } from '../seal';
+import { comebackDue } from '../comeback';
 import { AXES, type Axis, type AxisFlags, type AxisValues } from '../types';
 
 export interface Health {
@@ -20,11 +22,13 @@ export interface Health {
   /** Walk journal entries with a distance. */
   walks: { date: DayKey; km: number }[];
   routes: RouteRun[];
+  /** Check-in (Medical day) dates. */
+  checkins?: DayKey[];
 }
 export async function loadHealth(): Promise<Health> {
-  const [settings, days, sessions, entries, measures, sets, walk, routes] = await Promise.all([
+  const [settings, days, sessions, entries, measures, sets, walk, routes, checkins] = await Promise.all([
     db.settings.get('app'), db.days.toArray(), db.sessions.toArray(), db.entries.toArray(), db.measurements.toArray(),
-    db.sets.toArray(), db.walk.toArray(), db.routes.toArray(),
+    db.sets.toArray(), db.walk.toArray(), db.routes.toArray(), db.checkins.toArray(),
   ]);
   const kcal = new Map<DayKey, { kcal: number; protein: number; n: number }>();
   const meals: Health['meals'] = new Map();
@@ -48,6 +52,7 @@ export async function loadHealth(): Promise<Health> {
     meals,
     walks: walk.filter((w) => w.kind === 'journal' && typeof w.km === 'number').map((w) => ({ date: w.date, km: w.km! })),
     routes,
+    checkins: checkins.map((c) => c.date),
   };
 }
 const firsts = new WeakMap<Map<DayKey, unknown>, DayKey>();
@@ -104,15 +109,28 @@ export function axisInputFor(h: Health, date: DayKey): AxisInput {
     targets: targetsFor(h.settings, date),
     checklist: h.settings.checklist ?? [],
     weighIns7,
-    waist7: waist28.some((m) => m.date > addDays(date, -7)),
+    // A Medical day (the monthly check-in) refreshes Shape for four weeks: it counts as the waist mark (R3 q-medical).
+    waist7: waist28.some((m) => m.date > addDays(date, -7)) || medicalWithin(h, date),
     // Toward the goal: the waist is no bigger than at the start of the last 28 days.
     trendTowardGoal: waist28.length >= 2 && waist28[waist28.length - 1].waist! <= waist28[0].waist!,
     history: historyDays(h, date),
   };
 }
+/** A check-in in the 28 days up to `date`. */
+export const medicalWithin = (h: Health, date: DayKey) => (h.checkins ?? []).some((d) => d <= date && d > addDays(date, -28));
+
+/** Tonight's values from the logs; once the day is sealed at Close the day, the sealed shape (Pace may still rise). */
 export function nightFor(h: Health, date: DayKey): { values: AxisValues; flags: AxisFlags; input: AxisInput } {
   const input = axisInputFor(h, date);
-  return { ...axisValues(input), input };
+  return { ...sealedNight(axisValues(input), h.days.get(date)?.seal), input };
+}
+/** The live values, ignoring any seal (what sealing stores). */
+export function liveNightFor(h: Health, date: DayKey): { values: AxisValues; flags: AxisFlags } {
+  return axisValues(axisInputFor(h, date));
+}
+/** Whether tonight earns the comeback lift. */
+export function comebackOn(h: Health, date: DayKey): boolean {
+  return h.days.size > 0 && comebackDue(date, (d) => ({ day: h.days.get(d), foodEntries: h.kcal.get(d)?.n ?? 0 }), firstDay(h));
 }
 /** Data conditions true for this night, used by data-linked abilities. */
 export function conditions(h: Health, date: DayKey, i: AxisInput, auto: boolean): string[] {

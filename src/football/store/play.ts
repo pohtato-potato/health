@@ -25,7 +25,8 @@ import { abilityFor, braboAbilities } from '../data/abilities';
 import { standings, type Played, type Row } from '../table';
 import { applyChanges, worldTurn } from '../world';
 import { AXES, TIERS, type AxisValues, type Comp, type Mod, type Result, type Tier } from '../types';
-import { axisInputFor, bestAxis, conditions, loadHealth, medsTaken, nightFor, type Health } from './gather';
+import { axisInputFor, bestAxis, comebackOn, conditions, loadHealth, medsTaken, nightFor, type Health } from './gather';
+import { comebackLift } from '../comeback';
 import { factsFor, matchLines, situationOf } from './lines';
 import { newSeason, OWN } from './season';
 import type { FbBundle, FbClub, FbNews, FbSave, FbSeason, FbSquadRow, StoredMatch } from './tables';
@@ -331,6 +332,8 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
   pre.push(...physio(meds, date, w.save.physioRoom, healNow(w.save, w.bundles)).mods);
   const nightOuts = [...w.h.days.values()].filter((d) => d.nightOut).map((d) => d.date);
   if (cards(nightOuts, date).red) pre.push(redCardMod(values.Rest));
+  // The comeback lift: +1, at most, on the first fully logged day after a gap (never on a rotation night).
+  if (!rotation && comebackOn(w.h, date)) { const lift = comebackLift(values, flags); if (lift) pre.push(lift); }
   if (armbandHarmony(w.save.captains) && w.save.harmonyAt !== w.save.captains.length) {
     for (const a of AXES) pre.push({ axis: a, d: 1, why: 'Harmony', kind: 'ability' });
     w.save.harmonyAt = w.save.captains.length;

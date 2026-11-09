@@ -348,6 +348,10 @@ export interface Day {
   missed?: Record<string, true>;
   /** Food marked complete for the day. */
   foodDone?: boolean;
+  /** Closed with food not all in (G g-unfinished): scored as logged, marked partial. */
+  partial?: boolean;
+  /** Close the day's seal: tonight's shape as it stood at the whistle (R5 c-lock). */
+  seal?: DaySeal;
   /** Readiness answers. */
   energy?: number;
   stomach?: boolean;
@@ -356,6 +360,13 @@ export interface Day {
   revealedAt?: number;
   /** A creature's earned theme worn on this day, by creature id. */
   theme?: string;
+}
+
+/** Tonight's shape locked at Close the day; the morning match plays it. */
+export interface DaySeal {
+  at: number;
+  values: Partial<Record<'Pace' | 'Power' | 'Fuel' | 'Rest' | 'Routine' | 'Shape', number>>;
+  flags: Partial<Record<'Pace' | 'Power' | 'Fuel' | 'Rest' | 'Routine' | 'Shape', 'no-data' | 'not-logged'>>;
 }
 
 export type FoodUnit = 'g' | 'ml' | 'piece' | 'serving';

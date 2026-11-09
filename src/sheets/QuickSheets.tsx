@@ -105,13 +105,21 @@ function StepsForm({ date, today, initial, at, target, loop, outdoors: wasOutdoo
   const looksTyped = steps !== undefined && steps > 0 && (steps === target || steps % 1000 === 0);
   const estimated = estimate ?? looksTyped;
   const [outdoors, setOutdoors] = useState(wasOutdoors);
+  const [correct, setCorrect] = useState(false);
+  // A running total: a lower number keeps the earlier count unless it was a mistake (G g-steps).
+  const lower = steps !== undefined && initial !== undefined && steps < initial;
   const save = async () => {
     if (steps === undefined) return;
-    const editId = await setSteps(date, steps, date < today, estimated);
+    const editId = await setSteps(date, steps, date < today, estimated, lower && correct);
     if (outdoors !== wasOutdoors) await patchDay(date, { outdoors });
     closeSheet();
     const left = target - steps;
     const undo = { label: 'Undo', run: () => void undoEdit(editId) };
+    const kept = lower && !correct ? initial! : steps;
+    if (kept !== steps) {
+      toast({ text: `Kept ${fmtInt(kept)} steps`, sub: 'The higher count stays. Tick “was a mistake” to lower it.', action: undo });
+      return;
+    }
     toast(left <= 0 ? { kicker: 'Steps ring closed', text: `${fmtInt(steps)} steps`, tone: 'sage', action: undo } : { text: `Steps changed to ${fmtInt(steps)} · ${fmtInt(left)} to go`, action: undo });
   };
   return (
@@ -126,6 +134,15 @@ function StepsForm({ date, today, initial, at, target, loop, outdoors: wasOutdoo
           Aim: {fmtInt(target)}.
         </span>
       </label>
+      {lower && (
+        <label className="row" style={{ minHeight: 48 }}>
+          <span className="col gap2">
+            <span className="t15">The {fmtInt(initial!)} was a mistake</span>
+            <span className="t13 q">Otherwise the app keeps the higher count: steps only add up through the day.</span>
+          </span>
+          <input type="checkbox" className="sw" checked={correct} onChange={(e) => setCorrect(e.target.checked)} />
+        </label>
+      )}
       <label className="row" style={{ minHeight: 48 }}>
         <span className="col gap2">
           <span className="t15">An estimate</span>
