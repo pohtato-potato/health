@@ -62,7 +62,7 @@ export interface ChoiceOptions {
   title: string;
   body?: string;
   /** Each a button; with `input`, each one saves the text too. */
-  options: { id: string; label: string; on?: boolean }[];
+  options: { id: string; label: string; on?: boolean; primary?: boolean }[];
   /** An optional field: a note, or a number. */
   input?: { label: string; value?: string; inputMode?: 'decimal' | 'text'; placeholder?: string };
   cancel?: string;
@@ -118,9 +118,9 @@ export function ChoiceHost() {
               />
             </label>
           )}
-          <div className="col gap8">
+          <div className={p.options.length > 6 ? 'choice-grid' : 'col gap8'}>
             {p.options.map((o) => (
-              <button key={o.id} type="button" className={`btn lg block${o.on ? '' : ' ghost'}`} aria-pressed={o.on} style={{ minHeight: 48 }} onClick={() => done({ id: o.id, text })}>
+              <button key={o.id} type="button" className={`btn lg block${o.on || o.primary ? '' : ' ghost'}`} aria-pressed={o.on} style={{ minHeight: 48 }} onClick={() => done({ id: o.id, text })}>
                 {o.label}
                 {o.on ? ' ✓' : ''}
               </button>

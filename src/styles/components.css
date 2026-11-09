@@ -1402,3 +1402,7 @@
     transform: translateX(var(--to));
   }
 }
+
+/* A long list of answers (body parts): two columns, so it fits without scrolling on a phone. */
+.choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.choice-grid .btn { padding-left: 8px; padding-right: 8px; white-space: normal; line-height: 1.2; }

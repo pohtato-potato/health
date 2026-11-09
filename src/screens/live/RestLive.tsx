@@ -9,7 +9,7 @@ interface Props {
   /** The colour the last set ended in; rest fades from it to blue. */
   from: SetState;
   just: string[];
-  next: { label: string; kg: number | null; aim?: string; tempo: boolean; cue?: string } | null;
+  next: { label: string; kg: number | null; kgText?: string; aim?: string; tempo: boolean; cue?: string } | null;
   onMore: () => void;
   onReady: () => void;
   rings: [string, string, string];
@@ -69,7 +69,7 @@ export function RestLive(p: Props) {
           <div className="lv-card-h">Next</div>
           <div className="lv-next-row">
             <span className="lv-next-title">{p.next.label}</span>
-            {p.next.kg !== null && <span className="num tn lv-next-kg">{p.next.kg} kg</span>}
+            {p.next.kg !== null && <span className="num tn lv-next-kg">{p.next.kgText ?? `${p.next.kg} kg`}</span>}
           </div>
           {(p.next.aim || p.next.tempo) && (
             <div className="lv-small">

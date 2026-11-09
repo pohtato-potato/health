@@ -345,3 +345,25 @@ describe('the coach export', () => {
     expect(col('Plan', rdl, 'load')).toBe('barbell, total kg');
   });
 });
+
+describe('gym loads in words, everywhere a set is shown', () => {
+  it('a set reads in its own unit, and the plate plan names the kit', async () => {
+    const { fmtSet, loadWords } = await import('../src/domain/setText');
+    const { gymLoadLabel } = await import('../src/domain/gym');
+    expect(fmtSet(set({ loadKg: 4, loadUnit: 'plates', reps: 12 }))).toBe('4 plates × 12');
+    expect(fmtSet(set({ loadKg: 6, reps: 10 }))).toBe('6 kg × 10');
+    expect(loadWords(25, 'assist-kg')).toBe('assist 25 kg');
+    expect(gymLoadLabel('stack', null)).toBe('machine');
+    expect(gymLoadLabel('stack', 30, 'kg')).toBe('stack 30 kg');
+    expect(gymLoadLabel('pair', 10)).toBeUndefined();
+  });
+
+  it('a gym number is never a "first N kg": machines aren’t compared with dumbbells', async () => {
+    const { detectFirsts } = await import('../src/domain/firsts');
+    const before = [set({ exerciseId: 'curl', loadKg: 10, reps: 10, sessionId: 'a', at: 1 })];
+    const stack = set({ exerciseId: 'lat-pulldown', loadKg: 40, loadUnit: 'kg', reps: 10, sessionId: 'b', at: 2 });
+    expect(detectFirsts(before, [stack]).some((f) => f.key.startsWith('load:'))).toBe(false);
+    const heavier = set({ exerciseId: 'curl', loadKg: 12.5, reps: 8, sessionId: 'b', at: 3 });
+    expect(detectFirsts(before, [heavier]).some((f) => f.key === 'load:12.5')).toBe(true);
+  });
+});

@@ -23,7 +23,7 @@ import { dayRings, doneSessions, nextUp, triggersMet, weeksFor } from '../state/
 import { TrainNextUp } from './train/TrainNextUp';
 import { sessionStats } from './SessionDone';
 import { HALF_RULES, HALF_TEXT, halfWhy, lighterCase, lighterOn, sickOn } from '../domain/deload';
-import { heavyFirstOffer, isDumbbellKind, weekGuide } from '../domain/gym';
+import { gymLoadLabel, heavyFirstOffer, isDumbbellKind, unitFor, weekGuide } from '../domain/gym';
 import { hasGym, type LoadKind, type Place } from '../domain/plan';
 import { placeFor } from '../domain/places';
 import { TRIP_SESSION_ID } from '../domain/trip';
@@ -164,7 +164,13 @@ export function Train() {
               changes={plateChanges(blocks)}
               heavier={up.exercises.filter((e) => e.status.advice && e.status.advice.kind !== 'maxed').length}
               focus={formFocus(sets, plan, up.sessionId)}
-              blocks={blocks.map((b) => ({ kg: b.kg, items: b.exs.map((ex) => ({ name: up.exercises.find((e) => e.id === ex.id)?.status.name ?? ex.name, light: false })) }))}
+              blocks={blocks.map((b) => ({
+                kg: b.kg,
+                items: b.exs.map((ex) => {
+                  const st = up.exercises.find((e) => e.id === ex.id)?.status;
+                  return { name: st?.name ?? ex.name, light: false, load: gymLoadLabel(ex.load, st?.loadKg, unitFor(ex, settings)) };
+                }),
+              }))}
               swaps={up.swaps.length}
               onStart={() => go('/session', startArgs())}
               place={

@@ -5,6 +5,8 @@ import { LiveFrame, Primary } from './Frame';
 interface Props {
   name: string;
   kg: number | null;
+  /** The load as words, for gym kit. */
+  kgText?: string;
   /** The count, as shown: "19", "1:05". */
   value: string;
   /** The best it beat, and when; none at a first load. */
@@ -34,7 +36,7 @@ export function RecordScreen(p: Props) {
         <div className="lv-bloom num tn">{p.value}</div>
         <div className="lv-bloom-sub">
           {p.name}
-          {p.kg !== null ? ` · ${p.kg} kg` : ''}
+          {p.kg !== null ? ` · ${p.kgText ?? `${p.kg} kg`}` : ''}
         </div>
         <div className="lv-small" style={{ textAlign: 'center' }}>
           {p.was ? `Your best was ${p.was.value}, on ${fmtDayMonth(p.was.date)}.` : 'Your first time at this load.'}

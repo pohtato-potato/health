@@ -24,7 +24,7 @@ import { exerciseStatus, heavierOffer, historyFor, loadSoFar, loadTonight } from
 import type { BodyKind, LiveCounter, SetEntry, Settings, SkipReason, TrainingSession } from '../../domain/types';
 import { addBodyEntry, deleteSet, discardSession, logSet, patchSession, patchSettings } from '../../db/actions';
 import { halfSets } from '../../domain/deload';
-import { BODY_PARTS, heavyFirstOffer, isDumbbellKind, isGymKind, lowerIsHarder, machineKey, machineUnit, protectedLeft, SKIP_REASONS, unitFor, unitLabel } from '../../domain/gym';
+import { BODY_PARTS, coachTags, heavyFirstOffer, isDumbbellKind, isGymKind, lowerIsHarder, machineKey, machineUnit, protectedLeft, SKIP_REASONS, unitFor, unitLabel } from '../../domain/gym';
 import { askChoice } from '../../ui/Confirm';
 import { setLastSetAt, setRestRunning } from '../../state/restState';
 import { useNow } from '../../db/hooks';
@@ -319,7 +319,7 @@ export function useRunner(session: TrainingSession, settings: Settings, plan: Pl
       body: ex.load === 'barbell' ? 'Total kg, bar included.' : ex.load === 'plates' ? `Plates added, not the sled.${ex.sledKg ? ` The sled is ${ex.sledKg} kg.` : ''}` : ex.load === 'assist' ? 'The assist number: less assist is progress.' : 'The number this machine’s stack shows. Never compared with another machine.',
       input: { label: `In ${unitLabel(ex.load, unit)}`, value: current?.toString() ?? '', inputMode: 'decimal' },
       options: [
-        { id: 'save', label: 'Use this' },
+        { id: 'save', label: 'Use this', primary: true },
         ...(stacky ? (['kg', 'lb', 'stack'] as const).map((u) => ({ id: `unit:${u}`, label: u === 'stack' ? 'This stack shows plain numbers' : `This stack is in ${u}`, on: machineUnit(ex, settings) === u })) : []),
       ],
     });
@@ -373,11 +373,14 @@ export function useRunner(session: TrainingSession, settings: Settings, plan: Pl
       return;
     }
     // Heavy block first: the light work it put off can't be dropped quietly. Asked once.
-    const protect = session.heavyFirst && !session.protectAsked ? protectedLeft(heavyProtect(), mine) : [];
+    const left = session.heavyFirst && !session.protectAsked ? protectedLeft(heavyProtect(), mine) : [];
+    // The shoulder work is what the order must not cost; name it when the light block has it.
+    const shoulders = left.filter((id) => coachTags(exs.find((e) => e.id === id) ?? { id, load: 'pair' }).family === 'shoulders');
+    const protect = shoulders.length ? shoulders : left;
     if (protect.length) {
       void patchSession(session.id, { protectAsked: true });
       const names = protect.map((id) => statuses.get(id)?.name ?? id).map((n) => n.toLowerCase());
-      const go2 = await askConfirm({ title: 'Shoulders first?', body: `2 sets of ${names.join(' / ')} before you finish?`, yes: 'Do 2 sets', no: 'Finish anyway' });
+      const go2 = await askConfirm({ title: shoulders.length ? 'Shoulders first?' : 'The lighter block first?', body: `2 sets of ${names.join(' / ')} before you finish?`, yes: 'Do 2 sets', no: 'Finish anyway' });
       if (go2) {
         const i = groups.findIndex((g) => g.some((e) => e.id === protect[0]));
         if (i >= 0) setGi(i);

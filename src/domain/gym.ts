@@ -220,3 +220,10 @@ export function weekGuide(plan: PlanDef, sessions: Pick<TrainingSession, 'status
   const aim = [t.gym !== undefined ? `${t.gym} gym` : '', t.home !== undefined ? `${t.home} home` : ''].filter(Boolean).join(' + ');
   return `Guide: ${aim} a week · ${done}. Every session counts.`;
 }
+
+/** A gym exercise's load for the plate plan: its number when there is one, else what kind of kit it is. */
+export function gymLoadLabel(load: LoadKind, value: number | null | undefined, unit?: LoadUnit): string | undefined {
+  if (!isGymKind(load)) return undefined;
+  if (value !== null && value !== undefined) return loadText(load, value, unit);
+  return load === 'barbell' ? 'barbell' : load === 'plates' ? 'plates' : load === 'assist' ? 'assist' : 'machine';
+}

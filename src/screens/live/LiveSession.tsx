@@ -6,7 +6,7 @@ import { newLoad, recordBar, recordHolder, recordValue } from '../../domain/mark
 import { bottomOfRange, measureOf, sidesFor, valueOfSet, type ExerciseDef, type PlanDef } from '../../domain/plan';
 import { addSetup, afterSave, lastLoad, loadBlocks, plateChange, plateChanges, setupOn, usualLength } from '../../domain/sessionEdges';
 import { movementKind } from '../../domain/trainingChecks';
-import { isDumbbellKind, isGymKind, isOverheadPress, lightWarmup, loadText, lowerIsHarder, safetyFor, unitFor, unitLabel } from '../../domain/gym';
+import { gymLoadLabel, isDumbbellKind, isGymKind, isOverheadPress, lightWarmup, loadText, lowerIsHarder, safetyFor, unitFor, unitLabel } from '../../domain/gym';
 import { HALF_RULES, HALF_TEXT } from '../../domain/deload';
 import { loadOptions } from '../../domain/loads';
 import { useSessions } from '../../db/hooks';
@@ -85,7 +85,7 @@ function LiveScreens({ r, session, settings, plan }: LiveProps) {
   const dumbbellKg = (ex: ExerciseDef, kg: number | null) => (isDumbbellKind(ex.load) ? kg : null);
   const [saving, setSaving] = useState(false);
   const [look, setLook] = useState<null | 'sets' | 'session'>(null);
-  const [record, setRecord] = useState<{ row: Row; name: string; kg: number | null; value: string; was?: { value: string; date: string } } | null>(null);
+  const [record, setRecord] = useState<{ row: Row; name: string; kg: number | null; kgText?: string; value: string; was?: { value: string; date: string } } | null>(null);
   const [song, setSong] = useState<string | undefined>();
   useEffect(() => {
     if (!record) return setSong(undefined);
@@ -104,7 +104,7 @@ function LiveScreens({ r, session, settings, plan }: LiveProps) {
   const blocks = loadBlocks(r.exs, (ex) => dumbbellKg(ex, r.defaults(firstRow(ex)).kg));
   const usual = usualLength(sessions ?? [], [...r.history, ...r.mine], session.session, r.def?.minutes ?? 60);
   const sore = (session.legSoreness ?? 0) >= 4;
-  const blockItems = blocks.map((b) => ({ kg: b.kg, items: b.exs.map((ex) => ({ name: nameOf(ex), light: sore && movementKind(ex) === 'legs' })) }));
+  const blockItems = blocks.map((b) => ({ kg: b.kg, items: b.exs.map((ex) => ({ name: nameOf(ex), light: sore && movementKind(ex) === 'legs', load: gymLoadLabel(ex.load, r.defaults(firstRow(ex)).kg, unitFor(ex, settings)) })) }));
   const lookEx = row?.ex ?? r.group[0];
 
   const top = (
@@ -176,6 +176,7 @@ function LiveScreens({ r, session, settings, plan }: LiveProps) {
         onSoreness={(n) => patchSession(session.id, { legSoreness: n })}
         warmup={plan.warmup}
         half={session.half ? `${HALF_TEXT[session.half]}: ${HALF_RULES.toLowerCase()}` : undefined}
+        gym={session.place === 'gym'}
         onStart={() => patchSession(session.id, { beforeDone: true })}
         top={top}
       />
@@ -231,7 +232,7 @@ function LiveScreens({ r, session, settings, plan }: LiveProps) {
               const clean = settings.formRecordsClean !== false;
               const best = firstAt(x) ? undefined : recordHolder({ side: x.side, loadKg: kg }, priorOf(x), { clean, lowerIsHarder: lowerIsHarder(x.ex) });
               const shown = (v: number) => (timed ? mmss(v) : String(v));
-              setRecord({ row: x, name: nameOf(x.ex), kg, value: shown(val), was: best ? { value: shown(recordValue(best, clean)), date: best.date } : undefined });
+              setRecord({ row: x, name: nameOf(x.ex), kg, kgText: kgTextOf(x), value: shown(val), was: best ? { value: shown(recordValue(best, clean)), date: best.date } : undefined });
             }
           } finally {
             setSaving(false);
@@ -263,6 +264,7 @@ function LiveScreens({ r, session, settings, plan }: LiveProps) {
             ? {
                 label: upNext.ex.id === lastDone?.exerciseId ? `Set ${upNext.setNo}${sideWord(upNext.side)}` : nameOf(upNext.ex),
                 kg: r.defaults(upNext).kg,
+                kgText: kgTextOf(upNext),
                 aim: aimOf(upNext.ex),
                 tempo: !!session.tempo?.[upNext.ex.id],
                 cue: upNext.ex.cue,
