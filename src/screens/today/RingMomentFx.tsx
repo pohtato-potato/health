@@ -34,7 +34,7 @@ export function RingMomentFx({ playing }: { playing: PlayingMoment | null }) {
         <i key={s.k} className="rm-spark" style={{ ...pos, ['--dx' as string]: `${s.dx}px`, ['--dy' as string]: `${s.dy}px`, animationDelay: perfect ? `${0.9 + (s.k % 3) * 0.22}s` : '0.1s' }} />
       ))}
       <span className="sr-only" role="status">
-        {playing.kind === 'ring' ? `${RING_WORD[playing.ring]} closed` : 'A perfect day. All three rings closed.'}
+        {playing.kind === 'ring' ? `${RING_WORD[playing.ring]} closed` : 'A perfect day. All the rings closed.'}
       </span>
     </div>
   );

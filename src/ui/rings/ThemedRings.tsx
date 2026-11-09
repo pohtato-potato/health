@@ -1,6 +1,8 @@
 import { CONTENT_STYLES, contentMarks, MARKS_PER_RING, RING_INKS, shapePath, type Mark, type RingStyle } from './styles';
 
-const RADII = [84, 66, 48];
+// Four rings since release 1 (sleep innermost); 16 apart with a 12-wide stroke.
+export const RADII = [86, 70, 54, 38];
+export const RING_STROKE = 12;
 const PI_DIGITS = '314159265358979323846264338327950288';
 
 /** One mark of a content-styled ring, drawn in the ring's own ink. */
@@ -72,11 +74,11 @@ function Glyph({ style, m, ink, i, ring, arc }: { style: RingStyle; m: Mark; ink
 }
 
 /**
- * The three rings for a theme day: the shape or the marks change, the inks, order and fill do
+ * The four rings for a theme day: the shape or the marks change, the inks, order and fill do
  * not. Each ring shows its true progress, with the unfilled part dimmed. The one exception to the
  * inks is gold: `gold` marks the rings that have earned it, as on a perfect day.
  */
-export function ThemedRings({ style, progress, size = 140, label, center, gold }: { style: RingStyle; progress: [number, number, number]; size?: number; label: string; gold?: readonly boolean[]; center?: string }) {
+export function ThemedRings({ style, progress, size = 140, label, center, gold }: { style: RingStyle; progress: readonly number[]; size?: number; label: string; gold?: readonly boolean[]; center?: string }) {
   const content = CONTENT_STYLES.includes(style);
   return (
     <svg width={size} height={size} viewBox="0 0 200 200" role="img" aria-label={label} style={{ flexShrink: 0 }}>
@@ -86,7 +88,7 @@ export function ThemedRings({ style, progress, size = 140, label, center, gold }
         if (content) {
           return (
             <g key={r} className={gold?.[i] ? 'lr-gold' : undefined}>
-              {contentMarks(i as 0 | 1 | 2, r, p).map((m, k) => (
+              {contentMarks(i as 0 | 1 | 2 | 3, r, p).map((m, k) => (
                 <Glyph key={k} style={style} m={m} ink={ink} i={k} ring={i} arc={(2 * Math.PI * r) / MARKS_PER_RING[i] + 0.4} />
               ))}
             </g>
@@ -94,14 +96,14 @@ export function ThemedRings({ style, progress, size = 140, label, center, gold }
         }
         return (
           <g key={r} className={gold?.[i] ? 'lr-gold' : undefined}>
-            <path d={`${shapePath(style, 100, 100, r)}Z`} fill="none" stroke={ink} strokeOpacity={p >= 1 ? 1 : 0.14} strokeWidth="13" strokeLinejoin="round" />
+            <path d={`${shapePath(style, 100, 100, r)}Z`} fill="none" stroke={ink} strokeOpacity={p >= 1 ? 1 : 0.14} strokeWidth={RING_STROKE} strokeLinejoin="round" />
             {gold?.[i] && p >= 1 && <path className="lr-gold-core" d={`${shapePath(style, 100, 100, r)}Z`} fill="none" strokeWidth="3" strokeLinejoin="round" />}
-            {p > 0 && p < 1 && <path d={shapePath(style, 100, 100, r, 0, p)} fill="none" stroke={ink} strokeWidth="13" strokeLinecap="round" strokeLinejoin="round" />}
+            {p > 0 && p < 1 && <path d={shapePath(style, 100, 100, r, 0, p)} fill="none" stroke={ink} strokeWidth={RING_STROKE} strokeLinecap="round" strokeLinejoin="round" />}
           </g>
         );
       })}
       {center && (
-        <text x="100" y="110" textAnchor="middle" fill={gold?.every(Boolean) ? 'var(--gold)' : 'var(--text)'} fontFamily="var(--serif)" fontWeight="300" fontSize="30">
+        <text x="100" y="110" textAnchor="middle" fill={gold?.every(Boolean) ? 'var(--gold)' : 'var(--text)'} fontFamily="var(--serif)" fontWeight="300" fontSize="26">
           {center}
         </text>
       )}

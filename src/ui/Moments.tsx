@@ -448,7 +448,7 @@ function GlowRings() {
     [48, 'var(--sage)'],
   ];
   return (
-    <svg width="220" height="220" viewBox="0 0 200 200" role="img" aria-label="All three rings closed">
+    <svg width="220" height="220" viewBox="0 0 200 200" role="img" aria-label="All the rings closed">
       <defs>
         <filter id="rg" x="-40%" y="-40%" width="180%" height="180%">
           <feGaussianBlur stdDeviation="7" />

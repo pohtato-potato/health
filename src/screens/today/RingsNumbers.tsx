@@ -45,12 +45,12 @@ export type RingRow = { key: 'kcal' | 'protein' | 'steps' | 'sleep'; name: strin
  * The rings with only their numbers beside them, each in its ring's ink with a tiny unit. Tapping a number shows
  * its target and its action in place: Log food, or a number pad for steps. The ring drawing is passed in.
  */
-export function RingsNumbers({ rows, rings, closed, onLogFood, onLogSleep, onSaveSteps, showCopyHint, play = 0 }: { play?: number; rows: RingRow[]; rings: ReactNode; closed: number; onLogFood: () => void; onLogSleep?: () => void; onSaveSteps: (steps: number) => void; showCopyHint: boolean }) {
+export function RingsNumbers({ rows, rings, closed, of = 4, onLogFood, onLogSleep, onSaveSteps, showCopyHint, play = 0 }: { play?: number; rows: RingRow[]; rings: ReactNode; closed: number; of?: number; onLogFood: () => void; onLogSleep?: () => void; onSaveSteps: (steps: number) => void; showCopyHint: boolean }) {
   const [shown, setShown] = useState<RingRow['key'] | null>(null);
   const [steps, setSteps] = useState('');
   const more = rows.find((r) => r.key === shown);
   return (
-    <section className="td-rings" data-section="rings" aria-label={`Rings: ${closed} of 3 closed`}>
+    <section className="td-rings" data-section="rings" aria-label={`Rings: ${closed} of ${of} closed`}>
       <div className="td-rings-row">
         {rings}
         <div className="td-nums">

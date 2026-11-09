@@ -53,7 +53,7 @@ export function goldenMoments(g: GoldenInput): Golden[] {
       kicker: 'Everything, all at once',
       place,
       title: 'A day where it all landed',
-      text: `All three rings, your water, a full night’s sleep${g.slots ? ', the whole checklist' : ''} and a session, on the same day.`,
+      text: `All the rings, your water, a full night’s sleep${g.slots ? ', the whole checklist' : ''} and a session, on the same day.`,
       foot: 'Days like this are rare. This one’s yours.',
     });
   }
@@ -72,7 +72,7 @@ export function goldenMoments(g: GoldenInput): Golden[] {
       kicker: 'A perfect arrival',
       place: `${g.city} · ${place}`,
       title: `${g.city}, on a perfect day`,
-      text: `You walked into ${g.city} on a day you closed all three rings.`,
+      text: `You walked into ${g.city} on a day you closed all the rings.`,
     });
   }
   const fest = festivalOn(g.date);
@@ -84,7 +84,7 @@ export function goldenMoments(g: GoldenInput): Golden[] {
       kicker: birthday ? 'Happy birthday' : `Happy ${fest!.name}`,
       place,
       title: `A perfect day on ${what}`,
-      text: birthday ? 'All three rings closed on your own day, without it feeling like work. That takes something.' : `All three rings closed on ${fest!.name} itself, sweets and all.`,
+      text: birthday ? 'All the rings closed on your own day, without it feeling like work. That takes something.' : `All the rings closed on ${fest!.name} itself, sweets and all.`,
     });
   }
   if (g.rings.perfect && g.records.length) {
@@ -93,7 +93,7 @@ export function goldenMoments(g: GoldenInput): Golden[] {
       kicker: 'Stronger, and perfect',
       place,
       title: g.records.length === 1 ? `A record on ${lowerFirst(g.records[0])}` : `${g.records.length} records`,
-      text: 'A new best in training on a day with all three rings closed. The whole plan, working at once.',
+      text: 'A new best in training on a day with all the rings closed. The whole plan, working at once.',
     });
   }
   return out;

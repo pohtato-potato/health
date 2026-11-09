@@ -99,7 +99,7 @@ function JourneyWrapped() {
       ink: '#efe8ff',
       kicker: 'Perfect days',
       big: String(s.perfect),
-      body: `all three rings closed.${s.busiestWeekday !== undefined ? ` ${WEEKDAY_NAMES[s.busiestWeekday]} were your busiest days on foot.` : ''}`,
+      body: `all the rings closed.${s.busiestWeekday !== undefined ? ` ${WEEKDAY_NAMES[s.busiestWeekday]} were your busiest days on foot.` : ''}`,
     },
     ...(names.length
       ? [{ bg: 'linear-gradient(160deg,#1f3a44,#4a8a9c)', ink: '#e3f8ff', kicker: 'Unlocked', big: `${names.length} achievement${names.length === 1 ? '' : 's'}`, body: names.slice(0, 6).join(' · ') + (names.length > 6 ? ` and ${names.length - 6} more` : '') }]

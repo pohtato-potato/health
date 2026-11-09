@@ -18,13 +18,14 @@ describe('ring moments: each plays once a day', () => {
     expect(ringMomentsDue(D, { kcal: false, protein: true, steps: false }, seen)).toEqual([]);
   });
   it('turns the last ring into the perfect day, not a ring moment', () => {
-    expect(ringMomentsDue(D, { kcal: true, protein: true, steps: true }, none)).toEqual([{ kind: 'perfect' }]);
+    expect(ringMomentsDue(D, { kcal: true, protein: true, steps: true, sleep: true }, none)).toEqual([{ kind: 'perfect' }]);
+    expect(ringMomentsDue(D, { kcal: false, protein: false, steps: false, sleep: true }, none)).toEqual([{ kind: 'ring', ring: 'sleep' }]);
   });
   it('a perfect day marks every ring as played too, so none plays after it', () => {
     const marks = ringMomentMarks(D, { kind: 'perfect' });
     expect(marks).toContain(ringMomentKey(D, 'perfect'));
     expect(marks).toContain(ringMomentKey(D, 'steps'));
-    expect(ringMomentsDue(D, { kcal: true, protein: true, steps: true }, (k) => marks.includes(k))).toEqual([]);
+    expect(ringMomentsDue(D, { kcal: true, protein: true, steps: true, sleep: true }, (k) => marks.includes(k))).toEqual([]);
   });
   it('a new day owes its own', () => {
     const seen = (k: string) => k === ringMomentKey(D, 'kcal');
@@ -57,8 +58,8 @@ describe('ringsGold', () => {
   it('stays plain until the perfect day has played, then stays gold', () => {
     expect(ringsGold({ counting: null, perfect: true, played: false })).toBe(0);
     expect(ringsGold({ counting: 2, perfect: true, played: true })).toBe(2);
-    expect(ringsGold({ counting: null, perfect: true, played: true })).toBe(3);
-    expect(ringsGold({ counting: null, perfect: true, played: undefined })).toBe(3);
+    expect(ringsGold({ counting: null, perfect: true, played: true })).toBe(4);
+    expect(ringsGold({ counting: null, perfect: true, played: undefined })).toBe(4);
     expect(ringsGold({ counting: null, perfect: false, played: true })).toBe(0);
   });
 });

@@ -23,7 +23,7 @@ export const GREMLIN_LINES = {
     ['Rest day. You earned it, statistically. I checked before saying that.', 'Nothing today. Sit down. Everything you built this week is still there, I have it right here.', 'Rest day. Go on. I will mind the numbers.', 'A quiet one. The plan needs these more than it lets on.'],
   ],
   perfect: [
-    ['Perfect day. I checked the data three times looking for an error. There is not one. Disgusting. Well done.', 'All three rings. I have run out of sarcasm and will need a moment to restock.', 'Every ring closed. I will be filing a complaint with whoever made this possible.', 'A perfect day. Do not let it go to your head. It has already gone to mine.'],
+    ['Perfect day. I checked the data three times looking for an error. There is not one. Disgusting. Well done.', 'All the rings. I have run out of sarcasm and will need a moment to restock.', 'Every ring closed. I will be filing a complaint with whoever made this possible.', 'A perfect day. Do not let it go to your head. It has already gone to mine.'],
     ['Perfect day. I would say something cutting but the rings are all closed and it would look petty.', 'All closed. You keep doing this and I keep running out of objections.', 'A full set of rings. I have put the good stamp on it. I do not lend out the good stamp.', 'Perfect. I looked for a loophole and found only your name on it.'],
     ['Perfect day. I have nothing to add. Look at it for a while.', 'All three. I saved this one somewhere easy to find.', 'Every ring closed. I will be mentioning this to the dumbbells at length.', 'That is a very good day. I have checked, and I am allowed to say so.'],
   ],

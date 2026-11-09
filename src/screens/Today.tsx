@@ -116,7 +116,7 @@ export function Today() {
   const ringDay = settings && days && entries ? dayRings(settings, today, days.find((d) => d.date === today), entries).rings : undefined;
   const { playing, goldCount, perfectPlayed } = useRingMoment({
     date: today,
-    closed: { kcal: !!ringDay?.kcal.closed, protein: !!ringDay?.protein.closed, steps: !!ringDay?.steps.closed },
+    closed: { kcal: !!ringDay?.kcal.closed, protein: !!ringDay?.protein.closed, steps: !!ringDay?.steps.closed, sleep: !!ringDay?.sleep.closed },
     hold: !ringDay || !!route.params.get('sheet') || momentShowing,
     rest: day?.status === 'sick' || day?.status === 'injured' || day?.status === 'break',
     momentsOn: !settings || prefOn(settings.prefs, 'moments'),
@@ -180,7 +180,7 @@ export function Today() {
   const voiceNow = !!line && (moment === 'perfect' || moment === 'proteinClosed' || (moment === 'trained' && recordsTonight.length > 0));
   const sessionTonight = up && !active && !trainedToday.length && weeks.thisWeek < weeks.perWeek ? sessionName : undefined;
   const lineKind: 'glance' | 'voice' | 'flag' = flag ? 'flag' : voiceNow ? 'voice' : 'glance';
-  const lineText = flag ? line : voiceNow ? lineForTheDay(today, moment, line) : glanceLine({ minutes: logMinutes(nowMs), closedRings: rings.closed, dayClosed: !!day?.foodDone, sessionTonight, nextSession: day?.foodDone && up ? sessionName : undefined, morningDone: !!day?.morning });
+  const lineText = flag ? line : voiceNow ? lineForTheDay(today, moment, line) : glanceLine({ minutes: logMinutes(nowMs), closedRings: rings.closed, ringsOf: rings.of, dayClosed: !!day?.foodDone, sessionTonight, nextSession: day?.foodDone && up ? sessionName : undefined, morningDone: !!day?.morning });
   const gap = proteinGap({ protein: totals.protein, proteinTarget: targets.proteinG, kcal: totals.kcal, kcalMax: targets.kcalMax }, foods, monthEntries, Date.now());
   const addGap = () => void gapAdd(gap.picks);
   // The walk at the top says what the Walk tab says: its title and one of its lines (the milestone's km when nothing else).
@@ -251,16 +251,17 @@ export function Today() {
           { key: 'kcal', name: 'Calories', value: fmtInt(totals.kcal), unit: 'kcal', target: `${fmtInt(targets.kcalMin)}–${fmtInt(targets.kcalMax)} kcal`, ink: rings.perfect ? 'var(--gold)' : 'var(--kcal)', known: true },
           { key: 'protein', name: 'Protein', value: String(Math.round(totals.protein)), unit: 'g', target: `of ${targets.proteinG} g`, ink: rings.perfect ? 'var(--gold)' : 'var(--protein)', known: true },
           { key: 'steps', name: 'Steps', value: day?.steps !== undefined ? fmtInt(totals.steps) : '—', unit: 'steps', target: `${totals.eased ? 'eased to ' : 'of '}${fmtInt(stepsGoal(targets, totals.eased))}`, ink: rings.perfect ? 'var(--gold)' : 'var(--steps)', known: day?.steps !== undefined },
-          { key: 'sleep', name: 'Sleep', value: sleepMin !== undefined ? fmtDuration(sleepMin) : '—', unit: 'sleep', target: `last night · aim ${fmtDuration(targets.sleepMin)}`, ink: 'var(--sleep)', known: sleepMin !== undefined },
+          { key: 'sleep', name: 'Sleep', value: sleepMin !== undefined ? fmtDuration(sleepMin) : '—', unit: 'sleep', target: `last night · aim ${fmtDuration(targets.sleepMin)}`, ink: rings.perfect ? 'var(--gold)' : 'var(--sleep)', known: sleepMin !== undefined },
         ]}
         closed={rings.closed}
+        of={rings.of}
         play={ringPlay}
         rings={
           <div className="td-ringfig" onPointerDown={konami.onPointerDown} onPointerUp={konami.onPointerUp} onPointerCancel={konami.onPointerCancel} onClickCapture={konami.onClickCapture} style={konami.style}>
             <LiveRings
-              progress={[rings.kcal.progress, rings.protein.progress, rings.steps.progress]}
-              label={themeDay ? `Rings for ${themeDay.name}: ${rings.closed} of 3 closed` : `Rings: ${rings.closed} of 3 closed`}
-              center={`${rings.closed}/3`}
+              progress={[rings.kcal.progress, rings.protein.progress, rings.steps.progress, rings.sleep.progress]}
+              label={themeDay ? `Rings for ${themeDay.name}: ${rings.closed} of ${rings.of} closed` : `Rings: ${rings.closed} of ${rings.of} closed`}
+              center={`${rings.closed}/${rings.of}`}
               style={themeDay?.ring}
               goldClosed={!!unlocked && hasReward(unlocked, 'Gold rings') && prefOn(settings.prefs, 'goldRings')}
               goldCount={ringsGold({ counting: goldCount, perfect: rings.perfect, played: perfectPlayed })}
@@ -286,6 +287,7 @@ export function Today() {
         kind={momentFor({ minutes: logMinutes(nowMs), status: day?.status, morningDone: !!day?.morning, perfect: rings.perfect, dayClosed: !!day?.foodDone, proteinGapG: gap.gapG, stepsLeft: Math.max(0, stepsLeft), stepsKnown: day?.steps !== undefined })}
         data={{
           closedRings: rings.closed,
+          ringsOf: rings.of,
           proteinGapG: gap.gapG,
           gapFoods: gap.picks.map((p) => p.name).join(' and '),
           addLabel: `${gap.picks.length === 1 ? 'Add it' : gap.picks.length === 2 ? 'Add both' : 'Add them'} · ${Math.round(gap.picks.reduce((n, p) => n + p.proteinG, 0))} g`,

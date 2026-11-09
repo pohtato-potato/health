@@ -19,7 +19,14 @@ export interface Totals {
   entries: number;
   /** The day after a night out, when the step goal eases off. */
   eased?: boolean;
+  /** Minutes asleep last night, from the morning log; undefined when not logged. */
+  sleep?: number;
+  /** Days from FOUR_RINGS_FROM on count sleep as the fourth ring; earlier days keep three, so old perfect days stay perfect. */
+  fourRings?: boolean;
 }
+
+/** The day sleep became the fourth ring (owner, 9 Nov; release 1). Earlier days are judged on three rings. */
+export const FOUR_RINGS_FROM = '2026-11-10';
 
 /** The step goal for a day: 2,000 lower the day after a night out, never under 6,000. */
 export function stepsGoal(targets: Targets, eased?: boolean): number {
@@ -35,7 +42,8 @@ export function totalsFor(day: Day | undefined, entries: FoodEntry[]): Totals {
     protein += e.protein;
     if (e.kind === 'free') freeMeal = true;
   }
-  return { kcal, protein, steps: day?.steps ?? 0, waterMl: day?.waterMl ?? 0, freeMeal, entries: entries.length, eased: day?.eased };
+  const sleep = day?.sleep ? sleepMinutes(day.sleep.asleep, day.sleep.woke) : undefined;
+  return { kcal, protein, steps: day?.steps ?? 0, waterMl: day?.waterMl ?? 0, freeMeal, entries: entries.length, eased: day?.eased, sleep, fourRings: !day || day.date >= FOUR_RINGS_FROM };
 }
 
 export interface Ring {
@@ -53,7 +61,11 @@ export interface Rings {
   kcal: CalorieRing;
   protein: Ring;
   steps: Ring;
+  /** Last night's sleep against the sleep target. */
+  sleep: Ring;
   closed: number;
+  /** How many rings count on this day: 4, or 3 before FOUR_RINGS_FROM. */
+  of: 3 | 4;
   perfect: boolean;
 }
 
@@ -73,8 +85,11 @@ export function ringsFor(t: Totals, targets: Targets): Rings {
   const protein: Ring = { value: t.protein, progress: clamp(t.protein / targets.proteinG), closed: t.protein >= targets.proteinG };
   const goal = stepsGoal(targets, t.eased);
   const steps: Ring = { value: t.steps, progress: clamp(t.steps / goal), closed: t.steps >= goal };
-  const closed = [kcal, protein, steps].filter((r) => r.closed).length;
-  return { kcal, protein, steps, closed, perfect: closed === 3 };
+  const sleepMin = t.sleep ?? 0;
+  const sleep: Ring = { value: sleepMin, progress: clamp(sleepMin / targets.sleepMin), closed: t.sleep !== undefined && t.sleep >= targets.sleepMin };
+  const of = t.fourRings === false ? 3 : 4;
+  const closed = (of === 4 ? [kcal, protein, steps, sleep] : [kcal, protein, steps]).filter((r) => r.closed).length;
+  return { kcal, protein, steps, sleep, closed, of, perfect: closed === of };
 }
 
 const clamp = (n: number) => (Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : 0);

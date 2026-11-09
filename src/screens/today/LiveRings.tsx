@@ -1,9 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ThemedRings } from '../../ui/rings/ThemedRings';
+import { RADII, RING_STROKE, ThemedRings } from '../../ui/rings/ThemedRings';
+import { RING_INKS } from '../../ui/rings/styles';
 import type { RingStyle } from '../../ui/rings/styles';
 
-const RADII = [84, 66, 48];
-const INKS = ['var(--kcal)', 'var(--protein)', 'var(--steps)'];
+const INKS = RING_INKS;
 const STAR_POINTS = Array.from({ length: 12 }, (_, k) => {
   const a = (k / 12) * Math.PI * 2 - Math.PI / 2;
   const r = k % 2 ? 94 : 99;
@@ -28,7 +28,8 @@ function StarChain({ draw }: { draw: boolean }) {
  * how they're drawn. A closed ring shows through the ring itself: full and bright.
  */
 export function LiveRings({ progress, label, center, style, goldClosed, goldCount, chain, spin, play, onTap }: {
-  progress: [number, number, number];
+  /** Calories, protein, steps and sleep, outer to inner. */
+  progress: number[];
   label: string;
   center: string;
   style?: RingStyle;
@@ -44,7 +45,7 @@ export function LiveRings({ progress, label, center, style, goldClosed, goldCoun
   play: number;
   onTap: () => void;
 }) {
-  const [shown, setShown] = useState<[number, number, number]>(progress);
+  const [shown, setShown] = useState<number[]>(progress);
   const [settled, setSettled] = useState(true);
   const group = useRef<HTMLDivElement>(null);
   const latest = useRef(progress);
@@ -52,9 +53,9 @@ export function LiveRings({ progress, label, center, style, goldClosed, goldCoun
 
   useLayoutEffect(() => {
     setSettled(false);
-    setShown([0, 0, 0]);
-    const timers = [0, 1, 2].map((i) =>
-      window.setTimeout(() => setShown((s) => s.map((v, k) => (k === i ? latest.current[k] : v)) as [number, number, number]), 120 + i * 160),
+    setShown(latest.current.map(() => 0));
+    const timers = latest.current.map((_, i) =>
+      window.setTimeout(() => setShown((s) => s.map((v, k) => (k === i ? latest.current[k] : v))), 120 + i * 160),
     );
     timers.push(window.setTimeout(() => setSettled(true), 1500));
     return () => timers.forEach(clearTimeout);
@@ -62,7 +63,7 @@ export function LiveRings({ progress, label, center, style, goldClosed, goldCoun
 
   useEffect(() => {
     if (settled) setShown(progress);
-  }, [settled, progress[0], progress[1], progress[2]]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [settled, progress.join()]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!spin) return;
@@ -87,7 +88,7 @@ export function LiveRings({ progress, label, center, style, goldClosed, goldCoun
               const ink = gold ? 'var(--gold)' : INKS[i];
               return (
                 <g key={r}>
-                  <circle cx="100" cy="100" r={r} fill="none" stroke={ink} strokeOpacity={0.16} strokeWidth="13" />
+                  <circle cx="100" cy="100" r={r} fill="none" stroke={ink} strokeOpacity={0.16} strokeWidth={RING_STROKE} />
                   <circle
                     className={`lr-arc${closed && p >= 1 ? ' closed' : ''}${gold ? ' lr-gold' : ''}`}
                     cx="100"
@@ -95,7 +96,7 @@ export function LiveRings({ progress, label, center, style, goldClosed, goldCoun
                     r={r}
                     fill="none"
                     stroke={ink}
-                    strokeWidth="13"
+                    strokeWidth={RING_STROKE}
                     strokeLinecap="round"
                     strokeDasharray={`${p * c} ${c}`}
                     strokeOpacity={p > 0 ? 1 : 0}
@@ -105,7 +106,7 @@ export function LiveRings({ progress, label, center, style, goldClosed, goldCoun
                 </g>
               );
             })}
-            <text x="100" y="110" textAnchor="middle" fill={goldCount >= 3 ? 'var(--gold)' : 'var(--text)'} fontFamily="var(--serif)" fontWeight="300" fontSize="30">
+            <text x="100" y="110" textAnchor="middle" fill={goldCount >= RADII.length ? 'var(--gold)' : 'var(--text)'} fontFamily="var(--serif)" fontWeight="300" fontSize="26">
               {center}
             </text>
           </svg>

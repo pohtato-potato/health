@@ -18,7 +18,7 @@ export function useRingMoment(i: { date: DayKey; closed: Record<RingKey, boolean
   const perfectPlayed = useLiveQuery(async () => !!(await db.seen.get(ringMomentKey(i.date, 'perfect'))), [i.date]);
   const busy = useRef(false);
   const nextId = useRef(1);
-  const key = `${i.date}|${i.closed.kcal}|${i.closed.protein}|${i.closed.steps}|${i.hold}|${i.rest}|${i.momentsOn}`;
+  const key = `${i.date}|${i.closed.kcal}|${i.closed.protein}|${i.closed.steps}|${i.closed.sleep}|${i.hold}|${i.rest}|${i.momentsOn}`;
 
   useEffect(() => {
     if (i.hold || busy.current) return;
@@ -40,7 +40,7 @@ export function useRingMoment(i: { date: DayKey; closed: Record<RingKey, boolean
       if (i.buzzOn && loud) buzz(m.kind === 'perfect' ? [60, 60, 60, 60, 160] : [40, 50, 80]);
       if (m.kind === 'perfect') {
         setGoldCount(0);
-        [900, 1120, 1340].forEach((at, n) => window.setTimeout(() => setGoldCount(n + 1), at));
+        [900, 1120, 1340, 1560].forEach((at, n) => window.setTimeout(() => setGoldCount(n + 1), at));
       }
       window.setTimeout(() => {
         busy.current = false;

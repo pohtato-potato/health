@@ -503,3 +503,7 @@ button.fb-todaycard { cursor: pointer; }
 .fb-result .fb-score { color: #fff; text-shadow: none; }
 .fb-result .fb-s { color: #f4f1ff; }
 .fb-result .fb-tag { color: #fff; }
+/* The whole Football page takes the result while Full time shows: the aurora keeps moving, in the result's colours. */
+:root[data-ft='W'] .fb-au { background: linear-gradient(175deg, #123d2a, #0a1f16 70%); --a: #e8c25a; --c: #2fbf78; }
+:root[data-ft='D'] .fb-au { background: linear-gradient(175deg, #16304f, #0b1728 70%); --a: #d9a24c; --c: #4f8fd0; }
+:root[data-ft='L'] .fb-au { background: linear-gradient(175deg, #3a1628, #1c0b14 70%); --a: #7a3a55; --c: #5a2a48; }

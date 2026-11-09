@@ -14,7 +14,8 @@ import { arrivals, kmFromSteps, positionAt } from '../src/domain/walk';
 import { bestFits, roomLeft } from '../src/domain/whatsleft';
 
 const T: Targets = { kcalMin: 2000, kcalMax: 2300, proteinG: 140, steps: 10000, waterMl: 3000, sleepMin: 420, sessionsPerWeek: 3 };
-const totals = (kcal: number, protein: number, steps: number, freeMeal = false) => ({ kcal, protein, steps, waterMl: 0, freeMeal, entries: 1 });
+// Eight hours' sleep by default, so the fourth ring (sleep, from release 1) is closed unless a test says otherwise.
+const totals = (kcal: number, protein: number, steps: number, freeMeal = false, sleep: number | null = 480) => ({ kcal, protein, steps, waterMl: 0, freeMeal, entries: 1, sleep: sleep ?? undefined });
 
 describe('dates and numbers', () => {
   it('handles weeks from Monday', () => {
@@ -35,7 +36,18 @@ describe('rings', () => {
     expect(ringsFor(totals(2100, 160, 11200), T).perfect).toBe(true);
     const over = ringsFor(totals(2400, 160, 11200), T);
     expect(over.kcal.state).toBe('over');
-    expect(over.closed).toBe(2);
+    expect(over.closed).toBe(3);
+  });
+  it('makes sleep the fourth ring: a perfect day needs the sleep target too, from FOUR_RINGS_FROM on', () => {
+    const short = ringsFor(totals(2100, 160, 11200, false, 300), T);
+    expect(short.of).toBe(4);
+    expect(short.sleep.closed).toBe(false);
+    expect(short.perfect).toBe(false);
+    expect(ringsFor(totals(2100, 160, 11200, false, null), T).perfect).toBe(false);
+    // Before the cut-over, the three rings still make a perfect day, so old perfect days stay perfect.
+    const old = ringsFor({ ...totals(2100, 160, 11200, false, null), fourRings: false }, T);
+    expect(old.of).toBe(3);
+    expect(old.perfect).toBe(true);
   });
   it('lifts the ceiling on a free-meal day', () => {
     expect(ringsFor(totals(2900, 160, 13000, true), T).kcal.closed).toBe(true);

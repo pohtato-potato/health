@@ -498,10 +498,10 @@ a(
 );
 
 // Streaks
-a('streaks', 'Three for three', 'Close all three rings for the first time.', 'b', (s) => s.daily.some((d) => d.perfect));
+a('streaks', 'Three for three', 'Close all the rings for the first time.', 'b', (s) => s.daily.some((d) => d.perfect));
 a('streaks', '1-UP', 'Bank your first shield.', 'b', (s) => s.streak.earned >= 1);
 a('streaks', 'Saved by the shield', 'Let a shield save one of your streaks.', 'b', (s) => s.streak.shieldsUsed.length >= 1);
-a('streaks', 'Bounce back', 'Close all three rings the day after a missed day.', 'b', (s) => s.daily.some((d, i) => i > 0 && d.perfect && s.daily[i - 1].logged && !s.daily[i - 1].perfect));
+a('streaks', 'Bounce back', 'Close all the rings the day after a missed day.', 'b', (s) => s.daily.some((d, i) => i > 0 && d.perfect && s.daily[i - 1].logged && !s.daily[i - 1].perfect));
 a('streaks', 'Challenge accepted', 'Complete your first monthly challenge.', 'b', (s) => count(s, 'challenge-done') >= 1);
 a('streaks', 'True to your word', 'Follow through on the weekly ‘one thing’ 4 weeks in a row.', 's', (s) => oneThingRun(s) >= 4, { progress: (s) => [oneThingRun(s), 4] });
 a('streaks', 'Main character energy', '7 perfect days in a row.', 'g', (s) => longestRun(s.daily, (d) => d.perfect) >= 7, { progress: (s) => [longestRun(s.daily, (d) => d.perfect), 7] });
@@ -527,7 +527,7 @@ a('nights', 'Designated driver', 'Log a night out with zero drinks.', 's', (s) =
 a('nights', 'Sober October', 'Log no drinks for the whole of October.', 's', (s) =>
   [...byMonth(s.daily).entries()].some(([m, ds]) => m.endsWith('-10') && s.today > `${m}-31` && ds.filter((d) => d.logged).length >= 20 && ds.every((d) => d.drinks === 0)),
 );
-a('nights', 'Comeback season', 'Close all three rings the day after a night out.', 's', (s) => s.daily.some((d, i) => i > 0 && d.perfect && s.daily[i - 1].nightOut));
+a('nights', 'Comeback season', 'Close all the rings the day after a night out.', 's', (s) => s.daily.some((d, i) => i > 0 && d.perfect && s.daily[i - 1].nightOut));
 a('nights', 'Shaken, not stirred', 'End occasion mode with your trend within half a kilo.', 'g', (s) =>
   s.occasions.some((o) => {
     if (o.to >= s.today) return false;
