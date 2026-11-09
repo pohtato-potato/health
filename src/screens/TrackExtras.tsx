@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { addDays, dayRange, daysBetween, weekday, weekStart, type DayKey } from '../domain/dates';
 import { fmt1, fmtClock, fmtDayMonth, fmtDayShort, fmtDuration, fmtInt } from '../domain/format';
-import { WEEKDAYS, WEEKDAY_NAMES, bedtimeFor, drinkNights, morningAfter, raceLastWeek, sleepPayoff, sleepWindows, sources, strengthScores, tshirtVsLast, weekdayPattern, type Strength } from '../domain/insights';
+import { WEEKDAYS, WEEKDAY_NAMES, bedtimeFor, drinkNights, morningAfter, raceLastWeek, sleepChartSpan, sleepPayoff, sleepTick, sleepWindows, sources, strengthScores, tshirtVsLast, weekdayPattern, type Strength } from '../domain/insights';
 import type { CheckIn, Day, FoodEntry, Measurement, SetEntry, Settings, TrainingSession } from '../domain/types';
 import { flagEvents, targetsFor } from '../state/derived';
 import { usualWake } from '../domain/wake';
@@ -158,9 +158,8 @@ export function SleepExtras({ days, today, settings }: { days: Day[]; today: Day
 }
 
 function SleepWindowChart({ nights, bed }: { nights: ReturnType<typeof sleepWindows>; bed?: number }) {
-  // From 9 pm to 11 am.
-  const start = -180;
-  const end = 660;
+  // From 9 pm to 11 am, later when a night ran past it.
+  const { start, end, ticks } = sleepChartSpan(nights);
   const W = 300;
   const row = 12;
   const left = 30;
@@ -169,11 +168,11 @@ function SleepWindowChart({ nights, bed }: { nights: ReturnType<typeof sleepWind
   const bedRel = bed !== undefined ? (bed > 720 ? bed - 1440 : bed) : undefined;
   return (
     <svg width="100%" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="When you slept, night by night">
-      {[-180, 0, 180, 360, 540].map((m) => (
+      {ticks.map((m) => (
         <g key={m}>
           <line x1={x(m)} x2={x(m)} y1="0" y2={H - 14} stroke="var(--divider)" />
           <text x={x(m)} y={H - 3} textAnchor="middle" fontSize="16" fill="var(--dim)" fontFamily="var(--sans)">
-            {m === -180 ? '9p' : m === 0 ? '12a' : m === 180 ? '3a' : m === 360 ? '6a' : '9a'}
+            {sleepTick(m, true)}
           </text>
         </g>
       ))}

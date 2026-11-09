@@ -3,7 +3,7 @@
 import { addDays, daysBetween, type DayKey } from '../../domain/dates';
 import { allExercises, valueOfSet } from '../../domain/plan';
 import { placeFor } from '../../domain/places';
-import { stepsGoal } from '../../domain/rings';
+import { bedOrder, fromBedOrder, stepsGoal } from '../../domain/rings';
 import type { Day, SetEntry, TrainingSession } from '../../domain/types';
 import { targetsFor } from '../../state/derived';
 import { sleepHours } from '../axes';
@@ -249,7 +249,7 @@ function attrsOf(c: Ctx, p: PlayerDef, date: DayKey, days: DayKey[], r: (v: numb
       if (!nights.length) return null;
       const target = c.bedtime ?? usualBedtime(h, date) ?? 0;
       const kept = nights.filter((d) => bedtimeKept(day(d)!.sleep!.asleep, target)).length;
-      const beds = nights.map((d) => (day(d)!.sleep!.asleep + 720) % 1440);
+      const beds = nights.map((d) => bedOrder(day(d)!.sleep!.asleep));
       return [
         A('kept', 'Kept', r(rate(share(kept, nights.length))), 0.7, 'rate', `asleep by ${clock(target + BEDTIME_GRACE)} on ${kept} of ${nights.length} nights`),
         A('spread', 'Spread', r(rate(clamp(1 - sd(beds) / 90, 0, 1))), 0.3, 'rate', `bedtimes vary by about ${Math.round(sd(beds))} minutes`),
@@ -272,10 +272,10 @@ export function bedtimeKept(asleep: number, target: number): boolean {
 }
 export function usualBedtime(h: Health, date: DayKey): number | undefined {
   const xs: number[] = [];
-  for (let d = addDays(date, -27); d <= date; d = addDays(d, 1)) { const a = h.days.get(d)?.sleep?.asleep; if (a !== undefined) xs.push((a + 720) % 1440); }
+  for (let d = addDays(date, -27); d <= date; d = addDays(d, 1)) { const a = h.days.get(d)?.sleep?.asleep; if (a !== undefined) xs.push(bedOrder(a)); }
   if (!xs.length) return undefined;
   xs.sort((a, b) => a - b);
-  return (xs[xs.length >> 1] + 720) % 1440;
+  return fromBedOrder(xs[xs.length >> 1]);
 }
 export const clock = (m: number) => { const x = ((m % 1440) + 1440) % 1440; return `${Math.floor(x / 60)}:${String(x % 60).padStart(2, '0')}`; };
 

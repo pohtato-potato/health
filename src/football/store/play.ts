@@ -1,4 +1,5 @@
 // The only writer of Football's tables. Kick-off reads Health once, plays, and stores the events.
+import { bedOrder, fromBedOrder } from '../../domain/rings';
 import { db } from '../../db/db';
 import { addDays, dayOfLogging, daysBetween, type DayKey } from '../../domain/dates';
 import { seasonDays, SEASON_DAYS, type DayPlan } from '../calendar';
@@ -506,10 +507,10 @@ export const contractsFor = (date: DayKey) => HABITS.map((h) => newContract(h.id
 const doneBundles = (w: World) => [...w.bundles.values()].filter((b) => b.done).map((b) => b.id);
 function usualBedtime(w: World, date: DayKey): number | undefined {
   const xs: number[] = [];
-  for (let d = addDays(date, -28); d < date; d = addDays(d, 1)) { const a = w.h.days.get(d)?.sleep?.asleep; if (a !== undefined) xs.push((a + 720) % 1440); }
+  for (let d = addDays(date, -28); d < date; d = addDays(d, 1)) { const a = w.h.days.get(d)?.sleep?.asleep; if (a !== undefined) xs.push(bedOrder(a)); }
   if (xs.length < 7) return undefined;
   xs.sort((a, b) => a - b);
-  return (xs[Math.floor(xs.length / 2)] + 720) % 1440;
+  return fromBedOrder(xs[Math.floor(xs.length / 2)]);
 }
 /** Every day: open bundles take the day's totals; a finished one is paid for and opens from the next match. */
 function groundDay(w: World, date: DayKey, input: ReturnType<typeof axisInputFor>) {

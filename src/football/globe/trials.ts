@@ -6,6 +6,7 @@
 //   short but rested      → quick wingers (Pace habits)
 //   mixed                 → anyone
 // A trialist waits a couple of days to be tied to a real habit (the Portakabin: a week), then leaves kindly.
+import { bedOrder } from '../../domain/rings';
 import { addDays, type DayKey } from '../../domain/dates';
 import { sleepHours } from '../axes';
 import { NATION_POOL } from '../content/nations';
@@ -41,7 +42,7 @@ export function sleepWeek(h: Health, date: DayKey, bedtime: number | undefined):
   if (nights.length < 3) return { style: 'mixed', nights: nights.length, kept: 0, hours: 0, quality: 0 };
   const hours = nights.reduce((t, s) => t + sleepHours(s), 0) / nights.length;
   const kept = bedtime === undefined ? 0 : nights.filter((s) => bedtimeKept(s.asleep, bedtime)).length;
-  const asleep = nights.map((s) => (s.asleep + 720) % 1440);
+  const asleep = nights.map((s) => bedOrder(s.asleep));
   const mean = asleep.reduce((a, b) => a + b, 0) / asleep.length;
   const spread = Math.sqrt(asleep.reduce((t, a) => t + (a - mean) ** 2, 0) / asleep.length);
   const rs = nights.map((s) => s.rested).filter((x): x is number => typeof x === 'number');

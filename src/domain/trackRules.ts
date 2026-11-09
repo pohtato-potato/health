@@ -4,7 +4,7 @@ import { e1rm } from './insights';
 import { dayDoses, refillBy } from './medicines';
 import { realSets } from './plan';
 import { regionAt } from './regions';
-import { sleepMinutes } from './rings';
+import { bedOrder, sleepMinutes } from './rings';
 import type { ChecklistItem, CustomTrack, Day, FoodEntry, Measurement, SetEntry, Settings, TrackValue, TrainingSession } from './types';
 import { kmFromSteps, positionAt, setStride } from './walk';
 import { weightTrend } from './streaks';
@@ -234,7 +234,7 @@ export function sleepBalance(days: Pick<Day, 'date' | 'sleep'>[], today: DayKey,
 
 /** How far the middle of the night moves at weekends, in minutes. Needs both to compare. */
 export function socialJetLag(days: Pick<Day, 'date' | 'sleep'>[]): number | undefined {
-  const mid = (d: Pick<Day, 'sleep'>) => (d.sleep!.asleep >= 720 ? d.sleep!.asleep - 1440 : d.sleep!.asleep) + sleepMinutes(d.sleep!.asleep, d.sleep!.woke) / 2;
+  const mid = (d: Pick<Day, 'sleep'>) => bedOrder(d.sleep!.asleep) + sleepMinutes(d.sleep!.asleep, d.sleep!.woke) / 2;
   const weekend = (d: Pick<Day, 'date'>) => [0, 6].includes(parseDay(d.date).getDay());
   const slept = days.filter((d) => d.sleep);
   const [a, b] = [mean(slept.filter(weekend).map(mid)), mean(slept.filter((d) => !weekend(d)).map(mid))];

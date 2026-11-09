@@ -80,6 +80,18 @@ export function ringsFor(t: Totals, targets: Targets): Rings {
 const clamp = (n: number) => (Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : 0);
 
 /** Sleep minutes from asleep and woke times, across midnight. */
+/** A night is read from 18:00 the evening before: bedtimes sort in that order. */
+export const NIGHT_FROM = 18 * 60;
+/**
+ * Minutes after 18:00, for sorting and averaging bedtimes. An evening bedtime comes first, one after midnight next, and
+ * an afternoon bedtime after a sleepless night last (it never passes for an early night).
+ */
+export const bedOrder = (asleep: number): number => (((asleep - NIGHT_FROM) % 1440) + 1440) % 1440;
+/** A sleep wheel's rows: every 5 minutes for 24 hours from `from` (values past 1440 wrap to the next day's clock). */
+export const sleepWheelItems = (from: number): number[] => Array.from({ length: 288 }, (_, i) => from + i * 5);
+/** Back from bedOrder to a clock time (minutes after midnight). */
+export const fromBedOrder = (m: number): number => (m + NIGHT_FROM) % 1440;
+/** Minutes asleep, across midnight if need be. Both ends are clock times (0–1439); a night is always under 24 hours. */
 export function sleepMinutes(asleep: number, woke: number): number {
   return (((woke - asleep) % 1440) + 1440) % 1440;
 }

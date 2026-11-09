@@ -10,7 +10,7 @@ import { targetsFor } from '../../state/derived';
 import { SleepExtras } from '../TrackExtras';
 import { headInput, dayLabel, kindOn, placeMarkOn, spanDays, type TrackData } from './data';
 import { changeText, HeroChart, TrackShell } from './Template';
-import { sleepWindows } from '../../domain/insights';
+import { sleepChartSpan, sleepTick, sleepWindows } from '../../domain/insights';
 import { usualWake } from '../../domain/sleepRegularity';
 
 /** Sleep, kept minimal: nightly duration, regularity, office-night drift, tonight's target and one tip. */
@@ -81,8 +81,7 @@ export function SleepTrack({ data }: { data: TrackData }) {
 function SleepBands({ days, range, officeWake }: { days: TrackData['days'] extends Map<string, infer D> ? D[] : never; range: string[]; officeWake?: number }) {
   const nights = sleepWindows(days, range).slice(-21);
   const dates = range.slice(-21);
-  const start = -180;
-  const end = 660;
+  const { start, end, ticks } = sleepChartSpan(nights);
   const W = 320;
   const row = 18;
   const left = 26;
@@ -92,11 +91,11 @@ function SleepBands({ days, range, officeWake }: { days: TrackData['days'] exten
     <div className="col gap8">
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="When you slept, night by night">
         {officeWake !== undefined && <rect x={x(officeWake) - 3} y="0" width="6" height={H - 18} fill="var(--gold)" opacity="0.28" rx="2" />}
-        {[-180, 0, 180, 360, 540].map((m) => (
+        {ticks.map((m) => (
           <g key={m}>
             <line x1={x(m)} x2={x(m)} y1="0" y2={H - 18} stroke="var(--divider)" />
             <text x={x(m)} y={H - 2} textAnchor="middle" fontSize="16" fill="var(--dim)" fontFamily="var(--sans)">
-              {m === -180 ? '9 pm' : m === 0 ? '12' : m === 180 ? '3 am' : m === 360 ? '6 am' : '9 am'}
+              {sleepTick(m)}
             </text>
           </g>
         ))}
