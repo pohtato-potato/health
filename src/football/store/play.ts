@@ -81,8 +81,21 @@ export async function upgradeSave(): Promise<boolean> {
   });
 }
 
+/** Old saves brought up to date on load, whether or not a match plays: the retired 4 am rival (decision C3). */
+export async function migrateSave(): Promise<boolean> {
+  return db.transaction('rw', db.fbSave, async () => {
+    const cur = await db.fbSave.get('save');
+    if (!cur) return false;
+    const rivals = migrateRivals(cur.rivals);
+    if (rivals === cur.rivals) return false;
+    await db.fbSave.put({ ...cur, rivals });
+    return true;
+  });
+}
+
 async function playThrough(until: DayKey, closed: DayKey | null): Promise<StoredMatch[]> {
   await upgradeSave();
+  await migrateSave();
   const save = await db.fbSave.get('save');
   if (!save) return [];
   const stored = await db.fbClubs.toArray();

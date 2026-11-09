@@ -6,6 +6,8 @@ import { afterMatch, rivalList, rivalTwist, type Meeting, type Rival } from '../
 import type { StoredMatch } from '../../src/football/store/tables';
 import { RivalsView } from '../../src/screens/football/story/Rivals';
 import { RivalryView } from '../../src/screens/football/story/Rivalry';
+import { db } from '../../src/db/db';
+import { migrateSave } from '../../src/football/store/play';
 
 const loss = (clubId: string, o: Partial<Meeting> = {}): Meeting => ({ clubId, result: 'L', comp: 'league', ...o });
 const match = (id: string, opp: string, result: 'W' | 'D' | 'L', score: [number, number]): StoredMatch => ({
@@ -59,5 +61,19 @@ describe('Rivals', () => {
     expect(out).toMatch(/>1<\/b><span class="fb-s">lost/);
     expect(out.match(/fb-meet/g)).toHaveLength(3);
     expect(out).toContain('Bad blood');
+  });
+});
+
+describe('migrating a saved Night shift rival (C3)', () => {
+  it('rewrites the stored save once, keeping everything else', async () => {
+    await db.fbSave.clear();
+    expect(await migrateSave()).toBe(false); // no club yet
+    const save = { id: 'save', season: 2, rivals: [{ clubId: 'ant', how: 'legend', since: '' }, { clubId: 'hul', how: 'fouram', since: '2026-10-30', best: 'Pace' }] };
+    await db.fbSave.put(save as never);
+    expect(await migrateSave()).toBe(true);
+    const after = await db.fbSave.get('save');
+    expect(after?.season).toBe(2);
+    expect(after?.rivals).toEqual([{ clubId: 'ant', how: 'legend', since: '' }, { clubId: 'hul', how: 'close', since: '2026-10-30', best: 'Pace', weak: 'Rest' }]);
+    expect(await migrateSave()).toBe(false); // already done
   });
 });
