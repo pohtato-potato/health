@@ -7,6 +7,8 @@ import { clamp, type Axis, type AxisValues, type BraboAbility, type ChanceEvent,
 
 export interface MatchCtx {
   comp?: Comp; derby?: boolean; vsHigher?: boolean; last5?: boolean; matchday?: number; auto?: boolean;
+  /** A final (cup, playoff or continental), for the tree's 'final' situations. */
+  final?: boolean;
   firstMeeting?: boolean; familiarAxis?: Axis; prevBest?: Axis;
 }
 export interface MatchInput {
@@ -78,7 +80,7 @@ export function matchup(v: AxisValues, opp: Opponent): { gap: number; atk: numbe
 export const pctOf = (v: AxisValues, side: Side, reach: number | null) =>
   coverage(reach == null ? FULL : hexagon(reach), shapeOf(v, side));
 
-interface Live { mine: number; theirs: number; lastMiss: boolean; afterGoal: number; defCount: number; atkCount: number; theyConceded: boolean; iScored: boolean; used: Set<string> }
+interface Live { mine: number; theirs: number; lastMiss: boolean; afterGoal: number; defCount: number; atkCount: number; theyConceded: boolean; iScored: boolean; used: Set<string>; saved?: boolean }
 
 function whenOk(when: string, side: Side, minute: number, type: string, home: boolean, live: Live, ctx: MatchCtx): boolean {
   const oppHome = !home;
@@ -152,7 +154,11 @@ function abilityFx(a: AbilityDef, side: Side, minute: number, type: string, home
   return out;
 }
 
-const braboOk = (b: BraboAbility, side: Side, minute: number, type: string, home: boolean, live: Live) => {
+/** The tree's limit on its situational bonuses: ±3 per axis in total (spec §1). */
+export const TREE_CAP = 3;
+const CUPS_COMP = new Set(['bigcup', 'tiercup', 'playoff', 'event', 'continental', 'clubworld']);
+const braboOk = (b: BraboAbility, side: Side, minute: number, type: string, home: boolean, live: Live, ctx: MatchCtx = {}) => {
+  if (b.side && b.side !== 'both' && b.side !== side) return false;
   switch (b.when ?? 'always') {
     case 'always': return true;
     case 'long': return type === 'Long shot' || type === 'Long-range effort';
@@ -164,6 +170,22 @@ const braboOk = (b: BraboAbility, side: Side, minute: number, type: string, home
     case 'after-concede': return live.theirs > 0;
     case 'level': return live.mine === live.theirs;
     case 'own-type': return TYPES[side].some(([t, ax]) => t === type && ax === b.axis);
+    case 'second-half': return minute > 45;
+    case 'behind': return live.mine < live.theirs;
+    case 'ahead': return live.mine > live.theirs;
+    case 'set-piece': return type === 'Set piece' || type === 'Corner';
+    case 'derby': return Boolean(ctx.derby);
+    case 'cup': return CUPS_COMP.has(ctx.comp ?? '');
+    case 'final': return Boolean(ctx.final);
+    case 'continental': return ctx.comp === 'continental' || ctx.comp === 'clubworld';
+    case 'continental-home': return ctx.comp === 'continental' && home;
+    case 'continental-away': return ctx.comp === 'continental' && !home;
+    case 'auto': return Boolean(ctx.auto);
+    case 'first-chance': return (side === 'atk' ? live.atkCount : live.defCount) === 0;
+    case 'after-goal': return live.iScored;
+    case 'after-save': return Boolean(live.saved);
+    case 'vs-higher': return Boolean(ctx.vsHigher);
+    case 'international': return ctx.comp === 'worldcup';
     default: return false;
   }
 };
@@ -207,6 +229,7 @@ export function playMatch(m: MatchInput): MatchEvents {
   const moments: string[] = [];
   const xg: [number, number] = [0, 0];
   let wind = m.abilities.some((a) => a.id === 'second-wind');
+  const retakes = m.abilities.filter((a) => a.retake);
   let scrappy = has('Scrappy') || has('Rekordmeister');
   let flip = has('Beach Wind') ? Math.floor(r() * total) : -1;
   let foul = has('Dirty Leeds') || has('Dark arts') ? Math.floor(r() * Math.max(1, yours)) : -1;
@@ -222,7 +245,13 @@ export function playMatch(m: MatchInput): MatchEvents {
     if (boost) add({ axis: boost, d: 2, why: type, kind: 'type' });
     // 2. captain and equipped abilities
     if (m.captain && LIT[side].includes(m.captain)) add({ axis: m.captain, d: 2, why: 'Captain', kind: 'captain' });
-    for (const b of m.abilities) if (b.axis && b.d && LIT[side].includes(b.axis) && braboOk(b, side, minute, type, m.home, live)) add({ axis: b.axis, d: b.d, why: b.name, kind: 'ability' });
+    const treeSum: Partial<Record<Axis, number>> = {};
+    for (const b of m.abilities) {
+      if (b.retake || !b.axis || !b.d || !LIT[side].includes(b.axis) || !braboOk(b, side, minute, type, m.home, live, ctx)) continue;
+      let d = b.d;
+      if (b.tree) { d = Math.min(d, TREE_CAP - (treeSum[b.axis] ?? 0)); treeSum[b.axis] = (treeSum[b.axis] ?? 0) + Math.max(0, d); }
+      if (d > 0) add({ axis: b.axis, d, why: b.name, kind: 'ability' });
+    }
     // 3. youth sub from 60'
     if (minute >= 60) for (const b of m.bench) if (LIT[side].includes(b.axis)) add({ axis: b.axis, d: b.plus, why: 'Off the bench', kind: 'sub' });
     // 4. the opponent's shrinks and presses
@@ -269,10 +298,15 @@ export function playMatch(m: MatchInput): MatchEvents {
     let ok = inside(land, shape);
     const ev: ChanceEvent = { minute, side, type, mods, values: v, reach, pct, land, ok, glDist: null };
     // second wind, and rebounds for Scrappy-type clubs
+    const tr = side === 'atk' && !ok && pct >= 30 && !wind ? retakes.find((a) => !live.used.has(a.id) && braboOk(a, side, minute, type, m.home, live, ctx)) : undefined;
     if (side === 'atk' && !ok && wind && pct >= 30) {
       wind = false;
       land = randomIn(region, r); ok = inside(land, shape);
       ev.retake = { land, ok, why: 'Second wind' };
+    } else if (tr) {
+      live.used.add(tr.id);
+      land = randomIn(region, r); ok = inside(land, shape);
+      ev.retake = { land, ok, why: tr.name };
     } else if (side === 'def' && ok && scrappy) {
       scrappy = false;
       land = randomIn(region, r); ok = inside(land, shape);
@@ -294,7 +328,7 @@ export function playMatch(m: MatchInput): MatchEvents {
     } else {
       xg[1] += 1 - pctF;
       live.defCount++;
-      if (ok) { if (pct <= 25) { ev.tag = 'WONDER SAVE'; moments.push(`WONDER SAVE: ${pct}% to stop it, ${minute}'`); } }
+      if (ok) { live.saved = true; if (pct <= 25) { ev.tag = 'WONDER SAVE'; moments.push(`WONDER SAVE: ${pct}% to stop it, ${minute}'`); } }
       else { live.theirs++; live.afterGoal = 2; if (pct >= 70) moments.push(`Conceded with ${pct}% to save, ${minute}'`); }
       live.lastMiss = false;
     }

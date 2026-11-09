@@ -15,12 +15,20 @@ function runEndingOn(days: Map<DayKey, boolean>, end: DayKey): number {
  * One missed day: a knock, −2 Rest next match. Two in a row: an injury, −4 Rest for two matches
  * (three in a row with the physio room).
  */
-export function physio(medDays: MedDay[], date: DayKey, physioRoom: boolean): { state: 'fit' | 'knock' | 'injury'; mods: Mod[] } {
+/**
+ * Knocks from missed medicines. `heal` (layer 3: the physio, the recovery pool and the club doctor's levels) makes them
+ * heal faster: each step shortens an injury by a night, then softens it to a knock, then softens the knock. 0 is unchanged.
+ */
+export function physio(medDays: MedDay[], date: DayKey, physioRoom: boolean, heal = 0): { state: 'fit' | 'knock' | 'injury'; mods: Mod[] } {
   const m = new Map(medDays.map((d) => [d.date, d.allTaken]));
   const thr = physioRoom ? 3 : 2;
   const y1 = addDays(date, -1), y2 = addDays(date, -2);
-  if (runEndingOn(m, y1) >= thr || runEndingOn(m, y2) >= thr) return { state: 'injury', mods: [{ axis: 'Rest', d: -4, why: 'Injury', kind: 'knock' }] };
-  if (m.get(y1) === false) return { state: 'knock', mods: [{ axis: 'Rest', d: -2, why: 'Knock', kind: 'knock' }] };
+  const injuredLong = runEndingOn(m, y2) >= thr && heal < 1;
+  if (runEndingOn(m, y1) >= thr || injuredLong) {
+    if (heal < 2) return { state: 'injury', mods: [{ axis: 'Rest', d: -4, why: 'Injury', kind: 'knock' }] };
+    return { state: 'knock', mods: [{ axis: 'Rest', d: heal >= 3 ? -1 : -2, why: 'Knock', kind: 'knock' }] };
+  }
+  if (m.get(y1) === false) return { state: 'knock', mods: [{ axis: 'Rest', d: heal >= 3 ? -1 : -2, why: 'Knock', kind: 'knock' }] };
   return { state: 'fit', mods: [] };
 }
 /** A night out the day before is a yellow card; two within 14 days make a red: Rest plays at half value. */

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { euros, type Offer, type Risk, type Slot } from '../../../football/money';
 import type { Club } from '../../../football/store/club';
 import type { Tier } from '../../../football/types';
+import { WagesCard } from '../tree/TreeScreens';
 
 export const RISK: Record<Risk, string> = { stable: 'Stable', flashy: 'Flashy', dodgy: 'Dodgy' };
 const RISK_WHY: Record<Risk, string> = { stable: 'Pays steadily.', flashy: 'Pays more, with a habit clause.', dodgy: 'Pays most. 1 in 4 a season it folds.' };
@@ -32,6 +33,7 @@ export function MoneyView({ c, groundBuilt = false, onAccept, onOwn }: { c: Club
         {s.income ? s.income.lines.map((l) => <div key={l.name} className="fb-row"><span className="fb-s">{l.name}, season {s.income!.season}</span><b className="fb-num">{m(l.amount)}</b></div>)
           : <p className="fb-s">Income lands at the end of each season: TV, the gate, prize money and the sponsors. It grows with promotion.</p>}
       </section>
+      <WagesCard />
       <section className="fb-card" aria-label="Sponsor slots">
         <span className="fb-lb">Slots</span>
         {slotRows(c.tier, groundBuilt).map((r) => {

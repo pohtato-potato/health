@@ -31,6 +31,12 @@ export function FullTimeView({ m, save, studio, press, tier = 6, onWatch }: { m:
         <p className="fb-s fb-ctr">xG {xg[0].toFixed(1)} – {xg[1].toFixed(1)}</p>
         {onWatch && <div className="fb-btns"><button type="button" className="fb-btn pri" onClick={onWatch}>{m.watched ? 'Watch again' : 'Watch the match'}</button></div>}
       </article>
+      {(m.credits?.length ?? 0) > 0 && (
+        <section className="fb-card" aria-label="Goals and saves">
+          <span className="fb-lb">Goals and saves</span>
+          <ul className="fb-moments">{m.credits!.map((c) => <li key={c.i}><b>{c.kind === 'goal' ? 'Goal' : 'Save'} · {m.events.chances[c.i]?.minute ?? ''}′</b> {c.line}</li>)}</ul>
+        </section>
+      )}
       {m.events.moments.length > 0 && (
         <section className="fb-card" aria-label="Moments">
           <span className="fb-lb">Moments</span>

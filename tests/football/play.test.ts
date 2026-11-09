@@ -20,12 +20,17 @@ beforeEach(async () => {
 const noon = (d: string) => atOn(d, 12 * 60);
 
 describe('kick-off and the 4 am rule', () => {
-  it('closing a day stores one match; closing again adds nothing', async () => {
-    await closeDay('2026-10-10', true);
+  it('closing a past day stores one match; closing again adds nothing', async () => {
+    await closeDay('2026-10-10', true, noon('2026-10-11'));
     expect(await db.fbMatches.count()).toBe(1);
-    await closeDay('2026-10-10', false);
-    await closeDay('2026-10-10', true);
+    await closeDay('2026-10-10', false, noon('2026-10-11'));
+    await closeDay('2026-10-10', true, noon('2026-10-11'));
     expect(await db.fbMatches.count()).toBe(1);
+  });
+  it('closing today waits for the morning match (whichever is later)', async () => {
+    await closeDay('2026-10-10', true, noon('2026-10-10'));
+    expect(await db.fbMatches.count()).toBe(0);
+    expect((await playDue(noon('2026-10-11'))).map((m) => m.date)).toEqual(['2026-10-10']);
   });
   it('plays missed days once each at 4 am, and running it again adds nothing', async () => {
     const played = await playDue(noon('2026-10-13'));

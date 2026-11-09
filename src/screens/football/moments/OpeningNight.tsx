@@ -1,9 +1,10 @@
 // Opening night: a new stand or building drawn in light for the first time.
 import { bundleById } from '../../../football/ground';
+import { projectById } from '../../../football/content/projects';
 import { Aurora } from '../FootballHome';
 
 export function OpeningNightView({ id, onDone }: { id: string; onDone: () => void }) {
-  const b = id === 'moving-day' ? { name: 'Kaai 42', effect: 'Moving day. The first match at Kaai 42 is a big night, and the groundshare ends.' } : bundleById(id);
+  const b = id === 'moving-day' ? { name: 'Kaai 42', effect: 'Moving day. The first match at Kaai 42 is a big night, and the groundshare ends.' } : bundleById(id) ?? openingOf(id);
   return (
     <div className="fb-moment" role="dialog" aria-modal="true" aria-labelledby="fb-open-t">
       <Aurora a="#ff7a1a" c="#7fe0a8">
@@ -21,4 +22,10 @@ export function OpeningNightView({ id, onDone }: { id: string; onDone: () => voi
       </Aurora>
     </div>
   );
+}
+
+/** A new layer 3 stage isn't a shipped bundle: its name and reward stand in. */
+function openingOf(id: string) {
+  const p = projectById(id);
+  return { name: p?.name ?? 'A new building', effect: p?.reward ?? 'Built.' };
 }
