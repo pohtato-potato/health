@@ -1,3 +1,4 @@
+import { CardViewerHost } from './ui/CardViewer';
 import { TrainProto } from './screens/proto/TrainLiving';
 import { SessionProto } from './screens/proto/SessionLiving';
 import { Suspense, lazy, useEffect, useRef, type ComponentType, type ReactNode } from 'react';
@@ -256,6 +257,7 @@ export function App() {
       <MaintenanceWatcher />
       <ChallengeWatcher />
       <ShakeStat />
+      <CardViewerHost />
     </div>
   );
 }

@@ -1,10 +1,11 @@
 // A player card (round 8, bare): the drawing of the habit in its tier's glass frame. No text on the face; the
 // overall, name and step sit beside it. Chevrons mark the step inside a tier. Prism, Icon and Legend tilt.
-import { useMemo, useRef, type PointerEvent } from 'react';
+import { useMemo, useRef, type PointerEvent, type ReactNode } from 'react';
+import { Viewable, type CardView } from '../../../ui/CardViewer';
 import { rarityClass, stepName } from '../../../football/players/cards';
 import { artSvg } from '../../../football/players/art';
 import { hashSeed, rng } from '../../../football/rng';
-import type { CardStep, CardTier } from '../../../football/players/types';
+import type { CardStep, CardTier, FbPlayer } from '../../../football/players/types';
 
 const PAL: Record<CardTier, string[]> = {
   bronze: ['#7a3d12', '#a85a24', '#c97a3a', '#e0955a', '#f2c08a'],
@@ -43,7 +44,37 @@ const SHARDS: [number, number, number][] = [[4, 8, 20], [80, 16, -30], [8, 52, 5
 export const TILTS = new Set<CardTier>(['prism', 'icon', 'legend']);
 
 /** The card itself. `label` is what a screen reader hears (the face has no text). */
-export function PlayerCard({ card, art, seed, label, className = '' }: { card: CardStep; art: string; seed: string; label?: string; className?: string }) {
+type CardProps = { card: CardStep; art: string; seed: string; label?: string; className?: string; artNode?: ReactNode; player?: Pick<FbPlayer, 'name' | 'overall' | 'best' | 'versions' | 'kind'>; back?: ReactNode; noView?: boolean };
+
+/** The card's back in the full-screen viewer: name, tier and step, rating and its history. */
+export function playerBack(card: CardStep, label: string | undefined, p?: CardProps['player']): ReactNode {
+  const when = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  return (
+    <>
+      <span className="cv-k">{stepName(card)}</span>
+      <h2>{p?.name ?? label ?? 'A card'}</h2>
+      {p && <p><span className="cv-big tn">{p.overall}</span> <span className="cv-k">overall · best {p.best}</span></p>}
+      {p?.versions?.length ? (
+        <>
+          <span className="cv-k">Its history</span>
+          <ul>{[...p.versions].reverse().slice(0, 8).map((v, i) => <li key={i}><span>{stepName(v)} · {when(v.on)}</span><b className="tn">{v.overall}</b></li>)}</ul>
+        </>
+      ) : null}
+    </>
+  );
+}
+
+/** The card itself. `label` is what a screen reader hears (the face has no text). A tap opens it full screen. */
+export function PlayerCard(props: CardProps) {
+  const { card, seed, label, player, back, noView } = props;
+  const face = <CardFace {...props} />;
+  if (noView) return face;
+  const view = (): CardView => ({ face: <CardFace {...props} />, back: back ?? playerBack(card, label, player), label: player ? `${player.name}, ${stepName(card)} card` : (label ?? `${stepName(card)} card`) });
+  void seed;
+  return <Viewable view={view}>{face}</Viewable>;
+}
+
+function CardFace({ card, art, seed, label, className = '', artNode }: CardProps) {
   const svg = useMemo(() => glass(card.tier, seed), [card.tier, seed]);
   const r = card.tier === 'icon' || card.tier === 'legend';
   const steps = card.tier === 'legend' ? 0 : card.step;
@@ -55,7 +86,7 @@ export function PlayerCard({ card, art, seed, label, className = '' }: { card: C
       <div className="k6in">
         <span dangerouslySetInnerHTML={{ __html: svg }} style={{ display: 'contents' }} />
         {!r && <span className="win6" />}
-        <div className="k6art" dangerouslySetInnerHTML={{ __html: artSvg(art) }} />
+        {artNode ? <div className="k6art">{artNode}</div> : <div className="k6art" dangerouslySetInnerHTML={{ __html: artSvg(art) }} />}
       </div>
       <span className="gla8" />
     </div>

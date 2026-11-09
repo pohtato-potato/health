@@ -140,7 +140,7 @@ export function LimitBreakRoute({ id }: { id: string }) {
       {[0, 1, 2].map((k) => <i key={k} className="rt-sw" style={{ animationDelay: `${k * 0.7}s` }} aria-hidden="true" />)}
       <span className="pl-kick">Limit break</span>
       <h2 className="fb-t">{p.name}</h2>
-      <div className="rt-lbc"><PlayerCard card={p.card} art={p.art} seed={p.id} label={`${p.name}, ${stepName(p.card)} card, cracked with light`} />{CRACKS}</div>
+      <div className="rt-lbc"><PlayerCard card={p.card} art={p.art} seed={p.id} player={p} label={`${p.name}, ${stepName(p.card)} card, cracked with light`} />{CRACKS}</div>
       {l.from != null && <div className="rt-lbn" aria-label={`Rating ${l.from} to ${l.to}`}><span className="pl-num">{l.from}</span><i aria-hidden="true">→</i><b className="pl-num">{l.to}</b></div>}
       <p className="pl-sub">{l.what ? `${l.what[0].toUpperCase()}${l.what.slice(1)}.` : ''} The scale resets: the next stretch of progress counts again.</p>
       <div className="rt-rw">
@@ -260,7 +260,7 @@ export function TeamSheetRoute() {
               const on = starting.has(m.id);
               return (
                 <button key={m.id} type="button" className={`rt-pick${on ? ' st' : ''}`} aria-pressed={on} onClick={() => void setStarters(u, toggleStarter(unit, starters, m.id, places))}>
-                  <PlayerCard card={p.card} art={p.art} seed={p.id} />
+                  <PlayerCard card={p.card} art={p.art} seed={p.id} player={p} />
                   <span className="pl-col"><b>{m.name}</b><span>{rowWords(p, on)}</span></span>
                   <b className="pl-num">{m.rating}</b>
                   <span className="rt-tag">{on ? 'Starts' : 'Bench'}</span>
@@ -309,7 +309,7 @@ export function RotationLinks({ players }: { players: FbPlayer[] }) {
     <>
       {lb && (
         <button type="button" className="pl-banner rt-lbban" onClick={() => go('/football/limit', { id: lb.id })}>
-          <PlayerCard card={lb.card} art={lb.art} seed={lb.id} />
+          <PlayerCard card={lb.card} art={lb.art} seed={lb.id} player={lb} />
           <span><b>{lb.name}</b> has broken its limit. Tap to see what changed.</span>
         </button>
       )}

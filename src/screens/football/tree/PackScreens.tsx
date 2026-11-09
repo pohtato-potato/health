@@ -12,6 +12,8 @@ import { go } from '../../../router';
 import { useModel, type Model } from './model';
 import { Back, TreePage } from './TreeScreens';
 import { PackLoan } from '../world/WorldScreens';
+import { Gem, GlassCard, SimpleBack, Viewable, type CardView } from '../../../ui/CardViewer';
+import type { AlbumCard } from '../../../football/content/types';
 
 const RARITY_NAME: Record<Rarity, string> = { bronze: 'Bronze', silver: 'Silver', gold: 'Gold', prism: 'Prism', icon: 'Icon', legend: 'Legend' };
 const SOURCE: Record<PackEarned['source'], string> = { 'week-finished': 'A week finished', 'final-won': 'A final won', promotion: 'Promotion', tech: 'From the tree', bounty: 'A bounty', track: 'The season track', testimonial: 'A testimonial' };
@@ -78,19 +80,24 @@ function Item({ it }: { it: PackItem }) {
     const c = ALBUM_CARDS.find((x) => x.id === it.id)!;
     const set = ALBUM.find((s) => s.cards.some((x) => x.id === c.id))!;
     return (
-      <div className={`fbt-item album ${c.rarity}${it.duplicate ? ' dup' : ''}`}>
+      <Viewable view={() => albumView(c, set.title)} className={`fbt-item album ${c.rarity}${it.duplicate ? ' dup' : ''}`}>
         <span className="fbt-lb">{RARITY_NAME[c.rarity]} · {set.title}</span>
         <b className="fbt-t2">{c.title}</b>
         <span>{c.fact}</span>
         {it.duplicate ? <small>Already in the album: <b className="fbt-n">+{it.n}</b> research</small> : <small>New in the album</small>}
-      </div>
+      </Viewable>
     );
   }
   if (it.kind === 'boost') {
     const b = BOOSTS.find((x) => x.id === it.id)!;
-    return <div className="fbt-item boost"><span className="fbt-lb">{b.kind === 'kit-trim' ? 'Kit trim' : 'Boost · one match'}</span><b className="fbt-t2">{b.name}</b><span>{b.text}</span></div>;
+    const kick = b.kind === 'kit-trim' ? 'Kit trim' : 'Boost · one match';
+    const view = (): CardView => ({ face: <GlassCard ink="#8fdcb6" tier="silver"><Gem /></GlassCard>, back: <SimpleBack kicker={kick} title={b.name} lines={[b.text]} />, label: `${kick}: ${b.name}` });
+    return <Viewable view={view} className="fbt-item boost"><span className="fbt-lb">{kick}</span><b className="fbt-t2">{b.name}</b><span>{b.text}</span></Viewable>;
   }
-  if (it.kind === 'research') return <div className="fbt-item research"><span className="fbt-lb">Research</span><b className="fbt-t2 fbt-n">+{it.n}</b><span>Into the bank.</span></div>;
+  if (it.kind === 'research') {
+    const view = (): CardView => ({ face: <GlassCard ink="#ffe27a" tier="bronze"><Gem /></GlassCard>, back: <SimpleBack kicker="Research" title={`+${it.n}`} lines={['Into the bank.']} />, label: `Research, plus ${it.n}` });
+    return <Viewable view={view} className="fbt-item research"><span className="fbt-lb">Research</span><b className="fbt-t2 fbt-n">+{it.n}</b><span>Into the bank.</span></Viewable>;
+  }
   if (it.kind === 'loan' && it.id) return <PackLoan id={it.id} />;
   return null;
 }
@@ -118,8 +125,12 @@ export function AlbumPage() {
               <ol className="fbt-cards">
                 {set.cards.map((c) => (
                   <li key={c.id} className={`${c.rarity}${have.has(c.id) ? '' : ' miss'}`} style={{ ['--r' as string]: RARITY_HUE[c.rarity] } as CSSProperties}>
-                    <b>{have.has(c.id) ? c.title : 'Not found yet'}</b><small>{RARITY_NAME[c.rarity]}</small>
-                    {have.has(c.id) && <span>{c.fact}</span>}
+                    {have.has(c.id) ? (
+                      <Viewable view={() => albumView(c, set.title)}>
+                        <b>{c.title}</b><small>{RARITY_NAME[c.rarity]}</small>
+                        <span>{c.fact}</span>
+                      </Viewable>
+                    ) : <><b>Not found yet</b><small>{RARITY_NAME[c.rarity]}</small></>}
                   </li>
                 ))}
               </ol>
@@ -132,6 +143,14 @@ export function AlbumPage() {
   );
 }
 const RARITY_HUE: Record<Rarity, string> = { bronze: '#e0955a', silver: '#d6e8f5', gold: '#ffcf4a', prism: '#ff7ad9', icon: '#ffa25c', legend: '#ffd56a' };
+/** An album card full screen: glass in its rarity's colour, no words on the face; the fact and the set on the back. */
+export function albumView(c: AlbumCard, setTitle: string): CardView {
+  return {
+    face: <GlassCard ink={RARITY_HUE[c.rarity]} tier={c.rarity}><Gem /></GlassCard>,
+    back: <SimpleBack kicker={`${RARITY_NAME[c.rarity]} · ${setTitle}`} title={c.title} lines={[c.fact]} />,
+    label: `${c.title}, ${RARITY_NAME[c.rarity]} album card`,
+  };
+}
 function SetRewards({ m }: { m: Model }) {
   const done = albumProgress(m.user).filter((p) => p.done);
   if (!done.length) return null;

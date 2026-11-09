@@ -15,9 +15,20 @@ import { fmtCount, METRIC_WORDS, ROMAN } from '../../../football/tree/words';
 import { go } from '../../../router';
 import { useModel, type Model } from './model';
 import { Skyline } from './Skyline';
+import { Crest, GlassCard, SimpleBack, Viewable, type CardView } from '../../../ui/CardViewer';
 
 const eraOf = (id: EraId) => ERAS.find((e) => e.id === id)!;
 const col = (c: string) => ({ ['--c' as string]: c }) as CSSProperties;
+
+type Era = (typeof ERAS)[number];
+/** An era seal full screen: a crest in the era's colour; its name and story on the back. */
+export function sealView(era: Era, k: number, state: string): CardView {
+  return { face: <GlassCard ink={era.colour} tier="gold"><Crest /></GlassCard>, back: <SimpleBack kicker={`Era ${ROMAN[k]} · ${state}`} title={era.name} lines={[era.intro]} />, label: `Era ${ROMAN[k]}: ${era.name}, ${state.toLowerCase()}` };
+}
+/** A staff card full screen. */
+export function staffView(name: string, text: string, era: Era, from: string): CardView {
+  return { face: <GlassCard ink={era.colour} tier="silver"><Crest /></GlassCard>, back: <SimpleBack kicker={from} title={name} lines={[text]} />, label: `${name}, staff` };
+}
 
 export function Back({ to, label, params }: { to: string; label: string; params?: Record<string, string> }) {
   return <button type="button" className="fbt-back" onClick={() => go(to, params, { replace: true })}>‹ {label}</button>;
@@ -190,9 +201,9 @@ export function EraMoment({ e }: { e: string }) {
       <p className="fbt-line c">{era.intro}</p>
       <div className="fbt-seals">
         {ERAS.map((x, k) => (
-          <span key={x.id} className={k < i ? 'dn' : k === i ? 'now' : 'lk'} style={col(x.colour)} aria-label={`Era ${ROMAN[k]}: ${x.name}${k < i ? ', done' : k === i ? ', now' : ', ahead'}`}>
-            <b>{ROMAN[k]}</b>
-          </span>
+          <Viewable key={x.id} view={() => sealView(x, k, k < i ? 'Done' : k === i ? 'Now' : 'Ahead')}>
+            <span className={k < i ? 'dn' : k === i ? 'now' : 'lk'} style={col(x.colour)} aria-hidden="true"><b>{ROMAN[k]}</b></span>
+          </Viewable>
         ))}
       </div>
       <div className="fbt-plates">{techs.map((t, k) => <span key={t.id} style={{ animationDelay: `${1.2 + k * 0.15}s` }}>{t.name}</span>)}</div>
@@ -287,12 +298,12 @@ export function StaffPage() {
     const era = eraOf(x.tech.era);
     const doc = x.s.id === 'club-doctor' && x.hired;
     return (
-      <p key={x.s.id} className={`fbt-staff${x.leave ? ' leave' : ''}`} style={col(era.colour)}>
+      <Viewable key={x.s.id} className={`fbt-staff${x.leave ? ' leave' : ''}`} style={col(era.colour)} view={() => staffView(x.s.name, x.s.text, era, `${era.name} · ${x.tech.name}`)}>
         <b>{x.s.name}{doc ? ` · level ${m.doctor.level}` : ''}{x.leave ? ' · on leave' : ''}</b>
         <small>{x.s.text}</small>
         {doc && <small>{m.doctor.xp} days with every medicine kept{m.doctor.next ? ` · next level at ${m.doctor.next}` : ' · top level'}</small>}
         <small className="fbt-from">{era.name} · {x.tech.name}{x.hired ? ` · ${euros(wage(x.s.wageUnits, m.t.tier))} a season` : ''}</small>
-      </p>
+      </Viewable>
     );
   };
   return (

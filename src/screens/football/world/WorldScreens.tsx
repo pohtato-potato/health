@@ -17,12 +17,22 @@ import { UNIT_COLOUR } from '../../../football/players/eleven';
 import type { LoanDef, Unit } from '../../../football/content/types';
 import type { FbSquadRow } from '../../../football/store/tables';
 import type { LoanStay } from '../../../football/globe/types';
+import { GlassCard, SimpleBack, Viewable, type CardView } from '../../../ui/CardViewer';
 import { Back, TreePage } from '../tree/TreeScreens';
 
 const col = (c: string) => ({ ['--c' as string]: c }) as CSSProperties;
 const fmtDate = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 const TIER_COLOUR: Record<LoanDef['tier'], string> = { gold: '#ffd56a', prism: '#c4abff', icon: '#ffa25c' };
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
+/** A loan full screen: the drawing on glass in its tier's colour; name, tier, unit and signature move on the back. */
+export function loanView(loan: LoanDef, extra?: string): CardView {
+  return {
+    face: <GlassCard ink={TIER_COLOUR[loan.tier]} tier={loan.tier}><LoanArt loan={loan} size={220} /></GlassCard>,
+    back: <SimpleBack kicker={`${LOAN_TIER_NAME[loan.tier]} · ${loan.unit}`} title={loan.name} lines={[`${loan.trait.name}: ${loan.trait.text}`, loan.style, extra]} />,
+    label: `${loan.name}, ${LOAN_TIER_NAME[loan.tier]} loan`,
+  };
+}
 
 /** The loan's drawing: a pose, kit colours and a shirt number; the face is line-art shading only. */
 export function LoanArt({ loan, size = 120 }: { loan: LoanDef; size?: number }) {
@@ -61,7 +71,7 @@ export function LoanMoment({ k }: { k: string }) {
     <div className="fbg-moment loan" style={col(TIER_COLOUR[def.tier])}>
       <i className="fbg-ray" aria-hidden="true" />
       <p className="fbt-lb c">On loan · {days} days</p>
-      <div className="fbg-sil"><LoanArt loan={def} size={150} /></div>
+      <Viewable view={() => loanView(def, def.arrival)} className="fbg-sil"><LoanArt loan={def} size={150} /></Viewable>
       <h1 className="fbt-t1 c">{def.name}</h1>
       <p className="fbg-say c">{def.arrival}</p>
       <p className="fbt-line c">Joins {def.unit}. Plays only on days you log {UNIT_HABIT[def.unit]}, in place of the lowest-rated starter there, who rests. While {def.name.split(' ').slice(-1)[0]} is here the {def.unit} youngsters grow half as fast again.</p>
@@ -86,7 +96,7 @@ function StayCard({ st, left, past }: { st: LoanStay; left?: number; past?: bool
   if (!def) return null;
   return (
     <section className="fbg-stay" style={col(TIER_COLOUR[def.tier])}>
-      <LoanArt loan={def} size={72} />
+      <Viewable view={() => loanView(def, past ? `“${def.farewell}”` : undefined)}><LoanArt loan={def} size={72} /></Viewable>
       <span className="fbg-st">
         <span className="fbt-lb">{LOAN_TIER_NAME[def.tier]} · {def.unit}</span>
         <b className="fbt-t2">{def.name}</b>
@@ -361,7 +371,7 @@ export function PackLoan({ id }: { id: string }) {
   return (
     <div className={`fbt-item loan ${d.tier}`} style={col(TIER_COLOUR[d.tier])}>
       <span className="fbt-lb">{LOAN_TIER_NAME[d.tier]} · {LOAN_DAYS} days</span>
-      <span className="fbg-pk"><LoanArt loan={d} size={64} /><span><b className="fbt-t2">{d.name}</b><span>Joins {d.unit} as soon as a slot is free.</span></span></span>
+      <span className="fbg-pk"><Viewable view={() => loanView(d)}><LoanArt loan={d} size={64} /></Viewable><span><b className="fbt-t2">{d.name}</b><span>Joins {d.unit} as soon as a slot is free.</span></span></span>
       <small>{d.trait.name}: {d.trait.text}</small>
     </div>
   );
