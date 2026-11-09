@@ -1,5 +1,6 @@
 // One match from stored inputs to stored events (spec §7.2–7.3). Pure and seeded.
 import type { AbilityDef } from './data/load';
+import { capChance, type CondCap } from './squadCare';
 import { CAL, type Opponent } from './opponent';
 import { coverage, edgeDistance, hexagon, inside, polygon, radii, randomIn, LIT, type Pt } from './radar';
 import { rng, shuffle } from './rng';
@@ -27,6 +28,8 @@ export interface MatchInput {
   rival?: RivalTwist;
   /** Data conditions true today, e.g. 'protein-hit'. */
   conds: string[];
+  /** Release 1 (R7 q-cond A): squad condition caps how high a chance can lift Power and Pace, never below `values`. */
+  condCap?: CondCap;
   ctx?: MatchCtx;
 }
 
@@ -290,6 +293,7 @@ export function playMatch(m: MatchInput): MatchEvents {
       mods.push({ axis: 'Pace', d: 0, why: has('Dirty Leeds') ? 'Dirty Leeds: fouled down to 40%' : 'Dark arts', kind: 'opp' });
       foul = -1;
     }
+    for (const mod of capChance(v, base, m.condCap)) mods.push(mod);
     const pctF = pctOf(v, side, reach);
     const pct = Math.round(pctF * 100);
     const shape = shapeOf(v, side);

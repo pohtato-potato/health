@@ -1,23 +1,26 @@
 import { useEffect } from 'react';
 
-/** The pill above the tab bar: what the drawer holds, readable without opening it. */
-export function DrawerHandle({ ready, protein, closeLabel, onOpen }: { ready: number | undefined; protein: string; closeLabel: 'Close the day' | 'Day closed'; onOpen: () => void }) {
+/**
+ * The dock above the tab bar (Today AM, pinned): the protein still to go opens the drawer; the moon-coloured
+ * Close the day button with its moon goes straight to Close the day. No + button: logging lives on the page.
+ */
+export function DrawerHandle({ protein, closeLabel, onOpen, onCloseDay }: { protein: string; closeLabel: 'Close the day' | 'Day closed'; onOpen: () => void; onCloseDay: () => void }) {
   return (
-    <button type="button" className="td-handle" data-section="handle" aria-label="Open today in detail" onClick={onOpen}>
-      <i aria-hidden="true" />
-      <span className="td-handle-row">
-        <span>
-          Ready <b className="tn">{ready ?? '—'}</b>
-        </span>
+    <div className="td-handle" data-section="handle">
+      <button type="button" className="td-handle-open" aria-label={`${protein}. Open today in detail`} onClick={onOpen}>
+        <i aria-hidden="true" />
         <span>{protein}</span>
-        <span className="td-handle-close">{closeLabel}</span>
-      </span>
-    </button>
+      </button>
+      <button type="button" className="td-moonbtn" onClick={onCloseDay}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 15.5 A7.5 7.5 0 1 1 9.5 4.5 A6 6 0 0 0 17.5 15.5 Z" /><circle cx="18" cy="6" r="1" /><circle cx="20.5" cy="10" r=".7" /></svg>
+        {closeLabel}
+      </button>
+    </div>
   );
 }
 
-/** The drawer: the full voice line, readiness, the protein gap, and Close the day. */
-export function TodayDrawer({ voice, readiness, protein, dayClosed, onReadiness, onAddGap, onCloseDay, onClose }: { voice: string; readiness: { score?: number; reason?: string }; protein: { text: string; foods: string }; dayClosed: boolean; onReadiness: () => void; onAddGap: () => void; onCloseDay: () => void; onClose: () => void }) {
+/** The drawer: the full voice line, the body log, the protein gap, and Close the day. */
+export function TodayDrawer({ voice, body, protein, dayClosed, onBody, onAddGap, onCloseDay, onClose }: { voice: string; body: string; protein: { text: string; foods: string }; dayClosed: boolean; onBody: () => void; onAddGap: () => void; onCloseDay: () => void; onClose: () => void }) {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -32,10 +35,10 @@ export function TodayDrawer({ voice, readiness, protein, dayClosed, onReadiness,
         </button>
         <p className="td-drawer-voice">{voice}</p>
         <div className="td-dgrid">
-          <button type="button" className="td-dtile" onClick={onReadiness}>
-            <b className="tn">{readiness.score ?? '—'}</b>
-            <span>{readiness.score !== undefined ? 'Ready' : 'Log sleep'}</span>
-            <small>{readiness.reason ?? 'The morning log’s sleep makes this a real score.'}</small>
+          <button type="button" className="td-dtile" onClick={onBody}>
+            <b>Body</b>
+            <span>Body log</span>
+            <small>{body}</small>
           </button>
           <button type="button" className="td-dtile" onClick={onAddGap} disabled={!protein.foods}>
             <b>{protein.text.split(' ')[0]}</b>

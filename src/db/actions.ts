@@ -5,6 +5,7 @@ import type { Swap } from '../domain/plan';
 import type {
   BodyEntry,
   Day,
+  DaySeal,
   Food,
   FoodEntry,
   Measurement,
@@ -103,11 +104,23 @@ export async function bump(id: string, opts: { day?: DayKey; value?: string; by?
   });
 }
 
-export async function setSteps(date: DayKey, steps: number, final = false, estimated = false): Promise<number> {
+/**
+ * Steps are a running total (G g-steps): type the phone's counter and the app keeps the highest number for the day.
+ * `correct` lets a mistyped count come down.
+ */
+export async function setSteps(date: DayKey, steps: number, final = false, estimated = false, correct = false): Promise<number> {
   void logUsage('log', 'steps');
-  const id = await editDay(date, { steps: Math.max(0, Math.round(steps)), stepsAt: Date.now(), stepsEstimated: estimated || undefined, ...(final ? { stepsFinal: true } : {}) });
+  const had = (await db.days.get(date))?.steps;
+  const next = keptSteps(had, steps, correct);
+  const id = await editDay(date, { steps: next, stepsAt: Date.now(), stepsEstimated: (next === had ? undefined : estimated) || undefined, ...(final ? { stepsFinal: true } : {}) });
   if (date === dayKey() && logMinutes(Date.now()) < 720 && steps > 9000) await bump('steps-9000-by-noon', { day: date });
   return id;
+}
+
+/** The count to keep: the higher of the two unless correcting. */
+export function keptSteps(had: number | undefined, typed: number, correct = false): number {
+  const t = Math.max(0, Math.round(typed));
+  return correct || had === undefined ? t : Math.max(had, t);
 }
 
 export interface MorningInput {
@@ -144,7 +157,7 @@ export async function saveMorningLog(date: DayKey, input: MorningInput, yesterda
     });
     if (input.yesterdaySteps !== undefined) {
       const y = (await db.days.get(yesterday)) ?? { date: yesterday };
-      await db.days.put({ ...y, date: yesterday, steps: input.yesterdaySteps, stepsFinal: true, stepsAt: now });
+      await db.days.put({ ...y, date: yesterday, steps: keptSteps(y.steps, input.yesterdaySteps), stepsFinal: true, stepsAt: now });
     }
   });
   return recordEdit('days', date, before, await db.days.get(date));
@@ -374,9 +387,23 @@ export async function moveEntry(id: string, meal: FoodEntry['meal']) {
  * Marks a day's food complete (or not). Works for any date. A day is scored at Close the day or the morning match,
  * whichever is later (spec §16): closing today waits for the morning; closing a day already past kicks it off now.
  */
-export async function closeDay(date: DayKey, done: boolean, now = Date.now()) {
-  await patchDay(date, { foodDone: done });
-  if (done && date < dayOfLogging(now)) await import('../football/store/play').then((m) => m.kickOff(date)).catch((e) => console.error('football kick-off', e));
+export async function closeDay(date: DayKey, done: boolean, now = Date.now(), partial = false) {
+  // Closing seals tonight's shape (R5 c-lock); opening the day again lifts the seal.
+  const seal = done || partial ? await sealFor(date, now) : undefined;
+  await patchDay(date, { foodDone: done, partial: (!done && partial) || undefined, seal });
+  if ((done || partial) && date < dayOfLogging(now)) await import('../football/store/play').then((m) => m.kickOff(date)).catch((e) => console.error('football kick-off', e));
+}
+
+/** Tonight's shape as it stands, read by Football. Undefined when Football can't read it (no save yet is fine). */
+async function sealFor(date: DayKey, at: number): Promise<DaySeal | undefined> {
+  try {
+    const g = await import('../football/store/gather');
+    const night = g.liveNightFor(await g.loadHealth(), date);
+    return { at, values: { ...night.values }, flags: { ...night.flags } };
+  } catch (e) {
+    console.error('seal', e);
+    return undefined;
+  }
 }
 
 /** Puts a status on every day from..to, or takes it off when status is undefined. */
@@ -430,6 +457,11 @@ export async function carryStatus(today: DayKey) {
 export async function endStatus(today: DayKey) {
   await setStatusRange(today, today, undefined);
   await patchSettings({ activeStatus: undefined });
+}
+
+/** Takes a body log mark back off (the chart's Clear). */
+export async function deleteBodyEntry(id: string) {
+  await db.body.delete(id);
 }
 
 /** A body log entry. During a set it carries the exercise, side and set. */

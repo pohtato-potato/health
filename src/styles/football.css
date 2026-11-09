@@ -136,7 +136,12 @@ svg.fb-crest { filter: drop-shadow(0 0 6px rgba(255,122,26,.55)); }
 .fb-radar .lab .v { font: 500 15px var(--mono); fill: var(--bc, var(--fb-ink)); }
 .fb-radar .lab .cap { font: 700 14px var(--fb-cond); fill: var(--fb-or-text); }
 .fb-radar .lab .fl { font: 500 14px var(--sans); fill: #c9c4d6; }
-.fb-radar .b1 { --bc: #e79a9a; } .fb-radar .b2 { --bc: #e9a26b; } .fb-radar .b3 { --bc: #bfe3cf; } .fb-radar .b4 { --bc: #7fe0a8; }
+.fb-radar .v1 { --bc: #aab5cf; } .fb-radar .v2 { --bc: #ff9270; } .fb-radar .v3 { --bc: #7fb8ff; } .fb-radar .v4 { --bc: #3fd98a; } .fb-radar .v5 { --bc: #ffd56a; }
+.fb-radar .opp { fill: none; stroke-width: 2.4; stroke-dasharray: 7 5; stroke-linejoin: round; opacity: .9; }
+.fb-radar .fog { stroke: rgba(243,238,230,.35); stroke-width: 1; }
+.fb-radar .dot { fill: var(--bc); stroke: #10121f; stroke-width: 2.5; transition: r .3s ease-out; }
+.fb-radar .dot.hit { filter: drop-shadow(0 0 8px var(--bc)); animation: fb-dothit .9s ease-out; }
+@keyframes fb-dothit { 0% { r: 7; } 35% { r: 14; } 100% { r: 9; } }
 
 /* ---- the match ---- */
 .fb-match.def { --a: var(--fb-save); }
@@ -488,3 +493,17 @@ button.fb-todaycard { cursor: pointer; }
 .fb-ctn { display: flex; align-items: center; gap: 8px; min-width: 0; overflow-wrap: anywhere; }
 .fb-res.ct, .fb-sh.ct { outline: 2px solid currentColor; outline-offset: 2px; }
 .fb-sh.ct { color: var(--fb-ink); }
+
+/* Full time (closing drawing): the background is the result. Green and gold for a win, a calm blue and amber for a
+   draw, deep wine for a loss: quiet, never shaming. The score itself is plain white. */
+.fb-card.fb-result { border: 0; color: #f4f1ff; }
+.fb-card.fb-result.r-W { background: radial-gradient(120% 80% at 50% 0%, #e8c25a 0%, transparent 55%), linear-gradient(170deg, #1f7a52, #0f3b2c); }
+.fb-card.fb-result.r-D { background: radial-gradient(120% 80% at 50% 0%, #d9a24c 0%, transparent 55%), linear-gradient(170deg, #2c5c8e, #172c4a); }
+.fb-card.fb-result.r-L { background: radial-gradient(120% 80% at 50% 0%, #7a3a55 0%, transparent 60%), linear-gradient(170deg, #4a1d33, #24101c); }
+.fb-result .fb-score { color: #fff; text-shadow: none; }
+.fb-result .fb-s { color: #f4f1ff; }
+.fb-result .fb-tag { color: #fff; }
+/* The whole Football page takes the result while Full time shows: the aurora keeps moving, in the result's colours. */
+:root[data-ft='W'] .fb-au { background: linear-gradient(175deg, #123d2a, #0a1f16 70%); --a: #e8c25a; --c: #2fbf78; }
+:root[data-ft='D'] .fb-au { background: linear-gradient(175deg, #16304f, #0b1728 70%); --a: #d9a24c; --c: #4f8fd0; }
+:root[data-ft='L'] .fb-au { background: linear-gradient(175deg, #3a1628, #1c0b14 70%); --a: #7a3a55; --c: #5a2a48; }

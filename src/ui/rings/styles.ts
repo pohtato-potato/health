@@ -1,6 +1,6 @@
 /**
  * Ring styles for theme days. A theme changes a ring's SHAPE or its CONTENT, never its
- * colour, order or how full it is: calories, protein and steps keep their inks on every day.
+ * colour, order or how full it is: calories, protein, steps and sleep keep their inks on every day.
  */
 export const RING_STYLES = ['plain', 'scallop', 'kite', 'lantern', 'thrown', 'blossom', 'ripple', 'stars', 'marigold', 'cane', 'sparks', 'digits', 'candles', 'spots', 'rays', 'ticks', 'leaves', 'claws', 'waves', 'forks', 'hen'] as const;
 export type RingStyle = (typeof RING_STYLES)[number];
@@ -11,11 +11,11 @@ export const SHAPE_STYLES: RingStyle[] = ['plain', 'scallop', 'kite', 'lantern',
 export const CONTENT_STYLES: RingStyle[] = ['stars', 'marigold', 'cane', 'sparks', 'digits', 'candles', 'spots', 'rays', 'ticks', 'leaves', 'claws', 'waves', 'forks', 'hen'];
 
 /** The fixed metric inks, outer to inner. */
-export const RING_INKS = ['var(--kcal)', 'var(--protein)', 'var(--steps)'] as const;
+export const RING_INKS = ['var(--kcal)', 'var(--protein)', 'var(--steps)', 'var(--sleep)'] as const;
 
 /**
  * Radius multiplier around the ring at angle theta (radians, 0 at the top): 1 is a circle.
- * Each shape keeps within ±10 % so the three rings never touch.
+ * Each shape keeps within ±10 % so the four rings never touch.
  */
 export function shapeRadius(style: RingStyle, theta: number): number {
   switch (style) {
@@ -63,13 +63,13 @@ export interface Mark {
 }
 
 /** How many marks go round each ring, outer to inner, for the content styles. */
-export const MARKS_PER_RING = [30, 24, 18];
+export const MARKS_PER_RING = [30, 25, 20, 14];
 
 /**
  * The marks that make up a content-styled ring, in order from the top clockwise. The first
  * round(progress × total) are filled; the rest are dimmed.
  */
-export function contentMarks(ring: 0 | 1 | 2, r: number, progress: number, cx = 100, cy = 100): Mark[] {
+export function contentMarks(ring: 0 | 1 | 2 | 3, r: number, progress: number, cx = 100, cy = 100): Mark[] {
   const total = MARKS_PER_RING[ring];
   const filled = Math.round(Math.max(0, Math.min(1, progress)) * total);
   return Array.from({ length: total }, (_, i) => {

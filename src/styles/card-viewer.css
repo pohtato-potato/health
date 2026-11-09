@@ -1,0 +1,48 @@
+/* The full-screen card viewer (release 1). Dark aurora, the card large and centred, words only on the back. */
+:where(.cv-open) { cursor: zoom-in; display: block; min-width: 44px; min-height: 44px; border-radius: 14px; -webkit-tap-highlight-color: transparent; }
+.cv-open:focus-visible { outline: 3px solid #ffd56a; outline-offset: 4px; }
+
+.cv { position: fixed; inset: 0; z-index: 95; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: calc(var(--safe-top, 0px) + 64px) 16px calc(var(--safe-bottom, 0px) + 20px); background: #05060f; color: #f4f1ff; font-family: 'Atkinson Hyperlegible Next', var(--sans); overflow: hidden; animation: cv-in .35s ease-out both; touch-action: none; }
+@keyframes cv-in { from { opacity: 0; } }
+.cv-sky { position: absolute; inset: 0; pointer-events: none; }
+.cv-sky i { position: absolute; width: 70vmax; height: 70vmax; border-radius: 50%; filter: blur(70px); opacity: .45; }
+.cv-sky .a { left: -30vmax; top: -25vmax; background: #6c3fc4; animation: cv-a 14s ease-in-out infinite alternate; }
+.cv-sky .b { right: -35vmax; top: 10vmax; background: #1a8f6a; opacity: .35; animation: cv-b 17s ease-in-out infinite alternate; }
+.cv-sky .c { left: -10vmax; bottom: -45vmax; background: #3fa0ff; opacity: .3; animation: cv-a 20s ease-in-out infinite alternate-reverse; }
+@keyframes cv-a { to { transform: translate(12vmax, 8vmax) scale(1.1); } }
+@keyframes cv-b { to { transform: translate(-10vmax, 12vmax) scale(.9); } }
+
+.cv-close { position: absolute; z-index: 3; top: calc(var(--safe-top, 0px) + 12px); right: 12px; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.4); background: rgba(10,12,28,.6); color: #fff; cursor: pointer; }
+.cv-close svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; fill: none; }
+
+.cv-stage { position: relative; z-index: 1; perspective: 1100px; display: grid; place-items: center; width: 100%; flex: 1; min-height: 0; outline: none; cursor: grab; }
+.cv-stage.held { cursor: grabbing; }
+.cv-stage:focus-visible .cv-card { outline: 3px solid #ffd56a; outline-offset: 10px; }
+.cv-card { position: relative; width: min(76vw, 300px, calc((100vh - 220px) * 5 / 7)); aspect-ratio: 5 / 7; transform-style: preserve-3d; transition: transform .7s cubic-bezier(.16,1,.3,1); display: block; }
+.cv-stage.held .cv-card { transition: transform .06s linear; }
+.cv-face, .cv-back { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.cv-face > *, .cv-face .k6 { width: 100%; height: 100%; }
+.cv-face .tilt8, .cv-face .cv-open { display: block; width: 100%; height: 100%; }
+/* The glare shows at full size; the living sweep, rays and rims keep running (no "held" state here). */
+.cv .gla8 { opacity: .9; }
+.cv-back { transform: rotateY(180deg); border-radius: 16px; padding: 22px 18px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; background: linear-gradient(160deg, #1c1838, #0c0b1c); border: 1.5px solid rgba(255,255,255,.25); box-shadow: 0 30px 60px -20px rgba(0,0,0,.8); font-size: 15px; line-height: 1.4; }
+.cv-back h2 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 26px; line-height: 1.1; }
+.cv-back .cv-k { font-size: 14px; color: #c9c5d6; text-transform: none; }
+.cv-back .cv-big { font-family: var(--serif); font-size: 44px; line-height: 1; }
+.cv-back ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.cv-back li { display: flex; justify-content: space-between; gap: 10px; font-size: 15px; border-top: 1px solid rgba(255,255,255,.12); padding-top: 6px; }
+.cv-back li b { font-family: var(--serif); font-weight: 400; }
+
+.cv-hint { position: relative; z-index: 1; margin: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; font-size: 14px; color: #c9c5d6; max-width: 340px; }
+.cv-tiltbtn { min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1.5px solid #ffd56a; background: rgba(255,213,106,.12); color: #ffe7a6; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+
+/* A glass card for things that aren't players: facets lit by the light, an emblem, the same glare. */
+.cv-glass { --ink: #ffd56a; position: relative; width: 100%; aspect-ratio: 5 / 7; border-radius: 14px; overflow: hidden; isolation: isolate; background: conic-gradient(from 210deg at 30% 20%, color-mix(in srgb, var(--ink) 70%, #000), color-mix(in srgb, var(--ink) 30%, #0c0b1c), color-mix(in srgb, var(--ink) 85%, #fff), color-mix(in srgb, var(--ink) 40%, #0c0b1c), color-mix(in srgb, var(--ink) 70%, #000)); border: 3px solid color-mix(in srgb, var(--ink) 60%, #140e26); box-shadow: 0 0 24px -4px color-mix(in srgb, var(--ink) 60%, transparent); }
+.cv-glass-facets { position: absolute; inset: 0; background: repeating-linear-gradient(60deg, rgba(255,255,255,.10) 0 18px, transparent 18px 36px), repeating-linear-gradient(-60deg, rgba(0,0,0,.18) 0 22px, transparent 22px 44px); transform: translate(calc(var(--px, 0) * -6px), calc(var(--py, 0) * -6px)) scale(1.06); mix-blend-mode: overlay; animation: cv-sweep 9s linear infinite; }
+@keyframes cv-sweep { to { background-position: 120px 0, -120px 0; } }
+.cv-glass-emblem { position: absolute; inset: 14%; display: grid; place-items: center; color: #fff; filter: drop-shadow(0 0 8px color-mix(in srgb, var(--ink) 80%, transparent)); transform: translate(calc(var(--px, 0) * 10px), calc(var(--py, 0) * 8px)); }
+.cv-glass-emblem svg { width: 100%; height: 100%; }
+.cv-glass.t-prism, .cv-glass.t-icon, .cv-glass.t-legend { animation: cv-rim 6s linear infinite; }
+@keyframes cv-rim { 50% { box-shadow: 0 0 40px 2px color-mix(in srgb, var(--ink) 80%, transparent); } }
+.cv-glass .gla8 { opacity: .5; }
+.fbt-seals .cv-open { display: inline-flex; align-items: center; border-radius: 999px; }

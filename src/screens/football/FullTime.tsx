@@ -1,5 +1,6 @@
 // Full time: the score, xG, the moments, a hidden ability found out, then the studio and the press.
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useEffect } from 'react';
 import { db } from '../../db/db';
 import { clubCrest, crestSvg } from '../../football/art/crest';
 import { clubById } from '../../football/data/load';
@@ -17,6 +18,12 @@ export function FullTimeView({ m, save, studio, press, tier = 6, onWatch }: { m:
   const xg = m.home === OWN ? m.events.xg : [m.events.xg[1], m.events.xg[0]];
   const crest = (id: string) => (id === OWN ? crestSvg(save.crest.step, save.crest.opt, 52) : clubCrest(clubById(id), 52));
   const facts = factsFor(m, tier, 1, 'press');
+  // The whole page is the result (owner, 9 Nov): the Football aurora takes the result's colours while Full time shows.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.ft = m.result;
+    return () => { if (root.dataset.ft === m.result) delete root.dataset.ft; };
+  }, [m.result]);
   return (
     <>
       <div className="fb-row"><span className="fb-lb">Full time</span><span className="fb-s">{m.round ?? ''}</span></div>

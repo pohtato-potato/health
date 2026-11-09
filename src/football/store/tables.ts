@@ -103,6 +103,8 @@ export interface FbSave {
   chemOn?: DayKey;
   /** 0 Settled, 1 Up, 2 High. */
   morale?: Morale;
+  /** Release 1 (R3 b-lowlog): this week's low-log week, Monday's date and the one habit's axis that still counts. */
+  lowLog?: { week: DayKey; axis: Axis };
 }
 export interface FbClub { id: string; tier: Tier; rating: number; style: string; old?: OldSelf; folded?: boolean }
 export interface FbSeason {

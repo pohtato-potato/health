@@ -13,7 +13,7 @@ export const FIRST_SHIRTS = BRABO_KITS.A.map((k, i) => ({ id: `A${i + 1}`, kit: 
 export const HABIT: Record<Axis, string> = {
   Pace: 'your steps',
   Power: 'your training sessions',
-  Fuel: 'calories and protein in range',
+  Fuel: 'eating in your range, plus protein',
   Rest: 'your sleep',
   Routine: 'your daily checklist',
   Shape: 'weigh-ins and the waist',

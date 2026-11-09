@@ -2,7 +2,7 @@ import './helpers/windowStub';
 import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup as html } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { PlusButton, TabBar } from '../../src/ui/TabBar';
+import { TabBar } from '../../src/ui/TabBar';
 import { FootballHome } from '../../src/screens/football/FootballHome';
 
 describe('tab bar A', () => {
@@ -17,13 +17,10 @@ describe('tab bar A', () => {
     expect(html(<TabBar active="walk" />)).not.toContain('Log something');
   });
 
-  it('on Today the plus sits in the handle row; elsewhere it is the fixed corner button', () => {
-    const today = readFileSync('src/screens/Today.tsx', 'utf8');
-    expect(today).toMatch(/<div className="td-dock">[\s\S]*<DrawerHandle[\s\S]*<PlusButton docked \/>[\s\S]*<\/div>/);
-    const app = readFileSync('src/App.tsx', 'utf8');
-    expect(app).toContain("page.tab !== 'today' && route.path !== '/football/match' && <PlusButton />");
-    expect(html(<PlusButton docked />)).toContain('class="fab-plus docked"');
-    expect(html(<PlusButton />)).toContain('class="fab-plus"');
+  it('has no + button anywhere (release 1): logging lives on the page', () => {
+    expect(readFileSync('src/screens/Today.tsx', 'utf8')).not.toContain('PlusButton');
+    expect(readFileSync('src/App.tsx', 'utf8')).not.toContain('PlusButton');
+    expect(readFileSync('src/ui/TabBar.tsx', 'utf8')).not.toContain('fab-plus');
   });
 
   it('every Football route lives under the football tab', () => {

@@ -89,7 +89,7 @@ export function DawnPage() {
             <div className="dawn-row"><span>Protein</span><b className="tn">{Math.round(totals.protein)} g</b></div>
             <div className="dawn-row"><span>Steps</span><b className="tn">{fmtInt(totals.steps)}</b></div>
           </div>
-          <p className="dawn-note">{rings.closed} of 3 closed. The steps goal was {fmtInt(stepsGoal(targets, totals.eased))}.</p>
+          <p className="dawn-note">{rings.closed} of {rings.of} closed. The steps goal was {fmtInt(stepsGoal(targets, totals.eased))}.</p>
         </>
       ),
     });

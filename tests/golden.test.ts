@@ -5,7 +5,7 @@ import type { Targets } from '../src/domain/types';
 
 const T: Targets = { kcalMin: 2000, kcalMax: 2300, proteinG: 140, steps: 10000, waterMl: 3000, sleepMin: 420, sessionsPerWeek: 4 };
 const ring = (closed: boolean) => ({ value: 0, progress: closed ? 1 : 0.5, closed });
-const perfect: Rings = { kcal: { ...ring(true), state: 'in' }, protein: ring(true), steps: ring(true), closed: 3, perfect: true };
+const perfect: Rings = { kcal: { ...ring(true), state: 'in' }, protein: ring(true), steps: ring(true), sleep: ring(true), closed: 4, of: 4, perfect: true };
 const base: GoldenInput = { date: '2026-10-14', rings: perfect, targets: T, slots: 1, ticked: 1, trained: true, records: [], day: { date: '2026-10-14', steps: 11000, waterMl: 3200, sleep: { asleep: 1380, woke: 420 } } };
 
 describe('golden moments', () => {

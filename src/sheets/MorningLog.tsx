@@ -5,13 +5,15 @@ import { homePlace } from '../domain/places';
 import { NIGHT_FROM, sleepMinutes, sleepWheelItems } from '../domain/rings';
 import type { Day, MuscleId, Settings } from '../domain/types';
 import { saveMorningLog } from '../db/actions';
-import { useAllDays, useAllSets, useSessions, useSettings } from '../db/hooks';
+import { useAllDays, useAllSets, useBody, useSessions, useSettings } from '../db/hooks';
+import { bodyTileWords } from '../domain/bodyLog';
+import { weightTrend } from '../domain/streaks';
+import { BodyChart } from '../ui/BodyChart';
 import { DateChip, useLogDate } from '../ui/DateChip';
 import { closeSheet } from '../router';
 import { IntField } from '../ui/controls';
 import { Dial } from '../ui/Dial';
 import { Wheel } from '../ui/Wheel';
-import { BodyMap } from '../ui/BodyMap';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
 import { morningQuestions, swapSentence } from '../state/derived';
@@ -49,12 +51,15 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
   const [rested, setRested] = useState<number | undefined>(day?.sleep?.rested);
   const [steps, setSteps] = useState<number | undefined>(yesterday?.steps);
   const [place, setPlace] = useState<string>(day?.place ?? before.find((d) => d.place)?.place ?? places[0].id);
-  const [energy, setEnergy] = useState<number | undefined>(day?.energy);
-  const [stomach, setStomach] = useState<boolean | undefined>(day?.stomach);
-  const [sore, setSore] = useState<Partial<Record<MuscleId, 1 | 2 | 3>>>(day?.soreness ?? {});
+  const energy = day?.energy;
+  const stomach = day?.stomach;
+  const sore: Partial<Record<MuscleId, 1 | 2 | 3>> = day?.soreness ?? {};
   const [answers, setAnswers] = useState<Record<string, boolean>>(() => Object.fromEntries(questions.map((q) => [q.id, day?.answers?.[q.id] ?? false])));
   const [saving, setSaving] = useState(false);
-  const [more, setMore] = useState(day?.energy !== undefined || day?.stomach !== undefined);
+  // Readiness's energy, stomach and soreness are retired from the form (R3 x-ready); answers already stored are kept.
+  const [more, setMore] = useState(false);
+  const body = useBody();
+  const trendNow = weight !== undefined ? weightTrend([...before.filter((d) => d.weightKg !== undefined).map((d) => ({ date: d.date, kg: d.weightKg! })), { date: today, kg: weight }]).pop()?.trend : undefined;
 
   const sleepLen = asleep !== undefined && woke !== undefined ? sleepMinutes(asleep, woke) : undefined;
 
@@ -149,7 +154,13 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
         <div style={{ opacity: weight === undefined ? 0.45 : 1 }}>
           <Dial value={weight ?? lastWeight ?? 75} step={0.1} min={35} max={200} major={10} onChange={setWeight} label="Weight in kg" unit="kg" />
         </div>
-        <div className="t12 q">After the toilet, before food or water. Leave it if you didn't weigh.</div>
+        {trendNow !== undefined && weight !== undefined && (
+          <div className="ml-trend" aria-live="polite">
+            <span><b className="tn">{trendNow.toFixed(1)}</b> kg trend</span>
+            <small>today’s reading {weight.toFixed(1)} kg</small>
+          </div>
+        )}
+        <div className="t13 q">After the toilet, before food or water. Leave it if you didn't weigh. The trend is the number that matters; a single morning moves with water.</div>
       </div>
 
       <div className="panel col gap10">
@@ -195,32 +206,11 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
       )}
 
       <div className="panel col gap10">
-        <button type="button" className="row tap44" aria-expanded={more} onClick={() => setMore(!more)} style={{ minHeight: 40 }}>
-          <span className="t15">Energy, stomach, soreness</span>
-          <span className="t12 q">{energy !== undefined || stomach !== undefined || Object.keys(sore).length ? 'answered' : '3 quick taps'}</span>
+        <button type="button" className="row tap44" aria-expanded={more} onClick={() => setMore(!more)} style={{ minHeight: 44 }}>
+          <span className="t15">Body</span>
+          <span className="t13 q">{bodyTileWords(body ?? [], today)}</span>
         </button>
-        {more && (
-          <>
-            <div className="col gap8">
-              <div className="lbl">Energy</div>
-              <Scale value={energy} onChange={setEnergy} low="Flat" high="Charged" label="Energy" />
-            </div>
-            <div className="row">
-              <div className="t15">Stomach settled?</div>
-              <div className="row" style={{ gap: 8 }}>
-                {([true, false] as const).map((v) => (
-                  <button key={String(v)} type="button" className={`chip${stomach === v ? ' on' : ''}`} aria-pressed={stomach === v} onClick={() => setStomach(stomach === v ? undefined : v)}>
-                    {v ? 'Yes' : 'No'}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="col gap8">
-              <div className="lbl">Anything sore?</div>
-              <BodyMap value={sore} onChange={setSore} />
-            </div>
-          </>
-        )}
+        {more && <BodyChart date={today} entries={body ?? []} />}
       </div>
 
       {questions.map((q) => (
@@ -247,23 +237,6 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
   );
 }
 
-function Scale({ value, onChange, low, high, label }: { value: number | undefined; onChange: (v: number | undefined) => void; low: string; high: string; label: string }) {
-  return (
-    <>
-      <div className="row" role="radiogroup" aria-label={label}>
-        {[1, 2, 3, 4, 5].map((n) => (
-          <button key={n} type="button" role="radio" aria-checked={value === n} className={`round${value === n ? ' on' : ''}`} style={{ fontSize: 16, color: value === n ? undefined : 'var(--quiet)' }} onClick={() => onChange(value === n ? undefined : n)}>
-            {n}
-          </button>
-        ))}
-      </div>
-      <div className="row t12 d">
-        <span>{low}</span>
-        <span>{high}</span>
-      </div>
-    </>
-  );
-}
 
 function fmtClock(minutes: number): string {
   const h = Math.floor(minutes / 60);

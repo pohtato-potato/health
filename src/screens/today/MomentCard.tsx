@@ -4,6 +4,8 @@ import type { MomentKind } from '../../domain/todayMoment';
 
 export interface MomentData {
   closedRings: number;
+  /** How many rings count today (4 since sleep joined). */
+  ringsOf?: number;
   proteinGapG: number;
   /** The foods that would close the gap, e.g. "Greek yogurt and two eggs"; empty when there are none. */
   gapFoods: string;
@@ -37,7 +39,7 @@ export function MomentCard({ kind, data, actions, sheen }: { kind: MomentKind; d
     case 'rest':
       return card('Rest is the plan', `${data.easedTo ? `Steps are eased to ${fmtInt(data.easedTo)}. ` : ''}Water, food, sleep. Nothing is missed.`, null);
     case 'closed':
-      return card('Today, kept', `${data.closedRings} of 3 rings. Tap the day in Close the day to change anything.`, null);
+      return card('Today, kept', `${data.closedRings} of ${data.ringsOf ?? 4} rings. Tap the day in Close the day to change anything.`, null);
     case 'morning':
       return card('Last night is waiting', 'Log weight and sleep to open the morning.', <button type="button" className="btn lg td-moment-btn" onClick={actions.logMorning}>Log the morning</button>);
     case 'perfect':
@@ -45,7 +47,7 @@ export function MomentCard({ kind, data, actions, sheen }: { kind: MomentKind; d
     case 'close':
       return card(
         'Ready to close the day?',
-        `${data.closedRings} of 3 rings.${data.proteinGapG > 0 && data.gapFoods ? ` Protein is ${data.proteinGapG} g short: ${data.gapFoods} would do it.` : ''}`,
+        `${data.closedRings} of ${data.ringsOf ?? 4} rings.${data.proteinGapG > 0 && data.gapFoods ? ` Protein is ${data.proteinGapG} g short: ${data.gapFoods} would do it.` : ''}`,
         <>
           <button type="button" className="btn lg td-moment-btn" onClick={actions.closeDay}>
             Close the day

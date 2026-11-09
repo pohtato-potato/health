@@ -50,7 +50,7 @@ export async function foundClub(date: DayKey, choices: { shirt: string; crest: C
     if (players.length) await db.fbPlayers.bulkPut(players);
   });
 }
-export async function setFbSetting<K extends 'buzz' | 'wcCountry' | 'ownSponsor' | 'captain' | 'slots'>(k: K, v: FbSave[K]) {
+export async function setFbSetting<K extends 'buzz' | 'wcCountry' | 'ownSponsor' | 'captain' | 'slots' | 'lowLog'>(k: K, v: FbSave[K]) {
   await db.transaction('rw', db.fbSave, async () => {
     const s = await db.fbSave.get('save');
     if (!s) return;

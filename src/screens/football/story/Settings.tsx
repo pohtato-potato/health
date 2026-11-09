@@ -1,4 +1,4 @@
-// Settings: five rows only (spec §5.6). Times and the mapping are fixed and shown; three things change.
+// Settings: spec §5.6 rows plus stadium sound and the low-log week (release 1). Times and the mapping are fixed and shown.
 import { useState } from 'react';
 import { NATIONS, nationBar } from '../../../football/events';
 import type { Slot } from '../../../football/money';
@@ -6,11 +6,53 @@ import { setBedtime, setFbSetting, setOwnSponsor } from '../../../football/store
 import { clock } from '../../../football/players/attributes';
 import type { FbSave } from '../../../football/store/tables';
 import { SLOT_NAME } from '../club/Money';
+import { patchSettings } from '../../../db/actions';
+import { useSettings } from '../../../db/hooks';
+import { prefOn } from '../../../domain/types';
+import { dayOfLogging, weekStart } from '../../../domain/dates';
+import type { Axis } from '../../../football/types';
+
+/** Low-log week (release 1, R3 b-lowlog): one week at a time, only medicines and one habit are needed. */
+function LowLogRow({ s }: { s: FbSave }) {
+  const [axis, setAxis] = useState<Axis>(s.lowLog?.axis ?? 'Pace');
+  const week = weekStart(dayOfLogging(Date.now()));
+  const on = s.lowLog?.week === week;
+  return (
+    <section className="fb-card fb-setrow" aria-label="Low-log week">
+      <div className="fb-row">
+        <span className="fb-lb">Low-log week</span>
+        <button type="button" className={`fb-btn sm ${on ? 'pri' : ''}`} aria-pressed={on} onClick={() => void setFbSetting('lowLog', on ? undefined : { week, axis })}>{on ? 'On' : 'Off'}</button>
+      </div>
+      <label className="fb-row">
+        <b>The one habit</b>
+        <select className="fb-select" value={on ? s.lowLog!.axis : axis} onChange={(e) => { const a = e.target.value as Axis; setAxis(a); if (on) void setFbSetting('lowLog', { week, axis: a }); }} aria-label="The one habit that still counts">
+          {MAPPING.map(([a, h]) => <option key={a} value={a}>{a}: {h.toLowerCase()}</option>)}
+        </select>
+      </label>
+      <p className="fb-s">{on ? 'On until Sunday.' : 'For a slammed week.'} Only medicines and this one habit are needed; every other axis plays at your typical level. One week at a time.</p>
+    </section>
+  );
+}
+
+/** Stadium sound (release 1): one switch, off by default. A crowd swell plays only when a log takes you ahead. */
+function StadiumRow() {
+  const settings = useSettings();
+  const on = settings ? prefOn(settings.prefs, 'stadium') : false;
+  return (
+    <section className="fb-card fb-setrow" aria-label="Stadium sound">
+      <div className="fb-row">
+        <span className="fb-lb">Stadium sound</span>
+        <button type="button" className={`fb-btn sm ${on ? 'pri' : ''}`} aria-pressed={on} disabled={!settings} onClick={() => void patchSettings((x) => ({ prefs: { ...x.prefs, stadium: !on } }))}>{on ? 'On' : 'Off'}</button>
+      </div>
+      <p className="fb-s">A crowd swell when a log on Today takes you ahead of tonight’s opponent. Off unless you turn it on.</p>
+    </section>
+  );
+}
 
 export const MAPPING: [string, string][] = [
   ['Pace', 'Your steps'],
   ['Power', 'Training sessions'],
-  ['Fuel', 'Food: calories in range, plus protein'],
+  ['Fuel', 'Food: eating in your range, plus protein'],
   ['Rest', 'Sleep'],
   ['Routine', 'The daily checklist'],
   ['Shape', 'Weigh-ins and waist'],
@@ -50,6 +92,8 @@ export function SettingsView({ s, onBuzz = (v) => void setFbSetting('buzz', v), 
         </div>
         <p className="fb-s">A long buzz when you score, a short one when they do. No sound.</p>
       </section>
+      <StadiumRow />
+      <LowLogRow s={s} />
       <section className="fb-card fb-setrow" aria-label="World Cup country">
         <label className="fb-lb" htmlFor="fb-wc">World Cup country</label>
         <select id="fb-wc" className="fb-select" value={s.wcCountry ?? ''} onChange={(e) => onCountry(e.target.value || undefined)}>

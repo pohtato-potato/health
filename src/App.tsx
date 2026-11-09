@@ -1,3 +1,4 @@
+import { CardViewerHost } from './ui/CardViewer';
 import { TrainProto } from './screens/proto/TrainLiving';
 import { SessionProto } from './screens/proto/SessionLiving';
 import { Suspense, lazy, useEffect, useRef, type ComponentType, type ReactNode } from 'react';
@@ -10,7 +11,7 @@ import { useActiveSession, useNow, useSettings, useToday } from './db/hooks';
 import { clearParam, go, useRoute, type Route } from './router';
 import { visitsFor } from './domain/visits';
 import { logUsage } from './db/usage';
-import { PlusButton, TabBar } from './ui/TabBar';
+import { TabBar } from './ui/TabBar';
 import { useToast } from './ui/Toasts';
 import { ShelfPage } from './screens/walk/ShelfPage';
 import { RouteScreen } from './screens/walk/RouteScreen';
@@ -72,7 +73,7 @@ function page<K extends string>(load: () => Promise<Record<K, ComponentType>>, n
 // Pages opened now and then load on demand; the tabs, sessions and sheets stay in the main bundle.
 const AchievementsPage = page(() => import('./screens/AchievementsPage'), 'AchievementsPage');
 const Football = page(() => import('./screens/football/Football'), 'Football');
-const ReadinessPage = page(() => import('./screens/Readiness'), 'ReadinessPage');
+const BodyLogPage = page(() => import('./screens/BodyLog'), 'BodyLogPage');
 const CheckInScreen = page(() => import('./screens/CheckIn'), 'CheckInScreen');
 const PhotosPage = page(() => import('./screens/Photos'), 'PhotosPage');
 const MapPage = page(() => import('./screens/MapPage'), 'MapPage');
@@ -186,7 +187,9 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/session/view': { el: () => <SessionView /> },
   '/session/replay': { el: () => <Replay /> },
   '/achievements': { el: () => <AchievementsPage /> },
-  '/readiness': { el: () => <ReadinessPage /> },
+  // Readiness is retired (R3 x-ready); its stored answers stay. The body log takes its place.
+  '/readiness': { el: () => <Moved to="/body" /> },
+  '/body': { el: () => <BodyLogPage /> },
   '/checkin': { el: () => <CheckInScreen /> },
   '/photos': { el: () => <PhotosPage /> },
   '/reports': { el: () => <ReportsHome />, tab: 'you' },
@@ -243,7 +246,6 @@ export function App() {
       <RegionRoot />
       <Suspense fallback={<div className="page" />}>{page.el()}</Suspense>
       {page.tab && <TabBar active={page.tab} />}
-      {page.tab && page.tab !== 'today' && route.path !== '/football/match' && <PlusButton />}
       {page.tab && <ResumePill />}
       {sheet && SHEETS[sheet]?.()}
       <DeepLinks />
@@ -255,6 +257,7 @@ export function App() {
       <MaintenanceWatcher />
       <ChallengeWatcher />
       <ShakeStat />
+      <CardViewerHost />
     </div>
   );
 }

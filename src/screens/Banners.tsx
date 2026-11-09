@@ -13,7 +13,6 @@ import { addDays, dayKey, logMinutes, logWeekdaySun, weekday } from '../domain/d
 import { fmtDayMonth, fmtTime } from '../domain/format';
 import { lastFullWeek } from '../domain/weekly';
 import { go, openSheet } from '../router';
-import { checkInDue } from '../domain/checkinSchedule';
 import { Icon } from '../ui/Icon';
 import { useToast } from '../ui/Toasts';
 import { modelFor } from './MaintenanceCards';
@@ -41,7 +40,6 @@ export function Banners() {
   const settings = useSettings();
   const days = useAllDays();
   const entries = useAllEntries();
-  const checkins = useLiveQuery(() => db.checkins.toArray(), []);
   const lastWeek = lastFullWeek(dayKey());
   const recapNote = useLiveQuery(async () => (await db.weeks.get(lastWeek)) ?? null, [lastWeek]);
   const toast = useToast();
@@ -51,12 +49,9 @@ export function Banners() {
   const [dismissed, setDismissed] = useState(readDismissed);
   // The banner chosen on load is held until the next load, so the page never moves while you read.
   const held = useRef<string | null | undefined>(undefined);
-  if (!settings || !days || !checkins || recapNote === undefined || !usage || !news) return null;
+  if (!settings || !days || recapNote === undefined || !usage || !news) return null;
   const recapReady = !recapNote?.recapSeenAt && weekday(dayKey()) <= 2 && days.some((d) => d.date >= lastWeek && d.date <= addDays(lastWeek, 6));
   const today = dayKey();
-  const lastCheck = checkins.map((c) => c.date).sort().pop();
-  // Monthly, on a fixed day; the first one is offered a few days after starting.
-  const checkinDue = lastCheck ? checkInDue(today, settings.checkInDay ?? 1, lastCheck) : Date.now() - settings.createdAt > 3 * 86_400_000;
 
   const last = settings.backup.lastQuick;
   const hasData = days.length > 0;
@@ -122,8 +117,7 @@ export function Banners() {
       ],
     });
 
-  if (checkinDue)
-    candidates.push({ id: 'checkin', priority: BANNER_PRIORITY.checkin, icon: <Icon name="camera" size={20} color="var(--pearl)" />, title: lastCheck ? 'Your monthly check-in is due.' : 'Time for your first check-in.', sub: lastCheck ? undefined : 'Photos and a tape measure.', actions: [{ label: 'Start', run: () => go('/checkin') }] });
+  // Medical day shows as Today's full-width due card (release 1), not a banner.
   if (recapReady)
     candidates.push({ id: 'recap', priority: BANNER_PRIORITY.recap, icon: <Icon name="calendar" size={20} color="var(--pearl)" />, title: `Your week, ${fmtDayMonth(lastWeek)}–${fmtDayMonth(addDays(lastWeek, 6))}, is ready.`, sub: 'The road, who came by, and what is next.', actions: [{ label: 'Open', run: () => go('/reports/week') }] });
   if (settings.reviewDay !== undefined && weekdayNow === settings.reviewDay)

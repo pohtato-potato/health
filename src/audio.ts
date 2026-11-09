@@ -82,6 +82,31 @@ export function chime(bright = false) {
   });
 }
 
+/** Stadium sound (G g-sound, off by default): a short crowd swell, filtered noise rising and falling. */
+export function crowd() {
+  if (!ctx) unlockAudio();
+  const c = ctx;
+  if (!c) return;
+  const len = 1.6;
+  const buf = c.createBuffer(1, Math.floor(c.sampleRate * len), c.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.6;
+  const src = c.createBufferSource();
+  src.buffer = buf;
+  const band = c.createBiquadFilter();
+  band.type = 'bandpass';
+  band.frequency.value = 900;
+  band.Q.value = 0.7;
+  const out = c.createGain();
+  const t = c.currentTime + 0.02;
+  out.gain.setValueAtTime(0.0001, t);
+  out.gain.exponentialRampToValueAtTime(0.22, t + 0.35);
+  out.gain.exponentialRampToValueAtTime(0.0001, t + len);
+  src.connect(band).connect(out).connect(c.destination);
+  src.start(t);
+  src.stop(t + len);
+}
+
 export function buzz(pattern: number | number[]) {
   try {
     navigator.vibrate?.(pattern);

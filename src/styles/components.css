@@ -1379,3 +1379,16 @@
 /* A long list of answers (body parts): two columns, so it fits without scrolling on a phone. */
 .choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .choice-grid .btn { padding-left: 8px; padding-right: 8px; white-space: normal; line-height: 1.2; }
+.cd-ask { display: flex; flex-direction: column; gap: 10px; }
+
+/* Food (release 1): the bars draw in like the rings, with a bright head; protein closing sends a wave along it. */
+.fd-bar.lg { height: 12px; border-radius: 6px; }
+.fd-bar i { position: relative; transform-origin: left center; animation: fd-fill 1.1s cubic-bezier(.2, .9, .2, 1) both; }
+.fd-bar.lg i::after { content: ''; position: absolute; right: -3px; top: 50%; width: 14px; height: 14px; margin-top: -7px; border-radius: 50%; background: #fff; box-shadow: 0 0 12px 4px var(--ink); opacity: 0.9; }
+.fd-bar.closed i { background-image: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.65) 50%, transparent 100%) !important; background-size: 40% 100%; background-repeat: no-repeat; background-color: var(--lavender); animation: fd-fill 1.1s cubic-bezier(.2, .9, .2, 1) both, fd-wave 1.6s 1.1s ease-in-out 2; }
+@keyframes fd-fill { from { transform: scaleX(0); } }
+@keyframes fd-wave { from { background-position: -40% 0; } to { background-position: 140% 0; } }
+.fd-meals { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.fd-meals li { display: grid; grid-template-columns: 84px 1fr 52px; align-items: center; gap: 10px; font-size: 15px; }
+.fd-meals .bar { height: 8px; }
+.fd-meals b { text-align: right; font-weight: 700; }

@@ -30,7 +30,7 @@ describe('MomentCard', () => {
   it('close: "Ready to close the day?" / Close the day and the gap add', () => {
     const html = render('close');
     expect(html).toContain('Ready to close the day?');
-    expect(html).toContain('2 of 3 rings');
+    expect(html).toContain('2 of 4 rings');
     expect(buttons(html)).toEqual(['Close the day', 'Add both · 24 g']);
   });
   it('close with no protein gap offers only Close the day', () => {

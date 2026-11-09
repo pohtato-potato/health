@@ -65,7 +65,7 @@ export function ElevenView({ xi, players, formation = '4-3-3' }: { xi: XiPlace[]
         const more = waiting.length - 1;
         return (
           <button type="button" className="pl-banner" onClick={() => go('/football/card', { id: p.id })}>
-            <PlayerCard card={p.moments.find((x) => !x.seen)!.from} art={p.art} seed={p.id} />
+            <PlayerCard card={p.moments.find((x) => !x.seen)!.from} art={p.art} seed={p.id} player={p} />
             <span><b>{p.name}</b>{more ? ` and ${more} more have` : ' has'} a new card waiting. Tap to open {more ? 'the first' : 'it'}.</span>
           </button>
         );
@@ -87,7 +87,7 @@ export function ElevenView({ xi, players, formation = '4-3-3' }: { xi: XiPlace[]
 function Row({ p, starts }: { p: FbPlayer; starts?: boolean }) {
   return (
     <button type="button" className={`pl-row${starts ? ' st' : ''}`} style={uc(p.unit)} onClick={() => openPlayer(p.id)}>
-      <PlayerCard card={p.card} art={p.art} seed={p.id} />
+      <PlayerCard card={p.card} art={p.art} seed={p.id} player={p} />
       <span className="pl-col"><b>{p.name}</b><span>{rowWords(p, Boolean(starts))} · {stepName(p.card)}</span></span>
       <b className="pl-num">{p.status === 'squad' ? matchRating(p) : p.overall}</b>
       <Freshness p={p} />
@@ -145,7 +145,7 @@ export function PlayerPage({ id }: { id: string }) {
     <div className="pl-page" style={uc(p.unit)}>
       <button type="button" className="fb-btn sm" onClick={() => go('/football/unit', { u: p.unit })}>← {p.unit}</button>
       <div className={`pl-hero${legend ? ' lg' : ''}`}>
-        <TiltCard card={p.card} art={p.art} seed={p.id} label={`${p.name}, ${stepName(p.card)} card`} />
+        <TiltCard card={p.card} art={p.art} seed={p.id} player={p} label={`${p.name}, ${stepName(p.card)} card`} />
         <div className="pl-heroinfo">
           <span className="pl-sub">{p.unit} · {UNIT_WHERE[p.unit]}</span>
           <h2 className="fb-t">{p.name}</h2>
@@ -180,7 +180,7 @@ export function PlayerPage({ id }: { id: string }) {
         <div className="pl-vs">
           {p.versions.map((v, i) => (
             <div key={`${v.on}${i}`} className={i === p.versions.length - 1 ? 'now' : undefined}>
-              <PlayerCard card={v} art={p.art} seed={p.id} />
+              <PlayerCard card={v} art={p.art} seed={p.id} player={p} />
               <b>{stepName(v)}</b><small>{fmtDate(v.on)}</small><small>{stepRange(v)}</small>
             </div>
           ))}
@@ -230,12 +230,12 @@ export function CardMomentRoute({ id }: { id: string }) {
       <span className="pl-kick">{m.kind === 'tier' ? `${TIER_NAME[m.tier]} card` : 'Step up'}</span>
       <h2 className="fb-t">{p.name}</h2>
       {legend && done ? (
-        <div className="lgout9"><TiltCard card={m} art={p.art} seed={p.id} label={`${p.name}, ${stepName(m)} card`} /></div>
+        <div className="lgout9"><TiltCard card={m} art={p.art} seed={p.id} player={p} label={`${p.name}, ${stepName(m)} card`} /></div>
       ) : <button key={run} type="button" className={`rb8 ${build}${go_ ? ' go' : ''}`} onClick={play} aria-label={go_ ? `${stepName(m)} card` : `Tap to break the ${stepName(m.from)} card`}>
-        <div className="nw8"><PlayerCard card={m} art={p.art} seed={p.id} /></div>
+        <div className="nw8"><PlayerCard card={m} art={p.art} seed={p.id} player={p} /></div>
         <div className="old8">
-          <div className="hf8 l"><PlayerCard card={m.from} art={p.art} seed={p.id} /></div>
-          <div className="hf8 r"><PlayerCard card={m.from} art={p.art} seed={p.id} /></div>
+          <div className="hf8 l"><PlayerCard card={m.from} art={p.art} seed={p.id} player={p} /></div>
+          <div className="hf8 r"><PlayerCard card={m.from} art={p.art} seed={p.id} player={p} /></div>
           {CRACK}
           {legend && SEAMS}
         </div>

@@ -9,8 +9,8 @@ export interface StoryCard {
 }
 
 /** Tap-through stories: the right side goes on, the left side goes back, Escape closes. */
-export function Story({ cards, onClose, label = 'Story' }: { cards: StoryCard[]; onClose: () => void; label?: string }) {
-  const [i, setI] = useState(0);
+export function Story({ cards, onClose, label = 'Story', start = 0, className }: { cards: StoryCard[]; onClose: () => void; label?: string; start?: number; className?: string }) {
+  const [i, setI] = useState(Math.min(Math.max(0, start), Math.max(0, cards.length - 1)));
   const go = (by: number) => {
     const n = i + by;
     if (n >= cards.length) onClose();
@@ -30,7 +30,7 @@ export function Story({ cards, onClose, label = 'Story' }: { cards: StoryCard[];
   const card = cards[i];
   if (!card) return null;
   return (
-    <div className="story" role="dialog" aria-modal="true" aria-label={label} style={{ background: card.ground ?? 'var(--ink)' }}>
+    <div className={`story${className ? ` ${className}` : ''}`} role="dialog" aria-modal="true" aria-label={label} style={{ background: card.ground ?? 'var(--ink)' }}>
       <div className="story-bars" aria-hidden>
         {cards.map((c, j) => (
           <span key={c.id} className={j < i ? 'done' : j === i ? 'now' : ''} />

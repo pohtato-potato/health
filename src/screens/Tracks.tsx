@@ -16,7 +16,7 @@ import { FoodTrack } from './tracks/Food';
 import { JointsTrack } from './tracks/Joints';
 import { TRACK_LOOK } from './tracks/look';
 import { OwnTrack } from './tracks/Own';
-import { ReadinessTrack } from './tracks/ReadinessTrack';
+import { Moved } from './reports/Moved';
 import { ShapeTrack } from './tracks/Shape';
 import { SleepTrack } from './tracks/Sleep';
 import { StepsTrack } from './tracks/Steps';
@@ -51,7 +51,8 @@ export function Tracks() {
     steps: range.flatMap((d) => { const s = data.days.get(d)?.steps; return s === undefined ? [] : [s]; }),
     sleep: range.flatMap((d) => { const s = data.days.get(d)?.sleep; return s ? [sleepMinutes(s.asleep, s.woke)] : []; }),
   };
-  const keys = TRACK_KEYS.filter((k) => k !== 'joints' || settings.plan?.flags.length);
+  // Readiness is retired (R3 x-ready): the body log on Today replaces it. Its stored data stays.
+  const keys = TRACK_KEYS.filter((k) => k !== 'readiness' && (k !== 'joints' || settings.plan?.flags.length));
   const own = (settings.customTracks ?? []).filter((t) => t.active).length;
   return (
     <div className="page bare yu-page">
@@ -103,7 +104,7 @@ export function TrackPage() {
     case 'drinks':
       return <DrinksTrack data={data} />;
     case 'readiness':
-      return <ReadinessTrack data={data} />;
+      return <Moved to="/body" />;
     case 'own':
       return <OwnTrack data={data} />;
     case 'compare':
