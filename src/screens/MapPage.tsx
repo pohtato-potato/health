@@ -9,7 +9,6 @@ import { useUnlockedIds } from '../ui/Theme';
 import { STRETCHES } from '../walk/content';
 import { flyoverAllowed, flyoverBox, trailTo, type MapLevel } from '../walk/mapView';
 import { stretchAt } from '../walk/road';
-import { RouteSwitch } from '../walk/RouteSwitch';
 import { stepsByDay } from '../walk/runs';
 import { IndiaMap, MAP_ASPECT, MapKey, MapLevels } from './walk/IndiaMap';
 import { WalkFrame } from './walk/WalkFrame';
@@ -73,7 +72,6 @@ export function MapPage() {
         <Icon name="left" size={20} stroke={1.8} />
         Walk
       </button>
-      <RouteSwitch on="route" />
       <header className="walk-head">
         <h1 className="walk-title">{stretch ? stretch.name : 'The walk across India'}</h1>
         <p className="walk-sub">

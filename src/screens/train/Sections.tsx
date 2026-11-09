@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import type { Creature } from '../../domain/creatureRoster';
-import { RecordFrame } from '../../ui/creatures/Payoffs';
 import type { DayKey } from '../../domain/dates';
 import { fmtDayMonth, lowerFirst } from '../../domain/format';
 import { GROUPS } from '../../domain/muscles';
@@ -83,7 +81,7 @@ export function BodyCard({ rows, line, onOpen }: { rows: VolumeRow[]; line?: str
 }
 
 /** The latest records, in gold. */
-export function RecordsCard({ total, rows, onAll }: { total: number; rows: { what: string; name: string; when: string; frame?: { guest: Creature; stage: number } }[]; onAll: () => void }) {
+export function RecordsCard({ total, rows, onAll }: { total: number; rows: { what: string; name: string; when: string }[]; onAll: () => void }) {
   if (!rows.length) return null;
   return (
     <div className="lv-card">
@@ -103,7 +101,7 @@ export function RecordsCard({ total, rows, onAll }: { total: number; rows: { wha
             <span className="lv-tag gold">{r.when}</span>
           </div>
         );
-        return r.frame ? <RecordFrame key={`${r.name}${r.what}`} guest={r.frame.guest} stage={r.frame.stage}>{row}</RecordFrame> : row;
+        return row;
       })}
     </div>
   );

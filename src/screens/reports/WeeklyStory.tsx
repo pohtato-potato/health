@@ -3,16 +3,13 @@ import { useEffect, useState } from 'react';
 import { saveBackup } from '../../db/backup';
 import { db } from '../../db/db';
 import { useAllDays, useAllEntries, useAllSets, useFoods, useSessions, useSettings, useSightings, useToday } from '../../db/hooks';
-import { creatureById, nameAt } from '../../domain/creatureRoster';
-import { addDays, type DayKey } from '../../domain/dates';
+import { addDays } from '../../domain/dates';
 import { backupLine } from '../../domain/dueLines';
 import { fmtDayMonth, fmtInt } from '../../domain/format';
 import { lastFullWeek, suggestOneThing, weekNumber, weekStats } from '../../domain/weekly';
 import { storyChapters, type StoryChapter } from '../../domain/weeklyStory';
 import { usualWake } from '../../domain/wake';
 import { back, go, useRoute } from '../../router';
-import { CreatureFigure } from '../../ui/creatures/Figure';
-import { stageNow } from '../../ui/creatures/Payoffs';
 import { Icon } from '../../ui/Icon';
 import { RegionFrame } from '../../ui/live/RegionFrame';
 import { useToast } from '../../ui/Toasts';
@@ -25,7 +22,7 @@ import { WeekLine } from '../football/HabitLine';
 
 const km = (n: number) => `${fmtInt(n)} km`;
 
-function Chapter({ c, sightings, end }: { c: StoryChapter; sightings: { creatureId: string; date: DayKey }[]; end: DayKey }) {
+function Chapter({ c }: { c: StoryChapter }) {
   switch (c.id) {
     case 'road':
       return (
@@ -39,26 +36,6 @@ function Chapter({ c, sightings, end }: { c: StoryChapter; sightings: { creature
           </div>
         </section>
       );
-    case 'visitors': {
-      const then = sightings.filter((s) => s.date <= end);
-      return (
-        <section className="yu-sec"><h2>Who came by</h2>
-          <div className="yu-vis2">
-            {c.ids.map((id) => {
-              const k = creatureById(id);
-              if (!k) return <div key={id} className="yu-vis"><b>Someone from before</b></div>;
-              const stage = stageNow(k, then);
-              return (
-                <div key={id} className="yu-vis yu-vis-dark">
-                  <CreatureFigure c={k} stage={stage} width={120} burst={false} draw={false} />
-                  <b style={{ color: k.main }}>{nameAt(k, stage)}</b>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      );
-    }
     case 'tally':
       return (
         <section className="yu-sec"><h2>The tally</h2>
@@ -172,7 +149,7 @@ export function WeeklyStory() {
         <h1>Week {weekNumber(week)}, the story</h1>
         <span className="yu-q">{fmtDayMonth(week)} to {fmtDayMonth(end)}</span>
         {!chapters.length && <div className="yu-card"><b>Nothing was logged that week</b><span className="yu-q">A story needs at least one day.</span></div>}
-        {chapters.map((c) => <Chapter key={c.id} c={c} sightings={sightings} end={end} />)}
+        {chapters.map((c) => <Chapter key={c.id} c={c} />)}
         <WeekLine start={week} />
         {note?.oneThing && (
           <section className="yu-sec"><h2>The one thing you picked</h2>

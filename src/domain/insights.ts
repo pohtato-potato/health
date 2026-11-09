@@ -1,5 +1,5 @@
 import { addDays, dayRange, weekday, weekStart, type DayKey } from './dates';
-import { sleepMinutes } from './rings';
+import { bedOrder, NIGHT_FROM, sleepMinutes } from './rings';
 import { kmFromSteps } from './walk';
 import type { CheckIn, Day, FoodEntry, SetEntry } from './types';
 
@@ -68,9 +68,33 @@ export function sleepWindows(days: Day[], range: DayKey[]): (Night | null)[] {
   return range.map((date) => {
     const s = byDate.get(date)?.sleep;
     if (!s) return null;
-    const from = s.asleep > s.woke ? s.asleep - 1440 : s.asleep;
-    return { date, from, to: s.woke, minutes: sleepMinutes(s.asleep, s.woke), rested: s.rested };
+    // From 18:00 the evening before: an afternoon bedtime after a sleepless night sits after the morning, not before it.
+    const from = bedOrder(s.asleep) - (1440 - NIGHT_FROM);
+    const minutes = sleepMinutes(s.asleep, s.woke);
+    return { date, from, to: from + minutes, minutes, rested: s.rested };
   });
+}
+
+/**
+ * The span a sleep chart shows: 9 pm to 11 am, stretched later when a night ran past it (a wake in the afternoon or
+ * evening), with a tick every 3 hours, or every 6 when the span is long, so the labels never crowd.
+ */
+export function sleepChartSpan(nights: (Night | null)[]): { start: number; end: number; ticks: number[] } {
+  const start = -180;
+  const late = Math.max(660, ...nights.map((n) => (n ? n.to : 0)));
+  const end = late <= 660 ? 660 : Math.ceil(late / 180) * 180;
+  const step = end - start > 1080 ? 360 : 180;
+  const ticks: number[] = [];
+  for (let m = start; m < end; m += step) ticks.push(m);
+  return { start, end, ticks };
+}
+/** A tick label: "9 pm", "12 am", "3 am" … ("12 pm" at noon). */
+export function sleepTick(m: number, short = false): string {
+  const c = ((m % 1440) + 1440) % 1440;
+  const h = Math.floor(c / 60);
+  const am = h < 12;
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return short ? `${h12}${am ? 'a' : 'p'}` : `${h12} ${am ? 'am' : 'pm'}`;
 }
 
 /** When to be asleep tonight to get the target, from the usual wake time. */

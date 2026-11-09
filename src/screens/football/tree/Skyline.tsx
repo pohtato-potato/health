@@ -77,6 +77,32 @@ export function placeWords(p: PlaceLook, progress: (id: string) => string): stri
   return 'not started';
 }
 
+/** Each label's column: from its x to the next label's x (the last runs to the river's end), less a gap. */
+const ORDER = (Object.keys(LABEL_X) as Place[]).sort((x, y) => LABEL_X[x] - LABEL_X[y]);
+const COLUMN: Record<Place, number> = Object.fromEntries(ORDER.map((p, i) => [p, (i + 1 < ORDER.length ? LABEL_X[ORDER[i + 1]] : 1420) - LABEL_X[p] - 14])) as Record<Place, number>;
+/** A generous width for one 16-unit character, so a wrapped line never runs into the next label. */
+const SUB_CH = 9.4;
+const SUB_GAP = 22;
+const SUB_Y = 398;
+
+/** Words wrapped to fit `width` (in viewBox units); a single long word stays whole on its own line. */
+export function wrapWords(text: string, width: number, ch = SUB_CH): string[] {
+  const max = Math.max(1, Math.floor(width / ch));
+  const out: string[] = [];
+  for (const w of text.split(' ')) {
+    const last = out[out.length - 1];
+    if (last !== undefined && (last + ' ' + w).length <= max) out[out.length - 1] = `${last} ${w}`;
+    else out.push(w);
+  }
+  return out;
+}
+/** A place's state under its name, one short line at a time: "building", then "18 of 25" wrapped to its column. */
+export function placeLines(p: PlaceLook, progress: (id: string) => string): string[] {
+  const width = COLUMN[p.place];
+  if (p.now) return ['building', ...wrapWords(progress(p.now.id), width)];
+  return wrapWords(placeWords(p, progress), width);
+}
+
 export function Skyline({ places, progress, focus }: { places: PlaceLook[]; progress: (id: string) => string; focus?: Place }) {
   const box = useRef<HTMLDivElement>(null);
   const target = focus ?? places.find((p) => p.now)?.place;
@@ -86,10 +112,12 @@ export function Skyline({ places, progress, focus }: { places: PlaceLook[]; prog
     el.scrollLeft = Math.max(0, LABEL_X[target] - 40);
   }, [target]);
   const label = places.map((p) => `${p.name}: ${placeWords(p, progress)}`).join('. ');
+  const lines = places.map((p) => placeLines(p, progress));
+  const height = SUB_Y + (Math.max(1, ...lines.map((l) => l.length)) - 1) * SUB_GAP + 16;
   return (
     <figure className="fbt-sky">
       <div className="fbt-scene" ref={box} role="img" aria-label={`The Kaai quarter, one riverside skyline. ${label}.`} tabIndex={0}>
-        <svg viewBox="0 0 1420 414" aria-hidden="true">
+        <svg viewBox={`0 0 1420 ${height}`} aria-hidden="true">
           {STARS}
           {places.flatMap((p) => p.stages.map(({ p: s, look }) => {
             const cls = LOOK_CLASS[look];
@@ -101,10 +129,10 @@ export function Skyline({ places, progress, focus }: { places: PlaceLook[]; prog
               : ds.map((d, k) => <path key={`${s.id}:${k}`} className={cls} d={d} />);
           }))}
           {RIVER}
-          {places.map((p) => (
+          {places.map((p, i) => (
             <g key={p.place}>
               <text className={`lbl${p.now ? ' g' : ''}`} x={LABEL_X[p.place]} y={376}>{SHORT[p.place]}</text>
-              <text className="sub" x={LABEL_X[p.place]} y={398}>{placeWords(p, progress)}</text>
+              {lines[i].map((l, k) => <text key={k} className="sub" x={LABEL_X[p.place]} y={SUB_Y + k * SUB_GAP}>{l}</text>)}
             </g>
           ))}
         </svg>

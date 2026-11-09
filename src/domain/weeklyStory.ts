@@ -1,4 +1,4 @@
-import { metBetween, type Sighting } from './creatures';
+import type { Sighting } from './creatures';
 import { dailyFinding, type Finding } from './dailyFinding';
 import { addDays, weekStart, type DayKey } from './dates';
 import { fmtDuration, fmtInt } from './format';
@@ -19,7 +19,6 @@ export interface StoryInput {
 }
 export type StoryChapter =
   | { id: 'road'; km: number; toKm: number; reached: string; ahead?: string; aheadKm?: number }
-  | { id: 'visitors'; ids: string[] }
   | { id: 'tally'; steps?: number; sessions: number; records: number; perfect: number }
   | { id: 'swing'; what: string; now: string; was: string; up: boolean }
   | { id: 'food'; proteinAvg?: number; foodDays: number; inRange: number }
@@ -66,9 +65,6 @@ export function storyChapters(week: DayKey, i: StoryInput): StoryChapter[] {
   const km = kmFromSteps(w.steps);
   const pos = positionAt(toKm);
   if (km > 0) out.push({ id: 'road', km, toKm, reached: pos.from.name, ahead: pos.to?.name, aheadKm: pos.to ? pos.to.km - toKm : undefined });
-
-  const met = metBetween(i.sightings, week, end);
-  if (met.length) out.push({ id: 'visitors', ids: met });
 
   if (w.steps || w.sessions || w.records.length || w.perfect) out.push({ id: 'tally', steps: w.steps || undefined, sessions: w.sessions, records: w.records.length, perfect: w.perfect });
   const s = swing(w, prev);
