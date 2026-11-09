@@ -8,6 +8,7 @@ import { PACK_ITEMS } from '../content/packs';
 import type { EraId } from '../content/types';
 import { rememberClubs } from '../data/load';
 import { openPack, recordOpen, runningLowNow, poolCounts, type PoolId } from '../tree/packs';
+import { iconOdds, loansOpened } from '../globe/loans';
 import { activeFor, builtOf, engineOf, seasonFacts, userOf } from './tree';
 import { standings } from '../table';
 import type { SeasonFacts } from '../tree/season';
@@ -55,15 +56,19 @@ export const openPackNow = (packId: string, on: DayKey = today()) => editUser((u
   const eng = engineOf(s);
   const pack = eng.packs.find((p) => p.id === packId);
   if (!pack || u.opened.some((o) => o.id === packId)) return undefined;
-  const n = ruleValue(activeFor(s, b), 'packs-items', PACK_ITEMS);
-  return settle(eng, recordOpen(pack, u, openPack(pack, u, n), on), on).user;
+  const a = activeFor(s, b);
+  const n = ruleValue(a, 'packs-items', PACK_ITEMS);
+  // Layer 4: a loan can be in it. Icon odds rise each pack without one; the track and the tree add to them.
+  const met = [...(s.globe?.met ?? []), ...loansOpened(u.opened).map((q) => q.loan)];
+  const loans = { iconPct: iconOdds(u.opened, eng.iconOdds + ruleValue(a, 'icon-odds', 0)), met };
+  return settle(eng, recordOpen(pack, u, openPack(pack, u, n, loans), on), on).user;
 });
 
 export const seeEra = (e: EraId) => editUser((u) => (u.seenEras.includes(e) ? undefined : { ...u, seenEras: [...u.seenEras, e] }));
 export const seeEureka = (id: string) => editUser((u) => (u.seenEurekas.includes(id) ? undefined : { ...u, seenEurekas: [...u.seenEurekas, id] }));
 /** The running-low notice was shown: not again until the pool grows. */
 export const seeRunningLow = (pool: PoolId) => editUser((u, s) => {
-  const size = poolCounts(u, engineOf(s).bountiesDone)[pool].size;
+  const size = poolCounts(u, engineOf(s).bountiesDone, s.globe?.met)[pool].size;
   return { ...u, lowShown: { ...u.lowShown, [pool]: size } };
 });
 
@@ -91,6 +96,6 @@ export async function loadTree(now = Date.now()): Promise<TreeView | null> {
     const rows = standings(season.results[tier] ?? [], Object.keys(season.tierOf).filter((id) => season.tierOf[id] === tier), season.deductions);
     facts = seasonFacts({ season, save, matches: await db.fbMatches.where('season').equals(save.season).sortBy('date') }, { [tier]: rows } as Record<Tier, typeof rows>, false);
   }
-  return { save, season, tier, bundles, built: builtOf(bundles), today: dayOfLogging(now), low: runningLowNow(u, engineOf(save).bountiesDone), facts };
+  return { save, season, tier, bundles, built: builtOf(bundles), today: dayOfLogging(now), low: runningLowNow(u, engineOf(save).bountiesDone, save.globe?.met), facts };
 }
 export const useTree = () => useLiveQuery(() => loadTree(), []);

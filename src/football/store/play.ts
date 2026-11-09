@@ -15,7 +15,7 @@ import { simResult } from '../otherMatches';
 import { applyMoves, playoffPairs, seasonEnd } from '../promotion';
 import { afterMatch, ANTIGOON, HOW_TEXT, rivalTwist, type Meeting } from '../rivals';
 import { hashSeed, rng, pick } from '../rng';
-import { contractDay, keptOn, intake, youthStatus, newContract } from '../contracts';
+import { contractDay, keptOn, intake, newContract } from '../contracts';
 import { nationId, YOUTH_POOL } from '../data/load';
 import { crestStepFor } from '../kits';
 import { BUNDLES, bundleDay, capacityOf, dayCounts, groundAbilities, isOpen, TENANT_CAPACITY } from '../ground';
@@ -30,7 +30,7 @@ import { factsFor, matchLines, situationOf } from './lines';
 import { newSeason, OWN } from './season';
 import type { FbBundle, FbClub, FbNews, FbSave, FbSeason, FbSquadRow, StoredMatch } from './tables';
 import { creditsFor } from '../players/credit';
-import { linkedLogged, youthDay } from '../players/youth';
+import { linkedLogged } from '../players/youth';
 import type { Ctx } from '../players/attributes';
 import { formationFor } from '../tree/rotation';
 import { healNow, rotationOf, stageCapacity, treeAbilities, treeDay, treeMatch, treeSeasonEnd, type TreeCtx } from './tree';
@@ -39,6 +39,7 @@ import { academyIds, creditMatch, nightOptsFor, playerCtx, playersDay, rebuildPl
 import { signFreeAgents } from '../rotation/freeAgents';
 import { chemistryAfter, moraleAfter } from '../rotation/night';
 import { traitAbilities } from '../rotation/traits';
+import { breakStarts, globeAfterPlayers, globeDay, globeMatch, globeNight, globeRules, globeSeasonEnd, isBreakDay, loanAbilities, restedForLeague } from './globe';
 
 export const CATCH_UP_CAP = 42;
 const resultOf = (s: [number, number], pens?: [number, number]): Result => (s[0] > s[1] || (pens && pens[0] > pens[1]) ? 'W' : s[0] < s[1] || (pens && pens[0] < pens[1]) ? 'L' : 'D');
@@ -55,7 +56,7 @@ export async function playDue(now = Date.now()): Promise<StoredMatch[]> {
   return playThrough(yesterday, null);
 }
 
-const USER_KEYS = ['buzz', 'wcCountry', 'ownSponsor', 'captain', 'captains', 'captainWeek', 'slots', 'sponsorStyle', 'awakeSeen', 'seenSeasonEnd', 'sheet', 'tactics', 'bedtime', 'treeUser'] as const satisfies readonly (keyof FbSave)[];
+const USER_KEYS = ['buzz', 'wcCountry', 'ownSponsor', 'captain', 'captains', 'captainWeek', 'slots', 'sponsorStyle', 'awakeSeen', 'seenSeasonEnd', 'sheet', 'tactics', 'bedtime', 'treeUser', 'globeUser'] as const satisfies readonly (keyof FbSave)[];
 /**
  * Engine 2 arrives: rebuilds the players from history once (spec §16), crediting the stored matches and keeping only
  * youngsters tied to a real habit. Everything else in the save stays. Safe to call any time; it runs once.
@@ -113,7 +114,11 @@ async function playThrough(until: DayKey, closed: DayKey | null): Promise<Stored
     if (w.matches.length) await db.fbMatches.bulkPut(w.matches);
     if (w.roster.size) await db.fbPlayers.bulkPut([...w.roster.values()]);
     if (w.news.length) await db.fbNews.bulkPut(w.news);
-    if (w.squad.length) await db.fbSquad.bulkPut(w.squad);
+    if (w.squad.length) {
+      // A trialist tied (or let go) by a tap while the days played keeps the tap.
+      const now = new Map((await db.fbSquad.toArray()).map((y) => [y.id, y]));
+      await db.fbSquad.bulkPut(w.squad.map((y) => { const c = now.get(y.id); return y.status === 'trial' && c && c.status !== 'trial' ? c : y; }));
+    }
     if (w.bundles.size) await db.fbBundles.bulkPut([...w.bundles.values()]);
   });
   return w.matches;
@@ -127,6 +132,7 @@ function otherResult(w: World, home: string, away: string, seed: string, neutral
 function playDay(w: World, date: DayKey, auto: boolean) {
   const { save } = w;
   if (save.phase === 'event') return playEventDay(w, date, auto);
+  if (isBreakDay(save, date)) return; // an international break: no matches, the season day waits
   const plan = seasonDays()[save.day - 1];
   w.season.dates[save.day] = date;
   const braboTier = w.season.tierOf[OWN];
@@ -239,7 +245,7 @@ function endSeason(w: World, date: DayKey) {
   tenancyAtSeasonEnd(w, date, tables);
   const nowTier = tierOf[OWN];
   if (moves.up[w.season.tierOf[OWN]]?.includes(OWN) && crestStepFor(nowTier) > w.save.crest.step) w.save.crestPending = crestStepFor(nowTier);
-  for (const y of w.squad) if (y.season === w.save.season && y.status === 'growing' && youthStatus(y.logged.length, true) === 'leaves') y.status = 'left';
+  globeSeasonEnd(w, date, w.save.season);
   const ev = nextEvent(w.save.season, w.save.eventState, rng(hashSeed('event', String(w.save.season))));
   w.save.eventState = ev.state;
   w.save.phase = 'event';
@@ -271,7 +277,7 @@ const monthsBefore = (w: World, date: DayKey) => monthsFromHealth(w.h, date);
 
 function playEventDay(w: World, date: DayKey, auto: boolean) {
   const ev = w.save.event!;
-  if (w.save.day === 1) w.squad.push(...youthIntake(w.save.season + 1, date, w.save.youthSlots ?? 0, doneBundles(w).includes('academy-2')));
+  // Engine 2, layer 4: youngsters now come to the Sunday trials (spec §9.2), not a season intake.
   const plan: DayPlan = { day: w.save.day, kind: 'event', event: ev.id, round: `${EVENTS[ev.id].name}, day ${w.save.day} of ${ev.days}` };
   if (ev.id === 'worldcup') worldCupDay(w, date, plan, auto);
   else if (ev.id === 'clubworld') clubWorldDay(w, date, plan, auto);
@@ -310,7 +316,10 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
   // Engine 2: tonight = 70% today + 30% squad. A sick day plays the rotation squad (the bench) at 100% squad value.
   // An axis with no data tonight keeps its no-data value: the squad does not paper over a blank.
   const tonight = nightOptsFor(w.save, w.roster, w.h, date, oppId, raw, rotationOf(w.save, w.bundles.values()));
-  const team = squadNight(w.roster, raw, sick, tonight.opts);
+  // Layer 4: tonight's loans (they play only if their unit was logged), False nine and Two fronts.
+  const lastLeague = comp === 'continental' ? [...w.matches].reverse().find((x) => x.date === date && x.comp === 'league') : undefined;
+  const world = globeNight(w.save, w.bundles.values(), date, rotation ? {} : night.flags, sick || rotation, restedForLeague(w.roster, lastLeague));
+  const team = squadNight(w.roster, raw, sick, { ...tonight.opts, ...world });
   const blended = rotation && !sick ? raw : team.values;
   const flags = rotation ? {} : { ...night.flags };
   const values = { ...blended };
@@ -353,7 +362,7 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
     captain: slots.has('armband') ? w.save.captain : undefined,
     stack: slots.has('stack') ? w.save.earned.filter((e) => e.date > addDays(date, -7)).length : 0,
     // Engine 2: a player's traits play while it starts (an Awakening's trait became its player's first limit break).
-    abilities: [...braboAbilities(w.save.slots), ...(w.save.engine === 2 ? traitAbilities(team.xi, w.roster) : awakenedTraits(w.save)), ...groundAbilities(doneBundles(w)), ...tree.abilities],
+    abilities: [...braboAbilities(w.save.slots), ...(w.save.engine === 2 ? traitAbilities(team.xi, w.roster) : awakenedTraits(w.save)), ...groundAbilities(doneBundles(w)), ...tree.abilities, ...loanAbilities(w.save, team.loansPlayed, date, globeRules(w.save, w.bundles.values()).loan)],
     bench: benchFor(w, date), pre, conds, ctx,
     rival: rival ? rivalTwist(oppId, rival.how, rival.best) : oppId === ANTIGOON ? rivalTwist(ANTIGOON, 'legend') : undefined,
   });
@@ -390,6 +399,7 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
   // Engine 2 has no new Awakenings: a player's limit breaks take their place (layer 2).
   w.matches.push(m);
   w.roster = creditMatch(w.roster, m);
+  globeMatch(w.save, m, team.loansPlayed);
   treeMatch(w, m);
   afterNight(w, m, sick, def.name);
   const run = [...w.past, ...w.matches].filter((x) => !x.rotation);
@@ -419,14 +429,12 @@ function clubDay(w: World, date: DayKey) {
     if (next.state !== c.state) w.news.push({ id: `${date}:contract:${c.habit}`, date, kind: 'club', text: next.state === 'due' ? `${habitById(c.habit).label} has earned a new contract. Renew it on the Deals page.` : `${habitById(c.habit).label} missed its contract line and is transfer-listed. No penalty in matches.` });
     return next;
   });
+  // Layer 4: an international break day pauses the season (no matches); the tree and the world still run.
+  breakStarts(w, date);
   groundDay(w, date, input);
   treeDay(treeCtx(w), date, w.squad.filter((y) => (y.status === 'growing' || y.status === 'promoted') && youthDone(w, y, date)).length);
-  // Youngsters: sessions from the linked habit, growth from kept bedtimes; both full, they join the squad.
-  w.squad = w.squad.map((y) => {
-    const next = youthDay(w.h, y, date, w.save.bedtime);
-    if (next.status === 'promoted' && y.status !== 'promoted') w.news.push({ id: `${date}:youth:${y.id}`, date, kind: 'club', text: `${y.name} joins the squad after ${next.sessions?.length ?? 0} sessions and a run of kept bedtimes.` });
-    return next;
-  });
+  // Layer 4: loans come and go, trials, youngsters grow (sessions from the linked habit, growth from kept bedtimes).
+  globeDay(w, date, w.save.season);
   w.ctx = playerCtx(w.h, w.save, w.squad);
   w.roster = playersDay(w.roster, w.h, w.ctx, date, academyIds(w.squad), false, rotationOf(w.save, w.bundles.values()).rules);
   // Departed players sign for a club in our division (spec §6).
@@ -435,6 +443,8 @@ function clubDay(w: World, date: DayKey) {
   const fa = signFreeAgents(w.roster, date, seats);
   w.roster = fa.roster;
   w.news.push(...fa.news);
+  // Layer 4: nations for new players, duty on break days.
+  globeAfterPlayers(w, date);
 }
 
 /** After a match: morale moves with the result; chemistry counts the night (not a sick night); a former player may score. */

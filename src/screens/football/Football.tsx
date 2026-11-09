@@ -18,6 +18,7 @@ import { FirstRun } from './FirstRun';
 import { BoardPage, EraMoment, EurekaMoment, ProjectsPage, StaffPage, TechPage } from './tree/TreeScreens';
 import { BoonPage, BountiesPage, TrackPage } from './tree/SeasonScreens';
 import { AlbumPage, PacksPage } from './tree/PackScreens';
+import { AcademyPage, DutyPage, LoanMoment, LoansPage, TiePage, TrialsPage } from './world/WorldScreens';
 import { keyChances } from './CatchUp';
 import { go } from '../../router';
 import type { StoredMatch } from '../../football/store/tables';
@@ -84,6 +85,13 @@ export function Football() {
     '/football/boon': () => <BoonPage />,
     '/football/packs': () => <PacksPage />,
     '/football/album': () => <AlbumPage />,
+    // Layer 4: the world.
+    '/football/loan': () => <LoanMoment k={params.get('key') ?? ''} />,
+    '/football/loans': () => <LoansPage />,
+    '/football/trials': () => <TrialsPage />,
+    '/football/tie': () => <TiePage id={params.get('id') ?? ''} />,
+    '/football/academy': () => <AcademyPage />,
+    '/football/duty': () => <DutyPage />,
   };
   if (tree[path]) return <FootballHome section="club">{tree[path]()}</FootballHome>;
   if (path === '/football/track') return <FootballHome section="story"><TrackPage /></FootballHome>;

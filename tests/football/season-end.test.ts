@@ -8,12 +8,14 @@ import { rollOldSelves, type OldSelf } from '../../src/football/oldSelves';
 import { shownRating } from '../../src/football/ratings';
 import { seasonChange } from '../../src/football/seasonChange';
 import { playDue } from '../../src/football/store/play';
+import { BREAK_DAYS } from '../../src/football/globe/duty';
 import { foundClub } from '../../src/football/store/save';
 import type { Row } from '../../src/football/table';
 import { TIERS, allAxes, type Tier } from '../../src/football/types';
 
 const noon = (d: string) => new Date(`${d}T12:00:00`).getTime();
 const FOUNDED = '2026-06-01';
+const SEASON_REAL_DAYS = 42 + 2 * BREAK_DAYS;
 
 describe('Season end', { timeout: 180_000 }, () => {
   beforeAll(async () => {
@@ -21,8 +23,10 @@ describe('Season end', { timeout: 180_000 }, () => {
     await db.open();
     await setTargets({ kcalMin: 2000, kcalMax: 2300, proteinG: 140, steps: 8000, waterMl: 0, sleepMin: 450, sessionsPerWeek: 3 }, '2026-01-01');
     await foundClub(FOUNDED, { shirt: 'A1', crest: 'a' });
-    // Day 42 is FOUNDED + 41; playDue plays through yesterday.
-    await playDue(noon(addDays(FOUNDED, 42)));
+    // Two international breaks pause the season for 3 days each (layer 4): day 42 is FOUNDED + 47; playDue plays
+    // through yesterday, at most 42 days at a time (the catch-up cap), so it runs twice.
+    await playDue(noon(addDays(FOUNDED, 30)));
+    await playDue(noon(addDays(FOUNDED, SEASON_REAL_DAYS)));
   });
 
   it('a full season ends with every tier at 18, before and after the moves', async () => {
@@ -37,7 +41,7 @@ describe('Season end', { timeout: 180_000 }, () => {
 
   it('season 2 day 1 is the day after the last event day', async () => {
     const save = (await db.fbSave.get('save'))!;
-    const eventStart = addDays(FOUNDED, 42);
+    const eventStart = addDays(FOUNDED, SEASON_REAL_DAYS);
     const lastEvent = addDays(eventStart, save.event!.days - 1);
     await playDue(noon(addDays(lastEvent, 1)));
     const s2 = (await db.fbSeasons.get(2))!;

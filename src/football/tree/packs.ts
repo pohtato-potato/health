@@ -2,8 +2,8 @@
 // album already holds when it's opened. Five items, mostly album cards, plus boosts and research. Packs never
 // hold players (the card is the player). Each duplicate album card becomes research.
 //
-// Loans are layer 4. The loan slot is a seam: `drawLoan` returns nothing yet, and the slot is drawn again from
-// its other weights, so a pack shows nothing of loans until layer 4 fills it in.
+// Loans (layer 4): the fifth slot can hold a loan, and an Icon loan is checked before the slots (about 2%, rising 0.5%
+// a pack without one). Without `loans` (older callers and tests) the loan slot is drawn again from its other weights.
 import { ALBUM, ALBUM_CARDS, DUPLICATE_RESEARCH } from '../content/album';
 import { ALBUM_ODDS, BOOSTS, PACK_ITEMS, PACK_RESEARCH, PACK_SLOTS } from '../content/packs';
 import { BOONS, BOUNTIES } from '../content/season';
@@ -11,6 +11,7 @@ import { POOLS, runningLow } from '../content/pools';
 import { RARITIES, type AlbumCard, type AlbumSet, type Rarity } from '../content/types';
 import { hashSeed, rng } from '../rng';
 import type { PackEarned, PackItem, PackOpened, TreeUser } from './types';
+import { loanItem } from '../globe/loans';
 
 /** A big pack (the track's day 28) holds three more album cards. */
 export const BIG_EXTRA = 3;
@@ -24,10 +25,8 @@ function weighted<K extends string>(r: () => number, w: Record<K, number>): K {
   return keys[keys.length - 1];
 }
 
-/** Layer 4 fills this in. Until then a loan slot holds nothing and is drawn again. */
-export function drawLoan(_r: () => number): PackItem | null {
-  return null;
-}
+/** What opening a pack needs to know about loans: this pack's Icon odds (%) and the loans already met. */
+export interface LoanDraw { iconPct: number; met: string[] }
 
 /** The album cards already collected. */
 export const collected = (user: TreeUser): Set<string> =>
@@ -42,8 +41,11 @@ function albumCard(r: () => number): AlbumCard {
 }
 
 /** Opens a pack: `items` is how many (5, or 6 with the Bigger packs boon). */
-export function openPack(pack: Pick<PackEarned, 'id' | 'size'>, user: TreeUser, items = PACK_ITEMS): PackItem[] {
+export function openPack(pack: Pick<PackEarned, 'id' | 'size'>, user: TreeUser, items = PACK_ITEMS, loans?: LoanDraw): PackItem[] {
   const r = rng(hashSeed('pack', pack.id));
+  // The Icon check comes before the slots, on its own seed, so it never changes what the other slots hold.
+  const rl = rng(hashSeed('pack-loan', pack.id));
+  const icon = Boolean(loans) && pack.size !== 'single' && rl() * 100 < loans!.iconPct;
   const have = collected(user);
   const out: PackItem[] = [];
   const album = (): PackItem => {
@@ -55,11 +57,11 @@ export function openPack(pack: Pick<PackEarned, 'id' | 'size'>, user: TreeUser, 
   if (pack.size === 'single') return [album()];
   const slots: Slot[] = Array.from({ length: items }, (_, i) => PACK_SLOTS[Math.min(i, PACK_SLOTS.length - 1)]);
   if (pack.size === 'big') for (let k = 0; k < BIG_EXTRA; k++) slots.unshift(PACK_SLOTS[0]);
-  for (const s of slots) {
+  for (const [i, s] of slots.entries()) {
+    if (icon && i === slots.length - 1) { out.push(loanItem(rl, true, loans!.met)); continue; }
     let kind = weighted(r, s);
     if (kind === 'loan') {
-      const loan = drawLoan(r);
-      if (loan) { out.push(loan); continue; }
+      if (loans) { out.push(loanItem(rl, false, loans.met)); continue; }
       kind = weighted(r, { ...s, loan: 0 });
     }
     if (kind === 'album') out.push(album());
@@ -94,18 +96,18 @@ export const kitTrims = (user: TreeUser) =>
 
 export type PoolId = 'loans' | 'album' | 'boons' | 'bounties';
 /** How much of each limited pool has been collected (spec §16, running low). */
-export function poolCounts(user: TreeUser, bountiesDone: string[]): Record<PoolId, { collected: number; size: number }> {
+export function poolCounts(user: TreeUser, bountiesDone: string[], loansMet: string[] = []): Record<PoolId, { collected: number; size: number }> {
   const size = (p: PoolId) => POOLS.find((x) => x.pool === p)!.size;
   return {
-    loans: { collected: 0, size: size('loans') }, // layer 4 counts loan players met
+    loans: { collected: new Set(loansMet).size, size: size('loans') },
     album: { collected: collected(user).size, size: size('album') },
     boons: { collected: new Set(user.boons.map((b) => b.id).filter((id) => BOONS.some((x) => x.id === id))).size, size: size('boons') },
     bounties: { collected: new Set(bountiesDone.map((k) => k.split(':').slice(1).join(':')).filter((id) => BOUNTIES.some((x) => x.id === id))).size, size: size('bounties') },
   };
 }
 /** Pools whose running-low notice should show now (80–85% collected, once per pool size). */
-export function runningLowNow(user: TreeUser, bountiesDone: string[]): PoolId[] {
-  const c = poolCounts(user, bountiesDone);
+export function runningLowNow(user: TreeUser, bountiesDone: string[], loansMet: string[] = []): PoolId[] {
+  const c = poolCounts(user, bountiesDone, loansMet);
   return (Object.keys(c) as PoolId[]).filter((p) => runningLow(c[p].collected, c[p].size, user.lowShown[p]));
 }
 export const POOL_WORD: Record<PoolId, string> = { loans: 'loan players', album: 'album cards', boons: 'boons', bounties: 'bounties' };

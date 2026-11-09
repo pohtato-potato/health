@@ -97,7 +97,7 @@ export function treeDay(c: TreeCtx, date: DayKey, youthDays: number) {
   if (s.phase === 'season') {
     if (eng.track.season !== s.season) eng.track = { season: s.season, steps: [], catchups: 0 };
     if (m.logged && !eng.track.steps.includes(date)) eng.track = { ...eng.track, steps: [...eng.track.steps, date] };
-    if (s.day % 7 === 0 && eng.days.some((d) => d.date > addDays(date, -7) && d.m.logged)) earnPack(eng, date, 'week-finished', s.season);
+    if (s.day % 7 === 0 && !(s.globe?.breaks ?? []).some((b) => b.days.includes(date)) && eng.days.some((d) => d.date > addDays(date, -7) && d.m.logged)) earnPack(eng, date, 'week-finished', s.season);
   }
 
   // 3. Bounties picked this week.

@@ -18,6 +18,9 @@ import { BASE_RULES, type RotationRules } from '../rotation/rules';
 import { NO_TREE, sheetFor, type TreeRotation } from '../tree/rotation';
 import { captainChemistry, freshnessScale, pickTrait } from '../rotation/traits';
 import { PROMOTED_START, youthDay, type YouthLink } from '../players/youth';
+import { dutyBonus } from '../globe/duty';
+import { withLoans } from '../globe/loans';
+import type { LoanStay } from '../globe/types';
 import type { Health } from './gather';
 import type { FbNews, FbSave, FbSquadRow, StoredMatch } from './tables';
 
@@ -61,7 +64,7 @@ export function playersDay(roster: Roster, h: Health, c: Ctx, date: DayKey, acad
       next.set(d.id, old.freeAgent ? { ...old, freeAgent: { ...old.freeAgent, readded: d.active || undefined } } : old);
       continue;
     }
-    const r = ratingOf(c, def, date, { base: old?.base, weights: old?.weights });
+    const r = ratingOf(c, def, date, { base: old?.base, weights: old?.weights, bonus: old && dutyBonus(old) });
     const computed = r ? clampO(r.overall + carryOf(old)) : old?.overall ?? c.rampStart?.[d.id] ?? 50;
     const base = old ?? newRow(def, computed, date);
     const status: FbPlayer['status'] = academy.has(d.id) ? 'academy' : d.active ? 'squad' : 'left';
@@ -81,7 +84,7 @@ export function playersDay(roster: Roster, h: Health, c: Ctx, date: DayKey, acad
       const switched = found.why === 'kit' || found.why === 'profile';
       const before = switched ? Math.max(old!.overall, row.overall) : row.overall;
       const { weights, moved } = shiftWeights(row.weights ?? Object.fromEntries(r.attrs.map((a) => [a.id, a.weight])), found.shift);
-      const r2 = ratingOf(c, def, date, { base: date, weights });
+      const r2 = ratingOf(c, def, date, { base: date, weights, bonus: old && dutyBonus(old) });
       const after = Math.min(100, before + 3);
       const trait = found.why === 'kit' ? pickTrait(row, date, 'gym') ?? pickTrait(row, date) : pickTrait(row, date);
       const lb: LimitBreak = { on: date, tier: row.card.tier, why: found.why, from: before, to: after, carry: after - (r2 ?? r).overall, what: found.what, ...(trait ? { trait } : {}), ...(moved ? { shift: moved } : {}), ...(quiet ? { seen: true } : {}) };
@@ -130,8 +133,28 @@ export function sheetEleven(members: SquadMember[], sheet: TeamSheet | undefined
   });
 }
 
-export interface NightOpts { sheet?: TeamSheet; latest?: string[]; night?: Omit<NightCtx, 'rules' | 'formation'>; rules?: RotationRules }
-export interface Night { xi: XiPlace[]; values: AxisValues; squad: Partial<AxisValues>; base: AxisValues; nudges: Nudge[]; total: AxisValues }
+export interface NightOpts {
+  sheet?: TeamSheet; latest?: string[]; night?: Omit<NightCtx, 'rules' | 'formation'>; rules?: RotationRules;
+  /** Layer 4: loans at the club tonight, and whether each unit's habit was logged today (a loan plays only then). */
+  loans?: LoanStay[]; logged?: (u: Unit) => boolean;
+  /** Layer 4, False nine: a Fuel player can take Power's place at this share (90%) when that's better. */
+  falseNine?: number;
+  /** Layer 4, Two fronts: players rested for the league match who are fully fresh tonight. */
+  rested?: string[];
+}
+export interface Night { xi: XiPlace[]; values: AxisValues; squad: Partial<AxisValues>; base: AxisValues; nudges: Nudge[]; total: AxisValues; /** Loans that played (stay keys) and the starters who sat out for them. */ loansPlayed?: string[]; loanRested?: string[] }
+
+/** False nine (Continental era): the best Fuel player not starting takes the weakest Power place at 90%, when that's higher. */
+export function withFalseNine(xi: XiPlace[], members: SquadMember[], share: number): XiPlace[] {
+  const power = xi.map((x, i) => ({ x, i })).filter(({ x }) => x.unit === 'Power');
+  const starting = new Set(xi.map((x) => x.player));
+  const fuel = members.filter((m) => m.unit === 'Fuel' && !starting.has(m.id)).sort((a, b) => b.rating - a.rating)[0];
+  if (!fuel || !power.length) return xi;
+  const low = power.reduce((a, b) => (b.x.rating < a.x.rating ? b : a));
+  const r = Math.round((fuel.rating * share) / 100);
+  if (r <= low.x.rating) return xi;
+  return xi.map((x, i) => (i === low.i ? { player: fuel.id, unit: 'Power', place: 'False nine', name: fuel.name, rating: r } : x));
+}
 
 /**
  * Tonight's eleven and axis values. Base = 70% today + 30% squad; the nudges (formation, tactic, chemistry, morale,
@@ -139,15 +162,19 @@ export interface Night { xi: XiPlace[]; values: AxisValues; squad: Partial<AxisV
  * value, with no chemistry (its starters rest).
  */
 export function squadNight(roster: Roster, today: AxisValues, sick: boolean, o: NightOpts = {}): Night {
-  const members = membersOf(roster);
-  const starters = sheetEleven(members, o.sheet, o.latest);
+  const fresh = o.rested?.length ? new Map([...roster].map(([id, p]) => [id, o.rested!.includes(id) && p.fresh != null ? { ...p, fresh: 100 } : p])) : roster;
+  const members = membersOf(fresh);
+  const sheetXi = sheetEleven(members, o.sheet, o.latest);
+  const starters = o.falseNine && !o.sheet?.picks?.Power?.length ? withFalseNine(sheetXi, members, o.falseNine) : sheetXi;
   const formation = o.sheet?.formation ?? '4-3-3';
-  const xi = sick ? benchOf(members, starters, formation) : starters;
+  // A sick day plays no loans: nothing was logged, so no loan has a day to play.
+  const loaned = !sick && o.loans?.length ? withLoans(starters, o.loans, o.logged ?? (() => false)) : undefined;
+  const xi = sick ? benchOf(members, starters, formation) : loaned?.xi ?? starters;
   const squad = squadValues(xi);
   const base = blend(today, squad, sick ? 0 : undefined);
   const nudges = nudgesFor({ ...o.night, formation, chemistry: sick ? undefined : o.night?.chemistry, rules: o.rules ?? BASE_RULES });
   const { values, total } = applyNudges(base, nudges);
-  return { xi, squad, base, values, nudges, total };
+  return { xi, squad, base, values, nudges, total, ...(loaned?.played.length ? { loansPlayed: loaned.played, loanRested: loaned.rested } : {}) };
 }
 
 /** Tonight's team sheet, tactic, captains, chemistry, morale and the rival's free agents (spec §8, §9.1). */

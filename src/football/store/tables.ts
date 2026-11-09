@@ -13,6 +13,7 @@ import type { Continental } from '../continental';
 import type { Credit, XiPlace } from '../players/types';
 import type { YouthLink } from '../players/youth';
 import type { TreeEngine, TreeUser } from '../tree/types';
+import type { GlobeEngine, GlobeUser } from '../globe/types';
 import type { Chemistry, Morale, Tactic, TeamSheet } from '../rotation/night';
 
 export type CrestOpt = 'a' | 'b' | 'c' | 'd' | 'e';
@@ -88,6 +89,10 @@ export interface FbSave {
   tree?: TreeEngine;
   /** Engine 2, layer 3: the tree as you tapped it (techs, boons, bounties, packs opened, moments seen). */
   treeUser?: TreeUser;
+  /** Engine 2, layer 4: the world as the days played it (loans at the club, nations, breaks, duty, trials). */
+  globe?: GlobeEngine;
+  /** Engine 2, layer 4: the world as you tapped it (moments seen). */
+  globeUser?: GlobeUser;
   // ---- Engine 2, layer 2: rotation ----
   /** The team sheet: starters, unit captains, the set-piece taker (spec §9.1, §16). */
   sheet?: TeamSheet;
@@ -156,7 +161,15 @@ export interface FbSquadRow {
   id: string; kind: 'youth'; name: string; axis: Axis; potential: 3 | 4 | 5; what: string; exercise: boolean; season: number;
   /** Days its habit was logged (engine 2: the same as sessions). */
   logged: DayKey[];
-  status: 'growing' | 'promoted' | 'left';
+  /** trial (layer 4): came to the trials and waits to be tied to a habit until `trialUntil`. */
+  status: 'trial' | 'growing' | 'promoted' | 'left';
+  /** Layer 4: a trialist's last day to be tied to a habit, the week's sleep style that brought it, and a nation from abroad. */
+  trialUntil?: DayKey;
+  style?: 'early' | 'long' | 'short' | 'mixed';
+  nation?: string;
+  /** Layer 4: the last night it grew, and by how much (the morning reveal). */
+  lastGrow?: { on: DayKey; n: number };
+  leftOn?: DayKey;
   /** Engine 2 (spec §9.2): the real habit it is tied to; without one it is never counted. */
   link?: YouthLink;
   sessions?: DayKey[];

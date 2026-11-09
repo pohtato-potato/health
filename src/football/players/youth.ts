@@ -26,18 +26,22 @@ export function linkedLogged(h: Health, link: YouthLink | undefined, date: DayKe
  * One day for one youngster. A logged day of its habit is a session. The night's sleep (logged on this day) adds growth
  * when the bedtime was kept, doubled after a rest day. Growth pauses but never goes back. A sick day moves nothing.
  */
-export function youthDay(h: Health, y: FbSquadRow, date: DayKey, bedtime: number | undefined): FbSquadRow {
+/** Layer 4: a loan in the unit (×1.5), the sleep coach's extra growth, and the sessions promotion needs. */
+export interface YouthOpts { mult?: number; extra?: number; sessions?: number }
+export function youthDay(h: Health, y: FbSquadRow, date: DayKey, bedtime: number | undefined, o: YouthOpts = {}): FbSquadRow {
   if (y.status !== 'growing' || !y.link || h.days.get(date)?.status === 'sick') return y;
   const next = { ...y, sessions: [...(y.sessions ?? [])], grown: [...(y.grown ?? [])], growth: y.growth ?? 0 };
   if (!next.sessions.includes(date) && linkedLogged(h, y.link, date)) next.sessions.push(date);
   const sleep = h.days.get(date)?.sleep;
   if (sleep && bedtime !== undefined && !next.grown.includes(date) && bedtimeKept(sleep.asleep, bedtime)) {
     const restDay = !h.sessions.some((s) => s.date === addDays(date, -1));
-    next.growth = Math.round((next.growth + GROWTH_BY_STARS[y.potential] * (restDay ? 2 : 1)) * 100) / 100;
+    const n = Math.round((GROWTH_BY_STARS[y.potential] + (o.extra ?? 0)) * (restDay ? 2 : 1) * (o.mult ?? 1) * 100) / 100;
+    next.growth = Math.round((next.growth + n) * 100) / 100;
     next.grown.push(date);
+    next.lastGrow = { on: date, n };
   }
   next.logged = next.sessions;
-  if (next.sessions.length >= PROMOTE_SESSIONS && next.growth >= PROMOTE_GROWTH) next.status = 'promoted';
+  if (next.sessions.length >= (o.sessions ?? PROMOTE_SESSIONS) && next.growth >= PROMOTE_GROWTH) next.status = 'promoted';
   return next;
 }
 

@@ -21,11 +21,13 @@ export function playable(t: TraitDef): boolean {
   return false;
 }
 
-/** A player's traits, from its limit breaks, oldest first, at most three. */
-export const traitsOf = (p: Pick<FbPlayer, 'limitBreaks'>): string[] => [...new Set(p.limitBreaks.map((l) => l.trait).filter((t): t is string => Boolean(t)))].slice(0, MAX_TRAITS);
+/** A player's traits, from its limit breaks and international duty (layer 4), oldest first, at most three. */
+export const traitsOf = (p: Pick<FbPlayer, 'limitBreaks'> & Pick<Partial<FbPlayer>, 'duty'>): string[] =>
+  [...new Set([...p.limitBreaks.map((l) => ({ on: l.on, t: l.trait })), ...(p.duty ?? []).map((d) => ({ on: d.on, t: d.trait }))]
+    .sort((a, b) => (a.on < b.on ? -1 : a.on > b.on ? 1 : 0)).map((x) => x.t).filter((t): t is string => Boolean(t)))].slice(0, MAX_TRAITS);
 
 /** The trait a limit break gives: one for its unit (or any unit) the player doesn't hold yet, picked by its seed. */
-export function pickTrait(p: Pick<FbPlayer, 'id' | 'unit' | 'limitBreaks'>, on: string, from: 'limit-break' | 'gym' = 'limit-break'): string | undefined {
+export function pickTrait(p: Pick<FbPlayer, 'id' | 'unit' | 'limitBreaks'> & Pick<Partial<FbPlayer>, 'duty'>, on: string, from: 'limit-break' | 'gym' | 'duty' = 'limit-break'): string | undefined {
   const held = traitsOf(p);
   if (held.length >= MAX_TRAITS) return undefined;
   const pool = TRAITS.filter((t) => t.from.includes(from) && (t.unit === p.unit || t.unit === 'any') && !held.includes(t.id) && playable(t));
@@ -34,7 +36,7 @@ export function pickTrait(p: Pick<FbPlayer, 'id' | 'unit' | 'limitBreaks'>, on: 
 }
 
 /** Freshness cost scale from traits (Engine: half). */
-export function freshnessScale(p: Pick<FbPlayer, 'limitBreaks'>): number {
+export function freshnessScale(p: Pick<FbPlayer, 'limitBreaks'> & Pick<Partial<FbPlayer>, 'duty'>): number {
   let k = 1;
   for (const id of traitsOf(p)) { const e = traitById(id)?.effect; if (e?.kind === 'rule' && e.rule === 'freshness-cost') k *= 1 + e.value / 100; }
   return Math.max(0, k);
