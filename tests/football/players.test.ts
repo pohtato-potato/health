@@ -7,7 +7,7 @@ import { bedtimeKept, ctxFor, growth, ramp, rate, ratingOf, technique } from '..
 import { at95After, cardAfter, firstCard, gatedStep, ICON_DAYS, LEGEND_DAYS, LEGEND_HOLD, rankOf, stepName, stepOf, tierOf } from '../../src/football/players/cards';
 import { playersOn } from '../../src/football/players/catalogue';
 import { creditsFor } from '../../src/football/players/credit';
-import { benchOf, blend, elevenOf, squadValues, type SquadMember } from '../../src/football/players/eleven';
+import { benchOf, blend, elevenOf, FORMATIONS, squadValues, type SquadMember } from '../../src/football/players/eleven';
 import { heldLoads, profileStart, profileStarts } from '../../src/football/players/identity';
 import type { FbPlayer, XiPlace } from '../../src/football/players/types';
 import { linkedLogged, PROMOTE_GROWTH, PROMOTE_SESSIONS, youthDay } from '../../src/football/players/youth';
@@ -139,6 +139,15 @@ describe('the squad from the logs', () => {
     expect(ids).not.toContain('pace:big-days');
     expect(playersOn(h, addDays(D0, -1)).map((p) => p.id)).not.toContain('pace:steps');
   });
+  it('a renamed checklist habit keeps its player (id and history) and takes the new name and drawing', () => {
+    // an item keeps the id it was made with; renaming it (here from an old name to "Read") changes only the name
+    const checklist = [{ id: 'old-name', name: 'Read', slots: ['am'], active: true }];
+    const h = health({ days: days([{ date: D0, steps: 9000, ticks: { 'old-name:0': 1 } }]) });
+    const p = playersOn({ ...h, settings: { ...h.settings, checklist } }, D0).find((x) => x.ref === 'old-name')!;
+    expect(p.id).toBe('habit:old-name');
+    expect(p.name).toBe('Read');
+    expect(p.art).toBe('book');
+  });
   it('a sick day is left out of every window', () => {
     const d = (i: number, steps: number, status?: Day['status']) => ({ date: addDays(D0, i), steps, status });
     const h = health({ days: days([d(0, 8000), d(1, 8000), d(2, 1000, 'sick')]) });
@@ -163,24 +172,30 @@ describe('sick days (spec §16)', () => {
     const add = (id: string, unit: FbPlayer['unit'], overall: number) => roster.set(id, { id, unit, name: id, overall, status: 'squad' } as FbPlayer);
     add('a', 'Pace', 90); add('b', 'Pace', 80); add('c', 'Pace', 50);
     const night = squadNight(roster, all(2), true);
-    expect(night.xi.filter((x) => x.unit === 'Pace').map((x) => x.player)).toEqual(['c', 'c']);
-    expect(night.values.Pace).toBe(10); // 50, and 45 (90% cover) on the second place → 47.5 / 5 = 9.5, rounded
+    // c is the only Pace player on the bench; the best starter fills the second place, and nobody plays twice
+    expect(night.xi.filter((x) => x.unit === 'Pace').map((x) => x.player)).toEqual(['c', 'a']);
+    expect(night.values.Pace).toBe(14); // (50 + 90) / 2 / 5
     expect(squadNight(roster, all(2), false).values.Pace).toBe(7); // 0.7 × 2 + 0.3 × 17 = 6.5, rounded
   });
 });
 
 describe('the eleven and tonight’s value', () => {
   const m = (id: string, unit: SquadMember['unit'], rating: number): SquadMember => ({ id, unit, name: id, rating });
-  it('picks the best of each unit in 4-3-3; a short unit’s best covers at 90%', () => {
+  it('picks the best of each unit in 4-3-3; a short unit plays a place short, counted at 90% of its best', () => {
     const xi = elevenOf([m('p1', 'Pace', 70), m('p2', 'Pace', 60), m('p3', 'Pace', 80), m('w', 'Power', 65)]);
     expect(xi.filter((x) => x.unit === 'Pace').map((x) => x.player)).toEqual(['p3', 'p1']);
     expect(xi.filter((x) => x.unit === 'Power')).toHaveLength(1);
     const short = elevenOf([m('r', 'Rest', 80)]);
-    expect(short.map((x) => x.rating)).toEqual([80, 72]);
+    expect(short.map((x) => x.player)).toEqual(['r']);
+    expect(squadValues(short, FORMATIONS['4-3-3']).Rest).toBeCloseTo((80 + 72) / 2 / 5);
   });
-  it('the bench is everyone not starting', () => {
-    const mem = [m('p1', 'Pace', 70), m('p2', 'Pace', 60), m('p3', 'Pace', 80)];
-    expect(benchOf(mem, elevenOf(mem)).map((x) => x.player)).toEqual(['p2', 'p2']);
+  it('the bench is everyone not starting; a thin bench is filled by the unit’s starters, and nobody appears twice', () => {
+    const mem = [m('p1', 'Pace', 70), m('p2', 'Pace', 60), m('p3', 'Pace', 80), m('r1', 'Rest', 50), m('r2', 'Rest', 60), m('r3', 'Rest', 40), m('t1', 'Routine', 70), m('t2', 'Routine', 55), m('t3', 'Routine', 52)];
+    const bench = benchOf(mem, elevenOf(mem));
+    expect(bench.filter((x) => x.unit === 'Pace').map((x) => x.player)).toEqual(['p2', 'p3']);
+    expect(bench.filter((x) => x.unit === 'Rest').map((x) => x.player)).toEqual(['r3', 'r2']);
+    expect(bench.filter((x) => x.unit === 'Routine').map((x) => x.player)).toEqual(['t3', 't1']);
+    expect(new Set(bench.map((x) => x.player)).size).toBe(bench.length);
   });
   it('blends 70% today and 30% squad; a unit with no players plays on today', () => {
     const sq = squadValues([{ player: 'x', unit: 'Pace', place: 'Left wing', name: 'x', rating: 100 }]);

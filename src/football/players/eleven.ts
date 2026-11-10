@@ -27,7 +27,7 @@ export const PLACES_433: Record<Unit, { place: string; x: number; y: number }[]>
 export const UNIT_COLOUR: Record<Unit, string> = { Pace: '#8fdcb6', Power: '#ff9a76', Fuel: '#c2b2ff', Rest: '#93c3dc', Routine: '#f4aedb', Shape: '#d9e8f3' };
 /** Where a unit plays (spec §2). */
 export const UNIT_WHERE: Record<Unit, string> = { Pace: 'wings', Power: 'attack', Fuel: 'midfield', Routine: 'midfield and full-back', Shape: 'defence', Rest: 'goal and centre-back' };
-/** A unit short of players: its best covers the extra place at 90%. */
+/** A unit with fewer players than places plays a place short; that place counts at 90% of its best (COVER). */
 export const COVER = 0.9;
 /** Tonight = 70% today, 30% squad (spec §8). */
 export const TODAY_SHARE = 0.7;
@@ -36,36 +36,46 @@ export interface SquadMember { id: string; unit: Unit; name: string; rating: num
 
 /**
  * The starters of one unit: your team-sheet pick (layer 2) when it names players still in the squad, else the highest
- * match ratings. A short unit's best covers the extra places at 90%.
+ * match ratings. A player starts once: a unit with fewer players than places plays short (see `squadValues`).
  */
 export function startersOf(unit: Unit, members: SquadMember[], places: number, pick?: string[]): XiPlace[] {
   const pool = members.filter((m) => m.unit === unit).sort((a, b) => b.rating - a.rating || a.name.localeCompare(b.name));
-  if (!pool.length) return [];
-  const picked = (pick ?? []).map((id) => pool.find((m) => m.id === id)).filter((m): m is SquadMember => Boolean(m));
-  const order = [...picked, ...pool.filter((m) => !picked.includes(m))];
+  const picked = [...new Set(pick ?? [])].map((id) => pool.find((m) => m.id === id)).filter((m): m is SquadMember => Boolean(m));
+  const order = [...picked, ...pool.filter((m) => !picked.includes(m))].slice(0, places);
   const spots = PLACES_433[unit];
-  return Array.from({ length: places }, (_, i) => {
-    const m = order[i] ?? order[0];
-    const cover = i >= order.length;
-    return { player: m.id, unit, place: spots[i]?.place ?? spots[0].place, name: m.name, rating: Math.round(cover ? m.rating * COVER : m.rating) };
-  });
+  return order.map((m, i) => ({ player: m.id, unit, place: spots[i]?.place ?? spots[0].place, name: m.name, rating: Math.round(m.rating) }));
 }
 export function elevenOf(members: SquadMember[], formation: Formation = '4-3-3', picks: Partial<Record<Unit, string[]>> = {}): XiPlace[] {
   return AXES.flatMap((u) => startersOf(u, members, FORMATIONS[formation][u], picks[u]));
 }
-/** The bench: every squad player not starting. On a sick day they play (the rotation squad). */
+/**
+ * The bench, the rotation squad on a sick day: every squad player not starting. Each player appears once. When a unit's
+ * bench is too thin for its places, that unit's starters fill the rest, best first; when the whole unit is too small,
+ * it plays a place short.
+ */
 export function benchOf(members: SquadMember[], xi: XiPlace[], formation: Formation = '4-3-3'): XiPlace[] {
   const starting = new Set(xi.map((x) => x.player));
-  const rest = members.filter((m) => !starting.has(m.id));
-  // A unit with nobody on the bench is played by its starters.
-  return AXES.flatMap((u) => startersOf(u, rest.some((m) => m.unit === u) ? rest : members, FORMATIONS[formation][u]));
+  return AXES.flatMap((u) => {
+    const unit = members.filter((m) => m.unit === u);
+    const bench = unit.filter((m) => !starting.has(m.id)).map((m) => m.id);
+    const fill = unit.filter((m) => starting.has(m.id)).sort((a, b) => b.rating - a.rating).map((m) => m.id);
+    return startersOf(u, members, FORMATIONS[formation][u], [...sortedBy(unit, bench), ...fill]);
+  });
 }
-/** Squad share of an axis, 1–20: the starters' average match rating ÷ 5. Undefined when the unit has no players. */
-export function squadValues(xi: XiPlace[]): Partial<AxisValues> {
+const sortedBy = (unit: SquadMember[], ids: string[]) => unit.filter((m) => ids.includes(m.id)).sort((a, b) => b.rating - a.rating || a.name.localeCompare(b.name)).map((m) => m.id);
+/**
+ * Squad share of an axis, 1–20: the starters' average match rating ÷ 5. Undefined when the unit has no players. With
+ * `places`, a unit playing short counts each empty place at COVER × its best player's rating.
+ */
+export function squadValues(xi: XiPlace[], places?: Record<Unit, number>): Partial<AxisValues> {
   const out: Partial<AxisValues> = {};
   for (const a of AXES) {
     const xs = xi.filter((x) => x.unit === a);
-    if (xs.length) out[a] = clamp(xs.reduce((t, x) => t + x.rating, 0) / xs.length / 5, 1, 20);
+    if (!xs.length) continue;
+    const short = Math.max(0, (places?.[a] ?? xs.length) - xs.length);
+    const best = Math.max(...xs.map((x) => x.rating));
+    const sum = xs.reduce((t, x) => t + x.rating, 0) + short * best * COVER;
+    out[a] = clamp(sum / (xs.length + short) / 5, 1, 20);
   }
   return out;
 }
