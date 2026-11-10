@@ -11,6 +11,8 @@ export interface SeasonChange {
   from: Tier;
   to: Tier;
   move: Move;
+  /** A double promotion: up two divisions at once. */
+  double?: boolean;
   /** Brabo's final position in the old tier. */
   pos: number;
   /** The clubs going up and down from Brabo's tier (Brabo included when it moves). */
@@ -26,10 +28,11 @@ export function seasonChange(s: FbSeason, values: AxisValues): SeasonChange | nu
   const from = s.tierOf[OWN_ID];
   const up = s.final.up[from] ?? [], down = s.final.down[from] ?? [];
   const move: Move = up.includes(OWN_ID) ? 'up' : down.includes(OWN_ID) ? 'down' : 'stay';
-  const to = (move === 'up' ? from - 1 : move === 'down' ? from + 1 : from) as Tier;
+  const double = s.final.double?.id === OWN_ID;
+  const to = (double ? from - 2 : move === 'up' ? from - 1 : move === 'down' ? from + 1 : from) as Tier;
   const pos = (s.final.tables[from]?.findIndex((r) => r.id === OWN_ID) ?? -1) + 1;
   const po = s.playoffs[from];
   const playoff = po?.final && po.final.includes(OWN_ID) ? { final: po.final, winner: po.winner } : undefined;
   const ratings = AXES.map((axis) => ({ axis, before: shownRating(values[axis], from), after: shownRating(values[axis], to) }));
-  return { season: s.id, from, to, move, pos, up, down, playoff, ratings };
+  return { season: s.id, from, to, move, ...(double ? { double } : {}), pos, up, down, playoff, ratings };
 }

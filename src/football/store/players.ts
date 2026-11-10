@@ -170,7 +170,7 @@ export function squadNight(roster: Roster, today: AxisValues, sick: boolean, o: 
   // A sick day plays no loans: nothing was logged, so no loan has a day to play.
   const loaned = !sick && o.loans?.length ? withLoans(starters, o.loans, o.logged ?? (() => false)) : undefined;
   const xi = sick ? benchOf(members, starters, formation) : loaned?.xi ?? starters;
-  const squad = squadValues(xi);
+  const squad = squadValues(xi, FORMATIONS[formation]);
   const base = blend(today, squad, sick ? 0 : undefined);
   const nudges = nudgesFor({ ...o.night, formation, chemistry: sick ? undefined : o.night?.chemistry, rules: o.rules ?? BASE_RULES });
   const { values, total } = applyNudges(base, nudges);

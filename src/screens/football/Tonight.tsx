@@ -13,6 +13,7 @@ import { LevelUpView } from './moments/LevelUp';
 import { AwakeningView } from './moments/Awakening';
 import { FullTime } from './FullTime';
 import { Radar } from './Radar';
+import { AXES } from '../../football/types';
 import { TacticPicker } from './players/Rotation';
 import { MorningCards } from './world/WorldScreens';
 
@@ -79,8 +80,8 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
           {t.also && <p className="fb-s fb-ctr"><b>{t.also}</b></p>}
         </>
       )}
-      <Radar values={t.liveValues} flags={t.flags} captain={t.save.slots.includes('armband') ? t.save.captain : undefined} />
-      <p className="fb-s fb-ctr">Your shape so far. It’s fixed when you close the day.</p>
+      <Radar values={t.liveValues} flags={t.flags} fog={AXES.filter((a) => t.flags[a])} captain={t.save.slots.includes('armband') ? t.save.captain : undefined} />
+      <p className="fb-s fb-ctr">Your shape so far. It’s fixed when you close the day.{AXES.some((a) => t.flags[a] === 'not-logged') ? ' An axis marked ? isn’t logged yet: left that way, it plays low and unpredictable.' : ''}</p>
       {t.loansPlaying.length > 0 && !t.morning.intl && <p className="fb-s fb-ctr">{t.xi.filter((x) => x.player.startsWith('loan:')).map((x) => x.name).join(' and ')} on loan in the eleven tonight{t.loanRested.length ? `; ${t.loanRested.length === 1 ? 'one starter rests' : `${t.loanRested.length} starters rest`} to make room` : ''}.</p>}
       {t.tactic && <TacticPicker date={t.date} pick={t.tactic.pick} by={t.tactic.by} />}
       {(t.known.length > 0 || t.hiddenNote) && (

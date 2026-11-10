@@ -31,7 +31,11 @@ export const PACE_PTS: Table = [[0, 1], [2000, 3], [4000, 5], [6000, 8], [8000, 
 export const REST_PTS: Table = [[5, 6], [6, 9], [7, 13], [7.5, 15], [8, 17], [8.5, 18]];
 export const ROUTINE_PTS: Table = [[0, 3], [0.5, 10], [0.8, 15], [1, 19]];
 export const NO_DATA = 10;
-export const NOT_LOGGED = 5;
+/**
+ * An axis not logged today (fog of war, R8 q-unlogged A, 11 Nov): it plays low, under any honest bad day, and the
+ * engine draws it afresh between FOG values on every chance. A sick day or too little history is "no data" instead.
+ */
+export const NOT_LOGGED = 2;
 
 function lerp(pts: Table, x: number): number {
   if (x <= pts[0][0]) return pts[0][1];

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { axisValues, fuelScore, paceFromSteps, powerFromTraining, restFromSleep, routineFromShare, shapeFromLogs, type AxisInput } from '../../src/football/axes';
+import { axisValues, fuelScore, NOT_LOGGED, paceFromSteps, powerFromTraining, restFromSleep, routineFromShare, shapeFromLogs, type AxisInput } from '../../src/football/axes';
 import type { ChecklistItem, Targets, TrainingSession } from '../../src/domain/types';
 
 const t: Targets = { kcalMin: 2000, kcalMax: 2300, proteinG: 140, steps: 8000, waterMl: 0, sleepMin: 450, sessionsPerWeek: 4 };
@@ -72,11 +72,13 @@ describe('axisValues', () => {
     expect(r.values.Pace).toBe(10);
     expect(r.flags.Pace).toBe('no-data');
   });
-  it('plays 5 marked not-logged when a known habit was not logged', () => {
+  it('plays low (fog of war) marked not-logged when a known habit was not logged, below an honest bad day', () => {
     const r = axisValues(base({ day: { date: '2026-11-04' } }));
-    expect(r.values.Pace).toBe(5);
+    expect(r.values.Pace).toBe(NOT_LOGGED);
     expect(r.flags.Pace).toBe('not-logged');
-    expect(r.values.Rest).toBe(5);
+    expect(r.values.Rest).toBe(NOT_LOGGED);
+    expect(NOT_LOGGED).toBeLessThan(restFromSleep(4.5)); // under five hours asleep is 4
+    expect(NOT_LOGGED).toBeLessThan(paceFromSteps(2000));
   });
   it('leaves medicines out of Routine', () => {
     const checklist: ChecklistItem[] = [
