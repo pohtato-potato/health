@@ -2,6 +2,7 @@
 // with your ratings dropping (or rising), each with room to grow.
 import { clubById, tierName } from '../../../football/data/load';
 import type { SeasonChange as Change } from '../../../football/seasonChange';
+import type { Tier } from '../../../football/types';
 import { OWN } from '../../../football/store/season';
 import { Aurora } from '../FootballHome';
 
@@ -9,7 +10,7 @@ const nm = (id: string) => (id === OWN ? 'Brabo United' : clubById(id).name);
 const ord = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th'}`;
 
 export function SeasonChangeView({ c, onDone }: { c: Change; onDone: () => void }) {
-  const title = c.move === 'up' ? 'Promoted' : c.move === 'down' ? 'Relegated' : `Another season in ${tierName(c.from)}`;
+  const title = c.double ? 'Double promotion' : c.move === 'up' ? 'Promoted' : c.move === 'down' ? 'Relegated' : `Another season in ${tierName(c.from)}`;
   const tone = c.move === 'up' ? 'up' : c.move === 'down' ? 'down' : 'stay';
   return (
     <div className="fb-moment" role="dialog" aria-modal="true" aria-label={title}>
@@ -24,6 +25,7 @@ export function SeasonChangeView({ c, onDone }: { c: Change; onDone: () => void 
               {c.playoff.winner && <p className="fb-s">{c.playoff.winner === OWN ? 'Won it. Up you go.' : `${nm(c.playoff.winner)} won it.`}</p>}
             </section>
           )}
+          {c.double && <p className="fb-s">Champions, and playing above anything in {tierName((c.from - 1) as Tier)}: straight up to {tierName(c.to)}.</p>}
           {c.up.length > 0 && (
             <section className="fb-card" aria-label="Going up">
               <span className="fb-lb">Going up from {tierName(c.from)}</span>

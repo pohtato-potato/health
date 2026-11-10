@@ -10,7 +10,7 @@ import { useSettings } from '../../db/hooks';
 import { addDays, dayOfLogging, type DayKey } from '../../domain/dates';
 import { prefOn } from '../../domain/types';
 import { clubCrest, crestSvg } from '../../football/art/crest';
-import { clubById } from '../../football/data/load';
+import { clubById, tierName } from '../../football/data/load';
 import { matchupShare, movedAxes, oppShape, threatLine, wentAhead } from '../../football/matchup';
 import { loadTonight, type Tonight } from '../../football/store/hooks';
 import { OWN } from '../../football/store/season';
@@ -108,7 +108,9 @@ export function TonightShape({ t, stadium, buzzOn, reel }: { t: Tonight; stadium
   const opp = t.oppTonight;
   const oppVals = useMemo(() => (opp ? oppShape(opp) : undefined), [opp]);
   const logged = Object.fromEntries(AXES.map((a) => [a, !t.flags[a]])) as Record<Axis, boolean>;
-  const fog = AXES.filter((a) => t.flags[a] === 'no-data');
+  // Fog of war: an axis with no data, or not logged yet, is hatched with "?" (q-pg-fog A); unlogged ones play low.
+  const fog = AXES.filter((a) => t.flags[a]);
+  const noData = fog.filter((a) => t.flags[a] === 'no-data'), unlogged = fog.filter((a) => t.flags[a] === 'not-logged');
   const prev = useRef<{ date: DayKey; v: AxisValues } | null>(null);
   const [ahead, setAhead] = useState<Axis | undefined>(() => readAhead(t.date));
   const [moment, setMoment] = useState<{ axis: Axis; id: number } | null>(null);
@@ -155,6 +157,7 @@ export function TonightShape({ t, stadium, buzzOn, reel }: { t: Tonight; stadium
   return (
     <section className="tm-shape" aria-label="Tonight’s shape">
       <h2 className="tm-h">Tonight’s shape {oppId && <span className="tm-vsx">against <Art svg={clubCrest(clubById(oppId), 22)} /><b style={{ color: oppInk }}>{name(oppId)}</b></span>}</h2>
+      {oppId && t.oppTier && t.braboTier && (f.comp !== 'league' || t.oppTier !== t.braboTier) && <p className="tm-ln">{f.round ?? 'A cup tie'}: {name(oppId)} play in {t.oppTier === t.braboTier ? 'your division' : tierName(t.oppTier)}{t.oppTier < t.braboTier ? `, ${t.braboTier - t.oppTier === 1 ? 'one division' : `${t.braboTier - t.oppTier} divisions`} above you` : ''}.</p>}
       <Radar values={t.liveValues} flags={t.flags} opp={oppVals} oppInk={oppInk} oppName={oppId ? name(oppId) : undefined} fog={fog} inked pulse={pulse} size={300} label="Tonight’s shape so far" />
       {threat && oppId && <p className="tm-ln"><b style={{ color: oppInk }}>{name(oppId)}</b> {threat.kind === 'strong' ? 'are strong on' : 'lead you on'} <b style={{ color: AXIS_INK[threat.axis] }}>{threat.axis}</b>. {threat.answer}</p>}
       {share !== undefined && oppId && (
@@ -175,7 +178,8 @@ export function TonightShape({ t, stadium, buzzOn, reel }: { t: Tonight; stadium
         <p className="tm-ln"><b>Squad condition:</b> {(['Power', 'Pace'] as const).filter((a) => t.condition[a] < 80).map((a) => `${a} ${t.condition[a]}%`).join(', ')}. Low condition lowers tonight’s ceiling, never your logged numbers. Rest and a full night refill it.</p>
       )}
       {t.comeback && <p className="tm-ln"><b className="tm-back">Comeback lift.</b> A full day after a gap: +1 tonight on your weakest logged axis.</p>}
-      {fog.length > 0 && <p className="tm-ln"><b className="tm-fog">{fog.join(' and ')} {fog.length === 1 ? 'is' : 'are'} in fog.</b> Not enough history yet, so {fog.length === 1 ? 'it plays' : 'they play'} as an even 10.</p>}
+      {noData.length > 0 && <p className="tm-ln"><b className="tm-fog">{noData.join(' and ')} {noData.length === 1 ? 'is' : 'are'} in fog.</b> No data, so {noData.length === 1 ? 'it plays' : 'they play'} as an even 10.</p>}
+      {unlogged.length > 0 && <p className="tm-ln"><b className="tm-fog">{unlogged.join(' and ')} {unlogged.length === 1 ? 'is' : 'are'} not logged yet.</b> Left in fog, {unlogged.length === 1 ? 'it plays' : 'they play'} low and unpredictable tonight.</p>}
       {moment && oppVals && oppId && (
         <button type="button" className="tm-moment" key={moment.id} style={{ '--ax': AXIS_INK[moment.axis] } as React.CSSProperties} onClick={() => setMoment(null)} aria-live="assertive">
           <span className="tm-burst" aria-hidden="true" />

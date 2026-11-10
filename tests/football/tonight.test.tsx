@@ -26,7 +26,8 @@ describe('Tonight', () => {
     expect(out).toContain('Matchday 1 of 42');
     expect(out).toContain('Brabo United');
     expect(out).toContain(t.opp!.name);
-    for (const a of ['Pace', 'Power', 'Fuel', 'Rest', 'Routine', 'Shape']) expect(out).toMatch(new RegExp(`>${a}</tspan><tspan[^>]*>10<`));
+    // with no history every axis is "no data": fogged, shown as ?
+    for (const a of ['Pace', 'Power', 'Fuel', 'Rest', 'Routine', 'Shape']) expect(out).toMatch(new RegExp(`>${a}</tspan><tspan[^>]*>\\?<`));
     expect(out).toContain('no data');
   });
 

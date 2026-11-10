@@ -4,7 +4,7 @@ import { OWN } from './season';
 import { db } from '../../db/db';
 import { addDays, dayOfLogging, type DayKey } from '../../domain/dates';
 import { clubById, rememberClubs, type AbilityDef, type ClubDef } from '../data/load';
-import type { Axis, AxisFlags, AxisValues, Mod } from '../types';
+import type { Axis, AxisFlags, AxisValues, Mod, Tier } from '../types';
 import { comebackOn, loadHealth, nightFor, squadCondition } from './gather';
 import { dressingRoom, lowLogOn } from '../squadCare';
 import { opponentFor, type Opponent } from '../opponent';
@@ -74,6 +74,9 @@ export interface Tonight {
   loanRested: string[];
   /** Tonight's opponent as the engine sizes it (rating from the save), for Today's shape and matchup bar. */
   oppTonight?: Opponent;
+  /** The division tonight's opponent plays in now, and Brabo's (a cup can pair clubs far apart). */
+  oppTier?: Tier;
+  braboTier?: Tier;
   /** Tonight earns the comeback lift (+1, first fully logged day after a gap). */
   comeback: boolean;
   /** Release 1: squad condition (50–100 %), the dressing room's response after a defeat, and this week's low-log axis. */
@@ -115,6 +118,8 @@ export async function loadTonight(date: DayKey): Promise<Tonight | null> {
     morning: morningFor(save, await db.fbSquad.toArray(), [...roster.values()], bundles, h, date, fixture),
     loansPlaying: team.loansPlayed ?? [], loanRested: team.loanRested ?? [],
     oppTonight: opp ? opponentFor(opp, { rating: oppSaved?.rating ?? undefined }) : undefined,
+    oppTier: opp ? (oppSaved?.tier ?? opp.tier) as Tier : undefined,
+    braboTier: season?.tierOf[OWN] as Tier | undefined,
     comeback: comebackOn(h, date),
     condition: squadCondition(h, date),
     respond: dressingRoom((await db.fbMatches.where('date').below(date).sortBy('date')).pop())?.axis,

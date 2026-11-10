@@ -3,6 +3,8 @@ import { db } from '../../db/db';
 import { clubById, rememberClubs, TIER_BANDS } from '../data/load';
 import { parityRating } from '../engine';
 import { monthAverage } from '../oldSelves';
+import { DOUBLE_MIN_NIGHTS, formRating } from '../promotion';
+import { addDays } from '../../domain/dates';
 import { standings, type Row } from '../table';
 import { TIERS, type Tier } from '../types';
 import { OWN } from './season';
@@ -17,6 +19,8 @@ export interface League {
   /** Brabo's rating on the 1–100 club scale, from the last 7 matches' shapes. */
   rating: number;
   matches: StoredMatch[];
+  /** Brabo's form for a double promotion: 28-day parity rating, once there are enough real nights. */
+  form?: number;
 }
 
 export function tablesFor(season: FbSeason): Record<Tier, Row[]> {
@@ -30,6 +34,15 @@ export function braboRating(matches: StoredMatch[]): number {
   return recent.length ? Math.round(parityRating(monthAverage(recent.map((m) => m.values)))) : 37;
 }
 
+/** Form over the 28 days up to the last match played: the rating a double promotion is judged on (promotion.ts). */
+export function braboForm(matches: StoredMatch[]): number | undefined {
+  const last = matches.reduce<string | undefined>((d, m) => (!d || m.date > d ? m.date : d), undefined);
+  if (!last) return undefined;
+  const nights = new Map<string, StoredMatch['values']>();
+  for (const m of matches) if (!m.rotation && m.date > addDays(last as DayKey, -28) && !nights.has(m.date)) nights.set(m.date, m.values);
+  return nights.size >= DOUBLE_MIN_NIGHTS ? formRating([...nights.values()]) : undefined;
+}
+
 export async function loadLeague(): Promise<League | null> {
   const save = await db.fbSave.get('save');
   if (!save) return null;
@@ -39,7 +52,7 @@ export async function loadLeague(): Promise<League | null> {
   rememberClubs(list);
   const matches = await db.fbMatches.where('season').equals(save.season).toArray();
   const all = await db.fbMatches.orderBy('date').toArray();
-  return { save, season, clubs: new Map(list.map((c) => [c.id, c])), tables: tablesFor(season), rating: braboRating(all), matches };
+  return { save, season, clubs: new Map(list.map((c) => [c.id, c])), tables: tablesFor(season), rating: braboRating(all), matches, form: braboForm(all) };
 }
 
 export type Gap = 'gap-up' | 'gap-even' | 'gap-down';

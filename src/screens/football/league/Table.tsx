@@ -1,6 +1,6 @@
 // The league table (boards 9 and 10): 18 rows in the tier's colour, form as result letters, the cut lines.
 import { clubById } from '../../../football/data/load';
-import { tierName } from '../../../football/data/load';
+import { TIER_BANDS, tierName } from '../../../football/data/load';
 import { clubColour } from '../../../football/store/league';
 import { OWN } from '../../../football/store/season';
 import type { Row } from '../../../football/table';
@@ -15,7 +15,8 @@ function Cut({ kind, text }: { kind: 'up' | 'po' | 'down'; text: string }) {
   return <li className={`fb-cut ${kind}`} aria-label={text}><span>{text}</span></li>;
 }
 
-export function Table({ tier, rows, day }: { tier: Tier; rows: Row[]; day?: string }) {
+/** `form` is Brabo's 28-day form rating, for the double-promotion line (Division Three and below). */
+export function Table({ tier, rows, day, form }: { tier: Tier; rows: Row[]; day?: string; form?: number }) {
   const out: React.ReactNode[] = [];
   rows.forEach((r, i) => {
     const pos = i + 1;
@@ -42,6 +43,7 @@ export function Table({ tier, rows, day }: { tier: Tier; rows: Row[]; day?: stri
     <section className="fb-table" style={{ '--t': `var(--fb-t${tier})` } as React.CSSProperties} aria-label={`${tierName(tier)} table`}>
       <div className="fb-row"><span className="fb-t fb-tiername">{tierName(tier)}</span>{day && <span className="fb-s">{day}</span>}</div>
       <ol className="fb-trows">{out}</ol>
+      {tier >= 3 && <p className="fb-s">Double promotion: champions whose form over the last four weeks is above {tierName((tier - 1) as Tier)}’s top rating ({TIER_BANDS[String(tier - 1)][1]}) go straight up to {tierName((tier - 2) as Tier)}.{rows[0]?.id === OWN && form != null && rows[0].p > 0 ? ` You top the table with form ${Math.round(form)}: ${form > TIER_BANDS[String(tier - 1)][1] ? 'on course for it.' : 'not enough yet.'}` : ''}</p>}
       {tier === 6 && <p className="fb-s">No relegation from here. The bottom club may fold, and a new one is founded.</p>}
       {tier === 1 && <p className="fb-s">The top of the pyramid: no promotion, only the title.</p>}
     </section>

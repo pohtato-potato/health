@@ -12,7 +12,7 @@ export type Tier = 1 | 2 | 3 | 4 | 5 | 6;
 export const TIERS: Tier[] = [1, 2, 3, 4, 5, 6];
 export type Comp = 'league' | 'bigcup' | 'tiercup' | 'playoff' | 'event' | 'worldcup' | 'continental' | 'clubworld' | 'friendly';
 export type Result = 'W' | 'D' | 'L';
-export type ModKind = 'type' | 'captain' | 'sub' | 'opp' | 'hidden' | 'rival' | 'tired' | 'stack' | 'knock' | 'card' | 'ability';
+export type ModKind = 'type' | 'captain' | 'sub' | 'opp' | 'hidden' | 'rival' | 'tired' | 'stack' | 'knock' | 'card' | 'ability' | 'fog' | 'home';
 export interface Mod { axis: Axis; d: number; why: string; kind: ModKind }
 export type Tag = 'SCREAMER' | 'HEARTBREAK' | 'WONDER SAVE';
 export interface ChanceEvent {

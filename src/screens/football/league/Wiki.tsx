@@ -21,7 +21,7 @@ export function Wiki({ d }: { d: ClubPageData }) {
         {seasons.map((s) => {
           const t = s.tierOf[d.id];
           const fin = s.final?.tables[t]?.findIndex((r) => r.id === d.id);
-          const moved = s.final?.up[t]?.includes(d.id) ? ', promoted' : s.final?.down[t]?.includes(d.id) ? ', relegated' : '';
+          const moved = s.final?.double?.id === d.id ? ', promoted two divisions' : s.final?.up[t]?.includes(d.id) ? ', promoted' : s.final?.down[t]?.includes(d.id) ? ', relegated' : '';
           const cups = [s.bigcup, ...Object.values(s.tiercups)].filter((b) => b.winner === d.id).map((b) => `, won ${b.name}`).join('');
           return <li key={s.id}>Season {s.id}: {t ? tierName(t) : 'not in the league'}{fin !== undefined && fin >= 0 ? `, finished ${fin + 1}` : ', still playing'}{moved}{cups}</li>;
         })}

@@ -6,14 +6,14 @@ import { seasonDays, SEASON_DAYS, type DayPlan } from '../calendar';
 import { advance, penalties, type Bracket } from '../cups';
 import { clubById, rememberClubs } from '../data/load';
 import { cards, physio, redCardMod, rotationShape, usesRotation } from '../discipline';
-import { playMatch, type MatchCtx } from '../engine';
+import { playMatch, typicalFor, type MatchCtx } from '../engine';
 import { CONT_NAME, CWC_DAYS, CWC_NAME, contPrize, koFromTable, newClubWorld, phaseTable, reachOf } from '../continental';
 import { WORLD_CHAMPS } from '../data/continental';
 import { calledUp, EVENTS, NATIONS, nationBar, nextEvent, worldCupGroups, worldCupRun } from '../events';
 import { rollOldSelves } from '../oldSelves';
 import { opponentFor } from '../opponent';
 import { simResult } from '../otherMatches';
-import { applyMoves, playoffPairs, seasonEnd } from '../promotion';
+import { applyMoves, doubleUp, formRating, playoffPairs, seasonEnd } from '../promotion';
 import { afterMatch, ANTIGOON, howText, migrateRivals, rivalTwist, twistOf, weakestAxis, type Meeting } from '../rivals';
 import { hashSeed, rng, pick } from '../rng';
 import { contractDay, keptOn, intake, newContract } from '../contracts';
@@ -37,7 +37,7 @@ import { linkedLogged } from '../players/youth';
 import type { Ctx } from '../players/attributes';
 import { formationFor } from '../tree/rotation';
 import { healNow, rotationOf, stageCapacity, treeAbilities, treeDay, treeMatch, treeSeasonEnd, type TreeCtx } from './tree';
-import { LEAGUE } from '../data/load';
+import { LEAGUE, TIER_BANDS, tierName } from '../data/load';
 import { academyIds, creditMatch, nightOptsFor, playerCtx, playersDay, rebuildPlayers, squadNight, type Roster } from './players';
 import { signFreeAgents } from '../rotation/freeAgents';
 import { chemistryAfter, moraleAfter } from '../rotation/night';
@@ -244,8 +244,13 @@ function endSeason(w: World, date: DayKey) {
   const tables = tablesNow(w);
   const winners: Partial<Record<Tier, string>> = {};
   for (const t of TIERS) if (w.season.playoffs[t]?.winner) winners[t] = w.season.playoffs[t]!.winner;
-  const moves = seasonEnd(tables, winners);
-  w.season.final = { tables, up: moves.up, down: moves.down };
+  // Brabo's form over the last 28 days: the parity rating of its average real night (one per date).
+  const form = new Map<DayKey, AxisValues>();
+  for (const x of [...w.past, ...w.matches]) if (!x.rotation && x.date > addDays(date, -28) && x.date <= date && !form.has(x.date)) form.set(x.date, x.values);
+  const double = doubleUp(tables, OWN, w.season.tierOf[OWN], formRating([...form.values()]), form.size, TIER_BANDS);
+  const moves = seasonEnd(tables, winners, double);
+  w.season.final = { tables, up: moves.up, down: moves.down, ...(double ? { double } : {}) };
+  if (double) w.news.push({ id: `${date}:double`, date, kind: 'club', text: `Double promotion. Champions of ${tierName(double.from)}, and playing like a side rated ${double.rating} over the last four weeks, above anything in ${tierName((double.from - 1) as Tier)}: Brabo go straight up to ${tierName((double.from - 2) as Tier)}. ${clubById(double.swap).name} finished fourth from bottom there and go down with the bottom three to make room.` });
   const tierOf = applyMoves(w.season.tierOf, moves);
   const r = rng(hashSeed('world', String(w.save.season)));
   const turn = worldTurn([...w.clubs.values()].map((c) => {
@@ -399,8 +404,13 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
   const seed = hashSeed(date, home, away, comp, String(leg ?? 0));
   const tree = treeAbilities(w, ctx, braboHome);
   const slots = new Set(w.save.slots);
+  // Chances are sized against your typical shape: the median of the real nights in the last 28 days (one per date).
+  const nights = new Map<DayKey, AxisValues>();
+  for (const x of recent) if (!nights.has(x.date)) nights.set(x.date, x.values);
   const events = playMatch({
-    seed, values, opp, home: braboHome,
+    seed, values, opp, home: braboHome, neutral,
+    typical: typicalFor([...nights.values()]),
+    fog: AXES.filter((a) => flags[a] === 'not-logged'),
     captain: slots.has('armband') ? w.save.captain : undefined,
     stack: slots.has('stack') ? w.save.earned.filter((e) => e.date > addDays(date, -7)).length : 0,
     // Engine 2: a player's traits play while it starts (an Awakening's trait became its player's first limit break).

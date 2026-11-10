@@ -1,4 +1,5 @@
 // Rows in the fb* tables. Football writes only to these.
+import type { DoubleUp } from '../promotion';
 import type { DayKey } from '../../domain/dates';
 import type { Bracket } from '../cups';
 import type { EventId, EventState } from '../events';
@@ -122,7 +123,7 @@ export interface FbSeason {
   /** The Club World Cup, played in the event days after this season, when Brabo won the Continental Cup. */
   clubworld?: Bracket;
   playoffs: Partial<Record<Tier, { semis: [string, string][]; semiWinners?: string[]; final?: [string, string]; winner?: string }>>;
-  final?: { tables: Record<Tier, Row[]>; up: Partial<Record<Tier, string[]>>; down: Partial<Record<Tier, string[]>> };
+  final?: { tables: Record<Tier, Row[]>; up: Partial<Record<Tier, string[]>>; down: Partial<Record<Tier, string[]>>; /** A double promotion (11 Nov). */ double?: DoubleUp };
   dates: Record<number, DayKey>;
   /** Points deductions decided at this season's end, applied to the next. */
   nextDeductions?: Record<string, number>;

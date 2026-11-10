@@ -3,7 +3,9 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { setTargets } from '../../src/db/actions';
 import { HealthDB, db, setDatabase } from '../../src/db/db';
 import { addDays } from '../../src/domain/dates';
-import { applyMoves, seasonEnd } from '../../src/football/promotion';
+import { applyMoves, DOUBLE_MIN_NIGHTS, doubleUp, formRating, seasonEnd } from '../../src/football/promotion';
+import { TIER_BANDS } from '../../src/football/data/load';
+import { parityRating } from '../../src/football/engine';
 import { rollOldSelves, type OldSelf } from '../../src/football/oldSelves';
 import { shownRating } from '../../src/football/ratings';
 import { seasonChange } from '../../src/football/seasonChange';
@@ -73,6 +75,45 @@ describe('Promotion', () => {
     expect(c.up).toContain('bra');
     for (const r of c.ratings) expect(r.before - r.after).toBe(4);
     expect(shownRating(9, 6) - shownRating(9, 5)).toBe(4);
+  });
+});
+
+describe('Double promotion (O29 5a)', () => {
+  const table = (ids: string[]): Row[] => ids.map((id, i) => ({ id, p: 34, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 100 - i, form: [] }));
+  const world = (pos = 0) => {
+    const tables = {} as Record<Tier, Row[]>;
+    const tierOf: Record<string, Tier> = {};
+    for (const t of TIERS) {
+      const ids = Array.from({ length: 18 }, (_, i) => (t === 6 && i === pos ? 'bra' : `c${t}-${i}`));
+      tables[t] = table(ids);
+      for (const id of ids) tierOf[id] = t;
+    }
+    return { tables, tierOf };
+  };
+  const top5 = TIER_BANDS['5'][1];
+  it('champions whose 28-day form is above the next division’s top rating go up two', () => {
+    const { tables, tierOf } = world();
+    const d = doubleUp(tables, 'bra', 6, top5 + 1, DOUBLE_MIN_NIGHTS, TIER_BANDS)!;
+    expect(d).toMatchObject({ id: 'bra', from: 6, swap: 'c4-14' });
+    const moves = seasonEnd(tables, {}, d);
+    const after = applyMoves(tierOf, moves);
+    expect(after.bra).toBe(4);
+    expect(after['c4-14']).toBe(5);
+    for (const t of TIERS) expect(Object.values(after).filter((x) => x === t)).toHaveLength(18);
+    const c = seasonChange({ id: 1, start: '2026-06-01', fixtures: {} as never, results: {} as never, tierOf, deductions: {}, bigcup: {} as never, tiercups: {}, playoffs: {}, dates: {}, final: { tables, up: moves.up, down: moves.down, double: d } }, allAxes(14))!;
+    expect(c).toMatchObject({ move: 'up', double: true, to: 4 });
+  });
+  it('is rare and earned: not without the title, the form, enough nights, or from Division Two', () => {
+    expect(doubleUp(world(1).tables, 'bra', 6, top5 + 10, 28, TIER_BANDS)).toBeUndefined(); // second place
+    expect(doubleUp(world().tables, 'bra', 6, top5, 28, TIER_BANDS)).toBeUndefined(); // level with the top, not above
+    expect(doubleUp(world().tables, 'bra', 6, top5 + 10, DOUBLE_MIN_NIGHTS - 1, TIER_BANDS)).toBeUndefined();
+    expect(doubleUp(world().tables, 'bra', 6, undefined, 28, TIER_BANDS)).toBeUndefined();
+    const t2 = world().tables; t2[2] = table(['bra', ...t2[2].slice(1).map((r) => r.id)]);
+    expect(doubleUp(t2, 'bra', 2, 99, 28, TIER_BANDS)).toBeUndefined();
+  });
+  it('form is the parity rating of the average night', () => {
+    expect(formRating([allAxes(10), allAxes(14)])).toBeCloseTo(parityRating(allAxes(12)));
+    expect(formRating([])).toBeUndefined();
   });
 });
 
