@@ -31,8 +31,9 @@ export const RUN_TUNE = {
 
 export interface Offer { cards: Card[]; heirloom?: HeirloomId; coins: number; picked?: boolean; tookHeirloom?: boolean }
 export interface Stock { cards: { card: Card; price: number; sold?: boolean }[]; heirloom?: { id: HeirloomId; price: number; sold?: boolean }; remove: { price: number; used?: boolean } }
+export interface MatchStop { kind: 'match' | 'elite' | 'final'; node: number; club: ClubSpec; match: MatchState; offer?: Offer }
 export type Stop =
-  | { kind: 'match' | 'elite' | 'final'; node: number; club: ClubSpec; match: MatchState; offer?: Offer }
+  | MatchStop
   | { kind: 'rest'; node: number }
   | { kind: 'market'; node: number; stock: Stock }
   | { kind: 'event'; node: number; event: string; chose?: number; got?: string };
@@ -211,7 +212,7 @@ export function pickCard(r0: RunState, index: number | null): RunState {
   const st = r0.stop;
   if (!st || !('offer' in st) || !st.offer || st.offer.picked) return r0;
   const r = copy(r0);
-  const o = (r.stop as Extract<Stop, { offer?: Offer }>).offer!;
+  const o = (r.stop as MatchStop).offer!;
   o.picked = true;
   if (index != null && o.cards[index]) addCard(r, o.cards[index]);
   if (!o.heirloom) leave(r);
@@ -221,7 +222,7 @@ export function takeHeirloom(r0: RunState): RunState {
   const st = r0.stop;
   if (!st || !('offer' in st) || !st.offer?.picked || !st.offer.heirloom) return r0;
   const r = copy(r0);
-  const o = (r.stop as Extract<Stop, { offer?: Offer }>).offer!;
+  const o = (r.stop as MatchStop).offer!;
   o.tookHeirloom = true;
   r.heirlooms.push(o.heirloom!);
   leave(r);

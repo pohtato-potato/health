@@ -97,6 +97,8 @@ export interface MatchState {
   passedSpell?: boolean; recycledSpell?: boolean; coverCards?: number; firstFinish?: boolean; scarfUsed?: boolean; bootsUsed?: boolean;
   /** Cards played this match, for the record book. */
   played?: number;
+  /** Fitness at kick-off, for full time. */
+  fit0?: number;
 }
 
 // --- the random source -------------------------------------------------------------------------------------------
@@ -157,7 +159,7 @@ export function newMatch(o: { seed: number; deck: Card[]; club: ClubSpec; fitnes
     basics: [...new Set(o.deck.map((c) => c.kind).filter((k) => !NOT_WILD.includes(k)))],
     feed: [], last: [],
     ...(o.mods ? { mods: o.mods } : {}),
-    played: 0,
+    played: 0, fit0: o.fitness ?? TUNE.fitness,
   };
   s.intents = intentsFor(o.club, s, o.mods?.threatPlus ?? 0);
   s.draw = shuffle(s, o.deck.map((c) => ({ ...c })));

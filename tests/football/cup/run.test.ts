@@ -6,7 +6,7 @@ import { CUPS, twists } from '../../../src/football/cup/ladder';
 import { makeMap, paths } from '../../../src/football/cup/map';
 import { endSpell, TUNE, type MatchState } from '../../../src/football/cup/match';
 import {
-  abandon, buy, choose, clubFor, enter, leaveStop, pickCard, reachable, rest, restAmount, startRun, strengthAt, summary, takeHeirloom, updateMatch, type RunCtx, type RunState,
+  abandon, buy, choose, clubFor, enter, leaveStop, pickCard, reachable, rest, restAmount, startRun, strengthAt, summary, takeHeirloom, updateMatch, type MatchStop, type RunCtx, type RunState,
 } from '../../../src/football/cup/run';
 import { SLOTS } from '../../../src/football/cup/deck';
 import type { Card, Level } from '../../../src/football/cup/types';
@@ -49,7 +49,7 @@ function clear(r: RunState): RunState {
   }
   if (st.kind === 'rest') return rest(r, 'rub');
   if (st.kind === 'market') return leaveStop(r);
-  return leaveStop(choose(r, EVENTS.find((e) => e.id === st.event)!.choices.findIndex((c) => (c.fx.coins ?? 0) >= 0)));
+  return leaveStop(choose(r, EVENTS.find((e) => e.id === (st as { event: string }).event)!.choices.findIndex((c) => (c.fx.coins ?? 0) >= 0)));
 }
 
 describe('the map', () => {
@@ -145,7 +145,7 @@ describe('a run', () => {
     let r = enter(run(), reachable(run())[0], ctx);
     r = force(r, 3, 1);
     expect(r.coins).toBe(10 + 3 * 3);
-    const st = r.stop as Extract<RunState['stop'], { kind: 'match' }>;
+    const st = r.stop as MatchStop;
     expect(st.offer!.cards).toHaveLength(3);
     const n = r.deck.length;
     r = pickCard(r, 1);
@@ -187,7 +187,7 @@ describe('a run', () => {
   it('an elite win gives an heirloom after the card', () => {
     let r = walkTo(run(1, 9), 'elite');
     r = force(r, 2, 1);
-    const st = r.stop as Extract<RunState['stop'], { kind: 'elite' }>;
+    const st = r.stop as MatchStop;
     expect(st.offer!.heirloom).toBeDefined();
     r = pickCard(r, null);
     expect(r.stop).not.toBeNull();

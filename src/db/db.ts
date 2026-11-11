@@ -5,7 +5,8 @@ import Dexie, { type EntityTable } from 'dexie';
 import type { Snapshot } from './snapshots';
 import type { FbBundle, FbClub, FbNews, FbSave, FbSeason, FbSquadRow, StoredMatch } from '../football/store/tables';
 import type { FbPlayer } from '../football/players/types';
-import type { CupRun } from '../football/cup/store';
+import type { CupDone, CupRun } from '../football/cup/store';
+import type { CupBook } from '../football/cup/book';
 import type {
   BodyEntry,
   CheckIn,
@@ -78,6 +79,8 @@ export class HealthDB extends Dexie {
   fbPlayers!: EntityTable<FbPlayer, 'id'>;
   body!: EntityTable<BodyEntry, 'id'>;
   cupRuns!: EntityTable<CupRun, 'id'>;
+  cupBook!: EntityTable<CupBook, 'id'>;
+  cupDone!: EntityTable<CupDone, 'n'>;
 
   constructor(name = 'health') {
     super(name);
@@ -148,6 +151,11 @@ export class HealthDB extends Dexie {
     this.version(12).stores({
       cupRuns: 'id',
     });
+    // Cup runs, layers 3 and 4: the record book, and finished runs (summary only).
+    this.version(13).stores({
+      cupBook: 'id',
+      cupDone: '++n, date',
+    });
   }
 }
 
@@ -191,6 +199,8 @@ export const TABLES = [
   'fbPlayers',
   'body',
   'cupRuns',
+  'cupBook',
+  'cupDone',
 ] as const;
 export type TableName = (typeof TABLES)[number];
 

@@ -35,9 +35,9 @@ export const CUPS: CupDef[] = [
   { n: 10, name: 'The Europa League', made: false, colour: '#ff9a76', silver: 'tall', twist: 'The stall sells one item fewer',
     from: (c) => c.tier === 2 || c.tier === 3 || (!!c.abroad && c.id.startsWith('ct-')), band: [64, 84] },
   { n: 11, name: 'The Champions League', made: false, colour: '#ffffff', silver: 'ears', twist: 'Two finals, back to back',
-    from: (c) => c.tier <= 2 || (!!c.abroad && c.id.startsWith('ct-') && (c.rating ?? 0) >= 78), band: [70, 90] },
+    from: (c) => c.tier <= 2 || (!!c.abroad && c.id.startsWith('ct-') && (c.rating ?? 0) >= 78), band: [66, 86] },
   { n: 12, name: 'The Club World Cup', made: false, colour: '#ffd56a', silver: 'globe', twist: 'Every opponent is an elite club',
-    from: (c) => c.tier === 1 || (!!c.abroad && c.id.startsWith('cw-')), band: [78, 94],
+    from: (c) => c.tier === 1 || (!!c.abroad && c.id.startsWith('cw-')), band: [58, 76],
     note: 'Only the eight giants have signature moves; the other elite clubs here play without one.' },
 ];
 

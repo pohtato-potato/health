@@ -20,7 +20,7 @@ import { BoonPage, BountiesPage, TrackPage } from './tree/SeasonScreens';
 import { AlbumPage, PacksPage } from './tree/PackScreens';
 import { AcademyPage, DutyPage, LoanMoment, LoansPage, TiePage, TrialsPage } from './world/WorldScreens';
 import { keyChances } from './CatchUp';
-import { CupEntry, CupRoute } from './cup/CupScreens';
+import { CupRoute, CupsDoor } from './cup/CupScreens';
 import { go } from '../../router';
 import type { StoredMatch } from '../../football/store/tables';
 
@@ -30,7 +30,7 @@ function TonightSection() {
   const t = useTonight();
   if (t === undefined) return null;
   if (t === null) return <p className="fb-s">Football starts once you found the club.</p>;
-  return <><TonightView t={t} /><CupEntry /></>;
+  return <><TonightView t={t} /><CupsDoor /></>;
 }
 
 function MatchRoute({ id, at, paused }: { id: string | null; at?: number; paused?: boolean }) {
@@ -68,8 +68,8 @@ export function Football() {
     const at = dev && params.get('at') ? Number(params.get('at')) : undefined;
     return <MatchRoute id={params.get('id')} at={at} paused={dev && params.get('pause') === '1'} />;
   }
-  // Cup runs, layer 2: one try match (ledger O28).
-  if (path === '/football/cup' || path === '/football/cup/match') return <CupRoute match={path === '/football/cup/match'} />;
+  // Cup runs (ledger O28): the cups page, and the run in progress.
+  if (path === '/football/cup' || path === '/football/cup/run' || path === '/football/cup/match') return <CupRoute path={path} />;
   if (path === '/football/club-page') return <FootballHome section="league"><ClubPage id={params.get('id') ?? ''} wiki={params.get('wiki') === '1'} /></FootballHome>;
   if (path === '/football/wrapped') return <WrappedRoute season={Number(params.get('season') ?? 1)} />;
   if (path === '/football/rival') return <FootballHome section="story"><RivalRoute id={params.get('id') ?? ''} /></FootballHome>;

@@ -16,7 +16,7 @@ import { Gem, GlassCard, SimpleBack, Viewable, type CardView } from '../../../ui
 import type { AlbumCard } from '../../../football/content/types';
 
 const RARITY_NAME: Record<Rarity, string> = { bronze: 'Bronze', silver: 'Silver', gold: 'Gold', prism: 'Prism', icon: 'Icon', legend: 'Legend' };
-const SOURCE: Record<PackEarned['source'], string> = { 'week-finished': 'A week finished', 'final-won': 'A final won', promotion: 'Promotion', tech: 'From the tree', bounty: 'A bounty', track: 'The season track', testimonial: 'A testimonial' };
+const SOURCE: Record<PackEarned['source'], string> = { 'week-finished': 'A week finished', 'final-won': 'A final won', promotion: 'Promotion', tech: 'From the tree', bounty: 'A bounty', track: 'The season track', testimonial: 'A testimonial', 'cup-final': 'A cup final reached' };
 const fmtDate = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 
 /** The running-low notice: once a pool reaches 80–85%, until the pool grows. */
