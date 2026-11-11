@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo } from 'react';
 import { dailyFinding } from '../domain/dailyFinding';
-import { addDays, dayKey, daysBetween } from '../domain/dates';
+import { dayKey, daysBetween } from '../domain/dates';
 import { dataCheckup } from '../domain/checkup';
 import { dueItems } from '../domain/dueLines';
 import { fmtInt } from '../domain/format';
@@ -76,7 +76,6 @@ export function You() {
   // Medical day lives on Today's due card now (release 1), so the check-in leaves You.
   const due = dueItems({ today, settings, days, lastCheckIn, storySeenWeek: readStorySeen(), checkupCount }).filter((d) => d.id !== 'checkin');
   const steps = trendRows(today, momentum).find((r) => r.area === 'steps');
-  const yesterday = days.find((d) => d.date === addDays(today, -1));
   const months = [...new Set(days.map((d) => d.date.slice(0, 7)))].sort().reverse();
 
   const subs = {
@@ -84,7 +83,6 @@ export function You() {
     Earned: lv ? `${fmtInt(lv.unlocked.size)} earned so far` : 'What you have earned',
     Body: 'Photos and measurements',
     Tracks: steps ? `Steps ${steps.word.toLowerCase()}` : 'Every measure',
-    Diary: yesterday || dayN <= 1 ? 'Every day' : 'Yesterday not logged',
     Insights: finding ? 'One new finding' : 'Patterns over time',
   };
 

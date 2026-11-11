@@ -253,7 +253,7 @@ function StampBeat({ a }: { a: ArrivalInfo }) {
       <h1 className="walk-arr-title center">
         Stamped · {a.n} of {CITY_COUNT}
       </h1>
-      <p className="walk-arr-sub center">{a.name} goes in your passport. Replay any arrival from its stamp.</p>
+      <p className="walk-arr-sub center">{a.name} is on your road now, {a.n} of {CITY_COUNT} cities.</p>
     </div>
   );
 }

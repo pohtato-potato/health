@@ -72,10 +72,11 @@ export const GREMLIN_LINES = {
     ['Another record. I had to clear a shelf. I resent the shelf.', 'New best. I have stopped being surprised and started being inconvenienced.', 'A record. The dumbbells would like to speak to your manager. I said you do not have one.', 'That one goes on the wall. The wall is filling up, and I blame you personally.'],
     ['A record. I kept the old one too, so you can see how far that is.', 'New best. I did not need to check it. I checked it anyway, for the pleasure.', 'There it is. I have been expecting that one for a few weeks.', 'A new record. Stand there a second. I will wait.'],
   ],
+  // Totals and records, never runs (O1, 8 Nov): nothing here can be broken by a missed day.
   streak: [
-    ['Consistency this good should be illegal. I checked. It is not.', 'I set a reminder to be surprised. It keeps going off.', 'Still going. I had assumed this would have stopped by now. I assume a lot.', 'Another one on the chain. The chain has started asking for its own folder.'],
-    ['The streak continues. I have stopped setting the reminder. It was making me look bad.', 'Still going. At this point I am only counting for the sake of the record.', 'Unbroken. I looked for a gap, purely as a hobby.', 'Another. Whatever you are doing, the numbers cannot find anything wrong with it.'],
-    ['Still going. And if it stops, it stops. What it built does not go anywhere.', 'Look at that run. I keep it on the front of the file now.', 'Another one. I have been telling the dumbbells about it.', 'That is a long time to keep turning up. I have the dates, should anyone doubt it.'],
+    ['Another tally mark. I sharpened the pencil for it, which was more effort than I expected.', 'The count went up. Counts only do that. I checked the rules.', 'One more on the pile. The pile has started asking for its own folder.', 'Added to the season. The season did not argue.'],
+    ['The 28-day count is up again. I keep it on a card by the door.', 'Another for the season. I am only counting for the sake of the record book.', 'The tally grows. A missed day would not have taken a single mark off it. I looked.', 'Up again. Whatever you are doing, the numbers cannot find anything wrong with it.'],
+    ['A new best for 28 days. I moved it to the front of the record book.', 'That is a lot of marks in one season. I have the dates, should anyone doubt it.', 'Another one banked. Banked is banked. Nothing comes back out.', 'The record book needed a new page. I fetched one.'],
   ],
   milestone: [
     ['A milestone. I would like to formally apologise to your belt.', 'The tape measure reports a lot less work lately. It is thrilled.', 'A milestone. I marked it on the chart with a very small, very reluctant flag.', 'That is a round number. I do not care for round numbers. Well done anyway.'],

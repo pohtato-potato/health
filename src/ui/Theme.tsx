@@ -57,7 +57,7 @@ export function SeasonStrip({ settings, today }: { settings: Settings; today: Da
           <span className="sf apricot" style={{ fontSize: 20 }}>
             {fest?.day === today ? 'Happy Diwali' : 'Diwali week'}
           </span>
-          <span className="t14 q">Enjoy the sweets. Occasion mode keeps the streaks safe.</span>
+          <span className="t14 q">Enjoy the sweets. The lights are on for it.</span>
         </div>
       </div>
     );

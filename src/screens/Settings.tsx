@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode, createContext, useContext } from 'react';
-import { fmtDayMonth, fmtDuration, fmtInt, fmtLitres } from '../domain/format';
+import { fmtDayMonth, fmtDuration, fmtInt } from '../domain/format';
 import { dayKey } from '../domain/dates';
 import { DEFAULT_MEAL_TIMES, MEAL_NAMES, MEALS, prefOn, type ChecklistItem, type Place, type PlaceKind, type Settings, type Targets } from '../domain/types';
 import { homePlace } from '../domain/places';
@@ -119,7 +119,6 @@ export function SettingsScreen() {
         <LinkRow title="Calories" value={`${fmtInt(t.kcalMin)}–${fmtInt(t.kcalMax)} kcal`} onClick={() => setEditor('targets')} />
         <LinkRow title="Protein" value={`${t.proteinG} g`} onClick={() => setEditor('targets')} />
         <LinkRow title="Steps" value={fmtInt(t.steps)} onClick={() => setEditor('targets')} />
-        {prefOn(settings.prefs, 'water') && <LinkRow title="Water" value={`${fmtLitres(t.waterMl)} L`} onClick={() => setEditor('targets')} />}
         <LinkRow title="Sleep" value={`${fmtDuration(t.sleepMin)} or more`} onClick={() => setEditor('targets')} />
         <LinkRow title="Training" value={`${t.sessionsPerWeek} sessions a week`} onClick={() => setEditor('targets')} />
         <SwitchRow
@@ -219,7 +218,6 @@ export function SettingsScreen() {
         <SwitchRow title="Moments" sub="Full-screen celebrations for records, firsts and perfect days" checked={prefOn(p, 'moments')} onChange={(v) => setPref('moments', v)} />
         <SwitchRow title="Seasonal themes" sub="Diwali, Holi and your birthday take over for the day" checked={prefOn(p, 'seasonal')} onChange={(v) => setPref('seasonal', v)} />
         <SwitchRow title="Quiet in public" sub="No confetti or buzz from 10 pm to 7 am, or while a session runs in the background" checked={prefOn(p, 'quietPublic')} onChange={(v) => setPref('quietPublic', v)} />
-        <SwitchRow title="Shake for a stat" sub="Shake the phone anywhere in the app" checked={prefOn(p, 'shake')} onChange={(v) => setPref('shake', v)} />
       </Group>
 
       <Group id="privacy" title="Privacy">
@@ -378,7 +376,6 @@ export function SettingsScreen() {
               })}
             </div>
           </div>
-          <AuditNoteBox />
         </div>
         <button type="button" className="card" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }} onClick={() => setEditor('review')}>
           <span className="col gap2">
@@ -540,10 +537,6 @@ function TargetsEditor({ targets, onClose }: { targets: Targets; onClose: () => 
         <label className="flabel">
           <span className="lbl sage">Steps</span>
           <IntField value={v.steps} onChange={num('steps')} />
-        </label>
-        <label className="flabel">
-          <span className="lbl blue">Water, litres</span>
-          <DecField value={v.waterL} onChange={num('waterL')} />
         </label>
         <label className="flabel">
           <span className="lbl blue">Sleep, hours</span>
@@ -785,25 +778,3 @@ function SetupCard({ settings }: { settings: Settings }) {
   );
 }
 
-/** A note left while using the app ("this looked wrong"), for the next review. */
-function AuditNoteBox() {
-  const toast = useToast();
-  const [text, setText] = useState('');
-  return (
-    <div className="col gap8">
-      <textarea className="field" rows={2} value={text} onChange={(e) => setText(e.target.value)} placeholder="Something looked wrong or could be better? Leave a note for the review." spellCheck />
-      <button
-        type="button"
-        className="btn ghost sm"
-        disabled={!text.trim()}
-        onClick={async () => {
-          await db.auditNotes.add({ at: Date.now(), screen: 'settings', text: text.trim() });
-          setText('');
-          toast({ text: 'Noted for the next review' });
-        }}
-      >
-        Save the note
-      </button>
-    </div>
-  );
-}

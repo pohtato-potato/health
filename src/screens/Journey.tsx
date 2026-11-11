@@ -1,9 +1,11 @@
-import { addDays, dayRange, daysBetween, weekStart, type DayKey } from '../domain/dates';
+import { addDays, dayRange, daysBetween, type DayKey } from '../domain/dates';
 import { fmtDayMonth, fmtInt } from '../domain/format';
 import { INDIA_OUTLINE, PLACE_COUNT, kmFromSteps, positionAt, statesReached } from '../domain/walk';
 import { useAllDays, useAllEntries, useSessions, useSettings, useToday } from '../db/hooks';
 import { go } from '../router';
-import { dayRings, stepStreakFor, targetsFor, weeksFor } from '../state/derived';
+import { dayRings, stepTallyFor, targetsFor, trainingTallyFor } from '../state/derived';
+import { tally, type Tally } from '../domain/tallies';
+import { useSeasonStart } from '../db/hooks';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { Icon } from '../ui/Icon';
@@ -319,34 +321,37 @@ function nextMonth(m: DayKey): DayKey {
   return mo === 12 ? `${y + 1}-01-01` : `${y}-${String(mo + 1).padStart(2, '0')}-01`;
 }
 
+/** Tallies, not streaks (O1): the last 28 days, the season so far, and the record book. A missed day takes nothing away. */
 function Streaks({ settings, today, days, entries, sessions }: { settings: Settings; today: DayKey; days: Day[]; entries: FoodEntry[]; sessions: TrainingSession[] }) {
-  const streak = stepStreakFor(settings, days, today);
-  const weeks = weeksFor(settings, sessions, today, days);
+  const seasonStart = useSeasonStart() ?? undefined;
+  const steps = stepTallyFor(settings, days, today, seasonStart);
+  const train = trainingTallyFor(sessions, today, seasonStart);
   const t = targetsFor(settings, today);
   const byEntries = new Map<DayKey, FoodEntry[]>();
   for (const e of entries) byEntries.set(e.date, [...(byEntries.get(e.date) ?? []), e]);
   const perfectDays = [...new Set([...days.map((d) => d.date), ...byEntries.keys()])].filter((d) => d <= today && dayRings(settings, d, days.find((x) => x.date === d), byEntries.get(d) ?? []).rings.perfect);
-  const thisWeek = perfectDays.filter((d) => d >= weekStart(today)).length;
-  const row = (title: string, sub: string, value: number, unit: string) => (
+  const perfect = tally(perfectDays, today, seasonStart);
+  const season = seasonStart ? 'this season' : 'so far';
+  const row = (title: string, x: Tally, unit: string) => (
     <div className="row" style={{ padding: '10px 0', borderTop: '1px solid var(--divider)' }}>
       <span className="col gap2">
         <span className="t15">{title}</span>
-        <span className="t12 q">{sub}</span>
+        <span className="t14 q">{x.season} {season} · record {x.best28} in 28 days</span>
       </span>
       <span className="num" style={{ fontSize: 26 }}>
-        {value}
-        <span className="t12 q"> {unit}</span>
+        {x.last28}
+        <span className="t14 q"> {unit}</span>
       </span>
     </div>
   );
   return (
     <div className="card" style={{ gap: 0 }}>
       <div className="lbl" style={{ paddingBottom: 6 }}>
-        Streaks
+        Last 28 days
       </div>
-      {row(`Steps at ${fmtInt(t.steps / 1000)}k+`, `${streak.shields} shield${streak.shields === 1 ? '' : 's'} banked · best ${streak.best}`, streak.current, 'days')}
-      {row(`Training weeks at ${weeks.perWeek}+`, "Extra sessions don't count double", weeks.streak, 'weeks')}
-      {row('Perfect days', `${thisWeek} this week`, perfectDays.length, 'so far')}
+      {row(`Steps at ${fmtInt(t.steps / 1000)}k+`, steps, 'days')}
+      {row('Sessions', train, 'done')}
+      {row('Perfect days', perfect, 'days')}
     </div>
   );
 }

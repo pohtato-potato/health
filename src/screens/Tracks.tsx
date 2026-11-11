@@ -15,7 +15,6 @@ import { DrinksTrack } from './tracks/Drinks';
 import { FoodTrack } from './tracks/Food';
 import { JointsTrack } from './tracks/Joints';
 import { TRACK_LOOK } from './tracks/look';
-import { OwnTrack } from './tracks/Own';
 import { Moved } from './reports/Moved';
 import { ShapeTrack } from './tracks/Shape';
 import { SleepTrack } from './tracks/Sleep';
@@ -52,8 +51,8 @@ export function Tracks() {
     sleep: range.flatMap((d) => { const s = data.days.get(d)?.sleep; return s ? [sleepMinutes(s.asleep, s.woke)] : []; }),
   };
   // Readiness is retired (R3 x-ready): the body log on Today replaces it. Its stored data stays.
-  const keys = TRACK_KEYS.filter((k) => k !== 'readiness' && (k !== 'joints' || settings.plan?.flags.length));
-  const own = (settings.customTracks ?? []).filter((t) => t.active).length;
+  // Custom tracks are retired too (R3 x-custom); their stored entries stay in backups.
+  const keys = TRACK_KEYS.filter((k) => k !== 'readiness' && k !== 'own' && (k !== 'joints' || settings.plan?.flags.length));
   return (
     <div className="page bare yu-page">
       <button type="button" className="backlink" onClick={() => back('/you')}>
@@ -64,7 +63,7 @@ export function Tracks() {
       <div className="yu-tiles">
         {keys.map((k) => {
           const look = TRACK_LOOK[k];
-          const say = headlineFor(k, { ...head, readiness, ownCount: own }).say;
+          const say = headlineFor(k, { ...head, readiness, ownCount: 0 }).say;
           const line = series[k];
           return (
             <button key={k} type="button" style={{ '--c': look.accent, '--g': look.ground } as CSSProperties} onClick={() => (k === 'meds' ? go('/medicines') : go('/track', { k }))}>
@@ -106,7 +105,7 @@ export function TrackPage() {
     case 'readiness':
       return <Moved to="/body" />;
     case 'own':
-      return <OwnTrack data={data} />;
+      return <Moved to="/tracks" />;
     case 'compare':
       return <CompareTrack data={data} />;
     default:

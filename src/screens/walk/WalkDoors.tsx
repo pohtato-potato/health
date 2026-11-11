@@ -1,7 +1,6 @@
 import { Icon } from '../../ui/Icon';
 
 const DOORS: [string, string][] = [
-  ['Passport', '/passport'],
   ['Map', '/map'],
   ['Wrapped', '/road'],
 ];

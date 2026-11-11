@@ -4,15 +4,11 @@ import { SessionProto } from './screens/proto/SessionLiving';
 import { Suspense, lazy, useEffect, useRef, type ComponentType, type ReactNode } from 'react';
 import { RegionRoot } from './ui/live/RegionFrame';
 import { findSession } from './domain/plan';
-import { fmtLitres } from './domain/format';
-import { addWater } from './db/actions';
-import { db } from './db/db';
 import { useActiveSession, useNow, useSettings, useToday } from './db/hooks';
-import { clearParam, go, useRoute, type Route } from './router';
+import { go, useRoute, type Route } from './router';
 import { visitsFor } from './domain/visits';
 import { logUsage } from './db/usage';
 import { TabBar } from './ui/TabBar';
-import { useToast } from './ui/Toasts';
 import { ShelfPage } from './screens/walk/ShelfPage';
 import { RouteScreen } from './screens/walk/RouteScreen';
 import { JoinPage } from './screens/walk/JoinPage';
@@ -20,7 +16,6 @@ import { FinishPage } from './screens/walk/FinishPage';
 import { CelebrationWatcher } from './state/Celebrations';
 import { AchievementWatcher } from './state/Achievements';
 import { NotFound } from './screens/NotFound';
-import { ShakeStat } from './ui/Shake';
 import { useThemeClass } from './ui/Theme';
 import { MaintenanceWatcher } from './screens/MaintenanceCards';
 import { ChallengeWatcher } from './state/Challenge';
@@ -45,18 +40,15 @@ import { Checkup, EditHistory, Snapshots } from './screens/DataPages';
 import { MorningLog } from './sheets/MorningLog';
 import { AddFood } from './sheets/AddFood';
 import { EntrySheet, FoodForm, QuickKcal } from './sheets/FoodForms';
-import { ChecklistSheet, DrinkSheet, FreeMealSheet, StepsSheet, WaistSheet, WaterSheet } from './sheets/QuickSheets';
-import { WhatsLeft } from './sheets/WhatsLeft';
+import { ChecklistSheet, DrinkSheet, FreeMealSheet, StepsSheet, WaistSheet } from './sheets/QuickSheets';
 import { NightOutSheet } from './sheets/NightOut';
 import { SaveMealSheet } from './sheets/Meals';
-import { OccasionSheet } from './sheets/Occasion';
 import { CloseDay } from './screens/CloseDay';
 import { PlanEditor } from './screens/PlanEditor';
 import { RecordsWall } from './screens/RecordsWall';
 import { MuscleMapPage } from './screens/MuscleMap';
 import { ShortSessionSheet } from './sheets/ShortSession';
 import { WalkTab } from './screens/WalkTab';
-import { NightSkyPage } from './screens/NightSky';
 import { MedicinesPage } from './screens/Medicines';
 import { ExerciseGuidePage } from './screens/ExerciseGuide';
 import { MonthlyFilmPage } from './screens/MonthlyFilm';
@@ -83,9 +75,7 @@ const StopPage = page(() => import('./screens/walk/RoadPages'), 'StopPage');
 const ArrivalPage = page(() => import('./screens/walk/ArrivalPage'), 'ArrivalPage');
 const ChapterFilmPage = page(() => import('./screens/walk/ChapterFilm'), 'ChapterFilmPage');
 const RoadSoFarPage = page(() => import('./screens/walk/RoadSoFar'), 'RoadSoFarPage');
-const PassportPage = page(() => import('./screens/walk/PassportPage'), 'PassportPage');
 const ArrivalRedirect = page(() => import('./screens/Postcard'), 'ArrivalRedirect');
-const DiaryPage = page(() => import('./screens/Diary'), 'DiaryPage');
 const CharacterPage = page(() => import('./screens/Character'), 'CharacterPage');
 const PhysioPage = page(() => import('./screens/Physio'), 'PhysioPage');
 const RevealPage = page(() => import('./screens/Reveal'), 'RevealPage');
@@ -109,8 +99,6 @@ const SHEETS: Record<string, () => ReactNode> = {
   'food-new': () => <FoodForm />,
   quick: () => <QuickKcal />,
   entry: () => <EntrySheet />,
-  whatsleft: () => <WhatsLeft />,
-  water: () => <WaterSheet />,
   steps: () => <StepsSheet />,
   checklist: () => <ChecklistSheet />,
   waist: () => <WaistSheet />,
@@ -119,7 +107,6 @@ const SHEETS: Record<string, () => ReactNode> = {
   nightout: () => <NightOutSheet />,
   short: () => <ShortSessionSheet />,
   savemeal: () => <SaveMealSheet />,
-  occasion: () => <OccasionSheet />,
 };
 
 const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
@@ -165,7 +152,10 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/football/cup/match': { el: () => <Football />, tab: 'football' },
   '/football/cup/run': { el: () => <Football />, tab: 'football' },
   '/arrival': { el: () => <ArrivalRedirect /> },
-  '/sky': { el: () => <NightSkyPage /> },
+  // Retired pages: old links and home-screen shortcuts land on the live page that took their place.
+  '/departures': { el: () => <Moved to="/walk" /> },
+  '/dex': { el: () => <Moved to="/football/album" /> },
+  '/sky': { el: () => <Moved to="/earned" /> },
   '/medicines': { el: () => <MedicinesPage /> },
   '/guide': { el: () => <ExerciseGuidePage /> },
   '/film': { el: () => <MonthlyFilmPage /> },
@@ -209,12 +199,12 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/arrive': { el: () => <ArrivalPage /> },
   '/chapter': { el: () => <ChapterFilmPage /> },
   '/road': { el: () => <RoadSoFarPage /> },
-  '/passport': { el: () => <PassportPage /> },
+  '/passport': { el: () => <Moved to="/walk" /> },
   '/routes': { el: () => <ShelfPage /> },
   '/route': { el: () => <RouteScreen /> },
   '/join': { el: () => <JoinPage /> },
   '/finish': { el: () => <FinishPage /> },
-  '/diary': { el: () => <DiaryPage /> },
+  '/diary': { el: () => <Moved to="/reports" /> },
   '/climate': { el: () => <Moved to="/reports/month" /> },
   '/wrapped': { el: () => <WrappedPage /> },
   '/character': { el: () => <CharacterPage /> },
@@ -251,7 +241,6 @@ export function App() {
       {page.tab && <TabBar active={page.tab} />}
       {page.tab && <ResumePill />}
       {sheet && SHEETS[sheet]?.()}
-      <DeepLinks />
       <CelebrationWatcher />
       <AchievementWatcher />
       <OpenCounters />
@@ -259,27 +248,9 @@ export function App() {
       <PlanDefault />
       <MaintenanceWatcher />
       <ChallengeWatcher />
-      <ShakeStat />
       <CardViewerHost />
     </div>
   );
-}
-
-/** Home-screen shortcuts arrive as links; water logs itself with an undo. */
-function DeepLinks() {
-  const route = useRoute();
-  const today = useToday();
-  const toast = useToast();
-  const action = route.params.get('do');
-  useEffect(() => {
-    if (action !== 'water') return;
-    clearParam('do');
-    void addWater(today, 250).then(async () => {
-      const ml = (await db.days.get(today))?.waterMl ?? 250;
-      toast({ kicker: 'Water', text: `+250 ml · ${fmtLitres(ml)} L today`, action: { label: 'Undo', run: () => addWater(today, -250) } });
-    });
-  }, [action, today, toast]);
-  return null;
 }
 
 /** An install set up before the built-in plan existed gets it once, with the kit its loads assume. */

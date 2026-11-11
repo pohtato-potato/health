@@ -52,9 +52,6 @@ export function FoodToday() {
 
         <div className="row base">
           <h1 className="h1">{date === today ? 'Food today' : `Food · ${fmtDayShort(date)}`}</h1>
-          <button type="button" className="chip sm" onClick={() => go('/diary')}>
-            Diary
-          </button>
         </div>
 
         <div className="card" style={{ gap: 16, padding: 20 }}>
@@ -188,11 +185,9 @@ export function FoodToday() {
         <button type="button" className="btn lg grow" onClick={() => openSheet('addfood', date !== today ? { d: date } : {})}>
           Add food
         </button>
-        {date === today && (
-          <button type="button" className="btn lg ghost" style={{ background: 'var(--ink)' }} onClick={() => openSheet('whatsleft')}>
-            What's left?
-          </button>
-        )}
+        <button type="button" className="btn lg ghost" style={{ background: 'var(--ink)' }} onClick={() => openSheet('nightout', date !== today ? { d: date } : {})}>
+          Night out
+        </button>
       </div>
     </>
   );

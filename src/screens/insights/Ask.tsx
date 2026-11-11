@@ -11,7 +11,7 @@ function DaysUsed({ days }: { days: string[] }) {
   const shown = [...days].reverse().slice(0, MAX_DAYS_SHOWN);
   return (
     <div className="yu-chips" aria-label="The days this used">
-      {shown.map((d) => <button key={d} type="button" onClick={() => go('/diary', { d })}>{fmtDayMonth(d)}</button>)}
+      {shown.map((d) => <button key={d} type="button" onClick={() => go('/food', { d })}>{fmtDayMonth(d)}</button>)}
       {days.length > shown.length && <span className="yu-q">and {days.length - shown.length} earlier</span>}
     </div>
   );

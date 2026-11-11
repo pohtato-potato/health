@@ -1,5 +1,5 @@
 import { addDays, weekStart } from '../domain/dates';
-import { fmtDayMonth, fmtInt, fmtLitres, fmtTime } from '../domain/format';
+import { fmtDayMonth, fmtInt, fmtTime } from '../domain/format';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { nextCheckInDate } from '../screens/Photos';
@@ -11,7 +11,6 @@ import { Sheet } from '../ui/Sheet';
 import { LogSearch } from './LogSearch';
 import { DateChip, useLogDate } from '../ui/DateChip';
 import { checklistSlots, dayRings, freeMealsThisWeek, nextUp } from '../state/derived';
-import { prefOn } from '../domain/types';
 import { StatusRow } from '../ui/StatusRow';
 import { usualFoods } from '../domain/usual';
 import { mealForTime, portionFor } from '../domain/foods';
@@ -38,7 +37,7 @@ export function LogSheet() {
   const usual = usualFoods(monthEntries, foods, mealNow, today);
 
   const day = days.find((d) => d.date === date);
-  const { totals, targets } = dayRings(settings, date, day, entries);
+  const { totals } = dayRings(settings, date, day, entries);
   const up = nextUp(settings, sessions, sets, days);
   const plan = settings.plan;
   const slots = checklistSlots(settings, date);
@@ -94,7 +93,6 @@ export function LogSheet() {
               ? tile('train', 'var(--protein)', sessionName ?? 'Session', active ? 'In progress' : 'Start', () => (active ? go('/session') : hasGym(plan) ? go('/train') : go('/session', { start: up!.sessionId })))
               : tile('train', 'var(--protein)', 'Session', 'No plan yet', () => go('/plan'))}
             {tile('check', 'var(--gold)', 'Close the day', day?.foodDone ? 'Closed' : 'Meals, checklist', () => go('/close', d))}
-            {prefOn(settings.prefs, 'water') && tile('water', 'var(--blue)', 'Water', `${fmtLitres(totals.waterMl)} of ${fmtLitres(targets.waterMl)} L`, () => replaceSheet('water', d))}
           </div>
         }
         more={
@@ -111,7 +109,7 @@ export function LogSheet() {
   );
 }
 
-/** + › More (s44): the less frequent logs, and status, which relaxes targets and pauses streaks. */
+/** + › More (s44): the less frequent logs, and status, which relaxes targets while it lasts. */
 export function MoreSheet() {
   const settings = useSettings();
   const today = useToday();
@@ -148,10 +146,7 @@ export function MoreSheet() {
       </div>
       <div className="lbl">Status</div>
       <StatusRow today={today} current={days?.find((x) => x.date === today)?.status} />
-      <button type="button" className="link t13 tap44" style={{ alignSelf: 'flex-start', minHeight: 36 }} onClick={() => replaceSheet('occasion')}>
-        Name an occasion or set dates
-      </button>
-      <div className="t13 q lh">A status relaxes targets to maintenance and pauses streaks until you switch it off.</div>
+      <div className="t14 q lh">Sick, injured, travelling or on a break: targets relax to maintenance and the rotation squad plays until you switch it off.</div>
     </Sheet>
   );
 }

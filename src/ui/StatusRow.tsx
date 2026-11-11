@@ -6,7 +6,6 @@ export const STATUSES: { id: Status; label: string }[] = [
   { id: 'injured', label: 'Injured' },
   { id: 'travelling', label: 'Travelling' },
   { id: 'break', label: 'Break' },
-  { id: 'occasion', label: 'Occasion' },
 ];
 
 /** One tap switches a status on (until switched off) or off. */

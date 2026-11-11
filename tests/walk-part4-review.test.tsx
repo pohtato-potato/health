@@ -2,7 +2,6 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { CITIES, FINAL_KM, STRIDE_M } from '../src/domain/walk';
 import { ArrivalFallback, ArrivalView, StampTemplate, StateLineView } from '../src/screens/walk/Arrival';
-import { PassportView } from '../src/screens/walk/Passport';
 import { arrivalFor, canPlayArrivalAt, passportPages } from '../src/walk/arrivals';
 import { CITY_FACTS } from '../src/walk/content/cities';
 
@@ -47,14 +46,6 @@ describe('part 4 review fixes', () => {
 
   it('says a stamp’s date in words and in readable text', () => {
     expect(renderToStaticMarkup(<StampTemplate name="Agra" state="Uttar Pradesh" n={2} ut={false} date="2 Oct" />)).toContain('aria-label="Passport stamp: arrived, Agra, Uttar Pradesh, 2 Oct"');
-    const html = renderToStaticMarkup(<PassportView pages={passportPages(all).slice(0, 3)} startDay="2026-01-01" onReplay={() => {}} />);
-    expect(html).toMatch(/<span class="walk-pg-date">\d+ \w+<\/span>/);
-  });
-
-  it('doesn’t replay a 0 km arrival at the start', () => {
-    const html = renderToStaticMarkup(<PassportView pages={passportPages(all).slice(0, 1)} startDay="2026-01-01" onReplay={() => {}} />);
-    expect(html).not.toContain('Replay Delhi');
-    expect(html).toContain('Where the walk began');
   });
 
   it('names the state on a territory’s or a long-named state’s stamp in full', () => {

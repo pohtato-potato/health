@@ -106,3 +106,8 @@ export function useNow(ms = 1000): number {
 export function useBody(): BodyEntry[] | undefined {
   return useLiveQuery(async () => (await db.body.toArray()).sort((a, b) => a.at - b.at), []);
 }
+
+/** The Football season's first day, which the habit tallies count their season from; null with no club yet. */
+export function useSeasonStart(): DayKey | null | undefined {
+  return useLiveQuery(async () => (await db.fbSeasons.orderBy('id').last())?.start ?? null, []);
+}

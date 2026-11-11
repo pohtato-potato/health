@@ -128,13 +128,13 @@ export function NightOutSheet() {
           {fmtInt(total)} <span className="t16 q">kcal</span>
         </div>
         <div className="t13 q lh">
-          {drinks ? `${drinks} drink${drinks === 1 ? '' : 's'}, about ${fmt1(std)} standard drink${std === 1 ? '' : 's'}.` : 'No drinks: Designated driver.'} Logged quietly, no streaks.
+          {drinks ? `${drinks} drink${drinks === 1 ? '' : 's'}, about ${fmt1(std)} standard drink${std === 1 ? '' : 's'}.` : 'No drinks: Designated driver.'} Logged quietly.
         </div>
       </div>
 
       <div className="col gap4" style={{ padding: '0 2px' }}>
         <div className="lbl">Tomorrow, Health eases off</div>
-        <div className="t14 q lh">Your step goal drops to {fmtInt(stepsGoal(t, true))}, and if you miss it, no shield gets spent.</div>
+        <div className="t14 q lh">Your step goal drops to {fmtInt(stepsGoal(t, true))}.</div>
       </div>
 
       <button type="button" className="btn lg block" disabled={!meal && !drinks} onClick={log}>

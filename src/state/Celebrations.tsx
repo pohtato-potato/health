@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import { addDays, dayKey, daysBetween, weekStart, type DayKey } from '../domain/dates';
 import { revealDue } from '../domain/creatures';
 import { prefOn } from '../domain/types';
-import { fmt1, fmtDayMonth, fmtInt, weekdayName } from '../domain/format';
+import { fmt1, fmtDayMonth, fmtInt } from '../domain/format';
 import { CHAPTERS, arrivals, chapterAt, kmFromSteps } from '../domain/walk';
 import { arrivalToPlay, canPlayArrivalAt, stateLineToPlay } from '../walk/arrivals';
 import { routeById } from '../walk/catalogue';
@@ -17,11 +17,13 @@ import { goldenMoments } from '../domain/golden';
 import { useMoments, type MomentData } from '../ui/Moments';
 import { useToast } from '../ui/Toasts';
 import { go, useRoute } from '../router';
-import { checklistSlots, dayRings, stepStreakFor, targetsFor, weeksFor } from './derived';
+import { checklistSlots, dayRings, stepTallyFor, targetsFor, trainingTallyFor } from './derived';
 import { DEFAULT_MED_REWARDS, keptWeek } from '../domain/medicines';
 
-export const STEP_MILESTONES = [7, 14, 21, 30, 50, 75, 100, 150, 200, 250, 300, 365];
-export const WEEK_MILESTONES = [2, 4, 8, 12, 16, 20, 26, 39, 52];
+/** Goal days in all (O1: totals, never runs). */
+export const STEP_MILESTONES = [25, 50, 100, 150, 200, 250, 300, 365, 500, 750, 1000];
+/** Sessions done in all. */
+export const WEEK_MILESTONES = [10, 25, 50, 75, 100, 150, 200, 250, 300, 400, 500];
 export const KM_MILESTONES = [100, 250, 500, 750, 1000, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 7500, 10000, 12500, 15000, 20000];
 
 const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty'];
@@ -88,44 +90,65 @@ export function CelebrationWatcher() {
     const dayOf = (d: DayKey) => days.find((x) => x.date === d);
     const ringsOn = (d: DayKey) => dayRings(settings, d, dayOf(d), week.filter((e) => e.date === d));
 
-    // Step streak milestones, dated to the day they were reached.
-    const streak = stepStreakFor(settings, days, today);
+    // Tallies, not streaks (O1): totals that only go up, and a new record for any 28 days.
     const target = targetsFor(settings, today).steps;
-    if (STEP_MILESTONES.includes(streak.current)) {
-      const reached = (dayOf(today)?.steps ?? 0) >= target ? today : yesterday;
-      const n = streak.current;
-      const next = STEP_MILESTONES.find((m) => m > n);
-      const since = addDays(reached, -(n - 1));
+    const stepsNow = stepTallyFor(settings, days, today);
+    const stepsBefore = stepTallyFor(settings, days, addDays(today, -2));
+    const trainNow = trainingTallyFor(sessions, today);
+    const trainBefore = trainingTallyFor(sessions, addDays(today, -2));
+    const passed = (list: number[], before: number, now: number) => list.filter((m) => m > before && m <= now).pop();
+    const stepTotal = passed(STEP_MILESTONES, stepsBefore.total, stepsNow.total);
+    if (stepTotal) {
+      const next = STEP_MILESTONES.find((m) => m > stepTotal);
       push({
         kind: 'streak',
-        key: `streak:steps:${n}:${reached}`,
-        count: n,
+        key: `tally:steps:${stepTotal}`,
+        count: stepTotal,
         unit: 'days',
-        segments: Math.min(n, 7),
-        kicker: `Step streak · ${weekdayName(reached).slice(0, 3)} ${fmtDayMonth(reached)}`,
-        title: `${inWords(n)} days in a row.`,
-        text: `${fmtInt(target)} steps or more every day since ${fmtDayMonth(since)}${streak.shieldsUsed.length ? ', with a shield or two along the way' : ''}.`,
-        next: next ? `Next: ${next} days, around ${fmtDayMonth(addDays(reached, next - n))}` : undefined,
+        segments: 7,
+        kicker: 'Steps · the tally',
+        title: `${inWords(stepTotal)} goal days.`,
+        text: `${fmtInt(target)} steps or more, ${stepTotal} times in all. ${stepsNow.last28} of them in the last 28 days.`,
+        next: next ? `Next: ${next} goal days` : undefined,
       });
     }
-
-    // Training-week streaks, dated to the week they were reached.
-    const weeks = weeksFor(settings, sessions, today, days);
-    if (WEEK_MILESTONES.includes(weeks.streak)) {
-      const reachedWeek = weeks.thisWeek >= weeks.perWeek ? ws : addDays(ws, -7);
-      const n = weeks.streak;
-      const next = WEEK_MILESTONES.find((m) => m > n);
-      const since = addDays(reachedWeek, -7 * (n - 1));
+    if (stepsNow.best28 > stepsBefore.best28 && stepsNow.best28 >= 14) {
       push({
         kind: 'streak',
-        key: `streak:weeks:${n}:${reachedWeek}`,
-        count: n,
-        unit: 'weeks',
-        segments: Math.min(n, 12),
-        kicker: 'Training streak',
-        title: `${inWords(n)} weeks of ${inWords(weeks.perWeek, false)}.`,
-        text: `${inWords(weeks.perWeek)} sessions or more every week since ${fmtDayMonth(since)}, with the rest days kept too.`,
-        next: next ? `Next: ${next} weeks, around ${fmtDayMonth(addDays(reachedWeek, 7 * (next - n) + 6))}` : undefined,
+        key: `tally:steps28:${stepsNow.best28}`,
+        count: stepsNow.best28,
+        unit: 'of 28',
+        segments: 7,
+        kicker: 'Steps · record book',
+        title: `A new record: ${stepsNow.best28} goal days in 28.`,
+        text: `The best four weeks of walking yet, to ${fmtDayMonth(stepsNow.best28End ?? today)}.`,
+      });
+    }
+    const sessionTotal = passed(WEEK_MILESTONES, trainBefore.total, trainNow.total);
+    if (sessionTotal) {
+      const next = WEEK_MILESTONES.find((m) => m > sessionTotal);
+      push({
+        kind: 'streak',
+        key: `tally:sessions:${sessionTotal}`,
+        count: sessionTotal,
+        unit: 'sessions',
+        segments: 12,
+        kicker: 'Training · the tally',
+        title: `${inWords(sessionTotal)} sessions done.`,
+        text: `${trainNow.last28} of them in the last 28 days. Rest days are part of it, not gaps in it.`,
+        next: next ? `Next: ${next} sessions` : undefined,
+      });
+    }
+    if (trainNow.best28 > trainBefore.best28 && trainNow.best28 >= 8) {
+      push({
+        kind: 'streak',
+        key: `tally:sessions28:${trainNow.best28}`,
+        count: trainNow.best28,
+        unit: 'in 28 days',
+        segments: 12,
+        kicker: 'Training · record book',
+        title: `A new record: ${trainNow.best28} sessions in 28 days.`,
+        text: `The busiest four weeks of training yet, to ${fmtDayMonth(trainNow.best28End ?? today)}.`,
       });
     }
 

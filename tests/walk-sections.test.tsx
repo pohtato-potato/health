@@ -44,7 +44,7 @@ describe('the Walk tab’s sections', () => {
 
   it('opens each door', () => {
     const html = renderToStaticMarkup(<WalkDoors onGo={() => {}} />);
-    for (const d of ['Passport', 'Map', 'Wrapped']) expect(html).toContain(`>${d}<`);
+    for (const d of ['Map', 'Wrapped']) expect(html).toContain(`>${d}<`);
     expect(html).not.toContain('Departures');
   });
 

@@ -43,17 +43,16 @@ export function goldenMoments(g: GoldenInput): Golden[] {
   const out: Golden[] = [];
   const place = fmtDayMonth(g.date);
   const steps = g.day?.steps ?? 0;
-  const water = (g.day?.waterMl ?? 0) >= g.targets.waterMl;
   const sleep = g.day?.sleep ? sleepMinutes(g.day.sleep.asleep, g.day.sleep.woke) >= g.targets.sleepMin : false;
   const checklist = g.slots === 0 || g.ticked >= g.slots;
 
-  if (g.rings.perfect && water && sleep && checklist && g.trained) {
+  if (g.rings.perfect && sleep && checklist && g.trained) {
     out.push({
       key: `golden:everything:${g.date}`,
       kicker: 'Everything, all at once',
       place,
       title: 'A day where it all landed',
-      text: `All the rings, your water, a full night’s sleep${g.slots ? ', the whole checklist' : ''} and a session, on the same day.`,
+      text: `All the rings, a full night’s sleep${g.slots ? ', the whole checklist' : ''} and a session, on the same day.`,
       foot: 'Days like this are rare. This one’s yours.',
     });
   }

@@ -1,10 +1,9 @@
-import { usualWater } from '../domain/water';
 import { useEffect, useState } from 'react';
 import { addDays, atOn, dayKey, weekStart } from '../domain/dates';
-import { fmtDayMonth, fmtInt, fmtLitres, fmtTime, weekdayName } from '../domain/format';
+import { fmtDayMonth, fmtInt, fmtTime, weekdayName } from '../domain/format';
 import { DRINKS, FREE_MEAL_SIZES, mealForTime } from '../domain/foods';
 import type { ChecklistItem, Meal } from '../domain/types';
-import { addEntry, addWater, bump, deleteEntry, deleteMeasurement, patchDay, patchSettings, saveMeasurement, setMissed, setSteps, setTick } from '../db/actions';
+import { addEntry, bump, deleteEntry, deleteMeasurement, patchDay, patchSettings, saveMeasurement, setMissed, setSteps, setTick } from '../db/actions';
 import { uid } from '../db/db';
 import { isLateTick, slotStatus, slotTime } from '../domain/checklist';
 import { Check } from '../ui/Check';
@@ -14,78 +13,13 @@ import { closeSheet, go } from '../router';
 import { DecField, IntField, TimeTile } from '../ui/controls';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
-import { dayRings, freeMealSaved, targetsFor } from '../state/derived';
+import { dayRings, freeMealSaved } from '../state/derived';
 import { isEased, placeFor } from '../domain/places';
 import { prefOn } from '../domain/types';
 import { MealPicker } from './FoodForms';
 import { DateChip, useLogDate } from '../ui/DateChip';
 import { courseOn } from '../domain/medicines';
 import { undoEdit } from '../db/edits';
-
-export function WaterSheet() {
-  const settings = useSettings();
-  const today = useToday();
-  const days = useAllDays();
-  if (!settings || !days) return <Sheet title="Water">{null}</Sheet>;
-  const ml = days.find((d) => d.date === today)?.waterMl ?? 0;
-  const target = targetsFor(settings, today).waterMl;
-  const usual = usualWater(days, today) ?? target;
-  return (
-    <Sheet title="Water" sub={`Aim: ${fmtLitres(target)} L a day`}>
-      <div className="col gap8" style={{ alignItems: 'center', padding: '8px 0' }}>
-        <div className="num" style={{ fontSize: 56 }}>
-          {fmtLitres(ml)}
-          <span className="t17 q"> L</span>
-        </div>
-        <div className="t14 q">
-          {Math.round(ml / 250)} glasses · {ml >= target ? 'aim reached' : `${fmtLitres(target - ml)} L to go`}
-        </div>
-        <div className="bar" style={{ width: '100%', height: 8 }}>
-          <i style={{ width: `${Math.min(ml / target, 1) * 100}%`, background: 'var(--blue)' }} />
-        </div>
-      </div>
-      {ml < usual && (
-        <button type="button" className="btn lg block" onClick={() => addWater(today, usual - ml)}>
-          A usual day · {fmtLitres(usual)} L
-        </button>
-      )}
-      <div className="grid3">
-        <button type="button" className="btn ghost" onClick={() => addWater(today, -250)} disabled={ml <= 0}>
-          −250 ml
-        </button>
-        <button type="button" className="btn" onClick={() => addWater(today, 250)}>
-          +250 ml
-        </button>
-        <button type="button" className="btn ghost" onClick={() => addWater(today, 500)}>
-          +500 ml
-        </button>
-      </div>
-      <OtherAmount onAdd={(v) => addWater(today, v)} />
-    </Sheet>
-  );
-}
-
-function OtherAmount({ onAdd }: { onAdd: (ml: number) => void }) {
-  const [ml, setMl] = useState<number | undefined>();
-  return (
-    <div className="row" style={{ gap: 10 }}>
-      <div className="grow">
-        <IntField value={ml} onChange={setMl} placeholder="Other amount, ml" label="Other amount in ml" />
-      </div>
-      <button
-        type="button"
-        className="btn ghost"
-        disabled={!ml}
-        onClick={() => {
-          if (ml) onAdd(ml);
-          setMl(undefined);
-        }}
-      >
-        Add
-      </button>
-    </div>
-  );
-}
 
 export function StepsSheet() {
   const settings = useSettings();

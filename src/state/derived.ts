@@ -3,7 +3,8 @@ import { lowerFirst } from '../domain/format';
 import { buildSession, findExercise, findSession, hasGym, nextInLoop, rotationOf, type FlagDef, type PlanDef, type Place, type Swap } from '../domain/plan';
 import { exerciseStatus, triggerMet, type ExerciseStatus } from '../domain/progression';
 import { savedThisWeek } from '../domain/foods';
-import { ringsFor, targetsOn, totalsFor, type Rings, type Totals } from '../domain/rings';
+import { ringsFor, stepsGoal, targetsOn, totalsFor, type Rings, type Totals } from '../domain/rings';
+import { tally, weighted, type Tally } from '../domain/tallies';
 import { maintenanceKcal, stepStreakOf, trainingWeeksOf, withOccasion } from '../domain/occasions';
 import type { Day, FoodEntry, SetEntry, Settings, Targets, TrainingSession } from '../domain/types';
 import { isEased, placeFor } from '../domain/places';
@@ -125,6 +126,17 @@ export function dayRings(settings: Settings, date: DayKey, day: Day | undefined 
 
 export function stepStreakFor(settings: Settings, days: Day[], today: DayKey) {
   return stepStreakOf(settings, days, today, FALLBACK_TARGETS.steps);
+}
+
+/** Days at or over the step goal (eased after a night out or away): last 28, season, record (O1). */
+export function stepTallyFor(settings: Settings, days: Day[], today: DayKey, seasonStart?: DayKey): Tally {
+  const hits = days.filter((d) => d.steps !== undefined && d.steps >= stepsGoal(targetsFor(settings, d.date), isEased(d, placeFor(d, settings)))).map((d) => d.date);
+  return tally(hits, today, seasonStart);
+}
+
+/** Sessions done: last 28, season, record (O1). Two in a day count as two. */
+export function trainingTallyFor(sessions: TrainingSession[], today: DayKey, seasonStart?: DayKey): Tally {
+  return weighted(doneSessions(sessions).map((s) => ({ date: s.date, n: 1 })), today, seasonStart);
 }
 
 export function weeksFor(settings: Settings, sessions: TrainingSession[], today: DayKey, days: Day[] = []) {

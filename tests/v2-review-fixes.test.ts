@@ -69,7 +69,8 @@ describe('nothing asks for features v2 removed', () => {
 describe('Departures is cut (O8)', () => {
   it('has no route, and its secret achievement is retired, not lost', async () => {
     const { readFileSync, existsSync } = await import('node:fs');
-    expect(readFileSync('src/App.tsx', 'utf8')).not.toMatch(/departures/i);
+    // Old links land on Walk, where the forecasts went (whole-app pass, 10 Nov).
+    expect(readFileSync('src/App.tsx', 'utf8')).toContain(`'/departures': { el: () => <Moved to="/walk" /> }`);
     expect(existsSync('src/screens/Departures.tsx')).toBe(false);
     const { ACTIVE_ACHIEVEMENTS, ACHIEVEMENTS, RETIRED_ACHIEVEMENTS } = await import('../src/domain/achievements');
     expect(ACTIVE_ACHIEVEMENTS.map((a) => a.name)).not.toContain('Moye moye');
