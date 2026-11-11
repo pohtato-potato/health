@@ -31,3 +31,13 @@ describe('the maintenance read (y-maint)', () => {
     expect(maintenanceRead({ ...base, maintenance: undefined, yesterday: 3000 })).toEqual([]);
   });
 });
+
+// Owner, 12 Nov (choice D b): the read lives on Food only, to keep Today short.
+import { readFileSync as readSrc } from 'node:fs';
+describe('where the maintenance read shows', () => {
+  const src = (f: string) => readSrc(new URL(`../src/screens/${f}`, import.meta.url), 'utf8');
+  it('Food shows it; Today does not', () => {
+    expect(src('FoodToday.tsx')).toMatch(/<MaintenanceRead \/>/);
+    expect(src('Today.tsx')).not.toMatch(/MaintenanceRead/);
+  });
+});
