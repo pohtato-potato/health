@@ -38,6 +38,11 @@ export interface MatchInput {
    * for every chance, so it does worse on average than an honestly logged bad day and swings more. Never "no data".
    */
   fog?: Axis[];
+  /**
+   * A night out logged as ranges (l-away): Fuel is drawn afresh for each chance within this many points either side
+   * of its logged value, evenly, so it swings more but averages the same. 0 or absent: Fuel plays as logged.
+   */
+  fuelSpread?: number;
   /** Your typical shape (`typicalFor`): chances are sized against it, so a better night than usual scores and saves more. */
   typical?: AxisValues;
 }
@@ -352,6 +357,11 @@ export function nextChance(st: MatchState): ChanceEvent | undefined {
     const drawn = FOG[0] + r() * (FOG[1] - FOG[0]);
     const d = Math.round((drawn - m.values[a]) * 4) / 4;
     if (d) add({ axis: a, d, why: 'Not logged', kind: 'fog' });
+  }
+  // 0b. a night out logged as ranges: Fuel rolls evenly either side of what was logged (never when it is in fog)
+  if (m.fuelSpread && !(m.fog ?? []).includes('Fuel')) {
+    const d = Math.round((r() * 2 - 1) * m.fuelSpread * 4) / 4;
+    if (d) add({ axis: 'Fuel', d, why: 'Night out, logged as a range', kind: 'range' });
   }
   // 1. chance type
   if (boost) add({ axis: boost, d: 2, why: type, kind: 'type' });

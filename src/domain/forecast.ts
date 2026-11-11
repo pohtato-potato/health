@@ -75,7 +75,7 @@ export function forecasts(f: ForecastInput): Forecast[] {
   }
   const fest = nextFestival(f.today);
   if (fest && fest.from > f.today && fest.from <= addDays(f.today, 7)) {
-    out.push({ id: 'festive', value: 'Festive', title: 'Front moving in', text: `${fest.name} from ${fmtDayMonth(fest.from)}. Sweets likely. Occasion mode is on standby.`, weight: 65 });
+    out.push({ id: 'festive', value: 'Festive', title: 'Front moving in', text: `${fest.name} from ${fmtDayMonth(fest.from)}. Sweets likely.`, weight: 65 });
   }
   if (f.nextStop && f.nextStop.days <= 5) {
     out.push({

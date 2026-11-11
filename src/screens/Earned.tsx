@@ -71,7 +71,6 @@ export function Earned() {
         <div className="yu-doors">
           <button type="button" onClick={() => go('/records')}><b>Records wall</b><span>Every best</span></button>
           <button type="button" onClick={() => go('/achievements')}><b>Achievements</b><span>Sets and progress</span></button>
-          <button type="button" onClick={() => go('/sky')}><b>Night sky</b><span>A star per perfect day</span></button>
         </div>
       </div>
     </RegionFrameView>

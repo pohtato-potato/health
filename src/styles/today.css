@@ -40,7 +40,7 @@
 .td-rings-row { display: flex; align-items: center; gap: 22px; }
 .td-ringfig { flex: none; }
 .td-nums { display: flex; flex-direction: column; min-width: 0; }
-.td-num { display: flex; align-items: baseline; gap: 6px; min-height: 50px; padding: 0; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
+.td-num { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; min-height: 50px; padding: 0; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
 .td-num b { font-family: var(--serif); font-weight: 400; font-size: 34px; line-height: 1; white-space: nowrap; }
 .td-num > span { font-size: 14px; color: var(--quiet); }
 .td-ringmore { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 15px; color: var(--quiet); }
@@ -244,6 +244,8 @@
 .tm-back { color: #ffd56a; }
 .tm-fog { color: #c8d3ea; }
 .tm-bar { display: flex; height: 44px; border-radius: 14px; overflow: hidden; background: color-mix(in srgb, var(--t2) 55%, #151829); font-size: 15px; }
+/* Before the day's first log: an even, quiet bar with words, no score. */
+.tm-bar.tm-bar-empty { align-items: center; justify-content: center; background: linear-gradient(90deg, color-mix(in srgb, var(--t1) 30%, #151829), color-mix(in srgb, var(--t2) 30%, #151829)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--t1) 45%, transparent); color: #e9ecff; }
 .tm-me { display: flex; align-items: center; padding-left: 12px; background: var(--t1); color: #10121f; white-space: nowrap; transition: width 900ms cubic-bezier(.2, .9, .2, 1); min-width: 64px; }
 .tm-op { flex: 1; display: flex; align-items: center; justify-content: flex-end; padding-right: 12px; color: #10121f; white-space: nowrap; min-width: 0; }
 .tm-ahead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 10px 12px; border-radius: 14px; border: 1px solid color-mix(in srgb, #ffd56a 50%, transparent); background: color-mix(in srgb, #ffd56a 10%, transparent); }
@@ -268,3 +270,13 @@
 
 /* Release 1: words on Today in Atkinson Hyperlegible Next; numbers and titles stay Fraunces. */
 .td-page, .tm-moment, .td-handle, .td-drawer { font-family: 'Atkinson Hyperlegible Next', var(--sans); }
+
+/* The office usual (y-office): one full-width button per repeating meal, outlined in the food ink. */
+.office-usual { display: flex; flex-direction: column; gap: 8px; }
+.office-usual-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 64px; padding: 10px 14px; border-radius: 16px; text-align: left; border: 1.5px solid color-mix(in srgb, var(--kcal, #ffb36b) 60%, transparent); background: color-mix(in srgb, var(--kcal, #ffb36b) 10%, transparent); box-shadow: 0 0 18px -8px var(--kcal, #ffb36b); }
+.office-usual-btn b { font-size: 16px; font-weight: 600; }
+/* The weigh-in chip beside the status chip (y-morning). */
+.td-chip.td-weighin { border-color: color-mix(in srgb, var(--apricot, #ffb36b) 70%, transparent); color: var(--apricot, #ffb36b); }
+/* The maintenance read (y-maint): plain lines on a quiet outlined card, never red. */
+.maint-read { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--kcal, #ffb36b) 40%, transparent); }
+.maint-read p { margin: 0; }

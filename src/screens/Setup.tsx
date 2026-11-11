@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { dayKey } from '../domain/dates';
-import { fmtDuration, fmtInt, fmtLitres } from '../domain/format';
+import { fmtDuration, fmtInt } from '../domain/format';
 import type { Settings, Targets } from '../domain/types';
 import { GREMLIN_HELLO } from '../domain/voice';
 import { patchDay, patchSettings, saveMeasurement, setTargets } from '../db/actions';
@@ -100,10 +100,9 @@ function Numbers({ settings, onDone, onBack }: { settings: Settings; onDone: () 
   const [kcalMax, setKcalMax] = useState<number | undefined>(t?.kcalMax);
   const [protein, setProtein] = useState<number | undefined>(t?.proteinG);
   const [steps, setSteps] = useState<number | undefined>(t?.steps);
-  const [water, setWater] = useState<number | undefined>(t ? t.waterMl / 1000 : undefined);
   const [sleep, setSleep] = useState<number | undefined>(t ? t.sleepMin / 60 : undefined);
   const [sessions, setSessions] = useState<number | undefined>(t?.sessionsPerWeek);
-  const ok = !!name.trim() && !!kcalMin && !!kcalMax && kcalMax >= kcalMin && !!protein && !!steps && !!water && !!sleep && !!sessions;
+  const ok = !!name.trim() && !!kcalMin && !!kcalMax && kcalMax >= kcalMin && !!protein && !!steps && !!sleep && !!sessions;
 
   const save = async () => {
     const targets: Targets = {
@@ -111,7 +110,8 @@ function Numbers({ settings, onDone, onBack }: { settings: Settings; onDone: () 
       kcalMax: kcalMax!,
       proteinG: protein!,
       steps: steps!,
-      waterMl: Math.round(water! * 1000),
+      // Water is no longer tracked (R3 x-water); the stored target keeps its old value for old screens and backups.
+      waterMl: t?.waterMl ?? 3000,
       sleepMin: Math.round(sleep! * 60),
       sessionsPerWeek: sessions!,
     };
@@ -151,7 +151,6 @@ function Numbers({ settings, onDone, onBack }: { settings: Settings; onDone: () 
         {field('Calories to', 'apri', <IntField value={kcalMax} onChange={setKcalMax} placeholder="e.g. 2,300" />)}
         {field('Protein, g', 'lav', <IntField value={protein} onChange={setProtein} placeholder="e.g. 140" />)}
         {field('Steps', 'sage', <IntField value={steps} onChange={setSteps} placeholder="e.g. 10,000" />)}
-        {field('Water, litres', 'blue', <DecField value={water} onChange={setWater} placeholder="e.g. 3" />)}
         {field('Sleep, hours', 'blue', <DecField value={sleep} onChange={setSleep} placeholder="e.g. 7" />)}
         {field('Sessions a week', '', <IntField value={sessions} onChange={setSessions} placeholder="e.g. 4" />)}
       </div>
@@ -177,7 +176,6 @@ function Ready({ settings, onEdit }: { settings: Settings; onEdit: () => void })
     ['Calories', `${fmtInt(t.kcalMin)}–${fmtInt(t.kcalMax)} a day`],
     ['Protein', `${t.proteinG} g a day`],
     ['Steps · sleep', `${fmtInt(t.steps)} · ${fmtDuration(t.sleepMin)} or more`],
-    ['Water', `${fmtLitres(t.waterMl)} L`],
     ['Training', settings.plan ? `${settings.plan.name}, ${t.sessionsPerWeek} a week` : `${t.sessionsPerWeek} a week, no plan yet`],
   ];
 

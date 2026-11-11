@@ -1,5 +1,5 @@
 // The Story section: rivals, seasons, moments, the Old Selves and settings, one tap apart.
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../../db/db';
 import { loadLeague, type League } from '../../../football/store/league';
@@ -84,8 +84,12 @@ const crestName = (s: Story, n: number) => {
 
 export function WrappedRoute({ season }: { season: number }) {
   const s = useStory();
-  if (!s) return null;
-  const x = s.seasons.find((y) => y.id === season);
-  if (!x) return <p className="fb-s">No such season.</p>;
+  const x = s ? s.seasons.find((y) => y.id === season && !!y.final) : undefined;
+  // An old or bare link with no finished season lands on the seasons list, never a blank page.
+  const missing = s === null || (!!s && !x);
+  useEffect(() => {
+    if (missing) go('/football/story', { view: 'seasons' }, { replace: true });
+  }, [missing]);
+  if (!s || !x) return null;
   return <WrappedView s={summarise(x, s.all, s.seasons)} onDone={() => go('/football/story', { view: 'seasons' }, { replace: true })} />;
 }

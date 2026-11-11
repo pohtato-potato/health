@@ -7,7 +7,8 @@ import { HabitView, SortedDays } from './views';
 import { fmtDayShort, fmtInt } from '../../domain/format';
 import { bestWeekday, eveningTopUps, placeSplit, todayAndChange, usualRange } from '../../domain/trackStats';
 import { openSheet } from '../../router';
-import { stepStreakFor, targetsFor } from '../../state/derived';
+import { stepTallyFor, targetsFor } from '../../state/derived';
+import { useSeasonStart } from '../../db/hooks';
 import { loadedSteps } from '../../walk/lines';
 import { StepsExtras } from '../TrackExtras';
 import { dayLabel, headInput, kindOn, placeMarkOn, spanDays, type Span, type TrackData } from './data';
@@ -33,7 +34,8 @@ export function StepsTrack({ data }: { data: TrackData }) {
   const tops = eveningTopUps(range.map((d) => data.days.get(d)).filter((d) => !!d), t.steps);
   const best = bestWeekday(new Map([...steps].filter(([d]) => d >= range[0])));
   const band = usualRange(logged.map((d) => steps.get(d)!));
-  const streak = stepStreakFor(settings, all, today);
+  const seasonStart = useSeasonStart() ?? undefined;
+  const tal = stepTallyFor(settings, all, today, seasonStart);
 
   return (
     <TrackShell
@@ -69,16 +71,18 @@ export function StepsTrack({ data }: { data: TrackData }) {
       {[...loaded.keys()].some((d) => d >= range[0]) && <div className="t13 q lh">Gold on a bar: steps walked carrying weight, which count extra on the Walk.</div>}
       <div className="card">
         <div className="row t15">
-          <span>Step streak</span>
-          <span className="tn">
-            {streak.current} day{streak.current === 1 ? '' : 's'} · best {streak.best}
-          </span>
+          <span>Goal days, last 28</span>
+          <span className="tn">{tal.last28}</span>
         </div>
         <div className="row t15">
-          <span>Shields</span>
-          <span className="tn">{streak.shields} of 2</span>
+          <span>{seasonStart ? 'This season' : 'So far'}</span>
+          <span className="tn">{tal.season}</span>
         </div>
-        <div className="t13 q lh">A shield for every 7 days in a row, spent automatically on a missed day.</div>
+        <div className="row t15">
+          <span>Record, any 28 days</span>
+          <span className="tn">{tal.best28}</span>
+        </div>
+        <div className="t14 q lh">Counts only go up. A missed day takes nothing away.</div>
       </div>
       <StepsExtras days={all} today={today} range={range} settings={settings} />
       <button type="button" className="btn block" onClick={() => openSheet('steps')}>

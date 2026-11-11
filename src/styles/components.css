@@ -371,10 +371,10 @@
 }
 .datechip-pick input {
   position: absolute;
-  inset: 0;
+  inset: -1px;
   opacity: 0;
-  width: 100%;
-  height: 100%;
+  width: calc(100% + 2px);
+  height: calc(100% + 2px);
 }
 
 /* Plate mode: several foods with their own amounts, added once. */
@@ -409,7 +409,7 @@
   min-height: 52px;
 }
 .grip {
-  width: 34px;
+  width: 44px;
   height: 44px;
   display: inline-flex;
   align-items: center;
@@ -477,7 +477,7 @@
   width: 30px;
   font-family: var(--sans);
   font-variant-numeric: tabular-nums;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--quiet);
   flex-shrink: 0;
 }
@@ -1392,3 +1392,6 @@
 .fd-meals li { display: grid; grid-template-columns: 84px 1fr 52px; align-items: center; gap: 10px; font-size: 15px; }
 .fd-meals .bar { height: 8px; }
 .fd-meals b { text-align: right; font-weight: 700; }
+
+/* Label mode: the form is drawn like the label on the pack. */
+.label-card { border: 2px solid color-mix(in srgb, var(--text) 75%, transparent); border-radius: 12px; padding: 12px; }

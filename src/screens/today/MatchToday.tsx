@@ -11,7 +11,7 @@ import { addDays, dayOfLogging, type DayKey } from '../../domain/dates';
 import { prefOn } from '../../domain/types';
 import { clubCrest, crestSvg } from '../../football/art/crest';
 import { clubById, tierName } from '../../football/data/load';
-import { matchupShare, movedAxes, oppShape, threatLine, wentAhead } from '../../football/matchup';
+import { matchupShare, movedAxes, nothingLoggedYet, oppShape, threatLine, wentAhead } from '../../football/matchup';
 import { loadTonight, type Tonight } from '../../football/store/hooks';
 import { OWN } from '../../football/store/season';
 import type { FbSave, StoredMatch } from '../../football/store/tables';
@@ -160,7 +160,12 @@ export function TonightShape({ t, stadium, buzzOn, reel }: { t: Tonight; stadium
       {oppId && t.oppTier && t.braboTier && (f.comp !== 'league' || t.oppTier !== t.braboTier) && <p className="tm-ln">{f.round ?? 'A cup tie'}: {name(oppId)} play in {t.oppTier === t.braboTier ? 'your division' : tierName(t.oppTier)}{t.oppTier < t.braboTier ? `, ${t.braboTier - t.oppTier === 1 ? 'one division' : `${t.braboTier - t.oppTier} divisions`} above you` : ''}.</p>}
       <Radar values={t.liveValues} flags={t.flags} opp={oppVals} oppInk={oppInk} oppName={oppId ? name(oppId) : undefined} fog={fog} inked pulse={pulse} size={300} label="Tonight’s shape so far" />
       {threat && oppId && <p className="tm-ln"><b style={{ color: oppInk }}>{name(oppId)}</b> {threat.kind === 'strong' ? 'are strong on' : 'lead you on'} <b style={{ color: AXIS_INK[threat.axis] }}>{threat.axis}</b>. {threat.answer}</p>}
-      {share !== undefined && oppId && (
+      {share !== undefined && oppId && nothingLoggedYet(t.flags) && (
+        <div className="tm-bar tm-bar-empty" role="img" aria-label="Matchup: nothing logged yet">
+          <b>Nothing logged yet</b>
+        </div>
+      )}
+      {share !== undefined && oppId && !nothingLoggedYet(t.flags) && (
         <div className="tm-bar" role="img" aria-label={`Matchup as it stands: you ${share}, ${name(oppId)} ${100 - share}`} style={{ '--t1': BRABO_INK, '--t2': oppInk } as React.CSSProperties}>
           <span className="tm-me" style={{ width: `${share}%` }}><b>You {share}</b></span>
           <span className="tm-op"><b>{100 - share} {short(oppId)}</b></span>

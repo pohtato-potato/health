@@ -79,8 +79,8 @@ export function SessionScreen() {
     }
     starting.current = true;
     void (async () => {
-      const sessionId = start === 'next' ? nextUp(settings, sessions, sets, days, false, place ?? 'home')?.sessionId ?? rotationOf(plan, place)[0] : start;
-      const swaps = pendingSwaps(plan, sessions, days).filter((s) => s.flag.swap?.session === sessionId);
+      const sessionId = start === 'next' ? nextUp(settings, sessions, sets, days, false, place ?? 'home', body ?? [])?.sessionId ?? rotationOf(plan, place)[0] : start;
+      const swaps = pendingSwaps(plan, sessions, days, body ?? []).filter((s) => s.flag.swap?.session === sessionId);
       const today = dayKey();
       let exs = buildSession(plan, sessionId, { short: short && !only, swaps }).filter((e) => !only || only.includes(e.id));
       const statusOf = (e: ExerciseDef) => exerciseStatus(e, settings.planState, settings.equipment, sets, plan.bigJump);

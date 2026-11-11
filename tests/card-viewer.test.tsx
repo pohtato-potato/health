@@ -1,4 +1,5 @@
 import './football/helpers/windowStub';
+import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { closeCard, GlassCard, openCard, SimpleBack, Viewable, type CardView } from '../src/ui/CardViewer';
@@ -46,5 +47,36 @@ describe('the card viewer', () => {
     expect(back).toContain(c.title);
     expect(back).toContain(set.title);
     expect(v.label).toContain(c.title);
+  });
+});
+
+describe('the card viewer and the page under it (whole-app pass bug 1)', () => {
+  it('opening takes one history entry; closing gives it back, so Back closes the card', async () => {
+    const { closeCard, dropCard, openCard, useOpenCard } = await import('../src/ui/CardViewer');
+    const calls: string[] = [];
+    const h = globalThis.history as unknown as { state: unknown; pushState: (s: unknown) => void; back: () => void };
+    const prev = { push: h.pushState, back: h.back, state: h.state };
+    h.pushState = (s) => { calls.push('push'); h.state = s; };
+    h.back = () => { calls.push('back'); h.state = null; };
+    try {
+      openCard(view);
+      openCard(view);
+      expect(calls).toEqual(['push']);
+      closeCard();
+      expect(calls).toEqual(['push', 'back']);
+      openCard(view);
+      dropCard();
+      expect(calls).toEqual(['push', 'back', 'push']);
+      expect(typeof useOpenCard).toBe('function');
+    } finally {
+      h.pushState = prev.push;
+      h.back = prev.back;
+      h.state = prev.state;
+    }
+  });
+  it('the host closes the card when the page changes', () => {
+    const src = readFileSync('src/ui/CardViewer.tsx', 'utf8');
+    expect(src).toMatch(/useRoute\(\)/);
+    expect(src).toMatch(/dropCard\(\)/);
   });
 });

@@ -58,7 +58,6 @@
 .yu-rows span { color: var(--q); } .yu-rows b { font-weight: 500; } .yu-rows em { grid-column: 1/-1; text-align: right; font-style: normal; color: var(--q); }
 .yu-surprise { font: inherit; font-weight: 500; min-height: 48px; border-radius: 999px; border: 0; color: #0e1020; background: linear-gradient(100deg, #ff7db8, #ffb36b 55%, #ffd98a); background-size: 200% 100%; animation: yu-sheen 6s ease-in-out infinite alternate; }
 @keyframes yu-sheen { to { background-position: 100% 0; } }
-.yu-goto { border: 1px solid var(--edge); border-radius: 999px; padding: 12px 16px; color: var(--q); font-size: 14px; background: var(--glass2); }
 .yu-seg { display: flex; gap: 6px; } .yu-seg button { flex: 1; font: inherit; font-size: 14px; color: var(--text); background: var(--glass2); border: 1px solid var(--edge); border-radius: 999px; min-height: 44px; padding: 4px 8px; }
 .yu-seg button[aria-pressed='true'] { background: var(--text); color: #0e1020; font-weight: 500; }
 .yu-meter i { display: block; height: 10px; border-radius: 5px; background: linear-gradient(to right, var(--c) var(--w), #ede6da22 var(--w)); margin-top: 5px; }
@@ -88,10 +87,6 @@
 
 .yu-due u, .yu-find u { pointer-events: none; }
 .yu-why { background: none; border: 0; padding: 10px 0 2px; min-height: 44px; font: inherit; font-size: 14px; color: inherit; text-decoration: underline; text-underline-offset: 3px; text-align: left; align-self: flex-start; }
-.yu-goto-in { width: 100%; box-sizing: border-box; min-height: 48px; font: inherit; font-size: 15px; color: var(--text); }
-.yu-goto-in::placeholder { color: var(--q); }
-.yu-goto-hits { display: flex; flex-direction: column; margin-top: 6px; }
-.yu-goto-hits button { min-height: 44px; font: inherit; font-size: 15px; color: var(--text); background: none; border: 0; border-top: 1px solid var(--edge); text-align: left; padding: 0 4px; }
 .yu-settings { min-width: 44px; min-height: 44px; }
 
 /* Earned */

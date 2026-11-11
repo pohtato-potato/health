@@ -43,9 +43,10 @@ describe('The pages Today opens and the sheets: small controls reach 44 px witho
     });
 });
 
-describe('Bordered small controls keep their look; only the tap area grows', () => {
-  for (const [sel, px] of [['.btn.sm', 40], ['.chip.sm', 36]] as const)
-    it(`${sel} still looks ${px} px tall`, () => {
+// Whole-app pass (10 Nov): small controls are now drawn at 44 px, not only tapped at 44.
+describe('Small controls are drawn at 44 px', () => {
+  for (const [sel, px] of [['.btn.sm', 44], ['.chip.sm', 44]] as const)
+    it(`${sel} looks ${px} px tall`, () => {
       expect(heightOf(sel)).toBe(px);
     });
 });

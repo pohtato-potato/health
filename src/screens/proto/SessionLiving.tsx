@@ -107,11 +107,6 @@ const THEMES = [
 ] as const;
 type ThemeId = (typeof THEMES)[number]['id'];
 
-const RESTS = [
-  { id: 'ring', name: 'Normal' },
-  { id: 'saver', name: 'Low battery' },
-] as const;
-type RestLook = (typeof RESTS)[number]['id'];
 
 const SCREENS = ['before', 'guide', 'set', 'check', 'rest', 'plates', 'record', 'finale'] as const;
 type Screen = (typeof SCREENS)[number];
@@ -296,7 +291,6 @@ type E = ReturnType<typeof useEngine>;
 export function SessionProto() {
   const { params } = useRoute();
   const [theme, setTheme] = useState<ThemeId>(((params.get('theme') as ThemeId) || 'dusk') as ThemeId);
-  const [restLook, setRestLook] = useState<RestLook>('ring');
   const e = useEngine();
   const t = THEMES.find((x) => x.id === theme)!;
   const fill = e.screen === 'set' ? Math.min(1, e.reps / e.ex.hi) : e.screen === 'rest' ? e.restLeft / REST : 0.25;
@@ -309,7 +303,7 @@ export function SessionProto() {
     ['--ring3' as string]: t.rings[2],
   } as CSSProperties;
   return (
-    <div className={`lc look-aurora th-${theme} st-${e.state} from-${e.lastState}${e.screen === 'rest' ? ` rest-${restLook}` : ''} tempo-${e.tempoPhase}`} style={style}>
+    <div className={`lc look-aurora th-${theme} st-${e.state} from-${e.lastState}${e.screen === 'rest' ? ' rest-ring' : ''} tempo-${e.tempoPhase}`} style={style}>
       <Field />
       <div className="lc-dev" aria-label="Prototype controls">
         <div className="lc-dev-row">
@@ -326,22 +320,13 @@ export function SessionProto() {
             </button>
           ))}
         </div>
-        {e.screen === 'rest' && (
-          <div className="lc-dev-row">
-            {RESTS.map((r) => (
-              <button key={r.id} type="button" className={restLook === r.id ? 'on' : ''} onClick={() => setRestLook(r.id)}>
-                Rest · {r.name}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
       <div className="lc-body">
         {e.screen === 'before' && <Before e={e} />}
         {e.screen === 'guide' && <Guide e={e} />}
         {e.screen === 'set' && <SetScreen e={e} theme={theme} />}
         {e.screen === 'check' && <Check e={e} />}
-        {e.screen === 'rest' && (restLook === 'saver' ? <RestSaver e={e} /> : <RestRing e={e} />)}
+        {e.screen === 'rest' && <RestRing e={e} />}
         {e.screen === 'plates' && <Plates e={e} />}
         {e.screen === 'record' && <Record e={e} />}
         {e.screen === 'finale' && <Finale />}
@@ -793,25 +778,6 @@ function RestRing({ e }: { e: E }) {
       <NextCard e={e} />
       <div className="lc-adapt">Rest is 1:30 here: your reps dropped from 18 to 15 across sets last time.</div>
       <NoteLink e={e} />
-      <RestFoot e={e} />
-    </section>
-  );
-}
-
-/** Low battery: true black, still bright enough to read, nothing moving. */
-function RestSaver({ e }: { e: E }) {
-  return (
-    <section className="lc-screen lc-saver">
-      <div className="lc-rest-time num tn" style={{ marginTop: 60 }}>
-        {mmss(e.restLeft)}
-      </div>
-      <div className="lc-saver-next">
-        Next: <b>{e.nextLabel}</b>
-        {e.ex.kg !== null && <> · {e.ex.kg} kg</>}
-      </div>
-      <div className="lc-small" style={{ textAlign: 'center' }}>
-        Battery saver · no motion · the screen stays on
-      </div>
       <RestFoot e={e} />
     </section>
   );

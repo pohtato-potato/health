@@ -1,3 +1,4 @@
+import { bestWindow, tally, weighted, type Tally } from './tallies';
 import { dayRange, type DayKey } from './dates';
 import { ringsFor, sleepMinutes, totalsFor } from './rings';
 import { weightTrend, type StepStreak, type TrainingWeeks, type TrendPoint } from './streaks';
@@ -76,6 +77,10 @@ export interface AchStats extends Omit<AchInput, 'counters' | 'unlocked' | 'sess
   cities: string[];
   states: number;
   streak: StepStreak;
+  /** Step goal days: last 28, season, record, total (O1). */
+  steps28: Tally;
+  /** Sessions done, the same way. */
+  train28: Tally;
   weeks: TrainingWeeks & { perWeek: number };
   trend: TrendPoint[];
   /** The first waist reading on or after setup, the baseline for waist goals. */
@@ -156,6 +161,8 @@ export function buildStats(i: AchInput): AchStats {
       .map((a) => a.name))],
     states: statesReached(km).length,
     streak: stepStreakOf(i.settings, i.days, i.today),
+    steps28: tally(daily.filter((d) => d.stepsOk).map((d) => d.date), i.today),
+    train28: weighted(done.map((s) => ({ date: s.date, n: 1 })), i.today),
     weeks: { ...trainingWeeksOf(i.settings, done.map((s) => s.date), perWeek, i.today), perWeek },
     trend,
     baselineWaist: baseline?.waistStanding,
@@ -168,6 +175,12 @@ export const count = (s: AchStats, id: string) => s.counters.get(id)?.n ?? 0;
 export const countDays = (s: AchStats, id: string) => s.counters.get(id)?.days?.length ?? 0;
 
 /** The longest run of consecutive calendar days that pass a test. */
+/** The most days in any 28 that pass the test: the record book's measure (O1, no runs). */
+export function best28(days: DayStat[], test: (d: DayStat) => boolean): number {
+  return bestWindow(days.filter(test).map((d) => ({ date: d.date, n: 1 }))).best;
+}
+
+/** Kept for old callers; achievements count records now, not runs. */
 export function longestRun(days: DayStat[], test: (d: DayStat) => boolean): number {
   let best = 0;
   let run = 0;

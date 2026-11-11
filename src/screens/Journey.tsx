@@ -1,9 +1,11 @@
-import { addDays, dayRange, daysBetween, weekStart, type DayKey } from '../domain/dates';
+import { addDays, dayRange, daysBetween, type DayKey } from '../domain/dates';
 import { fmtDayMonth, fmtInt } from '../domain/format';
 import { INDIA_OUTLINE, PLACE_COUNT, kmFromSteps, positionAt, statesReached } from '../domain/walk';
 import { useAllDays, useAllEntries, useSessions, useSettings, useToday } from '../db/hooks';
 import { go } from '../router';
-import { dayRings, stepStreakFor, targetsFor, weeksFor } from '../state/derived';
+import { dayRings, stepTallyFor, targetsFor, trainingTallyFor } from '../state/derived';
+import { tally, type Tally } from '../domain/tallies';
+import { useSeasonStart } from '../db/hooks';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { Icon } from '../ui/Icon';
@@ -157,9 +159,9 @@ function JourneyClock({ start, end, today }: { start: DayKey; end: DayKey; today
           ['noon', 0.5],
           ['6 pm', 0.75],
         ].map(([t, f]) => {
-          const p = pt(f as number, R - 20);
+          const p = pt(f as number, R - 24);
           return (
-            <text key={t as string} x={p.x} y={p.y + 3} textAnchor="middle" fill="var(--dim)" fontSize="8.5" fontFamily="var(--sans)">
+            <text key={t as string} x={p.x} y={p.y + 4} textAnchor="middle" fill="var(--dim)" fontSize="13" fontFamily="var(--sans)">
               {t}
             </text>
           );
@@ -169,7 +171,7 @@ function JourneyClock({ start, end, today }: { start: DayKey; end: DayKey; today
         <text x={C} y={C + 28} textAnchor="middle" fill="var(--text)" fontSize="15" fontFamily="var(--serif)">
           {c.label}
         </text>
-        <text x={C} y={C + 42} textAnchor="middle" fill="var(--quiet)" fontSize="8.5" fontFamily="var(--sans)">
+        <text x={C} y={C + 46} textAnchor="middle" fill="var(--quiet)" fontSize="13" fontFamily="var(--sans)">
           day {fmtInt(c.day)} of {fmtInt(c.total)}
         </text>
       </svg>
@@ -260,9 +262,7 @@ function Heatmap({ settings, start, end, today, days, entries }: { settings: Set
   for (let m = `${start.slice(0, 7)}-01`; m <= to; m = nextMonth(m)) months.push(m);
   const cell = 7;
   const step = 9;
-  const left = 26;
-  const W = left + 31 * step;
-  const H = months.length * step;
+  const W = 31 * step;
   const colour = (d: DayKey) => {
     if (d < start || d > to) return undefined;
     if (d > today) return { fill: 'transparent', stroke: 'var(--hairline)' };
@@ -279,20 +279,23 @@ function Heatmap({ settings, start, end, today, days, entries }: { settings: Set
       <div className="lbl">
         Every day, {MONTHS[Number(start.slice(5, 7)) - 1]} to {MONTHS[Number(to.slice(5, 7)) - 1]}
       </div>
-      <svg width="100%" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="A cell for every day, coloured by rings closed">
-        {months.map((m, i) => (
-          <g key={m} transform={`translate(0 ${i * step})`}>
-            <text x="0" y={cell} fill="var(--dim)" fontSize="7.5" fontFamily="var(--sans)">
+      <div role="img" aria-label="A cell for every day, coloured by rings closed" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {months.map((m) => (
+          <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {/* The month in HTML at 14 px; the cells stay a drawing. */}
+            <span className="q" aria-hidden="true" style={{ fontSize: 14, width: 34, flexShrink: 0, lineHeight: 1 }}>
               {MONTHS[Number(m.slice(5, 7)) - 1]}
-            </text>
-            {dayRange(m, addDays(nextMonth(m), -1)).map((d, k) => {
-              const c = colour(d);
-              if (!c) return null;
-              return <rect key={d} x={left + k * step + 0.5} y="0.5" width={cell - 1} height={cell - 1} rx="1.5" fill={c.fill} stroke={c.stroke ?? 'none'} strokeWidth="0.8" opacity={c.opacity ?? 1} />;
-            })}
-          </g>
+            </span>
+            <svg width="100%" viewBox={`0 0 ${W} ${step}`} aria-hidden="true" style={{ display: 'block' }}>
+              {dayRange(m, addDays(nextMonth(m), -1)).map((d, k) => {
+                const c = colour(d);
+                if (!c) return null;
+                return <rect key={d} x={k * step + 0.5} y="0.5" width={cell - 1} height={cell - 1} rx="1.5" fill={c.fill} stroke={c.stroke ?? 'none'} strokeWidth="0.8" opacity={c.opacity ?? 1} />;
+              })}
+            </svg>
+          </div>
         ))}
-      </svg>
+      </div>
       <div className="row t11 q" style={{ flexWrap: 'wrap', gap: '6px 14px', justifyContent: 'flex-start' }}>
         {[
           ['var(--gold)', 1, 'Perfect day'],
@@ -319,34 +322,37 @@ function nextMonth(m: DayKey): DayKey {
   return mo === 12 ? `${y + 1}-01-01` : `${y}-${String(mo + 1).padStart(2, '0')}-01`;
 }
 
+/** Tallies, not streaks (O1): the last 28 days, the season so far, and the record book. A missed day takes nothing away. */
 function Streaks({ settings, today, days, entries, sessions }: { settings: Settings; today: DayKey; days: Day[]; entries: FoodEntry[]; sessions: TrainingSession[] }) {
-  const streak = stepStreakFor(settings, days, today);
-  const weeks = weeksFor(settings, sessions, today, days);
+  const seasonStart = useSeasonStart() ?? undefined;
+  const steps = stepTallyFor(settings, days, today, seasonStart);
+  const train = trainingTallyFor(sessions, today, seasonStart);
   const t = targetsFor(settings, today);
   const byEntries = new Map<DayKey, FoodEntry[]>();
   for (const e of entries) byEntries.set(e.date, [...(byEntries.get(e.date) ?? []), e]);
   const perfectDays = [...new Set([...days.map((d) => d.date), ...byEntries.keys()])].filter((d) => d <= today && dayRings(settings, d, days.find((x) => x.date === d), byEntries.get(d) ?? []).rings.perfect);
-  const thisWeek = perfectDays.filter((d) => d >= weekStart(today)).length;
-  const row = (title: string, sub: string, value: number, unit: string) => (
+  const perfect = tally(perfectDays, today, seasonStart);
+  const season = seasonStart ? 'this season' : 'so far';
+  const row = (title: string, x: Tally, unit: string) => (
     <div className="row" style={{ padding: '10px 0', borderTop: '1px solid var(--divider)' }}>
       <span className="col gap2">
         <span className="t15">{title}</span>
-        <span className="t12 q">{sub}</span>
+        <span className="t14 q">{x.season} {season} · record {x.best28} in 28 days</span>
       </span>
       <span className="num" style={{ fontSize: 26 }}>
-        {value}
-        <span className="t12 q"> {unit}</span>
+        {x.last28}
+        <span className="t14 q"> {unit}</span>
       </span>
     </div>
   );
   return (
     <div className="card" style={{ gap: 0 }}>
       <div className="lbl" style={{ paddingBottom: 6 }}>
-        Streaks
+        Last 28 days
       </div>
-      {row(`Steps at ${fmtInt(t.steps / 1000)}k+`, `${streak.shields} shield${streak.shields === 1 ? '' : 's'} banked · best ${streak.best}`, streak.current, 'days')}
-      {row(`Training weeks at ${weeks.perWeek}+`, "Extra sessions don't count double", weeks.streak, 'weeks')}
-      {row('Perfect days', `${thisWeek} this week`, perfectDays.length, 'so far')}
+      {row(`Steps at ${fmtInt(t.steps / 1000)}k+`, steps, 'days')}
+      {row('Sessions', train, 'done')}
+      {row('Perfect days', perfect, 'days')}
     </div>
   );
 }

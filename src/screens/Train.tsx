@@ -58,7 +58,7 @@ export function Train() {
   // Home or gym, picked on the card; the last pick is remembered so the card opens on it.
   const setPlacePick = (pl: Place) => void patchSettings({ lastPlace: pl });
   const place: Place = gym ? settings.lastPlace ?? 'home' : 'home';
-  const up = nextUp(settings, sessions, sets, days, false, place);
+  const up = nextUp(settings, sessions, sets, days, false, place, body ?? []);
   const weeks = weeksFor(settings, sessions, today, days);
   const done = doneSessions(sessions);
   const trainedToday = done.filter((s) => s.date === today);
@@ -242,6 +242,16 @@ export function Train() {
           .sort((a, b) => TIERS.indexOf(b.card.tier) - TIERS.indexOf(a.card.tier) || a.ex.name.localeCompare(b.ex.name))
           .map(({ ex, card, back }) => ({ key: ex.id, name: ex.name, pose: POSES[poseFor(ex)], tier: card.tier, next: card.next, seed: ex.id, back }))}
       />
+
+      <div className="lv-card">
+        <div className="lv-tr-cardhead">
+          <span className="lv-card-h">Bounties</span>
+          <button type="button" className="lv-link" onClick={() => go('/football/bounties')}>
+            This week ›
+          </button>
+        </div>
+        <div className="lv-small">Training jobs sit in Football's one bounty list, with the rest. Every week has at least one.</div>
+      </div>
 
       <MonthCard month={monthName} next={`1 ${nextMonth}`} m={month} film={filmDue(sessions, today)} onFilm={() => go('/film')} />
 

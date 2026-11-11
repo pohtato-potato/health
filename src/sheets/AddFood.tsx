@@ -360,12 +360,15 @@ export function AddFood() {
         )}
       </div>
 
-      <div className="row" style={{ justifyContent: 'center', gap: 28 }}>
+      <div className="row wrap" style={{ justifyContent: 'center', gap: '4px 24px' }}>
         <button type="button" className="link" onClick={() => replaceSheet('food-new', { ...(query ? { name: query } : {}), meal, d: date })}>
           Create a food
         </button>
         <button type="button" className="link" onClick={() => replaceSheet('quick', { meal, d: date })}>
           Quick kcal
+        </button>
+        <button type="button" className="link" onClick={() => replaceSheet('label', { meal, d: date })}>
+          From a label
         </button>
       </div>
     </Sheet>

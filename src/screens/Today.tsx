@@ -11,6 +11,8 @@ import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { StatusChip } from './today/StatusChip';
+import { weighInToCome } from '../domain/morningLog';
+import { OfficeUsual } from './today/OfficeUsual';
 import { DueCard, dueToday } from './today/DueCard';
 import { bodyTileWords } from '../domain/bodyLog';
 import { prefOn } from '../domain/types';
@@ -135,7 +137,7 @@ export function Today() {
   }
 
   const { totals, rings, targets } = dayRings(settings, today, day, entries);
-  const up = nextUp(settings, sessions, sets, days);
+  const up = nextUp(settings, sessions, sets, days, false, 'home', body ?? []);
   const weeks = weeksFor(settings, sessions, today, days);
   const trainedToday = doneSessions(sessions).filter((s) => s.date === today);
   const flag = recentFlag(settings.plan, sessions, days, today);
@@ -240,9 +242,9 @@ export function Today() {
         </>
       }
       walk={<WalkTop caption={caption} scene={scene} stamp={stamp} onOpen={() => go('/walk')} />}
-      status={<StatusChip today={today} days={days} />}
+      status={<><StatusChip today={today} days={days} />{weighInToCome(day) && <button type="button" className="td-chip td-weighin" onClick={() => openSheet('morning')}>Weigh-in to come</button>}</>}
       due={<DueCard due={dueToday({ today, settings, checkins: checkins.map((c) => c.date), measurements })} />}
-      banner={<Banners />}
+      banner={<><OfficeUsual /><Banners /></>}
       line={<TodayLine text={playing?.kind === 'ring' ? `${RING_WORD[playing.ring]} closed` : lineText} kind={playing?.kind === 'ring' ? 'voice' : lineKind} gold={moment === 'perfect'} clock={fmtTime(nowMs)} why={themeDay ? { name: themeDay.name, text: themeDay.why } : undefined} />}
       season={<SeasonStrip settings={settings} today={today} />}
       rings={

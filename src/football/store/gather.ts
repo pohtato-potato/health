@@ -1,3 +1,4 @@
+import { dayRange, type Range } from '../../domain/nightOut';
 // Reads Health's tables once for a date. Football reads values only, never log times.
 import { bedOrder, NIGHT_FROM, sleepMinutes } from '../../domain/rings';
 import { db } from '../../db/db';
@@ -16,6 +17,8 @@ export interface Health {
   days: Map<DayKey, Day>;
   sessions: TrainingSession[];
   kcal: Map<DayKey, { kcal: number; protein: number; n: number }>;
+  /** Days with food logged as ranges (a night out, l-away): the day's totals as a range. */
+  ranges?: Map<DayKey, Range & { ranged: boolean }>;
   measures: { date: DayKey; waist?: number }[];
   /** Every set logged and not skipped (engine 2 players read them). */
   sets: SetEntry[];
@@ -43,8 +46,11 @@ export async function loadHealth(): Promise<Health> {
     m[e.meal] = { kcal: x.kcal + e.kcal, protein: x.protein + e.protein };
     meals.set(e.date, m);
   }
+  const ranges = new Map<DayKey, Range & { ranged: boolean }>();
+  for (const date of new Set(entries.filter((e) => e.range).map((e) => e.date))) ranges.set(date, dayRange(entries.filter((e) => e.date === date)));
   const done = new Set(sessions.filter((s) => s.status === 'done').map((s) => s.id));
   return {
+    ranges,
     settings: (settings ?? { targets: [], checklist: [] }) as Settings,
     days: new Map(days.map((d) => [d.date, d])),
     sessions: sessions.filter((s) => s.status === 'done'),

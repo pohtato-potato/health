@@ -2,7 +2,7 @@
 .bc { display: flex; flex-direction: column; gap: 12px; font-family: 'Atkinson Hyperlegible Next', var(--sans); }
 .bc-figs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .bc-fig { width: 100%; height: auto; max-height: 300px; overflow: visible; }
-.bc-fig text { fill: var(--quiet); font-size: 12px; font-weight: 700; text-anchor: middle; }
+.bc-fig text { fill: var(--quiet); font-size: 15px; font-weight: 700; text-anchor: middle; }
 .bc-sil { fill: color-mix(in srgb, var(--text) 8%, transparent); stroke: color-mix(in srgb, var(--text) 40%, transparent); stroke-width: 1; }
 .bc-rg { fill: color-mix(in srgb, var(--text) 10%, transparent); stroke: color-mix(in srgb, var(--text) 35%, transparent); stroke-width: 0.8; cursor: pointer; }
 .bc-rg.jt { stroke-dasharray: 2 1.5; }

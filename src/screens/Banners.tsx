@@ -1,8 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { BANNER_PRIORITY, doseBannerId, holdBanner, morningLogBanner, notDismissed, pickBanner, type BannerCandidate } from '../domain/banners';
-import { occasionDue, occasionOn } from '../domain/occasions';
-import { fmtInt } from '../domain/format';
-import { maintenanceFor } from '../sheets/Occasion';
 import { TodayBanner, type BannerAction } from './today/TodayBanner';
 import { saveBackup } from '../db/backup';
 import { useAllDays, useAllEntries, useSettings } from '../db/hooks';
@@ -84,7 +81,7 @@ export function Banners() {
 
   const morning = morningLogBanner(!!todayDay?.morning, logMinutes(Date.now()));
   if (morning)
-    candidates.push({ id: 'morning-log', priority: morning.priority, anytime: true, icon: <Icon name="sun" size={20} color="var(--apricot)" />, title: morning.text, sub: 'Weight and sleep, then the night’s visitors', actions: [{ label: 'Log', run: () => openSheet('morning') }] });
+    candidates.push({ id: 'morning-log', priority: morning.priority, anytime: true, icon: <Icon name="sun" size={20} color="var(--apricot)" />, title: morning.text, sub: 'Sleep and the checklist now; the weigh-in can follow', actions: [{ label: 'Log', run: () => openSheet('morning') }] });
 
   if (nudge)
     candidates.push({ id: 'backup', priority: BANNER_PRIORITY.backup, icon: <Icon name="save" size={20} color="var(--quiet)" />, title: last ? `No backup for ${daysSince} days.` : 'No backup yet.', sub: 'One tap keeps your data safe.', actions: [{ label: 'Back up', run: backup, disabled: busy }] });
@@ -122,13 +119,6 @@ export function Banners() {
     candidates.push({ id: 'recap', priority: BANNER_PRIORITY.recap, icon: <Icon name="calendar" size={20} color="var(--pearl)" />, title: `Your week, ${fmtDayMonth(lastWeek)}–${fmtDayMonth(addDays(lastWeek, 6))}, is ready.`, sub: 'The road, who came by, and what is next.', actions: [{ label: 'Open', run: () => go('/reports/week') }] });
   if (settings.reviewDay !== undefined && weekdayNow === settings.reviewDay)
     candidates.push({ id: 'review-day', priority: BANNER_PRIORITY.review, icon: <Icon name="save" size={20} color="var(--protein)" />, title: 'Review day.', sub: 'Export the audit pack and ask Claude what to change.', actions: [{ label: 'Open', run: () => go('/settings', { at: 'data' }) }] });
-
-  const current = occasionOn(settings, today);
-  const fest = occasionDue(settings, today);
-  if (current)
-    candidates.push({ id: 'occasion-on', priority: BANNER_PRIORITY.occasion, anytime: true, icon: <Icon name="calendar" size={20} color="var(--pearl)" />, title: `${current.name} mode`, sub: `Calories up to ${fmtInt(maintenanceFor(settings, today))}. Streaks paused through ${fmtDayMonth(current.to)}.`, actions: [{ label: 'Change', run: () => openSheet('occasion') }] });
-  else if (fest)
-    candidates.push({ id: 'occasion', priority: BANNER_PRIORITY.occasion, icon: <Icon name="calendar" size={20} color="var(--pearl)" />, title: fest.inDays <= 0 ? `${fest.name} is here` : `${fest.name} in ${fest.inDays} day${fest.inDays === 1 ? '' : 's'}`, sub: 'Occasion mode holds the rings steady for it.', actions: [{ label: 'Set up', run: () => openSheet('occasion', { kind: 'festival', name: fest.name, from: fest.from > today ? fest.from : today, to: fest.to }) }] });
 
   if (news?.banner)
     candidates.push({ id: 'walk-news', priority: BANNER_PRIORITY.walkNews, anytime: true, icon: null, title: news.banner.title, actions: [], node: <NewsBannerView banner={news.banner} kmById={news.kmById} onOpen={news.open} onDismiss={news.dismiss} /> });

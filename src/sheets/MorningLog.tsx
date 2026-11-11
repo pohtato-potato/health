@@ -4,7 +4,8 @@ import { fmtDayLong, fmtDuration, fmtInt, fmtTime } from '../domain/format';
 import { homePlace } from '../domain/places';
 import { NIGHT_FROM, sleepMinutes, sleepWheelItems } from '../domain/rings';
 import type { Day, MuscleId, Settings } from '../domain/types';
-import { saveMorningLog } from '../db/actions';
+import { saveMorningLog, setTick } from '../db/actions';
+import { isMorningSlot } from '../domain/morningLog';
 import { useAllDays, useAllSets, useBody, useSessions, useSettings } from '../db/hooks';
 import { bodyTileWords } from '../domain/bodyLog';
 import { weightTrend } from '../domain/streaks';
@@ -16,7 +17,7 @@ import { Dial } from '../ui/Dial';
 import { Wheel } from '../ui/Wheel';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
-import { morningQuestions, swapSentence } from '../state/derived';
+import { checklistSlots, morningQuestions, swapSentence } from '../state/derived';
 import { placeOptions } from '../domain/places';
 import { ensurePlace } from '../db/actions';
 import { PlaceIcon } from '../ui/PlaceIcon';
@@ -56,6 +57,9 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
   const sore: Partial<Record<MuscleId, 1 | 2 | 3>> = day?.soreness ?? {};
   const [answers, setAnswers] = useState<Record<string, boolean>>(() => Object.fromEntries(questions.map((q) => [q.id, day?.answers?.[q.id] ?? false])));
   const [saving, setSaving] = useState(false);
+  // The morning round of the checklist saves with the log (y-morning).
+  const morningSlots = checklistSlots(settings, today).filter((s) => isMorningSlot(s.slot));
+  const [ticks, setTicks] = useState<Record<string, boolean>>(() => Object.fromEntries(morningSlots.map((s) => [s.key, day?.ticks?.[s.key] !== undefined])));
   // Readiness's energy, stomach and soreness are retired from the form (R3 x-ready); answers already stored are kept.
   const [more, setMore] = useState(false);
   const body = useBody();
@@ -93,13 +97,14 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
       },
       yesterdayKey,
     );
+    for (const s of morningSlots) if ((day?.ticks?.[s.key] !== undefined) !== !!ticks[s.key]) await setTick(today, s.key, !!ticks[s.key]);
     closeSheet();
     const flagged = questions.filter((q) => answers[q.id]);
     if (flagged.length) {
       const f = flagged[0];
       toast({ kicker: `${f.group} flagged`, text: swapSentence(settings.plan, f.swap) ?? 'Noted.', sub: f.advice, ms: 7000 });
     } else {
-      toast({ text: day?.morning ? 'Morning log updated' : 'Morning log saved', action: { label: 'Undo', run: () => void undoEdit(editId) } });
+      toast({ text: day?.morning ? 'Morning log updated' : 'Morning log saved', sub: weight === undefined ? 'The weigh-in can follow: tap “Weigh-in to come” on Today.' : undefined, action: { label: 'Undo', run: () => void undoEdit(editId) } });
     }
   };
 
@@ -230,8 +235,21 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
         </div>
       ))}
 
+      {morningSlots.length > 0 && (
+        <div className="col gap8">
+          <div className="lbl">Morning checklist</div>
+          <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
+            {morningSlots.map((s) => (
+              <button key={s.key} type="button" role="switch" aria-checked={!!ticks[s.key]} className={`chip sm${ticks[s.key] ? ' on' : ''}`} onClick={() => setTicks({ ...ticks, [s.key]: !ticks[s.key] })}>
+                {s.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <button type="button" className="btn lg block" onClick={save} disabled={saving}>
-        Save
+        {weight === undefined && !day?.weightKg ? 'Save, weigh-in to come' : 'Save'}
       </button>
     </Sheet>
   );

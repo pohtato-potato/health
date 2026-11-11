@@ -8,7 +8,9 @@ import { grepSrc } from './helpers/grepSrc';
 describe('creatures retired', () => {
   it('the Dex and the art board have no route and no screen', () => {
     const app = readFileSync('src/App.tsx', 'utf8');
-    expect(app).not.toMatch(/'\/dex'|proto\/creatures|DexPage|CreatureBoard/);
+    expect(app).not.toMatch(/proto\/creatures|DexPage|CreatureBoard/);
+    // Old links land on the album, never a blank page (whole-app pass, 10 Nov).
+    expect(app).toContain(`'/dex': { el: () => <Moved to="/football/album" /> }`);
     expect(existsSync('src/screens/Dex.tsx')).toBe(false);
     expect(existsSync('src/ui/creatures')).toBe(false);
     expect(grepSrc(/go\('\/dex'|#\/dex/)).toEqual([]);

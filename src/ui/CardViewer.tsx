@@ -4,6 +4,7 @@
 // down or the close button to leave. The face keeps no text; the words live on the back.
 import { useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent as RKeyboardEvent, type PointerEvent as RPointerEvent, type ReactNode, type CSSProperties } from 'react';
 import '../styles/card-viewer.css';
+import { useRoute } from '../router';
 
 export interface CardView {
   /** The card face, drawn at full size: no text on it. */
@@ -17,8 +18,31 @@ export interface CardView {
 let current: CardView | null = null;
 const subs = new Set<() => void>();
 const emit = () => subs.forEach((f) => f());
-export function openCard(v: CardView) { current = v; emit(); }
-export function closeCard() { current = null; emit(); }
+// The open card owns one history entry, so the phone's Back closes it; changing page closes it too.
+const hist = () => (typeof window !== 'undefined' && typeof history !== 'undefined' ? history : undefined);
+const isCardState = (st: unknown) => !!(st && typeof st === 'object' && (st as { card?: boolean }).card);
+export function openCard(v: CardView) {
+  const h = hist();
+  if (!current && h && !isCardState(h.state)) h.pushState({ inApp: true, card: true }, '');
+  current = v;
+  emit();
+}
+export function closeCard() {
+  if (!current) return;
+  current = null;
+  emit();
+  const h = hist();
+  if (h && isCardState(h.state)) h.back();
+}
+/** Drops the open card without touching history: the page under it has already changed. */
+export function dropCard() {
+  if (!current) return;
+  current = null;
+  emit();
+}
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('popstate', () => { if (current && !isCardState(hist()?.state)) dropCard(); });
+}
 const subscribe = (f: () => void) => { subs.add(f); return () => subs.delete(f); };
 export const useOpenCard = () => useSyncExternalStore(subscribe, () => current, () => null);
 
@@ -40,6 +64,13 @@ interface IOSOrientation { requestPermission?: () => Promise<'granted' | 'denied
 /** The viewer itself, mounted once at the app's root. */
 export function CardViewerHost() {
   const v = useOpenCard();
+  const { path } = useRoute();
+  const shown = useRef(path);
+  useEffect(() => {
+    if (shown.current === path) return;
+    shown.current = path;
+    dropCard();
+  }, [path]);
   if (!v) return null;
   return <Viewer v={v} />;
 }

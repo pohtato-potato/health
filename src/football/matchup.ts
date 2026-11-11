@@ -65,6 +65,16 @@ export function threatLine(name: string, opp: AxisValues, mine?: Partial<AxisVal
  * The live matchup bar: your share of tonight as it stands, from the same parity rating the engine sizes a match
  * with. 50 is an even match. A presentation of the engine's numbers, never a forecast of the score.
  */
+/**
+ * Before the day's first log (whole-app pass, 10 Nov): the axes that only today's logs fill are all still in fog.
+ * Power and Shape carry over from the week, so they never count as a log today. The bar then says
+ * "nothing logged yet" in place of a 4-to-96 that makes the morning look lost.
+ */
+export const DAILY_AXES: Axis[] = ['Pace', 'Fuel', 'Rest', 'Routine'];
+export function nothingLoggedYet(flags: Partial<Record<Axis, string>>): boolean {
+  return DAILY_AXES.every((a) => !!flags[a]);
+}
+
 export function matchupShare(mine: AxisValues, opp: Pick<Opponent, 'rating'>): number {
   const gap = parityRating(mine) - opp.rating;
   return clamp(Math.round(100 / (1 + Math.exp(-gap / 9))), 3, 97);

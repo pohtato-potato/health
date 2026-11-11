@@ -38,9 +38,22 @@ export const BODY_KINDS: { id: BodyKind; label: string; ink: string }[] = [
   { id: 'pain', label: 'Pain', ink: '#ff8fa8' },
 ];
 
+/**
+ * Whole-body entries the chart cannot show (y-body, 11 Nov). One tap each. They go to the coach export and the
+ * body log's history, never to the match or the lighter-week pain count.
+ */
+export const WHOLE_BODY: { part: string; label: string }[] = [
+  { part: 'Headache', label: 'Headache' },
+  { part: 'Constipation', label: 'Constipation' },
+  { part: 'Stomach', label: 'Stomach' },
+  { part: 'Poor night', label: 'A poor night' },
+];
+export const FELT = { id: 'felt' as const, label: 'Felt', ink: '#c9b6ff' };
+export const isWholeBody = (part: string) => WHOLE_BODY.some((w) => w.part === part);
+
 export const regionFor = (part: string) => BODY_REGIONS.find((r) => r.part === part);
-export const labelFor = (part: string) => regionFor(part)?.label ?? part;
-export const kindOf = (k: BodyKind) => BODY_KINDS.find((x) => x.id === k)!;
+export const labelFor = (part: string) => regionFor(part)?.label ?? WHOLE_BODY.find((w) => w.part === part)?.label ?? part;
+export const kindOf = (k: BodyKind) => (k === 'felt' ? FELT : BODY_KINDS.find((x) => x.id === k)!);
 
 /** Today's marks, one per part (the latest wins), for the chart and the chips. */
 export function marksOn(entries: Pick<BodyEntry, 'date' | 'part' | 'kind' | 'at' | 'side' | 'id'>[], date: DayKey) {
@@ -53,6 +66,6 @@ export function marksOn(entries: Pick<BodyEntry, 'date' | 'part' | 'kind' | 'at'
 export function bodyTileWords(entries: Pick<BodyEntry, 'date' | 'part' | 'kind' | 'at' | 'side' | 'id'>[], date: DayKey): string {
   const m = [...marksOn(entries, date).values()];
   if (!m.length) return 'All good. Tap where it hurts.';
-  if (m.length === 1) return `${labelFor(m[0].part)}: ${kindOf(m[0].kind).label.toLowerCase()}`;
+  if (m.length === 1) return m[0].kind === 'felt' ? labelFor(m[0].part) : `${labelFor(m[0].part)}: ${kindOf(m[0].kind).label.toLowerCase()}`;
   return `${m.length} places marked: ${m.slice(0, 2).map((x) => labelFor(x.part)).join(', ')}${m.length > 2 ? '…' : ''}`;
 }

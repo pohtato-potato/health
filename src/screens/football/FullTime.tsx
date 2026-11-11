@@ -36,6 +36,7 @@ export function FullTimeView({ m, save, studio, press, tier = 6, onWatch }: { m:
         <p className="fb-s fb-ctr">{scoreLine(m)}</p>
         <span className={`fb-tag ${m.result === 'W' ? 'or' : 'pu'} fb-ctrself`}>{RESULT[m.result]}</span>
         <p className="fb-s fb-ctr">xG {xg[0].toFixed(1)} – {xg[1].toFixed(1)}</p>
+        {rangedFuel(m) && <p className="fb-s fb-ctr">Fuel played on wider dice tonight: the night out was logged as a range, so each chance rolled it a little either side of the middle.</p>}
         {onWatch && <div className="fb-btns"><button type="button" className="fb-btn pri" onClick={onWatch}>{m.watched ? 'Watch again' : 'Watch the match'}</button></div>}
       </article>
       {(m.credits?.length ?? 0) > 0 && (
@@ -70,3 +71,6 @@ export function FullTime({ m, save, onWatch }: { m: StoredMatch; save: FbSave; o
   }), [m.id]);
   return <FullTimeView m={m} save={save} studio={got?.news[0]} press={got?.news[1]} tier={got?.tier} onWatch={onWatch} />;
 }
+
+/** The night out was logged light/medium/heavy, so Fuel rolled within its range on each chance (l-away). */
+export const rangedFuel = (m: Pick<StoredMatch, 'events'>) => m.events.chances.some((c) => c.mods.some((x) => x.kind === 'range'));

@@ -1,3 +1,6 @@
+import type { Targets } from '../../domain/types';
+import { fuelSpread } from '../../domain/nightOut';
+import { fuelScore } from '../axes';
 // The only writer of Football's tables. Kick-off reads Health once, plays, and stores the events.
 import { bedOrder, fromBedOrder } from '../../domain/rings';
 import { db } from '../../db/db';
@@ -411,6 +414,7 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
     seed, values, opp, home: braboHome, neutral,
     typical: typicalFor([...nights.values()]),
     fog: AXES.filter((a) => flags[a] === 'not-logged'),
+    fuelSpread: rotation || flags.Fuel ? 0 : nightOutSpread(w.h, date, night.input.targets),
     captain: slots.has('armband') ? w.save.captain : undefined,
     stack: slots.has('stack') ? w.save.earned.filter((e) => e.date > addDays(date, -7)).length : 0,
     // Engine 2: a player's traits play while it starts (an Awakening's trait became its player's first limit break).
@@ -743,4 +747,10 @@ function clubWorldDay(w: World, date: DayKey, plan: DayPlan, auto: boolean) {
     if (b.winner) w.news.push({ id: `${date}:cwc:winner`, date, kind: b.winner === OWN ? 'club' : 'world', clubId: b.winner, text: b.winner === OWN ? 'Brabo United are champions of the world.' : `${clubById(b.winner).name} win the Club World Cup.` });
   }
   w.season.clubworld = b;
+}
+
+/** A night out logged as ranges plays Fuel on slightly wider dice (l-away); 0 on an exact day. */
+export function nightOutSpread(h: Pick<Health, 'ranges'>, date: DayKey, targets: Targets): number {
+  const r = h.ranges?.get(date);
+  return r ? fuelSpread(r, targets, fuelScore) : 0;
 }

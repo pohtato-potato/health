@@ -7,7 +7,7 @@
 // Taps (research, boons, bounties, packs, moments seen) write save.treeUser only, in store/treeActions.ts.
 import { treeRotation } from '../tree/rotation';
 import { addDays, weekStart, type DayKey } from '../../domain/dates';
-import { BOARD, BOARD_RESEARCH, TRACK_KIT_PIECES, TRACK_THEMES } from '../content/season';
+import { BOARD, BOUNTIES, BOARD_RESEARCH, TRACK_KIT_PIECES, TRACK_THEMES } from '../content/season';
 import { BOOSTS } from '../content/packs';
 import { ERAS } from '../content/tree';
 import type { Reward } from '../content/types';
@@ -19,7 +19,7 @@ import type { BraboAbility, Tier } from '../types';
 import { addMetrics, dayMetrics } from '../tree/metrics';
 import { projectDay, projectOpen, TREE_PROJECTS } from '../tree/projects';
 import { activeEffects, erasOpen, eurekasDue, lessonFor, LOGGED_DAY, settle, techById, type Active } from '../tree/research';
-import { boardFor, boonsThisSeason, bountiesPicked, bountyOffer, bountyProgress, objectiveMet, strengthOf, trackDue, type SeasonFacts } from '../tree/season';
+import { boardFor, boonsThisSeason, bountiesPicked, bountyProgress, objectiveMet, strengthOf, trackDue, type SeasonFacts } from '../tree/season';
 import { boostsWaiting } from '../tree/packs';
 import { doctorLevel, healDays, payWages, treeIncome } from '../tree/staff';
 import { emptyEngine, emptyUser, type PackSource, type ResearchWhy, type TreeEngine, type TreeUser } from '../tree/types';
@@ -104,7 +104,7 @@ export function treeDay(c: TreeCtx, date: DayKey, youthDays: number) {
   const week = weekStart(date);
   for (const id of bountiesPicked(user, week)) {
     const key = `${week}:${id}`;
-    const b = bountyOffer(week).find((x) => x.id === id);
+    const b = BOUNTIES.find((x) => x.id === id); // picks were checked against the offer when made
     if (!b || eng.bountiesDone.includes(key)) continue;
     if (bountyProgress(eng, b, week, date) >= b.target.count) {
       eng.bountiesDone = [...eng.bountiesDone, key];

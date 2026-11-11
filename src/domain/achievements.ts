@@ -1,4 +1,4 @@
-import { byMonth, count, countDays, isPalindrome, longestRun, setScore, type AchStats, type DayStat } from './achStats';
+import { best28, byMonth, count, countDays, isPalindrome, setScore, type AchStats, type DayStat } from './achStats';
 import { addDays, daysBetween, weekStart, weekday, type DayKey } from './dates';
 import { FESTIVALS } from './festivals';
 import { fmtInt } from './format';
@@ -22,7 +22,7 @@ export const CATEGORIES: { id: Category; name: string; icon: 'sun' | 'steps' | '
   { id: 'water', name: 'Water', icon: 'water' },
   { id: 'sleep', name: 'Sleep', icon: 'sleep' },
   { id: 'body', name: 'Body', icon: 'tape' },
-  { id: 'streaks', name: 'Streaks', icon: 'shield' },
+  { id: 'streaks', name: 'Totals and records', icon: 'shield' },
   { id: 'nights', name: 'Nights out', icon: 'night' },
   { id: 'joints', name: 'Joints', icon: 'check' },
   { id: 'data', name: 'Data', icon: 'save' },
@@ -383,20 +383,20 @@ a('food', 'Chana jor garam', 'Log chana 30 times.', 's', (s) => matching(s, /cha
 a('food', 'Ghar ka khana', (s) => `Log 20 meals at ${home2(s)?.name ?? 'your other home'}.`, 's', (s) => home2Meals(s) >= 20, { progress: (s) => [home2Meals(s), 20] });
 a('food', 'Mere paas maa hai', (s) => `Spend 30 days at ${home2(s)?.name ?? 'your other home'}.`, 's', (s) => home2Days(s) >= 30, { progress: (s) => [home2Days(s), 30] });
 a('food', 'Shake-speare', 'Log 100 protein shakes of any kind.', 'g', (s) => matching(s, /shake|whey/i) >= 100, { progress: (s) => [matching(s, /shake|whey/i), 100] });
-a('food', 'The gains train', 'Close your protein ring 14 days in a row.', 'g', (s) => longestRun(s.daily, (d) => d.proteinOk) >= 14, {
-  progress: (s) => [longestRun(s.daily, (d) => d.proteinOk), 14],
+a('food', 'The gains train', 'Close your protein ring on 20 days of any 28.', 'g', (s) => best28(s.daily, (d) => d.proteinOk) >= 20, {
+  progress: (s) => [best28(s.daily, (d) => d.proteinOk), 20],
 });
 a('food', 'Goldilocks', 'Land inside your calorie range on 20 days in a month.', 'g', (s) => [...byMonth(s.daily).values()].some((ds) => ds.filter((d) => d.kcalIn).length >= 20));
-a('food', 'Balanced, as all things should be', 'Close calories and protein together 7 days in a row.', 'g', (s) => longestRun(s.daily, (d) => d.kcalIn && d.proteinOk) >= 7, {
-  progress: (s) => [longestRun(s.daily, (d) => d.kcalIn && d.proteinOk), 7],
+a('food', 'Balanced, as all things should be', 'Close calories and protein together on 10 days of any 28.', 'g', (s) => best28(s.daily, (d) => d.kcalIn && d.proteinOk) >= 7, {
+  progress: (s) => [best28(s.daily, (d) => d.kcalIn && d.proteinOk), 10],
 });
 
 // Water
 a('water', 'Hydration station', 'Hit your water target for the first time.', 'b', (s) => s.daily.some((d) => d.waterOk));
 a('water', 'Morning dew', 'Drink 1 L before 10 am.', 'b', (s) => count(s, 'water-1l-by-10') > 0);
 a('water', 'Steady flow', 'Log water in the morning, afternoon and evening of one day.', 'b', (s) => s.daily.some((d) => d.day?.waterParts === 7));
-a('water', 'Just keep swimming', 'Hit your water target 7 days in a row.', 's', (s) => longestRun(s.daily, (d) => d.waterOk) >= 7, {
-  progress: (s) => [longestRun(s.daily, (d) => d.waterOk), 7],
+a('water', 'Just keep swimming', 'Hit your water target 7 days in a row.', 's', (s) => best28(s.daily, (d) => d.waterOk) >= 7, {
+  progress: (s) => [best28(s.daily, (d) => d.waterOk), 7],
 });
 a('water', 'Monsoon', 'Drink 100 L in total.', 's', (s) => totalWater(s) >= 1e5, { progress: (s) => [totalWater(s) / 1000, 100] });
 a('water', 'Water under the bridge', 'Hit your water target the day after a night out.', 's', (s) =>
@@ -417,7 +417,7 @@ a('sleep', 'Lights out', 'Fall asleep within 15 minutes of your ‘Tonight’ ta
     return circ(asleep(d), (usualWake - d.targets.sleepMin + 1440) % 1440) <= 15;
   });
 });
-a('sleep', 'Seven wonders', 'Sleep 7 hours or more, 7 nights in a row.', 's', (s) => longestRun(s.daily, (d) => (d.sleepMin ?? 0) >= 420) >= 7);
+a('sleep', 'Seven wonders', 'Sleep 7 hours or more on 10 nights of any 28.', 's', (s) => best28(s.daily, (d) => (d.sleepMin ?? 0) >= 420) >= 10);
 a('sleep', 'Captain Cool', 'Fall asleep within 20 minutes of your usual time, 7 nights running.', 's', (s) => {
   const ds = sleptDays(s);
   let run = 0;
@@ -461,8 +461,8 @@ a('body', 'Weigh to go', 'Log your first weigh-in.', 'b', (s) => s.daily.some((d
 a('body', 'Just looking like a wow', 'Complete your first photo check-in.', 'b', (s) => s.checkins.some((c) => Object.keys(c.photos).length > 0));
 a('body', 'Waist not, want not', 'Take an inch off your waist.', 'b', (s) => waistBelow(s, 1), { progress: (s) => waistProgress(s, 1) });
 a('body', 'Notched it', 'Put a new belt notch in the wins jar.', 'b', (s) => s.wins.some((w) => /notch|belt/i.test(w.text)));
-a('body', 'Scale model', 'Weigh in 30 mornings in a row.', 's', (s) => longestRun(s.daily, (d) => d.day?.weightKg !== undefined) >= 30, {
-  progress: (s) => [longestRun(s.daily, (d) => d.day?.weightKg !== undefined), 30],
+a('body', 'Scale model', 'Weigh in on 25 mornings of any 28.', 's', (s) => best28(s.daily, (d) => d.day?.weightKg !== undefined) >= 25, {
+  progress: (s) => [best28(s.daily, (d) => d.day?.weightKg !== undefined), 25],
 });
 a('body', 'Trendsetter', 'Bring your trend weight down 2 kg from day one.', 's', (s) => trendDrop(s) >= 2, { progress: (s) => [trendDrop(s), 2] });
 a('body', 'Glow up', 'Complete three monthly check-ins.', 's', (s) => s.checkins.length >= 3, { progress: (s) => [s.checkins.length, 3] });
@@ -497,24 +497,24 @@ a(
   { reward: 'Gold rings' },
 );
 
-// Streaks
+// Totals and records (were streaks until O1, 8 Nov; ids kept so earned stays earned)
 a('streaks', 'Three for three', 'Close all the rings for the first time.', 'b', (s) => s.daily.some((d) => d.perfect));
-a('streaks', '1-UP', 'Bank your first shield.', 'b', (s) => s.streak.earned >= 1);
+a('streaks', 'Seven of twenty-eight', 'Hit the step goal on 7 days of any 28.', 'b', (s) => s.steps28.best28 >= 7, { id: slug('1-UP'), progress: (s) => [s.steps28.best28, 7] });
 a('streaks', 'Saved by the shield', 'Let a shield save one of your streaks.', 'b', (s) => s.streak.shieldsUsed.length >= 1);
 a('streaks', 'Bounce back', 'Close all the rings the day after a missed day.', 'b', (s) => s.daily.some((d, i) => i > 0 && d.perfect && s.daily[i - 1].logged && !s.daily[i - 1].perfect));
 a('streaks', 'Challenge accepted', 'Complete your first monthly challenge.', 'b', (s) => count(s, 'challenge-done') >= 1);
-a('streaks', 'True to your word', 'Follow through on the weekly ‘one thing’ 4 weeks in a row.', 's', (s) => oneThingRun(s) >= 4, { progress: (s) => [oneThingRun(s), 4] });
-a('streaks', 'Main character energy', '7 perfect days in a row.', 'g', (s) => longestRun(s.daily, (d) => d.perfect) >= 7, { progress: (s) => [longestRun(s.daily, (d) => d.perfect), 7] });
-a('streaks', 'Groundhog Day', 'Complete the morning log 30 days in a row.', 'g', (s) => longestRun(s.daily, (d) => !!d.day?.morning) >= 30, {
-  progress: (s) => [longestRun(s.daily, (d) => !!d.day?.morning), 30],
+a('streaks', 'True to your word', 'Follow through on the weekly ‘one thing’ 6 times.', 's', (s) => oneThingDone(s) >= 6, { progress: (s) => [oneThingDone(s), 6] });
+a('streaks', 'Main character energy', '10 perfect days in any 28.', 'g', (s) => best28(s.daily, (d) => d.perfect) >= 10, { progress: (s) => [best28(s.daily, (d) => d.perfect), 10] });
+a('streaks', 'Groundhog Day', 'Complete the morning log on 25 days of any 28.', 'g', (s) => best28(s.daily, (d) => !!d.day?.morning) >= 25, {
+  progress: (s) => [best28(s.daily, (d) => !!d.day?.morning), 25],
 });
 a('streaks', 'Dream month', '20 perfect days in one month.', 'g', (s) => [...byMonth(s.daily).values()].some((ds) => ds.filter((d) => d.perfect).length >= 20));
-a('streaks', 'The Wall', (s) => `Train ${s.weeks.perWeek} times a week for 12 weeks straight.`, 'g', (s) => s.weeks.best >= 12, {
+a('streaks', 'The Wall', (s) => `Train ${s.weeks.perWeek * 4} times in any 28 days.`, 'g', (s) => s.train28.best28 >= s.weeks.perWeek * 4, {
   reward: 'The ‘Wall’ title',
-  progress: (s) => [s.weeks.streak, 12],
+  progress: (s) => [s.train28.best28, s.weeks.perWeek * 4],
 });
-a('streaks', 'Never gonna give you up', (s) => `Train ${s.weeks.perWeek} times a week for 26 weeks straight.`, 'p', (s) => s.weeks.best >= 26, { progress: (s) => [s.weeks.streak, 26] });
-a('streaks', 'I am inevitable', 'Keep a step streak going for 100 days.', 'p', (s) => s.streak.best >= 100, { progress: (s) => [s.streak.current, 100] });
+a('streaks', 'Never gonna give you up', 'Finish 150 sessions in all.', 'p', (s) => s.train28.total >= 150, { progress: (s) => [s.train28.total, 150] });
+a('streaks', 'I am inevitable', 'Hit the step goal on 300 days in all.', 'p', (s) => s.steps28.total >= 300, { progress: (s) => [s.steps28.total, 300] });
 a('streaks', 'Legen—wait for it—dary', 'Complete six monthly challenges.', 'p', (s) => count(s, 'challenge-done') >= 6, { reward: 'Legendary confetti' });
 
 // Nights out
@@ -720,8 +720,8 @@ secret('Early bird', 'Weigh in before 6 am.', 'b', 'The worm is optional.', (s) 
     return h >= 3 && h < 6;
   }),
 );
-secret('Sigma grindset', 'Finish the morning log before 6 am, 7 days in a row.', 'g', 'Rise and grind, literally.', (s) =>
-  longestRun(s.daily, (d) => {
+secret('Sigma grindset', 'Finish the morning log before 6 am on 7 days of any 28.', 'g', 'Rise and grind, literally.', (s) =>
+  best28(s.daily, (d) => {
     const at = d.day?.morning?.at;
     return !!at && new Date(at).getHours() >= 3 && new Date(at).getHours() < 6;
   }) >= 7,
@@ -802,14 +802,8 @@ function ratios(s: AchStats) {
   }
   return out;
 }
-function oneThingRun(s: AchStats) {
-  let run = 0;
-  let best = 0;
-  for (const w of [...s.weekNotes].sort((x, y) => x.id.localeCompare(y.id))) {
-    run = w.done ? run + 1 : 0;
-    best = Math.max(best, run);
-  }
-  return best;
+function oneThingDone(s: AchStats) {
+  return s.weekNotes.filter((w) => w.done).length;
 }
 function cleanRun(s: AchStats) {
   let run = 0;
@@ -892,10 +886,13 @@ export function fmtProgress(p: [number, number]): string {
  * Retired in v2: the morning log is no longer timed, identical step counts are usually a
  * copied number, water is no longer tracked, and the Passport is gone. The ticker is gone too,
  * and with it Rickrolled and Clickbait. The Departures board was cut (O8, 8 Nov), and with it Moye moye.
+ * Streaks became tallies (O1): the run achievements count records in any 28 days, under their old ids.
  * Kept so old unlocks still resolve.
  */
 export const RETIRED_ACHIEVEMENTS: string[] = [
   ...['World record', 'Glitch in the Matrix', 'Speedrunner', 'Pi day', 'Voice of reason', 'Rickrolled', 'Clickbait', 'Moye moye'].map(slug),
+  // The 5.9 removals (11 Nov): What's left, Shake for a stat, Occasion mode and the wins jar; shields and broken streaks went with streaks (O1).
+  ...["What's left?", 'Shake it off', 'Helicopter shot', 'Shaken, not stirred', 'Shaadi season survivor', 'Notched it', 'Saved by the shield', 'Press F'].map(slug),
   ...ACHIEVEMENTS.filter((a) => a.cat === 'water' || (typeof a.desc === 'string' && /passport/i.test(a.desc))).map((a) => a.id),
 ];
 
