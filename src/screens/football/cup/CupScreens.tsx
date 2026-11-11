@@ -1,331 +1,188 @@
-// Cup runs, layer 2: "How your deck was dealt", one playable match, penalties and full time (spec §3.5, §4, §13).
-// The move cards' look is a first, unapproved version: flat cards in each axis's ink, plainly unlike the player cards.
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
+// Cup runs on Football: the Cups door (it replaces the layer-2 "Try a cup match" card), and the cups page in the
+// tactics-board world: the run in progress, "How your deck was dealt" before a new run, the twelve cups with their
+// silverware, and the record book (spec §2, §3.5, §9, §11).
+import { useEffect, useState, type CSSProperties } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { buzz } from '../../../audio';
-import { longText, ROLE, shortText, TITLE, actsAs } from '../../../football/cup/cards';
-import { SIGNATURE, SIDE_WORD, STYLE_NAME, STYLE_TEXT } from '../../../football/cup/clubs';
+import { cupsOpen, type CupBook } from '../../../football/cup/book';
+import { titleOf } from '../../../football/cup/cards';
 import type { Deal } from '../../../football/cup/deck';
-import {
-  blocked, canRecycle, costOf, coverNow, endSpell, lineNow, outcome, play, preview, recycle, shownIntents, TUNE, type MatchState,
-} from '../../../football/cup/match';
-import { dive, kick, leanOf } from '../../../football/cup/pens';
-import { dealToday, endRun, loadRun, saveMatch, startTry, type CupRun } from '../../../football/cup/store';
-import { SIDES, type Card, type Side } from '../../../football/cup/types';
-import { useSave } from '../../../football/store/hooks';
+import { cupByN, CUPS } from '../../../football/cup/ladder';
+import { dealToday, loadBook, loadRun, startCupRun } from '../../../football/cup/store';
+import type { Card } from '../../../football/cup/types';
+import { clubById } from '../../../football/data/load';
 import { go } from '../../../router';
-import { AXIS_INK, valueTier } from '../../../ui/inks';
+import { AXIS_INK } from '../../../ui/inks';
 import { Aurora } from '../FootballHome';
+import { Crest, inkOf, Slab, Trophy } from './CupArt';
+import { RunRoute, whereNow } from './CupRun';
 
-const ink = (c: Card): string => (c.axis ? AXIS_INK[c.axis] : c.kind === 'total' ? '#ffd56a' : '#aab5cf');
 /** "One-two ×2, Overlap run". */
-const cardList = (cs: Card[]) => [...new Set(cs.map((c) => TITLE[c.kind]))].map((t) => { const k = cs.filter((c) => TITLE[c.kind] === t).length; return k > 1 ? `${t} ×${k}` : t; }).join(', ');
+const cardList = (cs: Card[]) => [...new Set(cs.map((c) => titleOf(c.kind)))].map((t) => { const k = cs.filter((c) => titleOf(c.kind) === t).length; return k > 1 ? `${t} ×${k}` : t; }).join(', ');
 const LEVEL: Record<string, string> = { basic: 'Basic', good: 'Good', great: 'Great', punt: 'Punts' };
+const twistLine = (t: string, more = false) => (t === 'None' ? 'No twist: the first cup.' : `Twist: ${t}${more ? ', and every earlier cup\'s' : ''}.`);
+const wonCups = (b: CupBook | undefined) => CUPS.filter((c) => (b?.cups[c.n]?.won ?? 0) > 0);
 
-/** The entry on Football: says plainly that this is a first try and pays nothing. */
-export function CupEntry() {
-  const run = useLiveQuery(loadRun, []);
-  const live = run && run.match.phase !== 'done' ? run.match : undefined;
+/** The Cups door on Football: the cup you are on, a run in progress, the cups won. */
+export function CupsDoor() {
+  const run = useLiveQuery(async () => (await loadRun()) ?? null, []);
+  const book = useLiveQuery(loadBook, []);
+  if (run === undefined || !book) return null;
+  const live = run && !run.run.over ? run.run : null;
+  const on = cupByN(live ? live.cup : cupsOpen(book));
+  const won = wonCups(book);
   return (
-    <section className="fb-card cup-entry" aria-labelledby="cup-entry-h">
-      <h2 id="cup-entry-h" className="cup-h">Try a cup match</h2>
-      <p className="fb-s">A first try of the cup-run match: one card match against a club from your division, with a deck dealt from your last seven days. It pays nothing and never touches the league.</p>
-      <button type="button" className="fb-btn pri" onClick={() => go(live ? '/football/cup/match' : '/football/cup')}>
-        {live ? `Back to your match: spell ${live.spell}, ${live.score[0]}–${live.score[1]}` : 'See your deck'}
-      </button>
+    <section className="fb-card cup-door" style={{ '--cup': on.colour } as CSSProperties} aria-labelledby="cup-door-h">
+      <div className="cup-door-top">
+        <Trophy kind={on.silver} colour={on.colour} size={52} />
+        <div>
+          <h2 id="cup-door-h" className="cup-h">Cups</h2>
+          <p className="fb-s">{live ? `A run of ${on.name} in progress.` : `The cup you are on: ${on.name}.`}</p>
+        </div>
+      </div>
+      {live ? (
+        <p className="fb-s">{whereNow(live)} · fitness {live.fitness} · {live.coins} coins · {live.path.length} of {live.map.rows} stops cleared.</p>
+      ) : (
+        <p className="fb-s">A run is a path of matches, rests and stops with a deck dealt from your last seven days. It never touches the league.</p>
+      )}
+      {won.length > 0 && (
+        <div className="cup-door-won" aria-label={`Cups won: ${won.map((c) => c.name).join(', ')}`}>
+          <span className="fb-s">Won</span>
+          {won.map((c) => <Trophy key={c.n} kind={c.silver} colour={c.colour} size={32} />)}
+        </div>
+      )}
+      <div className="cup-row">
+        <button type="button" className="fb-btn pri" onClick={() => go(live || (run && run.run.over) ? '/football/cup/run' : '/football/cup')}>
+          {live ? 'Carry on the run' : run?.run.over ? 'See how the run ended' : 'Start a run'}
+        </button>
+        <button type="button" className="fb-btn" onClick={() => go('/football/cup')}>{book.runs ? 'Cups and record book' : 'The twelve cups'}</button>
+      </div>
     </section>
   );
 }
 
-/** "How your deck was dealt" (spec §3.5), then kick-off; or the match in progress, to resume or abandon. */
-export function CupHome() {
-  const run = useLiveQuery(loadRun, []);
-  const [deal, setDeal] = useState<Deal | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState('');
-  useEffect(() => { void dealToday().then(setDeal).catch(() => setErr('Could not read your last seven days.')); }, []);
-  if (run === undefined && !deal) return null;
-  const live = run && run.match.phase !== 'done' ? run : undefined;
-  const kickOff = async () => {
-    setBusy(true);
-    try { await startTry(); go('/football/cup/match'); } catch { setErr('No club to play yet. Found the club first.'); setBusy(false); }
-  };
-  return (
-    <div className="cup-home">
-      <header className="cup-top">
-        <button type="button" className="fb-btn sm" onClick={() => go('/football')}>Back</button>
-        <h1 className="cup-title">Cup match: a first try</h1>
-      </header>
-      {live && (
-        <section className="fb-card hot">
-          <h2 className="cup-h">A match in progress</h2>
-          <p className="fb-s">Against {live.match.club.name}, spell {live.match.spell} of {TUNE.spells}, {live.match.score[0]}–{live.match.score[1]}{live.match.phase === 'pens' ? ', penalties' : ''}.</p>
-          <div className="cup-row">
-            <button type="button" className="fb-btn pri" onClick={() => go('/football/cup/match')}>Resume</button>
-            <button type="button" className="fb-btn" onClick={() => void endRun()}>Abandon it</button>
-          </div>
-        </section>
-      )}
-      {deal && <DealView deal={live ? live.deal : deal} title={live ? 'The deck this match was dealt' : 'How your deck was dealt'} />}
-      {!live && (
-        <div className="cup-go">
-          <p className="fb-s">One match against a club from your division. A first try of the match only: no map, no rewards, nothing for the league.</p>
-          <button type="button" className="fb-btn pri" disabled={busy || !deal} onClick={() => void kickOff()}>Kick off</button>
-        </div>
-      )}
-      {err && <p className="fb-s" role="alert">{err}</p>}
-    </div>
-  );
-}
-
+/** "How your deck was dealt" (spec §3.5). */
 export function DealView({ deal, title }: { deal: Deal; title: string }) {
   return (
     <section className="cup-deal" aria-label={title}>
       <h2 className="cup-h">{title}</h2>
-      <p className="fb-s">Your last seven nights, as the league match scored them. Fifteen or more is great, 11 to 14 good, under 11 basic.</p>
-      <ul className="cup-rows">
+      <p className="cup-q">Your last seven nights, as the league match scored them. Fifteen or more is great, 11 to 14 good, under 11 basic.</p>
+      <ul className="cup-dl">
         {deal.rows.map((r) => (
-          <li key={r.axis} className="cup-dr" style={{ '--k': AXIS_INK[r.axis] } as CSSProperties}>
-            <span className="cup-ax">{r.axis}</span>
-            <b className={`cup-avg ${r.avg != null ? valueTier(r.avg) : 'v1'}`}>{r.avg != null ? (Math.round(r.avg * 10) / 10).toFixed(1) : '–'}</b>
-            <span className={`cup-lv lv-${r.level}`}>{LEVEL[r.level]}</span>
-            <span className="cup-why">{cardList(r.cards)}. {r.why}</span>
+          <li key={r.axis} className="cup-dr" style={{ '--ink': AXIS_INK[r.axis] } as CSSProperties}>
+            <span><b className="cup-ax">{r.axis}</b><br /><span className="cup-q">{LEVEL[r.level]} · {cardList(r.cards)}</span></span>
+            <span className="cup-q">7-day</span>
+            <b className={`cup-n lv-${r.level}`}>{r.avg != null ? Math.floor(r.avg) : '–'}</b>
+            <span className="cup-why">{r.why}</span>
           </li>
         ))}
         {deal.extras.map((e) => (
-          <li key={e.card.id} className="cup-dr extra" style={{ '--k': ink(e.card) } as CSSProperties}>
-            <span className="cup-ax">Extra</span>
-            <span className="cup-lv">{e.card.name ? e.card.name : TITLE[e.card.kind]}</span>
-            <span className="cup-why">{e.why}</span>
+          <li key={e.card.id} className="cup-dr extra" style={{ '--ink': inkOf(e.card) } as CSSProperties}>
+            <span><b className="cup-ax">{e.kind === 'empty' ? 'An empty day' : e.kind === 'record' ? 'A record' : e.kind === 'loan' ? 'On loan' : 'Every ring closed'}</b><br /><span className="cup-q">{e.why}</span></span>
+            <span />
+            <b className="cup-n">+1</b>
           </li>
         ))}
       </ul>
-      <p className="fb-s">{deal.cards.length} cards in all.</p>
+      <p className="cup-q">{deal.cards.length} cards in all.</p>
     </section>
   );
 }
 
-// --- the match ----------------------------------------------------------------------------------------------------
-export function CupMatchRoute() {
+/** /football/cup: the run in progress, or a new run; the twelve cups; the record book. */
+export function CupsPage() {
   const run = useLiveQuery(async () => (await loadRun()) ?? null, []);
-  if (run === undefined) return null;
-  if (!run) return <div className="cup-home"><p className="fb-s">No cup match in progress.</p><button type="button" className="fb-btn pri" onClick={() => go('/football/cup')}>See your deck</button></div>;
-  return <CupMatch key={run.startedAt} run={run} />;
-}
-
-function CupMatch({ run }: { run: CupRun }) {
-  const save = useSave();
-  const [s, setS] = useState<MatchState>(run.match);
-  const [recycling, setRecycling] = useState(false);
-  const [read, setRead] = useState<Card | null>(null);
-  const [wild, setWild] = useState<Card | null>(null);
-  const [about, setAbout] = useState(false);
-  const feel = save?.buzz !== false;
-  const commit = (n: MatchState) => {
-    if (n === s) return;
-    setS(n);
-    void saveMatch(n);
-    if (!feel) return;
-    if (n.last.some((f) => f.kind === 'goal')) buzz([60, 40, 60, 40, 220]);
-    else if (n.last.some((f) => f.kind === 'conceded')) buzz([200]);
-    else if (n.zone > s.zone || n.build > s.build) buzz(18);
-  };
-  const tap = (c: Card) => {
-    if (recycling) {
-      const n = recycle(s, c.id);
-      commit(n);
-      if (!canRecycle(n)) setRecycling(false);
-      return;
-    }
-    if (c.kind === 'total') { setWild(c); return; }
-    commit(play(s, c.id));
-  };
-  if (s.phase === 'pens') return <Pens s={s} commit={commit} />;
-  if (s.phase === 'done') return <FullTimeCup s={s} />;
-  const intents = shownIntents(s);
-  const line = lineNow(s);
-  return (
-    <div className="cup-match">
-      <header className="cup-score" aria-label="Score">
-        <span className="cup-team">You</span>
-        <b className="cup-goals" aria-live="polite">{s.score[0]}–{s.score[1]}</b>
-        <span className="cup-team them" style={{ '--k': s.club.colours[0] } as CSSProperties}>{s.club.short}</span>
-        <span className="cup-spell">Spell {s.spell} of {TUNE.spells}</span>
-      </header>
-      <section className="cup-them" aria-label="The other club">
-        <button type="button" className="cup-club" onClick={() => setAbout(true)}>
-          <b>{s.club.name}</b>
-          <span className="fb-s">{STYLE_NAME[s.club.style]}{s.club.elite ? ` · ${SIGNATURE[s.club.elite].name}` : ''}{s.club.scouted ? ' · scouted' : ''} · how they play</span>
-        </button>
-        <div className="cup-nums">
-          <span className="cup-num"><small>Their line</small><b>{line}</b></span>
-          <span className="cup-num threat"><small>Threat</small><b>{intents[0]?.threat ?? 0}</b></span>
-          <span className="cup-num cover"><small>Your cover</small><b>{coverNow(s)}</b></span>
-        </div>
-        <p className="cup-ahead">{intents[0]?.threat ? `Coming: ${intents[0].kind.toLowerCase()}.` : 'No attack this spell.'}{intents.length > 1 ? ` Then ${intents.slice(1).map((x) => (x.threat ? `${x.threat}` : 'none')).join(', ')}.` : ''}</p>
-      </section>
-      <Pitch s={s} />
-      <div className="cup-bar">
-        <span className="cup-fit"><span>Stamina <b className="cup-st">{s.stamina}</b></span><span>Fitness {s.fitness}</span></span>
-        <button type="button" className={`fb-btn sm ${recycling ? 'pri' : ''}`} disabled={!recycling && !canRecycle(s)} aria-pressed={recycling} onClick={() => setRecycling(!recycling)}>
-          {recycling ? 'Done' : `Recycle${s.freeRecycles ? ` (${s.freeRecycles} free)` : ''}`}
-        </button>
-        <button type="button" className="fb-btn sm" onClick={() => { setRecycling(false); commit(endSpell(s)); }}>End spell</button>
-      </div>
-      {recycling && <p className="cup-hint">Tap a card to drop it and draw another. {s.freeRecycles ? 'Free.' : 'Costs 1 stamina.'}</p>}
-      <Hand s={s} recycling={recycling} onTap={tap} onRead={setRead} />
-      {s.inPlay.length > 0 && <p className="cup-hint">In play: {s.inPlay.map((c) => `${TITLE[c.kind]} (${shortText(c.kind, c.level)})`).join(', ')}</p>}
-      {read && <Sheet onClose={() => setRead(null)} title={read.name ?? TITLE[read.kind]}><p>{longText(read)}</p>{blocked(s, read.id) && read.kind !== 'total' && <p className="fb-s">Now: {blocked(s, read.id)}</p>}</Sheet>}
-      {about && (
-        <Sheet onClose={() => setAbout(false)} title={s.club.name}>
-          <p><b>{STYLE_NAME[s.club.style]}.</b> {STYLE_TEXT[s.club.style]}</p>
-          {s.club.elite && <p><b>{SIGNATURE[s.club.elite].name}.</b> {SIGNATURE[s.club.elite].text}</p>}
-          <p className="fb-s">{s.club.scouted ? 'Scouted: you have met them in the league, so you see their attacks two spells ahead and their penalty habits.' : 'Not scouted: meet them in the league to see their attacks two spells ahead.'}</p>
-          <p className="fb-s">A chance at or above their line is a goal; at half the line or more, a near miss that lowers it. Their attack short of your cover by 1 to {TUNE.shortMax} costs fitness; by more, they score.</p>
-        </Sheet>
-      )}
-      {wild && (
-        <Sheet onClose={() => setWild(null)} title="Total football plays as…">
-          <div className="cup-wild">
-            {s.basics.map((k) => (
-              <button key={k} type="button" className="fb-btn" disabled={!!blocked(s, wild.id, k)} onClick={() => { commit(play(s, wild.id, k)); setWild(null); }}>
-                {TITLE[k]}: {shortText(k, 'basic')}
-              </button>
-            ))}
-          </div>
-        </Sheet>
-      )}
-    </div>
-  );
-}
-
-const ZONES = ['Your third', 'Midfield', 'Final third'];
-function Pitch({ s }: { s: MatchState }) {
-  const toasts = s.last.filter((f) => f.kind !== 'spell');
-  return (
-    <section className="cup-pitch" aria-label={`The ball is in ${ZONES[s.zone].toLowerCase()}. Build-up ×${s.build}.`}>
-      {[2, 1, 0].map((z) => (
-        <div key={z} className={`cup-zone ${s.zone === z ? 'on' : ''}`}>
-          <span className="cup-zl">{ZONES[z]}</span>
-          {s.zone === z && <span className="cup-ball" aria-hidden="true" />}
-        </div>
-      ))}
-      <span className="cup-build">Build-up <b>×{s.build}</b></span>
-      <div className="cup-toasts" aria-live="polite">
-        {toasts.map((f, i) => <p key={`${s.feed.length}-${i}`} className={`cup-toast k-${f.kind}`}>{f.text}</p>)}
-      </div>
-    </section>
-  );
-}
-
-const HOLD_MS = 450;
-function Hand({ s, recycling, onTap, onRead }: { s: MatchState; recycling: boolean; onTap: (c: Card) => void; onRead: (c: Card) => void }) {
-  const timer = useRef<number | undefined>(undefined);
-  const held = useRef(false);
-  const down = (c: Card) => { held.current = false; timer.current = window.setTimeout(() => { held.current = true; onRead(c); }, HOLD_MS); };
-  const cancel = () => window.clearTimeout(timer.current);
-  return (
-    <section className="cup-hand" aria-label="Your hand. Tap to play, press and hold to read.">
-      {s.hand.length === 0 && <p className="fb-s">No cards left this spell. End the spell.</p>}
-      {s.hand.map((c) => {
-        const why = c.kind === 'total' ? (s.basics.some((k) => !blocked(s, c.id, k)) ? null : 'Nothing to play as') : blocked(s, c.id);
-        const off = recycling ? false : !!why;
-        const pv = !recycling && ROLE[actsAs(c).kind] === 'finish' ? preview(s, c.id) : null;
-        const act = actsAs(c);
-        return (
-          <button
-            key={c.id} type="button" className={`cup-card ${off ? 'off' : ''} ${recycling ? 'drop' : ''} lv-${c.level}`}
-            style={{ '--k': ink(c) } as CSSProperties}
-            aria-label={`${c.name ?? TITLE[c.kind]}, ${c.level}. ${shortText(act.kind, act.level)}.${off && why ? ` ${why}` : ''}`}
-            onPointerDown={() => down(c)} onPointerUp={cancel} onPointerLeave={cancel} onPointerCancel={cancel}
-            onContextMenu={(e) => e.preventDefault()}
-            onClick={() => { cancel(); if (held.current) { held.current = false; return; } if (!off) onTap(c); }}
-          >
-            <span className="cup-cost" aria-hidden="true">{costOf(s, c)}</span>
-            <span className="cup-ct">{c.name && c.kind !== 'loan' ? c.name : TITLE[c.kind]}</span>
-            <span className="cup-cx">{c.kind === 'loan' ? `${c.name}: ${shortText(act.kind, 'great')}` : shortText(c.kind, c.level)}</span>
-            {pv && <span className={`cup-pv k-${pv.kind}`}>{pv.chance} v {pv.line}</span>}
-            {recycling && <span className="cup-pv">Drop</span>}
-            <span className="cup-lvl">{c.axis ?? (c.kind === 'total' ? 'Wild' : 'Punt')} · {c.level}</span>
-          </button>
-        );
-      })}
-    </section>
-  );
-}
-
-function Sheet({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
-  // On the page body, above the tab bar: the Football page is its own layer.
-  return createPortal(
-    <div className="cup-sheet-bg" onClick={onClose}>
-      <div className="cup-sheet" role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
-        <h2 className="cup-h">{title}</h2>
-        {children}
-        <button type="button" className="fb-btn" onClick={onClose}>Close</button>
-      </div>
-    </div>,
-    document.body,
-  );
-}
-
-const aimWord = (x: Side) => (x === 'centre' ? 'down the middle' : x);
-const diveWord = (x: Side) => (x === 'centre' ? 'stayed in the middle' : `dived ${x}`);
-function Pens({ s, commit }: { s: MatchState; commit: (n: MatchState) => void }) {
-  const p = s.pens!;
-  const mine = p.turn === 'us';
-  const last = p.kicks[p.kicks.length - 1];
-  const dots = (xs: boolean[]) => Array.from({ length: Math.max(5, xs.length) }, (_, i) => <i key={i} className={i < xs.length ? (xs[i] ? 'in' : 'out') : ''} />);
-  return (
-    <div className="cup-match cup-pens">
-      <header className="cup-score"><span className="cup-team">You</span><b className="cup-goals">{s.score[0]}–{s.score[1]}</b><span className="cup-team them">{s.club.short}</span><span className="cup-spell">Penalties</span></header>
-      <section className="cup-tally" aria-label={`Penalties: you ${p.us.filter(Boolean).length}, them ${p.them.filter(Boolean).length}`}>
-        <p><span>You</span><span className="cup-dots">{dots(p.us)}</span></p>
-        <p><span>{s.club.short}</span><span className="cup-dots">{dots(p.them)}</span></p>
-      </section>
-      {last && <p className="cup-toast" aria-live="polite">{last.who === 'us' ? `You shot ${aimWord(last.aim)}, the keeper ${diveWord(last.dive)}: ${last.scored ? 'goal' : last.dive === last.aim ? 'saved' : 'wide'}.` : `They shot ${aimWord(last.aim)}, you ${diveWord(last.dive)}: ${last.scored ? 'goal' : 'saved'}.`}</p>}
-      <h2 className="cup-h">{mine ? 'Your kick: where do you shoot?' : 'Their kick: where do you dive?'}</h2>
-      <p className="fb-s">{s.club.scouted ? (mine ? `Scouted: their keeper tends to dive ${SIDE_WORD[leanOf(p.keeper)]}.` : `Scouted: their takers like ${SIDE_WORD[leanOf(p.takers)]}.`) : 'Not scouted: you have not met them in the league, so their habits are hidden.'}</p>
-      <div className="cup-goalmouth">
-        {SIDES.map((side: Side) => (
-          <button key={side} type="button" className="fb-btn" onClick={() => { const n = mine ? kick(s, side) : dive(s, side); commit(n); }}>
-            {side === 'centre' ? 'Middle' : side === 'left' ? 'Left' : 'Right'}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function FullTimeCup({ s }: { s: MatchState }) {
-  const o = outcome(s);
+  const book = useLiveQuery(loadBook, []);
+  const [deal, setDeal] = useState<Deal | null>(null);
+  const [cup, setCup] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
-  const p = s.pens;
-  const combos = s.feed.filter((f) => f.kind === 'combo').length;
+  const [err, setErr] = useState('');
+  useEffect(() => { void dealToday().then(setDeal).catch(() => setErr('Could not read your last seven days.')); }, []);
+  if (run === undefined || !book) return null;
+  const open = cupsOpen(book);
+  const chosen = cup ?? open;
+  const live = run && !run.run.over ? run.run : null;
+  const start = async () => {
+    setBusy(true);
+    try { await startCupRun(chosen); go('/football/cup/run'); } catch { setErr('Could not start a run.'); setBusy(false); }
+  };
+  const combos = Object.entries(book.combos).sort((a, b) => b[1] - a[1]);
   return (
-    <div className="cup-match cup-ft">
-      <p className="cup-spell">Full time</p>
-      <h1 className={`cup-result ${o === 'W' ? 'w' : 'l'}`}>{o === 'W' ? 'You win' : 'You lose'}</h1>
-      <p className="cup-final">You {s.score[0]}–{s.score[1]} {s.club.name}{p ? `, ${p.us.filter(Boolean).length}–${p.them.filter(Boolean).length} on penalties` : ''}</p>
-      <p className="fb-s">{combos} combination{combos === 1 ? '' : 's'} landed. Fitness {s.fitness} of {TUNE.fitness}.</p>
-      <p className="fb-s">This was a first try of the cup match. It pays nothing and the league is untouched.</p>
-      <div className="cup-row">
-        <button type="button" className="fb-btn pri" disabled={busy} onClick={async () => { setBusy(true); await startTry(); setBusy(false); }}>Play another</button>
-        <button type="button" className="fb-btn" onClick={async () => { await endRun(); go('/football'); }}>Back to Football</button>
+    <div className="cup-board cup-cups">
+      <div className="cup-top">
+        <button type="button" className="cup-btn ghost sm" onClick={() => go('/football')}><span>Back</span></button>
+        <Slab>THE CUPS</Slab>
       </div>
-      <details className="cup-log">
-        <summary>How the match went</summary>
-        <ol>{s.feed.filter((f) => f.kind !== 'spell').map((f, i) => <li key={i}>Spell {f.spell}: {f.text}</li>)}</ol>
-      </details>
+      {live ? (
+        <section className="cup-sig" style={{ '--cup': cupByN(live.cup).colour } as CSSProperties}>
+          <p className="cup-cap">A run in progress</p>
+          <p className="cup-h">{cupByN(live.cup).name}</p>
+          <p className="cup-q">{whereNow(live)} · fitness {live.fitness} · {live.coins} coins · {live.path.length} of {live.map.rows} stops cleared. One run at a time.</p>
+          <button type="button" className="cup-btn" onClick={() => go('/football/cup/run')}><span>Carry on</span></button>
+        </section>
+      ) : run?.run.over ? (
+        <section className="cup-sig">
+          <p className="cup-cap">Your last run has ended</p>
+          <button type="button" className="cup-btn" onClick={() => go('/football/cup/run')}><span>See how it ended</span></button>
+        </section>
+      ) : (
+        <>
+          {deal && <DealView deal={deal} title="How your deck was dealt" />}
+          <div className="cup-sig" style={{ '--cup': cupByN(chosen).colour } as CSSProperties}>
+            <p className="cup-cap">Your run</p>
+            <p className="cup-h">{cupByN(chosen).name}</p>
+            <p className="cup-q">{twistLine(cupByN(chosen).twist, chosen > 1)}</p>
+            <button type="button" className="cup-btn" disabled={busy || !deal} onClick={() => void start()}><span>Start the run</span></button>
+          </div>
+        </>
+      )}
+      {err && <p role="alert">{err}</p>}
+
+      <h2 className="cup-h">The twelve cups</h2>
+      <p className="cup-q">Win a cup to open the next. Each adds a twist and keeps the earlier ones.</p>
+      <ol className="cup-ladder">
+        {CUPS.map((c) => {
+          const rec = book.cups[c.n];
+          const isOpen = c.n <= open;
+          const pickable = isOpen && !live && !run?.run.over;
+          return (
+            <li key={c.n} className={`cup-lad ${isOpen ? '' : 'shut'} ${chosen === c.n && pickable ? 'sel' : ''}`} style={{ '--cup': c.colour } as CSSProperties}>
+              <button type="button" disabled={!pickable} aria-pressed={chosen === c.n} onClick={() => setCup(c.n)}>
+                <Trophy kind={c.silver} colour={isOpen ? c.colour : '#5d6170'} size={40} />
+                <span>
+                  <b>{c.n}. {c.name}</b><br />
+                  <span className="cup-q">{isOpen ? twistLine(c.twist) : 'Opens when you win the cup before it.'}</span>
+                  {rec && <><br /><span className="cup-q">{rec.won ? `Won ${rec.won}×` : `Furthest: ${rec.furthest} stops`}{rec.fastest != null ? ` · fastest win ${rec.fastest} cards` : ''} · {rec.runs} run{rec.runs === 1 ? '' : 's'}</span></>}
+                  {isOpen && c.note && <><br /><span className="cup-q">{c.note}</span></>}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+
+      <h2 className="cup-h">The record book</h2>
+      {book.runs === 0 ? <p className="cup-q">Every run counts here, paid or not: furthest stop in each cup, fastest win, biggest scoreline, clubs beaten and combinations landed.</p> : (
+        <>
+          <ul className="cup-rows">
+            <li><span>Runs</span><b>{book.runs}</b></li>
+            <li><span>Cups won</span><b>{wonCups(book).length}</b></li>
+            <li><span>Biggest scoreline</span><b>{book.biggest ? `${book.biggest.for}–${book.biggest.against} v ${book.biggest.club}` : '–'}</b></li>
+            <li><span>Clubs beaten</span><b>{book.beaten.length}</b></li>
+          </ul>
+          {book.beaten.length > 0 && <div className="cup-beaten" aria-label="Clubs beaten">{book.beaten.slice(-24).map((id) => <span key={id} title={safeName(id)}><Crest id={id} size={30} /></span>)}</div>}
+          {combos.length > 0 && <><p className="cup-cap">Combinations landed</p><ul className="cup-rows">{combos.map(([k, v]) => <li key={k}><span>{k}</span><b>{v}</b></li>)}</ul></>}
+        </>
+      )}
     </div>
   );
 }
+const safeName = (id: string) => { try { return clubById(id).name; } catch { return id; } };
 
-/** The route shell: the aurora behind every cup screen. */
-export function CupRoute({ match }: { match: boolean }) {
+/** The route shell: the tactics board behind every cup screen. */
+export function CupRoute({ path }: { path: string }) {
   return (
-    <Aurora>
-      <main className="fb-page cup-page">{match ? <CupMatchRoute /> : <CupHome />}</main>
+    <Aurora className="cup-world">
+      <main className="fb-page cup-page">{path === '/football/cup' ? <CupsPage /> : <RunRoute />}</main>
     </Aurora>
   );
 }

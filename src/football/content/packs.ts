@@ -24,7 +24,7 @@ export const LOAN_TIER_ODDS = { gold: 75, prism: 25 };
 export const LOAN_RETURN_PCT = 5;
 
 /** Where packs come from (spec §10). */
-export const PACK_SOURCES = ['week-finished', 'final-won', 'promotion', 'tech', 'bounty', 'track', 'testimonial'] as const;
+export const PACK_SOURCES = ['week-finished', 'final-won', 'promotion', 'tech', 'bounty', 'track', 'testimonial', 'cup-final'] as const;
 
 /** Boosts: a match trait, a kit trim or a one-match captain bonus. Each lasts one match unless it says otherwise. */
 export interface BoostDef { id: string; name: string; kind: 'match-trait' | 'kit-trim' | 'captain'; text: string; effect: Effect }

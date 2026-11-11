@@ -9,10 +9,13 @@ export type CardKind =
   | 'one-two' | 'overlap' | 'strike' | 'header' | 'thunderbolt' | 'second-wind' | 'fuelled'
   | 'hold' | 'fresh-legs' | 'drilled' | 'system' | 'total' | 'punt' | 'loan';
 
+/** Any card: a starting card or one from the pool (pool.ts, by id). */
+export type AnyKind = CardKind | (string & {});
+
 export interface Card {
   /** Unique within a deck; temporary cards made in a match take `t<n>`. */
   id: string;
-  kind: CardKind;
+  kind: AnyKind;
   level: Level;
   /** The axis whose ink it wears; null for hopeful punts and the wild card. */
   axis: Axis | null;
