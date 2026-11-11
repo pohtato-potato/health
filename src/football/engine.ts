@@ -3,8 +3,9 @@ import type { AbilityDef } from './data/load';
 import { capChance, type CondCap } from './squadCare';
 import { CAL, type Opponent } from './opponent';
 import { coverage, edgeDistance, hexagon, inside, polygon, radii, randomIn, LIT, type Pt } from './radar';
-import { rng, shuffle } from './rng';
-import { AXES, clamp, type Axis, type AxisValues, type BraboAbility, type ChanceEvent, type Comp, type MatchEvents, type Mod, type RivalTwist, type Side } from './types';
+import { hashSeed, rng, shuffle } from './rng';
+import { AXES, clamp, type Axis, type AxisValues, type BraboAbility, type CallPick, type CallRecord, type ChanceEvent, type Comp, type MatchEvents, type Mod, type RivalTwist, type Side } from './types';
+export type { CallPick, CallRecord } from './types';
 
 export interface MatchCtx {
   comp?: Comp; derby?: boolean; vsHigher?: boolean; last5?: boolean; matchday?: number; auto?: boolean;
@@ -45,6 +46,40 @@ export interface MatchInput {
   fuelSpread?: number;
   /** Your typical shape (`typicalFor`): chances are sized against it, so a better night than usual scores and saves more. */
   typical?: AxisValues;
+  /**
+   * Matchday (spec §2.4): tempo, and mods for the whole match (the read, a tactic card) or one half (the plan per
+   * half: a change at half-time counts from the next chance). Each applies on the side whose axes it names.
+   */
+  plan?: MatchPlan;
+  /**
+   * Matchday (spec §2.3): present on a league night, the match has one to three calls. These are the owner's picks so
+   * far, in order; a call beyond them goes to the assistant, or stops the match when `watch` is set.
+   */
+  calls?: CallPick[];
+  /** Being watched: stop at a call with no pick yet, and at half-time unless `halfSeen`. */
+  watch?: boolean;
+  halfSeen?: boolean;
+}
+export type Tempo = 'patient' | 'normal' | 'quick';
+export interface MatchPlan { tempo?: Tempo; all?: Mod[]; first?: Mod[]; second?: Mod[] }
+/** Keep the ball: their next attack is this much easier to stop. */
+export const KEEP_STOP = 0.15;
+/** The atk kind each axis takes a chance on when the owner says "take it on". */
+export const TAKE_KIND: Record<'Pace' | 'Power' | 'Fuel', string> = { Pace: 'Counter-attack', Power: 'Set piece', Fuel: 'Through ball' };
+/** One option at a call, with the odds exactly as they will be used. */
+export interface CallOption { pick: CallPick; pct: number; axis?: Axis; type?: string }
+export interface CallOffer { slot: number; minute: number; n: number; of: number; score: [number, number]; options: CallOption[]; best: CallPick }
+export type MatchStop = { kind: 'half' } | { kind: 'call'; offer: CallOffer };
+/** Each chance's own random stream (spec §2.2): a call never shifts the luck of a later chance. */
+export const subSeed = (seed: number, i: number, part = 'chance') => hashSeed(String(seed), part, String(i));
+/**
+ * How many calls a league match gets: one to three, set by the seed, more of them when the two sides are close
+ * (the damped rating gap near zero).
+ */
+export function callCount(seed: number, gap: number): number {
+  const r = rng(subSeed(seed, 0, 'calls'));
+  const tight = 1 / (1 + Math.abs(gap) / 6);
+  return 1 + (r() < 0.25 + 0.6 * tight ? 1 : 0) + (r() < 0.55 * tight ? 1 : 0);
 }
 
 /**
@@ -283,6 +318,10 @@ export interface MatchState {
   wind: boolean; retakes: BraboAbility[]; scrappy: boolean; flip: number; foul: number; eruption: number; slow: boolean;
   /** Index of the next chance; equal to `total` when the match is over. */
   i: number;
+  /** Calls this match (0 without calls), the ones made so far, a kept ball waiting for their next attack. */
+  callN: number; made: CallRecord[]; keep: boolean;
+  /** Set when a watched match waits for the owner: at half-time, or at a call. */
+  stop?: MatchStop;
 }
 
 export function startMatch(m: MatchInput): MatchState {
@@ -295,7 +334,8 @@ export function startMatch(m: MatchInput): MatchState {
   for (const p of m.pre) base[p.axis] = clamp(base[p.axis] + p.d, 1, 20);
   if (has('Mistral') && conds.has('windy')) [base.Pace, base.Power] = [base.Power, base.Pace];
   const atkAvg = (base.Pace + base.Power + base.Fuel) / 3, defAvg = (base.Rest + base.Routine + base.Shape) / 3;
-  const total = chanceCount(r());
+  const tempo = m.plan?.tempo === 'quick' ? 1 : m.plan?.tempo === 'patient' ? -1 : 0;
+  const total = chanceCount(r()) + 2 * tempo;
   // Sized against your typical shape; with too little history, tonight's, where an unlogged axis counts as no data.
   const ref = m.typical ?? { ...base, ...Object.fromEntries((m.fog ?? []).map((a) => [a, FOG_REF])) };
   const mu = matchup(base, m.opp, ref);
@@ -307,7 +347,8 @@ export function startMatch(m: MatchInput): MatchState {
     return o;
   };
   const wS = weights(m.opp.shrinks), wP = weights(m.opp.presses);
-  const yours = splitChances(total, atkAvg, defAvg, m.opp.reach, r());
+  // Tempo (spec §2.4): quick adds one chance each way, patient takes one each way.
+  const yours = splitChances(total - 2 * tempo, atkAvg, defAvg, m.opp.reach, r()) + tempo;
   const mins = new Set<number>();
   while (mins.size < total) mins.add(3 + Math.floor(r() * 87));
   const minutes = [...mins].sort((a, b) => a - b);
@@ -331,6 +372,7 @@ export function startMatch(m: MatchInput): MatchState {
     eruption: has('Eruption') && r() < 0.1 ? Math.floor(r() * Math.max(1, total - yours)) : -1,
     slow: has('Slow and Sure'),
     i: 0,
+    callN: m.calls ? callCount(m.seed, mu.gap) : 0, made: [], keep: false,
   };
 }
 
@@ -341,21 +383,25 @@ function kindOf(side: Side, x: number): ChanceKind {
   return KINDS[side][KINDS[side].length - 1];
 }
 
-/** Plays the next chance and returns it (undefined once all are played). */
-export function nextChance(st: MatchState): ChanceEvent | undefined {
-  if (st.i >= st.total) return undefined;
-  const { m, r, ctx, conds, has, base, mu, live, order, minutes } = st;
-  const i = st.i++;
+interface Sized { side: Side; minute: number; type: string; v: AxisValues; mods: Mod[]; reach: number; pctF: number; r: () => number; fouled: boolean }
+
+/**
+ * Sizes chance `i` without playing it: its kind (or the forced one), every modifier and its odds. Pure: draws only
+ * from the chance's own sub-seed, so sizing it twice (one call, several options) gives the same numbers.
+ */
+function sizeChance(st: MatchState, i: number, force?: string): Sized {
+  const { m, ctx, conds, has, base, mu, live, order, minutes } = st;
+  const r = rng(subSeed(m.seed, i));
   const side = order[i], minute = minutes[i];
-  const kind = kindOf(side, r() * KINDS[side].reduce((t, k) => t + k.w, 0));
+  const drawn = kindOf(side, r() * KINDS[side].reduce((t, k) => t + k.w, 0));
+  const kind = force ? KINDS[side].find((k) => k.type === force) ?? drawn : drawn;
   const type = kind.type, boost = kind.axis;
   const v = { ...base };
   const mods: Mod[] = m.pre.map((p) => ({ ...p }));
   const add = (mod: Mod) => { v[mod.axis] = clamp(v[mod.axis] + mod.d, 1, 20); mods.push(mod); };
   // 0. fog: an unlogged axis is drawn low for this chance (any knock or card on it still applies)
   for (const a of m.fog ?? []) {
-    const drawn = FOG[0] + r() * (FOG[1] - FOG[0]);
-    const d = Math.round((drawn - m.values[a]) * 4) / 4;
+    const d = Math.round((FOG[0] + r() * (FOG[1] - FOG[0]) - m.values[a]) * 4) / 4;
     if (d) add({ axis: a, d, why: 'Not logged', kind: 'fog' });
   }
   // 0b. a night out logged as ranges: Fuel rolls evenly either side of what was logged (never when it is in fog)
@@ -365,9 +411,10 @@ export function nextChance(st: MatchState): ChanceEvent | undefined {
   }
   // 1. chance type
   if (boost) add({ axis: boost, d: 2, why: type, kind: 'type' });
-  // 2. captain, the home crowd and equipped abilities
+  // 2. captain, the home crowd, the plan (the read, a tactic card, the plan for this half) and equipped abilities
   if (m.captain && LIT[side].includes(m.captain)) add({ axis: m.captain, d: 2, why: 'Captain', kind: 'captain' });
   if (!m.neutral) for (const a of LIT[side]) add({ axis: a, d: m.home ? HOME_EDGE : -HOME_EDGE, why: m.home ? 'Home crowd' : 'Away crowd', kind: 'home' });
+  for (const p of [...(m.plan?.all ?? []), ...((minute <= 45 ? m.plan?.first : m.plan?.second) ?? [])]) if (p.d && LIT[side].includes(p.axis)) add({ ...p });
   const treeSum: Partial<Record<Axis, number>> = {};
   for (const b of m.abilities) {
     if (b.retake || !b.axis || !b.d || !LIT[side].includes(b.axis) || !braboOk(b, side, minute, type, m.home, live, ctx)) continue;
@@ -411,37 +458,127 @@ export function nextChance(st: MatchState): ChanceEvent | undefined {
     if (lift) for (const a of LIT[side]) add({ axis: a, d: lift, why: 'Weekly stack', kind: 'stack' });
   }
   reach = clamp(st.eruption >= 0 && side === 'def' && live.defCount === st.eruption ? MAX_REACH : reach, 0.1, MAX_REACH);
-  if (side === 'atk' && st.foul === live.atkCount) {
+  const fouled = side === 'atk' && st.foul === live.atkCount;
+  if (fouled) {
     while (pctOf(v, side, reach) > 0.4 && LIT.atk.some((a) => v[a] > 1)) for (const a of LIT.atk) v[a] = clamp(v[a] - 0.5, 1, 20);
     mods.push({ axis: 'Pace', d: 0, why: has('Dirty Leeds') ? 'Dirty Leeds: fouled down to 40%' : 'Dark arts', kind: 'opp' });
-    st.foul = -1;
   }
   for (const mod of capChance(v, base, m.condCap)) mods.push(mod);
-  const pctF = pctOf(v, side, reach);
+  return { side, minute, type, v, mods, reach, pctF: pctOf(v, side, reach), r, fouled };
+}
+
+/** A landing spot that agrees with an outcome already decided by the shared draw (presentation only). */
+function landFor(hex: Pt[], shape: Pt[], ok: boolean, r: () => number): Pt {
+  let p = randomIn(hex, r) as Pt;
+  for (let k = 0; k < 80 && inside(p, shape) !== ok; k++) p = randomIn(hex, r) as Pt;
+  return p;
+}
+
+/** The atk axis the moment favours: tonight's strongest of Pace, Power and Fuel (ties in that order). */
+const favoured = (st: MatchState): 'Pace' | 'Power' | 'Fuel' => (['Pace', 'Power', 'Fuel'] as const).reduce((b, a) => (st.base[a] > st.base[b] ? a : b), 'Pace');
+
+/** Whether slot `i` (one of yours) is a call: the closest moments weigh most, and every call due is placed. */
+function callHere(st: MatchState, i: number): boolean {
+  if (!st.callN || st.made.length >= st.callN || st.order[i] !== 'atk') return false;
+  const atkLeft = st.order.slice(i).filter((s) => s === 'atk').length;
+  if (atkLeft <= st.callN - st.made.length) return true;
+  const diff = Math.abs(st.live.mine - st.live.theirs);
+  const close = diff === 0 ? 1 : diff === 1 ? 0.8 : 0.12;
+  const late = st.minutes[i] >= 55 ? 1 : 0.3;
+  return rng(subSeed(st.m.seed, i, 'call'))() < close * late * 0.75;
+}
+
+/** The three options at a call, with odds from tonight's numbers through the same sizing as any chance. */
+export function offerAt(st: MatchState, i: number): CallOffer {
+  const ax = favoured(st);
+  const take = Math.round(sizeChance(st, i, TAKE_KIND[ax]).pctF * 100);
+  const shoot = Math.round(sizeChance(st, i, 'Long shot').pctF * 100);
+  const theirsLeft = st.order.slice(i + 1).includes('def');
+  const options: CallOption[] = [
+    { pick: 'take', pct: take, axis: ax, type: TAKE_KIND[ax] },
+    { pick: 'shoot', pct: shoot, type: 'Long shot' },
+    { pick: 'keep', pct: theirsLeft ? Math.round(KEEP_STOP * 100) : 0 },
+  ];
+  // The assistant takes the best odds (owner, 12 Nov): the option worth most, ties to taking it on.
+  const best = options.reduce((b, o) => (o.pct > b.pct ? o : b), options[0]).pick;
+  return { slot: i, minute: st.minutes[i], n: st.made.length + 1, of: st.callN, score: [st.live.mine, st.live.theirs], options, best };
+}
+
+/** Plays the next chance and returns it (undefined once all are played, or while the match waits for the owner). */
+export function nextChance(st: MatchState): ChanceEvent | undefined {
+  if (st.i >= st.total || st.stop) return undefined;
+  const { m, has, live, order } = st;
+  const i = st.i;
+  // A watched match stops at half-time, so the plan can change before the second half.
+  if (m.watch && !m.halfSeen && st.minutes[i] > 45 && !st.chances.some((c) => c.minute > 45)) { st.stop = { kind: 'half' }; return undefined; }
+  let call: CallRecord | undefined;
+  let force: string | undefined;
+  if (callHere(st, i)) {
+    const offer = offerAt(st, i);
+    const k = st.made.length;
+    let pick = m.calls?.[k], by: CallRecord['by'] = 'you';
+    if (!pick) {
+      if (m.watch) { st.stop = { kind: 'call', offer }; return undefined; }
+      pick = offer.best; by = 'assistant';
+    }
+    const opt = (p: CallPick) => offer.options.find((o) => o.pick === p)!;
+    call = {
+      slot: i, minute: offer.minute, n: offer.n, of: offer.of, score: offer.score, pick, by,
+      odds: { take: opt('take').pct, shoot: opt('shoot').pct, ...(opt('keep').pct ? { keep: opt('keep').pct } : {}) },
+      takeAxis: opt('take').axis!, takeType: opt('take').type!,
+    };
+    st.made.push(call);
+    if (pick === 'keep') {
+      // No chance now: the slot passes without a shot, and their next attack is easier to stop.
+      st.i++;
+      st.keep = true;
+      const ev: ChanceEvent = { minute: offer.minute, side: 'atk', type: 'Kept the ball', mods: [], values: { ...st.base }, reach: 0, pct: 0, land: [0, 0], ok: false, glDist: null, kept: true };
+      st.chances.push(ev);
+      return ev;
+    }
+    force = pick === 'take' ? call.takeType : 'Long shot';
+  }
+  st.i++;
+  const sz = sizeChance(st, i, force);
+  const { side, minute, type, v, mods, reach, r } = sz;
+  if (sz.fouled) st.foul = -1;
+  let pctF = sz.pctF;
+  const keepBonus = side === 'def' && st.keep;
+  if (keepBonus) { pctF = Math.min(0.99, pctF + KEEP_STOP); st.keep = false; mods.push({ axis: 'Rest', d: 0, why: 'Kept the ball: 15 points easier to stop', kind: 'call' }); }
   const pct = Math.round(pctF * 100);
   const shape = shapeOf(v, side);
   const hex = hexagon(reach);
-  let land = randomIn(hex, r) as Pt;
-  let ok = inside(land, shape);
-  const ev: ChanceEvent = { minute, side, type, mods, values: v, reach, pct, land, ok, glDist: null };
-  // second wind, and rebounds for Scrappy-type clubs
-  const tr = side === 'atk' && !ok && pct >= 30 && !st.wind ? st.retakes.find((a) => !live.used.has(a.id) && braboOk(a, side, minute, type, m.home, live, ctx)) : undefined;
-  if (side === 'atk' && !ok && st.wind && pct >= 30) {
-    st.wind = false;
-    land = randomIn(hex, r); ok = inside(land, shape);
-    ev.retake = { land, ok, why: 'Second wind' };
-  } else if (tr) {
-    live.used.add(tr.id);
-    land = randomIn(hex, r); ok = inside(land, shape);
-    ev.retake = { land, ok, why: tr.name };
-  } else if (side === 'def' && ok && st.scrappy) {
-    st.scrappy = false;
-    land = randomIn(hex, r); ok = inside(land, shape);
-    ev.retake = { land, ok, why: has('Scrappy') ? 'Scrappy' : 'Rekordmeister' };
+  let land: Pt, ok: boolean;
+  const ev: ChanceEvent = { minute, side, type, mods, values: v, reach, pct, land: [0, 0], ok: false, glDist: null };
+  if (call || keepBonus) {
+    // Honest dice with choices: one shared draw u decides it; the odds shown are exactly the odds used.
+    const u = rng(subSeed(m.seed, i, 'u'))();
+    ok = u < pctF;
+    land = landFor(hex, shape, ok, r);
+    ev.land = land;
+  } else {
+    land = randomIn(hex, r) as Pt;
+    ok = inside(land, shape);
+    ev.land = land;
+    // second wind, and rebounds for Scrappy-type clubs
+    const tr = side === 'atk' && !ok && pct >= 30 && !st.wind ? st.retakes.find((a) => !live.used.has(a.id) && braboOk(a, side, minute, type, m.home, live, st.ctx)) : undefined;
+    if (side === 'atk' && !ok && st.wind && pct >= 30) {
+      st.wind = false;
+      land = randomIn(hex, r); ok = inside(land, shape);
+      ev.retake = { land, ok, why: 'Second wind' };
+    } else if (tr) {
+      live.used.add(tr.id);
+      land = randomIn(hex, r); ok = inside(land, shape);
+      ev.retake = { land, ok, why: tr.name };
+    } else if (side === 'def' && ok && st.scrappy) {
+      st.scrappy = false;
+      land = randomIn(hex, r); ok = inside(land, shape);
+      ev.retake = { land, ok, why: has('Scrappy') ? 'Scrappy' : 'Rekordmeister' };
+    }
+    if (st.flip === i) { ok = !ok; ev.retake = { land, ok, why: 'Beach Wind' }; st.flip = -1; }
+    if (side === 'atk' && ok && has('Iron') && live.mine >= 3) { ok = false; ev.retake = { land, ok, why: 'Iron' }; }
+    if (side === 'def' && ok && has('Homing') && !m.home && live.theirs === 0 && order.slice(i + 1).every((s) => s === 'atk')) { ok = false; ev.retake = { land, ok, why: 'Homing' }; }
   }
-  if (st.flip === i) { ok = !ok; ev.retake = { land, ok, why: 'Beach Wind' }; st.flip = -1; }
-  if (side === 'atk' && ok && has('Iron') && live.mine >= 3) { ok = false; ev.retake = { land, ok, why: 'Iron' }; }
-  if (side === 'def' && ok && has('Homing') && !m.home && live.theirs === 0 && order.slice(i + 1).every((s) => s === 'atk')) { ok = false; ev.retake = { land, ok, why: 'Homing' }; }
   ev.ok = ok;
   const d = edgeDistance(land, shape);
   ev.glDist = d < GOAL_LINE ? d : null;
@@ -469,6 +606,7 @@ export function finishMatch(st: MatchState): MatchEvents {
   return {
     seed: m.seed, chances: st.chances, score: [live.mine, live.theirs],
     xg: [Math.round(xg[0] * 100) / 100, Math.round(xg[1] * 100) / 100], moments: st.moments,
+    ...(m.calls ? { calls: st.made } : {}),
     revealed: ctx.firstMeeting && hidden ? hidden.name : undefined,
   };
 }
