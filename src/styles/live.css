@@ -358,7 +358,7 @@ html.contrast .lv-check, html.contrast .lv-ghost { border-color: var(--text); }
 .lv-card-ex::after { display: none; }
 .lv-card-ex-sky { height: 118px; top: 6px; }
 .lv-card-ex-text { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 4px; padding: 8px; margin: 0 -2px; border-radius: 12px; background: rgba(5, 6, 14, 0.82); }
-.lv-card-ex-hint { font-size: 13px; color: color-mix(in srgb, var(--text) 70%, transparent); }
+.lv-card-ex-hint { font-size: 14px; color: color-mix(in srgb, var(--text) 70%, transparent); }
 .lv-card-ex.back { padding-top: 10px; }
 html.contrast .lv-card-ex { background: #000; border: 2px solid currentColor; box-shadow: none; }
 html.contrast .lv-card-ex-text { background: #000; }

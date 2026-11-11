@@ -481,7 +481,7 @@ function Capture({
       )}
       {!shotUrl && (
         <>
-          <button type="button" className="link tap44" style={{ alignSelf: 'center', minHeight: 32 }} onClick={() => fileInput.current?.click()}>
+          <button type="button" className="link tap44" style={{ alignSelf: 'center', minHeight: 44 }} onClick={() => fileInput.current?.click()}>
             Use the camera app instead
           </button>
           <input

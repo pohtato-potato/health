@@ -371,10 +371,10 @@
 }
 .datechip-pick input {
   position: absolute;
-  inset: 0;
+  inset: -1px;
   opacity: 0;
-  width: 100%;
-  height: 100%;
+  width: calc(100% + 2px);
+  height: calc(100% + 2px);
 }
 
 /* Plate mode: several foods with their own amounts, added once. */
@@ -409,7 +409,7 @@
   min-height: 52px;
 }
 .grip {
-  width: 34px;
+  width: 44px;
   height: 44px;
   display: inline-flex;
   align-items: center;
@@ -477,7 +477,7 @@
   width: 30px;
   font-family: var(--sans);
   font-variant-numeric: tabular-nums;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--quiet);
   flex-shrink: 0;
 }

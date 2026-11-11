@@ -17,3 +17,9 @@
   height: max(100%, 44px);
   transform: translate(-50%, -50%);
 }
+
+/* Whole-app pass (10 Nov): the drawn box reaches 44 px as well, not just the tap area. */
+.tap44 {
+  min-height: 44px;
+  min-width: 44px;
+}

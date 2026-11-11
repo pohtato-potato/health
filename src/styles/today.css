@@ -244,6 +244,8 @@
 .tm-back { color: #ffd56a; }
 .tm-fog { color: #c8d3ea; }
 .tm-bar { display: flex; height: 44px; border-radius: 14px; overflow: hidden; background: color-mix(in srgb, var(--t2) 55%, #151829); font-size: 15px; }
+/* Before the day's first log: an even, quiet bar with words, no score. */
+.tm-bar.tm-bar-empty { align-items: center; justify-content: center; background: linear-gradient(90deg, color-mix(in srgb, var(--t1) 30%, #151829), color-mix(in srgb, var(--t2) 30%, #151829)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--t1) 45%, transparent); color: #e9ecff; }
 .tm-me { display: flex; align-items: center; padding-left: 12px; background: var(--t1); color: #10121f; white-space: nowrap; transition: width 900ms cubic-bezier(.2, .9, .2, 1); min-width: 64px; }
 .tm-op { flex: 1; display: flex; align-items: center; justify-content: flex-end; padding-right: 12px; color: #10121f; white-space: nowrap; min-width: 0; }
 .tm-ahead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 10px 12px; border-radius: 14px; border: 1px solid color-mix(in srgb, #ffd56a 50%, transparent); background: color-mix(in srgb, #ffd56a 10%, transparent); }
