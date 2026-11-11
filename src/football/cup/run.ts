@@ -181,7 +181,9 @@ export function updateMatch(r0: RunState, match: MatchState): RunState {
   const coins = tw.winCoins + RUN_TUNE.goalCoins * match.score[0] + (r.heirlooms.includes('ticket-stub') ? RUN_TUNE.ticketStub : 0);
   r.coins += coins;
   if (st.kind === 'final' && isLastFinal(r, st.node)) {
-    leave(r);
+    // the final joins the route, and stays on show for the cup-won screen
+    r.at = st.node;
+    r.path.push(st.node);
     r.over = 'won';
     return r;
   }

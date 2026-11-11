@@ -2,7 +2,8 @@
    chalk hatching, white slabs set on a slant, dashed chalk lines, and move cards as coaching-board diagrams in each
    axis's ink. The Cups door on Football stays in Football's aurora. Words in Atkinson Hyperlegible Next, numbers and
    titles in Fraunces. Text 14 px or more, targets 44 px or more. */
-.cup-world { --chalk: #f3efe4; --board: #0a1712; --cq: #c4c1cf; --ab: 'Atkinson Hyperlegible Next', var(--sans); --fr: var(--serif);
+.cup-world, .cup-goal, .cup-sheet { --chalk: #f3efe4; --board: #0a1712; --cq: #c4c1cf; --ab: 'Atkinson Hyperlegible Next', var(--sans); --fr: var(--serif); }
+.cup-world {
   background: repeating-linear-gradient(115deg, rgba(255,255,255,.022) 0 2px, transparent 2px 9px), radial-gradient(120% 60% at 50% 0%, color-mix(in srgb, var(--cup, #e9a46a) 20%, transparent), transparent 60%), var(--board); }
 .cup-world > .fb-field { display: none; }
 .cup-page { gap: 12px; font-family: var(--ab); color: #ede6da; padding-top: calc(10px + var(--safe-top)); padding-bottom: calc(var(--tab-h) + 28px + var(--safe-bottom)); }
@@ -29,7 +30,7 @@
 .cup-btn.sm { width: auto; min-height: 44px; padding: 0 14px; font-size: 15px; }
 .cup-btn:disabled { opacity: .45; cursor: default; }
 .cup-acts { display: flex; gap: 10px; } .cup-acts > * { flex: 1; }
-.cup-acts .cup-btn.ghost { flex: 0 1 40%; }
+.cup-match .cup-acts .cup-btn.ghost { flex: 0 1 40%; }
 
 /* options: dashed chalk rows */
 .cup-opt { all: unset; box-sizing: border-box; border: 2px dashed var(--chalk, #f3efe4); border-radius: 4px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 52px; cursor: pointer; font: 16px/1.35 var(--ab); color: #ede6da; text-align: left; }
@@ -44,7 +45,7 @@
 .cup-svg { display: inline-flex; flex: none; }
 .cup-svg svg { overflow: visible; }
 .cup-crest-x { display: inline-block; border: 2px solid var(--cq, #c4c1cf); border-radius: 6px 6px 50% 50%; }
-.cup-mom { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; height: 34px; align-items: center; }
+.cup-mom { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; height: 30px; align-items: center; }
 .cup-mom i { display: block; border-radius: 3px; background: rgba(237,230,218,.14); height: 6px; position: relative; }
 .cup-mom i.u::after, .cup-mom i.d::before { content: ""; position: absolute; left: 0; right: 0; border-radius: 3px; }
 .cup-mom i.u::after { bottom: 8px; height: var(--h); background: #ff7a1a; box-shadow: 0 0 8px #ff7a1a; }
@@ -59,6 +60,8 @@
 @keyframes cup-dash { to { stroke-dashoffset: -20; } }
 .cup-ball { filter: drop-shadow(0 0 6px #fff) drop-shadow(0 0 10px #e9a46a); animation: cup-ball .45s ease-out; transform-box: fill-box; transform-origin: center; }
 @keyframes cup-ball { from { transform: translateY(40px) scale(.6); opacity: .3; } }
+.cup-nw { white-space: nowrap; }
+.cup-them { all: unset; box-sizing: border-box; min-height: 44px; cursor: pointer; border-bottom: 2px dashed rgba(147,195,220,.6); display: flex; align-items: center; gap: 8px; font: 600 24px/1 var(--fr); }
 .cup-club { position: absolute; left: 6px; top: 6px; min-height: 44px; padding: 0 12px; border-radius: 22px; border: 1.5px solid rgba(147,195,220,.8); background: rgba(10,23,18,.85); color: #93c3dc; font: 700 14px var(--ab); cursor: pointer; }
 .cup-toasts { position: absolute; left: 8px; right: 8px; bottom: 40px; display: flex; flex-direction: column; gap: 4px; pointer-events: none; align-items: flex-start; }
 .cup-toast { margin: 0; padding: 4px 10px; border-radius: 4px; font: 600 14px/1.3 var(--ab); background: rgba(10,23,18,.9); border: 1.5px solid rgba(243,239,228,.6); animation: cup-pop .35s ease-out, cup-fade .6s ease-in 3.4s forwards; }
@@ -72,7 +75,9 @@
 @keyframes cup-pop { from { transform: scale(.85); opacity: 0; } }
 @keyframes cup-fade { to { opacity: 0; visibility: hidden; } }
 
-.cup-say { min-height: 44px; display: flex; align-items: center; font-size: 16px; line-height: 1.35; }
+.cup-match { gap: 6px; }
+.cup-match .cup-btn { min-height: 48px; }
+.cup-say { min-height: 40px; display: flex; align-items: center; font-size: 16px; line-height: 1.35; }
 .cup-say b { color: #f2c46d; }
 .cup-st { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-size: 15px; }
 .cup-pip { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #c2b2ff; display: inline-block; margin-right: 4px; vertical-align: -2px; }
@@ -110,7 +115,8 @@
 .cup-cd-lv { color: var(--ink); font-size: 14px; letter-spacing: 1px; }
 .cup-cd-val { text-align: right; font: 600 24px/0.9 var(--fr); color: var(--ink); }
 .cup-cd-val small { display: block; font: 700 14px/1 var(--ab); letter-spacing: .04em; }
-.cup-cd-note { position: absolute; left: 0; right: 0; top: 36%; text-align: center; font: 700 15px var(--ab); background: rgba(10,23,18,.88); color: #ede6da; padding: 4px 0; }
+.cup-cdw { display: flex; flex-direction: column; gap: 4px; }
+.cup-cd-note { text-align: center; font: 700 15px var(--ab); color: #ede6da; }
 .cup-cd-note.k-price { color: #f2c46d; }
 .cup-cd-note.k-drop { color: #ff9270; }
 
@@ -168,7 +174,9 @@
 .cup-node.can circle:nth-child(2) { animation: cup-breathe 2.4s ease-in-out infinite; }
 @keyframes cup-breathe { 50% { stroke-width: 4.5; } }
 .cup-legend { font-size: 14px; }
-.cup-dock { position: sticky; bottom: calc(var(--tab-h) + var(--safe-bottom) + 8px); display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 4px; background: rgba(10,23,18,.94); border: 2px solid rgba(243,239,228,.4); }
+.cup-mapscr { padding-bottom: 190px; }
+.cup-node:focus { outline: none; }
+.cup-dock { position: fixed; z-index: 5; left: 50%; transform: translateX(-50%); width: min(488px, calc(100% - 32px)); bottom: calc(var(--tab-h) + var(--safe-bottom) + 8px); display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 4px; background: rgba(10,23,18,.94); border: 2px solid rgba(243,239,228,.4); }
 
 /* the rest room */
 .cup-room { width: 100%; display: block; font-family: var(--ab); }
@@ -213,7 +221,7 @@
 .cup-door { --k: var(--cup, var(--fb-or)); }
 .cup-door-top { display: flex; align-items: center; gap: 12px; }
 .cup-door .cup-h { font: 700 22px/1.1 var(--fb-cond); }
-.cup-door-won { display: flex; gap: 6px; flex-wrap: wrap; }
+.cup-door-won { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .cup-trophy { flex: none; overflow: visible; }
 
 /* sheets: read a card, the deck, the wild card's choice */
@@ -221,3 +229,5 @@
 .cup-sheet { color: #ede6da; font-family: 'Atkinson Hyperlegible Next', var(--sans); width: 100%; max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; padding: 16px 16px calc(16px + var(--safe-bottom, 0px)); border-radius: 6px 6px 0 0; background: #0a1712; border-top: 2px solid #f3efe4; font-size: 16px; line-height: 1.4; max-height: 82vh; overflow-y: auto; --chalk: #f3efe4; --board: #0a1712; --cq: #c4c1cf; --ab: 'Atkinson Hyperlegible Next', var(--sans); --fr: var(--serif); }
 .cup-sheet p { margin: 0; }
 .cup-sheet .cup-h { font: 400 22px/1.15 var(--serif); }
+.cup-top { flex-wrap: wrap; }
+.cup-top > .cup-q { white-space: nowrap; }

@@ -19,6 +19,7 @@ import { RunRoute, whereNow } from './CupRun';
 /** "One-two ×2, Overlap run". */
 const cardList = (cs: Card[]) => [...new Set(cs.map((c) => titleOf(c.kind)))].map((t) => { const k = cs.filter((c) => titleOf(c.kind) === t).length; return k > 1 ? `${t} ×${k}` : t; }).join(', ');
 const LEVEL: Record<string, string> = { basic: 'Basic', good: 'Good', great: 'Great', punt: 'Punts' };
+const twistLine = (t: string, more = false) => (t === 'None' ? 'No twist: the first cup.' : `Twist: ${t}${more ? ', and every earlier cup\'s' : ''}.`);
 const wonCups = (b: CupBook | undefined) => CUPS.filter((c) => (b?.cups[c.n]?.won ?? 0) > 0);
 
 /** The Cups door on Football: the cup you are on, a run in progress, the cups won. */
@@ -45,6 +46,7 @@ export function CupsDoor() {
       )}
       {won.length > 0 && (
         <div className="cup-door-won" aria-label={`Cups won: ${won.map((c) => c.name).join(', ')}`}>
+          <span className="fb-s">Won</span>
           {won.map((c) => <Trophy key={c.n} kind={c.silver} colour={c.colour} size={32} />)}
         </div>
       )}
@@ -69,7 +71,7 @@ export function DealView({ deal, title }: { deal: Deal; title: string }) {
           <li key={r.axis} className="cup-dr" style={{ '--ink': AXIS_INK[r.axis] } as CSSProperties}>
             <span><b className="cup-ax">{r.axis}</b><br /><span className="cup-q">{LEVEL[r.level]} · {cardList(r.cards)}</span></span>
             <span className="cup-q">7-day</span>
-            <b className={`cup-n lv-${r.level}`}>{r.avg != null ? Math.round(r.avg) : '–'}</b>
+            <b className={`cup-n lv-${r.level}`}>{r.avg != null ? Math.floor(r.avg) : '–'}</b>
             <span className="cup-why">{r.why}</span>
           </li>
         ))}
@@ -128,7 +130,7 @@ export function CupsPage() {
           <div className="cup-sig" style={{ '--cup': cupByN(chosen).colour } as CSSProperties}>
             <p className="cup-cap">Your run</p>
             <p className="cup-h">{cupByN(chosen).name}</p>
-            <p className="cup-q">Twist: {cupByN(chosen).twist}{chosen > 1 ? ', and every earlier cup\'s' : ''}.</p>
+            <p className="cup-q">{twistLine(cupByN(chosen).twist, chosen > 1)}</p>
             <button type="button" className="cup-btn" disabled={busy || !deal} onClick={() => void start()}><span>Start the run</span></button>
           </div>
         </>
@@ -148,7 +150,7 @@ export function CupsPage() {
                 <Trophy kind={c.silver} colour={isOpen ? c.colour : '#5d6170'} size={40} />
                 <span>
                   <b>{c.n}. {c.name}</b><br />
-                  <span className="cup-q">{isOpen ? `Twist: ${c.twist}.` : 'Opens when you win the cup before it.'}</span>
+                  <span className="cup-q">{isOpen ? twistLine(c.twist) : 'Opens when you win the cup before it.'}</span>
                   {rec && <><br /><span className="cup-q">{rec.won ? `Won ${rec.won}×` : `Furthest: ${rec.furthest} stops`}{rec.fastest != null ? ` · fastest win ${rec.fastest} cards` : ''} · {rec.runs} run{rec.runs === 1 ? '' : 's'}</span></>}
                   {isOpen && c.note && <><br /><span className="cup-q">{c.note}</span></>}
                 </span>

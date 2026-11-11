@@ -24,12 +24,13 @@ const CHALK = '#f3efe4';
 const ACC = '#e9a46a';
 
 /** The crests and the score: you on the left, them on the right. */
-export function ScoreRow({ s }: { s: MatchState }) {
+export function ScoreRow({ s, onThem }: { s: MatchState; onThem?: () => void }) {
   const save = useSave();
+  const them = <>{s.score[1]} {s.club.short}<Crest id={s.club.id} size={28} /></>;
   return (
     <div className="cup-top" aria-label={`Brabo ${s.score[0]}, ${s.club.name} ${s.score[1]}`}>
       <span className="cup-sc"><Crest id={OWN} size={28} own={save?.crest} />Brabo {s.score[0]}</span>
-      <span className="cup-sc">{s.score[1]} {s.club.short}<Crest id={s.club.id} size={28} /></span>
+      {onThem ? <button type="button" className="cup-sc cup-them" onClick={onThem} aria-label={`${s.club.name}: how they play`}>{them}</button> : <span className="cup-sc">{them}</span>}
     </div>
   );
 }
@@ -52,48 +53,48 @@ function Momentum({ s }: { s: MatchState }) {
   );
 }
 
-const BALL_Y = [272, 226, 150];
+const BALL_Y = [234, 172, 110];
 /** The pitch, their goal at the top: their defence a row in front of it, their attack coming down the right. */
 function Pitch({ s }: { s: MatchState }) {
   const line = lineNow(s);
   const threat = threatNow(s);
   const by = BALL_Y[s.zone];
-  const passes = Math.min(4, s.move.passes + (s.move.carries ?? 0));
+  const passes = Math.min(3, s.move.passes + (s.move.carries ?? 0));
   // the move so far: a zigzag of players up to the ball
-  const pts = Array.from({ length: passes }, (_, i) => [i % 2 ? 150 : 96, Math.min(286, by + 34 * (passes - i))] as [number, number]);
-  const trail = [...pts, [124, by] as [number, number]];
+  const pts = Array.from({ length: passes }, (_, i) => [i % 2 ? 200 : 158, Math.min(256, by + 28 * (passes - i))] as [number, number]);
+  const trail = [...pts, [154, by] as [number, number]];
   return (
-    <svg className="cup-pt" viewBox="0 0 336 300" role="img"
+    <svg className="cup-pt" viewBox="0 0 336 270" role="img"
       aria-label={`The pitch. The ball is in ${['your third', 'midfield', 'the final third'][s.zone]}. Build-up times ${s.build}. Their defence ${line}. ${threat ? `Their attack coming: ${threat}.` : 'No attack this spell.'} Your cover ${coverNow(s)}.`}>
       <defs><marker id="cup-ah2" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="context-stroke" /></marker></defs>
       <g fill="none" stroke={CHALK} strokeWidth="1.6" strokeDasharray="6 6" opacity=".8">
-        <rect x="4" y="4" width="328" height="292" rx="10" /><path d="M4 104h328M4 200h328" /><path d="M120 4v26h96V4M120 296v-26h96v26" />
+        <rect x="4" y="4" width="328" height="262" rx="10" /><path d="M4 80h328M4 142h328M4 204h328" /><path d="M120 4v22h96V4M120 266v-22h96v22" />
       </g>
-      <g fontSize="14" fill="#c4c1cf">
-        <text x="12" y="98">Final third</text><text x="12" y="194">Midfield</text><text x="12" y="288">Your third</text>
+      <g fontSize="16" fill="#c4c1cf">
+        <text x="12" y="136">Final third</text><text x="12" y="198">Midfield</text><text x="12" y="260">Your third</text>
       </g>
       <g className="cup-def">
-        <path d="M60 50h216" stroke={OPP} strokeWidth="4" />
-        {[84, 134, 190, 240].map((x) => <path key={x} d={`M${x} 42l12 16M${x + 12} 42l-12 16`} stroke={OPP} strokeWidth="3" />)}
+        <path d="M40 38h256" stroke={OPP} strokeWidth="4" />
+        {[64, 120, 176, 232].map((x) => <path key={x} d={`M${x} 30l12 16M${x + 12} 30l-12 16`} stroke={OPP} strokeWidth="3" />)}
       </g>
-      <rect x="186" y="62" width="142" height="26" rx="13" fill="#0a1712" stroke={OPP} strokeWidth="1.6" />
-      <text x="257" y="80" fontSize="14" fontWeight="700" fill={OPP} textAnchor="middle">Their defence {line}</text>
+      <rect x="170" y="47" width="158" height="28" rx="14" fill="#0a1712" stroke={OPP} strokeWidth="1.6" />
+      <text x="249" y="67" fontSize="16" fontWeight="700" fill={OPP} textAnchor="middle">Their defence {line}</text>
       {threat > 0 && (
         <g className="cup-coming">
-          <path d="M296 104 Q308 190 236 262" stroke={OPP} strokeWidth="2.4" strokeDasharray="3 7" fill="none" markerEnd="url(#cup-ah2)" />
-          <rect x="222" y="150" width="106" height="26" rx="13" fill="#0a1712" stroke={OPP} strokeWidth="1.6" />
-          <text x="275" y="168" fontSize="14" fontWeight="700" fill={OPP} textAnchor="middle">Coming: {threat}</text>
+          <path d="M306 80 Q316 160 262 222" stroke={OPP} strokeWidth="2.4" strokeDasharray="3 7" fill="none" markerEnd="url(#cup-ah2)" />
+          <rect x="212" y="89" width="116" height="28" rx="14" fill="#0a1712" stroke={OPP} strokeWidth="1.6" />
+          <text x="270" y="109" fontSize="16" fontWeight="700" fill={OPP} textAnchor="middle">Coming: {threat}</text>
         </g>
       )}
       <g stroke={ACC} fill="none" strokeWidth="2.6">
         {trail.slice(1).map(([x, y], i) => <path key={i} d={`M${trail[i][0]} ${trail[i][1]} L${x} ${y}`} strokeDasharray="5 6" markerEnd={i === trail.length - 2 ? 'url(#cup-ah2)' : undefined} />)}
         {pts.map(([x, y], i) => <circle key={i} cx={x} cy={y} r="8" />)}
       </g>
-      <circle key={`${s.zone}-${s.spell}`} className="cup-ball" cx="124" cy={by} r="7" fill="#fff" />
-      <rect x="20" y={by + 12} width="100" height="26" rx="13" fill={ACC} />
-      <text x="70" y={by + 30} fontSize="14" fontWeight="700" fill="#0a1712" textAnchor="middle">Build-up ×{s.build.toFixed(1)}</text>
-      <rect x="118" y="268" width="100" height="24" rx="12" fill="#0a1712" stroke={CHALK} strokeWidth="1.6" />
-      <text x="168" y="285" fontSize="14" fontWeight="700" fill={CHALK} textAnchor="middle">Your cover {coverNow(s)}</text>
+      <circle key={`${s.zone}-${s.spell}`} className="cup-ball" cx="154" cy={by} r="7" fill="#fff" />
+      <rect x="8" y={by - 14} width="128" height="28" rx="14" fill={ACC} />
+      <text x="72" y={by + 6} fontSize="16" fontWeight="700" fill="#0a1712" textAnchor="middle">Build-up ×{s.build.toFixed(1)}</text>
+      <rect x="196" y="236" width="132" height="28" rx="14" fill="#0a1712" stroke={CHALK} strokeWidth="1.6" />
+      <text x="262" y="256" fontSize="16" fontWeight="700" fill={CHALK} textAnchor="middle">Your cover {coverNow(s)}</text>
     </svg>
   );
 }
@@ -213,7 +214,7 @@ function Banner({ s, onGo }: { s: MatchState; onGo: () => void }) {
 }
 
 /** One cup match. `label` is the round; `commit` saves after every card. */
-export function MatchScreen({ s, label, commit, onAbandon }: { s: MatchState; label: string; commit: (n: MatchState) => void; onAbandon: () => void }) {
+export function MatchScreen({ s, label, commit }: { s: MatchState; label: string; commit: (n: MatchState) => void }) {
   const save = useSave();
   const feel = save?.buzz !== false;
   const [recycling, setRecycling] = useState(false);
@@ -253,12 +254,11 @@ export function MatchScreen({ s, label, commit, onAbandon }: { s: MatchState; la
   return (
     <div className="cup-board cup-match">
       <ArtDefs />
-      <div className="cup-top"><Slab>{label.toUpperCase()}</Slab><span className="cup-q">Spell {s.spell} of {TUNE.spells}</span></div>
-      <ScoreRow s={s} />
+      <div className="cup-top"><Slab>{label.split(' · ').pop()!.toUpperCase()}</Slab><span className="cup-q cup-nw">Spell {s.spell} of {TUNE.spells}</span></div>
+      <ScoreRow s={s} onThem={() => setAbout(true)} />
       <Momentum s={s} />
       <div className="cup-pwrap">
         <Pitch s={s} />
-        <button type="button" className="cup-club" onClick={() => setAbout(true)} aria-label={`${s.club.name}: how they play`}>How they play</button>
         <div className="cup-toasts" aria-live="polite">
           {burst.map((b, i) => <p key={`${s.feed.length}-b${i}`} className="cup-burst">{b}</p>)}
           {toasts.map((f, i) => <p key={`${s.feed.length}-${i}`} className={`cup-toast k-${f.kind}`}>{f.text}</p>)}
@@ -295,7 +295,6 @@ export function MatchScreen({ s, label, commit, onAbandon }: { s: MatchState; la
           {s.club.elite && <p><b>{SIGNATURE[s.club.elite].name}.</b> {SIGNATURE[s.club.elite].text}</p>}
           <p className="cup-q">{s.club.scouted ? 'Scouted: you have met them in the league, so you see their attacks two spells ahead and their penalty habits.' : 'Not scouted: meet them in the league to see their attacks two spells ahead.'}</p>
           <p className="cup-q">A chance at or above their defence is a goal; at half of it or more, a near miss that lowers it. Their attack beating your cover by 1 to {TUNE.shortMax} costs fitness; by more, they score.</p>
-          <button type="button" className="cup-btn ghost" onClick={() => { setAbout(false); onAbandon(); }}><span>Give up the run</span></button>
         </Sheet>
       )}
       {wild && (
@@ -336,7 +335,7 @@ function Pens({ s, label, commit, feel }: { s: MatchState; label: string; commit
   };
   return (
     <div className="cup-board cup-match cup-pens">
-      <div className="cup-top"><Slab>{label.toUpperCase()} · PENALTIES</Slab></div>
+      <div className="cup-top"><Slab>{label.replace(/^The /, '').toUpperCase()} · PENS</Slab></div>
       <ScoreRow s={s} />
       <div className="cup-tally" aria-label={`Penalties: Brabo ${p.us.filter(Boolean).length}, ${s.club.short} ${p.them.filter(Boolean).length}`}>
         <p><span>Brabo</span><span className="cup-dots">{dots(p.us)}</span></p>
@@ -346,7 +345,7 @@ function Pens({ s, label, commit, feel }: { s: MatchState; label: string; commit
       <svg className="cup-pgoal" viewBox="0 0 336 170" role="img" aria-label={mine ? 'Their goal and keeper' : 'Your goal: you are the keeper'}>
         <g fill="none" stroke={CHALK} strokeWidth="3"><path d="M24 160V20h288v140" /><path d="M24 20l18 12h252l18-12" opacity=".5" /></g>
         <g stroke={CHALK} strokeWidth="1" opacity=".22">{Array.from({ length: 11 }, (_, i) => <path key={i} d={`M${48 + i * 24} 32v128`} />)}{Array.from({ length: 5 }, (_, i) => <path key={i} d={`M42 ${52 + i * 24}h252`} />)}</g>
-        {SIDES.map((x, i) => <text key={x} x={80 + i * 88} y="152" fontSize="14" fontWeight="700" fill={side === x ? ACC : '#c4c1cf'} textAnchor="middle">{SIDE_LABEL[x].toUpperCase()}</text>)}
+        {SIDES.map((x, i) => <text key={x} x={80 + i * 88} y="152" fontSize="16" fontWeight="700" fill={side === x ? ACC : '#c4c1cf'} textAnchor="middle">{SIDE_LABEL[x].toUpperCase()}</text>)}
         <g fill={mine ? OPP : ACC} opacity=".9"><circle cx="168" cy="72" r="13" /><path d="M150 90h36l8 46h-16l-4-26-4 26h-16l-4-26-4 26h-16z" /><path d="M150 94l-26 20M186 94l26 20" stroke={mine ? OPP : ACC} strokeWidth="9" strokeLinecap="round" /></g>
       </svg>
       <p className="cup-q">{hint}</p>

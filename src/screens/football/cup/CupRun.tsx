@@ -70,7 +70,7 @@ function Run({ rec, ctx }: { rec: CupRun; ctx: RunCtx }) {
   if (!st) body = <MapScreen r={r} onGo={(id) => put(enter(r, id, ctx))} onAbandon={() => put(abandon(r))} />;
   else if (st.kind === 'match' || st.kind === 'elite' || st.kind === 'final') {
     if (!st.offer) {
-      body = <MatchScreen key={st.node} s={st.match} label={`${cup.name} · ${labelOf(r, st.node)}`} commit={(m) => put(updateMatch(r, m))} onAbandon={() => put(abandon(r))} />;
+      body = <MatchScreen key={st.node} s={st.match} label={`${cup.name} · ${labelOf(r, st.node)}`} commit={(m) => put(updateMatch(r, m))} />;
     } else if (!st.offer.picked) body = <FullTime r={r} st={st} onPick={(i) => put(pickCard(r, i))} />;
     else body = <HeirloomScreen r={r} id={st.offer.heirloom!} from={st.club.name} round={labelOf(r, st.node)} onTake={() => put(takeHeirloom(r))} />;
   } else if (st.kind === 'rest') body = <RestRoom r={r} onRest={(c, id) => put(rest(r, c, id))} />;
@@ -105,17 +105,17 @@ function MapScreen({ r, onGo, onAbandon }: { r: RunState; onGo: (id: number) => 
     <div className="cup-board cup-mapscr">
       <div className="cup-top"><Slab>{cup.name.toUpperCase()}</Slab><span className="cup-q">Fitness {r.fitness} · {r.coins} coins</span></div>
       <svg className="cup-map" viewBox={`0 0 336 ${H}`} role="group" aria-label={`The cup map: ${r.map.rows} stops to the ${r.map.labels[r.map.rows - 1].toLowerCase()}. ${stopsCleared(r)} cleared.`}>
-        <defs><filter id="cup-gm" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter></defs>
+        <defs><filter id="cup-gm" filterUnits="userSpaceOnUse" x="0" y="0" width="336" height={H}><feGaussianBlur stdDeviation="3" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter></defs>
         {firsts.map((row) => (
           <g key={row}>
             <path d={`M4 ${yOf(row) + 29}h328`} stroke="rgba(237,230,218,.14)" />
-            <text x="8" y={yOf(row) + 5} fontSize="14" fill={row <= reachedRow + 1 ? '#ede6da' : '#c4c1cf'}>{r.map.labels[row]}</text>
+            <text x="8" y={yOf(row) + 5} fontSize="16" fill={row <= reachedRow + 1 ? '#ede6da' : '#c4c1cf'}>{r.map.labels[row]}</text>
           </g>
         ))}
         {edges.map(([a, b]) => {
           const [x1, y1] = xy(a); const [x2, y2] = xy(b);
           const on = lit(a, b); const nx = fromHere(a, b);
-          return <path key={`${a}-${b}`} d={`M${x1} ${y1}L${x2} ${y2}`} stroke={on ? 'var(--cup)' : nx ? '#ede6da' : 'rgba(237,230,218,.3)'} strokeWidth={on ? 4 : nx ? 2.4 : 2} strokeDasharray={on ? undefined : '4 7'} filter={on ? 'url(#cup-gm)' : undefined} />;
+          return <path key={`${a}-${b}`} d={`M${x1} ${y1}L${x2} ${y2}`} stroke={on ? cup.colour : nx ? '#ede6da' : 'rgba(237,230,218,.3)'} strokeWidth={on ? 4 : nx ? 2.4 : 2} strokeDasharray={on ? undefined : '4 7'} filter={on ? 'url(#cup-gm)' : undefined} />;
         })}
         {r.map.nodes.map((n) => {
           const [x, y] = xy(n.id);
@@ -145,7 +145,7 @@ function MapScreen({ r, onGo, onAbandon }: { r: RunState; onGo: (id: number) => 
           </>
         ) : <p className="cup-q">Tap a lit stop to choose where to go next.</p>}
         <div className="cup-acts">
-          <button type="button" className="cup-btn ghost" onClick={() => setDeck(true)}><span>Your deck · {r.deck.length}</span></button>
+          <button type="button" className="cup-btn ghost" onClick={() => setDeck(true)}><span>Deck · {r.deck.length}</span></button>
           <button type="button" className="cup-btn ghost" onClick={() => setQuit(true)}><span>Give up</span></button>
         </div>
       </div>
@@ -189,9 +189,10 @@ function FullTime({ r, st, onPick }: { r: RunState; st: MatchStop; onPick: (i: n
       <Slab>FULL TIME · {labelOf(r, st.node).toUpperCase()}</Slab>
       <ScoreRow s={s} />
       {p && <p className="cup-q">{p.us.filter(Boolean).length}–{p.them.filter(Boolean).length} on penalties.</p>}
+      {combos.length > 0 && <p className="cup-q">{[...new Set(combos)].map((k) => { const n = combos.filter((x) => x === k).length; return n > 1 ? `${k} ×${n}` : k; }).join(' · ')}</p>}
       <ul className="cup-rows">
         <li><span>Moves built</span><b>{finishes.length}</b></li>
-        <li><span>Combinations</span><b>{combos.length ? combos.join(', ') : 'none'}</b></li>
+        <li><span>Combinations</span><b>{combos.length}</b></li>
         <li><span>Best chance</span><b>{best || '–'}</b></li>
         <li><span>Fitness</span><b>{s.fit0 ?? r.fitness} → {r.fitness}</b></li>
         <li><span>Coins</span><b>+{st.offer!.coins}</b></li>
@@ -243,7 +244,7 @@ function RestRoom({ r, onRest }: { r: RunState; onRest: (c: 'rub' | 'drills' | '
   const up = r.deck.filter(canUpgrade);
   const frac = r.fitness / FIT_MAX;
   const after = (r.fitness + amount) / FIT_MAX;
-  const arc = (f: number) => { const a = Math.PI * (1 - f); return `${120 + 70 * Math.cos(a)} ${120 - 70 * Math.sin(a)}`; };
+  const arc = (f: number) => { const a = Math.PI * (1 - f); return `${150 + 58 * Math.cos(a)} ${124 - 58 * Math.sin(a)}`; };
   if (drills) {
     return (
       <div className="cup-board cup-rest">
@@ -263,15 +264,14 @@ function RestRoom({ r, onRest }: { r: RunState; onRest: (c: 'rub' | 'drills' | '
       <svg className="cup-room" viewBox="0 0 336 170" role="img" aria-label={`The physio's room. Fitness ${r.fitness} of ${FIT_MAX}.`}>
         <g fill="none" stroke="#f3efe4" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" opacity=".85">
           <path d="M12 140h312" opacity=".4" />
-          <path d="M196 96h120v10H196zM206 106v34M306 106v34M196 92q8-10 22-8" />
-          <path d="M18 112h44v28H18zM28 112v-8h24v8M40 118v16M32 126h16" />
-          <path d="M80 140V60h26v80M80 82h26M80 104h26" opacity=".6" />
+          <path d="M228 100h100v10H228zM236 110v30M320 110v30M228 96q8-10 22-8" />
+          <path d="M14 112h44v28H14zM24 112v-8h24v8M36 118v16M28 126h16" />
         </g>
-        <path d={`M50 120A70 70 0 0 1 190 120`} transform="translate(0,0)" fill="none" stroke="rgba(237,230,218,.18)" strokeWidth="10" strokeLinecap="round" />
-        <path d={`M50 120A70 70 0 0 1 ${arc(Math.min(1, after))}`} fill="none" stroke="#93c3dc" strokeWidth="10" strokeLinecap="round" opacity=".35" />
-        <path d={`M50 120A70 70 0 0 1 ${arc(Math.max(0.01, frac))}`} fill="none" stroke="#93c3dc" strokeWidth="10" strokeLinecap="round" style={{ filter: 'drop-shadow(0 0 6px #93c3dc)' }} />
-        <text x="120" y="112" fontSize="30" fontWeight="700" fill="#ede6da" textAnchor="middle" fontFamily="var(--serif)">{r.fitness}</text>
-        <text x="120" y="132" fontSize="14" fill="#c4c1cf" textAnchor="middle">fitness of {FIT_MAX}</text>
+        <path d="M92 124A58 58 0 0 1 208 124" fill="none" stroke="rgba(237,230,218,.18)" strokeWidth="10" strokeLinecap="round" />
+        <path d={`M92 124A58 58 0 0 1 ${arc(Math.min(1, after))}`} fill="none" stroke="#93c3dc" strokeWidth="10" strokeLinecap="round" opacity=".35" />
+        <path d={`M92 124A58 58 0 0 1 ${arc(Math.max(0.01, frac))}`} fill="none" stroke="#93c3dc" strokeWidth="10" strokeLinecap="round" style={{ filter: 'drop-shadow(0 0 6px #93c3dc)' }} />
+        <text x="150" y="116" fontSize="30" fontWeight="700" fill="#ede6da" textAnchor="middle" fontFamily="var(--serif)">{r.fitness}</text>
+        <text x="150" y="140" fontSize="16" fill="#c4c1cf" textAnchor="middle">fitness of {FIT_MAX}</text>
       </svg>
       <Speaker who="The physio" quote={PHYSIO[r.map.nodes[r.stop!.node].id % PHYSIO.length]} />
       <button type="button" className="cup-tile" style={{ '--ink': '#93c3dc' } as CSSProperties} disabled={amount <= 0} onClick={() => onRest('rub')}>

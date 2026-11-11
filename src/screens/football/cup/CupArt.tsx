@@ -115,7 +115,7 @@ const ARROWS = { basic: '▲', good: '▲▲', great: '▲▲▲' };
 export function MoveCard({ c, cost, off, note, noteKind, className, small }: { c: Card; cost?: number; off?: boolean; note?: string; noteKind?: string; className?: string; small?: boolean }) {
   const ink = inkOf(c);
   const [val, lab] = valueOf(c);
-  return (
+  const card = (
     <span className={`cup-cd ${frameOf(c)} ${c.level === 'great' ? 'great' : ''} ${off ? 'off' : ''} ${small ? 'sm' : ''} ${className ?? ''}`} style={{ '--ink': ink, color: ink } as CSSProperties}>
       <span className="cup-cd-cost" aria-hidden="true">{cost ?? baseCost(c.kind)}</span>
       <span className="cup-cd-art" aria-hidden="true">
@@ -126,9 +126,9 @@ export function MoveCard({ c, cost, off, note, noteKind, className, small }: { c
         <span className="cup-cd-lv" aria-hidden="true">{c.kind === 'punt' ? '' : ARROWS[c.level]}</span>
         <span className="cup-cd-val">{val}<small>{lab}</small></span>
       </span>
-      {note && <span className={`cup-cd-note k-${noteKind ?? ''}`}>{note}</span>}
     </span>
   );
+  return note ? <span className="cup-cdw">{card}<span className={`cup-cd-note k-${noteKind ?? ''}`}>{note}</span></span> : card;
 }
 
 // --- silverware --------------------------------------------------------------------------------------------------

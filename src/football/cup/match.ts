@@ -421,7 +421,7 @@ function shoot(s: MatchState, c: Card, kind: AnyKind, axis: Axis | null, shot0: 
   if (m.lastQuickPace && !o.punt) { shot += TUNE.overlap; combo(s, 'Overlap', `shot +${TUNE.overlap}`, `shot +${TUNE.overlap}`); }
   if (m.cross && o.header) { shot += TUNE.crossHead; combo(s, 'Cross and head', `shot +${TUNE.crossHead}`, `shot +${TUNE.crossHead}`); }
   if (s.zone === 1 && !o.mid && !o.punt) combo(s, 'Through ball', 'a finish from midfield');
-  step(s, titleOf(kind), axis, `shot ${shot}`);
+  step(s, c.name ?? titleOf(kind), axis, `shot ${shot}`);
   track(s, kind, axis);
   finish(s, shot, c, axis, o.rebound);
 }
