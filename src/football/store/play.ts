@@ -9,7 +9,9 @@ import { seasonDays, SEASON_DAYS, type DayPlan } from '../calendar';
 import { advance, penalties, type Bracket } from '../cups';
 import { clubById, rememberClubs } from '../data/load';
 import { cards, physio, redCardMod, rotationShape, usesRotation } from '../discipline';
-import { playMatch, typicalFor, type MatchCtx } from '../engine';
+import { playMatch, typicalFor, type MatchCtx, type MatchInput, type MatchPlan } from '../engine';
+import { isScouted, pausedInput, readFor } from './paused';
+import { pickOffer } from '../matchday';
 import { CONT_NAME, CWC_DAYS, CWC_NAME, contPrize, koFromTable, newClubWorld, phaseTable, reachOf } from '../continental';
 import { WORLD_CHAMPS } from '../data/continental';
 import { calledUp, EVENTS, NATIONS, nationBar, nextEvent, worldCupGroups, worldCupRun } from '../events';
@@ -28,13 +30,13 @@ import { HABITS, habitById, armbandHarmony, averageOf, momentsOf, TRAIT } from '
 import { abilityFor, braboAbilities } from '../data/abilities';
 import { standings, type Played, type Row } from '../table';
 import { applyChanges, worldTurn } from '../world';
-import { AXES, TIERS, type AxisValues, type Comp, type Mod, type Result, type Tier } from '../types';
+import { AXES, TIERS, type AxisValues, type CallPick, type Comp, type MatchEvents, type Mod, type Result, type Tier } from '../types';
 import { axisInputFor, bestAxis, comebackOn, condCapFor, conditions, loadHealth, medItems, medsTaken, nightFor, type Health } from './gather';
 import { backLine, cleanBill, dressingRoom, lowLogNight, lowLogOn, meetingDue, onInjuryList, typicalShape, type MedDay } from '../squadCare';
 import { comebackLift } from '../comeback';
 import { factsFor, matchLines, situationOf } from './lines';
 import { newSeason, OWN } from './season';
-import type { FbBundle, FbClub, FbNews, FbSave, FbSeason, FbSquadRow, StoredMatch } from './tables';
+import type { FbBundle, FbClub, FbNews, FbSave, FbSeason, FbSquadRow, PausedMatch, PausedPrep, StoredMatch } from './tables';
 import { creditsFor } from '../players/credit';
 import { linkedLogged } from '../players/youth';
 import type { Ctx } from '../players/attributes';
@@ -43,7 +45,7 @@ import { healNow, rotationOf, stageCapacity, treeAbilities, treeDay, treeMatch, 
 import { LEAGUE, TIER_BANDS, tierName } from '../data/load';
 import { academyIds, creditMatch, nightOptsFor, playerCtx, playersDay, rebuildPlayers, squadNight, type Roster } from './players';
 import { signFreeAgents } from '../rotation/freeAgents';
-import { chemistryAfter, moraleAfter } from '../rotation/night';
+import { chemistryAfter, moraleAfter, type Tactic } from '../rotation/night';
 import { traitAbilities } from '../rotation/traits';
 import { breakStarts, globeAfterPlayers, globeDay, globeMatch, globeNight, globeRules, globeSeasonEnd, isBreakDay, loanAbilities, restedForLeague } from './globe';
 
@@ -103,27 +105,39 @@ async function playThrough(until: DayKey, closed: DayKey | null): Promise<Stored
   await migrateSave();
   const save = await db.fbSave.get('save');
   if (!save) return [];
-  const stored = await db.fbClubs.toArray();
-  rememberClubs(stored);
   const from = save.lastPlayed ? addDays(save.lastPlayed, 1) : save.founded;
   if (until < from) return [];
   let start = from;
   if (daysBetween(from, until) + 1 > CATCH_UP_CAP) start = addDays(until, -(CATCH_UP_CAP - 1));
+  const w = await loadWorld(save, start);
+  // Matchday (decision 9.1 a): a match still waiting at the next 4 am is finished by the assistant first.
+  if (w.save.paused) finishPausedIn(w, false);
+  for (let d = start; d <= until; d = addDays(d, 1)) { clubDay(w, d); playDay(w, d, d !== closed, d === until); }
+  w.save.lastPlayed = until;
+  await saveWorld(w, save, (cur) => !(cur?.lastPlayed && cur.lastPlayed >= until)); // another tab played first
+  return w.matches;
+}
+
+async function loadWorld(save: FbSave, start: DayKey): Promise<World> {
+  const stored = await db.fbClubs.toArray();
+  rememberClubs(stored);
   const h = await loadHealth();
   const squad = await db.fbSquad.toArray();
   const roster: Roster = new Map((await db.fbPlayers.toArray()).map((p) => [p.id, p]));
-  const w: World = {
+  return {
     squad, roster, ctx: playerCtx(h, save, squad),
     bundles: new Map((await db.fbBundles.toArray()).map((b) => [b.id, b])),
     save: { ...save, rivals: migrateRivals(save.rivals) }, season: (await db.fbSeasons.get(save.season))!, oldSeasons: [], clubs: new Map(stored.map((c) => [c.id, c])),
     matches: [], news: [], h, past: await db.fbMatches.orderBy('date').toArray(),
     used: (await db.fbNews.where('date').aboveOrEqual(addDays(start, -31)).toArray()).filter((n) => n.lineId).map((n) => ({ id: n.lineId!, date: n.date })),
   };
-  for (let d = start; d <= until; d = addDays(d, 1)) { clubDay(w, d); playDay(w, d, d !== closed); }
-  w.save.lastPlayed = until;
-  await db.transaction('rw', [db.fbSave, db.fbSeasons, db.fbClubs, db.fbMatches, db.fbNews, db.fbSquad, db.fbBundles, db.fbPlayers], async () => {
+}
+
+/** Writes the world back, unless `ok` says another tab got there first. */
+async function saveWorld(w: World, save: FbSave, ok: (cur: FbSave | undefined) => boolean): Promise<boolean> {
+  return db.transaction('rw', [db.fbSave, db.fbSeasons, db.fbClubs, db.fbMatches, db.fbNews, db.fbSquad, db.fbBundles, db.fbPlayers], async () => {
     const cur = await db.fbSave.get('save');
-    if (cur?.lastPlayed && cur.lastPlayed >= until) return; // another tab played first
+    if (!ok(cur)) return false;
     // Settings the player changed while the days were playing win over the copy read at the start.
     if (cur) for (const k of USER_KEYS) if (JSON.stringify(cur[k]) !== JSON.stringify(save[k])) (w.save as unknown as Record<string, unknown>)[k] = cur[k];
     await db.fbSave.put(w.save);
@@ -139,8 +153,58 @@ async function playThrough(until: DayKey, closed: DayKey | null): Promise<Stored
       await db.fbSquad.bulkPut(w.squad.map((y) => { const c = now.get(y.id); return y.status === 'trial' && c && c.status !== 'trial' ? c : y; }));
     }
     if (w.bundles.size) await db.fbBundles.bulkPut([...w.bundles.values()]);
+    return true;
   });
-  return w.matches;
+}
+
+// ---- Matchday depth (spec 2026-11-12 §2.1): the league match that waits for you ----
+/** The league match waiting to be watched or skipped (Fork B's result tile reads this). */
+export async function pausedMatch(): Promise<PausedMatch | undefined> {
+  return (await db.fbSave.get('save'))?.paused;
+}
+/**
+ * Finishes the waiting match and stores it like any other: with the owner's calls made so far (a watched match ends
+ * with all of them made) and the assistant taking the best odds on any call left. Skip calls this with
+ * `watched: false`; the morning parcel's Skip uses `finishWithAssistant`.
+ */
+export async function finishPaused(o: { watched: boolean }): Promise<StoredMatch | undefined> {
+  await upgradeSave();
+  const save = await db.fbSave.get('save');
+  const p = save?.paused;
+  if (!save || !p) return undefined;
+  const w = await loadWorld(save, p.date);
+  const m = finishPausedIn(w, o.watched);
+  const ok = await saveWorld(w, save, (cur) => cur?.paused?.id === p.id);
+  return ok ? m : (await db.fbMatches.get(p.id));
+}
+/** Skip: the assistant makes every call left and the match is stored. */
+export const finishWithAssistant = () => finishPaused({ watched: false });
+
+/** Stores a call or the half-time plan as the owner makes it, so leaving mid-match resumes at the same point. */
+export async function recordLive(change: { pick?: CallPick; half2?: Tactic | null; halfSeen?: boolean }): Promise<void> {
+  await db.transaction('rw', db.fbSave, async () => {
+    const save = await db.fbSave.get('save');
+    if (!save?.paused) return;
+    const p = { ...save.paused };
+    if (change.pick) p.picks = [...p.picks, change.pick];
+    if (change.half2 !== undefined) { if (change.half2) p.half2 = change.half2; else delete p.half2; }
+    if (change.halfSeen) p.halfSeen = true;
+    await db.fbSave.put({ ...save, paused: p });
+  });
+}
+
+function finishPausedIn(w: World, watched: boolean): StoredMatch | undefined {
+  const p = w.save.paused;
+  if (!p) return undefined;
+  delete w.save.paused;
+  const input = pausedInput(p, w.save, { watch: false });
+  const events = playMatch(input);
+  const m = braboTail(w, p.date, p.prep, events, input.plan, p.half2, readFor(p, w.save).line);
+  if (watched) w.matches[w.matches.length - 1].watched = true;
+  // The table counts the match only now ("to be played" until then).
+  const tier = w.season.id === p.season ? w.season : w.oldSeasons.find((x) => x.id === p.season);
+  tier?.results[p.prep.braboTier].push({ home: p.prep.home, away: p.prep.away, score: m.score }); // braboTail returns the score home first
+  return w.matches[w.matches.length - 1];
 }
 
 const rating = (w: World, id: string) => w.clubs.get(id)?.rating ?? clubById(id).rating ?? 50;
@@ -148,7 +212,7 @@ function otherResult(w: World, home: string, away: string, seed: string, neutral
   return simResult({ rating: rating(w, home) }, { rating: rating(w, away) }, rng(hashSeed(seed, home, away)), neutral ? 0 : 3);
 }
 
-function playDay(w: World, date: DayKey, auto: boolean) {
+function playDay(w: World, date: DayKey, auto: boolean, last = false) {
   const { save } = w;
   if (save.phase === 'event') return playEventDay(w, date, auto);
   if (isBreakDay(save, date)) return; // an international break: no matches, the season day waits
@@ -161,9 +225,12 @@ function playDay(w: World, date: DayKey, auto: boolean) {
       if (h === OWN || a === OWN) mine.push({ comp: 'league', round: `Matchday ${plan.matchday}`, home: h, away: a });
       else w.season.results[t].push({ home: h, away: a, score: otherResult(w, h, a, date) });
     }
+    // Matchday (spec §2.1): the last day played waits to be watched, unless the season or a continental night
+    // needs its result straight away.
+    const wait = last && !plan.cont && save.day < SEASON_DAYS;
     for (const m of mine) {
-      const s = brabo(w, date, plan, m.comp, m.home, m.away, auto, m.round);
-      w.season.results[braboTier].push({ home: m.home, away: m.away, score: s.score });
+      const s = braboMaybe(w, date, plan, m.comp, m.home, m.away, auto, m.round, undefined, false, wait);
+      if (s) w.season.results[braboTier].push({ home: m.home, away: m.away, score: s.score });
     }
     if (plan.cont) continentalNight(w, date, plan, auto, mine.length);
   } else if (plan.kind === 'bigcup' || plan.kind === 'tiercup' || plan.kind === 'finals1' || plan.kind === 'finals2') {
@@ -342,7 +409,11 @@ function physioNews(w: World, meds: MedDay[], date: DayKey, state: 'fit' | 'knoc
 }
 
 /** One Brabo match: build the input from Health, play it, store it. */
-function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, away: string, auto: boolean, round?: string, leg?: 1 | 2, neutral = false): StoredMatch {
+/** Brabo's match, played whole. */
+const brabo = (w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, away: string, auto: boolean, round?: string, leg?: 1 | 2, neutral = false): StoredMatch =>
+  braboMaybe(w, date, plan, comp, home, away, auto, round, leg, neutral, false)!;
+/** Brabo's match; with `wait`, a league match is set up and left waiting for the owner (null). */
+function braboMaybe(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, away: string, auto: boolean, round?: string, leg?: 1 | 2, neutral = false, wait = false): StoredMatch | null {
   const oppId = home === OWN ? away : home;
   const night = nightFor(w.h, date);
   const day = w.h.days.get(date);
@@ -410,7 +481,7 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
   // Chances are sized against your typical shape: the median of the real nights in the last 28 days (one per date).
   const nights = new Map<DayKey, AxisValues>();
   for (const x of recent) if (!nights.has(x.date)) nights.set(x.date, x.values);
-  const events = playMatch({
+  const input: MatchInput = {
     seed, values, opp, home: braboHome, neutral,
     typical: typicalFor([...nights.values()]),
     fog: AXES.filter((a) => flags[a] === 'not-logged'),
@@ -422,11 +493,46 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
     bench: benchFor(w, date), pre, conds, ctx,
     condCap: rotation ? undefined : condCapFor(w.h, date),
     rival: rival ? twistOf(rival) : oppId === ANTIGOON ? rivalTwist(ANTIGOON, 'legend') : undefined,
-  });
+  };
+  const prep: PausedPrep = {
+    day: plan.day, matchday: plan.matchday, comp, round, home, away, oppId, braboHome, values, flags, xi: team.xi,
+    setPiece: tonight.setPiece, tactic: tonight.tactic, nudges: team.nudges.length ? team.nudges : undefined, loansPlayed: team.loansPlayed,
+    rotation, sick, auto, derby, vsHigher: Boolean(ctx.vsHigher), rival: Boolean(rival) || oppId === ANTIGOON, oldSelf: Boolean(club?.old), braboTier,
+  };
+  if (comp === 'league') {
+    // Matchday (spec §2.3–2.5): a league night has calls, and plays the plan (tempo, the read, a card) set for it.
+    const p: PausedMatch = {
+      id: `${date}:${leg ?? 1}`, date, season: w.save.season, input: { ...input, rival: undefined } as PausedMatch['input'],
+      rivalTwist: rival ? 'rival' : oppId === ANTIGOON ? 'antigoon' : undefined,
+      style: club?.style ?? def.style, scouted: isScouted(w.save, oppId), prep, picks: [],
+    };
+    if (wait) {
+      // Set up and stopped: the owner watches or skips it; the next 4 am finishes it with the assistant.
+      w.save.paused = p;
+      return null;
+    }
+    const full = pausedInput(p, w.save, { watch: false });
+    return braboTail(w, date, prep, playMatch(full), full.plan, undefined, readFor(p, w.save).line, leg);
+  }
+  const events = playMatch(input);
+  let pens: [number, number] | undefined;
+  if (events.score[0] === events.score[1] && comp !== 'friendly' && comp !== 'event' && !(comp === 'worldcup' && leg) && !(comp === 'continental' && round?.includes('league phase'))) pens = penalties(values.Routine * 5, opp.rating, rng(hashSeed(String(seed), 'pens')));
+  return braboTail(w, date, prep, events, undefined, undefined, undefined, leg, pens);
+}
+
+/** After the whistle: store the match and everything it moves (morale, rivals, players, the tree, the news). */
+function braboTail(w: World, date: DayKey, prep: PausedPrep, events: MatchEvents, played?: MatchPlan, half2?: Tactic, read?: string, leg?: 1 | 2, pens?: [number, number]): StoredMatch {
+  const { comp, round, home, away, oppId, braboHome, values, flags, rotation, sick, auto, derby } = prep;
+  const def = clubById(oppId);
+  const club = w.clubs.get(oppId);
+  const braboTier = prep.braboTier;
+  const ctx = { vsHigher: prep.vsHigher };
+  const team = { xi: prep.xi, nudges: prep.nudges ?? [], loansPlayed: prep.loansPlayed };
+  const tonight = { setPiece: prep.setPiece, tactic: prep.tactic };
+  const plan = { day: prep.day, matchday: prep.matchday };
+  const rival = prep.rival;
   const score: [number, number] = home === OWN ? events.score : [events.score[1], events.score[0]];
   const mineScore = events.score;
-  let pens: [number, number] | undefined;
-  if (mineScore[0] === mineScore[1] && comp !== 'league' && comp !== 'friendly' && comp !== 'event' && !(comp === 'worldcup' && leg) && !(comp === 'continental' && round?.includes('league phase'))) pens = penalties(values.Routine * 5, opp.rating, rng(hashSeed(String(seed), 'pens')));
   const m: StoredMatch = {
     id: `${date}:${leg ?? 1}`, date, season: w.save.season, day: plan.day, comp, round, home, away, opp: oppId, braboHome,
     values, flags, events, score: mineScore, pens, result: resultOf(mineScore, pens),
@@ -434,6 +540,17 @@ function brabo(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: string, 
     tactic: tonight.tactic, nudges: team.nudges.length ? team.nudges : undefined,
     watched: false, rotation, auto, leg, derby, big: derby || comp !== 'league' || plan.matchday === 34,
   };
+  if (comp === 'league' && played) {
+    // Matchday (spec §2.4–2.6): the plan it played, a card used up, and after a win the pick of three.
+    const pl = w.save.plans?.[date];
+    const card = pl?.card && (w.save.tacticCards ?? []).includes(pl.card) ? pl.card : undefined;
+    m.plan = { tactic: prep.tactic.pick, tempo: played.tempo ?? 'normal', width: pl?.width ?? 'middle', ...(card ? { card } : {}), ...(half2 ? { half2 } : {}), ...(read ? { read } : {}) };
+    if (card) { const k = w.save.tacticCards!.indexOf(card); w.save.tacticCards = w.save.tacticCards!.filter((_, i) => i !== k); }
+    if (m.result === 'W') {
+      const unscouted = Object.entries(w.season.tierOf).filter(([id, t]) => t === braboTier && id !== OWN && id !== oppId && !isScouted(w.save, id)).map(([id]) => id).sort();
+      m.pick = { tiles: pickOffer(m.id, unscouted, (w.save.tacticCards ?? []).length) };
+    }
+  }
   if (!w.save.met.includes(oppId)) w.save.met = [...w.save.met, oppId];
   const last4 = [...w.past, ...w.matches].filter((x) => x.date < date).slice(-4).map((x) => x.result);
   const finalWon = m.result === 'W' && round === 'Final';

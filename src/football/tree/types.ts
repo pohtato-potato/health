@@ -11,7 +11,7 @@ import type { EraId, Metric, Rarity } from '../content/types';
 /** One day's real-habit counts (only the metrics that happened). */
 export type DayMetrics = Partial<Record<Metric, number>>;
 
-export type ResearchWhy = 'win' | 'draw' | 'loss' | 'logged' | 'board' | 'bounty' | 'pack' | 'duplicate' | 'tour' | 'duty' | 'cup';
+export type ResearchWhy = 'win' | 'draw' | 'loss' | 'logged' | 'board' | 'bounty' | 'pack' | 'duplicate' | 'tour' | 'duty' | 'cup' | 'pick';
 export interface ResearchGain { on: DayKey; n: number; why: ResearchWhy; note?: string }
 
 export type PackSource = 'week-finished' | 'final-won' | 'promotion' | 'tech' | 'bounty' | 'track' | 'testimonial' | 'cup-final';
