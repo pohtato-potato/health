@@ -927,7 +927,7 @@ textarea.field {
   animation: drop 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .toast .k {
-  font-size: 11px;
+  font-size: 14px;
   letter-spacing: 0.01em;
   text-transform: none;
 }
@@ -935,7 +935,7 @@ textarea.field {
   font-size: 15px;
 }
 .toast .x {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--quiet);
 }
 .toast .act {
