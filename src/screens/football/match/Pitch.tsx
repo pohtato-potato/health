@@ -51,7 +51,7 @@ export function Pitch({ s, dots = [], entry = false }: { s: PitchState; dots?: C
           const lx = C + x * (R + 20), ly = C + y * (R + 20) + (y < -0.5 ? -6 : y > 0.5 ? 16 : 5);
           return (
             <text key={a} x={lx} y={ly} textAnchor={Math.abs(x) < 0.2 ? 'middle' : x > 0 ? 'start' : 'end'} className={`plab ${band(c.values[a])}${lit ? '' : ' dimlab'}`}>
-              {a} <tspan className="v">{c.values[a]}</tspan>
+              {a} <tspan className="v">{Math.round(c.values[a])}</tspan>
             </text>
           );
         })}

@@ -93,11 +93,14 @@ export function playerOfMatch(credits: { kind: 'goal' | 'save'; name: string }[]
 
 /** What moved the odds on a chance, as chips in each axis' ink (the biggest first). */
 export function oddsChips(mods: Mod[], type: string): { text: string; axis: Axis }[] {
+  // One chip per reason: a lift on all three axes (the weekly stack, tired legs) shows once.
+  const seen = new Set<string>();
   return mods
     .filter((m) => m.d && m.kind !== 'home')
     .sort((a, b) => Math.abs(b.d) - Math.abs(a.d))
+    .filter((m) => (seen.has(m.why) ? false : (seen.add(m.why), true)))
     .slice(0, 3)
-    .map((m) => ({ axis: m.axis, text: `${m.why === type ? m.axis : m.why} ${m.d > 0 ? '+' : '−'}${Math.abs(m.d)}` }));
+    .map((m) => ({ axis: m.axis, text: `${m.why === type ? m.axis : m.why} ${m.d > 0 ? '+' : '−'}${Math.abs(Math.round(m.d * 10) / 10)}` }));
 }
 
 /** The eleven as dots in their unit's ink. */
