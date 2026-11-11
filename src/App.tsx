@@ -40,6 +40,7 @@ import { Checkup, EditHistory, Snapshots } from './screens/DataPages';
 import { MorningLog } from './sheets/MorningLog';
 import { AddFood } from './sheets/AddFood';
 import { EntrySheet, FoodForm, QuickKcal } from './sheets/FoodForms';
+import { LabelForm } from './sheets/LabelForm';
 import { ChecklistSheet, DrinkSheet, FreeMealSheet, StepsSheet, WaistSheet } from './sheets/QuickSheets';
 import { NightOutSheet } from './sheets/NightOut';
 import { SaveMealSheet } from './sheets/Meals';
@@ -98,6 +99,7 @@ const SHEETS: Record<string, () => ReactNode> = {
   addfood: () => <AddFood />,
   'food-new': () => <FoodForm />,
   quick: () => <QuickKcal />,
+  label: () => <LabelForm />,
   entry: () => <EntrySheet />,
   steps: () => <StepsSheet />,
   checklist: () => <ChecklistSheet />,

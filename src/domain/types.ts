@@ -422,6 +422,10 @@ export interface FoodEntry {
   proteinUnknown?: boolean;
   /** The kcal and protein were typed for this entry alone: they no longer follow the food and amount. */
   own?: boolean;
+  /** Eaten out, logged light/medium/heavy (l-away, 11 Nov): the honest range; kcal and protein hold its middle. */
+  range?: { size: 'light' | 'medium' | 'heavy'; kcal: [number, number]; protein: [number, number] };
+  /** Logged from a pack's label (l-label, 11 Nov): what the label said, so the sum can be checked later. */
+  label?: { basis: 'per100' | 'serving'; kcal: number; protein: number; servingG?: number; packG?: number; eatenG: number };
 }
 
 export type Side = 'L' | 'R' | 'both';
@@ -516,7 +520,8 @@ export interface BodyEntry {
   sessionId?: string;
 }
 
-export type BodyKind = 'pain' | 'strain' | 'sore' | 'tight';
+/** 'felt': a whole-body entry (headache, constipation, stomach, a poor night; y-body, 11 Nov). */
+export type BodyKind = 'pain' | 'strain' | 'sore' | 'tight' | 'felt';
 
 export interface SetEntry {
   id: string;

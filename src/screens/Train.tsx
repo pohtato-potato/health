@@ -58,7 +58,7 @@ export function Train() {
   // Home or gym, picked on the card; the last pick is remembered so the card opens on it.
   const setPlacePick = (pl: Place) => void patchSettings({ lastPlace: pl });
   const place: Place = gym ? settings.lastPlace ?? 'home' : 'home';
-  const up = nextUp(settings, sessions, sets, days, false, place);
+  const up = nextUp(settings, sessions, sets, days, false, place, body ?? []);
   const weeks = weeksFor(settings, sessions, today, days);
   const done = doneSessions(sessions);
   const trainedToday = done.filter((s) => s.date === today);

@@ -6,7 +6,7 @@ import { savedThisWeek } from '../domain/foods';
 import { ringsFor, stepsGoal, targetsOn, totalsFor, type Rings, type Totals } from '../domain/rings';
 import { tally, weighted, type Tally } from '../domain/tallies';
 import { maintenanceKcal, stepStreakOf, trainingWeeksOf, withOccasion } from '../domain/occasions';
-import type { Day, FoodEntry, SetEntry, Settings, Targets, TrainingSession } from '../domain/types';
+import type { BodyEntry, Day, FoodEntry, SetEntry, Settings, Targets, TrainingSession } from '../domain/types';
 import { isEased, placeFor } from '../domain/places';
 import { courseOn } from '../domain/medicines';
 
@@ -28,6 +28,9 @@ export function doneSessions(sessions: TrainingSession[]): TrainingSession[] {
   return sessions.filter((s) => s.status === 'done').sort((a, b) => a.startedAt - b.startedAt);
 }
 
+/** A body log entry made during a set: the exercise it was logged against. */
+export type MidSetPain = Pick<BodyEntry, 'kind' | 'exerciseId' | 'at' | 'date'>;
+
 interface FlagEvent {
   flag: FlagDef;
   at: number;
@@ -35,10 +38,16 @@ interface FlagEvent {
 }
 
 /** Every time a joint flag was raised, after a session or in a morning log. */
-export function flagEvents(plan: PlanDef | undefined, sessions: TrainingSession[], days: Day[]): FlagEvent[] {
+export function flagEvents(plan: PlanDef | undefined, sessions: TrainingSession[], days: Day[], body: MidSetPain[] = []): FlagEvent[] {
   if (!plan) return [];
   const byId = new Map(plan.flags.map((f) => [f.id, f]));
   const out: FlagEvent[] = [];
+  // A pain or strain logged mid-set (d-pain, 11 Nov) raises the plan's own flag for that exercise, as the finale tick does.
+  for (const b of body) {
+    if ((b.kind !== 'pain' && b.kind !== 'strain') || !b.exerciseId) continue;
+    const flag = plan.flags.find((f) => f.swap?.from === b.exerciseId);
+    if (flag) out.push({ flag, at: b.at, date: b.date });
+  }
   for (const s of sessions) {
     if (s.status !== 'done') continue;
     for (const id of s.flags ?? []) {
@@ -56,9 +65,9 @@ export function flagEvents(plan: PlanDef | undefined, sessions: TrainingSession[
 }
 
 /** A flag's swap applies to the next session of its kind after the flag. */
-export function pendingSwaps(plan: PlanDef | undefined, sessions: TrainingSession[], days: Day[]): (Swap & { flag: FlagDef; date: DayKey })[] {
+export function pendingSwaps(plan: PlanDef | undefined, sessions: TrainingSession[], days: Day[], body: MidSetPain[] = []): (Swap & { flag: FlagDef; date: DayKey })[] {
   if (!plan) return [];
-  const events = flagEvents(plan, sessions, days);
+  const events = flagEvents(plan, sessions, days, body);
   const out: (Swap & { flag: FlagDef; date: DayKey })[] = [];
   const seen = new Set<string>();
   for (const ev of [...events].reverse()) {
@@ -93,7 +102,7 @@ export interface NextUp {
   exercises: { id: string; status: ExerciseStatus }[];
 }
 
-export function nextUp(settings: Settings, sessions: TrainingSession[], sets: SetEntry[], days: Day[], short = false, place: Place = 'home'): NextUp | undefined {
+export function nextUp(settings: Settings, sessions: TrainingSession[], sets: SetEntry[], days: Day[], short = false, place: Place = 'home', body: MidSetPain[] = []): NextUp | undefined {
   const plan = settings.plan;
   if (!plan) return undefined;
   const done = doneSessions(sessions);
@@ -102,7 +111,7 @@ export function nextUp(settings: Settings, sessions: TrainingSession[], sets: Se
   const mine = rot ? done.filter((s) => rot.includes(s.session)) : done;
   const lastDone = mine[mine.length - 1];
   const sessionId = nextInLoop(plan, done, settings.rotationStart, place);
-  const swaps = pendingSwaps(plan, sessions, days).filter((s) => plan.flags.find((f) => f.id === s.flag.id)?.swap?.session === sessionId);
+  const swaps = pendingSwaps(plan, sessions, days, body).filter((s) => plan.flags.find((f) => f.id === s.flag.id)?.swap?.session === sessionId);
   const exs = buildSession(plan, sessionId, { short, swaps, equipment: settings.equipment });
   return {
     sessionId,

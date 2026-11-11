@@ -270,3 +270,13 @@
 
 /* Release 1: words on Today in Atkinson Hyperlegible Next; numbers and titles stay Fraunces. */
 .td-page, .tm-moment, .td-handle, .td-drawer { font-family: 'Atkinson Hyperlegible Next', var(--sans); }
+
+/* The office usual (y-office): one full-width button per repeating meal, outlined in the food ink. */
+.office-usual { display: flex; flex-direction: column; gap: 8px; }
+.office-usual-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 64px; padding: 10px 14px; border-radius: 16px; text-align: left; border: 1.5px solid color-mix(in srgb, var(--kcal, #ffb36b) 60%, transparent); background: color-mix(in srgb, var(--kcal, #ffb36b) 10%, transparent); box-shadow: 0 0 18px -8px var(--kcal, #ffb36b); }
+.office-usual-btn b { font-size: 16px; font-weight: 600; }
+/* The weigh-in chip beside the status chip (y-morning). */
+.td-chip.td-weighin { border-color: color-mix(in srgb, var(--apricot, #ffb36b) 70%, transparent); color: var(--apricot, #ffb36b); }
+/* The maintenance read (y-maint): plain lines on a quiet outlined card, never red. */
+.maint-read { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--kcal, #ffb36b) 40%, transparent); }
+.maint-read p { margin: 0; }

@@ -1392,3 +1392,6 @@
 .fd-meals li { display: grid; grid-template-columns: 84px 1fr 52px; align-items: center; gap: 10px; font-size: 15px; }
 .fd-meals .bar { height: 8px; }
 .fd-meals b { text-align: right; font-weight: 700; }
+
+/* Label mode: the form is drawn like the label on the pack. */
+.label-card { border: 2px solid color-mix(in srgb, var(--text) 75%, transparent); border-radius: 12px; padding: 12px; }

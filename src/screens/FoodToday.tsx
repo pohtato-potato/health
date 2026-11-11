@@ -1,3 +1,4 @@
+import { MaintenanceRead } from './today/MaintenanceRead';
 import { RegionFrame } from '../ui/live/RegionFrame';
 import { addDays, weekStart } from '../domain/dates';
 import { fmtDayShort, fmtInt } from '../domain/format';
@@ -53,6 +54,8 @@ export function FoodToday() {
         <div className="row base">
           <h1 className="h1">{date === today ? 'Food today' : `Food · ${fmtDayShort(date)}`}</h1>
         </div>
+
+        {date === today && <MaintenanceRead />}
 
         <div className="card" style={{ gap: 16, padding: 20 }}>
           <div className="col gap8">
