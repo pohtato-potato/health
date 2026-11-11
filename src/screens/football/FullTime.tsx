@@ -12,6 +12,18 @@ import type { FbNews, FbSave, StoredMatch } from '../../football/store/tables';
 import { Art, homeFirst, RESULT, scoreLine } from './Tonight';
 import { Press } from './Press';
 import { Studio } from './Studio';
+import { MomentumStrip, PickOfThree, playerOfMatch, ShotMap } from './match/MatchBits';
+import { TACTIC_NAME } from '../../football/rotation/night';
+import type { CallRecord } from '../../football/types';
+
+const CALL_WORD = { take: 'took it on', shoot: 'shot on sight', keep: 'kept the ball' } as const;
+/** "71′ · you took it on (48%): in." */
+function callLine(c: CallRecord, m: StoredMatch): string {
+  const ev = m.events.chances[c.slot];
+  const odds = c.pick === 'take' ? `${c.odds.take}%` : c.pick === 'shoot' ? `${c.odds.shoot}%` : 'safe';
+  const out = c.pick === 'keep' ? '' : ev?.ok ? ': in.' : ': stayed out.';
+  return `${c.minute}′ · ${c.by === 'you' ? 'you' : 'your assistant'} ${CALL_WORD[c.pick]} (${odds})${out}`;
+}
 
 export function FullTimeView({ m, save, studio, press, tier = 6, onWatch }: { m: StoredMatch; save: FbSave; studio?: FbNews; press?: FbNews; tier?: Tier; onWatch?: () => void }) {
   const s = homeFirst(m);
@@ -39,6 +51,16 @@ export function FullTimeView({ m, save, studio, press, tier = 6, onWatch }: { m:
         {rangedFuel(m) && <p className="fb-s fb-ctr">Fuel played on wider dice tonight: the night out was logged as a range, so each chance rolled it a little either side of the middle.</p>}
         {onWatch && <div className="fb-btns"><button type="button" className="fb-btn pri" onClick={onWatch}>{m.watched ? 'Watch again' : 'Watch the match'}</button></div>}
       </article>
+      {m.comp === 'league' && m.events.calls && (
+        <section className="fb-card md-ft" aria-label="The match">
+          <MomentumStrip chances={m.events.chances} />
+          <ShotMap chances={m.events.chances} />
+          {playerOfMatch(m.credits) && <div className="fb-row"><span>Player of the match</span><b className="md-potm">{playerOfMatch(m.credits)}</b></div>}
+          {m.events.calls.length > 0 && <ul className="fb-moments">{m.events.calls.map((c) => <li key={c.slot}>{callLine(c, m)}</li>)}</ul>}
+          {m.plan && <p className="fb-s">Plan: {TACTIC_NAME[m.plan.tactic ?? m.tactic?.pick ?? 'hold']}{m.plan.half2 ? `, ${TACTIC_NAME[m.plan.half2]} after half-time` : ''} · tempo {m.plan.tempo ?? 'normal'}{m.plan.card ? ` · tactic card +1 ${m.plan.card}` : ''}{m.plan.read && m.plan.read !== 'Not scouted yet' ? `. ${m.plan.read}` : ''}</p>}
+        </section>
+      )}
+      {m.pick && <PickOfThree matchId={m.id} pick={m.pick} name={(id) => clubById(id).name} />}
       {(m.credits?.length ?? 0) > 0 && (
         <section className="fb-card" aria-label="Goals and saves">
           <span className="fb-lb">Goals and saves</span>

@@ -9,7 +9,7 @@ import { foundClub } from '../../src/football/store/save';
 import { CatchUp, keyChances } from '../../src/screens/football/CatchUp';
 import { FIRST_SHIRTS, FirstRun, STEPS } from '../../src/screens/football/FirstRun';
 import { TonightView } from '../../src/screens/football/Tonight';
-import { playDue } from '../../src/football/store/play';
+import { playDueDone as playDue } from './helpers/matchday';
 
 let n = 0;
 beforeEach(async () => {

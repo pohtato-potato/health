@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { setTargets } from '../../src/db/actions';
 import { HealthDB, db, setDatabase } from '../../src/db/db';
 import { loadTonight } from '../../src/football/store/hooks';
-import { kickOff } from '../../src/football/store/play';
+import { kickOffDone as kickOff } from './helpers/matchday';
 import { foundClub } from '../../src/football/store/save';
 import { FootballCardView, KickOffCard, footballCardState } from '../../src/screens/today/FootballCard';
 

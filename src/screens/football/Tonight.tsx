@@ -14,8 +14,12 @@ import { AwakeningView } from './moments/Awakening';
 import { FullTime } from './FullTime';
 import { Radar } from './Radar';
 import { AXES } from '../../football/types';
-import { TacticPicker } from './players/Rotation';
+import { PlanPanel } from './match/MatchBits';
+import { WaitingMatch } from './match/Waiting';
+import { planFor, isScouted } from '../../football/store/paused';
+import { readOf } from '../../football/matchday';
 import { MorningCards } from './world/WorldScreens';
+import { TacticPicker } from './players/Rotation';
 
 /** Our own SVG strings (crests, kits): built from data we ship, escaped where text goes in. */
 export function Art({ svg, className }: { svg: string; className?: string }) {
@@ -50,6 +54,7 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
       {quiet && !opening && born && <RivalBornView r={born} onDone={() => void markRivalSeen(born.clubId)} />}
       {quiet && !opening && !born && awake && <AwakeningView axis={awake.axis} at={awake.band} values={t.liveValues} onDone={() => void markAwakeSeen(t.save.awakeLog!.length)} />}
       {away.length > 0 && <CatchUp ms={away} />}
+      {t.save.paused && <WaitingMatch save={t.save} />}
       <MorningCards m={t.morning} />
     </>
   );
@@ -83,7 +88,13 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
       <Radar values={t.liveValues} flags={t.flags} fog={AXES.filter((a) => t.flags[a])} captain={t.save.slots.includes('armband') ? t.save.captain : undefined} />
       <p className="fb-s fb-ctr">Your shape so far. It’s fixed when you close the day.{AXES.some((a) => t.flags[a] === 'not-logged') ? ' An axis marked ? isn’t logged yet: left that way, it plays low and unpredictable.' : ''}</p>
       {t.loansPlaying.length > 0 && !t.morning.intl && <p className="fb-s fb-ctr">{t.xi.filter((x) => x.player.startsWith('loan:')).map((x) => x.name).join(' and ')} on loan in the eleven tonight{t.loanRested.length ? `; ${t.loanRested.length === 1 ? 'one starter rests' : `${t.loanRested.length} starters rest`} to make room` : ''}.</p>}
-      {t.tactic && <TacticPicker date={t.date} pick={t.tactic.pick} by={t.tactic.by} />}
+      {t.tactic && f?.comp === 'league' && t.opp ? (
+        <>
+          <PlanPanel date={t.date} tactic={t.tactic} plan={planFor(t.save, t.date, t.tactic.pick)} read={readOf(planFor(t.save, t.date, t.tactic.pick), { id: t.opp.id, style: t.opp.style }, isScouted(t.save, t.opp.id))} xi={t.xi} cards={t.save.tacticCards ?? []} />
+          <p className="fb-s fb-ctr">The match plays at 4 am and waits for you in the morning: watch it with your calls, or skip to the result. The plan can change until kick-off.</p>
+          <button type="button" className="fb-btn sm" onClick={() => go('/football/blend')}>How tonight adds up ›</button>
+        </>
+      ) : t.tactic && <TacticPicker date={t.date} pick={t.tactic.pick} by={t.tactic.by} />}
       {(t.known.length > 0 || t.hiddenNote) && (
         <section className="fb-card pu" aria-label="Their abilities">
           <span className="fb-lb">Their abilities</span>
