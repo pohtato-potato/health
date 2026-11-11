@@ -1,6 +1,6 @@
 // Cup runs, layers 3 and 4: the map, the stops, the run, the ladder, the record book and the pay. Made-up decks.
 import { describe, expect, it } from 'vitest';
-import { cupsOpen, emptyBook, GOOD_DAY, payFor, record } from '../../../src/football/cup/book';
+import { cupsOpen, emptyBook, GOOD_DAY, PAY, payFor, record } from '../../../src/football/cup/book';
 import { EVENTS, fxWords } from '../../../src/football/cup/events';
 import { CUPS, twists } from '../../../src/football/cup/ladder';
 import { makeMap, paths } from '../../../src/football/cup/map';
@@ -295,14 +295,23 @@ describe('events', () => {
 describe('the record book and the pay', () => {
   const sum = (o: Partial<ReturnType<typeof summary>> = {}) => ({ cup: 1, result: 'lost' as const, date: '2026-11-11', stopsCleared: 7, reachedFinal: false, stops: 14,
     stats: { played: 5, won: 4, goalsFor: 9, goalsAgainst: 3, combos: { 'One-two': 4 }, beaten: ['ant', 'ker'], biggest: { for: 4, against: 0, club: 'Antigoon FC' }, cards: 120 }, ...o });
-  it('only the first run to end each day pays, and never as much as a good league day', () => {
-    const p = payFor(emptyBook(), sum({ result: 'won', stopsCleared: 14, reachedFinal: true }), '2026-11-11');
+  it('only the first run to end each day pays, and a run that is not won never as much as a good league day', () => {
+    const p = payFor(emptyBook(), sum({ stopsCleared: 13, reachedFinal: true }), '2026-11-11');
     expect(p.research).toBe(GOOD_DAY - 1);
     expect(p.research).toBeLessThan(GOOD_DAY);
     expect(p.album).toBe(true);
     const { book } = record(emptyBook(), sum(), '2026-11-11', true);
     expect(payFor(book, sum(), '2026-11-11')).toMatchObject({ research: 0, album: false });
     expect(payFor(book, sum(), '2026-11-12').research).toBeGreaterThan(0);
+  });
+  it("on a day a cup is won, the run pays the cup's full 5 research (owner, 12 Nov)", () => {
+    const p = payFor(emptyBook(), sum({ result: 'won', stopsCleared: 14, reachedFinal: true }), '2026-11-11');
+    expect(p.research).toBe(PAY.cupWin);
+    expect(p.research).toBe(5);
+    expect(p.album).toBe(true);
+    // only the first run to end each day pays, a won cup included
+    const { book } = record(emptyBook(), sum(), '2026-11-11', true);
+    expect(payFor(book, sum({ result: 'won', stopsCleared: 14 }), '2026-11-11').research).toBe(0);
   });
   it('a short run pays 1 for every two stops cleared', () => {
     expect(payFor(emptyBook(), sum({ stopsCleared: 3 }), '2026-11-11').research).toBe(1);

@@ -1,6 +1,6 @@
 // The cup record book and what a run pays (spec §11). Pure. Every run counts for the book, paid or not: furthest stop
 // in each cup, fastest win, biggest scoreline, clubs beaten, combinations landed. Only the first run that ends each day
-// pays: research (1 for every two stops cleared, 5 for winning the cup, capped below a good league day) and an album
+// pays: research (1 for every two stops cleared, 5 for winning the cup, paid in full; any other run capped below a good league day) and an album
 // card for reaching the final. Bond points and fog wait for the desk and the atlas (seams only).
 import type { DayKey } from '../../domain/dates';
 import { LESSON, LOGGED_DAY } from '../tree/research';
@@ -37,7 +37,8 @@ export interface Pay { research: number; album: boolean; why: string }
 export function payFor(book: CupBook, s: RunSummary, today: DayKey): Pay {
   if (book.paid.includes(today)) return { research: 0, album: false, why: 'A run already paid today. This one still counts for the record book.' };
   const raw = Math.floor(s.stopsCleared / 2) * PAY.perTwoStops + (s.result === 'won' ? PAY.cupWin : 0);
-  const research = Math.min(PAY.cap, raw);
+  // A run that wins its cup pays the cup's full 5 (owner, 12 Nov); any other run stays below a good league day.
+  const research = Math.min(s.result === 'won' ? PAY.cupWin : PAY.cap, raw);
   return { research, album: s.reachedFinal, why: `The first run to end today: ${research} research${s.reachedFinal ? ' and an album card for reaching the final' : ''}.` };
 }
 
