@@ -19,6 +19,7 @@ import './styles/region.css';
 import './styles/football.css';
 import './styles/football-tree.css';
 import './styles/football-globe.css';
+import './styles/football-cup.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
