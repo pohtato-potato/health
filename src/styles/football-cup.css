@@ -11,7 +11,7 @@
 
 /* How your deck was dealt: one row per axis, two lines at most */
 .cup-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.cup-dr { display: grid; grid-template-columns: 74px 46px 1fr; grid-template-rows: auto auto; column-gap: 8px; row-gap: 2px; align-items: baseline; padding: 8px 10px; border-left: 4px solid var(--k); border-radius: 10px; background: linear-gradient(90deg, color-mix(in srgb, var(--k) 22%, transparent), transparent 80%); }
+.cup-dr { display: grid; grid-template-columns: 74px 46px 1fr; grid-template-rows: auto auto; column-gap: 8px; row-gap: 2px; align-items: baseline; padding: 8px 10px; border: 1.5px solid color-mix(in srgb, var(--k) 70%, transparent); border-radius: 12px; box-shadow: 0 0 12px -6px var(--k); background: linear-gradient(90deg, color-mix(in srgb, var(--k) 18%, transparent), transparent 80%); }
 .cup-ax { font: 700 17px var(--fb-cond); color: var(--k); }
 .cup-avg { font: 700 20px var(--fb-cond); font-variant-numeric: tabular-nums; }
 .cup-avg.v5 { color: #ffd56a; } .cup-avg.v4 { color: #3fd98a; } .cup-avg.v3 { color: #7fb8ff; } .cup-avg.v2 { color: #ff9270; } .cup-avg.v1 { color: #aab5cf; }
