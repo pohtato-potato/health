@@ -161,6 +161,8 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/football/limit': { el: () => <Football />, tab: 'football' },
   '/football/sheet': { el: () => <Football />, tab: 'football' },
   '/football/blend': { el: () => <Football />, tab: 'football' },
+  '/football/cup': { el: () => <Football />, tab: 'football' },
+  '/football/cup/match': { el: () => <Football />, tab: 'football' },
   '/arrival': { el: () => <ArrivalRedirect /> },
   '/sky': { el: () => <NightSkyPage /> },
   '/medicines': { el: () => <MedicinesPage /> },

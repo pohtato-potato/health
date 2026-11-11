@@ -203,6 +203,7 @@ export function blocked(s: MatchState, id: string, as?: CardKind): string | null
     if (k === 'punt') return null;
     if (s.zone === 2) return null;
     if (s.zone === 1 && (k === 'thunderbolt' || s.build >= TUNE.through)) return null;
+    if (k === 'thunderbolt') return 'Get the ball to midfield first.';
     return s.zone === 1 ? `Finish from here needs build-up ×${TUNE.through}.` : 'Get the ball to the final third first.';
   }
   return null;
@@ -248,7 +249,7 @@ export function play(s0: MatchState, id: string, as?: CardKind): MatchState {
       m.passes++;
       m.streak++;
       for (const p of s.inPlay) if (p.kind === 'system') m.shotBonus += CARD.systemShot[p.level];
-      if (m.streak >= 2) { m.streak = 0; s.build += TUNE.oneTwo; combo(s, 'One-two', `build-up +×${TUNE.oneTwo}`); }
+      if (m.streak >= 2) { m.streak = 0; s.build += TUNE.oneTwo; combo(s, 'One-two', `build-up +${TUNE.oneTwo}`); }
       if (afterCarry) { s.freePass = true; combo(s, 'Switch of play', 'next pass costs nothing'); }
       makeTemp(s, CARD.oneTwoMakes[level]);
       break;
@@ -332,7 +333,7 @@ export function recycle(s0: MatchState, id: string): MatchState {
     s.patient = true;
     s.build += TUNE.patientBuild;
     s.cover += TUNE.patientCover;
-    combo(s, 'Patient build-up', `build-up +×${TUNE.patientBuild} and ${TUNE.patientCover} cover`);
+    combo(s, 'Patient build-up', `build-up +${TUNE.patientBuild} and ${TUNE.patientCover} cover`);
   }
   return s;
 }

@@ -49,8 +49,6 @@ const AWAY: Status[] = ['sick', 'injured', 'travelling'];
 const BASIC_CAP = 10;
 
 export const levelFor = (avg: number): Level => (avg >= 15 ? 'great' : avg >= 11 ? 'good' : 'basic');
-const one = (x: number) => Math.round(x * 10) / 10;
-const LEVEL_WORD: Record<Level, string> = { basic: 'Basic', good: 'Good', great: 'Great' };
 
 export function dealDeck(i: DealInput): Deal {
   const cards: Card[] = [];
@@ -71,13 +69,9 @@ export function dealDeck(i: DealInput): Deal {
     cards.push(...mine);
     const logged = vals.length - away;
     let why: string;
-    if (level === 'punt') why = `Not logged in the last seven days, so ${mine.length === 1 ? 'a hopeful punt' : `${mine.length} hopeful punts`}.`;
+    if (level === 'punt') why = 'Not logged this week, so hopeful punts.';
     else if (avg == null) why = 'Your first week: too little data yet, so basic.';
-    else {
-      const parts = [`Average ${one(avg)} over ${vals.length} day${vals.length === 1 ? '' : 's'}`];
-      if (away) parts.push(`${away} sick or away at form, capped at basic`);
-      why = `${parts.join('; ')}: ${LEVEL_WORD[level].toLowerCase()}.`;
-    }
+    else why = `${logged} day${logged === 1 ? '' : 's'} logged${away ? `, ${away} sick or away (count at form, capped at basic)` : ''}.`;
     rows.push({ axis: a, avg: avg == null ? null : avg, level, cards: mine, why, days: logged, away });
   }
 

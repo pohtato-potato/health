@@ -5,6 +5,7 @@ import Dexie, { type EntityTable } from 'dexie';
 import type { Snapshot } from './snapshots';
 import type { FbBundle, FbClub, FbNews, FbSave, FbSeason, FbSquadRow, StoredMatch } from '../football/store/tables';
 import type { FbPlayer } from '../football/players/types';
+import type { CupRun } from '../football/cup/store';
 import type {
   BodyEntry,
   CheckIn,
@@ -76,6 +77,7 @@ export class HealthDB extends Dexie {
   fbBundles!: EntityTable<FbBundle, 'id'>;
   fbPlayers!: EntityTable<FbPlayer, 'id'>;
   body!: EntityTable<BodyEntry, 'id'>;
+  cupRuns!: EntityTable<CupRun, 'id'>;
 
   constructor(name = 'health') {
     super(name);
@@ -142,6 +144,10 @@ export class HealthDB extends Dexie {
     this.version(11).stores({
       body: 'id, date, at',
     });
+    // Cup runs (ledger O28): the run or try match in progress, saved after every card.
+    this.version(12).stores({
+      cupRuns: 'id',
+    });
   }
 }
 
@@ -184,6 +190,7 @@ export const TABLES = [
   'fbBundles',
   'fbPlayers',
   'body',
+  'cupRuns',
 ] as const;
 export type TableName = (typeof TABLES)[number];
 
