@@ -164,8 +164,8 @@ export async function pausedMatch(): Promise<PausedMatch | undefined> {
 }
 /**
  * Finishes the waiting match and stores it like any other: with the owner's calls made so far (a watched match ends
- * with all of them made) and the assistant taking the best odds on any call left. Skip calls this with
- * `watched: false`; the morning parcel's Skip uses `finishWithAssistant`.
+ * with all of them made) and the assistant taking the best odds on any call left. Skip in the live screen and
+ * the morning parcel's Skip both mark it seen (`finishWithAssistant`).
  */
 export async function finishPaused(o: { watched: boolean }): Promise<StoredMatch | undefined> {
   await upgradeSave();
@@ -177,8 +177,8 @@ export async function finishPaused(o: { watched: boolean }): Promise<StoredMatch
   const ok = await saveWorld(w, save, (cur) => cur?.paused?.id === p.id);
   return ok ? m : (await db.fbMatches.get(p.id));
 }
-/** Skip: the assistant makes every call left and the match is stored. */
-export const finishWithAssistant = () => finishPaused({ watched: false });
+/** Skip: the assistant makes every call left and the match is stored, marked seen (it never returns in the catch-up reel). */
+export const finishWithAssistant = () => finishPaused({ watched: true });
 
 /** Stores a call or the half-time plan as the owner makes it, so leaving mid-match resumes at the same point. */
 export async function recordLive(change: { pick?: CallPick; half2?: Tactic | null; halfSeen?: boolean }): Promise<void> {

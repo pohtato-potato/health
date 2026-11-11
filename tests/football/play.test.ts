@@ -126,13 +126,14 @@ describe('the league match that waits for you (matchday spec §2.1)', () => {
     expect(m.events).toEqual(expected);
     expect(m.events.calls!.length).toBeGreaterThanOrEqual(1);
     expect(m.events.calls!.every((c) => c.by === 'assistant')).toBe(true);
-    expect(m.watched).toBe(false);
+    expect(m.watched).toBe(true); // skipped: seen, never back in the catch-up reel
   });
   it('the next 4 am finishes a match nobody opened, with the assistant, before playing on', async () => {
     await kickOff('2026-10-10');
     const played = await playDue(noon('2026-10-12'));
     expect(played[0].date).toBe('2026-10-10');
     expect(played[0].events.calls!.every((c) => c.by === 'assistant')).toBe(true);
+    expect(played[0].watched).toBe(false); // nobody opened it: it waits in the catch-up reel
     expect((await pausedMatch())?.date ?? '2026-10-11').toBe('2026-10-11');
   });
   it('a watched match: the calls you made and the half-time change are kept, and resume where you left', async () => {
