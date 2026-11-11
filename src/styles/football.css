@@ -507,3 +507,100 @@ button.fb-todaycard { cursor: pointer; }
 :root[data-ft='W'] .fb-au { background: linear-gradient(175deg, #123d2a, #0a1f16 70%); --a: #e8c25a; --c: #2fbf78; }
 :root[data-ft='D'] .fb-au { background: linear-gradient(175deg, #16304f, #0b1728 70%); --a: #d9a24c; --c: #4f8fd0; }
 :root[data-ft='L'] .fb-au { background: linear-gradient(175deg, #3a1628, #1c0b14 70%); --a: #7a3a55; --c: #5a2a48; }
+
+/* ---------- Matchday depth (spec 2026-11-12 §3): before kick-off, live, a call, a goal, half-time, full time ---------- */
+.md-page .fb-page { display: flex; flex-direction: column; gap: 12px; }
+.md-score { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.md-side { display: inline-flex; align-items: center; gap: 8px; min-width: 0; font: 400 22px/1.1 var(--serif); }
+.md-side b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.md-side .fb-num { font-size: 26px; }
+.md-score.big .md-side { font-size: 24px; }
+.md-score.big .md-side .fb-num { font-size: 36px; font-style: italic; }
+.md-strip { display: grid; grid-template-columns: repeat(15, 1fr); gap: 4px; align-items: center; height: 14px; }
+.md-strip i { height: 4px; border-radius: 3px; background: rgba(243,238,230,.18); }
+.md-strip i.atk { background: var(--fb-or); box-shadow: 0 0 8px var(--fb-or); }
+.md-strip i.def { background: #8fc0ff; box-shadow: 0 0 8px #8fc0ff; }
+.md-strip i.goal { height: 9px; }
+.md-strip i.future { opacity: .35; }
+.md-shots { display: block; width: 100%; height: auto; }
+.md-shots .pl { fill: none; stroke: rgba(243,238,230,.4); stroke-width: 1.2; }
+.md-shots circle { fill: none; stroke-width: 2.4; }
+.md-shots circle.atk { stroke: var(--fb-or); }
+.md-shots circle.def { stroke: #8fc0ff; }
+.md-shots circle.goal.atk { fill: var(--fb-or); filter: drop-shadow(0 0 5px var(--fb-or)); }
+.md-shots circle.goal.def { fill: #8fc0ff; filter: drop-shadow(0 0 5px #8fc0ff); }
+.md-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.md-chip { display: inline-flex; align-items: center; min-height: 32px; padding: 0 12px; border-radius: 999px; border: 1.5px solid currentColor; font: 600 14px var(--sans); background: transparent; box-shadow: 0 0 10px -4px currentColor; }
+button.md-chip { min-height: 44px; cursor: pointer; }
+.md-chip.on { background: color-mix(in srgb, currentColor 22%, transparent); }
+.md-opp { display: flex; align-items: center; gap: 12px; }
+.md-opp > span:last-child { display: flex; flex-direction: column; }
+.md-oname { font: 400 26px/1.1 var(--serif); }
+.md-plan { display: flex; flex-direction: column; gap: 10px; }
+.md-seg3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.md-seg3 button { min-height: 48px; border-radius: 14px; border: 1.5px solid rgba(243,238,230,.75); background: transparent; color: var(--fb-ink); font: 700 16px var(--sans); cursor: pointer; }
+.md-seg3 button.on { background: var(--fb-or); border-color: var(--fb-or); color: #140d1a; box-shadow: 0 0 18px -4px var(--fb-or); }
+.md-dial .fb-row b { color: var(--fb-or-soft); }
+.md-bars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.md-bars button { min-height: 44px; display: flex; align-items: center; background: transparent; border: 0; padding: 0; cursor: pointer; }
+.md-bars i { display: block; width: 100%; height: 12px; border-radius: 999px; border: 1.5px solid rgba(243,238,230,.7); }
+.md-bars .lit i { background: var(--fb-or); border-color: var(--fb-or); box-shadow: 0 0 12px var(--fb-or); }
+.md-read { margin: 0; font: 400 16px/1.4 var(--sans); }
+.md-read.good::after { content: ''; }
+.md-read.good { color: var(--fb-ink); }
+.md-read.good { text-shadow: 0 0 12px rgba(255,213,106,.25); }
+.md-dots { display: flex; flex-wrap: wrap; gap: 6px; }
+.md-dots i { width: 18px; height: 18px; border-radius: 50%; border: 2.5px solid; box-shadow: 0 0 8px -2px currentColor; }
+.md-foot { margin-top: 8px; display: flex; flex-direction: column; gap: 10px; }
+.md-stadium { position: relative; border-radius: 24px; background: radial-gradient(60% 55% at 50% 12%, rgba(255,240,210,.16), transparent 70%); }
+.md-stadium.sm .fb-pitch { max-width: 240px; }
+.fb-pitch .pdot { fill: none; stroke-width: 2.5; }
+.fb-pitch .pdot.atk { stroke: var(--fb-or-soft); }
+.fb-pitch .pdot.def { stroke: #8fc0ff; }
+.fb-pitch .pdot.goal.atk { fill: var(--fb-or); }
+.fb-pitch .pdot.goal.def { fill: #8fc0ff; }
+.fb-pitch .entry { fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 600; stroke-dashoffset: 600; animation: md-entry 1s ease-out forwards; filter: drop-shadow(0 0 4px #fff); }
+@keyframes md-entry { to { stroke-dashoffset: 0; } }
+.md-chain { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.md-chain li { min-height: 36px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 999px; border: 1.5px solid var(--fb-pu-soft); font: 600 15px var(--sans); animation: md-in .4s ease-out both; }
+.md-chain li:nth-child(2) { animation-delay: .25s; border-color: #8fdcb6; }
+.md-chain li:nth-child(3) { animation-delay: .5s; }
+.md-chain li + li::before { content: '→'; margin: 0 8px 0 -4px; color: rgba(243,238,230,.7); }
+.md-chain li.last { background: var(--fb-or); border-color: var(--fb-or); color: #140d1a; }
+@keyframes md-in { from { opacity: 0; transform: translateY(6px); } }
+.md-now p { margin: 0; }
+.md-pct { font: italic 400 44px/1 var(--serif); }
+.md-res { font: 700 18px var(--sans); }
+.md-whistle { font: italic 400 36px/1 var(--serif); text-align: center; margin: 12px 0; }
+.md-ask { font: 400 26px/1.2 var(--serif); margin: 4px 0; }
+.md-opts { display: flex; flex-direction: column; gap: 10px; }
+.md-opt { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 64px; padding: 10px 14px; border-radius: 16px; border: 2px solid; background: rgba(11,16,34,.35); color: var(--fb-ink); text-align: left; cursor: pointer; box-shadow: 0 0 16px -6px currentColor; }
+.md-opt > span { display: flex; flex-direction: column; gap: 2px; }
+.md-opt b { font: 700 16px var(--sans); }
+.md-opt small { font: 400 15px/1.35 var(--sans); }
+.md-odds { font: italic 400 30px/1 var(--serif) !important; flex: none; }
+.md-goal .fb-page { align-items: stretch; }
+.md-gword { font: italic 800 72px/0.95 var(--serif); letter-spacing: -.01em; text-shadow: 0 0 30px var(--a); }
+.md-tag { align-self: flex-start; padding: 6px 12px; border-radius: 999px; border: 1.5px solid #ffd56a; color: #ffd56a; font: 700 14px var(--sans); }
+.md-scorer { display: flex; align-items: center; gap: 14px; }
+.md-scorer > span { display: flex; flex-direction: column; }
+.md-card { width: 108px; flex: none; }
+.md-gcrest { align-self: center; }
+.md-studio { margin: 0; display: flex; flex-direction: column; gap: 2px; font: 400 15px/1.4 var(--sans); }
+.md-studio b { font: 700 15px var(--sans); }
+.md-studio.g b { color: var(--fb-or-soft); }
+.md-studio.p b { color: var(--fb-pu-soft); }
+.md-ft { display: flex; flex-direction: column; gap: 10px; }
+.md-potm { color: var(--fb-or-soft); }
+.md-pick { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.md-tile { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 64px; padding: 10px 14px; border-radius: 16px; border: 2px solid; background: transparent; color: var(--fb-ink); text-align: left; cursor: pointer; box-shadow: 0 0 16px -6px currentColor; }
+.md-tile > span { display: flex; flex-direction: column; gap: 2px; }
+.md-tile b { font: 700 16px var(--sans); }
+.md-tile small { font: 400 15px var(--sans); }
+.md-tile:disabled { cursor: default; opacity: .55; }
+.md-tile.on { opacity: 1; background: rgba(243,238,230,.08); }
+.md-plus { font: italic 400 28px var(--serif) !important; }
+.md-took { font: 700 14px var(--sans); color: #3fd98a; }
+.md-wait .md-wduel { display: flex; align-items: center; justify-content: center; gap: 10px; font: 400 22px var(--serif); flex-wrap: wrap; }
+.md-tbp { display: block; color: var(--fb-or-text); }
+.md-cards { display: flex; flex-direction: column; gap: 6px; }
