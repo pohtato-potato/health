@@ -4,6 +4,7 @@ import { addDays, type DayKey } from '../../domain/dates';
 import type { Health } from '../store/gather';
 import type { FbSquadRow } from '../store/tables';
 import { bedtimeKept } from './attributes';
+import { keptPledgeNight } from '../../domain/pledge';
 
 export const PROMOTE_SESSIONS = 12;
 export const PROMOTE_GROWTH = 12;
@@ -33,7 +34,9 @@ export function youthDay(h: Health, y: FbSquadRow, date: DayKey, bedtime: number
   const next = { ...y, sessions: [...(y.sessions ?? [])], grown: [...(y.grown ?? [])], growth: y.growth ?? 0 };
   if (!next.sessions.includes(date) && linkedLogged(h, y.link, date)) next.sessions.push(date);
   const sleep = h.days.get(date)?.sleep;
-  if (sleep && bedtime !== undefined && !next.grown.includes(date) && bedtimeKept(sleep.asleep, bedtime)) {
+  // A kept lights-out pledge (matchday §5) grows the academy too; a pledge never takes a kept bedtime away.
+  const kept = sleep && ((bedtime !== undefined && bedtimeKept(sleep.asleep, bedtime)) || keptPledgeNight(h.days, date));
+  if (sleep && kept && !next.grown.includes(date)) {
     const restDay = !h.sessions.some((s) => s.date === addDays(date, -1));
     const n = Math.round((GROWTH_BY_STARS[y.potential] + (o.extra ?? 0)) * (restDay ? 2 : 1) * (o.mult ?? 1) * 100) / 100;
     next.growth = Math.round((next.growth + n) * 100) / 100;

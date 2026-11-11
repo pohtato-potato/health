@@ -19,7 +19,9 @@ import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
 import { checklistSlots, morningQuestions, swapSentence } from '../state/derived';
 import { placeOptions } from '../domain/places';
-import { ensurePlace } from '../db/actions';
+import { ensurePlace, setOfficeDay } from '../db/actions';
+import { isOfficeDay } from '../domain/officeUsual';
+import { CaughtWindow } from '../screens/Pledge';
 import { PlaceIcon } from '../ui/PlaceIcon';
 import { StatusRow } from '../ui/StatusRow';
 import { undoEdit } from '../db/edits';
@@ -144,6 +146,11 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
                   ))}
                 </div>
               )}
+              {/* Office days are away games (matchday §5): mark one by hand, or let the place do it. */}
+              <button type="button" className={`chip sm${isOfficeDay(day, settings.places ?? []) ? ' on' : ''}`} aria-pressed={isOfficeDay(day, settings.places ?? [])} style={{ minHeight: 44 }}
+                onClick={() => void setOfficeDay(today, !isOfficeDay(day, settings.places ?? []))}>
+                Office day: an away game
+              </button>
               <span className="lbl">Status</span>
               <StatusRow today={today} current={day?.status} />
             </>
@@ -196,6 +203,7 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
             ))}
           </div>
         </div>
+        <CaughtWindow date={today} days={days} />
       </div>
 
       {settings.prefs.confirmSteps && (

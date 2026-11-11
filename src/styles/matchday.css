@@ -1,0 +1,61 @@
+/* Matchday §4–§5 (Fork B): the morning parcel in its dawn look, the ground at night, and the lights-out pledge in the
+   aurora. Words in Atkinson Hyperlegible Next, numbers and titles in Fraunces. Text 14 px or more, targets 44 px or
+   more. Glowing outlines, no navy cards, no glass. */
+.md-page { --ab: 'Atkinson Hyperlegible Next', var(--sans); --fr: var(--serif); --cream: #ede6da; --mq: #cfc7d9;
+  min-height: 100dvh; color: var(--cream); font: 16px/1.4 var(--ab); display: flex; flex-direction: column; gap: 12px;
+  padding: calc(var(--safe-top, 0px) + 18px) 16px calc(var(--safe-bottom, 0px) + 110px); overflow-x: hidden; }
+.md-page.dawn { background: radial-gradient(120% 50% at 50% 108%, rgba(242,196,109,.55), transparent 60%), linear-gradient(180deg,#120e30 0%,#2c2060 46%,#7a3f6e 86%,#b2586a 100%); }
+.md-page.night { background: radial-gradient(90% 40% at 50% 0%, rgba(147,195,220,.12), transparent 60%), #07080f; }
+.md-page.pledge { background: radial-gradient(110% 55% at 20% 0%, rgba(147,195,220,.50), transparent 62%), radial-gradient(90% 50% at 100% 100%, rgba(154,116,236,.40), transparent 62%), #0b0f22; }
+.md-in { width: 100%; max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+.md-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.md-cap { font: 700 14px var(--ab); letter-spacing: .08em; text-transform: uppercase; color: var(--cream); }
+.md-q { color: var(--mq); font-size: 15px; }
+.md-h { font: 700 26px/1.15 var(--fr); margin: 0; color: #fff; }
+.md-big { font: 700 56px/1 var(--fr); color: #0d0f20; font-variant-numeric: tabular-nums; }
+.md-fill { flex: 1; }
+.md-tile { --ink: var(--cream); border-radius: 16px; border: 2px solid var(--ink); box-shadow: 0 0 18px -4px var(--ink), inset 0 0 22px -10px var(--ink); background: #0f0c26;
+  min-height: 74px; display: flex; align-items: center; gap: 12px; padding: 10px 14px; color: var(--cream); font: 600 17px var(--ab); text-align: left; width: 100%; }
+.md-tile.col { flex-direction: column; align-items: stretch; }
+.md-tile.small { min-height: 48px; opacity: .72; }
+.md-tile .seal { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--ink); display: grid; place-items: center; font: 700 18px var(--fr); color: var(--ink); flex: none; }
+.md-tile.small .seal { width: 28px; height: 28px; font-size: 14px; }
+.md-tile b { flex: 1; }
+.md-beam { height: 120px; margin: -4px -16px; background: radial-gradient(60% 100% at 50% 50%, rgba(255,255,255,.95), rgba(242,196,109,.6) 30%, transparent 70%); display: grid; place-items: center; animation: md-beam .7s ease-out both; }
+@keyframes md-beam { from { opacity: 0; transform: scaleY(.2); } to { opacity: 1; transform: none; } }
+.md-score { display: flex; justify-content: space-between; align-items: center; gap: 8px; font: 700 18px var(--fr); }
+.md-score span { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.md-duel { display: flex; justify-content: space-around; align-items: center; gap: 10px; padding: 6px 0; }
+.md-duel figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; font: 700 17px var(--fr); text-align: center; }
+.md-duel .v { font: 700 22px var(--fr); color: var(--mq); }
+.md-btn { min-height: 52px; border-radius: 999px; border: 2px solid var(--fb-or, #ff7a1a); background: var(--fb-or, #ff7a1a); color: #140d1a; font: 700 17px var(--ab); padding: 0 18px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; width: 100%; }
+.md-btn.ghost { background: transparent; color: var(--cream); border-color: rgba(237,230,218,.55); }
+.md-btns { display: flex; gap: 8px; } .md-btns > * { flex: 1; }
+.md-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 32px; }
+.md-row b { font-weight: 700; }
+.md-bar { height: 12px; border-radius: 6px; background: rgba(214,196,160,.25); overflow: hidden; }
+.md-bar i { display: block; height: 100%; background: #8fdcb6; box-shadow: 0 0 8px #8fdcb6; }
+.md-opts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.md-opts button { min-height: 48px; border-radius: 14px; border: 1.5px solid var(--cream); background: transparent; color: var(--cream); font: 700 18px var(--fr); cursor: pointer; }
+.md-opts button[aria-pressed='true'] { background: var(--fb-or, #ff7a1a); border-color: var(--fb-or, #ff7a1a); color: #0d0f20; }
+.md-opt { --ink: rgba(237,230,218,.5); border-radius: 16px; border: 2px solid var(--ink); box-shadow: 0 0 14px -8px var(--ink); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 52px; background: transparent; color: var(--cream); font: 600 16px var(--ab); text-align: left; width: 100%; cursor: pointer; }
+.md-opt[aria-pressed='true'] { --ink: #93c3dc; background: rgba(147,195,220,.12); }
+.md-opt .n { font: 700 20px var(--fr); white-space: nowrap; }
+.md-strip { display: flex; gap: 6px; flex-wrap: wrap; }
+.md-strip i { width: 38px; height: 10px; border-radius: 5px; background: rgba(237,230,218,.22); display: block; }
+.md-strip i.on { background: #93c3dc; box-shadow: 0 0 8px #93c3dc; }
+.md-v1 { color: #f2c46d; } .md-v2 { color: #8fc9b0; } .md-v3 { color: #8fb3f0; } .md-v4 { color: #e98a5b; } .md-v5 { color: #a9b0c4; }
+.md-ground { width: 100%; display: block; }
+.md-nav { display: flex; gap: 6px; flex-wrap: wrap; }
+.md-nav button { min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1.5px solid rgba(237,230,218,.4); background: transparent; color: var(--cream); font: 600 15px var(--ab); cursor: pointer; }
+/* The pledge as a card on Food and in the morning log. */
+.md-card { --cream: #ede6da; --mq: #cfc7d9; --ab: 'Atkinson Hyperlegible Next', var(--sans); --fr: var(--serif); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 10px; color: var(--cream); font: 16px/1.4 var(--ab);
+  background: radial-gradient(110% 80% at 20% 0%, rgba(147,195,220,.35), transparent 62%), radial-gradient(90% 70% at 100% 100%, rgba(154,116,236,.30), transparent 62%), #0b0f22; border: 1.5px solid rgba(147,195,220,.55); box-shadow: 0 0 18px -6px #93c3dc; }
+.md-yn { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.md-yn button { min-height: 48px; border-radius: 14px; border: 1.5px solid currentColor; background: transparent; font: 700 16px var(--sans); color: inherit; cursor: pointer; }
+.md-yn button[aria-pressed='true'] { background: #93c3dc; border-color: #93c3dc; color: #0d0f20; }
+/* The ground at night (p3-night): Football's frame with its lights off. */
+.fb-au.md-night { background: radial-gradient(90% 40% at 50% 0%, rgba(147,195,220,.12), transparent 60%), #07080f; }
+.fb-au.md-night > .fb-field { display: none; }
+.fb-au.md-night .md-in { --ab: 'Atkinson Hyperlegible Next', var(--sans); --fr: var(--serif); --cream: #ede6da; --mq: #cfc7d9; color: var(--cream); font: 16px/1.4 var(--ab); margin-top: 12px; }
+.md-opts button:disabled { opacity: .55; cursor: default; } .md-opts button[aria-pressed='true']:disabled { opacity: 1; }

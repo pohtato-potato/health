@@ -1,5 +1,6 @@
-import { dayRange, type Range } from '../../domain/nightOut';
 // Reads Health's tables once for a date. Football reads values only, never log times.
+import { excusedWeighIns } from '../../domain/officeDay';
+import { dayRange, type Range } from '../../domain/nightOut';
 import { bedOrder, NIGHT_FROM, sleepMinutes } from '../../domain/rings';
 import { db } from '../../db/db';
 import { addDays, daysBetween, weekStart, type DayKey } from '../../domain/dates';
@@ -103,7 +104,8 @@ export function axisInputFor(h: Health, date: DayKey): AxisInput {
   const day = h.days.get(date);
   const ws = weekStart(date);
   const k = h.kcal.get(date);
-  const weighIns7 = [...h.days.values()].filter((d) => d.date <= date && d.date > addDays(date, -7) && d.weightKg != null).length;
+  // An office day's missing weigh-in is expected (matchday §5): it counts as weighed, so Shape isn't fogged for it.
+  const weighIns7 = Math.min(7, [...h.days.values()].filter((d) => d.date <= date && d.date > addDays(date, -7) && d.weightKg != null).length + excusedWeighIns(h.days.values(), date, h.settings));
   const waist28 = h.measures.filter((m) => m.waist != null && m.date <= date && m.date > addDays(date, -28)).sort((a, b) => a.date.localeCompare(b.date));
   return {
     day,

@@ -16,6 +16,7 @@ import type { YouthLink } from '../players/youth';
 import type { TreeEngine, TreeUser } from '../tree/types';
 import type { GlobeEngine, GlobeUser } from '../globe/types';
 import type { Chemistry, Morale, Tactic, TeamSheet } from '../rotation/night';
+import type { TalkOutcome } from '../talks';
 
 export type CrestOpt = 'a' | 'b' | 'c' | 'd' | 'e';
 export interface FbSave {
@@ -106,7 +107,11 @@ export interface FbSave {
   morale?: Morale;
   /** Release 1 (R3 b-lowlog): this week's low-log week, Monday's date and the one habit's axis that still counts. */
   lowLog?: { week: DayKey; axis: Axis };
+  /** Matchday §4–§5 (Fork B): taps around the match. Needs 'around' in play.ts USER_KEYS (Fork A's file). */
+  around?: AroundUser;
 }
+/** The morning parcel opened (by logging day) and the target talks held. */
+export interface AroundUser { parcel?: DayKey; talks?: TalkOutcome[] }
 export interface FbClub { id: string; tier: Tier; rating: number; style: string; old?: OldSelf; folded?: boolean }
 export interface FbSeason {
   id: number;

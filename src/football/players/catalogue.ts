@@ -1,7 +1,7 @@
 // The squad from the logs (spec §2, calibration §13.1): every real thing you log is a player in one of six units.
+import { awayDay } from '../../domain/officeDay';
 import { addDays, type DayKey } from '../../domain/dates';
 import { allExercises, type ExerciseDef } from '../../domain/plan';
-import { placeFor } from '../../domain/places';
 import type { Meal } from '../../domain/types';
 import type { Health } from '../store/gather';
 import { artForExercise, artForHabit } from './art';
@@ -51,7 +51,7 @@ export function playersOn(h: Health, date: DayKey): PlayerDef[] {
   const stepDays = days.filter((d) => d.steps != null);
   add({ id: 'pace:steps', unit: 'Pace', kind: 'steps', name: 'Steps', art: 'steps', signed: first(stepDays.map((d) => d.date)), active: true });
   add({ id: 'pace:big-days', unit: 'Pace', kind: 'big-days', name: 'Big days', art: 'bigday', signed: first(stepDays.filter((d) => d.steps! >= BIG_DAY).map((d) => d.date)), active: true });
-  const travel = stepDays.filter((d) => { const k = placeFor(d, h.settings).kind; return k === 'office' || k === 'trip'; });
+  const travel = stepDays.filter((d) => awayDay(d, h.settings));
   add({ id: 'pace:commuter', unit: 'Pace', kind: 'commuter', name: 'Commuter', art: 'commuter', signed: first(travel.map((d) => d.date)), active: true });
   add({ id: 'pace:long-walk', unit: 'Pace', kind: 'long-walk', name: 'Long walk', art: 'longwalk', signed: first(h.walks.filter((w) => w.km >= LONG_WALK_KM && w.date <= date).map((w) => w.date)), active: true });
   add({ id: 'pace:route-walker', unit: 'Pace', kind: 'route-walker', name: 'Route walker', art: 'route', signed: first(h.routes.flatMap((r) => r.spans.map((s) => s.from)).filter((d) => d <= date)), active: true });

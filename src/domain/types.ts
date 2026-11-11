@@ -363,6 +363,14 @@ export interface Day {
   revealedAt?: number;
   /** A creature's earned theme worn on this day, by creature id. */
   theme?: string;
+  /** Matchday §5: tonight's lights-out pledge (minutes after midnight), or null for "Not tonight". */
+  pledge?: { at: number | null };
+  /** Matchday §5: the morning's "Caught the window?" answer. Shown in Reports; never feeds the match. */
+  caughtWindow?: boolean;
+  /** Matchday §5: marked as an office day (true) or not (false); unset follows the day's place. */
+  office?: boolean;
+  /** Matchday §5: the physio's question on a sick day. */
+  physio?: 'better' | 'same' | 'worse';
 }
 
 /** Tonight's shape locked at Close the day; the morning match plays it. */

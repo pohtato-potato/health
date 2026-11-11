@@ -1,5 +1,6 @@
 // Packs and the album (spec §10, §16). Five items a pack, opened on a tap; album cards in the player frames plus
 // Legend; duplicates turn into research; a finished set gives its reward. The running-low notice shows once.
+import { useGroundShut } from '../../../football/store/around';
 import { useState, type CSSProperties } from 'react';
 import { ALBUM_CARDS, ALBUM } from '../../../football/content/album';
 import { BOOSTS } from '../../../football/content/packs';
@@ -36,6 +37,8 @@ export function RunningLow({ pools }: { pools: PoolId[] }) {
 export function PacksPage() {
   const m = useModel();
   const [showing, setShowing] = useState<string | null>(null);
+  // Matchday §4 (d-closed B): after Close the day, packs are held for the morning.
+  const shut = useGroundShut() ?? false;
   if (!m) return null;
   const shown = showing ? m.user.opened.find((o) => o.id === showing) : undefined;
   return (
@@ -45,12 +48,13 @@ export function PacksPage() {
       <RunningLow pools={m.t.low} />
       {shown ? <Reveal items={shown.items} onDone={() => setShowing(null)} /> : (
         <>
+          {shut && m.packsWaiting.length > 0 && <p className="fbt-line"><b>The ground is shut for the night.</b> Packs wait for the morning parcel.</p>}
           {m.packsWaiting.length === 0 && <p className="fbt-line">No packs waiting. They come from each week you finish, finals won, promotion, the season track and some bounties.</p>}
           <div className="fbt-packs">
             {m.packsWaiting.map((p) => (
-              <button key={p.id} type="button" className={`fbt-pack ${p.size}`} onClick={() => { void openPackNow(p.id).then(() => setShowing(p.id)); }}>
+              <button key={p.id} type="button" className={`fbt-pack ${p.size}`} disabled={shut} onClick={() => { if (!shut) void openPackNow(p.id).then(() => setShowing(p.id)); }}>
                 <span className="fbt-lb">{p.size === 'big' ? 'Big pack' : p.size === 'single' ? 'Album card' : 'Pack'}</span>
-                <b>{SOURCE[p.source]}</b><small>{fmtDate(p.on)} · tap to open</small>
+                <b>{SOURCE[p.source]}</b><small>{fmtDate(p.on)} · {shut ? 'in the morning' : 'tap to open'}</small>
               </button>
             ))}
           </div>

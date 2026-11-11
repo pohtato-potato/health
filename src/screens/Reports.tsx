@@ -1,3 +1,4 @@
+import { caughtShare, pledgeOutcome } from '../domain/pledge';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState, type ReactNode } from 'react';
 import { achievementById } from '../domain/achievements';
@@ -62,6 +63,11 @@ function JourneyWrapped() {
   const laps = settings.loopSteps ? Math.round(s.steps / settings.loopSteps) : undefined;
   const names = s.unlocked.map((id) => achievementById(id)?.name).filter(Boolean) as string[];
 
+  // Matchday §5: "Caught the window?" and the pledges, shown here only; neither ever feeds a match.
+  const caught = caughtShare(days ?? [], s.from, s.to);
+  const dayMap = new Map((days ?? []).map((d) => [d.date, d]));
+  const settled = (days ?? []).filter((d) => d.date >= s.from && d.date < s.to).map((d) => pledgeOutcome(d, dayMap.get(addDays(d.date, 1)))).filter((o) => o === 'kept' || o === 'missed');
+  const kept = { n: settled.length, yes: settled.filter((o) => o === 'kept').length };
   const cards: { bg: string; ink: string; kicker: string; big: ReactNode; body?: ReactNode }[] = [
     { bg: 'linear-gradient(160deg,#3b1f5e,#8a2f6b)', ink: '#ffe3f1', kicker: `${title}, wrapped`, big: `${s.logged} days`, body: `logged between ${fmtDayMonth(s.from)} and ${fmtDayMonth(s.to)}.` },
     {
@@ -87,6 +93,9 @@ function JourneyWrapped() {
       ) : undefined,
     },
     { bg: 'linear-gradient(160deg,#16244f,#3a5bb5)', ink: '#e3ecff', kicker: 'You slept', big: s.sleepAvg ? `${fmtDuration(Math.round(s.sleepAvg))}` : '—', body: s.bestNight ? `a night on average. The longest: ${fmtDuration(s.bestNight.minutes)}, on ${fmtDayMonth(s.bestNight.date)}.` : undefined },
+    ...(caught.answered
+      ? [{ bg: 'linear-gradient(160deg,#0b0f22,#3a5b8a)', ink: '#e3f0ff', kicker: 'Caught the window', big: `${caught.yes} of ${caught.answered}`, body: `mornings you said you went to bed when sleepy.${kept.n ? ` Lights-out pledges kept: ${kept.yes} of ${kept.n}.` : ''}` }]
+      : []),
     {
       bg: 'linear-gradient(160deg,#3d3212,#9c7c2a)',
       ink: '#fff6dc',

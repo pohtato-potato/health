@@ -19,6 +19,7 @@ import type {
 } from '../domain/types';
 import { db, uid } from './db';
 import { setStride } from '../domain/walk';
+import { returnDate } from '../domain/treatment';
 import { recordEdit } from './edits';
 import { logUsage } from './usage';
 import { DEFAULT_EQUIPMENT, DEFAULT_PLAN } from '../domain/defaultPlan';
@@ -470,4 +471,34 @@ export async function addBodyEntry(e: Omit<BodyEntry, 'id' | 'at' | 'date'> & { 
   const rec: BodyEntry = { ...e, id: uid(), at, date: e.date ?? dayOfLogging(at) };
   await db.body.put(rec);
   return rec;
+}
+
+// ---- Matchday §5 (Fork B): around the match ----
+/** Tonight's lights-out pledge: a time in minutes after midnight, or null for "Not tonight". */
+export async function setPledge(date: DayKey, at: number | null) {
+  await patchDay(date, { pledge: { at } });
+}
+/** The morning's "Caught the window?" answer (Reports only). */
+export async function setCaughtWindow(date: DayKey, caught: boolean | undefined) {
+  await patchDay(date, (d) => { const next = { ...d }; if (caught === undefined) delete next.caughtWindow; else next.caughtWindow = caught; return next; });
+}
+/** Marks a day as an office day (true), not one (false), or back to following the place (undefined). */
+export async function setOfficeDay(date: DayKey, office: boolean | undefined) {
+  await patchDay(date, (d) => { const next = { ...d }; if (office === undefined) delete next.office; else next.office = office; return next; });
+}
+/**
+ * The physio's answer on a sick day. Two "better" days in a row set the return for tomorrow: the sick status ends
+ * today (any sick days already set ahead are cleared and the running status stops carrying). Returns that date.
+ */
+export async function answerPhysio(date: DayKey, a: NonNullable<Day['physio']>): Promise<DayKey | undefined> {
+  await patchDay(date, { physio: a });
+  const y = await db.days.get(addDays(date, -1));
+  const t = await db.days.get(date);
+  const back = returnDate(new Map([[date, t ?? { date }], [addDays(date, -1), y ?? { date: addDays(date, -1) }]]), date);
+  if (!back) return undefined;
+  const ahead = await db.days.where('date').above(date).toArray();
+  for (const d of ahead) if (d.status === 'sick') await setStatusRange(d.date, d.date, undefined);
+  const s = await getSettings();
+  if (s.activeStatus?.status === 'sick') await patchSettings({ activeStatus: undefined });
+  return back;
 }

@@ -25,6 +25,7 @@ import { useLiveTheme } from '../ui/live/useLiveTheme';
 import { LiveFinale } from './live/LiveFinale';
 import { finaleData } from './live/finaleData';
 import { HabitLine } from './football/HabitLine';
+import { needsPledge, PledgePage } from './Pledge';
 
 export function SessionDone() {
   const settings = useSettings();
@@ -124,6 +125,7 @@ function LiveDone({ session, plan, days, sets, withSkips, sessions, settings }: 
   const toast = useToast();
   const theme = useLiveTheme(settings);
   const [step, setStep] = useState(0);
+  const [pledging, setPledging] = useState(false);
   const [picked, setPicked] = useState<string[]>(session.flags ?? []);
   const [note, setNote] = useState(session.notes ?? '');
   const [saving, setSaving] = useState(false);
@@ -184,6 +186,8 @@ function LiveDone({ session, plan, days, sets, withSkips, sessions, settings }: 
   };
 
   const empty: FinaleData = { name: def?.name ?? `Session ${session.session}`, pages: [], recordSongs: {}, songs: [], hour: { total: 0, lift: 0, rest: 0, between: 0, longestRest: 0 }, form: { rows: [] }, rings: { exercises: [0, 0], inRange: [0, 0] }, quality: 0 };
+  // Matchday §5: the lights-out pledge follows the session finale (y-pledge A).
+  if (pledging) return <PledgePage date={session.date} onDone={() => go('/train', undefined, { replace: true })} />;
   return (
     <LiveFinale
       step={step}
@@ -199,7 +203,7 @@ function LiveDone({ session, plan, days, sets, withSkips, sessions, settings }: 
       saving={saving}
       onBack={() => go('/session', undefined, { replace: true })}
       onDiscard={discard}
-      onDone={() => go('/train', undefined, { replace: true })}
+      onDone={() => (needsPledge(days, session.date) ? setPledging(true) : go('/train', undefined, { replace: true }))}
       rings={RINGS[theme]}
       footer={<HabitLine axis="Power" />}
     />

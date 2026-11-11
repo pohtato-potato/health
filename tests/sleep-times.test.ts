@@ -135,3 +135,28 @@ describe('the Sleep track', () => {
     expect(Math.abs(lag ?? 0)).toBe(120);
   });
 });
+
+describe('a kept lights-out pledge (matchday §5)', () => {
+  const y = (): FbSquadRow => ({ id: 'y', kind: 'youth', name: 'Plank', axis: 'Pace', potential: 4, what: 'x', exercise: false, season: 1, logged: [], status: 'growing', link: { kind: 'habit', id: 'brush' }, sessions: [], growth: 0, grown: [] });
+  it('grows the academy even with no standing bedtime', () => {
+    const h = health({ days: days([{ date: addDays(D0, -1), pledge: { at: t(1, 30) } }, { date: D0, sleep: { asleep: t(1, 40), woke: t(9) } }]) });
+    expect(youthDay(h, y(), D0, undefined).growth).toBeGreaterThan(0);
+  });
+  it('a missed or copied night does not', () => {
+    const missed = health({ days: days([{ date: addDays(D0, -1), pledge: { at: t(0) } }, { date: D0, sleep: { asleep: t(2), woke: t(9) } }]) });
+    expect(youthDay(missed, y(), D0, undefined).growth).toBe(0);
+    const copied = health({ days: days([{ date: addDays(D0, -1), pledge: { at: t(1, 30) } }, { date: D0, sleep: { asleep: t(1, 40), woke: t(9), carried: true } }]) });
+    expect(youthDay(copied, y(), D0, undefined).growth).toBe(0);
+  });
+  it('"Not tonight" costs nothing: a kept standing bedtime still grows', () => {
+    const h = health({ days: days([{ date: addDays(D0, -1), pledge: { at: null } }, { date: D0, sleep: { asleep: t(0, 50), woke: t(9) } }]) });
+    expect(youthDay(h, y(), D0, t(1)).growth).toBeGreaterThan(0);
+  });
+  it('an office day without a weigh-in counts as weighed for Shape', () => {
+    const office = { ...settings, places: [{ id: 'o', name: 'Office', kind: 'office' as const, meals: { breakfast: 0, lunch: 0, snacks: 0, dinner: 0 }, eased: true, foodsFirst: 'normal' as const }] };
+    const h = health({ settings: office, days: days([{ date: D0, place: 'o' }, { date: addDays(D0, -1), weightKg: 70 }]) });
+    expect(axisInputFor(h, D0).weighIns7).toBe(2);
+    const marked = health({ days: days([{ date: D0, office: true }]) });
+    expect(axisInputFor(marked, D0).weighIns7).toBe(1);
+  });
+});

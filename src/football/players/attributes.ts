@@ -1,5 +1,7 @@
 // Attributes and the overall rating (spec §3.1 with the approved calibration numbers, report §8).
 // Every number comes from a real log. A sick day is "no data": it never counts for or against a player.
+import { keptPledgeNight } from '../../domain/pledge';
+import { awayDay } from '../../domain/officeDay';
 import { addDays, daysBetween, type DayKey } from '../../domain/dates';
 import { allExercises, valueOfSet } from '../../domain/plan';
 import { placeFor } from '../../domain/places';
@@ -121,7 +123,8 @@ function attrsOf(c: Ctx, p: PlayerDef, date: DayKey, days: DayKey[], r: (v: numb
       ];
     }
     case 'commuter': {
-      const away = days.filter((d) => { const k = placeFor(day(d), h.settings).kind; return day(d)?.steps != null && (k === 'office' || k === 'trip'); });
+      // Office days are away games (matchday §5): a day marked by hand counts as well as the place.
+      const away = days.filter((d) => day(d)?.steps != null && awayDay(day(d), h.settings));
       if (!away.length) return null;
       const mean = avg(away.map((d) => day(d)!.steps!));
       const g = avg(away.map(goal));
@@ -248,7 +251,8 @@ function attrsOf(c: Ctx, p: PlayerDef, date: DayKey, days: DayKey[], r: (v: numb
       const nights = days.filter((d) => day(d)?.sleep);
       if (!nights.length) return null;
       const target = c.bedtime ?? usualBedtime(h, date) ?? 0;
-      const kept = nights.filter((d) => bedtimeKept(day(d)!.sleep!.asleep, target)).length;
+      // A kept lights-out pledge (matchday §5) counts as a kept night: the Rest keeper starts fresh.
+      const kept = nights.filter((d) => bedtimeKept(day(d)!.sleep!.asleep, target) || keptPledgeNight(h.days, d)).length;
       const beds = nights.map((d) => bedOrder(day(d)!.sleep!.asleep));
       return [
         A('kept', 'Kept', r(rate(share(kept, nights.length))), 0.7, 'rate', `asleep by ${clock(target + BEDTIME_GRACE)} on ${kept} of ${nights.length} nights`),
