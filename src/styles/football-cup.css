@@ -128,7 +128,7 @@
 .cup-goal-big { font: 700 88px/0.9 var(--serif); transform: skew(-8deg); text-shadow: 0 0 30px var(--ink); animation: cup-land .5s cubic-bezier(.2,1.6,.4,1); }
 .cup-goal-who { font: 700 20px var(--serif); }
 .cup-goal-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.cup-goal-rows li { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 6px 10px; border-left: 4px solid var(--k); background: rgba(10,23,18,.55); font-size: 17px; animation: cup-row .35s ease-out; }
+.cup-goal-rows li { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 6px 10px; border: 1.5px solid var(--k); border-radius: 4px; box-shadow: 0 0 12px -6px var(--k); background: rgba(10,23,18,.55); font-size: 17px; animation: cup-row .35s ease-out; }
 .cup-goal-rows li b { font: 600 22px var(--serif); color: var(--k); }
 .cup-goal-rows li.combo { background: rgba(242,196,109,.18); }
 @keyframes cup-row { from { transform: translateX(-24px); opacity: 0; } }
