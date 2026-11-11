@@ -28,9 +28,14 @@ export const boonsThisSeason = (user: TreeUser, season: number) => user.boons.fi
 
 // ---------------- bounties ----------------
 
-/** The six offered for a week (Monday's date), seeded. */
+/** Training jobs: sessions, clean form, a kept rest day. Train has no list of its own; they sit in this one. */
+export const isTrainingBounty = (b: BountyDef) => b.target.what === 'training' || b.target.what === 'form-ok' || b.target.what === 'rest-day';
+/** The six offered for a week (Monday's date), seeded. At least one is a training job: if none was drawn, the first training job in the shuffle takes the last slot. */
 export function bountyOffer(week: DayKey): BountyDef[] {
-  return shuffle(rng(hashSeed('bounty', week)), BOUNTIES).slice(0, BOUNTIES_OFFERED);
+  const all = shuffle(rng(hashSeed('bounty', week)), BOUNTIES);
+  const offer = all.slice(0, BOUNTIES_OFFERED);
+  if (!offer.some(isTrainingBounty)) offer[offer.length - 1] = all.find(isTrainingBounty)!;
+  return offer;
 }
 export const bountiesPicked = (user: TreeUser, week: DayKey) => user.bounties.find((b) => b.week === week)?.ids ?? [];
 export const canPickBounties = (user: TreeUser, week: DayKey) => bountiesPicked(user, week).length < BOUNTIES_PICKED;

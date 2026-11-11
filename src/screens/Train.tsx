@@ -243,6 +243,16 @@ export function Train() {
           .map(({ ex, card, back }) => ({ key: ex.id, name: ex.name, pose: POSES[poseFor(ex)], tier: card.tier, next: card.next, seed: ex.id, back }))}
       />
 
+      <div className="lv-card">
+        <div className="lv-tr-cardhead">
+          <span className="lv-card-h">Bounties</span>
+          <button type="button" className="lv-link" onClick={() => go('/football/bounties')}>
+            This week ›
+          </button>
+        </div>
+        <div className="lv-small">Training jobs sit in Football's one bounty list, with the rest. Every week has at least one.</div>
+      </div>
+
       <MonthCard month={monthName} next={`1 ${nextMonth}`} m={month} film={filmDue(sessions, today)} onFilm={() => go('/film')} />
 
       <RecentCard

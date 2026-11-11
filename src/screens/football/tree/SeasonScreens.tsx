@@ -1,8 +1,8 @@
 // The season run (round six, pinned; track stars centred in round eight): pick a boon, the season track, bounties.
 import type { CSSProperties } from 'react';
-import { BOUNTIES_PICKED, TRACK } from '../../../football/content/season';
+import { BOUNTIES, BOUNTIES_PICKED, TRACK } from '../../../football/content/season';
 import { pickBoon, pickBounty } from '../../../football/store/treeActions';
-import { boonsThisSeason, bountiesPicked, bountyOffer, bountyProgress } from '../../../football/tree/season';
+import { boonsThisSeason, bountiesPicked, bountyOffer, bountyProgress, isTrainingBounty } from '../../../football/tree/season';
 import { fmtCount } from '../../../football/tree/words';
 import { BOONS } from '../../../football/content/season';
 import { go } from '../../../router';
@@ -73,14 +73,16 @@ export function TrackPage() {
 export function BountiesPage() {
   const m = useModel();
   if (!m) return null;
-  const offer = bountyOffer(m.week);
   const picked = bountiesPicked(m.user, m.week);
+  const offered = bountyOffer(m.week);
+  // A pick from before the offer always held a training job stays on the list.
+  const offer = [...offered, ...BOUNTIES.filter((b) => picked.includes(b.id) && !offered.some((o) => o.id === b.id))];
   const full = picked.length >= BOUNTIES_PICKED;
   return (
     <TreePage>
       <Back to="/football/story" label="Story" />
       <div className="fbt-head"><h1 className="fbt-t1">Bounties</h1><span className="fbt-cap"><b className="fbt-n">{picked.length}</b> of {BOUNTIES_PICKED} picked</span></div>
-      <p className="fbt-line">Six real-habit jobs this week. Pick three; each lasts until Sunday. Done ones pay out the morning after.</p>
+      <p className="fbt-line">Six real-habit jobs this week, training among them. Pick three; each lasts until Sunday. Done ones pay out the morning after.</p>
       <div className="fbt-bounties">
         {offer.map((b) => {
           const on = picked.includes(b.id);
@@ -88,7 +90,7 @@ export function BountiesPage() {
           const have = Math.min(b.target.count, bountyProgress(m.eng, b, m.week, m.t.today));
           return (
             <button key={b.id} type="button" className={`fbt-bounty${on ? ' on' : ''}${done ? ' dn' : ''}`} disabled={on || full} aria-pressed={on} onClick={() => void pickBounty(b.id)}>
-              <b>{done ? '✓ ' : on ? '• ' : ''}{b.name}</b>
+              <b>{done ? '✓ ' : on ? '• ' : ''}{b.name}{isTrainingBounty(b) && <em className="fbt-tag">Training</em>}</b>
               <span>{b.text}</span>
               {on && <span className="fbt-bar" role="img" aria-label={`${fmtCount(have)} of ${b.target.count}`}><i style={{ width: `${Math.round((have / b.target.count) * 100)}%` }} /></span>}
               <small>{done ? 'Done · ' : on ? `${fmtCount(have)} of ${b.target.count} · ` : ''}{rewardWords(b.reward)}</small>

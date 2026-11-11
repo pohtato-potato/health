@@ -187,6 +187,7 @@
 .fbt-bounty { cursor: pointer; font: inherit; font-size: 15px; --c: #93c3dc; }
 .fbt-bounty b { font: 400 19px var(--serif); }
 .fbt-bounty small { font-size: 14px; color: var(--fb-quiet); }
+.fbt-tag { font: 700 14px 'Atkinson Hyperlegible Next', var(--sans); font-style: normal; margin-left: 8px; padding: 1px 8px; border: 1.5px solid #ffb27a; border-radius: 999px; color: #ffb27a; box-shadow: 0 0 8px rgba(255,178,122,.45); vertical-align: 2px; }
 .fbt-bounty.on { --c: #8fdcb6; }
 .fbt-bounty.dn { --c: var(--fb-gold); }
 .fbt-bounty:disabled { cursor: default; }
