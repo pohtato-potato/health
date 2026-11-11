@@ -10,7 +10,7 @@ import * as engine from '../../src/football/engine';
 import { NOT_LOGGED } from '../../src/football/axes';
 import { CLUBS } from '../../src/football/data/load';
 import { opponentFor } from '../../src/football/opponent';
-import { AXES, type Axis, type AxisValues, type Tier } from '../../src/football/types';
+import { AXES, type Axis, type AxisValues, type MatchEvents, type Tier } from '../../src/football/types';
 
 const { playMatch, parityRating } = engine;
 const V = (Pace: number, Power: number, Fuel: number, Rest: number, Routine: number, Shape: number): AxisValues => ({ Pace, Power, Fuel, Rest, Routine, Shape });
@@ -107,3 +107,83 @@ describe.skipIf(!process.env.ENGINE_SIM)('engine simulation', () => {
     if (process.env.ENGINE_SIM_OUT) writeFileSync(process.env.ENGINE_SIM_OUT, `${text}\n`);
   }, 600_000);
 });
+
+// Matchday depth (spec 2026-11-12 §2.7): calls left to the assistant, the read, and the best calls possible.
+//   ENGINE_SIM=1 TZ=UTC npx vitest run tests/football/engine-sim.test.ts -t matchday
+describe.skipIf(!process.env.ENGINE_SIM)('matchday simulation', () => {
+  type Extra = Partial<engine.MatchInput>;
+  const M = Number(process.env.ENGINE_SIM_N ?? 3000);
+  function wins(n: Night, tier: Tier, extra: (i: number) => Extra, count = M) {
+    const clubs = CLUBS.filter((c) => c.tier === tier && c.kind !== 'own' && c.rating != null);
+    let w = 0, d = 0, g = 0;
+    for (let i = 0; i < count; i++) {
+      const ev = playMatch({ seed: 1000 + i * 7919 + tier, values: n.values, opp: opponentFor(clubs[i % clubs.length]), home: i % 2 === 0, captain: 'Pace', stack: 0, abilities: [], bench: [], pre: [], conds: [], ...(n.fog ? { fog: n.fog } : {}), ...(n.typical ? { typical: n.typical } : {}), ...extra(i) });
+      const [a, b] = ev.score;
+      g += a + b; if (a > b) w++; else if (a === b) d++;
+    }
+    return { w: (100 * w) / count, d: (100 * d) / count, g: g / count };
+  }
+  /** Best calls with hindsight: at each call in turn, the option that ends with the best goal difference. */
+  function best(base: engine.MatchInput): MatchEvents {
+    const picks: engine.CallPick[] = [];
+    let ev = playMatch({ ...base, calls: picks });
+    for (let k = 0; k < (ev.calls?.length ?? 0); k++) {
+      let top: { gd: number; ev: MatchEvents; p: engine.CallPick } | undefined;
+      for (const p of ['take', 'shoot', 'keep'] as engine.CallPick[]) {
+        const e = playMatch({ ...base, calls: [...picks, p] });
+        const gd = e.score[0] - e.score[1];
+        if (!top || gd > top.gd) top = { gd, ev: e, p };
+      }
+      picks.push(top!.p); ev = top!.ev;
+    }
+    return ev;
+  }
+  it('prints the matchday report', () => {
+    const out: string[] = [`Matchday simulation, ${M} matches per night and division. Win % without calls → with calls left to the assistant (best odds). Goals per match likewise.`];
+    let g0 = 0, g1 = 0, n = 0, worst = 0;
+    for (const [name, night] of Object.entries(NIGHTS)) {
+      const row: string[] = [];
+      for (const t of TIER_ORDER) {
+        const a = wins(night, t, () => ({})), b = wins(night, t, () => ({ calls: [] }));
+        g0 += a.g; g1 += b.g; n++; worst = Math.max(worst, Math.abs(b.w - a.w));
+        row.push(`T${t} ${a.w.toFixed(0)}→${b.w.toFixed(0)}`);
+      }
+      out.push(`  ${name}: ${row.join('  ')}`);
+    }
+    out.push(`Goals per match: ${(g0 / n).toFixed(2)} without calls, ${(g1 / n).toFixed(2)} with the assistant's calls. Largest win-rate change in any night and division: ${worst.toFixed(1)} points.`);
+    // The read and one good log, on the mixed night against Division Six and Division Three (calls to the assistant).
+    const mixed = NIGHTS['mixed night'];
+    out.push('', 'The read against one good log (mixed night, assistant calls): win % in Div 6 / Div 3');
+    const cases: [string, (i: number) => Extra, Night][] = [
+      ['neutral read', () => ({ calls: [] }), mixed],
+      ['one right read (+1 Fuel)', () => ({ calls: [], plan: { all: [{ axis: 'Fuel', d: 1, why: 'read', kind: 'plan' }] } }), mixed],
+      ['perfect read (+1 Fuel, +1 Pace)', () => ({ calls: [], plan: { all: [{ axis: 'Fuel', d: 1, why: 'read', kind: 'plan' }, { axis: 'Pace', d: 1, why: 'read', kind: 'plan' }] } }), mixed],
+      ['one good log instead (Pace 16→19)', () => ({ calls: [] }), { values: { ...mixed.values, Pace: 19 } }],
+      ['one good log instead (Rest 9→12)', () => ({ calls: [] }), { values: { ...mixed.values, Rest: 12 } }],
+      ['quick tempo', () => ({ calls: [], plan: { tempo: 'quick' } }), mixed],
+      ['patient tempo', () => ({ calls: [], plan: { tempo: 'patient' } }), mixed],
+    ];
+    for (const [label, ex, night] of cases) out.push(`  ${label}: ${([6, 3] as Tier[]).map((t) => wins(night, t, ex).w.toFixed(1)).join(' / ')}`);
+    // Best possible calls against the assistant's, in a close division for each night shape.
+    out.push('', 'Best possible calls (hindsight) against the assistant: win % in the closest division for the night');
+    const B = Math.min(M, 1500);
+    for (const name of ['all 11', 'all 14', 'mixed night', 'all 17']) {
+      const night = NIGHTS[name];
+      let closest: Tier = 6, gap = 1e9;
+      for (const t of TIER_ORDER) { const x = Math.abs(wins(night, t, () => ({ calls: [] }), 400).w - 45); if (x < gap) { gap = x; closest = t; } }
+      const clubs = CLUBS.filter((c) => c.tier === closest && c.kind !== 'own' && c.rating != null);
+      let wa = 0, wb = 0;
+      for (let i = 0; i < B; i++) {
+        const base: engine.MatchInput = { seed: 1000 + i * 7919 + closest, values: night.values, opp: opponentFor(clubs[i % clubs.length]), home: i % 2 === 0, captain: 'Pace', stack: 0, abilities: [], bench: [], pre: [], conds: [] };
+        const a = playMatch({ ...base, calls: [] }), b = best(base);
+        if (a.score[0] > a.score[1]) wa++;
+        if (b.score[0] > b.score[1]) wb++;
+      }
+      out.push(`  ${name}, Div ${closest}: assistant ${((100 * wa) / B).toFixed(1)}%, best calls ${((100 * wb) / B).toFixed(1)}%, gap ${((100 * (wb - wa)) / B).toFixed(1)} points`);
+    }
+    const text = out.join('\n');
+    console.log(text);
+    if (process.env.ENGINE_SIM_OUT) writeFileSync(process.env.ENGINE_SIM_OUT.replace(/(\.\w+)?$/, '-matchday$1'), `${text}\n`);
+  }, 1_800_000);
+});
+

@@ -84,14 +84,31 @@ describe('calls (§2.3)', () => {
       }
     }
   });
-  it('a strong axis makes its option better: take it on goes to the axis the moment favours', () => {
-    const ev = playMatch(input({ values: { ...allAxes(10), Fuel: 18 }, calls: ['take'] }));
-    expect(ev.calls![0].takeAxis).toBe('Fuel');
-    expect(ev.chances[ev.calls![0].slot].type).toBe('Through ball');
-    // against the same typical shape, a stronger Fuel night makes the option better
-    const weak = playMatch(input({ values: { ...allAxes(10), Fuel: 12 }, typical: allAxes(11), calls: ['take'] }));
-    const strong = playMatch(input({ values: { ...allAxes(10), Fuel: 18 }, typical: allAxes(11), calls: ['take'] }));
-    expect(strong.calls![0].odds.take).toBeGreaterThan(weak.calls![0].odds.take);
+  it("take it on plays the moment's own chance; a long-range moment goes to the strongest attacking axis", () => {
+    let long = 0, own = 0;
+    for (const seed of seeds(200)) {
+      const v = { ...allAxes(10), Fuel: 18 };
+      const plain = playMatch(input({ seed, values: v, calls: undefined }));
+      const ev = playMatch(input({ seed, values: v, calls: ['take'] }));
+      const c = ev.calls![0];
+      const moment = plain.chances[c.slot].type; // the same sub-seed draws the same kind
+      if (moment === 'Long shot') { expect(c.takeAxis).toBe('Fuel'); expect(c.takeType).toBe('Through ball'); long++; }
+      else { expect(c.takeType).toBe(moment); own++; }
+      expect(ev.chances[c.slot].type).toBe(c.takeType);
+    }
+    expect(long && own).toBeTruthy();
+  });
+  it('a strong axis makes its option better', () => {
+    let better = 0;
+    for (const seed of seeds(60)) {
+      // against the same typical shape, a stronger Fuel night never makes the option worse
+      const weak = playMatch(input({ seed, values: { ...allAxes(10), Fuel: 12 }, typical: allAxes(11), calls: ['take'] })).calls![0];
+      const strong = playMatch(input({ seed, values: { ...allAxes(10), Fuel: 18 }, typical: allAxes(11), calls: ['take'] })).calls![0];
+      if (weak.slot !== strong.slot || weak.takeAxis !== 'Fuel') continue;
+      expect(strong.odds.take).toBeGreaterThanOrEqual(weak.odds.take);
+      if (strong.odds.take > weak.odds.take) better++;
+    }
+    expect(better).toBeGreaterThan(0);
   });
   it('keep the ball: no chance now, and their next attack is 15 points easier to stop', () => {
     let checked = 0;

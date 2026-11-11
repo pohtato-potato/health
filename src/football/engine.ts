@@ -64,7 +64,7 @@ export type Tempo = 'patient' | 'normal' | 'quick';
 export interface MatchPlan { tempo?: Tempo; all?: Mod[]; first?: Mod[]; second?: Mod[] }
 /** Keep the ball: their next attack is this much easier to stop. */
 export const KEEP_STOP = 0.15;
-/** The atk kind each axis takes a chance on when the owner says "take it on". */
+/** The atk kind each axis takes a chance on when the owner says "take it on" at a long-range moment. */
 export const TAKE_KIND: Record<'Pace' | 'Power' | 'Fuel', string> = { Pace: 'Counter-attack', Power: 'Set piece', Fuel: 'Through ball' };
 /** One option at a call, with the odds exactly as they will be used. */
 export interface CallOption { pick: CallPick; pct: number; axis?: Axis; type?: string }
@@ -490,12 +490,15 @@ function callHere(st: MatchState, i: number): boolean {
 
 /** The three options at a call, with odds from tonight's numbers through the same sizing as any chance. */
 export function offerAt(st: MatchState, i: number): CallOffer {
-  const ax = favoured(st);
-  const take = Math.round(sizeChance(st, i, TAKE_KIND[ax]).pctF * 100);
+  // The moment's own chance, on its own axis; a long-range moment goes to tonight's strongest attacking axis instead.
+  const drawn = kindOf('atk', rng(subSeed(st.m.seed, i))() * KINDS.atk.reduce((t, k) => t + k.w, 0));
+  const ax = (drawn.axis as 'Pace' | 'Power' | 'Fuel' | null) ?? favoured(st);
+  const takeType = drawn.axis ? drawn.type : TAKE_KIND[ax];
+  const take = Math.round(sizeChance(st, i, takeType).pctF * 100);
   const shoot = Math.round(sizeChance(st, i, 'Long shot').pctF * 100);
   const theirsLeft = st.order.slice(i + 1).includes('def');
   const options: CallOption[] = [
-    { pick: 'take', pct: take, axis: ax, type: TAKE_KIND[ax] },
+    { pick: 'take', pct: take, axis: ax, type: takeType },
     { pick: 'shoot', pct: shoot, type: 'Long shot' },
     { pick: 'keep', pct: theirsLeft ? Math.round(KEEP_STOP * 100) : 0 },
   ];
