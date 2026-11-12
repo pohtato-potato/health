@@ -20,6 +20,8 @@ const weekday = (d: string) => WEEKDAY[new Date(`${d}T12:00:00`).getDay()];
 const WORDS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
 const SECTION: Record<string, string> = { quant: 'Quant', verbal: 'Verbal', lr: 'Logical reasoning', di: 'Data interpretation' };
 const sec = (x?: string) => (x ? SECTION[x] ?? x : '');
+/** A long list of targets (the scout's clubs) shows this many until asked for all. */
+const TARGETS_SHOWN = 8;
 const ink = (axis: Die['axis']) => ({ '--ink': AXIS_INK[axis] }) as CSSProperties;
 
 /** The job's drawing, with its ring when it is a clock (d3-home). */
@@ -32,6 +34,7 @@ function JobArt({ id, ring, colour }: { id: JobId; ring?: { filled: number; size
     project: 'M12 29 H28 M15 29 V16 H25 V29 M15 16 L20 11 L25 16 M18 21 H22',
     column: 'M13 28 L27 14 L29 16 L15 30 Z M13 28 L12 31 L15 30 M24 17 L26 19',
     course: 'M11 14 Q20 11 20 14 Q20 11 29 14 V27 Q20 24 20 27 Q20 24 11 27 Z M20 14 V27',
+    scout: 'M12 22 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M20 22 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M14 18 L16 12 H24 L26 18',
   };
   return (
     <svg className="dk-art" viewBox="0 0 40 40" style={{ '--ink': colour } as CSSProperties} aria-hidden="true">
@@ -107,7 +110,7 @@ export function DeskRoute() {
   if (path === '/football/desk/course') return <CoursePage m={m} spend={params.get('spend') ?? m.courseOpen ?? ''} />;
   if (path === '/football/desk/job') {
     const def = jobById((params.get('id') ?? '') as JobId);
-    if (def) return <SpendPage m={m} def={def} first={params.get('die') ?? undefined} />;
+    if (def) return <SpendPage m={m} def={def} first={params.get('die') ?? undefined} pick={params.get('target') ?? undefined} />;
   }
   return <DeskHome m={m} />;
 }
@@ -147,11 +150,14 @@ function DeskHome({ m }: { m: DeskModel }) {
 }
 
 /** d3-spend: two axes have their say, then exactly what this die would do. */
-function SpendPage({ m, def, first }: { m: DeskModel; def: JobDef; first?: string }) {
+/** `pick`: a target chosen elsewhere (the atlas, a club's page), picked here first. A long list shows its first few. */
+function SpendPage({ m, def, first, pick }: { m: DeskModel; def: JobDef; first?: string; pick?: string }) {
   const best = useMemo(() => [...m.left].sort((a, b) => b.value - a.value)[0], [m.left]);
   const [held, setHeld] = useState<Die | undefined>(() => m.left.find((d) => d.axis === first) ?? best);
   const targets = def.targets?.(m.view) ?? [];
-  const [target, setTarget] = useState<string | undefined>(targets[0]?.id);
+  const [target, setTarget] = useState<string | undefined>(() => (targets.some((x) => x.id === pick) ? pick : targets[0]?.id));
+  const [all, setAll] = useState(false);
+  const shown = all || targets.length <= TARGETS_SHOWN ? targets : [...targets.filter((x) => x.id === target), ...targets.filter((x) => x.id !== target).slice(0, TARGETS_SHOWN - 1)];
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState<string | undefined>();
   const card = def.card(m.view);
@@ -176,7 +182,7 @@ function SpendPage({ m, def, first }: { m: DeskModel; def: JobDef; first?: strin
           {held && <span className="dk-die" aria-hidden="true" style={{ background: AXIS_INK[held.axis], color: '#0d0f20' }}>{held.value}</span>}
           <span style={{ flex: 1 }}>{said}</span>
         </div>
-        {def.id !== 'watch' && <p className="md-q" style={{ margin: 0 }}>{def.id === 'column' ? 'It runs in tomorrow’s paper.' : 'It counts when the day plays, at 4 am. The desk shows it now.'}</p>}
+        {def.id !== 'watch' && <p className="md-q" style={{ margin: 0 }}>{def.id === 'column' ? 'It runs in tomorrow’s paper.' : def.id === 'scout' ? 'A scout’s report comes with the morning parcel.' : 'It counts when the day plays, at 4 am. The desk shows it now.'}</p>}
         <button type="button" className="md-btn" onClick={() => go('/football/desk', undefined, { replace: true })}>Back to the desk</button>
       </Page>
     );
@@ -188,11 +194,12 @@ function SpendPage({ m, def, first }: { m: DeskModel; def: JobDef; first?: strin
       {voices.map(({ d, line }) => line && <p key={d.axis} className="dk-say"><b style={{ color: AXIS_INK[d.axis] }}>{d.axis.toUpperCase()}</b> — {line}</p>)}
       {targets.length > 0 && (
         <div className="dk-targets" role="group" aria-label="Pick one">
-          {targets.map((x) => (
+          {shown.map((x) => (
             <button key={x.id} type="button" className="dk-target" style={{ '--ink': def.ink } as CSSProperties} aria-pressed={target === x.id} onClick={() => setTarget(x.id)}>
               <span>{x.name}</span>{x.line && <span className="md-q">{x.line}</span>}
             </button>
           ))}
+          {shown.length < targets.length && <button type="button" className="md-btn ghost" onClick={() => setAll(true)}>Show all {targets.length}</button>}
         </div>
       )}
       {held && p ? (

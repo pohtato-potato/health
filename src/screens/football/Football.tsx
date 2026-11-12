@@ -26,6 +26,7 @@ import { go } from '../../router';
 import { loadParcel } from '../../football/store/around';
 import { NightGround, ParcelView } from './Parcel';
 import { DeskDoor, DeskRoute } from './desk/Desk';
+import { Atlas } from './world/Atlas';
 import type { StoredMatch } from '../../football/store/tables';
 
 const SECTION: Record<string, FbSection> = { '/football': 'tonight', '/football/club': 'club', '/football/league': 'league', '/football/story': 'story' };
@@ -87,6 +88,7 @@ export function Football() {
   // Cup runs (ledger O28): the cups page, and the run in progress.
   if (path === '/football/desk' || path.startsWith('/football/desk/')) return <DeskRoute />;
   if (path === '/football/cup' || path === '/football/cup/run' || path === '/football/cup/match') return <CupRoute path={path} />;
+  if (path === '/football/atlas') return <FootballHome section="league"><Atlas /></FootballHome>;
   if (path === '/football/club-page') return <FootballHome section="league"><ClubPage id={params.get('id') ?? ''} wiki={params.get('wiki') === '1'} /></FootballHome>;
   if (path === '/football/wrapped') return <WrappedRoute season={Number(params.get('season') ?? 1)} />;
   if (path === '/football/rival') return <FootballHome section="story"><RivalRoute id={params.get('id') ?? ''} /></FootballHome>;

@@ -5,6 +5,7 @@ import { clubColour } from '../../../football/store/league';
 import { OWN } from '../../../football/store/season';
 import type { Row } from '../../../football/table';
 import type { Result, Tier } from '../../../football/types';
+import { Unknown } from '../world/Fog';
 
 const WORD: Record<Result, string> = { W: 'won', D: 'drew', L: 'lost' };
 export function ResultMark({ r, shape = 'c' }: { r: Result; shape?: 'c' | 'd' | 's' }) {
@@ -16,7 +17,8 @@ function Cut({ kind, text }: { kind: 'up' | 'po' | 'down'; text: string }) {
 }
 
 /** `form` is Brabo's 28-day form rating, for the double-promotion line (Division Three and below). */
-export function Table({ tier, rows, day, form, waiting = false }: { tier: Tier; rows: Row[]; day?: string; form?: number; waiting?: boolean }) {
+/** `kitKnown`: whether a club's kit and crest are out of the fog (desk spec §4); an unknown club shows a hatched "?". */
+export function Table({ tier, rows, day, form, waiting = false, kitKnown }: { tier: Tier; rows: Row[]; day?: string; form?: number; waiting?: boolean; kitKnown?: (id: string) => boolean }) {
   const out: React.ReactNode[] = [];
   rows.forEach((r, i) => {
     const pos = i + 1;
@@ -29,7 +31,7 @@ export function Table({ tier, rows, day, form, waiting = false }: { tier: Tier; 
       <li key={r.id} className={`fb-trow${me ? ' me' : ''}`} style={{ '--k': clubColour(r.id) } as React.CSSProperties}>
         <a href={`#/football/club-page?id=${encodeURIComponent(r.id)}`} aria-label={`${pos}, ${name}, ${r.pts} points${r.form.length ? `, form ${r.form.map((x) => WORD[x]).join(' ')}` : ''}`}>
           <span className="fb-tpos">{pos}</span>
-          <span className="fb-tring" aria-hidden="true" />
+          {me || !kitKnown || kitKnown(r.id) ? <span className="fb-tring" aria-hidden="true" /> : <Unknown size={20} />}
           <span className="fb-tname">
             <b>{name}{me && <em>You</em>}</b>
             {me && waiting && <span className="fb-s md-tbp">Last night: to be played</span>}

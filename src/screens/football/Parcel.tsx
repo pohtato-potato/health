@@ -17,6 +17,10 @@ import { go } from '../../router';
 import { AXIS_INK } from '../../ui/inks';
 import '../../styles/matchday.css';
 import { DiceTile } from './desk/Desk';
+import { tierName } from '../../football/data/load';
+import type { Tier } from '../../football/types';
+import { leadLine, type ScoutReport } from '../../football/fog/report';
+import { CrestOrFog, FactRow, Known, factLabel, factText } from './world/Fog';
 
 function Art({ svg }: { svg: string }) {
   return <span className="fb-art" aria-hidden="true" dangerouslySetInnerHTML={{ __html: svg }} />;
@@ -85,7 +89,7 @@ export function ParcelView({ t, p: live }: { t: Tonight; p: Parcel }) {
         {k === 'result' && (p.waiting || p.result) && <ResultTile waiting={p.waiting} m={p.result} save={t.save} onNext={next} last={last} />}
         {k === 'table' && <TableTile date={t.date} onNext={next} last={last} />}
         {k === 'talks' && <TalksTile offers={p.talks} date={t.date} onNext={next} last={last} />}
-        {k === 'scout' && <ScoutTile t={t} onNext={next} last={last} />}
+        {k === 'scout' && <ScoutTile t={t} scouts={p.scouts} onNext={next} last={last} />}
         {k === 'academy' && <AcademyTile t={t} onNext={next} last={last} />}
         {k === 'dice' && <DiceTile dice={p.dice} date={t.date} onNext={next} last={last} />}
         {k === 'pack' && <PackTile n={p.packs} date={t.date} onNext={next} last={last} />}
@@ -201,19 +205,64 @@ function TalksTile({ offers, date, onNext, last }: { offers: TalkOffer[]; date: 
   );
 }
 
-function ScoutTile({ t, onNext, last }: { t: Tonight; onNext: () => void; last: boolean }) {
-  const s = t.morning.scout!;
+/** p3-scout: scouts back from trips that ended yesterday (desk spec §4), then tonight's opponent's scout line. */
+function ScoutTile({ t, scouts, onNext, last }: { t: Tonight; scouts: Parcel['scouts']; onNext: () => void; last: boolean }) {
+  const s = t.morning.scout;
   const opp = t.fixture?.opp;
+  const y = t.date;
   return (
     <>
-      <div className="md-tile col" style={{ '--ink': TILE.scout.ink } as React.CSSProperties}>
-        {opp && <div className="md-row" style={{ justifyContent: 'flex-start', gap: 12 }}><Art svg={clubCrest(clubById(opp), 48)} /><span><b className="md-h" style={{ fontSize: 22 }}>{nameOf(opp)}</b><br /><span className="md-q">Tonight’s opponent</span></span></div>}
-        <div className="md-row"><span>Their strongest</span><b style={{ color: AXIS_INK[s.unit] }}>{s.unit} · {s.key}</b></div>
-        {s.weak && <div className="md-row"><span>Weak spot</span><b style={{ color: AXIS_INK[s.weak.unit] }}>{s.weak.unit}</b></div>}
-      </div>
-      <p style={{ margin: 0 }}>“{s.line}” <span className="md-q">Your scout</span></p>
-      {s.weak && <p className="md-q" style={{ margin: 0 }}>{s.weak.line}</p>}
+      {scouts.reports.map((r) => <ScoutReportCard key={r.target} r={r} t={t} day={y} />)}
+      {scouts.leads.map((l) => <p key={`${l.club}:${l.player}`} style={{ margin: 0 }}>Your scout also spotted {l.player} at {l.clubName}: a loan target, kept for the loan market.</p>)}
+      {s && (
+        <>
+          <div className="md-tile col" style={{ '--ink': TILE.scout.ink } as React.CSSProperties}>
+            {opp && <div className="md-row" style={{ justifyContent: 'flex-start', gap: 12 }}><Art svg={clubCrest(clubById(opp), 48)} /><span><b className="md-h" style={{ fontSize: 22 }}>{nameOf(opp)}</b><br /><span className="md-q">Tonight’s opponent</span></span></div>}
+            <div className="md-row"><span>Their strongest</span><b style={{ color: AXIS_INK[s.unit] }}>{s.unit} · {s.key}</b></div>
+            {s.weak && <div className="md-row"><span>Weak spot</span><b style={{ color: AXIS_INK[s.weak.unit] }}>{s.weak.unit}</b></div>}
+          </div>
+          <p style={{ margin: 0 }}>“{s.line}” <span className="md-q">Your scout</span></p>
+          {s.weak && <p className="md-q" style={{ margin: 0 }}>{s.weak.line}</p>}
+        </>
+      )}
       <Next onNext={onNext} last={last} />
+    </>
+  );
+}
+
+function ScoutReportCard({ r, t, day }: { r: ScoutReport; t: Tonight; day: string }) {
+  if (!r.club) {
+    return (
+      <>
+        <div className="md-tile col fg" style={{ '--ink': TILE.scout.ink } as React.CSSProperties}>
+          <div className="md-row"><b className="md-h" style={{ fontSize: 22 }}>{r.name}</b></div>
+          <Known pct={r.after} from={r.before} label="Seen" />
+          <p className="md-q" style={{ margin: 0 }}>{r.clubs ? `${r.clubs} ${r.clubs === 1 ? 'club' : 'clubs'} gave up ${r.thin ? 'their crest and rating' : 'their crest, rating and style'}.` : 'Nothing new turned up.'}</p>
+          <button type="button" className="md-btn ghost" onClick={() => go('/football/atlas', { layer: r.target === 'abroad' ? 'abroad' : r.target.slice(4) })}>See the atlas</button>
+        </div>
+        <p style={{ margin: 0 }}>“{r.line}” <span className="md-q">Your scout</span></p>
+        {r.lead && <p className="md-q" style={{ margin: 0 }}>{leadLine(r, day)}</p>}
+      </>
+    );
+  }
+  const id = r.club;
+  const tier = r.tier;
+  const met = t.save.met.includes(id);
+  const hiddenNow = r.hidden.slice(0, 2);
+  return (
+    <>
+      <div className="md-tile col fg" style={{ '--ink': TILE.scout.ink } as React.CSSProperties}>
+        <div className="md-row" style={{ justifyContent: 'flex-start', gap: 12 }}>
+          <CrestOrFog id={id} known={!r.hidden.includes('kit')} size={48} />
+          <span><b className="md-h" style={{ fontSize: 22 }}>{r.name}</b><br /><span className="md-q">{[tier ? tierName(tier as Tier) : 'Abroad', met ? 'met' : 'met never'].join(' · ')}</span></span>
+        </div>
+        <Known pct={r.after} from={r.before} />
+        {r.found.filter((f) => f !== 'kit').map((f) => <FactRow key={f} label={factLabel(f)} known num={f === 'rating'}>{factText(id, f)}</FactRow>)}
+        {hiddenNow.map((f) => <FactRow key={f} label={factLabel(f)} known={false} />)}
+      </div>
+      <p style={{ margin: 0 }}>“{r.line}” <span className="md-q">Your scout</span></p>
+      {r.lead && <p className="md-q" style={{ margin: 0 }}>{leadLine(r, day)}</p>}
+      <button type="button" className="md-btn ghost" onClick={() => go('/football/club-page', { id })}>Their page</button>
     </>
   );
 }

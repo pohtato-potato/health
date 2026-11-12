@@ -64,10 +64,11 @@ export const scout: JobDef = {
     const add = (id: string, line: string) => { if (!out.some((t) => t.id === id) && findable(v, id)) out.push({ id, name: targetName(v, id), line }); };
     for (const c of scoutClocks(v).filter((x) => x.filled < x.size)) add(c.target, `${c.filled} of ${c.size} done · on the road`);
     const all = clubsOf(v);
+    const wide = (t: number) => add(`div:${t}`, `Every club's crest, rating and style · seen ${seenOf(all.filter((c) => c.tier === t))}% · 4 to fill`);
+    wide(v.world.ownTier);
     const mine = all.filter((c) => c.tier === v.world!.ownTier).sort((a, b) => pctOf(a.facts) - pctOf(b.facts) || a.name.localeCompare(b.name));
     for (const c of mine) add(c.id, `Your division · known ${pctOf(c.facts)}% · 2 to fill`);
-    const tiers = [v.world!.ownTier, ...[1, 2, 3, 4, 5, 6].filter((t) => t !== v.world!.ownTier)];
-    for (const t of tiers) add(`div:${t}`, `Every club's crest, rating and style · seen ${seenOf(all.filter((c) => c.tier === t))}% · 4 to fill`);
+    for (const t of [1, 2, 3, 4, 5, 6].filter((x) => x !== v.world!.ownTier)) wide(t);
     add('abroad', `The clubs in Europe's cups · seen ${seenOf(all.filter((c) => c.tier === 0))}% · 4 to fill`);
     for (const c of all.filter((x) => x.tier !== v.world!.ownTier).sort((a, b) => a.tier - b.tier || a.name.localeCompare(b.name))) add(c.id, `${c.tier ? tierName(c.tier as Tier) : 'Abroad'} · known ${pctOf(c.facts)}% · 2 to fill`);
     return out;

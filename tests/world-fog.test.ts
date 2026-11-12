@@ -123,10 +123,10 @@ describe('Send a scout (spec §3)', () => {
     expect(scout.open(view({ world: undefined }))).toBe(false);
   });
 
-  it('offers clubs in your division first, then the divisions, abroad, then every other club', () => {
+  it('offers your division, its clubs least known first, the other divisions, abroad, then every other club', () => {
     const t = scout.targets!(view({}, { c2: ['kit'] })).map((x) => x.id);
-    expect(t.slice(0, 2)).toEqual(['c1', 'c2']);
-    expect(t.indexOf('div:5')).toBe(2);
+    expect(t.slice(0, 3)).toEqual(['div:5', 'c1', 'c2']);
+    expect(t.indexOf('div:4')).toBe(3);
     expect(t).toContain('abroad');
     expect(t.indexOf('c3')).toBeGreaterThan(t.indexOf('abroad'));
   });

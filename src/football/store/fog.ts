@@ -37,7 +37,7 @@ export const targetWords = (target: string) => {
 };
 
 /** The scout reports that came in this morning: trips that ended yesterday, and any loan target a 6 turned up. */
-export function morningReports(save: FbSave, today: DayKey): { reports: ScoutReport[]; leads: { club: string; clubName: string; player: string }[] } {
+export function morningReports(save: FbSave, today: DayKey, tierOf?: Record<string, Tier>): { reports: ScoutReport[]; leads: { club: string; clubName: string; player: string }[] } {
   const y = addDays(today, -1);
   const reports: ScoutReport[] = [];
   const used = new Set<string>();
@@ -46,10 +46,11 @@ export function morningReports(save: FbSave, today: DayKey): { reports: ScoutRep
     for (const e of s.effects) {
       if (e.kind !== 'scout') continue;
       if (lead?.kind === 'lead') used.add(`${s.id}`);
-      reports.push(reportOf(e, y, {
+      const r = reportOf(e, y, {
         name: targetWords, known: (id) => factsOf(save, id, today), player: (l) => LOANS.find((x) => x.id === l)?.name ?? 'A player',
         lead: lead?.kind === 'lead' ? { club: lead.club, loan: lead.loan } : undefined,
-      }));
+      });
+      reports.push(r.club && tierOf ? { ...r, tier: tierOf[r.club] ?? 0 } : r);
     }
   }
   const leads = (save.desk?.spends ?? []).filter((s) => s.day === y && !used.has(s.id)).flatMap((s) => s.effects.flatMap((e) => (e.kind === 'lead' ? [{ club: e.club, clubName: clubById(e.club).name, player: LOANS.find((x) => x.id === e.loan)?.name ?? 'A player' }] : [])));

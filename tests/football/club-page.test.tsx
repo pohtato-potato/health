@@ -23,18 +23,22 @@ beforeEach(async () => {
 });
 
 describe('Club page', () => {
-  it('an unmet quirky club hides its quirk; once met it shows the name and [data] when it reads your data', async () => {
+  // Desk spec §4 (Fork 2): the hidden ability is fogged until scouted; a club met before the fog keeps it (12.8 a).
+  it('an unmet quirky club hides its quirk under the fog; met before the fog it shows the name and [data]; met now it stays hidden', async () => {
     const q = CLUBS.find((c) => c.kind === 'quirky' && c.hidden?.data)!;
-    await db.fbSave.update('save', { met: [] });
+    await db.fbSave.update('save', { met: [], fog: { since: '2026-01-01', old: [] } });
     let d = (await loadClubPage(q.id))!;
     let out = html(<ClubPageView d={d} />);
-    expect(out).toContain('Hidden until you meet them');
+    expect(out).toContain('Hidden ability: not known yet');
     expect(out).not.toContain(q.hidden!.name);
-    await db.fbSave.update('save', { met: [q.id] });
+    await db.fbSave.update('save', { met: [q.id], fog: { since: '2026-01-01', old: [q.id] } });
     d = (await loadClubPage(q.id))!;
     out = html(<ClubPageView d={d} />);
-    expect(out).not.toContain('Hidden until you meet them');
-    expect(out).toContain(`<b>${q.hidden!.name}</b> [data]`);
+    expect(out).not.toContain('Hidden ability: not known yet');
+    expect(out).toContain(`${q.hidden!.name} [data]`);
+    await db.fbSave.update('save', { met: [q.id], fog: { since: '2026-01-01', old: [] } });
+    out = html(<ClubPageView d={(await loadClubPage(q.id))!} />);
+    expect(out).toContain('Hidden ability: not known yet');
   });
 
   it('the head-to-head counts match the stored matches', async () => {

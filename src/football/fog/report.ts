@@ -9,8 +9,9 @@ export interface ScoutReport {
   target: string;
   /** The club or the division, in words. */
   name: string;
-  /** For a club: its id (crest, page). */
+  /** For a club: its id (crest, page), and its division this season (0 = abroad), when the store knows it. */
   club?: string;
+  tier?: number;
   before: number;
   after: number;
   /** For a club: what this trip found, and what is still hidden after it. */

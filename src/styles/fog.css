@@ -1,0 +1,39 @@
+/* The world in fog (desk spec §4, w3-atlas, w3-club, p3-scout). Parchment hatching for what is unseen, scout green
+   for what is known. */
+.fg { --parch: 214,196,160; --known: #8fdcb6; }
+.fg-fog { background: repeating-linear-gradient(135deg, rgba(var(--parch),.30) 0 6px, rgba(var(--parch),.10) 6px 12px); border-radius: 10px; color: #f6ead0;
+  font-weight: 700; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 44px; }
+.fg-fog b { flex: none; font: 700 20px var(--serif); }
+.fg-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 44px; padding: 4px 2px; border-bottom: 1px solid rgba(237,230,218,.12); }
+.fg-row > span:first-child { flex: none; }
+.fg-row b { flex: 0 1 auto; text-align: right; overflow-wrap: anywhere; }
+.fg-row b.num { font: 700 20px var(--serif); font-variant-numeric: tabular-nums; }
+.fg-unk { --sz: 28px; width: var(--sz); height: var(--sz); flex: none; border-radius: 6px 6px calc(var(--sz) / 2) calc(var(--sz) / 2);
+  background: repeating-linear-gradient(135deg, rgba(var(--parch, 214,196,160),.55) 0 4px, rgba(var(--parch, 214,196,160),.2) 4px 8px);
+  display: grid; place-items: center; color: #fff4dc; text-shadow: 0 0 4px #0d0f20; font: 700 max(14px, calc(var(--sz) * .45)) var(--serif); }
+.fg-kb { height: 12px; border-radius: 6px; background: rgba(214,196,160,.25); overflow: hidden; position: relative; }
+.fg-kb i { display: block; height: 100%; background: var(--known, #8fdcb6); box-shadow: 0 0 8px var(--known, #8fdcb6); transition: width .9s cubic-bezier(.2,.8,.2,1); }
+.fg-kb i.was { position: absolute; inset: 0 auto 0 0; background: rgba(143,220,182,.45); box-shadow: none; }
+.fg-pct { color: var(--known, #8fdcb6); font: 700 18px var(--serif); font-variant-numeric: tabular-nums; }
+.fg-head { display: flex; gap: 12px; align-items: center; }
+.fg-head .fb-t, .fg-head .md-h { margin: 0; }
+.fg-note { color: var(--mq, #cfc7d9); font-size: 15px; margin: 0; }
+.fg-quote { margin: 0; font-size: 17px; }
+
+/* w3-atlas */
+.fg-atlas { display: flex; flex-direction: column; gap: 12px; }
+.fg-map { width: 100%; display: block; border-radius: 14px; }
+.fg-map text { font-family: var(--sans); }
+.fg-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.fg-tabs button { min-height: 44px; border-radius: 14px; border: 1.5px solid #ede6da; background: transparent; color: #ede6da; font: 700 15px var(--sans); cursor: pointer; padding: 0 4px; }
+.fg-tabs button[aria-pressed='true'] { background: #ff7a1a; border-color: #ff7a1a; color: #0d0f20; box-shadow: 0 0 14px -2px #ff7a1a; }
+.fg-trows { list-style: none; margin: 0; padding: 0; }
+.fg-tr { display: grid; grid-template-columns: 24px 28px 1fr auto; gap: 10px; align-items: center; min-height: 48px; border-bottom: 1px solid rgba(237,230,218,.12); }
+.fg-tr a { display: contents; color: inherit; text-decoration: none; }
+.fg-tr .q { color: #c4c1cf; font-variant-numeric: tabular-nums; }
+.fg-tr b.n { font: 700 18px var(--serif); font-variant-numeric: tabular-nums; }
+.fg-tr .nm { display: flex; flex-direction: column; min-width: 0; }
+.fg-tr .nm b { overflow-wrap: anywhere; }
+.fg-tr .nm span { color: #c4c1cf; font-size: 14px; }
+.fg-tr.me b { color: #ff9a4d; }
+.fg-door { display: flex; align-items: center; justify-content: space-between; gap: 10px; }

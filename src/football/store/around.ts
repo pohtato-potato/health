@@ -108,7 +108,7 @@ export async function loadParcel(t: Tonight): Promise<Parcel> {
   const packs = packsWaiting(t.save);
   const waiting = t.save.paused;
   const dice = diceFrozen(t.save, h, date);
-  const scouts = morningReports(t.save, date);
+  const scouts = morningReports(t.save, date, (await db.fbSeasons.get(t.save.season))?.tierOf);
   const tiles = parcelTiles({
     result: Boolean(waiting || result),
     table: physioDue(day),
