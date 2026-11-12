@@ -1,0 +1,54 @@
+/* The manager's desk (desk spec §2–3; d3-home, d3-spend, p3-dice). Aurora look, glowing outlines, no navy cards,
+   no glass. Words in Atkinson Hyperlegible Next, numbers and titles in Fraunces. Text 14 px or more, targets 44 px. */
+.md-page.desk { background: radial-gradient(110% 55% at 15% 0%, rgba(154,116,236,.50), transparent 62%), radial-gradient(90% 50% at 100% 22%, rgba(255,122,26,.34), transparent 66%), radial-gradient(120% 60% at 50% 110%, rgba(143,201,176,.20), transparent 60%), #0d0f20; }
+.dk-h { font: 400 26px/1.15 var(--fr); margin: 0; color: #fff; }
+.dk-jobs { display: flex; flex-direction: column; }
+.dk-job { --ink: var(--cream); display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 8px 0; min-height: 60px; border: 0; border-bottom: 1px solid rgba(237,230,218,.16); background: none; color: var(--cream); font: 16px/1.35 var(--ab); text-align: left; width: 100%; cursor: pointer; }
+.dk-job[aria-disabled='true'] { opacity: .62; }
+.dk-job b { font-weight: 700; }
+.dk-job .dk-chip { font: 700 16px var(--ab); color: var(--ink); white-space: nowrap; }
+.dk-art { width: 40px; height: 40px; flex: none; }
+.dk-art .ln { fill: none; stroke: var(--ink); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.dk-art .bg { fill: none; stroke: rgba(237,230,218,.22); stroke-width: 3; }
+.dk-art .rg { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linecap: round; filter: drop-shadow(0 0 4px var(--ink)); }
+.dk-tray { display: flex; justify-content: space-between; gap: 4px; padding: 10px 8px; border-radius: 18px; border: 1.5px solid rgba(237,230,218,.4); }
+.dk-tray.empty { justify-content: center; min-height: 66px; align-items: center; color: var(--mq); }
+.dk-die { --ink: var(--cream); width: 46px; height: 46px; border-radius: 12px; border: 2.5px solid var(--ink); color: var(--ink); display: grid; place-items: center; font: 700 24px/1 var(--fr); box-shadow: 0 0 12px -4px var(--ink); flex: none; background: #0d0f20; padding: 0; cursor: pointer; transition: transform .18s ease-out, background .18s; }
+.dk-die[aria-pressed='true'] { background: var(--ink); color: #0d0f20; transform: translateY(-8px) rotate(-6deg); }
+.dk-die.spent { opacity: .3; cursor: default; }
+@media (max-width: 352px) { .dk-die { width: 44px; height: 44px; font-size: 22px; } .dk-tray { padding: 10px 6px; gap: 2px; } }
+.dk-dice-row { display: flex; gap: 12px; align-items: center; }
+.dk-dice-row .dk-die { cursor: default; }
+.dk-dice-row b { font-weight: 700; }
+.dk-say { margin: 0; }
+.dk-say b { letter-spacing: .06em; }
+.dk-opt { --ink: var(--cream); border: 2px solid var(--ink); border-radius: 14px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 56px; box-shadow: 0 0 16px -6px var(--ink); }
+.dk-opt .n { font: 600 24px/1 var(--fr); white-space: nowrap; color: var(--ink); }
+.dk-targets { display: flex; flex-direction: column; gap: 6px; }
+.dk-target { --ink: var(--cream); min-height: 48px; border-radius: 14px; border: 1.5px solid rgba(237,230,218,.45); background: transparent; color: var(--cream); font: 16px/1.3 var(--ab); text-align: left; padding: 8px 12px; cursor: pointer; display: flex; flex-direction: column; justify-content: center; }
+.dk-target[aria-pressed='true'] { border-color: var(--ink); box-shadow: 0 0 14px -4px var(--ink); background: color-mix(in srgb, var(--ink) 14%, transparent); }
+.dk-done { --ink: #8fdcb6; animation: dk-pop .5s ease-out both; }
+@keyframes dk-pop { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
+/* the coaching course */
+.dk-q { font: 18px/1.45 var(--ab); margin: 0; white-space: pre-wrap; }
+.dk-passage { border: 1.5px solid #7fd8c8; border-radius: 14px; box-shadow: 0 0 14px -6px #7fd8c8; padding: 10px 12px; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.dk-passage p { margin: 0; white-space: pre-wrap; font: 16px/1.5 var(--ab); }
+.dk-ptitle { font: 400 19px/1.2 var(--fr); color: #7fd8c8; }
+.dk-table { border-collapse: collapse; width: 100%; font: 14px/1.25 var(--ab); font-variant-numeric: tabular-nums; }
+.dk-table th, .dk-table td { padding: 6px 3px; text-align: right; border-bottom: 1px solid rgba(237,230,218,.18); }
+.dk-table th:first-child { text-align: left; }
+.dk-table thead th { color: #7fd8c8; font-weight: 700; }
+.dk-choice { min-height: 52px; border-radius: 14px; border: 1.5px solid rgba(237,230,218,.55); background: transparent; color: var(--cream); font: 17px/1.3 var(--ab); text-align: left; padding: 10px 14px; cursor: pointer; width: 100%; }
+.dk-choice[aria-pressed='true'] { border-color: #7fd8c8; background: rgba(127,216,200,.18); box-shadow: 0 0 14px -4px #7fd8c8; }
+.dk-choice:disabled { text-decoration: line-through; opacity: .45; cursor: default; }
+.dk-input { min-height: 52px; border-radius: 14px; border: 1.5px solid rgba(237,230,218,.55); background: rgba(13,15,32,.6); color: #fff; font: 600 20px var(--fr); padding: 0 14px; width: 100%; }
+.dk-pips { display: flex; gap: 6px; }
+.dk-pips i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #7fd8c8; }
+.dk-pips i.on { background: #7fd8c8; box-shadow: 0 0 8px #7fd8c8; }
+.dk-mark { font: 700 15px var(--ab); }
+.dk-mark.right { color: #8fdcb6; } .dk-mark.wrong { color: #ff9a76; }
+.dk-errs { margin: 0; padding-left: 18px; color: var(--mq); }
+.dk-file { min-height: 52px; display: flex; align-items: center; }
+/* The tray stays within reach of the thumb, just above the tab bar (d3-home). */
+.dk-foot { position: sticky; bottom: calc(var(--tab-h, 72px) + var(--safe-bottom, 0px) + 8px); z-index: 2; display: flex; flex-direction: column; gap: 8px; padding-top: 22px; padding-bottom: 6px; background: linear-gradient(180deg, rgba(13,15,32,0), #0d0f20 18px); margin: 0 -16px; padding-left: 16px; padding-right: 16px; }
+.dk-foot.flow { position: static; background: none; padding-top: 4px; }

@@ -126,6 +126,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/football/unit': { el: () => <Football />, tab: 'football' },
   '/football/card': { el: () => <Football />, tab: 'football' },
   '/football/club-page': { el: () => <Football />, tab: 'football' },
+  '/football/atlas': { el: () => <Football />, tab: 'football' },
   '/football/rival': { el: () => <Football />, tab: 'football' },
   '/football/wrapped': { el: () => <Football />, tab: 'football' },
   '/football/cups': { el: () => <Football />, tab: 'football' },
@@ -153,6 +154,10 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/football/cup': { el: () => <Football />, tab: 'football' },
   '/football/cup/match': { el: () => <Football />, tab: 'football' },
   '/football/cup/run': { el: () => <Football />, tab: 'football' },
+  '/football/desk': { el: () => <Football />, tab: 'football' },
+  '/football/desk/job': { el: () => <Football />, tab: 'football' },
+  '/football/desk/course': { el: () => <Football />, tab: 'football' },
+  '/football/desk/questions': { el: () => <Football />, tab: 'football' },
   '/arrival': { el: () => <ArrivalRedirect /> },
   // Retired pages: old links and home-screen shortcuts land on the live page that took their place.
   '/departures': { el: () => <Moved to="/walk" /> },

@@ -30,21 +30,27 @@ export const WIDTH_AXIS: Record<Width, Axis> = { left: 'Pace', middle: 'Fuel', r
 /** Most tactic cards held at once. */
 export const CARD_MAX = 3;
 
-export interface Read { scouted: boolean; weak: Width; answer?: Tactic; tacticRight: boolean; widthRight: boolean; mods: Mod[]; line: string }
-/** Your plan against what the scouts saw. +1 for each right read, +2 at most; a wrong read costs nothing. */
-export function readOf(plan: MatchdayPlan, club: { id: string; style: string }, scouted: boolean): Read {
+/** `weakKnown`: the scouts saw their weak side too (a style-only look, a 1 or 2 at the desk, leaves it a guess). */
+export interface Read { scouted: boolean; weakKnown: boolean; weak: Width; answer?: Tactic; tacticRight: boolean; widthRight: boolean; mods: Mod[]; line: string }
+/**
+ * Your plan against what the scouts saw. +1 for each right read, +2 at most; a wrong read costs nothing.
+ * `scouted`: true (style and weak side known), 'style' (style only: the width read can't count), or false.
+ */
+export function readOf(plan: MatchdayPlan, club: { id: string; style: string }, scouted: boolean | 'style'): Read {
   const weak = weakSide(club.id), answer = ANSWER[club.style];
-  if (!scouted) return { scouted, weak, tacticRight: false, widthRight: false, mods: [], line: 'Not scouted yet' };
+  if (!scouted) return { scouted: false, weakKnown: false, weak, tacticRight: false, widthRight: false, mods: [], line: 'Not scouted yet' };
+  const weakKnown = scouted === true;
   const tactic = plan.tactic, width = plan.width ?? 'middle';
-  const tacticRight = Boolean(tactic && tactic === answer), widthRight = width === weak;
+  const tacticRight = Boolean(tactic && tactic === answer), widthRight = weakKnown && width === weak;
   const mods: Mod[] = [];
   if (tacticRight) mods.push({ axis: READ_AXIS[tactic!], d: 1, why: `Good read: ${TACTIC_NAME[tactic!]} answers them`, kind: 'plan' });
   if (widthRight) mods.push({ axis: WIDTH_AXIS[width], d: 1, why: 'Good read: into their weak side', kind: 'plan' });
-  const line = tacticRight && widthRight ? 'Your plan plays into their weak side. Good read.'
+  const line = !weakKnown ? (tacticRight ? `${TACTIC_NAME[tactic!]} answers how they play. Their weak side wasn't seen.` : `${TACTIC_NAME[answer] ?? 'Another plan'} would answer how they play. Their weak side wasn't seen.`)
+    : tacticRight && widthRight ? 'Your plan plays into their weak side. Good read.'
     : tacticRight ? `${TACTIC_NAME[tactic!]} answers how they play. Their weak side is ${WIDTH_NAME[weak].toLowerCase()}.`
     : widthRight ? `Into their weak side, but ${TACTIC_NAME[answer] ?? 'another plan'} would answer how they play.`
     : `No edge tonight: ${TACTIC_NAME[answer] ?? 'another plan'}, ${WIDTH_NAME[weak].toLowerCase()}, would find one.`;
-  return { scouted, weak, answer, tacticRight, widthRight, mods: mods.slice(0, 2), line };
+  return { scouted: true, weakKnown, weak, answer, tacticRight, widthRight, mods: mods.slice(0, 2), line };
 }
 
 /** The change from the tactic already in tonight's numbers to another one, axis by axis. */

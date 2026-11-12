@@ -56,6 +56,8 @@ export interface RunState {
   seenEvents: string[]; met: string[]; lore: string[];
   stats: RunStats;
   over?: 'won' | 'lost' | 'abandoned';
+  /** Extra card choices after a win: the manager's eye from the desk's coaching course, set when the run starts. */
+  eye?: number;
 }
 
 const copy = (r: RunState): RunState => JSON.parse(JSON.stringify(r)) as RunState;
@@ -65,7 +67,7 @@ const NO_UPGRADE: AnyKind[] = ['punt', 'total', 'loan', 'thunderbolt'];
 export const canUpgrade = (c: Card) => c.level !== 'great' && !NO_UPGRADE.includes(c.kind);
 const up = (lv: Level): Level => (lv === 'basic' ? 'good' : 'great');
 
-export function startRun(o: { cup: number; seed: number; date: DayKey; now: number; deck: Card[] }): RunState {
+export function startRun(o: { cup: number; seed: number; date: DayKey; now: number; deck: Card[]; eye?: number }): RunState {
   const tw = twists(o.cup);
   const deck = o.deck.map((c) => ({ ...c }));
   if (tw.extraPunt) deck.push({ id: 'cup-punt', kind: 'punt', level: 'basic', axis: null });
@@ -74,6 +76,7 @@ export function startRun(o: { cup: number; seed: number; date: DayKey; now: numb
     map: makeMap(o.seed, o.cup), at: null, path: [], fitness: tw.fitness, coins: 0, heirlooms: [], stop: null,
     seenEvents: [], met: [], lore: [],
     stats: { played: 0, won: 0, goalsFor: 0, goalsAgainst: 0, combos: {}, beaten: [], cards: 0 },
+    ...(o.eye ? { eye: o.eye } : {}),
   };
 }
 
@@ -187,7 +190,7 @@ export function updateMatch(r0: RunState, match: MatchState): RunState {
     r.over = 'won';
     return r;
   }
-  const n = tw.choices + (r.heirlooms.includes('boot-room-key') ? 1 : 0);
+  const n = tw.choices + (r.heirlooms.includes('boot-room-key') ? 1 : 0) + (r.eye ?? 0);
   st.offer = { cards: offerCards(r, st.node, n, st.kind === 'match' ? RUN_TUNE.offerMatch : RUN_TUNE.offerElite), coins };
   if (st.kind === 'elite') st.offer.heirloom = heirloomFor(r, st.node);
   return r;

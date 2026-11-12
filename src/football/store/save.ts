@@ -36,7 +36,7 @@ export async function foundClub(date: DayKey, choices: { shirt: string; crest: C
     budget: 0.05, buzz: true, crest: { step: 1, opt: choices.crest }, shirt: choices.shirt,
     rivals: [{ clubId: ANTIGOON, how: 'legend', since: date }], met: [], physioRoom: false, awakenings: {}, firstRunDone: true,
     contracts: contractsFor(date), sold: [], sponsors: [], offers: [], staff: [],
-    crestHistory: [{ step: 1, opt: choices.crest, season: 1 }], engine: 2,
+    crestHistory: [{ step: 1, opt: choices.crest, season: 1 }], engine: 2, fog: { since: date, old: [] },
   };
   // Engine 2 from day one: every logged habit is already a player, rated from its history up to founding.
   const { players } = rebuildPlayers(h, save, [], [], addDays(date, -1), () => '');

@@ -12,6 +12,8 @@ import { Events, eventRows } from './Events';
 import { BackPageCard, NewsView, useNews } from './News';
 import { Pyramid } from './Pyramid';
 import { Table } from './Table';
+import { atlasOf } from '../world/Atlas';
+import { clubFog } from '../../../football/store/fog';
 
 export const LEAGUE_VIEWS = [
   { id: 'table', label: 'Table' },
@@ -41,7 +43,8 @@ export function LeagueView({ l, view, tier, extra, n }: { l: League; view: Leagu
             <span className="fb-s">{t === mine ? 'Your division' : `${Math.abs(t - mine)} ${Math.abs(t - mine) === 1 ? 'tier' : 'tiers'} ${t < mine ? 'above' : 'below'} you`}</span>
             <button type="button" className="fb-btn sm" disabled={t === 6} aria-label={t < 6 ? `Down to ${tierName((t + 1) as Tier)}` : 'Bottom tier'} onClick={() => set({ tier: String(t + 1) })}>↓</button>
           </div>
-          <Table tier={t} rows={l.tables[t]} form={l.form} waiting={Boolean(l.save.paused)} day={l.save.phase === 'season' ? `Day ${l.save.day} of 42` : 'Between seasons'} />
+          <AtlasDoor l={l} />
+          <Table tier={t} rows={l.tables[t]} form={l.form} kitKnown={(id) => clubFog(l.save, id).facts.has('kit')} waiting={Boolean(l.save.paused)} day={l.save.phase === 'season' ? `Day ${l.save.day} of 42` : 'Between seasons'} />
         </>
       )}
       {view === 'pyramid' && <Pyramid tierOf={l.season.tierOf} rating={l.rating} onTier={(x) => set({ tier: String(x) })} />}
@@ -64,6 +67,16 @@ export function LeagueView({ l, view, tier, extra, n }: { l: League; view: Leagu
       )}
       {extra?.[view] ?? null}
     </>
+  );
+}
+
+/** The door to the atlas (w3-atlas): how much of the world you have seen. */
+function AtlasDoor({ l }: { l: League }) {
+  const seen = atlasOf(l).seen;
+  return (
+    <button type="button" className="fb-btn fg-door" onClick={() => go('/football/atlas')}>
+      <span>The atlas</span><span>World seen: <b className="fg-pct">{seen}%</b></span>
+    </button>
   );
 }
 

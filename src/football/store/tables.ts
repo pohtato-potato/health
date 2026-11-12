@@ -19,6 +19,8 @@ import type { Chemistry, Morale, Tactic, TeamSheet } from '../rotation/night';
 import type { TalkOutcome } from '../talks';
 import type { CallPick, MatchInput } from '../engine';
 import type { MatchdayPlan, PickTile } from '../matchday';
+import type { DeskState } from '../desk/types';
+import type { FogState } from '../fog/fog';
 
 export type CrestOpt = 'a' | 'b' | 'c' | 'd' | 'e';
 export interface FbSave {
@@ -120,6 +122,10 @@ export interface FbSave {
   scouted?: string[];
   /** Tactic cards held: +1 on the axis in a later league match of your choosing (three at most). */
   tacticCards?: Axis[];
+  /** The manager's desk (desk spec, step 4): dice handed over, dice spent, clocks, courses. A user key in play.ts. */
+  desk?: DeskState;
+  /** The world in fog (desk spec §4, Fork 2): stamped once with the clubs met before the fog came (12.8 a). */
+  fog?: FogState;
 }
 
 /** What a league match needs to be finished later: who, where, and the night as it was set at 4 am. */
@@ -134,8 +140,8 @@ export interface PausedMatch {
   /** The engine's input as set up at 4 am, without the rival's twist (rebuilt from the save), the plan or the calls. */
   input: Omit<MatchInput, 'rival' | 'plan' | 'calls' | 'watch' | 'halfSeen'>;
   rivalTwist?: 'rival' | 'antigoon';
-  /** The club's style, and whether it counted as scouted at 4 am. */
-  style: string; scouted: boolean;
+  /** The club's style, and whether it counted as scouted at 4 am (style only: a 1 or 2 at the desk). */
+  style: string; scouted: boolean | 'style';
   prep: PausedPrep;
   /** The owner's calls so far, a half-time change, and whether half-time has been seen. */
   picks: CallPick[]; half2?: Tactic; halfSeen?: boolean;

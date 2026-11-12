@@ -10,7 +10,10 @@ import { advance, penalties, type Bracket } from '../cups';
 import { clubById, rememberClubs } from '../data/load';
 import { cards, physio, redCardMod, rotationShape, usesRotation } from '../discipline';
 import { playMatch, typicalFor, type MatchCtx, type MatchInput, type MatchPlan } from '../engine';
-import { isScouted, pausedInput, readFor } from './paused';
+import { deskFold } from '../desk/fold';
+import { PROJECTS } from '../content/projects';
+import { diceFrozen } from './desk';
+import { isScouted, pausedInput, readFor, readScouted, scoutLevel } from './paused';
 import { pickOffer } from '../matchday';
 import { CONT_NAME, CWC_DAYS, CWC_NAME, contPrize, koFromTable, newClubWorld, phaseTable, reachOf } from '../continental';
 import { WORLD_CHAMPS } from '../data/continental';
@@ -41,7 +44,7 @@ import { creditsFor } from '../players/credit';
 import { linkedLogged } from '../players/youth';
 import type { Ctx } from '../players/attributes';
 import { formationFor } from '../tree/rotation';
-import { healNow, rotationOf, stageCapacity, treeAbilities, treeDay, treeMatch, treeSeasonEnd, type TreeCtx } from './tree';
+import { engineOf, healNow, rotationOf, stageCapacity, treeAbilities, treeDay, treeMatch, treeSeasonEnd, type TreeCtx } from './tree';
 import { LEAGUE, TIER_BANDS, tierName } from '../data/load';
 import { academyIds, creditMatch, nightOptsFor, playerCtx, playersDay, rebuildPlayers, squadNight, type Roster } from './players';
 import { signFreeAgents } from '../rotation/freeAgents';
@@ -64,7 +67,7 @@ export async function playDue(now = Date.now()): Promise<StoredMatch[]> {
   return playThrough(yesterday, null);
 }
 
-const USER_KEYS = ['buzz', 'wcCountry', 'ownSponsor', 'captain', 'captains', 'captainWeek', 'slots', 'sponsorStyle', 'awakeSeen', 'seenSeasonEnd', 'sheet', 'tactics', 'bedtime', 'treeUser', 'globeUser', 'around'] as const satisfies readonly (keyof FbSave)[];
+const USER_KEYS = ['buzz', 'wcCountry', 'ownSponsor', 'captain', 'captains', 'captainWeek', 'slots', 'sponsorStyle', 'awakeSeen', 'seenSeasonEnd', 'sheet', 'tactics', 'bedtime', 'treeUser', 'globeUser', 'around', 'desk'] as const satisfies readonly (keyof FbSave)[];
 /**
  * Engine 2 arrives: rebuilds the players from history once (spec §16), crediting the stored matches and keeping only
  * youngsters tied to a real habit. Everything else in the save stays. Safe to call any time; it runs once.
@@ -94,8 +97,10 @@ export async function migrateSave(): Promise<boolean> {
     const cur = await db.fbSave.get('save');
     if (!cur) return false;
     const rivals = migrateRivals(cur.rivals);
-    if (rivals === cur.rivals) return false;
-    await db.fbSave.put({ ...cur, rivals });
+    // The world in fog (desk spec §4, 12.8 a): stamped once; the clubs met so far keep what they had.
+    const fog = cur.fog ?? { since: cur.lastPlayed ?? cur.founded ?? '', old: [...(cur.met ?? [])] };
+    if (rivals === cur.rivals && fog === cur.fog) return false;
+    await db.fbSave.put({ ...cur, rivals, fog });
     return true;
   });
 }
@@ -504,7 +509,7 @@ function braboMaybe(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: str
     const p: PausedMatch = {
       id: `${date}:${leg ?? 1}`, date, season: w.save.season, input: { ...input, rival: undefined } as PausedMatch['input'],
       rivalTwist: rival ? 'rival' : oppId === ANTIGOON ? 'antigoon' : undefined,
-      style: club?.style ?? def.style, scouted: isScouted(w.save, oppId), prep, picks: [],
+      style: club?.style ?? def.style, scouted: readScouted(scoutLevel(w.save, oppId, date)), prep, picks: [],
     };
     if (wait) {
       // Set up and stopped: the owner watches or skips it; the next 4 am finishes it with the assistant.
@@ -547,7 +552,7 @@ function braboTail(w: World, date: DayKey, prep: PausedPrep, events: MatchEvents
     m.plan = { tactic: prep.tactic.pick, tempo: played.tempo ?? 'normal', width: pl?.width ?? 'middle', ...(card ? { card } : {}), ...(half2 ? { half2 } : {}), ...(read ? { read } : {}) };
     if (card) { const k = w.save.tacticCards!.indexOf(card); w.save.tacticCards = w.save.tacticCards!.filter((_, i) => i !== k); }
     if (m.result === 'W') {
-      const unscouted = Object.entries(w.season.tierOf).filter(([id, t]) => t === braboTier && id !== OWN && id !== oppId && !isScouted(w.save, id)).map(([id]) => id).sort();
+      const unscouted = Object.entries(w.season.tierOf).filter(([id, t]) => t === braboTier && id !== OWN && id !== oppId && !isScouted(w.save, id, date)).map(([id]) => id).sort();
       m.pick = { tiles: pickOffer(m.id, unscouted, (w.save.tacticCards ?? []).length) };
     }
   }
@@ -614,6 +619,8 @@ function clubDay(w: World, date: DayKey) {
   });
   // Layer 4: an international break day pauses the season (no matches); the tree and the world still run.
   breakStarts(w, date);
+  // The desk (step 4): the day's spends and its unspent dice, before the ground and the tree count the day.
+  deskDay(w, date);
   groundDay(w, date, input);
   treeDay(treeCtx(w), date, w.squad.filter((y) => (y.status === 'growing' || y.status === 'promoted') && youthDone(w, y, date)).length);
   // Layer 4: loans come and go, trials, youngsters grow (sessions from the linked habit, growth from kept bedtimes).
@@ -683,6 +690,12 @@ function seasonMoney(w: World, date: DayKey, tables: Record<Tier, Row[]>, up: Pa
     .flatMap((o) => offersFor(o.slot, nextTier, r));
   const row = (LEAGUE.income as unknown as Record<string, { tv: number; gate: number }>)[String(tier)];
   return { gate: row.gate * capShare, tv: row.tv, sponsors: sponsorMoney, shop: row.gate * capShare * shop, continental: cont };
+}
+/** The desk's day folded into the world: research, growth, project days and tomorrow's column (desk/fold.ts). */
+function deskDay(w: World, date: DayKey) {
+  const eng = structuredClone(engineOf(w.save));
+  deskFold(w.save.desk, date, diceFrozen(w.save, w.h, date), { eng, squad: w.squad, bundles: w.bundles, needs: (id) => PROJECTS.find((p) => p.id === id)?.needs, news: w.news });
+  w.save.tree = eng;
 }
 /** The world as the tree's hooks see it (store/tree.ts). */
 const treeCtx = (w: World): TreeCtx => ({ h: w.h, save: w.save, season: w.season, bundles: w.bundles, news: w.news, clubs: w.clubs, matches: () => [...w.past, ...w.matches] });
