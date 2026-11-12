@@ -23,9 +23,9 @@ export function Aurora({ a, c, children, className }: { a?: string; c?: string; 
 }
 
 /** Football's home: the four top tabs as a segmented control, then the section. */
-export function FootballHome({ section, children }: { section: FbSection; children?: ReactNode }) {
+export function FootballHome({ section, children, night }: { section: FbSection; children?: ReactNode; night?: boolean }) {
   return (
-    <Aurora>
+    <Aurora className={night ? 'md-night' : undefined}>
       <main className="fb-page">
         <nav className="fb-seg" aria-label="Football">
           {SECTIONS.map((s) => (

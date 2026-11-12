@@ -23,6 +23,8 @@ import { AcademyPage, DutyPage, LoanMoment, LoansPage, TiePage, TrialsPage } fro
 import { keyChances } from './CatchUp';
 import { CupRoute, CupsDoor } from './cup/CupScreens';
 import { go } from '../../router';
+import { loadParcel } from '../../football/store/around';
+import { NightGround, ParcelView } from './Parcel';
 import type { StoredMatch } from '../../football/store/tables';
 
 const SECTION: Record<string, FbSection> = { '/football': 'tonight', '/football/club': 'club', '/football/league': 'league', '/football/story': 'story' };
@@ -32,6 +34,16 @@ function TonightSection() {
   if (t === undefined) return null;
   if (t === null) return <p className="fb-s">Football starts once you found the club.</p>;
   return <><TonightView t={t} /><CupsDoor /></>;
+}
+
+/** Matchday §4 (Fork B): the morning parcel on the first open after 4 am; the ground at night after Close the day. */
+function TonightRoute() {
+  const t = useTonight();
+  const p = useLiveQuery(async () => (t ? loadParcel(t) : null), [t]);
+  if (t === undefined || p === undefined) return null;
+  if (t && p?.due) return <ParcelView t={t} p={p} />;
+  if (t && p?.shut) return <FootballHome section="tonight" night><NightGround t={t} packs={p.packs} sealAt={p.sealAt} /></FootballHome>;
+  return <FootballHome section="tonight"><TonightSection /></FootballHome>;
 }
 
 function MatchRoute({ id, at, paused, ft = false }: { id: string | null; at?: number; paused?: boolean; ft?: boolean }) {
@@ -106,5 +118,6 @@ export function Football() {
   if (path === '/football/sheet') return <FootballHome section="club"><TeamSheetRoute /></FootballHome>;
   if (path === '/football/blend') return <FootballHome section="tonight"><BlendRoute /></FootballHome>;
   const section = SECTION[path] ?? 'tonight';
-  return <FootballHome section={section}>{section === 'tonight' ? <TonightSection /> : section === 'league' ? <LeagueHome /> : section === 'story' ? <StoryHome /> : <ClubHome />}</FootballHome>;
+  if (section === 'tonight') return <TonightRoute />;
+  return <FootballHome section={section}>{section === 'league' ? <LeagueHome /> : section === 'story' ? <StoryHome /> : <ClubHome />}</FootballHome>;
 }

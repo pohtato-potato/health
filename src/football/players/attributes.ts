@@ -1,5 +1,8 @@
 // Attributes and the overall rating (spec §3.1 with the approved calibration numbers, report §8).
 // Every number comes from a real log. A sick day is "no data": it never counts for or against a player.
+import { ratedTargets, type TalkOutcome } from '../talks';
+import { keptPledgeNight } from '../../domain/pledge';
+import { awayDay } from '../../domain/officeDay';
 import { addDays, daysBetween, type DayKey } from '../../domain/dates';
 import { allExercises, valueOfSet } from '../../domain/plan';
 import { placeFor } from '../../domain/places';
@@ -46,12 +49,14 @@ export interface Ctx {
   bedtime?: number;
   /** Starting value for rate attributes, per player (youngsters promote with their potential). */
   rampStart?: Record<string, number>;
+  /** Target talks (matchday §5, choice A a): a raised target is rated against the old one until the season ends. */
+  talks?: TalkOutcome[];
 }
-export function ctxFor(h: Health, bedtime?: number, rampStart?: Record<string, number>): Ctx {
+export function ctxFor(h: Health, bedtime?: number, rampStart?: Record<string, number>, talks?: TalkOutcome[]): Ctx {
   const setsBy = new Map<string, SetEntry[]>();
   for (const s of [...h.sets].sort((a, b) => a.at - b.at)) setsBy.set(s.exerciseId, [...(setsBy.get(s.exerciseId) ?? []), s]);
   return {
-    h, setsBy, bedtime, rampStart,
+    h, setsBy, bedtime, rampStart, talks,
     sick: new Set([...h.days.values()].filter((d) => d.status === 'sick').map((d) => d.date)),
     sessions: new Map(h.sessions.map((s) => [s.id, s])),
   };
@@ -92,13 +97,14 @@ export function ratingOf(c: Ctx, p: PlayerDef, date: DayKey, ext: RatingExt = {}
 function attrsOf(c: Ctx, p: PlayerDef, date: DayKey, days: DayKey[], r: (v: number) => number, base: DayKey): Attribute[] | null {
   const h = c.h;
   const day = (d: DayKey): Day | undefined => h.days.get(d);
-  const goal = (d: DayKey) => stepsGoal(targetsFor(h.settings, d), Boolean(day(d)?.eased) || placeFor(day(d), h.settings).eased);
+  const tgt = (d: DayKey) => ratedTargets(targetsFor(h.settings, d), c.talks, d);
+  const goal = (d: DayKey) => stepsGoal(tgt(d), Boolean(day(d)?.eased) || placeFor(day(d), h.settings).eased);
   switch (p.kind) {
     case 'exercise': return exerciseAttrs(c, p, date, days, r, base);
     case 'steps': {
       const real = days.filter((d) => day(d)?.steps != null && !day(d)?.stepsEstimated);
       if (!real.length) return null;
-      const t = targetsFor(h.settings, date).steps;
+      const t = tgt(date).steps;
       const mean = avg(real.map((d) => day(d)!.steps!));
       const atGoal = days.filter((d) => (day(d)?.steps ?? 0) >= goal(d)).length;
       let peak = 0;
@@ -121,7 +127,8 @@ function attrsOf(c: Ctx, p: PlayerDef, date: DayKey, days: DayKey[], r: (v: numb
       ];
     }
     case 'commuter': {
-      const away = days.filter((d) => { const k = placeFor(day(d), h.settings).kind; return day(d)?.steps != null && (k === 'office' || k === 'trip'); });
+      // Office days are away games (matchday §5): a day marked by hand counts as well as the place.
+      const away = days.filter((d) => day(d)?.steps != null && awayDay(day(d), h.settings));
       if (!away.length) return null;
       const mean = avg(away.map((d) => day(d)!.steps!));
       const g = avg(away.map(goal));
@@ -162,7 +169,7 @@ function attrsOf(c: Ctx, p: PlayerDef, date: DayKey, days: DayKey[], r: (v: numb
     case 'calories': {
       const logged = days.filter((d) => (h.kcal.get(d)?.n ?? 0) > 0);
       if (!logged.length) return null;
-      const t = (d: DayKey) => targetsFor(h.settings, d);
+      const t = (d: DayKey) => tgt(d);
       const inRange = logged.filter((d) => { const k = h.kcal.get(d)!.kcal; return k >= t(d).kcalMin && k <= t(d).kcalMax; }).length;
       const ks = logged.map((d) => h.kcal.get(d)!.kcal);
       const swings = ks.slice(1).map((k, i) => Math.abs(k - ks[i]));
@@ -176,7 +183,7 @@ function attrsOf(c: Ctx, p: PlayerDef, date: DayKey, days: DayKey[], r: (v: numb
     case 'protein': {
       const logged = days.filter((d) => (h.kcal.get(d)?.n ?? 0) > 0);
       if (!logged.length) return null;
-      const target = (d: DayKey) => targetsFor(h.settings, d).proteinG || 1;
+      const target = (d: DayKey) => tgt(d).proteinG || 1;
       const hit = logged.filter((d) => h.kcal.get(d)!.protein >= target(d)).length;
       const sh = avg(logged.map((d) => Math.min(1, h.kcal.get(d)!.protein / target(d))));
       return [
@@ -188,7 +195,7 @@ function attrsOf(c: Ctx, p: PlayerDef, date: DayKey, days: DayKey[], r: (v: numb
       const meal = p.ref as 'breakfast' | 'lunch' | 'dinner';
       const logged = days.filter((d) => h.meals.get(d)?.[meal]);
       if (!logged.length) return null;
-      const sh = avg(logged.map((d) => Math.min(1, h.meals.get(d)![meal]!.protein / ((targetsFor(h.settings, d).proteinG || 4) / 4))));
+      const sh = avg(logged.map((d) => Math.min(1, h.meals.get(d)![meal]!.protein / ((tgt(d).proteinG || 4) / 4))));
       return [
         A('logged', 'Logged', r(rate(share(logged.length, days.length))), 0.4, 'rate', `logged on ${logged.length} of ${days.length} days`),
         A('protein', 'Protein share', r(rate(sh)), 0.6, 'rate', `${Math.round(sh * 100)}% of a quarter of the protein target`),
@@ -248,7 +255,8 @@ function attrsOf(c: Ctx, p: PlayerDef, date: DayKey, days: DayKey[], r: (v: numb
       const nights = days.filter((d) => day(d)?.sleep);
       if (!nights.length) return null;
       const target = c.bedtime ?? usualBedtime(h, date) ?? 0;
-      const kept = nights.filter((d) => bedtimeKept(day(d)!.sleep!.asleep, target)).length;
+      // A kept lights-out pledge (matchday §5) counts as a kept night: the Rest keeper starts fresh.
+      const kept = nights.filter((d) => bedtimeKept(day(d)!.sleep!.asleep, target) || keptPledgeNight(h.days, d)).length;
       const beds = nights.map((d) => bedOrder(day(d)!.sleep!.asleep));
       return [
         A('kept', 'Kept', r(rate(share(kept, nights.length))), 0.7, 'rate', `asleep by ${clock(target + BEDTIME_GRACE)} on ${kept} of ${nights.length} nights`),

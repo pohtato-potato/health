@@ -13,13 +13,15 @@ export const OFFICE_MIN_DAYS = 2;
 
 const sig = (xs: Pick<FoodEntry, 'foodId' | 'name' | 'kcal'>[]) => xs.map((e) => e.foodId ?? `${e.name.trim().toLowerCase()}|${Math.round(e.kcal)}`).sort().join('+');
 
-export function isOfficeDay(day: Pick<Day, 'place' | 'home'> | undefined, places: Pick<Place, 'id' | 'kind'>[] = []): boolean {
+/** An office day: marked by hand (d-office, matchday §5), else the day's place is an office. */
+export function isOfficeDay(day: Pick<Day, 'place' | 'home' | 'office'> | undefined, places: Pick<Place, 'id' | 'kind'>[] = []): boolean {
+  if (day?.office !== undefined) return day.office;
   const id = day?.place ?? day?.home;
   return !!id && places.some((p) => p.id === id && p.kind === 'office');
 }
 
 /** The usual for one meal on office days, from the last few office days before today. Empty when none repeats. */
-export function officeUsual(meal: Meal, days: Map<DayKey, Pick<Day, 'place' | 'home'>>, places: Pick<Place, 'id' | 'kind'>[], entries: FoodEntry[], today: DayKey): DraftEntry[] {
+export function officeUsual(meal: Meal, days: Map<DayKey, Pick<Day, 'place' | 'home' | 'office'>>, places: Pick<Place, 'id' | 'kind'>[], entries: FoodEntry[], today: DayKey): DraftEntry[] {
   const from = addDays(today, -7 * OFFICE_LOOKBACK);
   const byDate = new Map<DayKey, FoodEntry[]>();
   for (const e of entries) {

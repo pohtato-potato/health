@@ -16,6 +16,7 @@ import type { YouthLink } from '../players/youth';
 import type { TreeEngine, TreeUser } from '../tree/types';
 import type { GlobeEngine, GlobeUser } from '../globe/types';
 import type { Chemistry, Morale, Tactic, TeamSheet } from '../rotation/night';
+import type { TalkOutcome } from '../talks';
 import type { CallPick, MatchInput } from '../engine';
 import type { MatchdayPlan, PickTile } from '../matchday';
 
@@ -108,6 +109,8 @@ export interface FbSave {
   morale?: Morale;
   /** Release 1 (R3 b-lowlog): this week's low-log week, Monday's date and the one habit's axis that still counts. */
   lowLog?: { week: DayKey; axis: Axis };
+  /** Matchday §4–§5 (Fork B): taps around the match (the parcel opened, target talks). A user key in play.ts. */
+  around?: AroundUser;
   // ---- Matchday depth (spec 2026-11-12 §2, §6) ----
   /** The league match waiting to be watched or skipped: stored as data, rebuilt and replayed to resume. */
   paused?: PausedMatch;
@@ -137,6 +140,8 @@ export interface PausedMatch {
   /** The owner's calls so far, a half-time change, and whether half-time has been seen. */
   picks: CallPick[]; half2?: Tactic; halfSeen?: boolean;
 }
+/** The morning parcel opened (by logging day) and the target talks held. */
+export interface AroundUser { parcel?: DayKey; talks?: TalkOutcome[] }
 export interface FbClub { id: string; tier: Tier; rating: number; style: string; old?: OldSelf; folded?: boolean }
 export interface FbSeason {
   id: number;

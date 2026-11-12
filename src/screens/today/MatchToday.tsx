@@ -14,6 +14,7 @@ import { clubById, tierName } from '../../football/data/load';
 import { matchupShare, movedAxes, nothingLoggedYet, oppShape, threatLine, wentAhead } from '../../football/matchup';
 import { loadTonight, type Tonight } from '../../football/store/hooks';
 import { OWN } from '../../football/store/season';
+import { storedGate } from '../../football/store/matchGate';
 import type { FbSave, StoredMatch } from '../../football/store/tables';
 import { AXES, type Axis, type AxisValues } from '../../football/types';
 import { go } from '../../router';
@@ -76,7 +77,9 @@ export function MorningMatch({ m, save, today, more }: { m: StoredMatch; save: F
         <figure><Art svg={crest(save, m.away, 56)} /><figcaption style={{ color: inkOf(m.away) }}>{name(m.away)}</figcaption></figure>
       </div>
       <p className="tm-c">Last night’s shape is in. Watch it to see the score.</p>
-      <button type="button" className="tm-watch" onClick={() => go('/football/match', { id: m.id })}>Watch the match</button>
+      <button type="button" className="tm-watch" onClick={() => storedGate.watch(m)}>Watch the match</button>
+      {/* Matchday §4 (choice D a): Skip shows the score of a match the assistant finished, without the replay. */}
+      <button type="button" className="tm-more" onClick={() => void storedGate.skip(m)}>Skip to the result</button>
       {more > 0 && <button type="button" className="tm-more" onClick={() => go('/football')}>{more === 1 ? 'One more match waits on Football' : `${more} more matches wait on Football`}</button>}
     </section>
   );

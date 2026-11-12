@@ -1,4 +1,5 @@
 import { MaintenanceRead } from './today/MaintenanceRead';
+import { FoodPledge } from './Pledge';
 import { RegionFrame } from '../ui/live/RegionFrame';
 import { addDays, weekStart } from '../domain/dates';
 import { fmtDayShort, fmtInt } from '../domain/format';
@@ -56,6 +57,7 @@ export function FoodToday() {
         </div>
 
         {date === today && <MaintenanceRead />}
+        {date === today && <FoodPledge date={today} />}
 
         <div className="card" style={{ gap: 16, padding: 20 }}>
           <div className="col gap8">

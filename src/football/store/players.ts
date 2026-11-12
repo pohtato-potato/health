@@ -37,7 +37,7 @@ const linkId = (l: YouthLink) => (l.kind === 'habit' ? `habit:${l.id}` : `ex:${l
 export const academyIds = (squad: FbSquadRow[]) => new Set(squad.filter((y) => y.status === 'growing' && y.link).map((y) => linkId(y.link!)));
 /** A promoted youngster's player rates from its potential while it settles in. */
 export const rampStarts = (squad: FbSquadRow[]) => Object.fromEntries(squad.filter((y) => y.status === 'promoted' && y.link).map((y) => [linkId(y.link!), PROMOTED_START[y.potential]]));
-export const playerCtx = (h: Health, save: Pick<FbSave, 'bedtime'>, squad: FbSquadRow[]): Ctx => ctxFor(h, save.bedtime, rampStarts(squad));
+export const playerCtx = (h: Health, save: Pick<FbSave, 'bedtime' | 'around'>, squad: FbSquadRow[]): Ctx => ctxFor(h, save.bedtime, rampStarts(squad), save.around?.talks);
 
 function newRow(d: PlayerDef, overall: number, on: DayKey): FbPlayer {
   return { id: d.id, unit: d.unit, kind: d.kind, ref: d.ref, name: d.name, art: d.art, signed: d.signed, status: 'squad', overall, on, ...firstCard(overall, on, d.signed), apps: 0, goals: 0, saves: 0, seasons: [], limitBreaks: [] };
@@ -256,7 +256,7 @@ export function rebuildPlayers(h: Health, save: FbSave, squad: FbSquadRow[], mat
   let morale: Morale = 0;
   for (let d = start; d <= until; d = addDays(d, 1)) {
     youth = youth.map((y) => { const a = arrivedOn(y); return a && d >= a ? youthDay(h, y, d, save.bedtime ?? undefined) : y; });
-    const c = ctxFor(h, save.bedtime, rampStarts(youth));
+    const c = ctxFor(h, save.bedtime, rampStarts(youth), save.around?.talks);
     roster = playersDay(roster, h, c, d, academyIds(youth), true);
     for (const m of byDate.get(d) ?? []) {
       const sick = h.days.get(d)?.status === 'sick';
