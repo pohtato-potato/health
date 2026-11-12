@@ -13,7 +13,7 @@ import { talkAsk, talkDue, talkTarget, talkWindow, type TalkHabit, type TalkOutc
 import { loadHealth, type Health } from './gather';
 import type { Tonight } from './hooks';
 import { OWN } from './season';
-import type { AroundUser, FbSave, StoredMatch } from './tables';
+import type { AroundUser, FbSave, PausedMatch, StoredMatch } from './tables';
 
 export const aroundOf = (s: Pick<FbSave, 'around'> | undefined | null): AroundUser => s?.around ?? {};
 
@@ -73,7 +73,9 @@ export interface Parcel {
   tiles: TileKind[];
   due: boolean;
   shut: boolean;
-  /** Last night's league match (Brabo's), for the result tile. */
+  /** The league match still waiting for Watch or Skip (Fork A's `save.paused`). */
+  waiting?: PausedMatch;
+  /** Last night's match once finished (Brabo's), for the result tile. */
   result?: StoredMatch;
   talks: TalkOffer[];
   packs: number;
@@ -97,15 +99,16 @@ export async function loadParcel(t: Tonight): Promise<Parcel> {
   const result = (await db.fbMatches.where('date').equals(addDays(date, -1)).toArray()).filter((m) => m.home === OWN || m.away === OWN).sort((a, b) => (a.leg ?? 1) - (b.leg ?? 1))[0];
   const talks = talkOffers(h, t.save, date);
   const packs = packsWaiting(t.save);
+  const waiting = t.save.paused;
   const tiles = parcelTiles({
-    result: Boolean(result),
+    result: Boolean(waiting || result),
     table: physioDue(day),
     talks: talks.length > 0,
     scout: Boolean(t.morning.scout),
     academy: t.morning.grew.length > 0,
     pack: packs > 0,
   });
-  return { tiles, due: parcelDue(aroundOf(t.save).parcel, date, shut, tiles), shut, result, talks, packs, today: day, sealAt: day.seal?.at };
+  return { tiles, due: parcelDue(aroundOf(t.save).parcel, date, shut, tiles), shut, waiting, result, talks, packs, today: day, sealAt: day.seal?.at };
 }
 
 /** True from Close the day until the 4 am roll-over: packs and results wait for the morning. */

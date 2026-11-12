@@ -17,6 +17,8 @@ import type { TreeEngine, TreeUser } from '../tree/types';
 import type { GlobeEngine, GlobeUser } from '../globe/types';
 import type { Chemistry, Morale, Tactic, TeamSheet } from '../rotation/night';
 import type { TalkOutcome } from '../talks';
+import type { CallPick, MatchInput } from '../engine';
+import type { MatchdayPlan, PickTile } from '../matchday';
 
 export type CrestOpt = 'a' | 'b' | 'c' | 'd' | 'e';
 export interface FbSave {
@@ -107,8 +109,36 @@ export interface FbSave {
   morale?: Morale;
   /** Release 1 (R3 b-lowlog): this week's low-log week, Monday's date and the one habit's axis that still counts. */
   lowLog?: { week: DayKey; axis: Axis };
-  /** Matchday §4–§5 (Fork B): taps around the match. Needs 'around' in play.ts USER_KEYS (Fork A's file). */
+  /** Matchday §4–§5 (Fork B): taps around the match (the parcel opened, target talks). A user key in play.ts. */
   around?: AroundUser;
+  // ---- Matchday depth (spec 2026-11-12 §2, §6) ----
+  /** The league match waiting to be watched or skipped: stored as data, rebuilt and replayed to resume. */
+  paused?: PausedMatch;
+  /** Tempo, width and a played tactic card, by the day whose match it is for (the tactic stays in `tactics`). */
+  plans?: Record<DayKey, MatchdayPlan>;
+  /** Clubs named by a scouting lead (clubs met before count as scouted too). */
+  scouted?: string[];
+  /** Tactic cards held: +1 on the axis in a later league match of your choosing (three at most). */
+  tacticCards?: Axis[];
+}
+
+/** What a league match needs to be finished later: who, where, and the night as it was set at 4 am. */
+export interface PausedPrep {
+  day: number; matchday?: number; comp: Comp; round?: string; home: string; away: string; oppId: string; braboHome: boolean;
+  values: AxisValues; flags: AxisFlags; xi: XiPlace[]; setPiece?: string; tactic: { pick: Tactic; by: 'you' | 'assistant' };
+  nudges?: { axis: Axis; d: number; why: string }[]; loansPlayed?: string[]; rotation: boolean; sick: boolean; auto: boolean;
+  derby: boolean; vsHigher: boolean; rival: boolean; oldSelf: boolean; braboTier: Tier; pens?: boolean;
+}
+export interface PausedMatch {
+  id: string; date: DayKey; season: number;
+  /** The engine's input as set up at 4 am, without the rival's twist (rebuilt from the save), the plan or the calls. */
+  input: Omit<MatchInput, 'rival' | 'plan' | 'calls' | 'watch' | 'halfSeen'>;
+  rivalTwist?: 'rival' | 'antigoon';
+  /** The club's style, and whether it counted as scouted at 4 am. */
+  style: string; scouted: boolean;
+  prep: PausedPrep;
+  /** The owner's calls so far, a half-time change, and whether half-time has been seen. */
+  picks: CallPick[]; half2?: Tactic; halfSeen?: boolean;
 }
 /** The morning parcel opened (by logging day) and the target talks held. */
 export interface AroundUser { parcel?: DayKey; talks?: TalkOutcome[] }
@@ -164,6 +194,10 @@ export interface StoredMatch {
   /** Layer 2: the tactic it played (and whether the assistant chose it), and the nudges on each axis. */
   tactic?: { pick: Tactic; by: 'you' | 'assistant' };
   nudges?: { axis: Axis; d: number; why: string }[];
+  /** Matchday depth: the plan it played (tempo, width, a half-time change, a card) and the read's line. */
+  plan?: MatchdayPlan & { half2?: Tactic; read?: string };
+  /** After a league win: the pick of three, and the tile chosen. */
+  pick?: { tiles: PickTile[]; chosen?: number };
 }
 export interface FbSquadRow {
   id: string; kind: 'youth'; name: string; axis: Axis; potential: 3 | 4 | 5; what: string; exercise: boolean; season: number;

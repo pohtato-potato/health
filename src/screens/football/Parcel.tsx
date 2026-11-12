@@ -9,9 +9,9 @@ import { clubById } from '../../football/data/load';
 import { cameIn, forTheMorning, TILE, type TileKind } from '../../football/parcel';
 import { holdTalk, openParcel, type Parcel, type TalkOffer } from '../../football/store/around';
 import type { Tonight } from '../../football/store/hooks';
-import { matchGate } from '../../football/store/matchGate';
+import { matchGate, storedGate } from '../../football/store/matchGate';
 import { OWN } from '../../football/store/season';
-import type { FbSave, StoredMatch } from '../../football/store/tables';
+import type { FbSave, PausedMatch, StoredMatch } from '../../football/store/tables';
 import { TALK_AGENT, talkTarget, type TalkPick } from '../../football/talks';
 import { go } from '../../router';
 import { AXIS_INK } from '../../ui/inks';
@@ -51,7 +51,7 @@ function Sealed({ tiles, small, from = 0 }: { tiles: TileKind[]; small?: boolean
 export function ParcelView({ t, p: live }: { t: Tonight; p: Parcel }) {
   // The tiles stay as they came in while the parcel is open: answering the physio or a talk must not reshuffle them.
   const [fixed] = useState(live);
-  const p = { ...fixed, result: live.result ?? fixed.result };
+  const p = { ...fixed, result: live.result ?? fixed.result, waiting: live.waiting };
   const [at, setAt] = useState(() => readAt(t.date));
   useEffect(() => keepAt(t.date, at), [t.date, at]);
   const n = p.tiles.length;
@@ -81,7 +81,7 @@ export function ParcelView({ t, p: live }: { t: Tonight; p: Parcel }) {
           <span className="md-cap">{at + 1} of {n} · {TILE[k].title.toLowerCase()}</span>
           <button type="button" className="md-nav-go md-q" onClick={next} style={{ minHeight: 44, minWidth: 64, textAlign: 'right', background: 'none', border: 0, color: 'inherit', font: 'inherit', cursor: 'pointer' }}>{last ? 'Done' : 'Tap to go on'}</button>
         </div>
-        {k === 'result' && p.result && <ResultTile m={p.result} save={t.save} onNext={next} last={last} />}
+        {k === 'result' && (p.waiting || p.result) && <ResultTile waiting={p.waiting} m={p.result} save={t.save} onNext={next} last={last} />}
         {k === 'table' && <TableTile date={t.date} onNext={next} last={last} />}
         {k === 'talks' && <TalksTile offers={p.talks} date={t.date} onNext={next} last={last} />}
         {k === 'scout' && <ScoutTile t={t} onNext={next} last={last} />}
@@ -100,24 +100,27 @@ const Next = ({ onNext, last, label }: { onNext: () => void; last: boolean; labe
 
 const WORD = { W: 'won', D: 'drew', L: 'lost' } as const;
 /** p3-result with the owner's change (11 Nov): Watch or Skip first, the score only after one of them. */
-export function ResultTile({ m, save, onNext, last }: { m: StoredMatch; save: FbSave; onNext: () => void; last: boolean }) {
+export function ResultTile({ waiting, m, save, onNext, last }: { waiting?: PausedMatch; m?: StoredMatch; save: FbSave; onNext: () => void; last: boolean }) {
   const [busy, setBusy] = useState(false);
-  const hidden = matchGate.waiting(m);
-  if (hidden) {
+  // Waiting on the save (Fork A's paused match), or finished by the assistant at 4 am and not seen yet.
+  if (waiting || !m || storedGate.waiting(m)) {
+    const f = waiting ? { home: waiting.prep.home, away: waiting.prep.away, round: waiting.prep.round } : m!;
+    const watch = () => (waiting ? matchGate.watch() : storedGate.watch(m!));
+    const skip = async () => { setBusy(true); try { if (waiting) await matchGate.skip(); else await storedGate.skip(m!); } finally { setBusy(false); } };
     return (
       <>
-        <h2 className="md-h">Last night: {shortName(m.home)} v {shortName(m.away)}</h2>
+        <h2 className="md-h">Last night: {shortName(f.home)} v {shortName(f.away)}</h2>
         <div className="md-tile col" style={{ '--ink': TILE.result.ink } as React.CSSProperties}>
           <div className="md-duel">
-            <figure><Art svg={crest(save, m.home, 56)} /><figcaption>{shortName(m.home)}</figcaption></figure>
+            <figure><Art svg={crest(save, f.home, 56)} /><figcaption>{shortName(f.home)}</figcaption></figure>
             <span className="v" aria-hidden="true">v</span>
-            <figure><Art svg={crest(save, m.away, 56)} /><figcaption>{shortName(m.away)}</figcaption></figure>
+            <figure><Art svg={crest(save, f.away, 56)} /><figcaption>{shortName(f.away)}</figcaption></figure>
           </div>
-          <p className="md-q" style={{ margin: 0, textAlign: 'center' }}>{m.round ?? 'League'}. The line-up was set last night; the score waits for you.</p>
+          <p className="md-q" style={{ margin: 0, textAlign: 'center' }}>{f.round ?? 'League'}. {waiting ? 'Watch it with your calls, or skip and your assistant makes them.' : 'The line-up was set last night; the score waits for you.'}</p>
         </div>
         <div className="md-btns">
-          <button type="button" className="md-btn" onClick={() => matchGate.watch(m)}>Watch</button>
-          <button type="button" className="md-btn ghost" disabled={busy} onClick={() => { setBusy(true); void matchGate.skip(m).finally(() => setBusy(false)); }}>Skip</button>
+          <button type="button" className="md-btn" disabled={busy} onClick={watch}>Watch</button>
+          <button type="button" className="md-btn ghost" disabled={busy} onClick={() => void skip()}>Skip</button>
         </div>
       </>
     );

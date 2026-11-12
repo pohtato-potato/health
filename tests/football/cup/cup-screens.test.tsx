@@ -57,16 +57,16 @@ describe('cup runs: the store', () => {
     expect(book.cups[1].furthest).toBe(4);
     expect(book.runs).toBe(1);
   });
-  it('only the first run that ends each day pays, capped below a good league day; reaching the final pays an album card', async () => {
+  it('only the first run that ends each day pays, a won cup pays its full 5; reaching the final pays an album card', async () => {
     const before = engineOf((await db.fbSave.get('save'))!).earned;
     const rec = await startCupRun(1, T);
     const finalId = rec.run.map.nodes.find((x) => x.kind === 'final')!.id;
     const won: RunState = { ...ended(rec.run, 14, 'won'), path: [...rec.run.map.nodes.slice(0, 13).map((x) => x.id), finalId] };
     const end = await saveRun(won, T);
-    expect(end!.pay.research).toBe(PAY.cap);
+    expect(end!.pay.research).toBe(PAY.cupWin);
     expect(end!.pay.album).toBe(true);
     const eng = engineOf((await db.fbSave.get('save'))!);
-    expect(eng.earned - before).toBe(PAY.cap);
+    expect(eng.earned - before).toBe(PAY.cupWin);
     expect(eng.packs.some((p) => p.source === 'cup-final')).toBe(true);
     expect((await loadBook()).cups[1].won).toBe(1);
     // a second run the same day still counts for the book, but pays nothing
@@ -74,7 +74,7 @@ describe('cup runs: the store', () => {
     const rec2 = await startCupRun(1, T + 1000);
     const end2 = await saveRun(ended(rec2.run, 6, 'lost'), T + 2000);
     expect(end2!.pay).toMatchObject({ research: 0, album: false });
-    expect(engineOf((await db.fbSave.get('save'))!).earned - before).toBe(PAY.cap);
+    expect(engineOf((await db.fbSave.get('save'))!).earned - before).toBe(PAY.cupWin);
     expect((await loadBook()).runs).toBe(2);
   });
   it('never touches the league', async () => {

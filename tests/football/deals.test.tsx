@@ -9,7 +9,7 @@ import { YOUTH_POOL, type YouthDef } from '../../src/football/data/load';
 import { offers, type Offer } from '../../src/football/money';
 import { rng } from '../../src/football/rng';
 import { loadClub } from '../../src/football/store/club';
-import { kickOff } from '../../src/football/store/play';
+import { kickOffDone as kickOff } from './helpers/matchday';
 import { foundClub, sellHabit, setOwnSponsor } from '../../src/football/store/save';
 import { TIERS } from '../../src/football/types';
 import { MoneyView } from '../../src/screens/football/club/Money';

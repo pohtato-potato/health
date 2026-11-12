@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { setTargets } from '../../src/db/actions';
 import { HealthDB, db, setDatabase } from '../../src/db/db';
 import { addDays } from '../../src/domain/dates';
-import { kickOff } from '../../src/football/store/play';
+import { kickOffDone as kickOff } from './helpers/matchday';
 import { answerPress, foundClub } from '../../src/football/store/save';
 import { pressItem } from '../../src/football/news';
 import { FullTimeView } from '../../src/screens/football/FullTime';

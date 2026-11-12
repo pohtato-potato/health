@@ -47,6 +47,7 @@ export function timeline(ev: MatchEvents, big: boolean): Step[] {
   ev.chances.forEach((c, i) => {
     if (!half && c.minute > 45) { half = true; push('phase', -1, { bookend: 'halftime', minute: 45, score: [mine, theirs] }, T.half); }
     push('phase', i, { minute: c.minute, text: c.type }, T.phase);
+    if (c.kept) { push('feed', i, { minute: c.minute, text: 'Kept the ball: no shot, and their next attack is easier to stop.' }, T.feed); return; }
     push('mod', i, {}, T.mod);
     push('pct', i, {}, T.pct);
     const shot = (land: [number, number], ok: boolean, retake: boolean) => {

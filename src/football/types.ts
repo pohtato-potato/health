@@ -12,7 +12,7 @@ export type Tier = 1 | 2 | 3 | 4 | 5 | 6;
 export const TIERS: Tier[] = [1, 2, 3, 4, 5, 6];
 export type Comp = 'league' | 'bigcup' | 'tiercup' | 'playoff' | 'event' | 'worldcup' | 'continental' | 'clubworld' | 'friendly';
 export type Result = 'W' | 'D' | 'L';
-export type ModKind = 'type' | 'captain' | 'sub' | 'opp' | 'hidden' | 'rival' | 'tired' | 'stack' | 'knock' | 'card' | 'ability' | 'fog' | 'home' | 'range';
+export type ModKind = 'type' | 'captain' | 'sub' | 'opp' | 'hidden' | 'rival' | 'tired' | 'stack' | 'knock' | 'card' | 'ability' | 'fog' | 'home' | 'range' | 'plan' | 'call';
 export interface Mod { axis: Axis; d: number; why: string; kind: ModKind }
 export type Tag = 'SCREAMER' | 'HEARTBREAK' | 'WONDER SAVE';
 export interface ChanceEvent {
@@ -32,6 +32,28 @@ export interface ChanceEvent {
   /** Distance from the landing spot to the shape edge, when close enough for a goal-line check. */
   glDist: number | null;
   tag?: Tag;
+  /** A call's "keep the ball": no chance was taken in this slot (matchday spec §2.3). Never a shot, never in xG. */
+  kept?: boolean;
+}
+/** The owner's three options at a call (matchday spec §2.3). */
+export type CallPick = 'take' | 'shoot' | 'keep';
+/** One call in a match: where it came, the odds shown (exactly the odds used), what was picked and by whom. */
+export interface CallRecord {
+  /** Index of the chance slot it decided. */
+  slot: number;
+  minute: number;
+  /** Call n of `of`. */
+  n: number;
+  of: number;
+  /** Brabo first, at the moment of the call. */
+  score: [number, number];
+  pick: CallPick;
+  by: 'you' | 'assistant';
+  /** Whole percent: take it on and shoot on sight to score; keep the ball, the points it adds to stopping their next attack (absent with no attack of theirs left). */
+  odds: { take: number; shoot: number; keep?: number };
+  /** The axis and the kind of chance "take it on" goes to. */
+  takeAxis: Axis;
+  takeType: string;
 }
 export interface MatchEvents {
   seed: number;
@@ -39,6 +61,8 @@ export interface MatchEvents {
   score: [number, number];
   xg: [number, number];
   moments: string[];
+  /** League nights (matchday spec §2.3): the calls, in order. Absent for matches without calls. */
+  calls?: CallRecord[];
   /** Name of the hidden ability found out at full time, if any. */
   revealed?: string;
 }

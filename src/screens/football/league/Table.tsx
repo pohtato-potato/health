@@ -16,7 +16,7 @@ function Cut({ kind, text }: { kind: 'up' | 'po' | 'down'; text: string }) {
 }
 
 /** `form` is Brabo's 28-day form rating, for the double-promotion line (Division Three and below). */
-export function Table({ tier, rows, day, form }: { tier: Tier; rows: Row[]; day?: string; form?: number }) {
+export function Table({ tier, rows, day, form, waiting = false }: { tier: Tier; rows: Row[]; day?: string; form?: number; waiting?: boolean }) {
   const out: React.ReactNode[] = [];
   rows.forEach((r, i) => {
     const pos = i + 1;
@@ -32,6 +32,7 @@ export function Table({ tier, rows, day, form }: { tier: Tier; rows: Row[]; day?
           <span className="fb-tring" aria-hidden="true" />
           <span className="fb-tname">
             <b>{name}{me && <em>You</em>}</b>
+            {me && waiting && <span className="fb-s md-tbp">Last night: to be played</span>}
             <span className="fb-form" aria-hidden="true">{r.form.length ? r.form.map((x, k) => <ResultMark key={k} r={x} />) : <span className="fb-s">No games yet</span>}</span>
           </span>
           <span className="fb-tpts">{r.pts}<small>pts</small></span>

@@ -5,7 +5,7 @@ import { exportData, restoreData } from '../../src/db/backup';
 import { HealthDB, db, setDatabase } from '../../src/db/db';
 import { MATCH_HEADERS, workbookSheets } from '../../src/export/workbook';
 import { matchRows } from '../../src/football/store/exportRows';
-import { kickOff } from '../../src/football/store/play';
+import { kickOffDone as kickOff } from './helpers/matchday';
 import { foundClub, getSave, resetFootball } from '../../src/football/store/save';
 
 let n = 0;

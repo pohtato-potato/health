@@ -1,26 +1,24 @@
 // The result tile's door into the match (matchday §4, p3-result: Watch or Skip before any score).
-// Fork B calls only this interface. Today it is a stand-in that works on the stored, already-played match: waiting
-// means not watched yet; Watch opens the replay; Skip marks it watched so the score shows. Fork A (feat/matchday-match)
-// replaces the three bodies with its paused-match functions: waiting = the match is paused and unfinished, watch =
-// resume it live, skip = let the assistant finish it (best odds). Nothing else in Fork B needs to change.
+// The league match waits on the save (`save.paused`, Fork A) from 4 am until it is watched or skipped: Watch opens it
+// live with its calls; Skip lets the assistant finish it on the best odds and marks it seen. A match the assistant
+// finished at the next 4 am is stored unwatched; for that one Watch replays it and Skip just shows the score.
 import { go } from '../../router';
+import { finishWithAssistant } from './play';
 import { markWatched } from './save';
-import type { StoredMatch } from './tables';
+import type { FbSave, PausedMatch, StoredMatch } from './tables';
 
-export interface MatchGate {
-  /** The score must stay hidden: neither Watch nor Skip has happened. */
-  waiting(m: StoredMatch): boolean;
-  /** Play it on the match screen. */
-  watch(m: StoredMatch): void;
-  /** Finish it without watching; resolves once the score can be shown. */
-  skip(m: StoredMatch): Promise<void>;
-}
-
-export const standInGate: MatchGate = {
-  waiting: (m) => !m.watched,
-  watch: (m) => go('/football/match', { id: m.id }),
-  skip: (m) => markWatched(m.id),
+export const matchGate = {
+  /** The league match still waiting to be played out, if any. */
+  waiting: (save: Pick<FbSave, 'paused'> | undefined | null): PausedMatch | undefined => save?.paused,
+  /** Watch the waiting match live (before kick-off first). */
+  watch: () => go('/football/match', { live: '1' }),
+  /** The assistant finishes it; resolves with the stored match once the score can be shown. */
+  skip: (): Promise<StoredMatch | undefined> => finishWithAssistant(),
 };
 
-/** The gate in use. Fork A swaps this one line for its own. */
-export const matchGate: MatchGate = standInGate;
+/** A finished match nobody has seen yet (the catch-up kind). */
+export const storedGate = {
+  waiting: (m: Pick<StoredMatch, 'watched'>) => !m.watched,
+  watch: (m: Pick<StoredMatch, 'id'>) => go('/football/match', { id: m.id }),
+  skip: (m: Pick<StoredMatch, 'id'>) => markWatched(m.id),
+};

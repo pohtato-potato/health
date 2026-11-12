@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { useSave, useTonight } from '../../football/store/hooks';
 import { MatchPlayer } from './Match';
+import { LiveRoute } from './match/Live';
 import { useRoute } from '../../router';
 import { Aurora, FootballHome, type FbSection } from './FootballHome';
 import { TonightView } from './Tonight';
@@ -45,9 +46,9 @@ function TonightRoute() {
   return <FootballHome section="tonight"><TonightSection /></FootballHome>;
 }
 
-function MatchRoute({ id, at, paused }: { id: string | null; at?: number; paused?: boolean }) {
+function MatchRoute({ id, at, paused, ft = false }: { id: string | null; at?: number; paused?: boolean; ft?: boolean }) {
   const save = useSave();
-  const [ended, setEnded] = useState(false);
+  const [ended, setEnded] = useState(ft);
   const m = useLiveQuery(async () => (id ? db.fbMatches.get(id) : (await db.fbMatches.orderBy('date').last())) ?? null, [id]);
   if (save === undefined || m === undefined) return null;
   if (!save || !m) return <FootballHome section="tonight"><p className="fb-s">No match to show yet.</p></FootballHome>;
@@ -74,11 +75,13 @@ export function Football() {
   if (save === undefined) return null;
   if (save === null) return <Aurora><main className="fb-page"><FirstRun /></main></Aurora>;
   if (path === '/football/match' && params.get('reel') === '1') return <ReelRoute />;
+  // Matchday depth: the waiting league match, watched live with its calls.
+  if (path === '/football/match' && params.get('live') === '1') return <LiveRoute />;
   if (path === '/football/match') {
     // Dev only: ?at=<ms>&pause=1 freezes the replay at a moment, for checking each visual.
     const dev = import.meta.env.DEV;
     const at = dev && params.get('at') ? Number(params.get('at')) : undefined;
-    return <MatchRoute id={params.get('id')} at={at} paused={dev && params.get('pause') === '1'} />;
+    return <MatchRoute id={params.get('id')} at={at} paused={dev && params.get('pause') === '1'} ft={params.get('ft') === '1'} />;
   }
   // Cup runs (ledger O28): the cups page, and the run in progress.
   if (path === '/football/cup' || path === '/football/cup/run' || path === '/football/cup/match') return <CupRoute path={path} />;

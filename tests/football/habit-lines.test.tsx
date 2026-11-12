@@ -7,7 +7,7 @@ import { HealthDB, db, setDatabase } from '../../src/db/db';
 import { addDays } from '../../src/domain/dates';
 import { PACE_PTS } from '../../src/football/axes';
 import { paceNext, weekRecap } from '../../src/football/habitLines';
-import { kickOff } from '../../src/football/store/play';
+import { kickOffDone as kickOff } from './helpers/matchday';
 import { foundClub } from '../../src/football/store/save';
 import type { StoredMatch } from '../../src/football/store/tables';
 import { HabitLineView, habitLineFor, leagueLineFor, weekLineFor } from '../../src/screens/football/HabitLine';
