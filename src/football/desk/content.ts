@@ -8,7 +8,7 @@ import type { JobId } from './types';
 export interface VoiceSet { low: string[]; mid: string[]; high: string[] }
 /**
  * What each axis says about each job. Tokens filled in: `{reason}` (yesterday's numbers, as under the die:
- * "16,400 steps"), `{value}` (the die). A job or axis without lines falls back to `'*'`, then to no voice.
+ * "16,400 steps", "Four and a half hours"; it starts with a capital, so it opens a sentence), `{value}` (the die). A job or axis without lines falls back to `'*'`, then to no voice.
  */
 export type DeskVoices = Partial<Record<JobId | '*', Partial<Record<Axis, VoiceSet>>>>;
 

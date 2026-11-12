@@ -12,7 +12,7 @@ export const VOICES: DeskVoices = {
     Shape: { low: ['{reason}. The scales miss you.'], mid: ['{reason}. The numbers are coming in.'], high: ['{reason}. The tape measure trusts us.'] },
   },
   watch: {
-    Rest: { low: ['Ninety minutes of their full-back on {reason}? I will be asleep by the anthem.'], mid: ['{reason}. I can keep my eyes open for one match.'], high: ['{reason}. I will see every overlap.'] },
+    Rest: { low: ['{reason} of sleep, and you want ninety minutes of their full-back? I will be asleep by the anthem.'], mid: ['{reason}. I can keep my eyes open for one match.'], high: ['{reason}. I will see every overlap.'] },
   },
 };
 

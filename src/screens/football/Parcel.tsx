@@ -16,6 +16,7 @@ import { TALK_AGENT, talkTarget, type TalkPick } from '../../football/talks';
 import { go } from '../../router';
 import { AXIS_INK } from '../../ui/inks';
 import '../../styles/matchday.css';
+import { DiceTile } from './desk/Desk';
 
 function Art({ svg }: { svg: string }) {
   return <span className="fb-art" aria-hidden="true" dangerouslySetInnerHTML={{ __html: svg }} />;
@@ -86,6 +87,7 @@ export function ParcelView({ t, p: live }: { t: Tonight; p: Parcel }) {
         {k === 'talks' && <TalksTile offers={p.talks} date={t.date} onNext={next} last={last} />}
         {k === 'scout' && <ScoutTile t={t} onNext={next} last={last} />}
         {k === 'academy' && <AcademyTile t={t} onNext={next} last={last} />}
+        {k === 'dice' && <DiceTile dice={p.dice} date={t.date} onNext={next} last={last} />}
         {k === 'pack' && <PackTile n={p.packs} date={t.date} onNext={next} last={last} />}
         <div className="md-fill" />
         <Sealed tiles={p.tiles.slice(at + 1, at + 4)} small from={at + 1} />

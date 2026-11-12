@@ -13,7 +13,7 @@ export interface FoldWorld {
   bundles: Map<string, { id: string; progress: Record<string, number>; done?: DayKey }>;
   /** The needs of every project and ground bundle, by id. */
   needs: (id: string) => { what: string; count: number }[] | undefined;
-  news: { id: string; date: DayKey; kind: 'club' | 'press'; text: string }[];
+  news: { id: string; date: DayKey; kind: string; text: string }[];
 }
 
 /** Adds days to a project's least-finished need, capped at the need. Never takes anything away. */

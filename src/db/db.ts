@@ -7,6 +7,7 @@ import type { FbBundle, FbClub, FbNews, FbSave, FbSeason, FbSquadRow, StoredMatc
 import type { FbPlayer } from '../football/players/types';
 import type { CupDone, CupRun } from '../football/cup/store';
 import type { CupBook } from '../football/cup/book';
+import type { Question } from '../football/desk/content';
 import type {
   BodyEntry,
   CheckIn,
@@ -81,6 +82,7 @@ export class HealthDB extends Dexie {
   cupRuns!: EntityTable<CupRun, 'id'>;
   cupBook!: EntityTable<CupBook, 'id'>;
   cupDone!: EntityTable<CupDone, 'n'>;
+  deskQuestions!: EntityTable<Question, 'id'>;
 
   constructor(name = 'health') {
     super(name);
@@ -156,6 +158,10 @@ export class HealthDB extends Dexie {
       cupBook: 'id',
       cupDone: '++n, date',
     });
+    // The desk (step 4): the owner's own coaching-course questions, imported on the phone and kept only here.
+    this.version(14).stores({
+      deskQuestions: 'id',
+    });
   }
 }
 
@@ -201,6 +207,7 @@ export const TABLES = [
   'cupRuns',
   'cupBook',
   'cupDone',
+  'deskQuestions',
 ] as const;
 export type TableName = (typeof TABLES)[number];
 

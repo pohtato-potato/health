@@ -8,7 +8,7 @@ export const column: JobDef = {
   id: 'column',
   ink: '#f2c46d',
   open: (v) => v.columnLines.length > 0,
-  card: (v) => ({ title: 'Your column', line: 'Pick a line for tomorrow’s paper.', chip: v.spentToday.column ? 'Written' : 'New' }),
+  card: (v) => ({ ask: 'What goes in the column?', title: 'Your column', line: 'Pick a line for tomorrow’s paper.', chip: v.spentToday.column ? 'Written' : 'New' }),
   blocked: (v) => (v.spentToday.column ? 'One column a day' : undefined),
   targets: (v) => v.columnLines.map((l) => ({ id: l.id, name: l.text })),
   preview(die, v, target) {

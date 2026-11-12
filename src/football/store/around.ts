@@ -13,6 +13,8 @@ import { talkAsk, talkDue, talkTarget, talkWindow, type TalkHabit, type TalkOutc
 import { loadHealth, type Health } from './gather';
 import type { Tonight } from './hooks';
 import { OWN } from './season';
+import { diceFrozen } from './desk';
+import type { Die } from '../desk/types';
 import type { AroundUser, FbSave, PausedMatch, StoredMatch } from './tables';
 
 export const aroundOf = (s: Pick<FbSave, 'around'> | undefined | null): AroundUser => s?.around ?? {};
@@ -79,6 +81,8 @@ export interface Parcel {
   result?: StoredMatch;
   talks: TalkOffer[];
   packs: number;
+  /** Today's dice for the desk (made from yesterday), for the dice tile (p3-dice). */
+  dice: Die[];
   today: Pick<Day, 'date' | 'status' | 'physio'>;
   /** When the day was closed: shown on the night page only. */
   sealAt?: number;
@@ -100,15 +104,17 @@ export async function loadParcel(t: Tonight): Promise<Parcel> {
   const talks = talkOffers(h, t.save, date);
   const packs = packsWaiting(t.save);
   const waiting = t.save.paused;
+  const dice = diceFrozen(t.save, h, date);
   const tiles = parcelTiles({
     result: Boolean(waiting || result),
     table: physioDue(day),
     talks: talks.length > 0,
     scout: Boolean(t.morning.scout),
     academy: t.morning.grew.length > 0,
+    dice: dice.length > 0,
     pack: packs > 0,
   });
-  return { tiles, due: parcelDue(aroundOf(t.save).parcel, date, shut, tiles), shut, waiting, result, talks, packs, today: day, sealAt: day.seal?.at };
+  return { tiles, due: parcelDue(aroundOf(t.save).parcel, date, shut, tiles), shut, waiting, result, talks, packs, dice, today: day, sealAt: day.seal?.at };
 }
 
 /** True from Close the day until the 4 am roll-over: packs and results wait for the morning. */

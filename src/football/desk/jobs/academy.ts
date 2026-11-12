@@ -9,7 +9,7 @@ export const academy: JobDef = {
   id: 'academy',
   ink: '#c2b2ff',
   open: (v) => v.youth.length > 0,
-  card: (v) => ({ title: 'Academy session', line: `One youngster grows. ${v.youth.length} in the academy.`, chip: v.spentToday.academy ? 'Done today' : 'New' }),
+  card: (v) => ({ ask: 'Who gets the session?', title: 'Academy session', line: `One youngster grows. ${v.youth.length} in the academy.`, chip: v.spentToday.academy ? 'Done today' : 'New' }),
   blocked: (v) => (v.spentToday.academy ? 'One session a day' : !v.youth.length ? 'Nobody growing in the academy' : undefined),
   targets: (v) => v.youth.map((y) => ({ id: y.id, name: y.name, line: `${y.axis} · ${y.potential} stars · growth ${y.growth}` })),
   preview(die, v, target) {

@@ -98,6 +98,8 @@ export const emptyDesk = (): DeskState => ({ dice: {}, spends: [], clocks: [], c
 /** A row on the desk (d3-home). */
 export interface JobCard {
   title: string;
+  /** The question at the top of the spend screen (d3-spend): "Watch Hull tonight?". */
+  ask?: string;
   line: string;
   /** "New", "2 of 4", "Not today". */
   chip: string;

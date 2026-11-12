@@ -8,7 +8,7 @@ export const project: JobDef = {
   open: (v) => v.projects.length > 0,
   card: (v) => {
     const p = v.projects[0];
-    return { title: v.projects.length === 1 ? p.name : 'Push a building project', line: v.projects.length === 1 ? 'A die adds a day to it, two on a 5 or 6.' : `${v.projects.length} being built. A die adds a day, two on a 5 or 6.`, chip: v.projects.length === 1 ? `${fmt(p.worst.have)} of ${fmt(p.worst.count)}` : 'Pick one', ring: v.projects.length === 1 ? { filled: p.worst.have, size: p.worst.count } : undefined };
+    return { title: v.projects.length === 1 ? p.name : 'Push a building project', ask: v.projects.length === 1 ? `Push on with ${p.name}?` : 'Which project gets the day?', line: v.projects.length === 1 ? 'A die adds a day to it, two on a 5 or 6.' : `${v.projects.length} being built. A die adds a day, two on a 5 or 6.`, chip: v.projects.length === 1 ? `${fmt(p.worst.have)} of ${fmt(p.worst.count)}` : 'Pick one', ring: v.projects.length === 1 ? { filled: p.worst.have, size: p.worst.count } : undefined };
   },
   targets: (v) => v.projects.map((p) => ({ id: p.id, name: p.name, line: `${fmt(p.worst.have)} of ${fmt(p.worst.count)} ${p.worst.what}` })),
   preview(die, v, target) {

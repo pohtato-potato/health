@@ -6,7 +6,7 @@ export const watch: JobDef = {
   id: 'watch',
   ink: '#ff9a4d',
   open: (v) => Boolean(v.opp),
-  card: (v) => ({
+  card: (v) => ({ ask: `Watch ${v.opp ? v.opp.name : 'them'} tonight?`,
     title: `Watch ${v.opp ? v.opp.name : "tonight's opponent"}`,
     line: v.oppKnown === 'full' ? 'Already scouted: their style and weak side.' : 'One die. Shows their plan.',
     chip: v.oppKnown === 'full' ? 'Scouted' : v.oppKnown === 'style' ? 'Style known' : 'New',
@@ -18,7 +18,7 @@ export const watch: JobDef = {
     return {
       head: full ? 'Done.' : 'Half a look.',
       line: full ? `${name}: their style and their weak side, on the tactics board tonight.` : `${name}: their style only. The weak side stays a guess.`,
-      gain: full ? 'Style + side' : 'Style',
+      gain: full ? 'Both' : 'Style',
       others: full ? 'A 1 or 2 would show their style only.' : 'A 3 or more would show their weak side too.',
       effects: v.opp ? [{ kind: 'watch', club: v.opp.id, level: full ? 'full' : 'style' }] : [],
     };
