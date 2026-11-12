@@ -6,7 +6,8 @@ import { addDays, type DayKey } from '../domain/dates';
 
 export type TalkHabit = 'steps' | 'protein';
 export type TalkPick = 'sign' | 'haggle' | 'hold';
-export interface TalkOutcome { season: number; habit: TalkHabit; pick: TalkPick; from: number; to: number; on: DayKey }
+/** `until`: the season's last day; a raise is rated against `from` until then (choice A a, 12 Nov). */
+export interface TalkOutcome { season: number; habit: TalkHabit; pick: TalkPick; from: number; to: number; on: DayKey; until?: DayKey }
 
 export const TALK_DAYS = 42;
 /** Talks are held in a season's first week. */
@@ -48,4 +49,17 @@ export function talkTarget(habit: TalkHabit, pick: TalkPick, current: number, as
 /** Talks are due in the first week of a season, once per habit per season. */
 export function talkDue(save: { phase: 'season' | 'event'; day: number; season: number }, done: Pick<TalkOutcome, 'season' | 'habit'>[], habit: TalkHabit): boolean {
   return save.phase === 'season' && save.day <= TALK_WINDOW && !done.some((t) => t.season === save.season && t.habit === habit);
+}
+
+/**
+ * Choice A a (owner, 12 Nov): signing never costs the player. Until the season ends, a raised target is rated against
+ * the old one; Health itself shows and counts the new target. From the next season the player meets the new target.
+ */
+export function ratedTarget(talks: TalkOutcome[] | undefined, habit: TalkHabit, date: DayKey, real: number): number {
+  const t = (talks ?? []).find((x) => x.habit === habit && x.to > x.from && x.until && date >= x.on && date <= x.until);
+  return t && real >= t.to ? real - (t.to - t.from) : real;
+}
+export function ratedTargets<T extends { steps: number; proteinG: number }>(t: T, talks: TalkOutcome[] | undefined, date: DayKey): T {
+  if (!talks?.length) return t;
+  return { ...t, steps: ratedTarget(talks, 'steps', date, t.steps), proteinG: ratedTarget(talks, 'protein', date, t.proteinG) };
 }

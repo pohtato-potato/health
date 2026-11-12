@@ -7,6 +7,7 @@ import { addDays, dayOfLogging, type DayKey } from '../../domain/dates';
 import { targetsOn } from '../../domain/rings';
 import { physioDue } from '../../domain/treatment';
 import type { Day } from '../../domain/types';
+import { SEASON_DAYS } from '../calendar';
 import { groundShut, parcelDue, parcelTiles, type TileKind } from '../parcel';
 import { talkAsk, talkDue, talkTarget, talkWindow, type TalkHabit, type TalkOutcome, type TalkPick } from '../talks';
 import { loadHealth, type Health } from './gather';
@@ -46,7 +47,7 @@ export async function holdTalk(o: TalkOffer, pick: TalkPick, today: DayKey): Pro
   const save = await db.fbSave.get('save');
   if (!save) return o.current;
   const to = talkTarget(o.habit, pick, o.current, o.ask);
-  const rec: TalkOutcome = { season: save.season, habit: o.habit, pick, from: o.current, to, on: today };
+  const rec: TalkOutcome = { season: save.season, habit: o.habit, pick, from: o.current, to, on: today, until: addDays(today, Math.max(0, SEASON_DAYS - save.day)) };
   if (to > o.current) {
     const t = targetsOn((await getSettings()).targets, today);
     if (t) await setTargets(o.habit === 'steps' ? { ...t, steps: to } : { ...t, proteinG: to }, today);

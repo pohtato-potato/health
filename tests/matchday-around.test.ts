@@ -5,7 +5,7 @@ import { caughtShare, keptAgainst, keptPledgeNight, pledgeFor, pledgeOnFood, ple
 import { awayDay, excusedWeighIns } from '../src/domain/officeDay';
 import { isOfficeDay } from '../src/domain/officeUsual';
 import { physioDue, returnDate } from '../src/domain/treatment';
-import { haggled, talkAsk, talkDue, talkTarget } from '../src/football/talks';
+import { haggled, ratedTarget, talkAsk, talkDue, talkTarget } from '../src/football/talks';
 import { groundShut, heldAtNight, parcelDue, parcelTiles, PARCEL_MAX } from '../src/football/parcel';
 
 const sleep = (asleep: number, carried?: boolean) => ({ asleep, woke: 480, ...(carried ? { carried } : {}) });
@@ -152,5 +152,18 @@ describe('the morning parcel and the ground at night', () => {
     expect(heldAtNight('results')).toBe(true);
     expect(heldAtNight('table')).toBe(false);
     expect(heldAtNight('cups')).toBe(false);
+  });
+});
+
+describe('a raised target never costs the player that season (choice A a)', () => {
+  const talk = { season: 2, habit: 'steps' as const, pick: 'sign' as const, from: 10000, to: 12000, on: '2030-03-04', until: '2030-04-14' };
+  it('rates against the old target until the season ends, then the new one', () => {
+    expect(ratedTarget([talk], 'steps', '2030-03-10', 12000)).toBe(10000);
+    expect(ratedTarget([talk], 'steps', '2030-04-15', 12000)).toBe(12000);
+    expect(ratedTarget([talk], 'steps', '2030-03-03', 10000)).toBe(10000);
+    expect(ratedTarget([talk], 'protein', '2030-03-10', 120)).toBe(120);
+  });
+  it('a hold changes nothing', () => {
+    expect(ratedTarget([{ ...talk, pick: 'hold', to: 10000 }], 'steps', '2030-03-10', 10000)).toBe(10000);
   });
 });
