@@ -15,6 +15,7 @@ import { Back, TreePage } from './TreeScreens';
 import { PackLoan } from '../world/WorldScreens';
 import { Gem, GlassCard, SimpleBack, Viewable, type CardView } from '../../../ui/CardViewer';
 import type { AlbumCard } from '../../../football/content/types';
+import { MarketDoor } from '../desk/Market';
 
 const RARITY_NAME: Record<Rarity, string> = { bronze: 'Bronze', silver: 'Silver', gold: 'Gold', prism: 'Prism', icon: 'Icon', legend: 'Legend' };
 const SOURCE: Record<PackEarned['source'], string> = { 'week-finished': 'A week finished', 'final-won': 'A final won', promotion: 'Promotion', tech: 'From the tree', bounty: 'A bounty', track: 'The season track', testimonial: 'A testimonial', 'cup-final': 'A cup final reached' };
@@ -60,6 +61,7 @@ export function PacksPage() {
           </div>
         </>
       )}
+      <MarketDoor />
       <button type="button" className="fbt-btn wide" onClick={() => go('/football/album')}>The album · {collected(m.user).size} of {ALBUM_CARDS.length}</button>
       <p className="fbt-line">Packs never hold players: your cards are your habits. Each duplicate album card becomes research, from 1 for Bronze to 10 for Icon and 15 for Legend.</p>
     </TreePage>

@@ -11,6 +11,7 @@ import {
   type ReplyOption, type Reply, type Secrets, type TalkRound, type TalkState, type Terms,
 } from '../../market/market';
 import { MOVE } from '../../market/relations';
+import type { Tier } from '../../types';
 import type { DeskView, Die, Effect, JobDef, Target } from '../types';
 import { leadTaken, studiedIn } from './leads';
 
@@ -53,7 +54,7 @@ export function talkCtx(v: DeskView, talk: string): TalkCtx | undefined {
   const lead = m.leads.find((l) => l.key === talk);
   const def = lead && loanById(lead.loan);
   if (!lead || !def) return undefined;
-  const opening = openingLoan(def.tier, m.ownTier as never, lead.opinion);
+  const opening = openingLoan(def.tier, m.ownTier as Tier, lead.opinion);
   const studied = studiedIn(v, talk);
   return {
     talk, kind: 'loan', name: def.name, who: lead.clubName, club: lead.club, loan: lead.loan, opinion: lead.opinion, poach: lead.poach,

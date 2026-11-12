@@ -52,3 +52,26 @@
 /* The tray stays within reach of the thumb, just above the tab bar (d3-home). */
 .dk-foot { position: sticky; bottom: calc(var(--tab-h, 72px) + var(--safe-bottom, 0px) + 8px); z-index: 2; display: flex; flex-direction: column; gap: 8px; padding-top: 22px; padding-bottom: 6px; background: linear-gradient(180deg, rgba(13,15,32,0), #0d0f20 18px); margin: 0 -16px; padding-left: 16px; padding-right: 16px; }
 .dk-foot.flow { position: static; background: none; padding-top: 4px; }
+/* The loan market and talks (desk spec §5; w3-haggle). */
+.dk-back { min-height: 44px; min-width: 64px; background: none; border: 0; color: inherit; font: inherit; cursor: pointer; text-align: right; }
+.mk-list { display: flex; flex-direction: column; gap: 12px; }
+.mk-card { --ink: var(--cream); border: 2px solid var(--ink); border-radius: 16px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 0 18px -8px var(--ink); }
+.mk-head { display: flex; gap: 12px; align-items: center; }
+.mk-head b { font-weight: 700; }
+.mk-name { font: 400 22px/1.2 var(--fr); color: #fff; }
+.mk-card .md-btns { margin-top: 4px; }
+.mk-sil { width: 44px; height: 44px; flex: none; border-radius: 50% 50% 14px 14px; border: 2px solid rgba(237,230,218,.5); background: radial-gradient(circle at 50% 36%, rgba(237,230,218,.45) 0 22%, transparent 23%), radial-gradient(ellipse at 50% 100%, rgba(237,230,218,.35) 0 46%, transparent 47%); }
+.mk-say { display: flex; gap: 12px; align-items: flex-start; font-size: 17px; line-height: 1.4; }
+.mk-out { margin: 0; font-weight: 700; color: var(--ink); }
+.mk-seg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.mk-seg i { height: 10px; border-radius: 6px; border: 1.5px solid rgba(237,230,218,.35); }
+.mk-seg i.on { background: var(--ink); border-color: var(--ink); box-shadow: 0 0 10px -2px var(--ink); }
+.mk-know { display: flex; flex-direction: column; gap: 6px; border-left: 0; padding: 8px 0; }
+.mk-opt { --ink: var(--cream); display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 56px; border-radius: 14px; border: 2px solid color-mix(in srgb, var(--ink) 55%, transparent); background: transparent; color: var(--cream); font: 16px/1.35 var(--ab); text-align: left; padding: 8px 12px; cursor: pointer; }
+.mk-opt b { font-weight: 700; }
+.mk-opt .n { font: 600 24px/1 var(--fr); white-space: nowrap; }
+.mk-opt[aria-pressed='true'] { border-color: var(--ink); box-shadow: 0 0 16px -4px var(--ink); background: color-mix(in srgb, var(--ink) 14%, transparent); }
+.mk-opt:disabled { opacity: .55; cursor: default; }
+.md-btn[aria-disabled='true'] { opacity: .6; }
+.mk-card .md-row b { text-align: right; }
+.mk-table { margin: 0; font-weight: 700; }

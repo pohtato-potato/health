@@ -21,6 +21,7 @@ import { AXES, type Axis } from '../types';
 import { loadHealth, nightFor, type Health } from './gather';
 import { scoutLevel } from './paused';
 import { worldView } from './fog';
+import { loadRelations, marketViewOf } from './market';
 import { OWN } from './season';
 import { researchedOf } from './tree';
 import type { FbSave } from './tables';
@@ -120,6 +121,7 @@ export async function deskView(t: Pick<Tonight, 'save' | 'date' | 'fixture'>): P
     spentToday,
     clocks: desk.clocks.map((c) => ({ ...c, filled: clockFilled(desk, c) })),
     world: worldView(save, season?.tierOf),
+    market: marketViewOf(save, date, season?.tierOf, await loadRelations(save)),
   };
 }
 

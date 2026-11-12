@@ -18,6 +18,8 @@ import { clockFilled } from '../../../football/desk/rules';
 import { weakSide } from '../../../football/matchday';
 import { FactRow, Known, Unknown } from '../world/Fog';
 import { ResultMark } from './Table';
+import { movesOf, opinionKnown, opinionOf, opinionWord, OPINION_INK, type Move } from '../../../football/market/relations';
+import { relationSourceOf } from '../../../football/store/market';
 import { Wiki } from './Wiki';
 
 const WEAK: Record<string, string> = { left: 'Their left', middle: 'Through the middle', right: 'Their right' };
@@ -41,6 +43,8 @@ export function ClubPageView({ d, wiki = false }: { d: ClubPageData; wiki?: bool
   const hidden = c.hidden ?? lore?.hiddenNew;
   const desk = deskOf(l.save);
   const road = desk.clocks.find((x) => x.job === 'scout' && x.target === id && clockFilled(desk, x) < x.size);
+  const rel = relationSourceOf(l.save, d.all);
+  const moves = movesOf(rel, id);
   if (wiki) return <Wiki d={d} />;
   return (
     <article className="fb-club fg" style={{ '--k': k.has('kit') ? c.colours[0] ?? '#888' : '#d6c4a0' } as React.CSSProperties}>
@@ -70,6 +74,7 @@ export function ClubPageView({ d, wiki = false }: { d: ClubPageData; wiki?: bool
       <FactRow label="Their manager" known={k.has('manager')}>{lore ? `${lore.manager.name}: ${lore.manager.line}` : 'Not on file yet'}</FactRow>
       <FactRow label="History" known={k.has('history')}>{lore?.history ?? c.lore}</FactRow>
       <FactRow label="Kit and crest" known={k.has('kit')}><span className="fb-swatches" aria-label="Their colours">{c.colours.slice(0, 3).map((x) => <i key={x} style={{ background: x }} aria-hidden="true" />)}</span></FactRow>
+      <Opinion known={opinionKnown(k, moves)} value={opinionOf(rel, id)} moves={moves} />
       {fog.pct < 100 && <p className="fg-note">Playing them lifts some of this. A scout lifts more, sooner.</p>}
       {fog.pct < 100 && (
         <button type="button" className="fb-btn pri" onClick={() => go('/football/desk/job', { id: 'scout', target: id })}>
@@ -100,4 +105,20 @@ export function ClubPage({ id, wiki }: { id: string; wiki?: boolean }) {
   if (d === null) return <p className="fb-s">The league starts once you found the club.</p>;
   if (id === OWN) return <button type="button" className="fb-btn" onClick={() => go('/football/club')}>Brabo United is your club: open the Club tab</button>;
   return <ClubPageView d={d} wiki={wiki} />;
+}
+
+/** What a club thinks of Brabo (w-relations): −100 to 100, with what moved it. Fogged until you know their manager
+ *  or have dealt with them. It changes deals and talks, never a match. */
+function Opinion({ known, value, moves }: { known: boolean; value: number; moves: Move[] }) {
+  if (!known) return <FactRow label="Their opinion of you" known={false} />;
+  const word = opinionWord(value), ink = OPINION_INK[word];
+  const half = Math.abs(value) / 2;
+  return (
+    <section className="op" aria-label={`Their opinion of you: ${word}, ${value}`}>
+      <div className="fg-row" style={{ borderBottom: 0 }}><span>Their opinion of you</span><b style={{ color: ink }}>{word} <span className="num">{value > 0 ? `+${value}` : value < 0 ? `−${-value}` : '0'}</span></b></div>
+      <div className="op-bar" aria-hidden="true"><i style={{ left: value < 0 ? `${50 - half}%` : '50%', width: `${half}%`, background: ink, boxShadow: `0 0 10px -2px ${ink}` }} /></div>
+      <ul className="op-why">{moves.slice(-3).reverse().map((m, i) => <li key={i}><span>{m.why}</span><b className="num">{m.d > 0 ? `+${m.d}` : `−${-m.d}`}</b></li>)}</ul>
+      <p className="fg-note">Friends give better loan terms; rivals deal harder. It never touches a match.</p>
+    </section>
+  );
 }
