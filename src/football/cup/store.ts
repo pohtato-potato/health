@@ -10,6 +10,8 @@ import { CLUBS, clubById, rememberClubs } from '../data/load';
 import { loanById } from '../globe/loans';
 import { hashSeed } from '../rng';
 import { loadHealth } from '../store/gather';
+import { isScoutedBy } from '../fog/fog';
+import { fogToday } from '../store/fog';
 import { OWN } from '../store/season';
 import { engineOf } from '../store/tree';
 import { emptyBook, payFor, record, type CupBook, type Pay } from './book';
@@ -39,7 +41,10 @@ export async function dealToday(today: DayKey = dayOfLogging(Date.now())): Promi
   return dealDeck(dealInputFor(h, today, loans));
 }
 
-/** The clubs a run may meet, at their league ratings, and the ones scouted (met in the league, spec §5.3). */
+/**
+ * The clubs a run may meet, at their league ratings, and the ones scouted: style and weak side known (desk spec §4,
+ * Fork 2; it replaced "met in the league", spec §5.3).
+ */
 export async function runCtx(): Promise<RunCtx> {
   const save = await db.fbSave.get('save');
   const season = save ? await db.fbSeasons.get(save.season) : undefined;
@@ -54,8 +59,9 @@ export async function runCtx(): Promise<RunCtx> {
     }),
     ...ABROAD.map((c) => ({ id: c.id, name: c.name, short: c.short, rating: c.rating ?? 70, tier: c.tier, style: c.style, colours: c.colours, country: c.country, kind: c.kind, abroad: true })),
   ];
-  const met = new Set((await db.fbMatches.where('comp').equals('league').toArray()).map((m) => m.opp));
-  return { clubs, scouted: [...met], ownTier: season?.tierOf[OWN] ?? 6 };
+  const today = fogToday();
+  const scouted = save ? clubs.filter((c) => isScoutedBy(save, c.id, today)).map((c) => c.id) : [];
+  return { clubs, scouted, ownTier: season?.tierOf[OWN] ?? 6 };
 }
 
 /** The run in progress (a layer-2 try match is dropped: it has no map). */

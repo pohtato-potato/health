@@ -20,6 +20,7 @@ import { projectOpen } from '../tree/projects';
 import { AXES, type Axis } from '../types';
 import { loadHealth, nightFor, type Health } from './gather';
 import { scoutLevel } from './paused';
+import { worldView } from './fog';
 import { OWN } from './season';
 import { researchedOf } from './tree';
 import type { FbSave } from './tables';
@@ -87,7 +88,7 @@ export async function deskView(t: Pick<Tonight, 'save' | 'date' | 'fixture'>): P
   return {
     date,
     opp: opp ? { id: opp.id, name: opp.name, style: opp.style } : undefined,
-    oppKnown: opp ? scoutLevel(save, opp.id) : 'none',
+    oppKnown: opp ? scoutLevel(save, opp.id, date) : 'none',
     youth: squad.filter((y) => y.status === 'growing').map((y) => ({ id: y.id, name: y.name, axis: y.axis, growth: Math.round(((y.growth ?? 0) + pendingGrow(desk, y.id, save.lastPlayed)) * 100) / 100, potential: y.potential })),
     projects,
     columnLines: columnOffer(desk, date),
@@ -95,6 +96,7 @@ export async function deskView(t: Pick<Tonight, 'save' | 'date' | 'fixture'>): P
     answered: desk.courses.flatMap((c) => courseIds(desk, c.spend)),
     spentToday,
     clocks: desk.clocks.map((c) => ({ ...c, filled: clockFilled(desk, c) })),
+    world: worldView(save, season?.tierOf),
   };
 }
 

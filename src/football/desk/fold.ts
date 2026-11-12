@@ -48,7 +48,7 @@ function foldEffect(w: FoldWorld, e: Effect, date: DayKey) {
     case 'column':
       w.news.push({ id: `${addDays(date, 1)}:column:${e.line}`, date: addDays(date, 1), kind: 'press', text: `From the manager's column: “${e.text}”` });
       break;
-    case 'watch': case 'course': case 'clock': break;
+    case 'watch': case 'course': case 'clock': case 'scout': case 'lead': break;
   }
 }
 

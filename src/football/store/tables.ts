@@ -20,6 +20,7 @@ import type { TalkOutcome } from '../talks';
 import type { CallPick, MatchInput } from '../engine';
 import type { MatchdayPlan, PickTile } from '../matchday';
 import type { DeskState } from '../desk/types';
+import type { FogState } from '../fog/fog';
 
 export type CrestOpt = 'a' | 'b' | 'c' | 'd' | 'e';
 export interface FbSave {
@@ -123,6 +124,8 @@ export interface FbSave {
   tacticCards?: Axis[];
   /** The manager's desk (desk spec, step 4): dice handed over, dice spent, clocks, courses. A user key in play.ts. */
   desk?: DeskState;
+  /** The world in fog (desk spec §4, Fork 2): stamped once with the clubs met before the fog came (12.8 a). */
+  fog?: FogState;
 }
 
 /** What a league match needs to be finished later: who, where, and the night as it was set at 4 am. */

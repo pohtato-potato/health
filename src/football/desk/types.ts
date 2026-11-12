@@ -11,6 +11,7 @@
 // - Long jobs are clocks: `Clock` rows, filled only by `clock` effects. They never run backwards or expire.
 import type { DayKey } from '../../domain/dates';
 import type { Axis } from '../types';
+import type { Fact } from '../fog/fog';
 
 export type DieValue = 1 | 2 | 3 | 4 | 5 | 6;
 /** One die: an axis's score yesterday (1–20) as 1–6 by fixed bands, with the reason for its number. */
@@ -52,7 +53,11 @@ export type Effect =
   /** A coaching course started: five questions, and a lifeline on a high die. Answered later, from the log. */
   | { kind: 'course'; ids: string[]; lifeline: boolean }
   /** Segments added to a clock. */
-  | { kind: 'clock'; clock: string; n: number };
+  | { kind: 'clock'; clock: string; n: number }
+  /** Fork 2: a scout is back (the trip's clock is full). What each club gave up; known % before and after. Read from the log. */
+  | { kind: 'scout'; target: string; reveal: Record<string, Fact[]>; before: number; after: number; thin?: boolean }
+  /** Fork 2: a scout's 6 turned up a loan target, kept for the loan market (Fork 3). Read from the log. */
+  | { kind: 'lead'; club: string; loan: string };
 
 /** A chance in a job, shown before you commit (honest dice: the odds shown are the odds used, seeded). */
 export interface Risk { pct: number; line: string }
@@ -141,7 +146,11 @@ export interface DeskView {
   /** Spends already made today on each job (a once-a-day job reads this). */
   spentToday: Partial<Record<JobId, number>>;
   clocks: (Clock & { filled: number })[];
+  /** Fork 2: the world in fog, for the scout job. Facts count every scout report, even one still on its way. */
+  world?: WorldView;
 }
+/** Every fogged club the scouts can reach: league clubs by tier (0 = abroad), with what is known of each. */
+export interface WorldView { ownTier: number; clubs: { id: string; name: string; tier: number; facts: Fact[] }[] }
 
 export interface JobDef {
   id: JobId;

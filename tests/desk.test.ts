@@ -113,18 +113,19 @@ describe('quality and clocks', () => {
     expect(openClocks(d)).toEqual([]);
   });
 
+  // A stand-in long job (Fork 2's scout is a real job now, so the stand-in borrows the unbuilt 'study' id).
   it('a long job opens its clock in the same spend that fills it', () => {
-    const scout: JobDef = {
-      id: 'scout', ink: '#fff', open: () => true, card: () => ({ title: '', line: '', chip: '' }),
+    const study: JobDef = {
+      id: 'study', ink: '#fff', open: () => true, card: () => ({ title: '', line: '', chip: '' }),
       preview: () => ({ head: '', line: '', gain: '', others: '', effects: [] }),
-      spend: (dd) => ({ opens: [{ id: 'k-div5', job: 'scout', target: 'div-5', name: 'Division Five', size: 4 }], effects: [{ kind: 'clock', clock: 'k-div5', n: segmentsFor(dd.value) }] }),
+      spend: (dd) => ({ opens: [{ id: 'k-div5', job: 'study', target: 'div-5', name: 'Division Five', size: 4 }], effects: [{ kind: 'clock', clock: 'k-div5', n: segmentsFor(dd.value) }] }),
     };
-    JOBS.push(scout);
+    JOBS.push(study);
     try {
       const d = deskWith([die('Pace', 6)]);
-      const r = spendDie(d, view(), die('Pace', 6), 'scout');
+      const r = spendDie(d, view(), die('Pace', 6), 'study');
       if ('error' in r) throw new Error(r.error);
-      expect(r.desk.clocks).toEqual([{ id: 'k-div5', job: 'scout', target: 'div-5', name: 'Division Five', size: 4, opened: '2030-03-05' }]);
+      expect(r.desk.clocks).toEqual([{ id: 'k-div5', job: 'study', target: 'div-5', name: 'Division Five', size: 4, opened: '2030-03-05' }]);
       expect(clockFilled(r.desk, r.desk.clocks[0])).toBe(2);
     } finally { JOBS.pop(); }
   });

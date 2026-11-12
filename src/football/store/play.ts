@@ -97,8 +97,10 @@ export async function migrateSave(): Promise<boolean> {
     const cur = await db.fbSave.get('save');
     if (!cur) return false;
     const rivals = migrateRivals(cur.rivals);
-    if (rivals === cur.rivals) return false;
-    await db.fbSave.put({ ...cur, rivals });
+    // The world in fog (desk spec §4, 12.8 a): stamped once; the clubs met so far keep what they had.
+    const fog = cur.fog ?? { since: cur.lastPlayed ?? cur.founded ?? '', old: [...(cur.met ?? [])] };
+    if (rivals === cur.rivals && fog === cur.fog) return false;
+    await db.fbSave.put({ ...cur, rivals, fog });
     return true;
   });
 }
@@ -507,7 +509,7 @@ function braboMaybe(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: str
     const p: PausedMatch = {
       id: `${date}:${leg ?? 1}`, date, season: w.save.season, input: { ...input, rival: undefined } as PausedMatch['input'],
       rivalTwist: rival ? 'rival' : oppId === ANTIGOON ? 'antigoon' : undefined,
-      style: club?.style ?? def.style, scouted: readScouted(scoutLevel(w.save, oppId)), prep, picks: [],
+      style: club?.style ?? def.style, scouted: readScouted(scoutLevel(w.save, oppId, date)), prep, picks: [],
     };
     if (wait) {
       // Set up and stopped: the owner watches or skips it; the next 4 am finishes it with the assistant.
@@ -550,7 +552,7 @@ function braboTail(w: World, date: DayKey, prep: PausedPrep, events: MatchEvents
     m.plan = { tactic: prep.tactic.pick, tempo: played.tempo ?? 'normal', width: pl?.width ?? 'middle', ...(card ? { card } : {}), ...(half2 ? { half2 } : {}), ...(read ? { read } : {}) };
     if (card) { const k = w.save.tacticCards!.indexOf(card); w.save.tacticCards = w.save.tacticCards!.filter((_, i) => i !== k); }
     if (m.result === 'W') {
-      const unscouted = Object.entries(w.season.tierOf).filter(([id, t]) => t === braboTier && id !== OWN && id !== oppId && !isScouted(w.save, id)).map(([id]) => id).sort();
+      const unscouted = Object.entries(w.season.tierOf).filter(([id, t]) => t === braboTier && id !== OWN && id !== oppId && !isScouted(w.save, id, date)).map(([id]) => id).sort();
       m.pick = { tiles: pickOffer(m.id, unscouted, (w.save.tacticCards ?? []).length) };
     }
   }

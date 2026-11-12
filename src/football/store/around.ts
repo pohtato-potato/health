@@ -14,6 +14,7 @@ import { loadHealth, type Health } from './gather';
 import type { Tonight } from './hooks';
 import { OWN } from './season';
 import { diceFrozen } from './desk';
+import { morningReports } from './fog';
 import type { Die } from '../desk/types';
 import type { AroundUser, FbSave, PausedMatch, StoredMatch } from './tables';
 
@@ -83,6 +84,8 @@ export interface Parcel {
   packs: number;
   /** Today's dice for the desk (made from yesterday), for the dice tile (p3-dice). */
   dice: Die[];
+  /** Scouts back this morning (Fork 2, p3-scout): trips that ended yesterday, and loan targets a 6 turned up. */
+  scouts: ReturnType<typeof morningReports>;
   today: Pick<Day, 'date' | 'status' | 'physio'>;
   /** When the day was closed: shown on the night page only. */
   sealAt?: number;
@@ -105,16 +108,17 @@ export async function loadParcel(t: Tonight): Promise<Parcel> {
   const packs = packsWaiting(t.save);
   const waiting = t.save.paused;
   const dice = diceFrozen(t.save, h, date);
+  const scouts = morningReports(t.save, date);
   const tiles = parcelTiles({
     result: Boolean(waiting || result),
     table: physioDue(day),
     talks: talks.length > 0,
-    scout: Boolean(t.morning.scout),
+    scout: Boolean(t.morning.scout) || scouts.reports.length > 0 || scouts.leads.length > 0,
     academy: t.morning.grew.length > 0,
     dice: dice.length > 0,
     pack: packs > 0,
   });
-  return { tiles, due: parcelDue(aroundOf(t.save).parcel, date, shut, tiles), shut, waiting, result, talks, packs, dice, today: day, sealAt: day.seal?.at };
+  return { tiles, due: parcelDue(aroundOf(t.save).parcel, date, shut, tiles), shut, waiting, result, talks, packs, dice, scouts, today: day, sealAt: day.seal?.at };
 }
 
 /** True from Close the day until the 4 am roll-over: packs and results wait for the morning. */
