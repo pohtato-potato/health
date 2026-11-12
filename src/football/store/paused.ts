@@ -8,8 +8,21 @@ import { enginePlan, readOf, type MatchdayPlan, type Read } from '../matchday';
 import type { CallPick } from '../types';
 import type { FbSave, PausedMatch } from './tables';
 
-/** Scouted: met before, or named by a scouting lead (until the desk exists, spec §2.5). */
+/** Scouted: met before, or named by a scouting lead (matchday spec §2.5). */
 export const isScouted = (save: Pick<FbSave, 'met' | 'scouted'>, clubId: string) => save.met.includes(clubId) || Boolean(save.scouted?.includes(clubId));
+
+/**
+ * How much the tactics board knows of a club (desk spec §3–4): met before or a scouting lead is full; watching it as
+ * tonight's opponent at the desk adds full on a 3 or more, style only on a 1 or 2. Fork 2 (known % per club) replaces
+ * this body; everything that asks "scouted?" asks here.
+ */
+export function scoutLevel(save: Pick<FbSave, 'met' | 'scouted' | 'desk'>, clubId: string): 'none' | 'style' | 'full' {
+  if (isScouted(save, clubId)) return 'full';
+  const seen = (save.desk?.spends ?? []).flatMap((s) => s.effects).flatMap((e) => (e.kind === 'watch' && e.club === clubId ? [e.level] : []));
+  return seen.includes('full') ? 'full' : seen.length ? 'style' : 'none';
+}
+/** The read's `scouted` argument from a level. */
+export const readScouted = (l: 'none' | 'style' | 'full'): boolean | 'style' => (l === 'full' ? true : l === 'style' ? 'style' : false);
 
 /** The plan for a day: the tactic (yours, or the assistant's from tonight's numbers), tempo, width and a card. */
 export function planFor(save: Pick<FbSave, 'tactics' | 'plans'>, date: DayKey, fallback: Tactic): MatchdayPlan {
@@ -18,7 +31,7 @@ export function planFor(save: Pick<FbSave, 'tactics' | 'plans'>, date: DayKey, f
 
 /** The read for a waiting match, with the plan as it stands now (it can change until kick-off). */
 export function readFor(p: PausedMatch, save: FbSave): Read {
-  return readOf(planFor(save, p.date, p.prep.tactic.pick), { id: p.prep.oppId, style: p.style }, p.scouted || isScouted(save, p.prep.oppId));
+  return readOf(planFor(save, p.date, p.prep.tactic.pick), { id: p.prep.oppId, style: p.style }, p.scouted === true ? true : readScouted(scoutLevel(save, p.prep.oppId)) || p.scouted);
 }
 
 /**

@@ -16,7 +16,7 @@ import { Radar } from './Radar';
 import { AXES } from '../../football/types';
 import { PlanPanel } from './match/MatchBits';
 import { WaitingMatch } from './match/Waiting';
-import { planFor, isScouted } from '../../football/store/paused';
+import { planFor, readScouted, scoutLevel } from '../../football/store/paused';
 import { readOf } from '../../football/matchday';
 import { MorningCards } from './world/WorldScreens';
 import { TacticPicker } from './players/Rotation';
@@ -90,7 +90,7 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
       {t.loansPlaying.length > 0 && !t.morning.intl && <p className="fb-s fb-ctr">{t.xi.filter((x) => x.player.startsWith('loan:')).map((x) => x.name).join(' and ')} on loan in the eleven tonight{t.loanRested.length ? `; ${t.loanRested.length === 1 ? 'one starter rests' : `${t.loanRested.length} starters rest`} to make room` : ''}.</p>}
       {t.tactic && f?.comp === 'league' && t.opp ? (
         <>
-          <PlanPanel date={t.date} tactic={t.tactic} plan={planFor(t.save, t.date, t.tactic.pick)} read={readOf(planFor(t.save, t.date, t.tactic.pick), { id: t.opp.id, style: t.opp.style }, isScouted(t.save, t.opp.id))} xi={t.xi} cards={t.save.tacticCards ?? []} />
+          <PlanPanel date={t.date} tactic={t.tactic} plan={planFor(t.save, t.date, t.tactic.pick)} read={readOf(planFor(t.save, t.date, t.tactic.pick), { id: t.opp.id, style: t.opp.style }, readScouted(scoutLevel(t.save, t.opp.id)))} xi={t.xi} cards={t.save.tacticCards ?? []} />
           <p className="fb-s fb-ctr">The match plays at 4 am and waits for you in the morning: watch it with your calls, or skip to the result. The plan can change until kick-off.</p>
           <button type="button" className="fb-btn sm" onClick={() => go('/football/blend')}>How tonight adds up ›</button>
         </>

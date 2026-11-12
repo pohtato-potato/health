@@ -1,6 +1,8 @@
 // Cup runs' only writer: the run in progress (cupRuns, saved after every card and every stop), the record book
 // (cupBook) and finished runs (cupDone, summary only). A run never touches the league: the only writes outside these
 // tables are the research and the album card a run pays (spec §11), into the tree as its own gain.
+import { eyeChoices } from '../desk/course';
+import { coursePasses } from '../desk/rules';
 import { db } from '../../db/db';
 import { dayOfLogging, type DayKey } from '../../domain/dates';
 import { ABROAD } from '../data/continental';
@@ -70,7 +72,8 @@ export async function startCupRun(cup: number, now = Date.now()): Promise<CupRun
   if (cur && !cur.run.over) throw new Error('a run is in progress');
   const date = dayOfLogging(now);
   const deal = await dealToday(date);
-  const run = startRun({ cup, seed: hashSeed('cup-run', date, String(now)), date, now, deck: deal.cards });
+  const save = await db.fbSave.get('save');
+  const run = startRun({ cup, seed: hashSeed('cup-run', date, String(now)), date, now, deck: deal.cards, eye: eyeChoices(coursePasses(save?.desk)) });
   const rec: CupRun = { id: 'current', kind: 'run', deal, run };
   await db.cupRuns.put(rec);
   return rec;

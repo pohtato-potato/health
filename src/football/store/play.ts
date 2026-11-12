@@ -10,7 +10,7 @@ import { advance, penalties, type Bracket } from '../cups';
 import { clubById, rememberClubs } from '../data/load';
 import { cards, physio, redCardMod, rotationShape, usesRotation } from '../discipline';
 import { playMatch, typicalFor, type MatchCtx, type MatchInput, type MatchPlan } from '../engine';
-import { isScouted, pausedInput, readFor } from './paused';
+import { isScouted, pausedInput, readFor, readScouted, scoutLevel } from './paused';
 import { pickOffer } from '../matchday';
 import { CONT_NAME, CWC_DAYS, CWC_NAME, contPrize, koFromTable, newClubWorld, phaseTable, reachOf } from '../continental';
 import { WORLD_CHAMPS } from '../data/continental';
@@ -64,7 +64,7 @@ export async function playDue(now = Date.now()): Promise<StoredMatch[]> {
   return playThrough(yesterday, null);
 }
 
-const USER_KEYS = ['buzz', 'wcCountry', 'ownSponsor', 'captain', 'captains', 'captainWeek', 'slots', 'sponsorStyle', 'awakeSeen', 'seenSeasonEnd', 'sheet', 'tactics', 'bedtime', 'treeUser', 'globeUser', 'around'] as const satisfies readonly (keyof FbSave)[];
+const USER_KEYS = ['buzz', 'wcCountry', 'ownSponsor', 'captain', 'captains', 'captainWeek', 'slots', 'sponsorStyle', 'awakeSeen', 'seenSeasonEnd', 'sheet', 'tactics', 'bedtime', 'treeUser', 'globeUser', 'around', 'desk'] as const satisfies readonly (keyof FbSave)[];
 /**
  * Engine 2 arrives: rebuilds the players from history once (spec §16), crediting the stored matches and keeping only
  * youngsters tied to a real habit. Everything else in the save stays. Safe to call any time; it runs once.
@@ -504,7 +504,7 @@ function braboMaybe(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: str
     const p: PausedMatch = {
       id: `${date}:${leg ?? 1}`, date, season: w.save.season, input: { ...input, rival: undefined } as PausedMatch['input'],
       rivalTwist: rival ? 'rival' : oppId === ANTIGOON ? 'antigoon' : undefined,
-      style: club?.style ?? def.style, scouted: isScouted(w.save, oppId), prep, picks: [],
+      style: club?.style ?? def.style, scouted: readScouted(scoutLevel(w.save, oppId)), prep, picks: [],
     };
     if (wait) {
       // Set up and stopped: the owner watches or skips it; the next 4 am finishes it with the assistant.

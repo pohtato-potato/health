@@ -66,7 +66,7 @@ export function PreKickOff({ p, save, onKickOff, onSkip }: { p: PausedMatch; sav
         <div className="md-chips">
           {opp.known.slice(0, 2).map((a) => <span key={a.name} className="md-chip" style={{ color: '#ff9a76', borderColor: '#ff9a76' }}>{a.name}</span>)}
           {style?.say && <span className="md-chip" style={{ color: '#93c3dc', borderColor: '#93c3dc' }}>{style.say}</span>}
-          {read.scouted && <span className="md-chip" style={{ color: '#8fdcb6', borderColor: '#8fdcb6' }}>{WEAK_CHIP[weakSide(p.prep.oppId)]}</span>}
+          {read.weakKnown && <span className="md-chip" style={{ color: '#8fdcb6', borderColor: '#8fdcb6' }}>{WEAK_CHIP[weakSide(p.prep.oppId)]}</span>}
         </div>
         <PlanPanel date={p.date} tactic={tactic} plan={plan} read={read} xi={[]} cards={save.tacticCards ?? []} />
         <span className="fb-lb">Your eleven</span>
