@@ -37,3 +37,10 @@
 .fg-tr .nm span { color: #c4c1cf; font-size: 14px; }
 .fg-tr.me b { color: #ff9a4d; }
 .fg-door { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+/* A club's opinion of Brabo (w-relations): a bar from −100 to 100 around a centre line. */
+.op { display: flex; flex-direction: column; gap: 6px; padding: 6px 0; }
+.op-bar { position: relative; height: 10px; border-radius: 6px; border: 1.5px solid rgba(237,230,218,.3); }
+.op-bar::after { content: ''; position: absolute; left: 50%; top: -4px; bottom: -4px; width: 2px; background: rgba(237,230,218,.6); }
+.op-bar i { position: absolute; top: 0; bottom: 0; border-radius: 6px; }
+.op-why { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; font-size: 15px; }
+.op-why li { display: flex; justify-content: space-between; gap: 10px; }

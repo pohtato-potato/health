@@ -10,7 +10,7 @@ import { advance, penalties, type Bracket } from '../cups';
 import { clubById, rememberClubs } from '../data/load';
 import { cards, physio, redCardMod, rotationShape, usesRotation } from '../discipline';
 import { playMatch, typicalFor, type MatchCtx, type MatchInput, type MatchPlan } from '../engine';
-import { deskFold } from '../desk/fold';
+import { deskFold, type ClubWorld } from '../desk/fold';
 import { PROJECTS } from '../content/projects';
 import { diceFrozen } from './desk';
 import { isScouted, pausedInput, readFor, readScouted, scoutLevel } from './paused';
@@ -50,7 +50,7 @@ import { academyIds, creditMatch, nightOptsFor, playerCtx, playersDay, rebuildPl
 import { signFreeAgents } from '../rotation/freeAgents';
 import { chemistryAfter, moraleAfter, type Tactic } from '../rotation/night';
 import { traitAbilities } from '../rotation/traits';
-import { breakStarts, globeAfterPlayers, globeDay, globeMatch, globeNight, globeRules, globeSeasonEnd, isBreakDay, loanAbilities, restedForLeague } from './globe';
+import { breakStarts, globeAfterPlayers, globeDay, globeOf, globeMatch, globeNight, globeRules, globeSeasonEnd, isBreakDay, loanAbilities, restedForLeague } from './globe';
 
 export const CATCH_UP_CAP = 42;
 const resultOf = (s: [number, number], pens?: [number, number]): Result => (s[0] > s[1] || (pens && pens[0] > pens[1]) ? 'W' : s[0] < s[1] || (pens && pens[0] < pens[1]) ? 'L' : 'D');
@@ -694,8 +694,15 @@ function seasonMoney(w: World, date: DayKey, tables: Record<Tier, Row[]>, up: Pa
 /** The desk's day folded into the world: research, growth, project days and tomorrow's column (desk/fold.ts). */
 function deskDay(w: World, date: DayKey) {
   const eng = structuredClone(engineOf(w.save));
-  deskFold(w.save.desk, date, diceFrozen(w.save, w.h, date), { eng, squad: w.squad, bundles: w.bundles, needs: (id) => PROJECTS.find((p) => p.id === id)?.needs, news: w.news });
+  const g = globeOf(w.save);
+  const club: ClubWorld = { budget: w.save.budget, loans: g.loans, offers: w.save.offers ?? [], sponsors: w.save.sponsors ?? [], season: w.save.season, phase: w.save.phase };
+  deskFold(w.save.desk, date, diceFrozen(w.save, w.h, date), { eng, squad: w.squad, bundles: w.bundles, needs: (id) => PROJECTS.find((p) => p.id === id)?.needs, news: w.news, club });
   w.save.tree = eng;
+  // Fork 3: deals struck in talks (the market loan's own slot, sponsors signed on the terms reached).
+  w.save.budget = club.budget;
+  if (club.loans !== g.loans) w.save.globe = { ...g, loans: club.loans };
+  if (club.offers !== (w.save.offers ?? [])) w.save.offers = club.offers;
+  if (club.sponsors !== (w.save.sponsors ?? [])) w.save.sponsors = club.sponsors;
 }
 /** The world as the tree's hooks see it (store/tree.ts). */
 const treeCtx = (w: World): TreeCtx => ({ h: w.h, save: w.save, season: w.season, bundles: w.bundles, news: w.news, clubs: w.clubs, matches: () => [...w.past, ...w.matches] });

@@ -12,6 +12,8 @@ import { useTonight, type Tonight } from '../../../football/store/hooks';
 import { go, useRoute } from '../../../router';
 import { AXIS_INK } from '../../../ui/inks';
 import { FootballHome } from '../FootballHome';
+import { liveTalk } from '../../../football/desk/jobs/negotiate';
+import { TalkPage } from './Market';
 import '../../../styles/matchday.css';
 import '../../../styles/desk.css';
 
@@ -35,6 +37,8 @@ function JobArt({ id, ring, colour }: { id: JobId; ring?: { filled: number; size
     column: 'M13 28 L27 14 L29 16 L15 30 Z M13 28 L12 31 L15 30 M24 17 L26 19',
     course: 'M11 14 Q20 11 20 14 Q20 11 29 14 V27 Q20 24 20 27 Q20 24 11 27 Z M20 14 V27',
     scout: 'M12 22 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M20 22 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M14 18 L16 12 H24 L26 18',
+    study: 'M13 12 H24 L28 16 V29 H13 Z M24 12 V16 H28 M16 20 H25 M16 24 H22',
+    negotiate: 'M10 22 L15 17 L20 20 L25 17 L30 22 M15 17 L12 14 M25 17 L28 14 M17 23 L20 26 L23 23',
   };
   return (
     <svg className="dk-art" viewBox="0 0 40 40" style={{ '--ink': colour } as CSSProperties} aria-hidden="true">
@@ -107,6 +111,7 @@ export function DeskRoute() {
   if (t === undefined || m === undefined) return null;
   if (!t || !m) return <FootballHome section="tonight"><p className="fb-s">Football starts once you found the club.</p></FootballHome>;
   if (path === '/football/desk/questions') return <QuestionsPage />;
+  if (path === '/football/desk/talk') return <TalkPage m={m} talk={params.get('talk') ?? ''} />;
   if (path === '/football/desk/course') return <CoursePage m={m} spend={params.get('spend') ?? m.courseOpen ?? ''} />;
   if (path === '/football/desk/job') {
     const def = jobById((params.get('id') ?? '') as JobId);
@@ -119,7 +124,11 @@ export function DeskRoute() {
 function DeskHome({ m }: { m: DeskModel }) {
   const [held, setHeld] = useState<Die | undefined>();
   const jobs = jobsForDesk(m.view);
-  const open = (j: JobDef) => go('/football/desk/job', { id: j.id, ...(held ? { die: held.axis } : {}) });
+  const open = (j: JobDef) => {
+    // Talks have their own screen (w3-haggle): straight back into the open talk, else the market to pick one.
+    if (j.id === 'negotiate') { const live = liveTalk(m.view); go(live ? '/football/desk/talk' : '/football/market', live ? { talk: live.talk } : undefined); return; }
+    go('/football/desk/job', { id: j.id, ...(held ? { die: held.axis } : {}) });
+  };
   return (
     <Page>
       <div className="md-top"><span className="md-cap">The desk · {weekday(m.date)}</span><span className="md-q">Dice left: {m.left.length}</span></div>
@@ -182,7 +191,7 @@ function SpendPage({ m, def, first, pick }: { m: DeskModel; def: JobDef; first?:
           {held && <span className="dk-die" aria-hidden="true" style={{ background: AXIS_INK[held.axis], color: '#0d0f20' }}>{held.value}</span>}
           <span style={{ flex: 1 }}>{said}</span>
         </div>
-        {def.id !== 'watch' && <p className="md-q" style={{ margin: 0 }}>{def.id === 'column' ? 'It runs in tomorrow’s paper.' : def.id === 'scout' ? 'A scout’s report comes with the morning parcel.' : 'It counts when the day plays, at 4 am. The desk shows it now.'}</p>}
+        {def.id !== 'watch' && <p className="md-q" style={{ margin: 0 }}>{def.id === 'column' ? 'It runs in tomorrow’s paper.' : def.id === 'scout' ? 'A scout’s report comes with the morning parcel.' : def.id === 'study' ? 'It shows in the loan market now.' : 'It counts when the day plays, at 4 am. The desk shows it now.'}</p>}
         <button type="button" className="md-btn" onClick={() => go('/football/desk', undefined, { replace: true })}>Back to the desk</button>
       </Page>
     );

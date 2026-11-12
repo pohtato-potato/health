@@ -20,6 +20,13 @@ export interface LoanStay {
   goals: number;
   /** A loan already met: it came back. */
   back?: boolean;
+  /** Fork 3: a loan from the market (its own slot), the club it came from, the fee paid, a promise of minutes, and
+   *  once it has gone home, the days the promise broke (its unit unlogged, sick and travel days left out). */
+  market?: true;
+  club?: string;
+  fee?: number;
+  promise?: true;
+  missed?: number;
 }
 
 /** One international break this season (spec §9.4): three days with no league matches. */

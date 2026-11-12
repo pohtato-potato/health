@@ -12,6 +12,8 @@
 import type { DayKey } from '../../domain/dates';
 import type { Axis } from '../types';
 import type { Fact } from '../fog/fog';
+import type { SlotBusy, TalkRound, TalkRow } from '../market/market';
+import type { MoveKind } from '../market/relations';
 
 export type DieValue = 1 | 2 | 3 | 4 | 5 | 6;
 /** One die: an axis's score yesterday (1–20) as 1–6 by fixed bands, with the reason for its number. */
@@ -57,7 +59,15 @@ export type Effect =
   /** Fork 2: a scout is back (the trip's clock is full). What each club gave up; known % before and after. Read from the log. */
   | { kind: 'scout'; target: string; reveal: Record<string, Fact[]>; before: number; after: number; thin?: boolean }
   /** Fork 2: a scout's 6 turned up a loan target, kept for the loan market (Fork 3). Read from the log. */
-  | { kind: 'lead'; club: string; loan: string };
+  | { kind: 'lead'; club: string; loan: string }
+  /** Fork 3: one round of loan or sponsor talks (market/market.ts). Talks are worked out from these. Read from the log. */
+  | TalkRound
+  /** Fork 3: a loan deal, folded at 4 am: the fee leaves the budget and the loan arrives the next day. */
+  | { kind: 'deal'; talk: string; n: number; club: string; loan: string; days: number; fee: number; promise: boolean }
+  /** Fork 3: a sponsor deal from talks, folded at 4 am: signed on the terms reached, bonus paid. */
+  | { kind: 'sponsor'; slot: string; brand: string; perSeason: number; seasons: number; bonus: number }
+  /** Fork 3: a club's opinion of Brabo moves (market/relations.ts). Read from the log. Fork 4's lobbying can use it too. */
+  | { kind: 'opinion'; club: string; d: number; why: string; move: MoveKind };
 
 /** A chance in a job, shown before you commit (honest dice: the odds shown are the odds used, seeded). */
 export interface Risk { pct: number; line: string }
@@ -148,6 +158,22 @@ export interface DeskView {
   clocks: (Clock & { filled: number })[];
   /** Fork 2: the world in fog, for the scout job. Facts count every scout report, even one still on its way. */
   world?: WorldView;
+  /** Fork 3: the loan market and sponsor offers, for studying a target and negotiating. */
+  market?: MarketView;
+}
+/** Fork 3: what the study and negotiate jobs see. Opinions are worked out by the store (market/relations.ts). */
+export interface MarketView {
+  ownTier: number;
+  /** The club's money, in millions: a deal is only struck when it covers the fee. */
+  budget: number;
+  /** Loan targets the scouts found, with their club's opinion of Brabo and whether it is in Brabo's division. */
+  leads: { key: string; club: string; clubName: string; loan: string; day: DayKey; opinion: number; poach: boolean }[];
+  /** Every round of talks so far (the desk's `talk` effects, with their day). */
+  talks: TalkRow[];
+  /** The market slot, when a market loan is here or on its way. */
+  slot?: SlotBusy;
+  /** Sponsor offers waiting (between seasons): a sponsor talk uses the same screen. */
+  offers: { slot: string; brand: string; what: string; risk: string; perSeason: number; seasons: number }[];
 }
 /** Every fogged club the scouts can reach: league clubs by tier (0 = abroad), with what is known of each. */
 export interface WorldView { ownTier: number; clubs: { id: string; name: string; tier: number; facts: Fact[] }[] }

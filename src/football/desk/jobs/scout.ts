@@ -8,6 +8,8 @@ import { beforeAfter, clockSize, factList, LEAD_PCT, pctOf, revealFor, scopeOf, 
 import type { Tier } from '../../types';
 import { segmentsFor, type Clock, type DeskView, type Die, type Effect, type JobDef, type Risk, type Target } from '../types';
 
+const MARKET_POOL = LOANS.filter((l) => l.tier !== 'icon');
+
 type Club = { id: string; name: string; tier: number; facts: Set<Fact> };
 const clubsOf = (v: DeskView): Club[] => (v.world?.clubs ?? []).map((c) => ({ ...c, facts: new Set(c.facts) }));
 /** The clubs a target covers. */
@@ -101,7 +103,8 @@ export const scout: JobDef = {
     if (first.risk?.kind === 'lead' && hit) {
       const cs = covered(v, t);
       const club = cs[Math.floor(r() * cs.length)]?.id ?? t;
-      effects.push({ kind: 'lead', club, loan: LOANS[Math.floor(r() * LOANS.length)].id });
+      // Fork 3: a lead is a current player (Gold or Prism); Icon loans are retired greats, and stay a pack's surprise.
+      effects.push({ kind: 'lead', club, loan: MARKET_POOL[Math.floor(r() * MARKET_POOL.length)].id });
     }
     const { clock } = p;
     return {
