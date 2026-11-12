@@ -273,7 +273,7 @@ function Course({ sheet, date, passes }: { sheet: CourseSheet; date: string; pas
     <Page>
       <div className="md-top"><span className="md-cap">Question {at + 1} of {n}{q.section ? ` · ${sec(q.section)}` : ''}{q.year ? ` · ${q.year}` : ''}</span><Back to="/football/desk" label="Later" /></div>
       <div className="dk-pips" aria-hidden="true">{sheet.questions.map((x, i) => <i key={x.id} className={answers[i] != null ? 'on' : ''} />)}</div>
-      {q.passage && <p className="dk-passage">{q.passage}</p>}
+      {q.passage && <Passage title={q.passageTitle} text={q.passage} />}
       <p className="dk-q">{q.prompt}</p>
       {q.options ? (
         <div className="dk-targets" role="group" aria-label="Options">
@@ -336,3 +336,24 @@ function QuestionsPage() {
   );
 }
 
+/** A reading passage or a data set: paragraphs, and Markdown tables drawn as tables. */
+function Passage({ title, text }: { title?: string; text: string }) {
+  const blocks = text.split(/\n\s*\n/);
+  return (
+    <div className="dk-passage">
+      {title && <b className="dk-ptitle">{title}</b>}
+      {blocks.map((b, i) => {
+        const rows = b.trim().split('\n');
+        if (!rows.every((r) => r.trim().startsWith('|'))) return <p key={i}>{b}</p>;
+        const cells = rows.filter((r) => !/^\|[\s:|-]+\|$/.test(r.trim())).map((r) => r.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim()));
+        const [head, ...body] = cells;
+        return (
+          <table key={i} className="dk-table">
+            <thead><tr>{head.map((c, j) => <th key={j} scope="col">{c}</th>)}</tr></thead>
+            <tbody>{body.map((r, k) => <tr key={k}>{r.map((c, j) => (j === 0 ? <th key={j} scope="row">{c}</th> : <td key={j}>{c}</td>))}</tr>)}</tbody>
+          </table>
+        );
+      })}
+    </div>
+  );
+}

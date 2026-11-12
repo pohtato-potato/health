@@ -8,9 +8,9 @@ export const column: JobDef = {
   id: 'column',
   ink: '#f2c46d',
   open: (v) => v.columnLines.length > 0,
-  card: (v) => ({ ask: 'What goes in the column?', title: 'Your column', line: 'Pick a line for tomorrow’s paper.', chip: v.spentToday.column ? 'Written' : 'New' }),
+  card: (v) => ({ ask: 'What goes in the column?', title: 'Your column', line: 'A line, or a reply to a letter, for tomorrow’s paper.', chip: v.spentToday.column ? 'Written' : 'New' }),
   blocked: (v) => (v.spentToday.column ? 'One column a day' : undefined),
-  targets: (v) => v.columnLines.map((l) => ({ id: l.id, name: l.text })),
+  targets: (v) => v.columnLines.map((l) => ({ id: l.id, name: l.text, line: l.to ? `Your reply. ${l.to} wrote: “${l.letter}”` : undefined })),
   preview(die, v, target) {
     const q = qualityOf(die.value);
     const l = v.columnLines.find((x) => x.id === target) ?? v.columnLines[0];
@@ -19,7 +19,7 @@ export const column: JobDef = {
       line: `Tomorrow it runs ${PLACE[q]}.`,
       gain: q === 'well' ? 'Back page' : q === 'does' ? 'Notes' : 'Page 9',
       others: 'Words only: it never changes a match.',
-      effects: l ? [{ kind: 'column', line: l.id, text: l.text }] : [],
+      effects: l ? [{ kind: 'column', line: l.id, text: l.text, ...(l.to ? { to: l.to } : {}) }] : [],
     };
   },
   spend(die, v, target) { return { effects: this.preview(die, v, target).effects }; },

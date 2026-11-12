@@ -55,6 +55,9 @@ describe('the desk through the store', () => {
   it('Close the day shuts the desk; when the day plays, spends land and the dice left become research', async () => {
     const { m } = await desk();
     const line = m.view.columnLines[0];
+    expect(m.view.columnLines).toHaveLength(3);
+    expect(m.view.columnLines[2].to).toBeTruthy();
+    expect(m.view.columnLines.some((l) => /[{}]/.test(l.text))).toBe(false);
     expect(await spendAt(m.date, m.dice[0], 'column', line.id)).toBeUndefined();
     await closeDay(m.date, true, noon(m.date));
     expect(await spendAt(m.date, m.dice[1], 'watch')).toBe('shut');

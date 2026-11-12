@@ -1,6 +1,7 @@
 // The desk's results, folded into the world when a day plays at 4 am (desk spec §2–3). Pure: play.ts hands over the
 // pieces of the world, and each day's spends are folded once (days play once, in order). Taps never write the
 // engine's tables, so a match playing in the background can't lose a die spent at the same moment.
+import { inSentence } from './words';
 import type { DayKey } from '../../domain/dates';
 import { addDays } from '../../domain/dates';
 import type { TreeEngine } from '../tree/types';
@@ -46,7 +47,7 @@ function foldEffect(w: FoldWorld, e: Effect, date: DayKey) {
       break;
     }
     case 'column':
-      w.news.push({ id: `${addDays(date, 1)}:column:${e.line}`, date: addDays(date, 1), kind: 'press', text: `From the manager's column: “${e.text}”` });
+      w.news.push({ id: `${addDays(date, 1)}:column:${e.line}`, date: addDays(date, 1), kind: 'press', text: e.to ? `The manager answers ${inSentence(e.to)} in the paper: “${e.text}”` : `From the manager's column: “${e.text}”` });
       break;
     case 'watch': case 'course': case 'clock': break;
   }

@@ -9,12 +9,12 @@ import { PROJECTS } from '../content/projects';
 import { clubById } from '../data/load';
 import { diceFor, FORM_DAYS } from '../desk/dice';
 import { COURSE_SIZE, grade, importQuestions, lifelineStrikes, type ImportResult } from '../desk/course';
-import type { Question } from '../desk/content';
+import type { ColumnLine, Question } from '../desk/content';
 import { jobById, JOBS } from '../desk/jobs';
 import { clockFilled, diceLeft, spendsOn } from '../desk/rules';
 import { spendDie, spendSeed, type SpendError } from '../desk/spend';
 import { emptyDesk, type CourseDraft, type CourseResult, type DeskState, type DeskView, type Die, type JobId } from '../desk/types';
-import { DESK_COLUMN, DESK_QUESTIONS } from '../desk/words';
+import { DESK_COLUMN, DESK_FAN_MAIL, DESK_QUESTIONS, fillLine, type LineNames } from '../desk/words';
 import { hashSeed, rng, shuffle } from '../rng';
 import { projectOpen } from '../tree/projects';
 import { AXES, type Axis } from '../types';
@@ -49,11 +49,26 @@ export const diceFrozen = (save: FbSave, h: Health, date: DayKey): Die[] => save
 /** Each need in plain words, for the project row. */
 const NEED: Record<string, string> = { steps: 'step days', training: 'sessions', sleep: 'nights slept', protein: 'protein days', kcal: 'calorie days', bedtime: 'bedtimes kept', meds: 'medicine days', youth: 'academy sessions', logged: 'days logged', closed: 'days closed' };
 
-/** The column lines offered today: three, seeded by the day, never one already run. */
-function columnOffer(desk: DeskState, date: DayKey) {
+/** The club's name, for column lines that say it. */
+const CLUB = 'Brabo United';
+
+/**
+ * The column offered today: two lines and one fan-mail reply, seeded by the day, never one already run. After a loss
+ * the first line is a calm one about it; `after-loss` lines wait for a loss. A line naming a rival or one of ours
+ * waits for a day that has one.
+ */
+function columnOffer(desk: DeskState, date: DayKey, names: LineNames, lost: boolean): DeskView['columnLines'] {
   const used = new Set(desk.spends.flatMap((s) => s.effects).flatMap((e) => (e.kind === 'column' ? [e.line] : [])));
-  const fresh = DESK_COLUMN.filter((l) => !used.has(l.id));
-  return shuffle(rng(hashSeed('desk-column', date)), fresh.length ? fresh : DESK_COLUMN).slice(0, 3).map((l) => ({ id: l.id, text: l.text }));
+  const r = rng(hashSeed('desk-column', date));
+  const ready = (ls: ColumnLine[]) => {
+    const all = ls.flatMap((l) => { const text = fillLine(l.text, names); return text ? [{ ...l, text }] : []; });
+    const fresh = all.filter((l) => !used.has(l.id));
+    return shuffle(r, fresh.length ? fresh : all);
+  };
+  const calm = lost ? ready(DESK_COLUMN.filter((l) => l.kind === 'after-loss')).slice(0, 1) : [];
+  const lines = [...calm, ...ready(DESK_COLUMN.filter((l) => l.kind !== 'after-loss'))].slice(0, 2);
+  const fan = ready(DESK_FAN_MAIL).slice(0, 1);
+  return [...lines, ...fan].map((l) => ({ id: l.id, text: l.text, ...(l.to ? { to: l.to, letter: l.letter } : {}) }));
 }
 
 /** Every question in the course pool: the bank and the owner's own. */
@@ -83,6 +98,14 @@ export async function deskView(t: Pick<Tonight, 'save' | 'date' | 'fixture'>): P
   const today = spendsOn(desk, date);
   const spentToday: DeskView['spentToday'] = {};
   for (const s of today) spentToday[s.job] = (spentToday[s.job] ?? 0) + 1;
+  const rival = save.rivals.find((x) => x.clubId !== opp?.id);
+  const ours = squad.filter((y) => y.status === 'growing' || y.status === 'promoted');
+  const names: LineNames = {
+    club: CLUB,
+    opp: opp?.name ?? (rival ? clubById(rival.clubId).name : undefined),
+    player: ours.length ? ours[Math.floor(rng(hashSeed('desk-player', date))() * ours.length)].name : undefined,
+  };
+  const last = await db.fbMatches.where('date').below(date).last();
   const pool = await questionPool();
   return {
     date,
@@ -90,7 +113,7 @@ export async function deskView(t: Pick<Tonight, 'save' | 'date' | 'fixture'>): P
     oppKnown: opp ? scoutLevel(save, opp.id) : 'none',
     youth: squad.filter((y) => y.status === 'growing').map((y) => ({ id: y.id, name: y.name, axis: y.axis, growth: Math.round(((y.growth ?? 0) + pendingGrow(desk, y.id, save.lastPlayed)) * 100) / 100, potential: y.potential })),
     projects,
-    columnLines: columnOffer(desk, date),
+    columnLines: columnOffer(desk, date, names, last?.result === 'L'),
     questions: pool.map((q) => q.id),
     answered: desk.courses.flatMap((c) => courseIds(desk, c.spend)),
     spentToday,

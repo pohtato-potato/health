@@ -1,4 +1,5 @@
 // The manager's desk, Fork 1 (desk-and-world spec §2–3, §8, §13). Rules only; made-up days.
+import { AXES } from '../src/football/types';
 import { describe, expect, it } from 'vitest';
 import type { AxisInput } from '../src/football/axes';
 import { dieFromScore, diceFor, formOf, hoursInWords, reasonFor } from '../src/football/desk/dice';
@@ -8,7 +9,8 @@ import { JOBS, jobById } from '../src/football/desk/jobs';
 import { ACADEMY_GROWTH } from '../src/football/desk/jobs/academy';
 import { deskFold, pushProject } from '../src/football/desk/fold';
 import { drawCourse, eyeChoices, eyeLevel, grade, importQuestions, lifelineStrikes, parseCsv, PASS_AT, sameAnswer, toNextEye } from '../src/football/desk/course';
-import { speakers, voiceLine } from '../src/football/desk/words';
+import { DESK_COLUMN, DESK_FAN_MAIL, DESK_QUESTIONS, fillLine, speakers, voiceLine } from '../src/football/desk/words';
+import type { AxisVoices } from '../src/football/content/desk/types';
 import { emptyDesk, qualityOf, segmentsFor, type DeskState, type DeskView, type Die, type JobDef } from '../src/football/desk/types';
 import { readOf } from '../src/football/matchday';
 import { readScouted, scoutLevel } from '../src/football/store/paused';
@@ -355,6 +357,35 @@ describe('the axes speak', () => {
     const line = voiceLine('watch', { ...die('Rest', 2), reason: 'Four and a half hours' })!;
     expect(line).toContain('Four and a half hours');
     expect(voiceLine('column', { ...die('Pace', 6), reason: '16,400 steps' })).toContain('16,400 steps');
-    expect(voiceLine('column', die('Pace', 6), 0, {})).toBeUndefined();
+    expect(voiceLine('column', die('Pace', 6), 0, {} as AxisVoices)).toBeUndefined();
+    // the writer's "Pace: " opening is left to the screen, and a project speaks with the build lines
+    expect(voiceLine('column', { ...die('Pace', 6), reason: '16,400 steps' })!.startsWith('Pace:')).toBe(false);
+    expect(voiceLine('project', die('Power', 3))).toBeTruthy();
+    for (const a of AXES) for (const v of [1, 3, 6] as const) for (const j of ['watch', 'academy', 'column', 'project', 'course'] as const) {
+      expect(voiceLine(j, { ...die(a, v), reason: 'X' }, 1)).not.toMatch(/[{}]/);
+    }
+  });
+});
+
+describe('the real words', () => {
+  it('the course bank: a hundred questions, every answer one of its options or typed, every set found', () => {
+    expect(DESK_QUESTIONS).toHaveLength(100);
+    expect(new Set(DESK_QUESTIONS.map((q) => q.id)).size).toBe(100);
+    for (const q of DESK_QUESTIONS) {
+      expect(q.source).toBe('bank');
+      if (q.options) expect(q.options).toContain(q.answer);
+      else expect(q.answer).toMatch(/^-?[\d.]+$/);
+    }
+    expect(DESK_QUESTIONS.filter((q) => q.passage).length).toBeGreaterThan(0);
+  });
+
+  it('column lines: no congress yet, ids unique, names filled or the line waits', () => {
+    expect(DESK_COLUMN.length).toBeGreaterThan(20);
+    const ids = [...DESK_COLUMN, ...DESK_FAN_MAIL].map((l) => l.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(DESK_COLUMN.some((l) => l.text.includes('{motion}'))).toBe(false);
+    expect(fillLine('{opp} have a ground.', { club: 'C' })).toBeUndefined();
+    expect(fillLine('{club} beat {opp}.', { club: 'C', opp: 'O' })).toBe('C beat O.');
+    expect(DESK_FAN_MAIL.every((l) => l.to && l.letter)).toBe(true);
   });
 });

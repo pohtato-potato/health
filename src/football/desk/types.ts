@@ -44,7 +44,7 @@ export type Effect =
   /** A youngster grows by `n` (folded at 4 am into the academy). */
   | { kind: 'grow'; youth: string; n: number }
   /** A line in tomorrow's paper (folded at 4 am into the news). Lines only, no points. */
-  | { kind: 'column'; line: string; text: string }
+  | { kind: 'column'; line: string; text: string; to?: string }
   /** Days added to a building project's least-finished need (folded at 4 am). */
   | { kind: 'project'; id: string; n: number }
   /** Research toward the next tech (folded at 4 am). */
@@ -134,7 +134,7 @@ export interface DeskView {
   oppKnown: 'none' | 'style' | 'full';
   youth: { id: string; name: string; axis: Axis; growth: number; potential: 3 | 4 | 5 }[];
   projects: { id: string; name: string; worst: { what: string; have: number; count: number } }[];
-  columnLines: { id: string; text: string }[];
+  columnLines: { id: string; text: string; to?: string; letter?: string }[];
   /** Question ids in the course pool (bank plus the owner's import), and those already answered in a course. */
   questions: string[];
   answered: string[];
