@@ -31,7 +31,13 @@
 @keyframes dk-pop { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
 /* the coaching course */
 .dk-q { font: 18px/1.45 var(--ab); margin: 0; white-space: pre-wrap; }
-.dk-passage { border: 1.5px solid #7fd8c8; border-radius: 14px; box-shadow: 0 0 14px -6px #7fd8c8; padding: 10px 12px; margin: 0; white-space: pre-wrap; }
+.dk-passage { border: 1.5px solid #7fd8c8; border-radius: 14px; box-shadow: 0 0 14px -6px #7fd8c8; padding: 10px 12px; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.dk-passage p { margin: 0; white-space: pre-wrap; font: 16px/1.5 var(--ab); }
+.dk-ptitle { font: 400 19px/1.2 var(--fr); color: #7fd8c8; }
+.dk-table { border-collapse: collapse; width: 100%; font: 14px/1.25 var(--ab); font-variant-numeric: tabular-nums; }
+.dk-table th, .dk-table td { padding: 6px 3px; text-align: right; border-bottom: 1px solid rgba(237,230,218,.18); }
+.dk-table th:first-child { text-align: left; }
+.dk-table thead th { color: #7fd8c8; font-weight: 700; }
 .dk-choice { min-height: 52px; border-radius: 14px; border: 1.5px solid rgba(237,230,218,.55); background: transparent; color: var(--cream); font: 17px/1.3 var(--ab); text-align: left; padding: 10px 14px; cursor: pointer; width: 100%; }
 .dk-choice[aria-pressed='true'] { border-color: #7fd8c8; background: rgba(127,216,200,.18); box-shadow: 0 0 14px -4px #7fd8c8; }
 .dk-choice:disabled { text-decoration: line-through; opacity: .45; cursor: default; }
