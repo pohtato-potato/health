@@ -26,7 +26,9 @@ import { playable } from '../rotation/traits';
 import { hashSeed, rng } from '../rng';
 import { ruleValue, slots, type Active } from '../tree/research';
 import type { AxisFlags, BraboAbility } from '../types';
-import type { Health } from './gather';
+import { nightFor, type Health } from './gather';
+import { missedDays } from '../market/market';
+import { FORM_STATUSES } from '../desk/dice';
 import type { NightOpts, Roster } from './players';
 import { activeFor, engineOf, userOf } from './tree';
 import type { FbBundle, FbNews, FbSave, FbSquadRow, StoredMatch } from './tables';
@@ -111,6 +113,12 @@ export function globeDay(w: GlobeWorld, date: DayKey, season: number) {
   for (const st of leavingOn(g.loans, date)) {
     const def = loanById(st.loan);
     if (def) w.news.push({ id: `${date}:loan-out:${st.key}`, date, kind: 'club', text: `${def.farewell} ${st.apps.length ? `${st.apps.length} ${st.apps.length === 1 ? 'game' : 'games'}${st.goals ? `, ${st.goals} ${st.goals === 1 ? 'goal' : 'goals'}` : ''}.` : 'No games this time: its habit never had a logged day.'}` });
+  }
+  // Fork 3: a market loan with a promise of minutes goes home with the days the promise broke (relations read it).
+  if (g.loans.some((st) => st.market && st.promise && st.missed === undefined && st.until < date)) {
+    g = { ...g, loans: g.loans.map((st) => (st.market && st.promise && st.missed === undefined && st.until < date
+      ? { ...st, missed: missedDays(st.from, st.until, (d) => Boolean(nightFor(w.h, d).flags[st.unit]), (d) => (FORM_STATUSES as readonly string[]).includes(w.h.days.get(d)?.status ?? '')) }
+      : st)) };
   }
   const started = startLoans(g.loans, userOf(s).opened, g.met, date, rules.loan);
   for (const st of started) {

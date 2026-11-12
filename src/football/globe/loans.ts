@@ -67,7 +67,8 @@ export interface LoanRules { days: number; slots: number }
  */
 export function startLoans(stays: LoanStay[], opened: PackOpened[], met: string[], date: DayKey, rules: LoanRules): LoanStay[] {
   const out: LoanStay[] = [];
-  const here = atClub(stays, date);
+  // A market loan has a slot of its own (desk spec 12.5 a): it never takes a pack loan's slot.
+  const here = atClub(stays, date).filter((s) => !s.market);
   for (const q of loansOpened(opened)) {
     if (q.on > date || stays.some((s) => s.key === q.key)) continue;
     const def = loanById(q.loan);
@@ -78,7 +79,7 @@ export function startLoans(stays: LoanStay[], opened: PackOpened[], met: string[
   }
   return out;
 }
-/** Loans still waiting for a slot (opened, not yet at the club). */
+/** Loans still waiting for a slot (opened, not yet at the club). Market loans never wait: they come from a deal. */
 export const loansWaiting = (stays: LoanStay[], opened: PackOpened[]) => loansOpened(opened).filter((q) => !stays.some((s) => s.key === q.key));
 
 /** The loan's place in tonight's eleven. */

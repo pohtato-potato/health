@@ -3,10 +3,12 @@ import type { JobDef, JobId } from '../types';
 import { academy } from './academy';
 import { column } from './column';
 import { course } from './course';
+import { negotiate } from './negotiate';
 import { project } from './project';
 import { scout } from './scout';
+import { study } from './study';
 import { watch } from './watch';
 
 /** In the order the desk shows them. */
-export const JOBS: JobDef[] = [watch, scout, academy, project, column, course];
+export const JOBS: JobDef[] = [watch, scout, study, negotiate, academy, project, column, course];
 export const jobById = (id: JobId): JobDef | undefined => JOBS.find((j) => j.id === id);

@@ -9,3 +9,4 @@ export * from './motions';
 export * from './paper';
 export * from './scouting';
 export * from './cat';
+export * from './talks';
