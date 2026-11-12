@@ -7,7 +7,7 @@ import { COURSE_SIZE, eyeChoices, eyeLevel, isRight, PASS_AT, toNextEye } from '
 import { coursePasses, unspentResearch } from '../../../football/desk/rules';
 import type { Die, JobDef, JobId } from '../../../football/desk/types';
 import { speakers, voiceLine } from '../../../football/desk/words';
-import { clearMine, courseSheet, finishCourse, freezeDice, importMine, jobById, jobsForDesk, loadDesk, spendAt, useMineCount, type CourseSheet, type DeskModel } from '../../../football/store/desk';
+import { clearMine, courseSheet, saveDraft, finishCourse, freezeDice, importMine, jobById, jobsForDesk, loadDesk, spendAt, useMineCount, type CourseSheet, type DeskModel } from '../../../football/store/desk';
 import { useTonight, type Tonight } from '../../../football/store/hooks';
 import { go, useRoute } from '../../../router';
 import { AXIS_INK } from '../../../ui/inks';
@@ -241,9 +241,9 @@ function CoursePage({ m, spend }: { m: DeskModel; spend: string }) {
 }
 
 function Course({ sheet, date, passes }: { sheet: CourseSheet; date: string; passes: number }) {
-  const [answers, setAnswers] = useState<(string | null)[]>(() => sheet.done?.answers ?? sheet.questions.map(() => null));
-  const [at, setAt] = useState(0);
-  const [helped, setHelped] = useState<string | undefined>();
+  const [answers, setAnswers] = useState<(string | null)[]>(() => sheet.done?.answers ?? sheet.draft?.answers ?? sheet.questions.map(() => null));
+  const [at, setAt] = useState(() => { if (!sheet.draft) return 0; const i = sheet.draft.answers.findIndex((x) => x == null); return i < 0 ? sheet.questions.length - 1 : i; });
+  const [helped, setHelped] = useState<string | undefined>(sheet.draft?.helped);
   const [done, setDone] = useState(sheet.done);
   const n = sheet.questions.length;
   if (done) {
@@ -265,7 +265,8 @@ function Course({ sheet, date, passes }: { sheet: CourseSheet; date: string; pas
   }
   const q = sheet.questions[at];
   const a = answers[at];
-  const set = (v: string | null) => setAnswers(answers.map((x, i) => (i === at ? v : x)));
+  const set = (v: string | null) => { const next = answers.map((x, i) => (i === at ? v : x)); setAnswers(next); void saveDraft(sheet.spend, { answers: next, helped }); };
+  const help = () => { setHelped(q.id); void saveDraft(sheet.spend, { answers, helped: q.id }); };
   const strikes = helped === q.id ? sheet.strikes[q.id] ?? [] : [];
   const hand = async () => { const r = await finishCourse(sheet.spend, answers, date); if (r) setDone(r); };
   return (
@@ -283,7 +284,7 @@ function Course({ sheet, date, passes }: { sheet: CourseSheet; date: string; pas
           <input className="dk-input" inputMode="decimal" value={a ?? ''} onChange={(e) => set(e.target.value || null)} />
         </label>
       )}
-      {sheet.lifeline && q.options && !helped && <button type="button" className="md-btn ghost" onClick={() => setHelped(q.id)}>Lifeline: strike out two wrong options</button>}
+      {sheet.lifeline && q.options && !helped && <button type="button" className="md-btn ghost" onClick={help}>Lifeline: strike out two wrong options</button>}
       <div className="md-fill" />
       <div className="md-btns">
         {at > 0 && <button type="button" className="md-btn ghost" onClick={() => setAt(at - 1)}>Back</button>}

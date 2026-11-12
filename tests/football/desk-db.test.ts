@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { closeDay, patchDay, setTargets } from '../../src/db/actions';
 import { HealthDB, TABLES, db, setDatabase } from '../../src/db/db';
 import { addDays, atOn } from '../../src/domain/dates';
-import { courseSheet, deskOf, finishCourse, freezeDice, importMine, loadDesk, questionPool, spendAt } from '../../src/football/store/desk';
+import { courseSheet, deskOf, finishCourse, saveDraft, freezeDice, importMine, loadDesk, questionPool, spendAt } from '../../src/football/store/desk';
 import { loadTonight } from '../../src/football/store/hooks';
 import { scoutLevel } from '../../src/football/store/paused';
 import { playDue } from '../../src/football/store/play';
@@ -80,6 +80,19 @@ describe('the desk through the store', () => {
     expect(deskOf(await db.fbSave.get('save')).courses).toHaveLength(1);
     const run = await startCupRun(1, noon(m.date));
     expect(run.run.eye).toBe(1);
+  });
+
+  it('a course left halfway keeps its answers, and a used lifeline stays used', async () => {
+    const { m } = await desk();
+    const d = m.dice.find((x) => x.value >= 5) ?? m.dice[0];
+    expect(await spendAt(m.date, d, 'course')).toBeUndefined();
+    const id = `${m.date}:${d.axis}`;
+    await saveDraft(id, { answers: ['x', null, null, null, null], helped: 'q-a' });
+    await saveDraft(id, { answers: ['x', 'y', null, null, null], helped: 'q-b' });
+    const sheet = (await courseSheet(deskOf(await db.fbSave.get('save')), id))!;
+    expect(sheet.draft).toEqual({ answers: ['x', 'y', null, null, null], helped: 'q-a' });
+    await finishCourse(id, sheet.draft!.answers, m.date);
+    expect(deskOf(await db.fbSave.get('save')).drafts?.[id]).toBeUndefined();
   });
 
   it('the owner’s questions go into their own table, join the pool, and are kept in backups', async () => {

@@ -92,7 +92,10 @@ export interface DeskState {
   spends: Spend[];
   clocks: Clock[];
   courses: CourseResult[];
+  /** A course left halfway: the answers so far and the question the lifeline was used on (kept, so it's used once). */
+  drafts?: Record<string, CourseDraft>;
 }
+export interface CourseDraft { answers: (string | null)[]; helped?: string }
 export const emptyDesk = (): DeskState => ({ dice: {}, spends: [], clocks: [], courses: [] });
 
 /** A row on the desk (d3-home). */

@@ -13,7 +13,7 @@ import type { Question } from '../desk/content';
 import { jobById, JOBS } from '../desk/jobs';
 import { clockFilled, diceLeft, spendsOn } from '../desk/rules';
 import { spendDie, spendSeed, type SpendError } from '../desk/spend';
-import { emptyDesk, type CourseResult, type DeskState, type DeskView, type Die, type JobId } from '../desk/types';
+import { emptyDesk, type CourseDraft, type CourseResult, type DeskState, type DeskView, type Die, type JobId } from '../desk/types';
 import { DESK_COLUMN, DESK_QUESTIONS } from '../desk/words';
 import { hashSeed, rng, shuffle } from '../rng';
 import { projectOpen } from '../tree/projects';
@@ -167,7 +167,7 @@ export async function spendAt(date: DayKey, die: Die, job: JobId, target?: strin
 }
 
 // ---------- the coaching course ----------
-export interface CourseSheet { spend: string; questions: Question[]; lifeline: boolean; strikes: Record<string, string[]>; done?: CourseResult }
+export interface CourseSheet { spend: string; questions: Question[]; lifeline: boolean; strikes: Record<string, string[]>; done?: CourseResult; draft?: CourseDraft }
 
 /** The five questions of a course spent at the desk, and the lifeline's strikes (seeded, so always the same two). */
 export async function courseSheet(desk: DeskState, spendId: string): Promise<CourseSheet | undefined> {
@@ -178,7 +178,7 @@ export async function courseSheet(desk: DeskState, spendId: string): Promise<Cou
   const questions = e.ids.map((id) => pool.get(id)).filter((q): q is Question => !!q).slice(0, COURSE_SIZE);
   const strikes: Record<string, string[]> = {};
   if (e.lifeline) for (const q of questions) strikes[q.id] = lifelineStrikes(q, rng(hashSeed('lifeline', spendId, q.id)));
-  return { spend: spendId, questions, lifeline: e.lifeline, strikes, done: desk.courses.find((c) => c.spend === spendId) };
+  return { spend: spendId, questions, lifeline: e.lifeline, strikes, done: desk.courses.find((c) => c.spend === spendId), draft: desk.drafts?.[spendId] };
 }
 
 /** Hands in a course once: 3 right is a pass, and a pass levels up the manager's eye. */
@@ -194,9 +194,23 @@ export async function finishCourse(spendId: string, answers: (string | null)[], 
     if (!s) return;
     const d = deskOf(s);
     if (d.courses.some((c) => c.spend === spendId)) return;
-    await db.fbSave.put({ ...s, desk: { ...d, courses: [...d.courses, res] } });
+    const drafts = { ...d.drafts };
+    delete drafts[spendId];
+    await db.fbSave.put({ ...s, desk: { ...d, courses: [...d.courses, res], drafts } });
   });
   return res;
+}
+
+/** Keeps a course's answers and a used lifeline when you leave it halfway. The lifeline, once used, stays used. */
+export async function saveDraft(spendId: string, draft: CourseDraft): Promise<void> {
+  await db.transaction('rw', db.fbSave, async () => {
+    const s = await db.fbSave.get('save');
+    if (!s) return;
+    const d = deskOf(s);
+    if (d.courses.some((c) => c.spend === spendId)) return;
+    const helped = d.drafts?.[spendId]?.helped ?? draft.helped;
+    await db.fbSave.put({ ...s, desk: { ...d, drafts: { ...d.drafts, [spendId]: { answers: draft.answers, ...(helped ? { helped } : {}) } } } });
+  });
 }
 
 // ---------- the owner's own questions (on the phone only) ----------
