@@ -232,7 +232,9 @@ export function Today() {
   const closedFlags = { kcal: rings.kcal.closed, protein: rings.protein.closed, steps: rings.steps.closed, sleep: rings.sleep.closed };
   const momentKind = momentFor({ minutes: logMinutes(nowMs), status: day?.status, morningDone: !!day?.morning, perfect: rings.perfect, dayClosed: !!day?.foodDone, proteinGapG: gap.gapG, stepsLeft: Math.max(0, stepsLeft), stepsKnown: day?.steps !== undefined });
   const weighIn = weighInToCome(day, settings.places ?? []);
-  const nextKind: NextKind = weighIn && !['rest', 'closed', 'morning', 'perfect'].includes(momentKind) ? 'weighin' : momentKind;
+  // The morning log is the next thing to log at any hour until it is in (rest, a closed day and a perfect day aside).
+  const morningOpen = !day?.morning && !['rest', 'closed', 'perfect'].includes(momentKind);
+  const nextKind: NextKind = morningOpen ? 'morning' : weighIn && !['rest', 'closed', 'morning', 'perfect'].includes(momentKind) ? 'weighin' : momentKind;
   const ringGold = ringsGold({ counting: goldCount, perfect: rings.perfect, played: perfectPlayed });
   const goldNums = rings.perfect && ringGold >= rings.of;
   const rowInk = (k: keyof typeof METRIC_INK) => (goldNums ? RING_GOLD : METRIC_INK[k]);
@@ -258,7 +260,7 @@ export function Today() {
       }
       walk={<WalkTop caption={caption} scene={scene} stamp={stamp} status={<StatusChip today={today} days={days} />} onOpen={() => go('/walk')} />}
       due={<DueCard due={dueToday({ today, settings, checkins: checkins.map((c) => c.date), measurements })} />}
-      banner={<><OfficeUsual /><Banners /></>}
+      banner={<><OfficeUsual /><Banners noMorning={morningOpen} /></>}
       line={
         <TodayLine
           head={playing?.kind === 'ring' ? `${RING_WORD[playing.ring]} closed` : closedWords(rings.closed, rings.of)}
@@ -321,9 +323,9 @@ export function Today() {
             stepsLeft: Math.max(0, stepsLeft),
             laps: loop ? fmtInt(Math.ceil(Math.max(stepsLeft, 0) / loop)) : undefined,
             easedTo: totals.eased ? stepsGoal(targets, true) : undefined,
-            food: perMeal[mealNow] ? undefined : { meal: MEAL_NAMES[mealNow], usual: usual.slice(0, 2).map((u) => u.food.name).join(', ') },
+            food: { meal: MEAL_NAMES[mealNow], usual: usual.slice(0, 2).map((u) => u.food.name).join(', '), logged: !!perMeal[mealNow] },
           }}
-          actions={{ logMorning: () => openSheet('morning'), closeDay: () => go('/close'), addGap, typeSteps: () => openSheet('steps'), addFood: () => openSheet('addfood', { meal: mealNow }) }}
+          actions={{ logMorning: () => openSheet('morning'), closeDay: () => go('/close'), toClose: () => document.querySelector('.td-handle')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), addGap, typeSteps: () => openSheet('steps'), addFood: () => openSheet('addfood', { meal: mealNow }) }}
         />
       }
       football={<Suspense fallback={null}><MatchToday now={nowMs} /></Suspense>}

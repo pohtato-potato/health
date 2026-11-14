@@ -1,5 +1,5 @@
 /* Food on the kit (look pass L3; board four, "Food, in the maintenance weeks"). */
-.page.fd-page { gap: 10px; padding-bottom: calc(104px + var(--safe-bottom)); font-family: var(--sans); }
+.page.fd-page { gap: 10px; padding-bottom: calc(32px + var(--safe-bottom)); font-family: var(--sans); }
 .fd-date { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: -6px; font-size: 15px; color: var(--k-quiet); }
 .fd-dbtn { width: 44px; height: 44px; display: grid; place-items: center; border: 0; background: none; color: var(--k-cream); cursor: pointer; }
 .fd-dbtn:disabled { opacity: 0.3; cursor: default; }
@@ -109,3 +109,8 @@ button.cd-row { cursor: pointer; }
 .cd-page .item { min-height: 44px; }
 .sheet .round.sm { min-width: 44px; min-height: 44px; }
 .sheet .link.t13 { min-height: 44px; display: inline-flex; align-items: center; font-size: 14px; }
+/* Design check (15 Nov): nothing fixed to the bottom covers content at any scroll. Food's actions sit under the
+   bars, in the flow; Close the day's moon button and the morning log's save end their pages. */
+.fd-acts { position: static; transform: none; width: auto; max-width: none; padding: 4px 0 0; background: none; }
+.cd-go { position: static; margin: 6px 0 0; padding: 8px 0 0; background: none; }
+.ml-save { position: static; margin: 4px 0 0; padding: 4px 0 0; background: none; }

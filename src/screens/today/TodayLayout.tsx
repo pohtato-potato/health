@@ -27,8 +27,9 @@ export function TodayLayout(p: { walk: ReactNode; status?: ReactNode; due?: Reac
         {p.next}
         {p.shape}
         {p.log}
+        {/* The moon button closes the page, in the flow: nothing fixed covers content at any scroll (design check). */}
+        {p.handle}
       </div>
-      {p.handle}
     </>
   );
 }

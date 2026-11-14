@@ -81,7 +81,11 @@ export function GlowRings({ design = 'solid', inks, shown, closed, gold, size = 
         const full = `${shapePath(shape, C, C, r)}Z`;
         return (
           <g key={r} className={`gr-band${done ? ' closed' : ''}${isGold ? ' lr-gold' : ''}`} style={{ color: ink }}>
-            <path d={full} fill="none" stroke={ink} strokeOpacity={0.16} strokeWidth={band.w} />
+            {/* The empty track, as a lit tube: both edges in the ring's own ink, a faint cool fill between. A dim band of
+                orange reads brown on the night; edges keep it bright and the colour clean. */}
+            <path className="gr-track" d={full} fill="none" stroke={ink} strokeOpacity={0.62} strokeWidth={band.w} />
+            <path d={full} fill="none" stroke="var(--th-ground, #0d0f22)" strokeWidth={Math.max(1, band.w - 3)} />
+            <path d={full} fill="none" stroke={ink} style={{ stroke: `color-mix(in srgb, ${ink} 45%, #dfe6ff)` }} strokeOpacity={0.12} strokeWidth={Math.max(1, band.w - 3)} />
             <g transform={flip}>
               <g mask={`url(#${uid}-m${i})`}>
                 <path d={full} fill="none" stroke={ink} strokeWidth={band.w + (small ? 4 : 6)} filter={`url(#${uid}-g)`} opacity={done ? 0.95 : 0.6} />

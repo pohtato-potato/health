@@ -21,11 +21,11 @@ describe('MomentCard', () => {
     expect(html).toContain('Last night is waiting');
     expect(buttons(html)).toEqual(['Log the morning']);
   });
-  it('perfect: "All four closed", gold, leaving Close the day to the moon button', () => {
+  it('perfect: "All four closed", gold, with a gold Close the day', () => {
     const html = render('perfect');
     expect(html).toContain('All four closed');
     expect(html).toContain('td-moment gold');
-    expect(buttons(html)).toEqual([]);
+    expect(buttons(html)).toEqual(['Close the day']);
   });
   it('close: "Ready to close the day?" with the gap add as its one action', () => {
     const html = render('close');
@@ -33,8 +33,11 @@ describe('MomentCard', () => {
     expect(html).toContain('2 of 4 rings');
     expect(buttons(html)).toEqual(['Add both · 24 g']);
   });
-  it('close with no protein gap has no button: the moon button closes the day', () => {
-    expect(buttons(render('close', { proteinGapG: 0, gapFoods: '' }))).toEqual([]);
+  it('close with no protein gap glows "Close the day"; with a gap, a small way down to the moon button', () => {
+    expect(buttons(render('close', { proteinGapG: 0, gapFoods: '' }))).toEqual(['Close the day']);
+    const html = renderToStaticMarkup(<MomentCard kind="close" data={data} actions={{ ...actions, toClose: noop }} />);
+    expect(buttons(html)).toEqual(['Add both · 24 g', 'Close the day ↓']);
+    expect(html.match(/k-act/g)).toHaveLength(1);
   });
   it('weigh-in to come: "Add it", as drawn', () => {
     const html = render('weighin');
@@ -42,7 +45,7 @@ describe('MomentCard', () => {
     expect(buttons(html)).toEqual(['Add it']);
   });
   it('every button on the panel is the one glowing action', () => {
-    for (const k of ['morning', 'weighin', 'protein', 'steps', 'stepsMissing'] as const) expect(render(k).match(/k-act/g), k).toHaveLength(1);
+    for (const k of ['morning', 'weighin', 'protein', 'steps', 'stepsMissing', 'close', 'perfect'] as const) expect(render(k).match(/k-act/g), k).toHaveLength(1);
   });
   it('protein: "22 g protein to go" with the foods', () => {
     const html = render('protein');
@@ -64,5 +67,8 @@ describe('MomentCard', () => {
     const html = renderToStaticMarkup(<MomentCard kind="glance" data={{ ...data, food: { meal: 'Dinner', usual: 'Test dal' } }} actions={{ ...actions, addFood: noop }} />);
     expect(html).toContain('Dinner next');
     expect(buttons(html)).toEqual(['Add food']);
+    const done = renderToStaticMarkup(<MomentCard kind="glance" data={{ ...data, food: { meal: 'Dinner', usual: '', logged: true } }} actions={{ ...actions, addFood: noop }} />);
+    expect(done).toContain('Dinner is in');
+    expect(done.match(/k-act/g)).toHaveLength(1);
   });
 });

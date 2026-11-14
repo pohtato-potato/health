@@ -188,3 +188,5 @@ body:has(.tabbar) .page.bare { padding-bottom: calc(var(--tab-h) + 36px + var(--
 .th-name { font-weight: 700; font-size: 15px; margin-top: 4px; }
 .th-why { font-size: 14px; color: #d8d3e6; line-height: 1.25; }
 .th-on { position: absolute; top: 8px; right: 8px; color: #fff; }
+.th-tile.locked { border-style: dashed; cursor: default; }
+.th-tile:disabled { opacity: 1; filter: none; }

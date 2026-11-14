@@ -126,7 +126,7 @@ export function ThemeTile({ t, open, on, note, onPick }: { t: ThemeDef; open: bo
   const l = t.look.light;
   const bg = `radial-gradient(90% 60% at ${l.warmAt}, ${l.warm}, transparent 70%), radial-gradient(90% 60% at ${l.coolAt}, ${l.cool}, transparent 70%), ${l.ground}`;
   return (
-    <button type="button" className={`th-tile${on ? ' on' : ''}`} style={{ background: bg, opacity: open ? 1 : 0.6 }} disabled={!open} aria-pressed={on} onClick={onPick}
+    <button type="button" className={`th-tile${on ? ' on' : ''}${open ? '' : ' locked'}`} style={{ background: bg }} disabled={!open} aria-pressed={on} onClick={onPick}
       aria-label={`${t.name}: ${t.look.ring.name}. ${note}`}>
       <span className="th-top">
         <GlowRings design={t.look.ring.design} inks={t.look.ring.inks} shown={[0.72, 0.5, 1, 0.88]} closed={[false, false, true, false]} size={62} small />

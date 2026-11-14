@@ -95,6 +95,15 @@ export function FoodToday() {
           <i style={{ width: `${rings.protein.progress * 100}%` }} />
         </div>
 
+        <div className="fd-acts">
+          <button type="button" className="k-act fd-add" onClick={() => openSheet('addfood', dParam)}>
+            Add food
+          </button>
+          <button type="button" className="k-act quiet fd-night" onClick={() => openSheet('nightout', dParam)}>
+            Night out
+          </button>
+        </div>
+
         {date === today && <MaintenanceRead />}
         {date === today && <FoodPledge date={today} />}
 
@@ -174,14 +183,6 @@ export function FoodToday() {
         </div>
       </div>
 
-      <div className="fd-acts">
-        <button type="button" className="k-act fd-add" onClick={() => openSheet('addfood', dParam)}>
-          Add food
-        </button>
-        <button type="button" className="k-act quiet fd-night" onClick={() => openSheet('nightout', dParam)}>
-          Night out
-        </button>
-      </div>
     </>
   );
 }
