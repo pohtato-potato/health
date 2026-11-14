@@ -4,6 +4,7 @@
 import type { DayKey } from '../domain/dates';
 import { seasonDays, SEASON_DAYS } from './calendar';
 import type { Row } from './table';
+import { BREAK_BEFORE } from './globe/duty';
 
 /** League matchdays a sealed day plays while the pace is on. */
 export const PACE_PER_DAY = 3;
@@ -53,3 +54,24 @@ export function paceLine(on: boolean, ended: boolean): string {
     ? 'On. Each closed day plays the next three league matchdays on that day’s numbers, each with its own dice. You watch the last one; your assistant finishes the other two, and you can watch them after. The season ends the day the title is safe, with promotion then. Next season goes back to one a day by itself.'
     : 'Off. Turn it on to play three league matchdays for each closed day, each on that day’s numbers with its own dice, until the title is safe. It ends with this season; next season is one a day again.';
 }
+
+/**
+ * The night ahead at three a day, from season day `day`: the league matchdays it plays and the cup rounds on the way.
+ * `breakBefore(d)` says whether season day d starts an international break not yet played (the night stops there).
+ */
+export function paceNight(day: number, breakBefore: (d: number) => boolean): { matchdays: number[]; rounds: string[] } {
+  const plan = seasonDays();
+  const matchdays: number[] = [], rounds: string[] = [];
+  for (let d = day; d <= SEASON_DAYS && matchdays.length < PACE_PER_DAY; d++) {
+    if (d > day && breakBefore(d)) break;
+    const p = plan[d - 1];
+    if (p.kind === 'league') matchdays.push(p.matchday!);
+    else if (p.round) rounds.push(p.round);
+  }
+  return { matchdays, rounds };
+}
+/** "Matchdays 4, 5 and 6". */
+export const matchdayList = (ms: number[]) => (ms.length === 1 ? `Matchday ${ms[0]}` : `Matchdays ${ms.slice(0, -1).join(', ')} and ${ms[ms.length - 1]}`);
+/** Whether season day d starts an international break this season has not played yet. */
+export const breakBeforeFor = (save: { season: number; globe?: { breaks: { season: number; n: number }[] } }) => (d: number) =>
+  ([1, 2] as const).some((n) => BREAK_BEFORE[n] === d && !(save.globe?.breaks ?? []).some((b) => b.season === save.season && b.n === n));

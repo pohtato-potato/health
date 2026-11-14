@@ -20,6 +20,7 @@ import { planFor, readScouted, scoutLevel } from '../../football/store/paused';
 import { readOf } from '../../football/matchday';
 import { MorningCards } from './world/WorldScreens';
 import { TacticPicker } from './players/Rotation';
+import { breakBeforeFor, matchdayList, paceNight, paceOn } from '../../football/pace';
 
 /** Our own SVG strings (crests, kits): built from data we ship, escaped where text goes in. */
 export function Art({ svg, className }: { svg: string; className?: string }) {
@@ -46,6 +47,9 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
   const born = bornId ? t.save.rivals.find((r) => r.clubId === bornId) : undefined;
   const quiet = !t.change && !t.save.crestPending;
   const away = t.unwatchedAuto.filter((m) => m.date !== t.date);
+  // League pace (O36): tonight's three matchdays, shown under the first one's opponent.
+  const paced = paceOn(t.save, t.date) && !t.morning.intl;
+  const night = paceNight(t.save.day, breakBeforeFor(t.save));
   const catchUp = (
     <>
       {t.change && <SeasonChangeView c={t.change} onDone={() => void markSeasonSeen(t.change!.season)} />}
@@ -83,6 +87,7 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
           <h2 className="fb-hl">{t.opp ? `${t.morning.intl ? 'Next' : 'Tonight'}: ${t.opp.name}` : f.round ?? 'Tonight'}</h2>
           <p className="fb-s fb-ctr">{[f.round, f.opp ? (f.braboHome ? 'Home' : 'Away') : undefined].filter(Boolean).join(' · ')}</p>
           {t.also && <p className="fb-s fb-ctr"><b>{t.also}</b></p>}
+          {paced && night.matchdays.length > 1 && <p className="fb-s fb-ctr" data-pace><b>Three a day: {matchdayList(night.matchdays)} tonight{night.rounds.length ? `, with ${night.rounds.join(' and ')} on the way` : ''}.</b> All on today’s numbers, each with its own dice. You watch the last one; your assistant plays the others.</p>}
         </>
       )}
       <Radar values={t.liveValues} flags={t.flags} fog={AXES.filter((a) => t.flags[a])} captain={t.save.slots.includes('armband') ? t.save.captain : undefined} />

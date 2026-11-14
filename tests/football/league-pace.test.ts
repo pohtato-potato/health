@@ -1,11 +1,11 @@
 // League pace (O36): three league matchdays a day for the rest of one season, behind a switch that is off by default.
 import 'fake-indexeddb/auto';
+import './helpers/windowStub';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { patchDay, setTargets } from '../../src/db/actions';
 import { HealthDB, db, setDatabase } from '../../src/db/db';
 import { addDays, daysBetween } from '../../src/domain/dates';
-import { seasonDays } from '../../src/football/calendar';
-import { LEAGUE_MATCHDAYS, matchdaysBefore, matchIdFor, paceLine, paceOn, paceWeekDone, titleSafe } from '../../src/football/pace';
+import { LEAGUE_MATCHDAYS, matchdayList, matchdaysBefore, matchIdFor, paceLine, paceNight, paceOn, paceWeekDone, titleSafe } from '../../src/football/pace';
 import { finishWithAssistant, kickOff, pausedMatch } from '../../src/football/store/play';
 import { foundClub, setLeaguePace } from '../../src/football/store/save';
 import { OWN } from '../../src/football/store/season';
@@ -57,6 +57,12 @@ describe('the rules', () => {
     const p = { season: 1, from: '2026-11-01' };
     expect(paceWeekDone(p, '2026-11-07', daysBetween)).toBe(true);
     expect(paceWeekDone(p, '2026-11-08', daysBetween)).toBe(false);
+  });
+  it('the night ahead: three matchdays, cup rounds on the way, and a stop before a break', () => {
+    expect(paceNight(4, () => false)).toEqual({ matchdays: [4, 5, 6], rounds: ['Last 128 and Last 64'] });
+    expect(paceNight(12, (d) => d === 14).matchdays).toEqual([10, 11]);
+    expect(matchdayList([4, 5, 6])).toBe('Matchdays 4, 5 and 6');
+    expect(matchdayList([9])).toBe('Matchday 9');
   });
   it('the switch says what it does and that it ends with the season', () => {
     expect(paceLine(false, false)).toMatch(/three league matchdays/);
@@ -259,5 +265,47 @@ describe('the title is safe: the season ends that day', () => {
       }
     }
     throw new Error('the next season never started');
+  });
+});
+
+describe('the screens', () => {
+  it('the settings switch: off by default, says what it does, and goes once its season is over', async () => {
+    const { PaceRow } = await import('../../src/screens/football/story/Settings');
+    const { createElement } = await import('react');
+    const { renderToStaticMarkup: html } = await import('react-dom/server');
+    const s = (await db.fbSave.get('save'))!;
+    const off = html(createElement(PaceRow, { s }));
+    expect(off).toContain('Three matches a day for the rest of this season');
+    expect(off).toContain('aria-pressed="false"');
+    expect(off).toContain('next season is one a day again');
+    const on = html(createElement(PaceRow, { s: { ...s, pace: { season: 1, from: START } } }));
+    expect(on).toContain('aria-pressed="true"');
+    const after = html(createElement(PaceRow, { s: { ...s, season: 2, pace: { season: 1, from: START } } }));
+    expect(after).not.toContain('aria-pressed');
+    expect(after).toContain('one match a day again');
+    expect(html(createElement(PaceRow, { s: { ...s, season: 3, pace: { season: 1, from: START } } }))).toBe('');
+  });
+
+  it('the parcel shows the night’s three: the waiting one leads, the other two under it with Watch or Skip', async () => {
+    const { loadParcel } = await import('../../src/football/store/around');
+    const { NightResults } = await import('../../src/screens/football/Parcel');
+    const { createElement } = await import('react');
+    const { renderToStaticMarkup: html } = await import('react-dom/server');
+    await setLeaguePace(true, START);
+    await kickOff(START);
+    const save = (await db.fbSave.get('save'))!;
+    const t = { save, date: addDays(START, 1), morning: { grew: [] } } as never;
+    const p = await loadParcel(t);
+    expect(p.waiting?.id).toBe(`${START}:1#2`);
+    expect(p.result).toBeUndefined();
+    expect(p.others.map((m) => m.round)).toEqual(['Matchday 1', 'Matchday 2']);
+    const out = html(createElement(NightResults, { ms: p.others }));
+    expect(out).toContain('Also last night: 2 more matches');
+    expect(out.match(/>Watch</g)).toHaveLength(2);
+    expect(out).not.toMatch(/\d–\d/); // no score before Watch or Skip
+    await finishWithAssistant();
+    const after = await loadParcel({ ...(t as object), save: (await db.fbSave.get('save'))! } as never);
+    expect(after.result?.round).toBe('Matchday 3');
+    expect(after.others).toHaveLength(2);
   });
 });

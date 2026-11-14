@@ -6,8 +6,7 @@ import { bedOrder, fromBedOrder } from '../../domain/rings';
 import { db } from '../../db/db';
 import { addDays, dayOfLogging, daysBetween, weekday, type DayKey } from '../../domain/dates';
 import { seasonDays, SEASON_DAYS, type DayPlan } from '../calendar';
-import { LEAGUE_MATCHDAYS, matchdaysBefore, matchIdFor, PACE_PER_DAY, paceOn, slotKey, titleSafe } from '../pace';
-import { BREAK_BEFORE } from '../globe/duty';
+import { breakBeforeFor, LEAGUE_MATCHDAYS, matchdaysBefore, matchIdFor, PACE_PER_DAY, paceOn, slotKey, titleSafe } from '../pace';
 import { advance, penalties, type Bracket } from '../cups';
 import { clubById, rememberClubs } from '../data/load';
 import { cards, physio, redCardMod, rotationShape, usesRotation } from '../discipline';
@@ -245,10 +244,7 @@ function playDate(w: World, date: DayKey, auto: boolean, last: boolean) {
   w.slot = 0;
 }
 /** The next season day starts an international break that has not been played yet: the night stops before it. */
-function breakNext(w: World): boolean {
-  const g = globeOf(w.save);
-  return (Object.entries(BREAK_BEFORE) as [string, number][]).some(([n, day]) => day === w.save.day && !g.breaks.some((b) => b.season === w.save.season && b.n === Number(n)));
-}
+const breakNext = (w: World): boolean => breakBeforeFor(w.save)(w.save.day);
 /** Brabo's title cannot be lost on the league played so far. */
 function titleSafeNow(w: World): boolean {
   const tier = w.season.tierOf[OWN];
