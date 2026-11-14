@@ -182,3 +182,10 @@ export const PERK_RULES: Record<PerkKey, string> = {
   'meal-card': 'cup/pool.ts: a card in the cup pool',
   heirloom: 'cup/heirlooms.ts: an heirloom in the cup pool',
 };
+
+/** Cup-run story events (`cup/events.ts`) name their speaker by role; the cast give those roles a name. */
+const CUP_ROLE: Record<string, CastId> = { physio: 'physio', chairman: 'chairman', academy: 'academy', 'kit man': 'kitman', scout: 'scout' };
+export function cupSpeaker(role: string): string | undefined {
+  const c = CUP_ROLE[role] ? castById(CUP_ROLE[role]) : undefined;
+  return c ? `${c.name}, ${c.role.toLowerCase()}` : undefined;
+}

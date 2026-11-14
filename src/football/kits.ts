@@ -66,10 +66,12 @@ export function anniversaryKit(season: number): KitDef | null {
   return K(OR, 'anniv', { a: [BK, PU, BK], collarC: BK, cuff: BK, side: BK });
 }
 /** Launch day: the designs the kit maker offers for a slot. The data kit joins the third slot from season 2. */
-export function launchOptions(slot: KitSlot, season: number): string[] {
+/** `extra`: more designs for each slot (the cast's `kit-pick` perk), borrowed from the other slots' drawers. */
+export function launchOptions(slot: KitSlot, season: number, extra = 0): string[] {
   const base = CATALOGUE.filter((k) => k.slot === slot).map((k) => k.id);
-  if (slot !== 'third') return base;
-  return [...base, ...(season >= 2 ? ['DATA'] : []), ...(isAnniversary(season) ? ['ANNIV'] : [])];
+  const more = extra > 0 ? CATALOGUE.filter((k) => k.slot !== slot).map((k) => k.id).slice(0, extra) : [];
+  if (slot !== 'third') return [...base, ...more];
+  return [...base, ...more, ...(season >= 2 ? ['DATA'] : []), ...(isAnniversary(season) ? ['ANNIV'] : [])];
 }
 /** The one-night patch: finals and derbies only. The text is the day of the month. */
 export function patchFor(m: { derby?: boolean; round?: string; date: string }): { text: string } | undefined {

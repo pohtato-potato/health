@@ -176,7 +176,7 @@ export function PickOfThree({ matchId, pick, name }: { matchId: string; pick: { 
         return (
           <button key={k} type="button" className={`md-tile${on ? ' on' : ''}`} style={{ borderColor: t.kind === 'card' ? AXIS_INK[t.axis] : ink[k % 3] }} disabled={pick.chosen !== undefined} aria-pressed={on} onClick={() => void choosePick(matchId, k)}>
             <span><b>{w.title}</b><small>{w.line}</small></span>
-            {t.kind === 'research' && <b className="fb-num md-plus">+{t.n}</b>}
+            {(t.kind === 'research' || t.kind === 'bond') && <b className="fb-num md-plus">+{t.n}</b>}
             {on && <b className="md-took">Taken</b>}
           </button>
         );

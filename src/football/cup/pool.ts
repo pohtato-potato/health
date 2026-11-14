@@ -40,7 +40,12 @@ export interface PoolDef { id: string; title: string; axis: Axis; role: Role; co
 
 const P = (id: string, title: string, axis: Axis, role: Role, cost: number, basic: Fx, good: Fx, great: Fx): PoolDef => ({ id, title, axis, role, cost, fx: [basic, good, great] });
 
+/** The cast's meal card (Fork 4): in the pool only once a bond rank's `meal-card` perk brings it. */
+export const MEAL_CARD = 'lentil-soup';
+
 export const POOL: PoolDef[] = [
+  // The cook's lentil soup: Fuel, a little stamina now and fitness back.
+  P(MEAL_CARD, 'Lentil soup', 'Fuel', 'stamina', 0, { stamina: 1, fit: 2 }, { stamina: 1, fit: 3, draw: 1 }, { stamina: 2, fit: 4, draw: 1 }),
   // Pace: passes and carries, cheap and many
   P('give-and-go', 'Give and go', 'Pace', 'pass', 0, { quick: true, draw: 1 }, { quick: true, draw: 1, pass: 0.75 }, { quick: true, draw: 2 }),
   P('first-time', 'First-time ball', 'Pace', 'pass', 0, { quick: true }, { quick: true, pass: 0.75 }, { quick: true, pass: 1 }),

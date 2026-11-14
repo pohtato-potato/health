@@ -6,6 +6,8 @@ import { CREST_LINES, launchOptions, slotsOpen, SPONSOR_STYLES, type KitSlot } f
 import type { Club } from '../../../football/store/club';
 import { kitFor, kitWall, type WallKit } from '../../../football/store/kitWall';
 import { Art } from '../Tonight';
+import { perkValue } from '../../../football/cast/bonds';
+import { perksOfSave } from '../../../football/store/cast';
 
 const SLOT: Record<KitSlot, string> = { home: 'Home', away: 'Away', third: 'Third' };
 
@@ -30,7 +32,7 @@ export function KitsView({ c, act = {} }: { c: Club; act?: KitActions }) {
               <fieldset key={slot} className="fb-kitpick">
                 <legend className="fb-lb">{SLOT[slot]}</legend>
                 <div className="fb-kitgrid">
-                  {launchOptions(slot, next).map((id) => {
+                  {launchOptions(slot, next, perkValue(perksOfSave(s), 'kit-pick')).map((id) => {
                     const k = kitFor(id, next, c.matches);
                     if (!k) return null;
                     return (

@@ -13,8 +13,13 @@ import { MOTIONS, SEATS, type Lean, type Motion, type TwistKey } from '../conten
 import type { Move } from '../market/relations';
 import { hashSeed, rng, shuffle } from '../rng';
 
-/** The twists the game plays today. A motion is drawn for a ballot only when its twist is here. */
-export const WIRED: TwistKey[] = ['away-win-four', 'loan-cap', 'solidarity', 'four-up', 'spending-rule'];
+/**
+ * The twists the game plays today. A motion is drawn for a ballot only when its twist is here.
+ * `four-up` is wired (promotion.ts `upDown`) but kept off the ballot: the league rebuild (spec 2026-11-14, eight
+ * divisions of 12) rewrites promotion, so it returns once its rule is re-fitted there. Every twist here reads the
+ * pyramid as it is (clubs per division, bands), never a fixed size.
+ */
+export const WIRED: TwistKey[] = ['away-win-four', 'loan-cap', 'solidarity', 'spending-rule'];
 export const BALLOT_POOL: Motion[] = MOTIONS.filter((m) => WIRED.includes(m.twist.key));
 export const motionById = (id: string): Motion | undefined => MOTIONS.find((m) => m.id === id);
 
@@ -57,7 +62,11 @@ export const lobbyDaysLeft = (phase: 'season' | 'event', day: number, seasonDays
   phase === 'season' ? Math.max(0, seasonDays - day + 1) : undefined;
 
 const clampLean = (x: number): Lean => Math.max(-2, Math.min(2, Math.round(x))) as Lean;
-/** How a club's seat leans on a motion: its owner kind plus its region's pride, −2 to 2. Old selves sit neutral. */
+/**
+ * How a club's seat leans on a motion: its owner kind plus its region's pride, −2 to 2. Old selves sit neutral, and so
+ * does a club with no seat yet (a new real club before the writing chat gives it one): it still votes, pulled only by
+ * its opinion of Brabo or a lobby. Owners are never made up for a real club.
+ */
 export function seatLean(m: Motion, club: string): Lean {
   const seat = SEATS[club];
   if (!seat || seat.owner === 'old-self') return 0;

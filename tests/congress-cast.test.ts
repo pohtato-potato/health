@@ -71,6 +71,13 @@ describe('the congress: how clubs lean', () => {
     expect(clubVote(m, rich, 100, 'for').vote).toBe('against');
   });
 
+  it('a club with no seat yet (a new real club) still votes: neutral, pulled only by opinion or a lobby', () => {
+    expect(seatLean(m, 'new-real-club')).toBe(0);
+    expect(clubVote(m, 'new-real-club', 0, 'for').vote).toBe('abstain');
+    expect(clubVote(m, 'new-real-club', PULL_AT, 'for').vote).toBe('for');
+    expect(tally(m, [...CLUBS, 'new-real-club'], zero, 'abstain', []).abstain).toBe(tally(m, CLUBS, zero, 'abstain', []).abstain + 1);
+  });
+
   it('a lobbied club votes Brabo’s way whatever its seat', () => {
     expect(clubVote(m, rich, -100, 'for', { club: rich, motion: m.id, side: 'for' }).vote).toBe('for');
   });
@@ -115,7 +122,8 @@ describe('the congress sits', () => {
     expect(seasonRules([mk(four.id, false)], 3).awayWin).toBe(3);
     expect(twistsOf([mk(four.id, true)], 3).has('away-win-four')).toBe(true);
     const all: CongressRecord = { season: 7, on: '2030-01-01', moves: [], motions: BALLOT_POOL.map((m) => ({ id: m.id, for: 2, against: 1, abstain: 0, passed: true, brabo: 'abstain', votes: 1, lobbied: [], pulled: [] })) };
-    expect(seasonRules([all], 7)).toEqual({ awayWin: 4, upDown: 4, loanFee: 0.8, solidarity: 10, trouble: 2 });
+    expect(seasonRules([all], 7)).toEqual({ awayWin: 4, upDown: 3, loanFee: 0.8, solidarity: 10, trouble: 2 });
+    expect(WIRED).not.toContain('four-up');
   });
 
   it('how Brabo votes reaches relations through Fork 3’s hook, dated the day it sat', () => {

@@ -14,6 +14,8 @@ import { AXIS_INK } from '../../../ui/inks';
 import { FootballHome } from '../FootballHome';
 import { liveTalk } from '../../../football/desk/jobs/negotiate';
 import { TalkPage } from './Market';
+import { scenesWaiting } from '../../../football/store/cast';
+import { castById } from '../../../football/cast/bonds';
 import '../../../styles/matchday.css';
 import '../../../styles/desk.css';
 
@@ -39,6 +41,8 @@ function JobArt({ id, ring, colour }: { id: JobId; ring?: { filled: number; size
     scout: 'M12 22 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M20 22 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M14 18 L16 12 H24 L26 18',
     study: 'M13 12 H24 L28 16 V29 H13 Z M24 12 V16 H28 M16 20 H25 M16 24 H22',
     negotiate: 'M10 22 L15 17 L20 20 L25 17 L30 22 M15 17 L12 14 M25 17 L28 14 M17 23 L20 26 L23 23',
+    lobby: 'M12 29 H28 M14 29 V19 M20 29 V19 M26 29 V19 M11 19 H29 L20 12 Z',
+    cast: 'M14 18 a3 3 0 1 0 0.01 0 M26 18 a3 3 0 1 0 0.01 0 M9 29 Q14 21 19 29 M21 29 Q26 21 31 29',
   };
   return (
     <svg className="dk-art" viewBox="0 0 40 40" style={{ '--ink': colour } as CSSProperties} aria-hidden="true">
@@ -123,6 +127,8 @@ export function DeskRoute() {
 /** d3-home: the jobs on top, the dice in a tray at the bottom within reach of the thumb. */
 function DeskHome({ m }: { m: DeskModel }) {
   const [held, setHeld] = useState<Die | undefined>();
+  const t = useTonight();
+  const waiting = t ? scenesWaiting(t.save)[0] : undefined;
   const jobs = jobsForDesk(m.view);
   const open = (j: JobDef) => {
     // Talks have their own screen (w3-haggle): straight back into the open talk, else the market to pick one.
@@ -135,6 +141,7 @@ function DeskHome({ m }: { m: DeskModel }) {
       <h1 className="dk-h">{m.shut ? 'The desk is closed for the night' : `${WORDS[jobs.length] ?? jobs.length} ${jobs.length === 1 ? 'thing' : 'things'} on your desk`}</h1>
       {m.shut && <p className="md-q" style={{ margin: 0 }}>{m.left.length ? `${WORDS[m.left.length]} ${m.left.length === 1 ? 'die' : 'dice'} left over: ${unspentResearch(m.left.length) ? `+${unspentResearch(m.left.length)} research when the night plays` : 'it takes two for a point of research'}.` : 'Every die was spent.'} New dice come with the morning.</p>}
       {m.courseOpen && <button type="button" className="md-btn" onClick={() => go('/football/desk/course', { spend: m.courseOpen! })}>Finish today’s course</button>}
+      {waiting && <button type="button" className="md-btn" onClick={() => go('/football/cast', { scene: `${waiting.member}:${waiting.rank}` })}>A new scene with {castById(waiting.member)!.name}</button>}
       <div className="dk-jobs">
         {jobs.map((j) => {
           const c = j.card(m.view), blocked = j.blocked?.(m.view);
@@ -146,6 +153,10 @@ function DeskHome({ m }: { m: DeskModel }) {
             </button>
           );
         })}
+      </div>
+      <div className="dk-doors">
+        <button type="button" className="md-btn ghost" onClick={() => go('/football/congress')}>The congress</button>
+        <button type="button" className="md-btn ghost" onClick={() => go('/football/cast')}>The cast</button>
       </div>
       <div className="md-fill" />
       {!m.shut && (
@@ -192,6 +203,7 @@ function SpendPage({ m, def, first, pick }: { m: DeskModel; def: JobDef; first?:
           <span style={{ flex: 1 }}>{said}</span>
         </div>
         {def.id !== 'watch' && <p className="md-q" style={{ margin: 0 }}>{def.id === 'column' ? 'It runs in tomorrow’s paper.' : def.id === 'scout' ? 'A scout’s report comes with the morning parcel.' : def.id === 'study' ? 'It shows in the loan market now.' : 'It counts when the day plays, at 4 am. The desk shows it now.'}</p>}
+        {def.id === 'cast' && <SceneDoor />}
         <button type="button" className="md-btn" onClick={() => go('/football/desk', undefined, { replace: true })}>Back to the desk</button>
       </Page>
     );
@@ -234,6 +246,14 @@ function SpendPage({ m, def, first, pick }: { m: DeskModel; def: JobDef; first?:
       </div>
     </Page>
   );
+}
+
+/** After time with the cast: a rank reached today shows its scene straight away. */
+function SceneDoor() {
+  const t = useTonight();
+  const w = t ? scenesWaiting(t.save)[0] : undefined;
+  if (!w) return null;
+  return <button type="button" className="md-btn" onClick={() => go('/football/cast', { scene: `${w.member}:${w.rank}` }, { replace: true })}>Rank {w.rank} with {castById(w.member)!.name}: see the scene</button>;
 }
 
 /** The manager's eye, and the owner's own questions: shown with the coaching course. */

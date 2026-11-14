@@ -10,7 +10,7 @@ import {
 } from '../../../football/content/desk';
 import { tierName } from '../../../football/data/load';
 import { leadTaken, studiedIn } from '../../../football/desk/jobs/leads';
-import { liveTalk, optionsFor, talkBlocked, talkCtx, talkList, untilFor, type TalkCtx } from '../../../football/desk/jobs/negotiate';
+import { liveTalk, optionsFor, takeBackable, talkBlocked, talkCtx, talkList, untilFor, type TalkCtx } from '../../../football/desk/jobs/negotiate';
 import type { Die, Effect } from '../../../football/desk/types';
 import { speakers, voiceLine } from '../../../football/desk/words';
 import { loanById, LOAN_TIER_NAME } from '../../../football/globe/loans';
@@ -18,7 +18,7 @@ import { leadsFrom, coolingUntil, MOOD_MAX, MOOD_NAME, OPEN_DAYS, ratingShown, R
 import { euros } from '../../../football/money';
 import { loanLeads } from '../../../football/fog/fog';
 import { hashSeed } from '../../../football/rng';
-import { loadDesk, spendAt, type DeskModel } from '../../../football/store/desk';
+import { loadDesk, spendAt, takeBack, type DeskModel } from '../../../football/store/desk';
 import { globeOf } from '../../../football/store/globe';
 import { useTonight } from '../../../football/store/hooks';
 import type { Tier } from '../../../football/types';
@@ -175,6 +175,8 @@ function Talk({ m, c }: { m: DeskModel; c: TalkCtx }) {
   };
 
   // Their line: the reaction to your last reply, or their opening.
+  const lastRound = m.desk.spends.filter((x) => !m.desk.backs?.includes(x.id)).flatMap((x) => x.effects.flatMap((e) => (e.kind === 'talk' ? [{ id: x.id, e }] : []))).pop();
+  const back = lastRound && lastRound.e.talk === c.talk && takeBackable(m.desk, v.perks) === lastRound.id ? lastRound.id : undefined;
   const reaction = said ? lineAfter(said.round, c, words) : c.kind === 'sponsor' ? fill(SPONSOR_OPEN, words) : fill(pickOf(TALK_OPEN, c.talk, s.n), words);
   if (said?.round.end) return <TalkEnd m={m} c={c} round={said.round} line={reaction} />;
   const facts = c.kind === 'loan' && loan ? [`${loan.unit}`, (() => { const r = ratingShown(c.talk, loan.tier, c.studied); return r.lo === r.hi ? `rated ${r.lo}` : `rated ${r.lo} to ${r.hi}`; })(), `known ${targetKnown(c.studied)}%`] : [`a ${v.market?.offers.find((o) => `sp:${o.slot}:${o.brand}` === c.talk)?.slot ?? ''} deal`];
@@ -186,6 +188,11 @@ function Talk({ m, c }: { m: DeskModel; c: TalkCtx }) {
         <span><b className="mk-name">{c.name}{c.kind === 'loan' ? `, from ${c.who}` : ''}</b><br /><span className="md-q">{facts.join(' · ')}</span></span>
       </div>
       {said && <p className="mk-out" style={{ '--ink': said.round.hit ? '#8fdcb6' : '#ffad6b' } as CSSProperties}>{said.round.hit ? 'It came off' : 'No luck'} ({said.round.pct}%).</p>}
+      {back && (
+        <button type="button" className="md-btn ghost" onClick={() => void takeBack(back).then((ok) => { if (ok) setSaid(undefined); })}>
+          Take that reply back · once a talk
+        </button>
+      )}
       <div className="mk-say"><span className="mk-sil" aria-hidden="true" /><span>{reaction}</span></div>
       <div className="md-row" style={{ borderBottom: 0 }}><span>Their mood</span><b style={{ color: MOOD_INK[s.mood] }}>{MOOD_NAME[s.mood]}</b></div>
       <div className="mk-seg" role="img" aria-label={`Mood ${s.mood} of ${MOOD_MAX}`}>{Array.from({ length: MOOD_MAX }, (_, i) => <i key={i} className={i < s.mood ? 'on' : ''} style={{ '--ink': MOOD_INK[s.mood] } as CSSProperties} />)}</div>

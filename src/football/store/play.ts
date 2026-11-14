@@ -47,9 +47,8 @@ import { formationFor } from '../tree/rotation';
 import { engineOf, healNow, rotationOf, stageCapacity, treeAbilities, treeDay, treeMatch, treeSeasonEnd, type TreeCtx } from './tree';
 import { LEAGUE, TIER_BANDS, tierName } from '../data/load';
 import { braboVotes, motionById, seasonRules, sitCongress } from '../congress/congress';
-import { bondDay, bondsOf, castById, closeResearch, emptyBonds, perkValue, perksHeld } from '../cast/bonds';
+import { CAST_IDS, bondDay, bondsOf, castById, closeResearch, emptyBonds, perkValue, perksHeld } from '../cast/bonds';
 import { perksOfSave } from './cast';
-import { SEATS } from '../content/desk';
 import { lobbiesFor } from '../desk/jobs/lobby';
 import { opinionOf } from '../market/relations';
 import { relationSourceOf } from './market';
@@ -561,7 +560,7 @@ function braboTail(w: World, date: DayKey, prep: PausedPrep, events: MatchEvents
     if (card) { const k = w.save.tacticCards!.indexOf(card); w.save.tacticCards = w.save.tacticCards!.filter((_, i) => i !== k); }
     if (m.result === 'W') {
       const unscouted = Object.entries(w.season.tierOf).filter(([id, t]) => t === braboTier && id !== OWN && id !== oppId && !isScouted(w.save, id, date)).map(([id]) => id).sort();
-      m.pick = { tiles: pickOffer(m.id, unscouted, (w.save.tacticCards ?? []).length) };
+      m.pick = { tiles: pickOffer(m.id, unscouted, (w.save.tacticCards ?? []).length, CAST_IDS) };
     }
   }
   if (!w.save.met.includes(oppId)) w.save.met = [...w.save.met, oppId];
@@ -688,7 +687,7 @@ function seasonMoney(w: World, date: DayKey, tables: Record<Tier, Row[]>, up: Pa
   const shop = (done.includes('shop-2') ? 0.1 : 0) + (done.includes('shop-3') ? 0.1 : 0);
   const capShare = w.save.moved ? (capacityOf(true, done) + stageCapacity(done)) / TENANT_CAPACITY : 1;
   // The congress's `solidarity`: a share of Crown League TV money passed down to every club below, Brabo included.
-  const solidarity = solidarityMoney(tier, rulesOf(w).solidarity);
+  const solidarity = solidarityMoney(tier, rulesOf(w).solidarity, w.season.tierOf);
   const total = incomeFor(tier, pos, promoted, sponsorMoney, capShare * (1 + shop)) + solidarity;
   const prizeMoney = Math.round((total - sponsorMoney - solidarity) * 1000) / 1000;
   const reach = reachOf(w.season.continental, OWN);
@@ -719,17 +718,18 @@ function deskDay(w: World, date: DayKey) {
 /** The season's rules: the usual, or the twists the congress passed before it (congress/congress.ts). */
 const rulesOf = (w: World) => seasonRules(w.save.congress, w.season.id);
 /** Solidarity money for a season at `tier` (millions): the Crown League gives a share; every club below gets a cut. */
-function solidarityMoney(tier: Tier, pct: number): number {
+function solidarityMoney(tier: Tier, pct: number, tierOf: Record<string, Tier>): number {
   if (!pct) return 0;
   const tv = (LEAGUE.income as unknown as Record<string, { tv: number }>)['1'].tv;
-  const pot = (tv * pct) / 100;
-  return tier === 1 ? -pot : (pot * CLUBS_PER_TIER) / (CLUBS_PER_TIER * (TIERS.length - 1));
+  // Each Crown League club gives pct% of its TV money; the pot is shared by every club below, however many there are.
+  const top = Object.values(tierOf).filter((t) => t === 1).length, below = Object.values(tierOf).filter((t) => t > 1).length;
+  const share = (tv * pct) / 100;
+  return tier === 1 ? -share : below ? (share * top) / below : 0;
 }
-const CLUBS_PER_TIER = 18;
 /** The congress sits as a new season begins: Brabo's ballot and the votes won by lobbying, counted (spec §6). */
 function congressSits(w: World, season: number, on: DayKey) {
   if ((w.save.congress ?? []).some((c) => c.season === season)) return;
-  const clubs = [...w.clubs.values()].filter((c) => !c.folded && SEATS[c.id]).map((c) => c.id);
+  const clubs = [...w.clubs.values()].filter((c) => !c.folded).map((c) => c.id);
   const rel = relationSourceOf(w.save, [...w.past, ...w.matches]);
   const opinion = (club: string) => opinionOf(rel, club);
   const rec = sitCongress(season, on, clubs, opinion, w.save.ballot?.[season] ?? {}, lobbiesFor(w.save.desk?.spends ?? [], season), braboVotes());

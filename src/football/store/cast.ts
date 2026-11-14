@@ -1,8 +1,9 @@
 // The cast, read from the save (desk spec §7; Fork 4). Bonds are worked out from the desk's log and what the days
 // folded in (`save.bonds`); perks follow from the ranks. Nothing here touches a rating or a match's odds.
 import { db } from '../../db/db';
-import type { DayKey } from '../../domain/dates';
-import { askOpen, asksOf, bondsOf, castById, CAST_IDS, perksHeld, toneOf, type Bond, type HeldPerk } from '../cast/bonds';
+import { addDays, type DayKey } from '../../domain/dates';
+import { hashSeed, rng } from '../rng';
+import { askOpen, asksOf, bondsOf, caredOn, castById, CAST_IDS, parcelExtras, perksHeld, toneOf, type Bond, type HeldPerk } from '../cast/bonds';
 import type { CastId } from '../content/desk/types';
 import type { CastView } from '../desk/types';
 import type { FbSave } from './tables';
@@ -39,3 +40,24 @@ export async function seeScene(member: CastId, rank: number): Promise<void> {
   });
 }
 export { CAST_IDS };
+
+/** The cast's note in the morning parcel (Fork B's seam): one line, warm or cool by tone, and any perk lines. */
+export interface CastNote { lines: { member: CastId; name: string; text: string; extra?: boolean }[]; scene?: { member: CastId; rank: number } }
+export function castNote(save: CastSave & Pick<FbSave, 'castSeen' | 'tree'>, date: DayKey): CastNote | undefined {
+  if (!save.bonds) return undefined;
+  const y = addDays(date, -1);
+  const m = save.tree?.days.find((d) => d.date === y)?.m ?? {};
+  const pickLine = (id: CastId, salt: string) => {
+    const c = castById(id)!;
+    const lines = c.parcel[toneOf(id, save.bonds, save.desk, date)];
+    return lines[Math.floor(rng(hashSeed('cast-parcel', date, id, salt))() * lines.length)];
+  };
+  // The one who writes: someone whose habit counted yesterday, else anyone, seeded by the day.
+  const cared = CAST_IDS.filter((id) => caredOn(id, m));
+  const from = cared.length ? cared : CAST_IDS;
+  const who = from[Math.floor(rng(hashSeed('cast-parcel', date))() * from.length)];
+  const lines: CastNote['lines'] = [{ member: who, name: castById(who)!.name, text: pickLine(who, 'main') }];
+  for (const id of parcelExtras(perksOfSave(save), m)) if (id !== who) lines.push({ member: id, name: castById(id)!.name, text: pickLine(id, 'extra'), extra: true });
+  const scene = scenesWaiting(save)[0];
+  return { lines, ...(scene ? { scene } : {}) };
+}

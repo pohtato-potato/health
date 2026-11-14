@@ -3,7 +3,6 @@
 import { db } from '../../db/db';
 import { SEASON_DAYS } from '../calendar';
 import { ballotFor, braboVotes, lobbyDaysLeft, lobbyOpen, seatLean, tally, twistsOf, type CongressRecord, type Vote } from '../congress/congress';
-import { SEATS } from '../content/desk';
 import { clubById } from '../data/load';
 import type { CongressView } from '../desk/types';
 import { lobbiesFor } from '../desk/jobs/lobby';
@@ -16,7 +15,7 @@ export const nextCongress = (save: Pick<FbSave, 'season'>) => save.season + 1;
 
 export async function congressViewOf(save: FbSave, rel: RelationSource): Promise<CongressView> {
   const season = nextCongress(save);
-  const clubs = (await db.fbClubs.toArray()).filter((c) => !c.folded && SEATS[c.id] && c.id !== 'bra').map((c) => ({ id: c.id, name: nameOf(c.id), opinion: opinionOf(rel, c.id) }));
+  const clubs = (await db.fbClubs.toArray()).filter((c) => !c.folded && c.id !== 'bra').map((c) => ({ id: c.id, name: nameOf(c.id), opinion: opinionOf(rel, c.id) }));
   const ballot = save.ballot?.[season] ?? {};
   return {
     season,

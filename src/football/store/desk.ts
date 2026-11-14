@@ -24,6 +24,7 @@ import { worldView } from './fog';
 import { loadRelations, marketViewOf } from './market';
 import { OWN } from './season';
 import { researchedOf } from './tree';
+import { takeBackable } from '../desk/jobs/negotiate';
 import { congressViewOf } from './congress';
 import { perksOfSave, castViewOf } from './cast';
 import { restDieBonus } from '../cast/bonds';
@@ -272,3 +273,15 @@ export const useMineCount = () => useLiveQuery(() => db.deskQuestions.count(), [
 
 export const jobsForDesk = (v: DeskView) => JOBS.filter((j) => j.open(v));
 export { jobById, spendSeed };
+
+/** The cast's `negotiate-reroll`: take the last failed reply of a talk back, once a talk (desk/jobs/negotiate.ts). */
+export async function takeBack(spendId: string): Promise<boolean> {
+  return db.transaction('rw', db.fbSave, async () => {
+    const s = await db.fbSave.get('save');
+    if (!s) return false;
+    const desk = deskOf(s);
+    if (takeBackable(desk, perksOfSave(s)) !== spendId) return false;
+    await db.fbSave.put({ ...s, desk: { ...desk, backs: [...(desk.backs ?? []), spendId] } });
+    return true;
+  });
+}

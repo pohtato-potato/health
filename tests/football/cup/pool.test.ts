@@ -125,9 +125,9 @@ describe('the new combinations', () => {
 });
 
 describe('heirlooms in a match', () => {
-  it('there are twenty-five, each with one rule', () => {
-    expect(HEIRLOOMS).toHaveLength(25);
-    expect(new Set(HEIRLOOMS.map((h) => h.id)).size).toBe(25);
+  it('there are twenty-five, plus the cast’s three, each with one rule', () => {
+    expect(HEIRLOOMS).toHaveLength(28);
+    expect(new Set(HEIRLOOMS.map((h) => h.id)).size).toBe(28);
     for (const h of HEIRLOOMS) expect(h.rule.split('. ').length).toBeLessThanOrEqual(2);
   });
   it('the old match ball: the first pass each spell adds double', () => {
