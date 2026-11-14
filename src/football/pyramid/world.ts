@@ -37,3 +37,11 @@ export function seedWorld2(seeds: PyramidSeed[], own: { id: string; style: strin
   });
   return out;
 }
+
+/**
+ * LG-4: the real clubs (LG-2's world.json) as seeds. Berchem Sport, the landlords, is a neighbour and never rated
+ * into the league or the pool, so it is left out.
+ */
+export function realSeeds(clubs: readonly { id: string; rating: number; style: string; division: number | null; place: string }[]): PyramidSeed[] {
+  return clubs.filter((c) => c.place !== 'neighbour').map((c) => ({ id: c.id, rating: c.rating, style: c.style, division: c.division }));
+}
