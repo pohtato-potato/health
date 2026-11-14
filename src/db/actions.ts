@@ -317,6 +317,8 @@ export async function startSession(opts: {
   place?: TrainingSession['place'];
   half?: TrainingSession['half'];
   heavyFirst?: boolean;
+  easy?: TrainingSession['easy'];
+  loadSet?: TrainingSession['loadSet'];
 }): Promise<TrainingSession> {
   const existing = await activeSession();
   if (existing) return existing;
@@ -338,6 +340,8 @@ export async function startSession(opts: {
     ...(opts.place ? { place: opts.place } : {}),
     ...(opts.half ? { half: opts.half } : {}),
     ...(opts.heavyFirst ? { heavyFirst: true } : {}),
+    ...(opts.easy ? { easy: opts.easy } : {}),
+    ...(opts.loadSet && Object.keys(opts.loadSet).length ? { loadSet: opts.loadSet } : {}),
   };
   await db.sessions.put(s);
   return s;

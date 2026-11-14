@@ -31,9 +31,11 @@ describe('the set screen', () => {
     expect(h).not.toContain('Set done');
     expect(h).toContain('Skip this set');
   });
-  it('a started set with no rep yet has Set done waiting', () => {
+  it('a started set with no rep yet runs the clock, and Set done is ready (reps can be logged after)', () => {
     const h = html({ c: { key: row.key, taps: [], startedAt: NOW - 1000, started: true } });
-    expect(h).toMatch(/<button[^>]*disabled=""[^>]*>Set done · 0/);
+    expect(h).toContain('the set is running');
+    expect(h).toMatch(/<button type="button" class="lv-primary">Set done<\/button>/);
+    expect(h).toContain('It burns');
   });
   it('badges the lead side', () => {
     const left: Row = { ...row, ex: { ...ex, perSide: true, lead: 'L' }, side: 'L', key: 'curl:2:L' };
@@ -72,8 +74,8 @@ describe('the check screen', () => {
   ];
   const check = (p: Partial<Parameters<typeof CheckScreen>[0]> = {}) =>
     renderToStaticMarkup(<CheckScreen reps={11} unit="reps" state="burn" checks={checks} onSave={noop} {...p} />);
-  it('says "Same as last set" while the answers match the last set', () => {
-    expect(check({ prev: { checks: { tuck: 'ok' }, rir: 1 } })).toContain('Same as last set');
+  it('says "rated as last set" while the answers match the last set', () => {
+    expect(check({ prev: { checks: { tuck: 'ok' }, rir: 1 } })).toContain('Save, rated as last set');
     expect(check()).toContain('>Save<');
   });
   it('shows a check that went well in words, not colour alone', () => {
@@ -88,7 +90,7 @@ describe('the check screen', () => {
   it('leaves the list out when the plan has no checks', () => {
     const h = check({ checks: [] });
     expect(h).not.toMatch(/class="lv-check[ "]/);
-    expect(h).toContain('Left in the tank');
+    expect(h).toContain('Reps left in you');
   });
   it('keeps the set colour', () => expect(check()).toMatch(/class="lv [^"]*st-burn/));
   it('a slipped check takes back a record, in words', () => {

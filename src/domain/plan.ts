@@ -118,6 +118,8 @@ export interface ExerciseDef {
   unit?: 'kg' | 'lb' | 'stack';
   /** Plate-loaded machines: the sled's own weight, when known, as a note. */
   sledKg?: number;
+  /** Where to stop: reps left in you, low to high ([2, 3] is "stop 2–3 short", [0, 1] "to 0–1 left"). Plan v2 derives it when absent. */
+  effort?: [number, number];
 }
 
 export interface FormCheck {
@@ -194,6 +196,11 @@ export interface PlanDef {
   planVersion?: string;
   /** v3: hard sets per muscle group per week, [low, high], e.g. { Legs: [10, 16] }. */
   weeklyTargets?: Record<string, [number, number]>;
+  /**
+   * The first gym days, while loads are found: at most `sets` sets of everything, stopping `rir` reps short, for `days`
+   * days from the first gym session. Plans with a gym rotation get a default; `false` turns it off.
+   */
+  easyStart?: { days: number; sets: number; rir: number } | false;
 }
 
 export type PlanState = { variants: Record<string, number>; band: Record<string, number> };
@@ -432,6 +439,15 @@ export function validatePlan(p: unknown): string[] {
   for (const [k, v] of Object.entries(plan.weeklyTarget ?? {})) if (!['home', 'gym'].includes(k) || !(typeof v === 'number' && v >= 0)) errs.push('weeklyTarget takes home and gym session counts, e.g. { "gym": 2, "home": 2 }.');
   for (const e of (plan.sessions ?? []).flatMap((x) => x.exercises ?? [])) {
     for (const k of ['replaces', 'progressionOf'] as const) if (e[k] !== undefined && typeof e[k] !== 'string') errs.push(`${e.name}: ${k} names an exercise id.`);
+    if (e.effort !== undefined) {
+      const f = e.effort as unknown;
+      if (!(Array.isArray(f) && f.length === 2 && f.every((n) => Number.isInteger(n) && n >= 0 && n <= 5) && f[0] <= f[1])) errs.push(`${e.name}: effort is the reps to leave, low to high, e.g. [2, 3].`);
+    }
+  }
+  if (plan.easyStart !== undefined && plan.easyStart !== false) {
+    const es = plan.easyStart as Partial<{ days: unknown; sets: unknown; rir: unknown }>;
+    const ok = (v: unknown, lo: number) => typeof v === 'number' && Number.isInteger(v) && v >= lo;
+    if (!(es && ok(es.days, 1) && ok(es.sets, 1) && ok(es.rir, 0))) errs.push('easyStart is { "days", "sets", "rir" } (whole numbers), or false.');
   }
   for (const id of plan.extra ?? []) {
     if (!sessionIds.has(id)) errs.push(`The extra session "${id}" isn't a session.`);

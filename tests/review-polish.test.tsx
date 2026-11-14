@@ -217,7 +217,7 @@ describe('9 · the muscle list', () => {
 
 describe('10 · the live set screen', () => {
   const h = setHtml({ key: row.key, taps: [] });
-  it('the ghost side and weight sit in a row above the count', () => expect(h).toMatch(/class="lv-ghosts"[^>]*>.*10<small>kg<\/small>.*class="lv-countwrap"/));
+  it('the weight sits at the top, above the count (look pass L2)', () => expect(h).toMatch(/class="lv-load".*>10<\/b> kg.*class="lv-countwrap"/));
   it('the header never pushes its chips off the edge', () => {
     const live = css('live.css');
     expect(rule(live, '.lv-top')).toMatch(/grid-template-columns:\s*44px minmax\(0, 1fr\) auto/);
