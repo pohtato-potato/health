@@ -87,6 +87,7 @@ export function ParcelView({ t, p: live }: { t: Tonight; p: Parcel }) {
           <button type="button" className="md-nav-go md-q" onClick={next} style={{ minHeight: 44, minWidth: 64, textAlign: 'right', background: 'none', border: 0, color: 'inherit', font: 'inherit', cursor: 'pointer' }}>{last ? 'Done' : 'Tap to go on'}</button>
         </div>
         {k === 'result' && (p.waiting || p.result) && <ResultTile waiting={p.waiting} m={p.result} save={t.save} onNext={next} last={last} />}
+        {k === 'result' && live.others.length > 0 && <NightResults ms={live.others} />}
         {k === 'table' && <TableTile date={t.date} onNext={next} last={last} />}
         {k === 'talks' && <TalksTile offers={p.talks} date={t.date} onNext={next} last={last} />}
         {k === 'scout' && <ScoutTile t={t} scouts={p.scouts} onNext={next} last={last} />}
@@ -150,6 +151,38 @@ export function ResultTile({ waiting, m, save, onNext, last }: { waiting?: Pause
     </>
   );
 }
+
+/**
+ * League pace (O36): the night's other matches under the lead one. Each keeps Watch or Skip before its score, as the
+ * lead does; the assistant made their calls.
+ */
+export function NightResults({ ms }: { ms: StoredMatch[] }) {
+  return (
+    <section className="md-tile col" style={{ '--ink': TILE.result.ink } as React.CSSProperties} aria-label="Also last night">
+      <b>Also last night: {ms.length === 1 ? 'one more match' : `${ms.length} more matches`}</b>
+      <p className="md-q" style={{ margin: 0 }}>Your assistant made the calls in these.</p>
+      <ul className="md-night">
+        {ms.map((m) => {
+          const h = m.home === OWN ? m.score : [m.score[1], m.score[0]];
+          return (
+            <li key={m.id}>
+              <span className="md-night-what">{m.round ?? 'League'}: {shortName(m.home)} v {shortName(m.away)}</span>
+              {storedGate.waiting(m) ? (
+                <span className="md-night-btns">
+                  <button type="button" className="md-btn sm" onClick={() => storedGate.watch(m)}>Watch</button>
+                  <button type="button" className="md-btn ghost sm" onClick={() => void storedGate.skip(m)}>Skip</button>
+                </span>
+              ) : (
+                <span className="md-night-score"><span><b>{h[0]}–{h[1]}</b> {RESULT_WORD[m.result]}{m.pens ? `, ${m.pens[0]}–${m.pens[1]} on penalties` : ''}</span> <button type="button" className="md-btn ghost sm" onClick={() => go('/football/match', { id: m.id })}>Watch it</button></span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+const RESULT_WORD = { W: 'won', D: 'drew', L: 'lost' } as const;
 
 function TableTile({ date, onNext, last }: { date: string; onNext: () => void; last: boolean }) {
   const [said, setSaid] = useState<{ a: PhysioAnswer; back?: string } | null>(null);

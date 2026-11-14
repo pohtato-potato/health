@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { NATIONS, nationBar } from '../../../football/events';
 import type { Slot } from '../../../football/money';
-import { setBedtime, setFbSetting, setOwnSponsor } from '../../../football/store/save';
+import { setBedtime, setFbSetting, setLeaguePace, setOwnSponsor } from '../../../football/store/save';
+import { PACE_TITLE, paceLine } from '../../../football/pace';
 import { clock } from '../../../football/players/attributes';
 import type { FbSave } from '../../../football/store/tables';
 import { SLOT_NAME } from '../club/Money';
@@ -30,6 +31,28 @@ function LowLogRow({ s }: { s: FbSave }) {
         </select>
       </label>
       <p className="fb-s">{on ? 'On until Sunday.' : 'For a slammed week.'} Only medicines and this one habit are needed; every other axis plays at your typical level. One week at a time.</p>
+    </section>
+  );
+}
+
+/**
+ * League pace (owner, 13 Nov, O36): one switch, off by default, turned on once. It covers this season only: the next
+ * season is one match a day again by itself. Shown only during a season, or after it to say it has ended.
+ */
+export function PaceRow({ s, onPace = (v) => void setLeaguePace(v) }: { s: FbSave; onPace?: (on: boolean) => void }) {
+  const mine = s.pace && s.pace.season === s.season ? s.pace : undefined;
+  // Once its season is over the switch goes: a note says so through the next season, then the row is gone.
+  const ended = Boolean(s.pace && (s.pace.season < s.season || s.phase !== 'season'));
+  if (s.pace && s.pace.season < s.season - 1) return null;
+  if (s.phase !== 'season' && !ended) return null;
+  const on = Boolean(mine && !mine.to) && s.phase === 'season';
+  return (
+    <section className="fb-card fb-setrow" aria-label={PACE_TITLE}>
+      <div className="fb-row">
+        <span className="fb-lb">{PACE_TITLE}</span>
+        {!ended && <button type="button" className={`fb-btn sm ${on ? 'pri' : ''}`} aria-pressed={on} onClick={() => onPace(!on)}>{on ? 'On' : 'Off'}</button>}
+      </div>
+      <p className="fb-s">{paceLine(on, ended)}</p>
     </section>
   );
 }
@@ -71,8 +94,9 @@ export function SettingsView({ s, onBuzz = (v) => void setFbSetting('buzz', v), 
     <>
       <section className="fb-card fb-setrow" aria-label="Match times">
         <span className="fb-lb">Match times</span>
-        <p className="fb-s">Each day’s match plays the next morning, once the day is done, and waits for you. Closing a past day plays it straight away. One match a night; double-headers play two from the same night.</p>
+        <p className="fb-s">Each day’s match plays the next morning, once the day is done, and waits for you. Closing a past day plays it straight away. One match a night; double-headers play two from the same night. The switch below can make it three for this season.</p>
       </section>
+      <PaceRow s={s} />
       <section className="fb-card fb-setrow" aria-label="Which habit plays which axis">
         <span className="fb-lb">Which habit plays which axis</span>
         {MAPPING.map(([a, h]) => <div key={a} className="fb-row"><b>{a}</b><span className="fb-s fb-right">{h}</span></div>)}

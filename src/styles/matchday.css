@@ -70,3 +70,12 @@
 .fb-au.md-night > .fb-field { display: none; }
 .fb-au.md-night .md-in { --ab: 'Atkinson Hyperlegible Next', var(--sans); --fr: var(--serif); --cream: #ede6da; --mq: #cfc7d9; color: var(--cream); font: 16px/1.4 var(--ab); margin-top: 12px; }
 .md-opts button:disabled { opacity: .55; cursor: default; } .md-opts button[aria-pressed='true']:disabled { opacity: 1; }
+/* League pace (O36): the night's other matches under the lead result tile. */
+.md-night { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.md-night li { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid rgba(237,230,218,.2); }
+.md-night-what { font-size: 16px; }
+.md-night-btns { display: flex; gap: 8px; } .md-night-btns > * { flex: 1; }
+.md-night-score { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 16px; }
+.md-night-score b { font: 600 20px var(--fr); }
+.md-btn.sm { min-height: 44px; font-size: 16px; padding: 0 14px; }
+.md-night-score .md-btn.sm { width: auto; }

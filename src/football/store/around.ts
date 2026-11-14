@@ -80,6 +80,8 @@ export interface Parcel {
   waiting?: PausedMatch;
   /** Last night's match once finished (Brabo's), for the result tile. */
   result?: StoredMatch;
+  /** League pace (O36): the night's other matches, shown under the lead one (empty on a one-match night). */
+  others: StoredMatch[];
   talks: TalkOffer[];
   packs: number;
   /** Today's dice for the desk (made from yesterday), for the dice tile (p3-dice). */
@@ -90,6 +92,8 @@ export interface Parcel {
   /** When the day was closed: shown on the night page only. */
   sealAt?: number;
 }
+
+const waitingOn = (save: FbSave, date: DayKey) => save.paused?.date === date;
 
 /** Packs earned and not yet opened. */
 export function packsWaiting(save: FbSave): number {
@@ -103,7 +107,11 @@ export async function loadParcel(t: Tonight): Promise<Parcel> {
   const date = t.date;
   const day = h.days.get(date) ?? { date };
   const shut = groundShut(day);
-  const result = (await db.fbMatches.where('date').equals(addDays(date, -1)).toArray()).filter((m) => m.home === OWN || m.away === OWN).sort((a, b) => (a.leg ?? 1) - (b.leg ?? 1))[0];
+  // League pace (O36): a night can hold three league matches (and cup ties on the way), in calendar order. The lead
+  // is the one waiting, or else the night's first; the rest show under it, each with its own Watch or Skip.
+  const night = (await db.fbMatches.where('date').equals(addDays(date, -1)).toArray()).filter((m) => m.home === OWN || m.away === OWN).sort((a, b) => a.day - b.day || (a.leg ?? 1) - (b.leg ?? 1));
+  const result = waitingOn(t.save, addDays(date, -1)) ? undefined : [...night].reverse().find((m) => m.comp === 'league') ?? night[0];
+  const others = night.filter((m) => m !== result);
   const talks = talkOffers(h, t.save, date);
   const packs = packsWaiting(t.save);
   const waiting = t.save.paused;
@@ -118,7 +126,7 @@ export async function loadParcel(t: Tonight): Promise<Parcel> {
     dice: dice.length > 0,
     pack: packs > 0,
   });
-  return { tiles, due: parcelDue(aroundOf(t.save).parcel, date, shut, tiles), shut, waiting, result, talks, packs, dice, scouts, today: day, sealAt: day.seal?.at };
+  return { tiles, due: parcelDue(aroundOf(t.save).parcel, date, shut, tiles), shut, waiting, result, others, talks, packs, dice, scouts, today: day, sealAt: day.seal?.at };
 }
 
 /** True from Close the day until the 4 am roll-over: packs and results wait for the morning. */

@@ -21,6 +21,7 @@ import type { CallPick, MatchInput } from '../engine';
 import type { MatchdayPlan, PickTile } from '../matchday';
 import type { DeskState } from '../desk/types';
 import type { FogState } from '../fog/fog';
+import type { LeaguePace } from '../pace';
 
 export type CrestOpt = 'a' | 'b' | 'c' | 'd' | 'e';
 export interface FbSave {
@@ -126,6 +127,8 @@ export interface FbSave {
   desk?: DeskState;
   /** The world in fog (desk spec §4, Fork 2): stamped once with the clubs met before the fog came (12.8 a). */
   fog?: FogState;
+  /** League pace (O36): three league matchdays a day for one season, set by the settings switch. A user key in play.ts. */
+  pace?: LeaguePace;
 }
 
 /** What a league match needs to be finished later: who, where, and the night as it was set at 4 am. */
@@ -134,6 +137,8 @@ export interface PausedPrep {
   values: AxisValues; flags: AxisFlags; xi: XiPlace[]; setPiece?: string; tactic: { pick: Tactic; by: 'you' | 'assistant' };
   nudges?: { axis: Axis; d: number; why: string }[]; loansPlayed?: string[]; rotation: boolean; sick: boolean; auto: boolean;
   derby: boolean; vsHigher: boolean; rival: boolean; oldSelf: boolean; braboTier: Tier; pens?: boolean;
+  /** League pace (O36): the match's place in its day when more than one league matchday is played (1 or more). */
+  slot?: number;
 }
 export interface PausedMatch {
   id: string; date: DayKey; season: number;
@@ -166,6 +171,8 @@ export interface FbSeason {
   playoffs: Partial<Record<Tier, { semis: [string, string][]; semiWinners?: string[]; final?: [string, string]; winner?: string }>>;
   final?: { tables: Record<Tier, Row[]>; up: Partial<Record<Tier, string[]>>; down: Partial<Record<Tier, string[]>>; /** A double promotion (11 Nov). */ double?: DoubleUp };
   dates: Record<number, DayKey>;
+  /** League pace (O36): the league stopped here for every division once the title was safe (matchdays played, the day). */
+  leagueEnded?: { matchday: number; date: DayKey };
   /** Points deductions decided at this season's end, applied to the next. */
   nextDeductions?: Record<string, number>;
 }

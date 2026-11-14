@@ -6,6 +6,7 @@ import { bedOrder, fromBedOrder } from '../../domain/rings';
 import { db } from '../../db/db';
 import { addDays, dayOfLogging, daysBetween, weekday, type DayKey } from '../../domain/dates';
 import { seasonDays, SEASON_DAYS, type DayPlan } from '../calendar';
+import { breakBeforeFor, LEAGUE_MATCHDAYS, matchdaysBefore, matchIdFor, PACE_PER_DAY, paceOn, slotKey, titleSafe } from '../pace';
 import { advance, penalties, type Bracket } from '../cups';
 import { clubById, rememberClubs } from '../data/load';
 import { cards, physio, redCardMod, rotationShape, usesRotation } from '../discipline';
@@ -55,7 +56,7 @@ import { breakStarts, globeAfterPlayers, globeDay, globeOf, globeMatch, globeNig
 export const CATCH_UP_CAP = 42;
 const resultOf = (s: [number, number], pens?: [number, number]): Result => (s[0] > s[1] || (pens && pens[0] > pens[1]) ? 'W' : s[0] < s[1] || (pens && pens[0] < pens[1]) ? 'L' : 'D');
 
-interface World { bundles: Map<string, FbBundle>; squad: FbSquadRow[]; save: FbSave; season: FbSeason; oldSeasons: FbSeason[]; clubs: Map<string, FbClub>; matches: StoredMatch[]; news: FbNews[]; h: Health; past: StoredMatch[]; used: { id: string; date: DayKey }[]; roster: Roster; ctx: Ctx }
+interface World { /** League pace (O36): the match's place in its day; 0 is the one-a-day match. */ slot: number; bundles: Map<string, FbBundle>; squad: FbSquadRow[]; save: FbSave; season: FbSeason; oldSeasons: FbSeason[]; clubs: Map<string, FbClub>; matches: StoredMatch[]; news: FbNews[]; h: Health; past: StoredMatch[]; used: { id: string; date: DayKey }[]; roster: Roster; ctx: Ctx }
 
 /** Plays every unplayed day up to and including `date`, in order. Days before `date` count as auto-played. */
 export async function kickOff(date: DayKey): Promise<StoredMatch[]> {
@@ -67,7 +68,7 @@ export async function playDue(now = Date.now()): Promise<StoredMatch[]> {
   return playThrough(yesterday, null);
 }
 
-const USER_KEYS = ['buzz', 'wcCountry', 'ownSponsor', 'captain', 'captains', 'captainWeek', 'slots', 'sponsorStyle', 'awakeSeen', 'seenSeasonEnd', 'sheet', 'tactics', 'bedtime', 'treeUser', 'globeUser', 'around', 'desk'] as const satisfies readonly (keyof FbSave)[];
+const USER_KEYS = ['buzz', 'wcCountry', 'ownSponsor', 'captain', 'captains', 'captainWeek', 'slots', 'sponsorStyle', 'awakeSeen', 'seenSeasonEnd', 'sheet', 'tactics', 'bedtime', 'treeUser', 'globeUser', 'around', 'desk', 'pace'] as const satisfies readonly (keyof FbSave)[];
 /**
  * Engine 2 arrives: rebuilds the players from history once (spec §16), crediting the stored matches and keeping only
  * youngsters tied to a real habit. Everything else in the save stays. Safe to call any time; it runs once.
@@ -117,7 +118,7 @@ async function playThrough(until: DayKey, closed: DayKey | null): Promise<Stored
   const w = await loadWorld(save, start);
   // Matchday (decision 9.1 a): a match still waiting at the next 4 am is finished by the assistant first.
   if (w.save.paused) finishPausedIn(w, false);
-  for (let d = start; d <= until; d = addDays(d, 1)) { clubDay(w, d); playDay(w, d, d !== closed, d === until); }
+  for (let d = start; d <= until; d = addDays(d, 1)) { clubDay(w, d); playDate(w, d, d !== closed, d === until); }
   w.save.lastPlayed = until;
   await saveWorld(w, save, (cur) => !(cur?.lastPlayed && cur.lastPlayed >= until)); // another tab played first
   return w.matches;
@@ -130,7 +131,7 @@ async function loadWorld(save: FbSave, start: DayKey): Promise<World> {
   const squad = await db.fbSquad.toArray();
   const roster: Roster = new Map((await db.fbPlayers.toArray()).map((p) => [p.id, p]));
   return {
-    squad, roster, ctx: playerCtx(h, save, squad),
+    slot: 0, squad, roster, ctx: playerCtx(h, save, squad),
     bundles: new Map((await db.fbBundles.toArray()).map((b) => [b.id, b])),
     save: { ...save, rivals: migrateRivals(save.rivals) }, season: (await db.fbSeasons.get(save.season))!, oldSeasons: [], clubs: new Map(stored.map((c) => [c.id, c])),
     matches: [], news: [], h, past: await db.fbMatches.orderBy('date').toArray(),
@@ -209,26 +210,81 @@ function finishPausedIn(w: World, watched: boolean): StoredMatch | undefined {
   // The table counts the match only now ("to be played" until then).
   const tier = w.season.id === p.season ? w.season : w.oldSeasons.find((x) => x.id === p.season);
   tier?.results[p.prep.braboTier].push({ home: p.prep.home, away: p.prep.away, score: m.score }); // braboTail returns the score home first
-  return w.matches[w.matches.length - 1];
+  const stored = w.matches[w.matches.length - 1];
+  // League pace: the waiting match may be the one that makes the title safe; the season then ends on its day.
+  if (w.season.id === p.season && paceOn(w.save, p.date) && titleSafeNow(w)) { w.slot = (p.prep.slot ?? 0) + 1; endLeague(w, p.date, p.prep.auto); w.slot = 0; }
+  return stored;
 }
 
 const rating = (w: World, id: string) => w.clubs.get(id)?.rating ?? clubById(id).rating ?? 50;
 function otherResult(w: World, home: string, away: string, seed: string, neutral = false): [number, number] {
-  return simResult({ rating: rating(w, home) }, { rating: rating(w, away) }, rng(hashSeed(seed, home, away)), neutral ? 0 : 3);
+  return simResult({ rating: rating(w, home) }, { rating: rating(w, away) }, rng(hashSeed(seed, home, away, ...slotKey(w.slot))), neutral ? 0 : 3);
+}
+/** A seed's day part: the date itself for the one-a-day match, the date and its slot for the extra matchdays. */
+const sd = (w: World, date: DayKey) => (w.slot ? `${date}#${w.slot}` : date);
+
+// ---- League pace (O36): three league matchdays a day for the rest of one season ----
+/**
+ * One sealed day. At one a day it plays the next season day. With the pace on it plays season days in calendar order
+ * (cup days on the way included) until three league matchdays are in, each as its own slot with its own dice. It
+ * stops early before an international break, and ends the season the moment the title is safe.
+ */
+function playDate(w: World, date: DayKey, auto: boolean, last: boolean) {
+  if (!paceOn(w.save, date)) { w.slot = 0; return playDay(w, date, auto, last); }
+  let leagues = 0;
+  for (let k = 0; w.save.phase === 'season' && leagues < PACE_PER_DAY; k++) {
+    if (k > 0 && breakNext(w)) break;
+    w.slot = k;
+    const isLeague = seasonDays()[w.save.day - 1]?.kind === 'league' && !isBreakDay(w.save, date);
+    if (isLeague) leagues++;
+    playDay(w, date, auto, last && leagues === PACE_PER_DAY);
+    if (isBreakDay(w.save, date)) break;
+    if (isLeague && !w.save.paused && titleSafeNow(w)) { w.slot = k + 1; endLeague(w, date, auto); break; }
+  }
+  w.slot = 0;
+}
+/** The next season day starts an international break that has not been played yet: the night stops before it. */
+const breakNext = (w: World): boolean => breakBeforeFor(w.save)(w.save.day);
+/** Brabo's title cannot be lost on the league played so far. */
+function titleSafeNow(w: World): boolean {
+  const tier = w.season.tierOf[OWN];
+  return titleSafe(tablesNow(w)[tier], OWN, LEAGUE_MATCHDAYS - matchdaysBefore(w.save.day));
+}
+/**
+ * The title is safe: the league stops for every division on the matchday just played (so every table has the same
+ * games), and the rest of the calendar's cup rounds, continental nights and playoffs are played out that same day,
+ * each in its own slot. Then the existing season end runs: promotion, the double-promotion rule, the money.
+ */
+function endLeague(w: World, date: DayKey, auto: boolean) {
+  const md = matchdaysBefore(w.save.day);
+  w.season.leagueEnded = { matchday: md, date };
+  const tier = w.season.tierOf[OWN];
+  w.news.push({ id: `${date}:title-safe`, date, kind: 'club', text: `The title is safe. Nobody in ${tierName(tier)} can catch Brabo United now, with ${LEAGUE_MATCHDAYS - md} matchdays left. The league stops here for every division; the cups and the playoffs are played out tonight, and promotion comes with them. Next season is one match a day again.` });
+  while (w.save.phase === 'season') {
+    playDay(w, date, auto, false, true);
+    w.slot++;
+  }
 }
 
-function playDay(w: World, date: DayKey, auto: boolean, last = false) {
+function playDay(w: World, date: DayKey, auto: boolean, last = false, leagueOver = false) {
   const { save } = w;
   if (save.phase === 'event') return playEventDay(w, date, auto);
-  if (isBreakDay(save, date)) return; // an international break: no matches, the season day waits
+  if (isBreakDay(save, date) && !leagueOver) return; // an international break: no matches, the season day waits
   const plan = seasonDays()[save.day - 1];
   w.season.dates[save.day] = date;
   const braboTier = w.season.tierOf[OWN];
+  if (leagueOver && plan.kind === 'league') {
+    // League pace: the league has stopped; a continental night on this day is still played.
+    if (plan.cont) continentalNight(w, date, plan, auto, 0);
+    save.day++;
+    if (save.day > SEASON_DAYS) endSeason(w, date);
+    return;
+  }
   const mine: { comp: Comp; round?: string; home: string; away: string; neutral?: boolean; onWin?: (s: [number, number], p?: [number, number]) => void }[] = [];
   if (plan.kind === 'league') {
     for (const t of TIERS) for (const [h, a] of w.season.fixtures[t][plan.matchday! - 1]) {
       if (h === OWN || a === OWN) mine.push({ comp: 'league', round: `Matchday ${plan.matchday}`, home: h, away: a });
-      else w.season.results[t].push({ home: h, away: a, score: otherResult(w, h, a, date) });
+      else w.season.results[t].push({ home: h, away: a, score: otherResult(w, h, a, date) }); // the slot is in otherResult's seed
     }
     // Matchday (spec §2.1): the last day played waits to be watched, unless the season or a continental night
     // needs its result straight away.
@@ -257,7 +313,7 @@ function playDay(w: World, date: DayKey, auto: boolean, last = false) {
             score = m.score; pens = m.pens;
           } else {
             score = otherResult(w, t.home, t.away, `${date}:${b.id}:${ri}`, neutral);
-            if (score[0] === score[1]) pens = penalties(rating(w, t.home), rating(w, t.away), rng(hashSeed(date, 'pens', t.home, t.away)));
+            if (score[0] === score[1]) pens = penalties(rating(w, t.home), rating(w, t.away), rng(hashSeed(sd(w, date), 'pens', t.home, t.away)));
           }
           res[`${t.home}-${t.away}`] = { score, pens };
         }
@@ -267,7 +323,7 @@ function playDay(w: World, date: DayKey, auto: boolean, last = false) {
     }
     if (plan.kind === 'finals1') played += playoffSemis(w, date, plan, auto, played);
     if (plan.kind === 'finals2') played += playoffFinals(w, date, plan, auto, played);
-    if (!played) friendly(w, date, plan, auto);
+    if (!played && !leagueOver) friendly(w, date, plan, auto);
   }
   save.day++;
   if (save.day > SEASON_DAYS) endSeason(w, date);
@@ -287,7 +343,7 @@ function playoffSemis(w: World, date: DayKey, plan: DayPlan, auto: boolean, befo
     for (const [h, a] of semis) {
       let score: [number, number], pens: [number, number] | undefined;
       if (h === OWN || a === OWN) { const m = brabo(w, date, plan, 'playoff', h, a, auto, 'Playoff semi-final', (before + ++n) as 1 | 2); score = m.score; pens = m.pens; }
-      else { score = otherResult(w, h, a, `${date}:po`); if (score[0] === score[1]) pens = penalties(rating(w, h), rating(w, a), rng(hashSeed(date, 'popens', h))); }
+      else { score = otherResult(w, h, a, `${date}:po`); if (score[0] === score[1]) pens = penalties(rating(w, h), rating(w, a), rng(hashSeed(sd(w, date), 'popens', h))); }
       winners.push(resultOf(score, pens) === 'L' ? a : h);
     }
     w.season.playoffs[t] = { semis, semiWinners: winners, final: [winners[0], winners[1]] };
@@ -302,7 +358,7 @@ function playoffFinals(w: World, date: DayKey, plan: DayPlan, auto: boolean, bef
     const [h, a] = po.final;
     let score: [number, number], pens: [number, number] | undefined;
     if (h === OWN || a === OWN) { const m = brabo(w, date, plan, 'playoff', h, a, auto, 'Playoff final', (before + ++n) as 1 | 2, true); score = m.score; pens = m.pens; }
-    else { score = otherResult(w, h, a, `${date}:pof`, true); if (score[0] === score[1]) pens = penalties(rating(w, h), rating(w, a), rng(hashSeed(date, 'pofpens', h))); }
+    else { score = otherResult(w, h, a, `${date}:pof`, true); if (score[0] === score[1]) pens = penalties(rating(w, h), rating(w, a), rng(hashSeed(sd(w, date), 'pofpens', h))); }
     po.winner = resultOf(score, pens) === 'L' ? a : h;
   }
   return n;
@@ -311,7 +367,7 @@ function playoffFinals(w: World, date: DayKey, plan: DayPlan, auto: boolean, bef
 function friendly(w: World, date: DayKey, plan: DayPlan, auto: boolean) {
   const tier = w.season.tierOf[OWN];
   const pool = [...w.clubs.values()].filter((c) => c.id !== OWN && !c.folded && Math.abs(c.tier - tier) <= 1);
-  const opp = pick(rng(hashSeed(date, 'friendly')), pool).id;
+  const opp = pick(rng(hashSeed(sd(w, date), 'friendly')), pool).id;
   brabo(w, date, plan, 'friendly', OWN, opp, auto, 'Friendly');
 }
 
@@ -480,7 +536,7 @@ function braboMaybe(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: str
   if ([...w.past, ...w.matches].some((m) => m.opp === oppId && m.result === 'L')) conds.push('beat-them-before');
   let braboHome = neutral ? home === OWN : oppId === 'zur' && !w.save.moved ? false : home === OWN;
   if (braboHome && lockedOutTonight(w, plan, date)) braboHome = false;
-  const seed = hashSeed(date, home, away, comp, String(leg ?? 0));
+  const seed = hashSeed(date, home, away, comp, String(leg ?? 0), ...slotKey(w.slot));
   const tree = treeAbilities(w, ctx, braboHome);
   const slots = new Set(w.save.slots);
   // Chances are sized against your typical shape: the median of the real nights in the last 28 days (one per date).
@@ -503,11 +559,12 @@ function braboMaybe(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: str
     day: plan.day, matchday: plan.matchday, comp, round, home, away, oppId, braboHome, values, flags, xi: team.xi,
     setPiece: tonight.setPiece, tactic: tonight.tactic, nudges: team.nudges.length ? team.nudges : undefined, loansPlayed: team.loansPlayed,
     rotation, sick, auto, derby, vsHigher: Boolean(ctx.vsHigher), rival: Boolean(rival) || oppId === ANTIGOON, oldSelf: Boolean(club?.old), braboTier,
+    ...(w.slot ? { slot: w.slot } : {}),
   };
   if (comp === 'league') {
     // Matchday (spec §2.3–2.5): a league night has calls, and plays the plan (tempo, the read, a card) set for it.
     const p: PausedMatch = {
-      id: `${date}:${leg ?? 1}`, date, season: w.save.season, input: { ...input, rival: undefined } as PausedMatch['input'],
+      id: matchIdFor(date, leg, w.slot), date, season: w.save.season, input: { ...input, rival: undefined } as PausedMatch['input'],
       rivalTwist: rival ? 'rival' : oppId === ANTIGOON ? 'antigoon' : undefined,
       style: club?.style ?? def.style, scouted: readScouted(scoutLevel(w.save, oppId, date)), prep, picks: [],
     };
@@ -539,7 +596,7 @@ function braboTail(w: World, date: DayKey, prep: PausedPrep, events: MatchEvents
   const score: [number, number] = home === OWN ? events.score : [events.score[1], events.score[0]];
   const mineScore = events.score;
   const m: StoredMatch = {
-    id: `${date}:${leg ?? 1}`, date, season: w.save.season, day: plan.day, comp, round, home, away, opp: oppId, braboHome,
+    id: matchIdFor(date, leg, prep.slot ?? 0), date, season: w.save.season, day: plan.day, comp, round, home, away, opp: oppId, braboHome,
     values, flags, events, score: mineScore, pens, result: resultOf(mineScore, pens),
     xi: team.xi, credits: creditsFor(events, team.xi, def.name, undefined, tonight.setPiece),
     tactic: tonight.tactic, nudges: team.nudges.length ? team.nudges : undefined,
@@ -583,11 +640,13 @@ function braboTail(w: World, date: DayKey, prep: PausedPrep, events: MatchEvents
     const line = backLine(away);
     if (line && !w.news.some((n) => n.id === `${date}:back`)) w.news.push({ id: `${date}:back`, date, kind: 'club', text: line });
   }
+  // League pace: research from league matches comes once a day, from the day's first league match.
+  const lessonDue = comp !== 'league' || ![...w.past, ...w.matches].some((x) => x.date === date && x.comp === 'league');
   // Engine 2 has no new Awakenings: a player's limit breaks take their place (layer 2).
   w.matches.push(m);
   w.roster = creditMatch(w.roster, m);
   globeMatch(w.save, m, team.loansPlayed);
-  treeMatch(w, m);
+  if (lessonDue) treeMatch(w, m);
   afterNight(w, m, sick, def.name);
   const run = [...w.past, ...w.matches].filter((x) => !x.rotation);
   let streak = 0;
@@ -652,7 +711,7 @@ function afterNight(w: World, m: StoredMatch, sick: boolean, oppName: string) {
   const agents = [...w.roster.values()].filter((p) => p.freeAgent?.club === m.opp);
   if (theirs.length && agents.length) {
     const p = agents[hashSeed(String(m.events.seed), 'agent') % agents.length];
-    w.news.push({ id: `${m.date}:${m.leg ?? 1}:agent-goal`, date: m.date, kind: 'club', clubId: m.opp, matchId: m.id, text: `${p.name} scores against us for ${oppName}, ${theirs[0].minute}′. The buy-back clause is still open.` });
+    w.news.push({ id: `${m.id}:agent-goal`, date: m.date, kind: 'club', clubId: m.opp, matchId: m.id, text: `${p.name} scores against us for ${oppName}, ${theirs[0].minute}′. The buy-back clause is still open.` });
   }
 }
 /** Three youngsters for a season, at most one exercise, plus one per youth slot won in a trade. */
