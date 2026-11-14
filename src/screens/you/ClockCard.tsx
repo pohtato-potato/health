@@ -33,3 +33,15 @@ export function ClockCard({ start, end, today }: { start: string; end: string; t
     </button>
   );
 }
+
+/** The journey clock, small, for the top of You (look pass): the time on the journey, and its line on a tap. */
+export function ClockChip({ start, end, today }: { start: string; end: string; today: string }) {
+  const [note, setNote] = useState(false);
+  const c = clockAt(start, end, today);
+  return (
+    <button type="button" className="k-clock" onClick={() => setNote(!note)} aria-expanded={note} aria-label={`${c.label} on the journey clock. ${SAYS[c.phase].line}`}>
+      <b>{c.label}</b>
+      <span className="k-q">{note ? SAYS[c.phase].note : 'on the journey clock'}</span>
+    </button>
+  );
+}

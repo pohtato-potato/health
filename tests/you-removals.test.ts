@@ -18,7 +18,7 @@ describe('You page removals (12 Nov)', () => {
     expect(b).toMatch(/Did you know/);
     expect(b).toMatch(/Surprise me/);
     const y = src('screens/You.tsx');
-    for (const c of ['<TodaysLift', '<HowsToday', '<MomentumPanel', '<Browse', '<TrophyCase', '<Doors', '<FindingCard', '<LeagueLine', '<FilmPoster', '<ClockCard', '<DueLines'])
+    for (const c of ['<TodaysLift', '<HowsToday', '<MomentumPanel', '<Browse', '<TrophyCase', '<Doors', '<FindingCard', '<LeagueLine', '<FilmPoster', '<ClockChip', '<DueLines'])
       expect(y).toContain(c);
   });
   it('stored questions stay in settings so old backups restore', () => {

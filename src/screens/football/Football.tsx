@@ -6,12 +6,12 @@ import { useSave, useTonight } from '../../football/store/hooks';
 import { MatchPlayer } from './Match';
 import { LiveRoute } from './match/Live';
 import { useRoute } from '../../router';
-import { Aurora, FootballHome, type FbSection } from './FootballHome';
+import { Aurora, FootballHome, SECTIONS, type FbInner, type FbSection } from './FootballHome';
 import { TonightView } from './Tonight';
-import { LeagueHome } from './league/LeagueHome';
+import { LEAGUE_VIEWS, LeagueHome } from './league/LeagueHome';
 import { ClubPage } from './league/ClubPage';
-import { RivalRoute, StoryHome, WrappedRoute } from './story/StoryHome';
-import { ClubHome, PlayerRoute } from './club/ClubHome';
+import { RivalRoute, STORY_VIEWS, StoryHome, WrappedRoute } from './story/StoryHome';
+import { CLUB_HELP, CLUB_VIEWS, ClubHome, PlayerRoute } from './club/ClubHome';
 import { FullTime } from './FullTime';
 import { CardMomentRoute, PlayerPage, UnitRoute } from './players/Screens';
 import { BlendRoute, LimitBreakRoute, TeamSheetRoute } from './players/Rotation';
@@ -74,6 +74,45 @@ function ReelRoute() {
   return <MatchPlayer key={m.id} m={keyChances(m)} save={save} onEnd={() => (i + 1 < list.length ? setI(i + 1) : go('/football', undefined, { replace: true }))} />;
 }
 
+
+const TREE_BACK = { back: 'The tree', to: '/football/club', params: { view: 'tree' } };
+const CLUB_BACK = { back: 'Club', to: '/football/club' };
+/** Navigation A: each page inside Club, with its name and its one way back. */
+const INNER: Record<string, FbInner> = {
+  '/football/tech': { title: 'A tech', ...TREE_BACK },
+  '/football/era': { title: 'A new era', ...TREE_BACK },
+  '/football/eureka': { title: 'Eureka', ...TREE_BACK },
+  '/football/projects': { title: 'Projects', ...TREE_BACK },
+  '/football/staff': { title: 'Staff room', ...TREE_BACK },
+  '/football/board': { title: 'The board', ...TREE_BACK },
+  '/football/boon': { title: 'Boons', ...TREE_BACK },
+  '/football/packs': { title: 'Packs', ...CLUB_BACK },
+  '/football/album': { title: 'The album', back: 'Packs', to: '/football/packs' },
+  '/football/loan': { title: 'A loan', back: 'Loans', to: '/football/loans' },
+  '/football/loans': { title: 'Loans', ...CLUB_BACK },
+  '/football/trials': { title: 'Trials', ...CLUB_BACK },
+  '/football/tie': { title: 'Tie to a habit', back: 'Trials', to: '/football/trials' },
+  '/football/academy': { title: 'Academy', ...CLUB_BACK },
+  '/football/duty': { title: 'International duty', ...CLUB_BACK },
+};
+
+/** A section's other views (?view=) are pages inside it now, reached by doors on the section's page. */
+function viewInner(section: FbSection, view: string | null): FbInner | undefined {
+  if (!view) return undefined;
+  const label = (section === 'club' ? CLUB_VIEWS : section === 'league' ? LEAGUE_VIEWS : section === 'story' ? STORY_VIEWS : []).find((v) => v.id === view)?.label;
+  if (!label || (section === 'story' && view === 'rivals') || (section === 'league' && view === 'table')) return undefined;
+  const sec = SECTIONS.find((x) => x.id === section)!;
+  return { title: PAGE_NAME[label] ?? label, back: sec.label, to: sec.path };
+}
+const PAGE_NAME: Record<string, string> = { Squad: 'The squad', Tree: 'The tree', Ground: 'The ground', Deals: 'Deals', Money: 'Money', Kits: 'Kits', Pyramid: 'The pyramid', Calendar: 'Calendar', Cups: 'The cups', Seasons: 'Seasons', Moments: 'Moments', 'Old Selves': 'Old Selves', Settings: 'Football settings' };
+
+/** A player's page goes back to their unit. */
+function PlayerFrame({ id }: { id: string }) {
+  const p = useLiveQuery(() => db.fbPlayers.get(id), [id]);
+  if (p === undefined) return null;
+  return <FootballHome section="club" inner={p ? { title: 'A player', back: p.unit, to: '/football/unit', params: { u: p.unit } } : { title: 'A player', ...CLUB_BACK }}><PlayerPage id={id} /></FootballHome>;
+}
+
 export function Football() {
   const { path, params } = useRoute();
   const save = useSave();
@@ -92,14 +131,14 @@ export function Football() {
   if (path === '/football/desk' || path.startsWith('/football/desk/')) return <DeskRoute />;
   if (path === '/football/cup' || path === '/football/cup/run' || path === '/football/cup/match') return <CupRoute path={path} />;
   if (path === '/football/market') return <MarketRoute />;
-  if (path === '/football/atlas') return <FootballHome section="league"><Atlas /></FootballHome>;
-  if (path === '/football/club-page') return <FootballHome section="league"><ClubPage id={params.get('id') ?? ''} wiki={params.get('wiki') === '1'} /></FootballHome>;
+  if (path === '/football/atlas') return <FootballHome section="league" inner={{ title: 'The atlas', back: 'League', to: '/football/league' }}><Atlas /></FootballHome>;
+  if (path === '/football/club-page') return <FootballHome section="league" inner={{ title: 'A club', back: 'League', to: '/football/league' }}><ClubPage id={params.get('id') ?? ''} wiki={params.get('wiki') === '1'} /></FootballHome>;
   if (path === '/football/wrapped') return <WrappedRoute season={Number(params.get('season') ?? 1)} />;
-  if (path === '/football/rival') return <FootballHome section="story"><RivalRoute id={params.get('id') ?? ''} /></FootballHome>;
-  if (path === '/football/player' && params.get('id')) return <FootballHome section="club"><PlayerPage id={params.get('id')!} /></FootballHome>;
-  if (path === '/football/player') return <FootballHome section="club"><PlayerRoute axis={params.get('axis') ?? ''} /></FootballHome>;
-  if (path === '/football/unit') return <FootballHome section="club"><UnitRoute unit={params.get('u') ?? ''} /></FootballHome>;
-  if (path === '/football/card') return <FootballHome section="club"><CardMomentRoute id={params.get('id') ?? ''} /></FootballHome>;
+  if (path === '/football/rival') return <FootballHome section="story" inner={{ title: 'A rival', back: 'Story', to: '/football/story' }}><RivalRoute id={params.get('id') ?? ''} /></FootballHome>;
+  if (path === '/football/player' && params.get('id')) return <PlayerFrame id={params.get('id')!} />;
+  if (path === '/football/player') return <FootballHome section="club" inner={{ title: 'Squad member', back: 'Squad', to: '/football/club', params: { view: 'squad' } }}><PlayerRoute axis={params.get('axis') ?? ''} /></FootballHome>;
+  if (path === '/football/unit') return <FootballHome section="club" inner={{ title: params.get('u') ?? 'A unit', back: 'Club', to: '/football/club' }}><UnitRoute unit={params.get('u') ?? ''} /></FootballHome>;
+  if (path === '/football/card') return <FootballHome section="club" inner={{ title: 'A new card', back: 'Club', to: '/football/club' }}><CardMomentRoute id={params.get('id') ?? ''} /></FootballHome>;
   // Engine 2, layer 3: the tree.
   const tree: Record<string, () => ReactNode> = {
     // A link to a tech that is missing or unknown lands on the tree, never on an empty page.
@@ -120,13 +159,14 @@ export function Football() {
     '/football/academy': () => <AcademyPage />,
     '/football/duty': () => <DutyPage />,
   };
-  if (tree[path]) return <FootballHome section="club">{tree[path]()}</FootballHome>;
-  if (path === '/football/track') return <FootballHome section="story"><TrackPage /></FootballHome>;
-  if (path === '/football/bounties') return <FootballHome section="story"><BountiesPage /></FootballHome>;
-  if (path === '/football/limit') return <FootballHome section="club"><LimitBreakRoute id={params.get('id') ?? ''} /></FootballHome>;
-  if (path === '/football/sheet') return <FootballHome section="club"><TeamSheetRoute /></FootballHome>;
-  if (path === '/football/blend') return <FootballHome section="tonight"><BlendRoute /></FootballHome>;
+  if (tree[path]) return <FootballHome section="club" inner={INNER[path]}>{tree[path]()}</FootballHome>;
+  if (path === '/football/track') return <FootballHome section="story" inner={{ title: 'Season track', back: 'Story', to: '/football/story' }}><TrackPage /></FootballHome>;
+  if (path === '/football/bounties') return <FootballHome section="story" inner={{ title: 'Bounties', back: 'Story', to: '/football/story' }}><BountiesPage /></FootballHome>;
+  if (path === '/football/limit') return <FootballHome section="club" inner={{ title: 'Limit break', back: 'Club', to: '/football/club' }}><LimitBreakRoute id={params.get('id') ?? ''} /></FootballHome>;
+  if (path === '/football/sheet') return <FootballHome section="club" inner={{ title: 'Team sheet', back: 'Club', to: '/football/club' }}><TeamSheetRoute /></FootballHome>;
+  if (path === '/football/blend') return <FootballHome section="tonight" inner={{ title: 'How tonight adds up', back: 'Tonight', to: '/football' }}><BlendRoute /></FootballHome>;
   const section = SECTION[path] ?? 'tonight';
   if (section === 'tonight') return <TonightRoute />;
-  return <FootballHome section={section}>{section === 'league' ? <LeagueHome /> : section === 'story' ? <StoryHome /> : <ClubHome />}</FootballHome>;
+  const inner = viewInner(section, params.get('view'));
+  return <FootballHome section={section} inner={inner} help={section === 'club' && !inner ? CLUB_HELP : undefined}>{section === 'league' ? <LeagueHome /> : section === 'story' ? <StoryHome /> : <ClubHome />}</FootballHome>;
 }

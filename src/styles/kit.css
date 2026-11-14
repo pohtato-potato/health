@@ -1,0 +1,173 @@
+/*
+ * The kit (look pass, 14 Nov 2026). Every page is built from these parts; DESIGN.md says why.
+ * One thing leads (a picture, or one number where the number is the answer), then panels, then one glowing action.
+ * Loaded after the older sheets so its shared tokens win.
+ */
+:root {
+  /* Type: Fraunces for numbers and titles, Atkinson Hyperlegible for everything else. */
+  --sans: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, sans-serif;
+
+  /* Metric inks, made vivid. One meaning each, on every page and every theme. */
+  --kcal: #e98a5b;
+  --protein: #c2b2ff;
+  --steps: #8fdcb6;
+  --sleep: #93c3dc;
+  --apricot: #e98a5b;
+  --lavender: #c2b2ff;
+
+  /* The six Football axes keep their inks (src/ui/inks.ts). */
+  --ax-pace: #8fdcb6;
+  --ax-power: #ff9a76;
+  --ax-fuel: #c2b2ff;
+  --ax-rest: #93c3dc;
+  --ax-routine: #f4aedb;
+  --ax-shape: #d9e8f3;
+
+  --k-cream: #ede6da;
+  --k-quiet: #c4c1cf;
+  --k-gold: #f2c46d;
+  --k-pearl: #d9e8f3;
+  --k-coral: #ff9a76;
+  --k-good: #8fc9b0;
+
+  /* The one action colour. A theme may change it; the page's own light decides what it sits on. */
+  --act: #ff7a1a;
+  --act-ink: #0d0f20;
+
+  /* Each page's light, used by doors and the page background. Defaults are the You light. */
+  --w1: rgba(233, 138, 91, 0.18);
+  --w2: rgba(108, 63, 196, 0.24);
+}
+
+/* ---- the page's light: a warm glow in one corner, a cool one in the opposite corner, never on top of each other ---- */
+.k-light { position: relative; isolation: isolate; color: var(--k-cream); }
+.k-light::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: var(--k-bg); }
+.k-light.you { --w1: rgba(233, 138, 91, 0.18); --w2: rgba(108, 63, 196, 0.24); --k-bg: radial-gradient(90% 40% at 0% 0%, rgba(233, 138, 91, 0.30), transparent 70%), radial-gradient(90% 50% at 100% 100%, rgba(108, 63, 196, 0.45), transparent 70%), #100c1e; }
+.k-light.walk { --w1: rgba(143, 220, 182, 0.16); --w2: rgba(70, 60, 150, 0.26); --k-bg: radial-gradient(90% 45% at 100% 100%, rgba(143, 220, 182, 0.22), transparent 70%), #0b1024; }
+
+/* ---- the page skeleton ---- */
+.k-page { display: flex; flex-direction: column; gap: 10px; font-family: var(--sans); font-size: 15px; line-height: 1.3; font-variant-numeric: lining-nums; }
+.k-q { color: var(--k-quiet); }
+.k-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-width: 0; }
+.k-row.end { align-items: flex-end; }
+.k-col { display: flex; flex-direction: column; min-width: 0; }
+.k-r { text-align: right; }
+
+/* Titles in Fraunces; the small line sits under the title, never above it. */
+.k-title { font: 400 24px/1.15 var(--serif); margin: 0; text-wrap: balance; }
+.k-title.lg { font-size: 30px; }
+.k-under { display: block; margin-top: 2px; color: var(--k-quiet); font-size: 15px; }
+
+/* The hero number: Fraunces at 600, large, in the thing's own ink. */
+.k-hero { font: 600 72px/0.85 var(--serif); letter-spacing: -0.02em; color: var(--ink, var(--k-cream)); font-variant-numeric: lining-nums; }
+.k-hero.md { font-size: 54px; }
+.k-hero.sm { font-size: 44px; }
+.k-hero-row { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.k-hero-row b { font-weight: 700; }
+.k-num { font: 600 26px/1.05 var(--serif); font-variant-numeric: lining-nums; }
+
+/* A section label: small capitals with a hairline running to the edge. */
+.k-sect { font: 700 14px var(--sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--k-quiet); display: flex; align-items: center; gap: 10px; margin: 14px 0 0; }
+.k-sect::after { content: ''; flex: 1; height: 1px; background: rgba(237, 230, 218, 0.2); }
+
+/* ---- panels: filled in the thing's own colour. Tappable ones carry a hairline edge and a small drawn arrow. ---- */
+.k-panel {
+  --ink: var(--k-cream);
+  position: relative; min-width: 0; border-radius: 20px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ink) 24%, #10122a), color-mix(in srgb, var(--ink) 7%, #10122a) 90%);
+  border: 1px solid transparent; color: var(--k-cream); font: inherit; text-align: left;
+}
+.k-panel .k-q { color: color-mix(in srgb, var(--ink) 26%, #e4e0ee); }
+.k-panel .k-lb { font-weight: 700; color: var(--ink); }
+.k-panel.flat { flex-direction: row; align-items: center; gap: 12px; }
+button.k-panel, a.k-panel { cursor: pointer; text-decoration: none; min-height: 44px; }
+.k-tap { border-color: color-mix(in srgb, var(--ink) 46%, transparent); padding-right: 32px; }
+.k-tap > .k-arrow { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: color-mix(in srgb, var(--ink) 80%, #fff); }
+.k-tap:focus-visible, .k-door:focus-visible, .k-act:focus-visible, .k-back:focus-visible, .k-help:focus-visible, .k-nav a:focus-visible { outline: 3px solid var(--k-cream); outline-offset: 2px; }
+
+/* ---- doors: a way into another page, showing one live value, lit by the page they sit on ---- */
+.k-doors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.k-doors.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.k-door {
+  --ink: var(--k-cream);
+  position: relative; min-width: 0; min-height: 76px; border-radius: 18px; padding: 10px 12px; display: flex; flex-direction: column; gap: 1px; align-items: flex-start;
+  background: linear-gradient(150deg, var(--w1), var(--w2)); border: 1px solid color-mix(in srgb, var(--ink) 46%, transparent);
+  color: var(--k-cream); font: inherit; text-align: left; cursor: pointer; text-decoration: none;
+}
+.k-door .k-arrow { position: absolute; right: 9px; top: 12px; color: color-mix(in srgb, var(--ink) 80%, #fff); }
+.k-door b.v { font: 600 20px/1.15 var(--serif); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--k-cream); }
+.k-door .nm { font-weight: 700; font-size: 15px; line-height: 1.15; overflow-wrap: anywhere; }
+
+/* ---- the one glowing action a page: its glow falls below it, like a real light ---- */
+.k-act {
+  min-height: 52px; padding: 0 20px; border-radius: 999px; border: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--act); color: var(--act-ink); font: 700 16px var(--sans); cursor: pointer; text-decoration: none;
+  box-shadow: 0 10px 24px -8px var(--act);
+}
+.k-act.wide { width: 100%; }
+.k-act.sm { min-height: 44px; padding: 0 18px; font-size: 15px; }
+.k-act.quiet { background: transparent; color: var(--k-cream); border: 2px solid var(--k-cream); box-shadow: none; }
+
+/* ---- chips: the key numbers ---- */
+.k-chip { --ink: var(--k-cream); display: inline-flex; align-items: center; min-height: 32px; padding: 3px 12px; border-radius: 999px; border: 1.5px solid var(--ink); color: var(--ink); font-weight: 700; font-size: 15px; white-space: nowrap; }
+.k-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ---- the page header inside a page: one way back, the page's name, maybe a "?" ---- */
+.k-head { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; min-height: 48px; }
+.k-head .k-title { text-align: center; font-size: 22px; }
+.k-head > :last-child { justify-self: end; }
+.k-back { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; min-width: 44px; padding: 0 6px 0 0; border: 0; background: none; color: var(--k-cream); font: 700 15px var(--sans); cursor: pointer; justify-self: start; max-width: 100%; }
+.k-back span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---- the "?" and the "how this works" sheet ---- */
+.k-help { width: 44px; height: 44px; flex: none; border-radius: 50%; display: grid; place-items: center; border: 0; background: none; color: var(--k-cream); cursor: pointer; padding: 0; }
+.k-help i { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid rgba(237, 230, 218, 0.6); display: grid; place-items: center; }
+.k-how { display: flex; flex-direction: column; gap: 14px; font-family: var(--sans); padding-bottom: 8px; }
+.k-how-step { display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: center; }
+.k-how-step > span:first-child { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: color-mix(in srgb, var(--ink) 25%, #171a36); }
+.k-how-step b { display: block; }
+
+/* ---- Football: four words across the top, underlined where you are ---- */
+.k-nav { display: flex; align-items: center; gap: 4px 18px; flex-wrap: nowrap; min-height: 48px; }
+.k-nav a { min-height: 44px; min-width: 44px; justify-content: center; display: inline-flex; align-items: center; color: #a9a7b8; font: 400 16px var(--sans); text-decoration: none; position: relative; white-space: nowrap; }
+.k-nav a[aria-current='page'] { color: #fff; font-weight: 700; }
+.k-nav a[aria-current='page']::after { content: ''; position: absolute; left: 0; right: 0; bottom: 6px; height: 3px; border-radius: 2px; background: var(--act); }
+.k-nav .k-help { margin-left: auto; }
+@media (max-width: 350px) { .k-nav { gap: 4px 13px; } }
+
+/* ---- an empty page: one picture, one line, one thing to do ---- */
+.k-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 18px 0 8px; }
+.k-empty .k-pic { width: 140px; height: 140px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle, color-mix(in srgb, var(--ink) 35%, transparent), transparent 70%); }
+
+/* Inside a headed Football page the header carries the page's name, so older screens' own big title steps aside. */
+.k-headed .fbt-head > .fbt-t1 { display: none; }
+.k-headed .fbt-head { justify-content: flex-start; }
+.fb-au { --w1: rgba(255, 122, 26, 0.20); --w2: rgba(108, 63, 196, 0.24); }
+
+/* Club (board four): the Kaai runs edge to edge under the four words. */
+.kc-kaai-wrap { margin: -4px -16px 0; }
+.kc-kaai { width: 100%; display: block; }
+/* The eleven on a pitch that looks like one: mown stripes, each player filled in their unit's ink. */
+.kc-club .pl-pitch { aspect-ratio: 336 / 300; border: 0; box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.45); background: repeating-linear-gradient(180deg, #11402f 0 33px, #0e3628 33px 66px); border-radius: 22px; }
+.kc-club .pl-pitch .pl-lines * { stroke: rgba(255, 255, 255, 0.35); stroke-width: 0.6; }
+.kc-club .pl-tk b { background: var(--uc); color: #0d0f20; border: 0; box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35); }
+.kc-club .pl-tk span { font-weight: 700; text-shadow: 0 1px 3px #000; }
+
+/* You (board one, "You: proposed"): momentum's chart runs edge to edge; four trend tiles; five doors. */
+.k-mom { display: flex; flex-direction: column; gap: 8px; background: none !important; border: 0 !important; padding: 0 !important; box-shadow: none !important; }
+.k-mom-chart { margin: -14px -22px 0; }
+.k-mom-note { margin: -4px 0 4px; font-size: 14px; }
+.k-trend { gap: 2px; }
+.k-you-doors > :last-child:nth-child(odd) { grid-column: span 2; }
+.k-clock { display: flex; flex-direction: column; align-items: flex-end; text-align: right; min-height: 44px; padding: 4px 4px 0 0; border: 0; background: none; color: var(--k-cream); font: inherit; cursor: pointer; max-width: 150px; }
+.k-clock b { font: 600 22px/1.1 var(--serif); }
+.k-clock .k-q { font-size: 14px; }
+
+/* The desk and the market keep their own frame for now (fork L1); their way back sits first, on the left. */
+.md-top > .k-back { order: -1; }
+.md-top:has(> .k-back) { justify-content: flex-start; gap: 6px; }
+.md-top:has(> .k-back) > .dk-count { margin-left: auto; }
+
+/* Sweep fix (look pass): a "bare" page still sits above the tab bar when the bar is showing, so its last line must clear it. */
+body:has(.tabbar) .page.bare { padding-bottom: calc(var(--tab-h) + 36px + var(--safe-bottom)); }
+.k-hero-row b, .k-r .k-q { white-space: nowrap; }

@@ -19,6 +19,7 @@ import type { FbSquadRow } from '../../../football/store/tables';
 import type { LoanStay } from '../../../football/globe/types';
 import { GlassCard, SimpleBack, Viewable, type CardView } from '../../../ui/CardViewer';
 import { Back, TreePage } from '../tree/TreeScreens';
+import type { IconName } from '../../../ui/Icon';
 
 const col = (c: string) => ({ ['--c' as string]: c }) as CSSProperties;
 const fmtDate = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
@@ -40,22 +41,16 @@ export function LoanArt({ loan, size = 120 }: { loan: LoanDef; size?: number }) 
 }
 
 /** The doors to the world, on the Club's squad page. */
-export function WorldDoors() {
+/** The world's four pages as doors (Club's "The wider world"), each with one live line. */
+export function useWorldDoors(): { to: string; label: string; sub: string; icon: IconName }[] | undefined {
   const w = useWorld();
-  if (!w) return null;
-  const doors: { to: string; label: string; sub: string; c: string }[] = [
-    { to: '/football/loans', label: 'Loans', sub: w.here.length ? `${plural(w.here.length, 'player')} here` : 'From packs', c: '#ffa25c' },
-    { to: '/football/trials', label: 'Trials', sub: w.trials.length ? `${w.trials.length} waiting` : `Your sleep: ${STYLE_WORDS[w.week.style].name}`, c: '#ffe27a' },
-    { to: '/football/academy', label: 'Academy', sub: `${w.academy.filter((y) => y.link).length} of ${w.rules.academy} places`, c: '#8fdcb6' },
-    { to: '/football/duty', label: 'International duty', sub: w.intl ? `Break on: day ${w.intl.day} of ${BREAK_DAYS}` : 'Two breaks a season', c: '#ff7d9c' },
+  if (!w) return undefined;
+  return [
+    { to: '/football/loans', label: 'Loans', sub: w.here.length ? `${plural(w.here.length, 'player')} here` : 'From packs', icon: 'deal' },
+    { to: '/football/trials', label: 'Trials', sub: w.trials.length ? `${w.trials.length} waiting` : STYLE_WORDS[w.week.style].name, icon: 'scope' },
+    { to: '/football/academy', label: 'Academy', sub: `${w.academy.filter((y) => y.link).length} of ${w.rules.academy}`, icon: 'book' },
+    { to: '/football/duty', label: 'Duty', sub: w.intl ? `Day ${w.intl.day} of ${BREAK_DAYS}` : 'Two a season', icon: 'map' },
   ];
-  return (
-    <nav className="fbg-doors" aria-label="The world">
-      {doors.map((d) => (
-        <button key={d.to} type="button" className="fbg-door" style={col(d.c)} onClick={() => go(d.to)}><b>{d.label}</b><small>{d.sub}</small></button>
-      ))}
-    </nav>
-  );
 }
 
 /** A loan's arrival (round seven): "On loan · 7 days", the drawing, the line, the chips. */

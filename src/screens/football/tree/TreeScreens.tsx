@@ -13,6 +13,7 @@ import { techState } from '../../../football/tree/research';
 import { objectiveLine } from '../../../football/tree/season';
 import { fmtCount, METRIC_WORDS, ROMAN } from '../../../football/tree/words';
 import { go } from '../../../router';
+import { useHeaded } from '../FootballHome';
 import { useModel, type Model } from './model';
 import { Skyline } from './Skyline';
 import { Crest, GlassCard, SimpleBack, Viewable, type CardView } from '../../../ui/CardViewer';
@@ -30,11 +31,16 @@ export function staffView(name: string, text: string, era: Era, from: string): C
   return { face: <GlassCard ink={era.colour} tier="silver"><Crest /></GlassCard>, back: <SimpleBack kicker={from} title={name} lines={[text]} />, label: `${name}, staff` };
 }
 
+/** An older page's own way back. Inside Football's page header (navigation A) the header carries it instead. */
 export function Back({ to, label, params }: { to: string; label: string; params?: Record<string, string> }) {
+  const headed = useHeaded();
+  if (headed) return null;
   return <button type="button" className="fbt-back" onClick={() => go(to, params, { replace: true })}>‹ {label}</button>;
 }
 function Head({ title, cap }: { title: string; cap?: ReactNode }) {
-  return <div className="fbt-head"><h1 className="fbt-t1">{title}</h1>{cap != null && <span className="fbt-cap">{cap}</span>}</div>;
+  const headed = useHeaded();
+  if (headed && cap == null) return null;
+  return <div className="fbt-head">{!headed && <h1 className="fbt-t1">{title}</h1>}{cap != null && <span className="fbt-cap">{cap}</span>}</div>;
 }
 export function TreePage({ children }: { children: ReactNode }) {
   return <div className="fbt-page">{children}</div>;

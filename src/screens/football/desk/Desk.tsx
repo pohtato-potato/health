@@ -12,6 +12,7 @@ import { useTonight, type Tonight } from '../../../football/store/hooks';
 import { go, useRoute } from '../../../router';
 import { AXIS_INK } from '../../../ui/inks';
 import { FootballHome } from '../FootballHome';
+import { BackLink } from '../../../ui/kit/Kit';
 import { liveTalk } from '../../../football/desk/jobs/negotiate';
 import { TalkPage } from './Market';
 import '../../../styles/matchday.css';
@@ -99,9 +100,8 @@ export function DiceTile({ dice, date, onNext, last }: { dice: Die[]; date: stri
 }
 
 const Page = ({ children }: { children: React.ReactNode }) => <main className="md-page desk"><div className="md-in">{children}</div></main>;
-const Back = ({ to = '/football', label = 'Back' }: { to?: string; label?: string }) => (
-  <button type="button" className="md-q" onClick={() => go(to)} style={{ minHeight: 44, minWidth: 64, background: 'none', border: 0, color: 'inherit', font: 'inherit', cursor: 'pointer', textAlign: 'right' }}>{label}</button>
-);
+/** One way back (navigation A): drawn, on the left of the page's name. */
+const Back = ({ to = '/football', label = 'Back' }: { to?: string; label?: string }) => <BackLink label={label} onClick={() => go(to)} />;
 
 /** /football/desk, /football/desk/job?id=, /football/desk/course?spend=, /football/desk/questions */
 export function DeskRoute() {
@@ -133,7 +133,8 @@ function DeskHome({ m }: { m: DeskModel }) {
   };
   return (
     <Page>
-      <div className="md-top"><span className="md-cap">The desk · {weekday(m.date)}</span><span className="md-q dk-count">{tray.label}</span></div>
+      <div className="md-top"><Back to="/football/club" label="Club" /><span className="md-q dk-count">{tray.label}</span></div>
+      <span className="md-cap">The desk · {weekday(m.date)}</span>
       <h1 className="dk-h">{m.shut ? 'The desk is closed for the night' : `${WORDS[jobs.length] ?? jobs.length} ${jobs.length === 1 ? 'thing' : 'things'} on your desk`}</h1>
       {m.shut && <p className="md-q" style={{ margin: 0 }}>{m.left.length ? `${WORDS[m.left.length]} ${m.left.length === 1 ? 'die' : 'dice'} left over: ${unspentResearch(m.left.length) ? `+${unspentResearch(m.left.length)} research when the night plays` : 'it takes two for a point of research'}.` : 'Every die was spent.'} New dice come with the morning.</p>}
       {m.courseOpen && <button type="button" className="md-btn" onClick={() => go('/football/desk/course', { spend: m.courseOpen! })}>Finish today’s course</button>}
