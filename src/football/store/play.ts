@@ -5,7 +5,7 @@ import { fuelScore } from '../axes';
 import { bedOrder, fromBedOrder } from '../../domain/rings';
 import { db } from '../../db/db';
 import { addDays, dayOfLogging, daysBetween, weekday, type DayKey } from '../../domain/dates';
-import { seasonDays, SEASON_DAYS, type DayPlan } from '../calendar';
+import { daysOf, leagueMatchdays, seasonDays, seasonLength, type DayPlan } from '../calendar';
 import { breakBeforeFor, LEAGUE_MATCHDAYS, matchdaysBefore, matchIdFor, PACE_PER_DAY, paceOn, slotKey, titleSafe } from '../pace';
 import { advance, penalties, type Bracket } from '../cups';
 import { clubById, rememberClubs } from '../data/load';
@@ -34,12 +34,18 @@ import { HABITS, habitById, armbandHarmony, averageOf, momentsOf, TRAIT } from '
 import { abilityFor, braboAbilities } from '../data/abilities';
 import { standings, type Played, type Row } from '../table';
 import { applyChanges, worldTurn } from '../world';
+import { applyMoves2, seasonEnd2 } from '../pyramid/movement';
+import { settle2, tableDrift } from '../pyramid/drift';
+import { redrawUp } from '../pyramid/cups';
+import { LEVEL_DAYS, typicalNight, winRate, type LevelNight } from '../pyramid/level';
+import { rollOldSelves2, seatOldSelves } from '../pyramid/oldSelves';
+import { POOL, shapeOf, stageIn, stageOf, worldOf } from '../pyramid/shape';
 import { AXES, TIERS, type AxisValues, type CallPick, type Comp, type MatchEvents, type Mod, type Result, type Tier } from '../types';
 import { axisInputFor, bestAxis, comebackOn, condCapFor, conditions, loadHealth, medItems, medsTaken, nightFor, type Health } from './gather';
 import { backLine, cleanBill, dressingRoom, lowLogNight, lowLogOn, meetingDue, onInjuryList, typicalShape, type MedDay } from '../squadCare';
 import { comebackLift } from '../comeback';
 import { factsFor, matchLines, situationOf } from './lines';
-import { newSeason, OWN } from './season';
+import { newSeason, newSeason2, OWN } from './season';
 import type { FbBundle, FbClub, FbNews, FbSave, FbSeason, FbSquadRow, PausedMatch, PausedPrep, StoredMatch } from './tables';
 import { creditsFor } from '../players/credit';
 import { linkedLogged } from '../players/youth';
@@ -270,35 +276,50 @@ function playDay(w: World, date: DayKey, auto: boolean, last = false, leagueOver
   const { save } = w;
   if (save.phase === 'event') return playEventDay(w, date, auto);
   if (isBreakDay(save, date) && !leagueOver) return; // an international break: no matches, the season day waits
-  const plan = seasonDays()[save.day - 1];
+  const wv = worldOf(w.season);
+  const plan = daysOf(wv)[save.day - 1];
   w.season.dates[save.day] = date;
   const braboTier = w.season.tierOf[OWN];
   if (leagueOver && plan.kind === 'league') {
     // League pace: the league has stopped; a continental night on this day is still played.
     if (plan.cont) continentalNight(w, date, plan, auto, 0);
     save.day++;
-    if (save.day > SEASON_DAYS) endSeason(w, date);
+    if (save.day > seasonLength(wv)) endSeason(w, date);
     return;
   }
   const mine: { comp: Comp; round?: string; home: string; away: string; neutral?: boolean; onWin?: (s: [number, number], p?: [number, number]) => void }[] = [];
   if (plan.kind === 'league') {
-    for (const t of TIERS) for (const [h, a] of w.season.fixtures[t][plan.matchday! - 1]) {
+    for (const t of shapeOf(w.season).divisions) for (const [h, a] of w.season.fixtures[t][plan.matchday! - 1]) {
       if (h === OWN || a === OWN) mine.push({ comp: 'league', round: `Matchday ${plan.matchday}`, home: h, away: a });
       else w.season.results[t].push({ home: h, away: a, score: otherResult(w, h, a, date) }); // the slot is in otherResult's seed
     }
     // Matchday (spec §2.1): the last day played waits to be watched, unless the season or a continental night
     // needs its result straight away.
-    const wait = last && !plan.cont && save.day < SEASON_DAYS;
+    const wait = last && !plan.cont && !plan.cup && save.day < seasonLength(wv);
     for (const m of mine) {
       const s = braboMaybe(w, date, plan, m.comp, m.home, m.away, auto, m.round, undefined, false, wait);
       if (s) w.season.results[braboTier].push({ home: m.home, away: m.away, score: s.score });
     }
     if (plan.cont) continentalNight(w, date, plan, auto, mine.length);
+    // World 2: a Big Cup round on a league night is the double-header's second match.
+    if (plan.cup) cupRounds(w, date, plan, auto, [[w.season.bigcup, (b) => (w.season.bigcup = b), 'bigcup']], mine.length);
   } else if (plan.kind === 'bigcup' || plan.kind === 'tiercup' || plan.kind === 'finals1' || plan.kind === 'finals2') {
-    let played = 0;
     const brackets: [Bracket, (b: Bracket) => void, Comp][] = [];
     if (plan.kind === 'bigcup' || plan.kind === 'finals1') brackets.push([w.season.bigcup, (b) => (w.season.bigcup = b), 'bigcup']);
     if (plan.kind === 'tiercup' || plan.kind === 'finals2') for (const id of Object.keys(w.season.tiercups)) brackets.push([w.season.tiercups[id], (b) => (w.season.tiercups[id] = b), 'tiercup']);
+    let played = cupRounds(w, date, plan, auto, brackets, 0);
+    if (plan.kind === 'finals1') played += playoffSemis(w, date, plan, auto, played);
+    if (plan.kind === 'finals2') played += playoffFinals(w, date, plan, auto, played);
+    if (!played && !leagueOver) friendly(w, date, plan, auto);
+  }
+  save.day++;
+  if (save.day > seasonLength(wv)) endSeason(w, date);
+}
+
+/** The rounds of these brackets that fall on tonight's season day, in order. Returns Brabo's matches played. */
+function cupRounds(w: World, date: DayKey, plan: DayPlan, auto: boolean, brackets: [Bracket, (b: Bracket) => void, Comp][], before: number): number {
+  let played = before;
+  {
     for (const [b0, set, comp] of brackets) {
       let b = b0;
       for (let ri = 0; ri < b.rounds.length; ri++) {
@@ -318,26 +339,24 @@ function playDay(w: World, date: DayKey, auto: boolean, last = false, leagueOver
           res[`${t.home}-${t.away}`] = { score, pens };
         }
         b = advance(b, ri, res);
+        // World 2 (league spec §6): each Big Cup round is drawn "up" once the one before it is complete.
+        if (worldOf(w.season) === 2 && b.id === 'bigcup') b = redrawUp(b, ri + 1, (id) => w.season.tierOf[id] ?? POOL, rng(hashSeed('bigcup-draw', String(w.season.id), String(ri + 1))), OWN);
       }
       set(b);
     }
-    if (plan.kind === 'finals1') played += playoffSemis(w, date, plan, auto, played);
-    if (plan.kind === 'finals2') played += playoffFinals(w, date, plan, auto, played);
-    if (!played && !leagueOver) friendly(w, date, plan, auto);
   }
-  save.day++;
-  if (save.day > SEASON_DAYS) endSeason(w, date);
+  return played - before;
 }
 
 function tablesNow(w: World): Record<Tier, Row[]> {
   const out = {} as Record<Tier, Row[]>;
-  for (const t of TIERS) out[t] = standings(w.season.results[t], Object.keys(w.season.tierOf).filter((id) => w.season.tierOf[id] === t), w.season.deductions);
+  for (const t of shapeOf(w.season).divisions) out[t] = standings(w.season.results[t], Object.keys(w.season.tierOf).filter((id) => w.season.tierOf[id] === t), w.season.deductions);
   return out;
 }
 function playoffSemis(w: World, date: DayKey, plan: DayPlan, auto: boolean, before: number): number {
   const tables = tablesNow(w);
   let n = 0;
-  for (const t of TIERS.filter((x) => x > 1)) {
+  for (const t of shapeOf(w.season).divisions.filter((x) => x > 1)) {
     const semis = playoffPairs(tables[t]);
     const winners: string[] = [];
     for (const [h, a] of semis) {
@@ -352,7 +371,7 @@ function playoffSemis(w: World, date: DayKey, plan: DayPlan, auto: boolean, befo
 }
 function playoffFinals(w: World, date: DayKey, plan: DayPlan, auto: boolean, before: number): number {
   let n = 0;
-  for (const t of TIERS.filter((x) => x > 1)) {
+  for (const t of shapeOf(w.season).divisions.filter((x) => x > 1)) {
     const po = w.season.playoffs[t];
     if (!po?.final) continue;
     const [h, a] = po.final;
@@ -372,6 +391,7 @@ function friendly(w: World, date: DayKey, plan: DayPlan, auto: boolean) {
 }
 
 function endSeason(w: World, date: DayKey) {
+  if (worldOf(w.season) === 2) return endSeason2(w, date);
   const tables = tablesNow(w);
   const winners: Partial<Record<Tier, string>> = {};
   for (const t of TIERS) if (w.season.playoffs[t]?.winner) winners[t] = w.season.playoffs[t]!.winner;
@@ -392,7 +412,8 @@ function endSeason(w: World, date: DayKey) {
   for (const c of moved) w.clubs.set(c.id, { ...c, tier: tierOf[c.id] ?? c.tier, style: turn.styles[c.id] ?? c.style });
   turn.headlines.forEach((x, i) => w.news.push({ id: `${date}:world:${i}`, date, kind: 'world', text: x.text, clubId: x.clubId }));
   refreshOldSelves(w, date);
-  const base = seasonMoney(w, date, tables, moves.up);
+  const promoted = Boolean(moves.up[w.season.tierOf[OWN]]?.includes(OWN));
+  const base = seasonMoney(w, date, tables, moves.up, (promoted ? w.season.tierOf[OWN] - 1 : w.season.tierOf[OWN]) as Tier);
   treeSeasonEnd(treeCtx(w), date, tables, Boolean(moves.up[w.season.tierOf[OWN]]?.includes(OWN)), base);
   tenancyAtSeasonEnd(w, date, tables);
   const nowTier = tierOf[OWN];
@@ -404,6 +425,118 @@ function endSeason(w: World, date: DayKey) {
   w.save.event = { id: ev.id, days: ev.days };
   w.save.day = 1;
   w.season.nextDeductions = turn.deductions;
+}
+
+/**
+ * World 2's season end (ledger O38, league spec §7, §8): the table moves every club (top two and the playoff winner up,
+ * the bottom three down, Brabo included), Brabo's level check may add one step, Division Eight's bottom three swap
+ * with the pool. Clubs drift by finish and the lore events, clipped to their division's band. Old Selves of real
+ * months join and retire. Then the same money, tree, ground and event as the old world, keyed to stages.
+ */
+function endSeason2(w: World, date: DayKey) {
+  const tables = tablesNow(w);
+  const shape = shapeOf(w.season);
+  const winners: Partial<Record<Tier, string>> = {};
+  for (const t of shape.divisions) if (w.season.playoffs[t]?.winner) winners[t] = w.season.playoffs[t]!.winner;
+  const live = [...w.clubs.values()].filter((c) => !c.folded);
+  const pool = live.filter((c) => c.pool).map((c) => ({ id: c.id, rating: c.rating }));
+  // The level check's rate: Brabo's level night against a division's clubs, worked out only when it is needed.
+  let lv: LevelNight | undefined | null = null;
+  const rateIn = (d: number) => {
+    if (lv === null) lv = levelNightIn(w, date);
+    if (!lv) return 0.4; // no real nights: the check cannot move Brabo either way
+    return winRate(lv, live.filter((c) => !c.pool && c.tier === d && c.id !== OWN).map((c) => ({ id: c.id, rating: c.rating, style: c.style }))).w;
+  };
+  const moves = seasonEnd2(tables, winners, { own: OWN, pool, rateIn });
+  w.season.final = { tables, up: moves.up, down: moves.down, ...(moves.level ? { level: moves.level } : {}), pool: moves.pool };
+  const from = w.season.tierOf[OWN];
+  if (moves.level) {
+    const l = moves.level, pct = Math.round(l.rate * 100);
+    w.news.push({ id: `${date}:level`, date, kind: 'club', text: l.dir === 'up'
+      ? `Up two. Champions of ${shape.name(from)}, and the last four weeks would still win ${pct}% of matches in ${shape.name(l.to)}: Brabo go straight there. ${clubById(l.swap).name} finished fourth from bottom there and go down a division to make room.`
+      : `Down two. Relegated from ${shape.name(from)}, and the last four weeks would win only ${pct}% of matches in ${shape.name(l.to - 1)}: Brabo go down to ${shape.name(l.to)}. ${clubById(l.swap).name} go up a division in their place.` });
+  }
+  const divOf = applyMoves2(w.season.tierOf, moves);
+  const old = (id: string) => Boolean(w.clubs.get(id)?.old);
+  const skip = (id: string) => id === OWN || old(id);
+  const r = rng(hashSeed('world', String(w.save.season)));
+  const turn = worldTurn(live.map((c) => {
+    const def = clubById(c.id);
+    return { id: c.id, name: def.name, rating: c.rating, tier: (divOf[c.id] ?? POOL) as Tier, kind: c.old ? 'old' : c.id === OWN ? 'own' : def.kind, abilities: def.known.map((a) => a.name) };
+  }), r, { form: false });
+  const settled = settle2(live, [...turn.changes, ...tableDrift(tables, skip)], (id) => divOf[id], skip);
+  for (const c of settled) {
+    const d = divOf[c.id];
+    w.clubs.set(c.id, { ...c, tier: (d ?? POOL) as Tier, pool: d === undefined ? true : undefined, style: turn.styles[c.id] ?? c.style });
+  }
+  turn.headlines.forEach((x, i) => w.news.push({ id: `${date}:world:${i}`, date, kind: 'world', text: x.text, clubId: x.clubId }));
+  if (moves.pool.out.length) w.news.push({ id: `${date}:pool`, date, kind: 'world', text: `Out of the league: ${moves.pool.out.map((id) => clubById(id).name).join(', ')}. In from abroad: ${moves.pool.in.map((id) => clubById(id).name).join(', ')}.` });
+  refreshOldSelves2(w, date);
+  const to = w.clubs.get(OWN)!.tier;
+  const up = to < from;
+  const base = seasonMoney(w, date, tables, moves.up, stageOf(to));
+  treeSeasonEnd(treeCtx(w), date, tables, up, base);
+  tenancyAtSeasonEnd(w, date, tables);
+  if (up && crestStepFor(stageOf(to)) > w.save.crest.step) w.save.crestPending = crestStepFor(stageOf(to));
+  globeSeasonEnd(w, date, w.save.season);
+  const ev = nextEvent(w.save.season, w.save.eventState, rng(hashSeed('event', String(w.save.season))));
+  w.save.eventState = ev.state;
+  w.save.phase = 'event';
+  w.save.event = { id: ev.id, days: ev.days };
+  w.save.day = 1;
+  w.season.nextDeductions = turn.deductions;
+}
+/** World 2: months with real data join as Old Selves (at most seven), each in the division its rating falls in. */
+function refreshOldSelves2(w: World, date: DayKey) {
+  const current = [...w.clubs.values()].filter((c) => c.old && !c.folded).map((c) => ({ ...c.old!, id: c.id }));
+  const seen = [...(w.save.retired ?? []).map((o) => o.month ?? ''), ...current.map((o) => o.month ?? '')];
+  const turn = rollOldSelves2(current, monthsFromHealth2(w.h, date), seen);
+  if (!turn.joined.length && !turn.retired.length) return;
+  const seated = seatOldSelves([...w.clubs.values()], turn, (c) => c.id !== OWN && !c.old && !c.id.startsWith('os'), POOL);
+  for (const c of seated) w.clubs.set(c.id, c as FbClub);
+  if (turn.retired.length) w.save.retired = [...(w.save.retired ?? []), ...turn.retired.map((o) => ({ ...o, id: `retired:${o.month ?? o.name}` }))];
+  for (const o of turn.joined) w.news.push({ id: `${date}:old:${o.month}`, date, kind: 'club', clubId: o.id, text: `${o.name} join the league in ${shapeOf(w.season).name(o.tier)}: a month of your own nights, rated ${o.rating}.` });
+}
+/** Finished months before `before`'s month, each with its real nights (rotation nights and unlogged nights left out). */
+export function monthsFromHealth2(h: Health, before: DayKey) {
+  const cur = before.slice(0, 7);
+  const by = new Map<string, AxisValues[]>();
+  for (const [d, day] of h.days) {
+    const m = d.slice(0, 7);
+    if (m >= cur || usesRotation(day?.status)) continue;
+    const v = nightFor(h, d);
+    if (Object.values(v.flags).filter(Boolean).length >= 4) continue;
+    by.set(m, [...(by.get(m) ?? []), v.values]);
+  }
+  return [...by].map(([month, values]) => ({ month, values }));
+}
+/**
+ * Brabo's level (league spec §7): the median of the real nights in the last 28 days (rotation and unlogged nights
+ * left out) with what it would carry tonight: the armband, the week's stack, its abilities, the ground's, the tree's
+ * and its loans'. Undefined with no real night. Reads the world without changing it.
+ */
+export function levelNightIn(w: Pick<World, 'h' | 'save' | 'bundles'>, date: DayKey): LevelNight | undefined {
+  const nights: AxisValues[] = [];
+  for (let d = addDays(date, -(LEVEL_DAYS - 1)); d <= date; d = addDays(d, 1)) {
+    const day = w.h.days.get(d);
+    if (!day || usesRotation(day.status)) continue;
+    const v = nightFor(w.h, d);
+    if (Object.values(v.flags).filter(Boolean).length >= 4) continue;
+    nights.push(v.values);
+  }
+  const values = typicalNight(nights);
+  if (!values) return undefined;
+  const save = structuredClone(w.save); // tree boosts are spent by a real match, never by a probe
+  const slots = new Set(save.slots);
+  const ctx: MatchCtx = { comp: 'league', derby: false, auto: false, firstMeeting: false };
+  const done = [...w.bundles.values()].filter((b) => b.done).map((b) => b.id);
+  const loans = globeOf(save).loans.map((l) => l.key);
+  return {
+    values, nights: nights.length,
+    captain: slots.has('armband') ? save.captain : undefined,
+    stack: slots.has('stack') ? save.earned.filter((e) => e.date > addDays(date, -7)).length : 0,
+    abilities: [...braboAbilities(save.slots), ...groundAbilities(done), ...treeAbilities({ save, bundles: w.bundles }, ctx, true).abilities, ...loanAbilities(save, loans, date, globeRules(save, w.bundles.values()).loan)],
+  };
 }
 
 /** The newest finished month joins the Old Selves; the weakest retires. */
@@ -443,7 +576,8 @@ function playEventDay(w: World, date: DayKey, auto: boolean) {
     const next = w.save.season + 1;
     const ded = w.season.nextDeductions ?? {};
     w.oldSeasons.push(w.season);
-    w.season = newSeason(next, addDays(date, 1), [...w.clubs.values()], ded, w.season.final?.tables[1].slice(0, 4).map((r) => r.id));
+    const top4 = w.season.final?.tables[1].slice(0, 4).map((r) => r.id);
+    w.season = worldOf(w.season) === 2 ? newSeason2(next, addDays(date, 1), [...w.clubs.values()], ded, top4) : newSeason(next, addDays(date, 1), [...w.clubs.values()], ded, top4);
     w.save.season = next;
     w.save.phase = 'season';
     w.save.event = undefined;
@@ -527,7 +661,7 @@ function braboMaybe(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: str
   const braboTier = w.season.tierOf[OWN];
   const ctx: MatchCtx = {
     comp, derby, auto, firstMeeting, matchday: plan.matchday,
-    last5: (plan.matchday ?? 0) >= 30, vsHigher: (club?.tier ?? 6) > braboTier,
+    last5: (plan.matchday ?? 0) >= leagueMatchdays(worldOf(w.season)) - 4, vsHigher: (club?.tier ?? 6) > braboTier,
     familiarAxis: club?.old?.best, prevBest: lastMine ? bestAxis(lastMine.values) : undefined,
     final: /(^|, )Final$|Playoff final/.test(round ?? ''),
   };
@@ -602,7 +736,7 @@ function braboTail(w: World, date: DayKey, prep: PausedPrep, events: MatchEvents
     values, flags, events, score: mineScore, pens, result: resultOf(mineScore, pens),
     xi: team.xi, credits: creditsFor(events, team.xi, def.name, undefined, tonight.setPiece),
     tactic: tonight.tactic, nudges: team.nudges.length ? team.nudges : undefined,
-    watched: false, rotation, auto, leg, derby, big: derby || comp !== 'league' || plan.matchday === 34,
+    watched: false, rotation, auto, leg, derby, big: derby || comp !== 'league' || plan.matchday === leagueMatchdays(worldOf(w.season)),
   };
   if (comp === 'league' && played) {
     // Matchday (spec §2.4–2.6): the plan it played, a card used up, and after a win the pick of three.
@@ -622,7 +756,7 @@ function braboTail(w: World, date: DayKey, prep: PausedPrep, events: MatchEvents
     const ab = abilityFor(mo);
     if (ab && !w.save.earned.some((e) => e.id === ab.id)) w.save.earned = [...w.save.earned, { id: ab.id, date }];
   }
-  const meeting = (x: StoredMatch): Meeting => ({ clubId: x.opp, result: x.result, comp: x.comp, final: /Final$|Playoff final/.test(x.round ?? ''), derby: x.derby, lastDay: x.comp === 'league' && plan.matchday === 34 && x.id === m.id, margin: Math.abs(x.score[0] - x.score[1]) });
+  const meeting = (x: StoredMatch): Meeting => ({ clubId: x.opp, result: x.result, comp: x.comp, final: /Final$|Playoff final/.test(x.round ?? ''), derby: x.derby, lastDay: x.comp === 'league' && plan.matchday === leagueMatchdays(worldOf(w.season)) && x.id === m.id, margin: Math.abs(x.score[0] - x.score[1]) });
   // Rivals are clubs you keep meeting: never friendlies, event nights or World Cup nations.
   if (comp !== 'friendly' && comp !== 'event' && comp !== 'worldcup') {
     const hist = [...w.past, ...w.matches].filter((x) => x.comp !== 'friendly' && x.date < date).map(meeting);
@@ -725,10 +859,12 @@ export function youthIntake(season: number, date: DayKey, extra = 0, academy = f
 }
 const OPEN: { slot: Slot; from?: Tier }[] = [{ slot: 'shirt' }, { slot: 'kit' }, { slot: 'sleeve', from: 4 }, { slot: 'partner' }];
 /** Season end: income in, dodgy sponsors may fold, offers arrive for open slots. */
-function seasonMoney(w: World, date: DayKey, tables: Record<Tier, Row[]>, up: Partial<Record<Tier, string[]>>) {
-  const tier = w.season.tierOf[OWN];
-  const pos = tables[tier].findIndex((r) => r.id === OWN) + 1;
-  const promoted = Boolean(up[tier]?.includes(OWN));
+function seasonMoney(w: World, date: DayKey, tables: Record<Tier, Row[]>, up: Partial<Record<Tier, string[]>>, nextTier: Tier) {
+  const div = w.season.tierOf[OWN];
+  // Income, prizes, sponsors and offers keep their six-step tables: a world-2 division reads its stage (spec §9).
+  const tier = stageIn(w.season, div);
+  const pos = tables[div].findIndex((r) => r.id === OWN) + 1;
+  const promoted = Boolean(up[div]?.includes(OWN));
   const r = rng(hashSeed('money', String(w.save.season)));
   const live = (w.save.sponsors ?? []).filter((s) => w.save.season - s.since < s.seasons);
   const folded = live.filter((s) => s.risk === 'dodgy' && dodgyCollapse(r));
@@ -744,7 +880,6 @@ function seasonMoney(w: World, date: DayKey, tables: Record<Tier, Row[]>, up: Pa
   const cont = reach ? contPrize(reach) : 0;
   w.save.income = { season: w.save.season, lines: [{ name: 'TV, gate and prize money', amount: prizeMoney }, { name: 'Sponsors', amount: Math.round(sponsorMoney * 1000) / 1000 }, ...(cont ? [{ name: 'The Continental Cup', amount: cont }] : [])] };
   w.save.budget = Math.round((w.save.budget + total + cont) * 1000) / 1000;
-  const nextTier = (promoted ? tier - 1 : tier) as Tier;
   const taken = new Set(w.save.sponsors.map((s) => s.slot));
   const partners = w.save.sponsors.filter((s) => s.slot === 'partner').length;
   w.save.offers = OPEN.filter((o) => (o.from === undefined || nextTier <= o.from) && (o.slot === 'partner' ? partners < 3 : !taken.has(o.slot)))
@@ -781,7 +916,7 @@ function usualBedtime(w: World, date: DayKey): number | undefined {
 /** Every day: open bundles take the day's totals; a finished one is paid for and opens from the next match. */
 function groundDay(w: World, date: DayKey, input: ReturnType<typeof axisInputFor>) {
   const done = doneBundles(w);
-  const g = { tier: w.season.tierOf[OWN], moved: Boolean(w.save.moved), done, budget: w.save.budget };
+  const g = { tier: stageIn(w.season, w.season.tierOf[OWN]), moved: Boolean(w.save.moved), done, budget: w.save.budget };
   const youthDays = w.squad.filter((y) => (y.status === 'growing' || y.status === 'promoted') && youthDone(w, y, date)).length;
   const counts = dayCounts({ input, medsKept: medsTaken(w.h, date), youthDays, usualBedtime: usualBedtime(w, date) });
   for (const b of BUNDLES) {
@@ -800,7 +935,8 @@ function groundDay(w: World, date: DayKey, input: ReturnType<typeof axisInputFor
 /** Once a season, while tenants, the first home league match of one week is played as if away. */
 function lockedOutTonight(w: World, plan: DayPlan, date: DayKey): boolean {
   if (w.save.moved || plan.kind !== 'league' || (w.save.lockedOut ?? []).includes(w.save.season)) return false;
-  const week = 1 + (hashSeed('locked', String(w.save.season)) % 5);
+  // A week in the season's first five of six (world 2: the four weeks of 28 days).
+  const week = 1 + (hashSeed('locked', String(w.save.season)) % (worldOf(w.season) === 2 ? 4 : 5));
   if (Math.ceil(plan.day / 7) !== week) return false;
   w.save.lockedOut = [...(w.save.lockedOut ?? []), w.save.season];
   w.news.push({ id: `${date}:locked`, date, kind: 'back', text: 'Locked out! The landlords say the good dressing room is “unavailable”. Brabo change in the corridor and play tonight as if away.' });
