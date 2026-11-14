@@ -1,5 +1,6 @@
 // Rows in the fb* tables. Football writes only to these.
 import type { DoubleUp } from '../promotion';
+import type { LevelMove } from '../pyramid/movement';
 import type { DayKey } from '../../domain/dates';
 import type { Bracket } from '../cups';
 import type { EventId, EventState } from '../events';
@@ -129,6 +130,11 @@ export interface FbSave {
   fog?: FogState;
   /** League pace (O36): three league matchdays a day for one season, set by the settings switch. A user key in play.ts. */
   pace?: LeaguePace;
+  /**
+   * The league's world (ledger O38): absent or 1 is the old world (six divisions of 18, 42 days); 2 is the rebuilt one
+   * (eight divisions of 12, 28 days, placement by level). Set only by the migration (LG-4); every season carries it too.
+   */
+  world?: 1 | 2;
 }
 
 /** What a league match needs to be finished later: who, where, and the night as it was set at 4 am. */
@@ -153,9 +159,12 @@ export interface PausedMatch {
 }
 /** The morning parcel opened (by logging day) and the target talks held. */
 export interface AroundUser { parcel?: DayKey; talks?: TalkOutcome[] }
-export interface FbClub { id: string; tier: Tier; rating: number; style: string; old?: OldSelf; folded?: boolean }
+/** `tier` is the club's division (world 2: 1–8, or POOL for the outside pool, which plays no league). */
+export interface FbClub { id: string; tier: Tier; rating: number; style: string; old?: OldSelf; folded?: boolean; /** World 2: waiting in the outside pool. */ pool?: boolean }
 export interface FbSeason {
   id: number;
+  /** World 2 (ledger O38): eight divisions of 12 and the 28-day calendar. Absent: the old world. */
+  world?: 2;
   start: DayKey;
   /** tier -> 34 rounds of [home, away] */
   fixtures: Record<Tier, [string, string][][]>;
@@ -169,7 +178,13 @@ export interface FbSeason {
   /** The Club World Cup, played in the event days after this season, when Brabo won the Continental Cup. */
   clubworld?: Bracket;
   playoffs: Partial<Record<Tier, { semis: [string, string][]; semiWinners?: string[]; final?: [string, string]; winner?: string }>>;
-  final?: { tables: Record<Tier, Row[]>; up: Partial<Record<Tier, string[]>>; down: Partial<Record<Tier, string[]>>; /** A double promotion (11 Nov). */ double?: DoubleUp };
+  final?: {
+    tables: Record<Tier, Row[]>; up: Partial<Record<Tier, string[]>>; down: Partial<Record<Tier, string[]>>; /** A double promotion (11 Nov). */ double?: DoubleUp;
+    /** World 2: Brabo's level check moved it one extra step, and who made room. */
+    level?: LevelMove;
+    /** World 2: Division Eight's bottom three out to the pool, and the pool clubs in. */
+    pool?: { out: string[]; in: string[] };
+  };
   dates: Record<number, DayKey>;
   /** League pace (O36): the league stopped here for every division once the title was safe (matchdays played, the day). */
   leagueEnded?: { matchday: number; date: DayKey };

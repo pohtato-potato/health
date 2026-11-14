@@ -10,15 +10,19 @@ export const CONT_NAME = 'The Continental Cup';
 export const CWC_NAME = 'The Club World Cup';
 /** The season days it plays on: all league days, so each is a double-header. */
 export const CONT = { phase: [2, 4, 7, 9, 12, 14, 18, 20], qf: 26, sf: 32, final: 39 } as const;
+/** World 2's 28-day season (league spec §6): the same eleven nights, re-spaced onto league days. */
+export const CONT2 = { phase: [2, 4, 6, 9, 11, 14, 16, 18], qf: 21, sf: 24, final: 26 } as const;
+export const contDays = (world: 1 | 2 = 1) => (world === 2 ? CONT2 : CONT);
 export type ContStage = 'phase' | 'qf' | 'sf' | 'final';
 export interface ContNight { stage: ContStage; round: number }
 /** Which continental night a season day is (round counts from 1 in the phase). */
-export function contNight(day: number): ContNight | undefined {
-  const i = (CONT.phase as readonly number[]).indexOf(day);
+export function contNight(day: number, world: 1 | 2 = 1): ContNight | undefined {
+  const c = contDays(world);
+  const i = (c.phase as readonly number[]).indexOf(day);
   if (i >= 0) return { stage: 'phase', round: i + 1 };
-  if (day === CONT.qf) return { stage: 'qf', round: 0 };
-  if (day === CONT.sf) return { stage: 'sf', round: 0 };
-  if (day === CONT.final) return { stage: 'final', round: 0 };
+  if (day === c.qf) return { stage: 'qf', round: 0 };
+  if (day === c.sf) return { stage: 'sf', round: 0 };
+  if (day === c.final) return { stage: 'final', round: 0 };
   return undefined;
 }
 
@@ -86,10 +90,11 @@ function balance(rounds: [string, string][][]): [string, string][][] {
 export const phaseTable = (c: Continental): Row[] => standings(c.results.flat(), c.field);
 
 /** The top 8 seeded 1v8, 4v5, 2v7, 3v6: the top two can only meet in the final. */
-export function koFromTable(c: Continental): Bracket {
+export function koFromTable(c: Continental, world: 1 | 2 = 1): Bracket {
   const t = phaseTable(c).slice(0, 8).map((r) => r.id);
   const qf: Tie[] = [[0, 7], [3, 4], [1, 6], [2, 5]].map(([a, b]) => ({ home: t[a], away: t[b] }));
-  return { id: 'continental', name: CONT_NAME, size: 8, rounds: [{ name: 'Quarter-final', day: CONT.qf, ties: qf }, { name: 'Semi-final', day: CONT.sf, ties: [] }, { name: 'Final', day: CONT.final, ties: [] }] };
+  const d = contDays(world);
+  return { id: 'continental', name: CONT_NAME, size: 8, rounds: [{ name: 'Quarter-final', day: d.qf, ties: qf }, { name: 'Semi-final', day: d.sf, ties: [] }, { name: 'Final', day: d.final, ties: [] }] };
 }
 
 /** How far a club got: knocked out in the phase, or the knockout round it reached, or the winner. */

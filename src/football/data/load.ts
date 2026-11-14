@@ -27,6 +27,13 @@ const priv = import.meta.glob('/private/football-youth.json', { eager: true, imp
 export const YOUTH_POOL: YouthDef[] = [...(league.youth as unknown as YouthDef[]), ...Object.values(priv).flat()];
 
 const byId = new Map([...CLUBS, ...ABROAD].map((c) => [c.id, c]));
+/**
+ * World 2 (ledger O38): the real clubs (LG-2's data) are registered here when the new world loads, so every screen and
+ * rule that names a club by id finds it. A registered club replaces a league.json club of the same id.
+ */
+export function registerClubs(defs: ClubDef[]) {
+  for (const d of defs) byId.set(d.id, d);
+}
 const named = new Map<string, ClubDef>();
 /** Old-self clubs take their names from the save (built from the owner's past months), not the placeholder in league.json. */
 export function rememberClubs(clubs: { id: string; old?: { name: string; nickname: string } }[]) {
