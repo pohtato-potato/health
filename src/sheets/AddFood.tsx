@@ -18,6 +18,8 @@ import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
 import { askConfirm } from '../ui/Confirm';
 import { DateChip, useLogDate } from '../ui/DateChip';
+import { sameAsYesterday } from '../domain/usual';
+import '../styles/food.css';
 
 /** Each own category tab in its own colour. */
 const CAT_INKS = ['var(--protein)', 'var(--kcal)', 'var(--steps)', 'var(--blue)', 'var(--gold)', 'var(--pearl)'];
@@ -80,6 +82,11 @@ export function AddFood() {
   const place = placeFor(dayMap.get(date), settings);
   const usuals = usualsFor(meal, place.id, parseDay(date).getDay(), history, live, dayMap, date);
   const picked = pickedId ? byId.get(pickedId) : undefined;
+  const yesterday = sameAsYesterday(history, meal, date, 0);
+  const addYesterday = async () => {
+    const added = await addEntries(sameAsYesterday(history, meal, date, Date.now()));
+    toast({ text: `${MEAL_NAMES[meal]}: same as yesterday`, sub: `${added.length} item${added.length === 1 ? '' : 's'} added`, action: { label: 'Undo', run: () => added.forEach((e) => void deleteEntry(e.id)) } });
+  };
   const amt = picked ? amount ?? picked.defaultAmount : 0;
   const meat = !!picked && isWeighedMeat(picked);
   const weighed = weighedAs ?? picked?.weighed ?? 'cooked';
@@ -128,12 +135,15 @@ export function AddFood() {
     <Sheet
       tall
       head={
-        <div className="col" style={{ gap: 10 }}>
-          <div className="h2" style={{ fontSize: 24 }}>
-            Add food
+        <div className="col af-head" style={{ gap: 10 }}>
+          <div className="k-row">
+            <h2 className="k-title">Add to {MEAL_NAMES[meal].toLowerCase()}</h2>
+            <button type="button" className="af-label" onClick={() => replaceSheet('label', { meal, d: date })}>
+              Label
+            </button>
           </div>
-          <DateChip value={date} onChange={setDate} />
           <Seg options={MEALS.map((m) => ({ id: m, label: MEAL_NAMES[m] }))} value={meal} onChange={setMeal} />
+          <DateChip value={date} onChange={setDate} />
         </div>
       }
     >
@@ -146,18 +156,37 @@ export function AddFood() {
         </button>
       </div>
       {changeTime && <TimeTile label="Eaten at" minutes={eaten ?? mealTimesFor(settings, place)[meal]} onChange={setEaten} />}
+      <label className="search af-search">
+        <span className="sr">Search your foods</span>
+        <Icon name="search" size={18} stroke={1.8} color="var(--k-quiet)" />
+        <input className="field" placeholder="Search your foods" value={query} onChange={(e) => setQuery(e.target.value)} />
+      </label>
       {!query && usuals.length > 0 && (
         <div className="col gap8">
-          <div className="lbl" style={{ color: 'var(--kcal)' }}>
-            Usual for {MEAL_NAMES[meal].toLowerCase()} at {place.name}
-          </div>
+          <h3 className="k-sect af-sect">Your usuals · {place.name}</h3>
           <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
             {usuals.map((f) => (
-              <button key={f.id} type="button" style={{ color: (f.protein * 4) / Math.max(f.kcal, 1) >= 0.25 ? 'var(--protein)' : 'var(--kcal)', borderColor: 'color-mix(in srgb, currentColor 40%, transparent)' }} className="chip sm" aria-label={`${plate ? 'Put on the plate' : 'Add'}: ${f.name}, ${portionFor(f, f.defaultAmount)}`} onClick={() => tapAdd(f)}>
-                + {f.name}
+              <button key={f.id} type="button" className="af-pill" aria-label={`${plate ? 'Put on the plate' : 'Add'}: ${f.name}, ${portionFor(f, f.defaultAmount)}`} onClick={() => tapAdd(f)}>
+                {f.name} <span>{portionFor(f, f.defaultAmount)}</span>
               </button>
             ))}
           </div>
+        </div>
+      )}
+      {!query && !plate && !picked && yesterday.length > 0 && (
+        <div className="col gap8">
+          <h3 className="k-sect af-sect">Same as yesterday</h3>
+          <div className="k-panel af-yday" style={{ '--ink': 'var(--protein)' } as React.CSSProperties}>
+            {yesterday.map((e, i) => (
+              <div key={i} className="af-yrow">
+                <span>{e.name}</span>
+                <b className="tn">{fmtInt(e.kcal)}{e.protein >= 1 ? ` · ${Math.round(e.protein)} g` : ''}</b>
+              </div>
+            ))}
+          </div>
+          <button type="button" className="k-act wide" onClick={() => void addYesterday()}>
+            Add {yesterday.length === 1 ? 'it' : `${yesterday.length === 2 ? '2' : yesterday.length} things`}
+          </button>
         </div>
       )}
 
@@ -183,18 +212,12 @@ export function AddFood() {
             <button type="button" className="btn ghost sm" onClick={() => setPlate(null)}>
               Cancel
             </button>
-            <button type="button" className="btn grow" disabled={!plateItems.length} onClick={logPlate}>
+            <button type="button" className="k-act grow" disabled={!plateItems.length} onClick={logPlate}>
               Add plate to {MEAL_NAMES[meal].toLowerCase()}
             </button>
           </div>
         </div>
       )}
-
-      <label className="search">
-        <span className="sr">Search your foods</span>
-        <Icon name="search" size={18} stroke={1.8} color="var(--dim)" />
-        <input className="field" placeholder="Search your foods" value={query} onChange={(e) => setQuery(e.target.value)} />
-      </label>
 
       {!query && (
         <Seg
@@ -295,7 +318,7 @@ export function AddFood() {
             <button type="button" className="btn ghost sm" onClick={() => setPickedId(null)}>
               Cancel
             </button>
-            <button type="button" className="btn grow" disabled={amt <= 0} onClick={() => log(picked, basisAmt, basisAmt !== amt ? ` (weighed ${amt} g ${weighed})` : undefined)}>
+            <button type="button" className="k-act grow" disabled={amt <= 0} onClick={() => log(picked, basisAmt, basisAmt !== amt ? ` (weighed ${amt} g ${weighed})` : undefined)}>
               Add to {MEAL_NAMES[meal].toLowerCase()}
             </button>
           </div>

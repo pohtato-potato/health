@@ -1,31 +1,31 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { Aurora } from '../../ui/live/Aurora';
 
 /**
- * Today in the pinned order (closing drawing, Today AM): the walk, the status chip, the line, what is due today, the
- * rings, then the morning match and tonight's shape; after them the banner slot, the season strip, the moment card,
- * Next up, then logging. The drawer handle rides above the tab bar after them. The page sits on the aurora
- * tinted by the region the walk is in, as every Walk page does.
+ * Today on the kit (look pass, boards three and five). The first screen: the walk as a short banner, the count of
+ * closed rings as the heading with the day's line under it, the rings with their numbers (the lead), the one lit
+ * panel with the next thing to log and its glowing action, then Football's panel. Then the day's other panels
+ * (status, what is due, banners, the season, training), and, scrolled, tonight's shape, quick add, the meals, the
+ * body log and the checklist. The moon Close the day rides above the tab bar, and the page leaves room for it.
  */
-export function TodayLayout(p: { walk: ReactNode; status?: ReactNode; due?: ReactNode; banner: ReactNode; line: ReactNode; season?: ReactNode; rings: ReactNode; moment: ReactNode; football?: ReactNode; next: ReactNode; fx?: ReactNode; log: ReactNode; handle: ReactNode; overlays?: ReactNode; before?: ReactNode; tint?: CSSProperties; glow?: boolean }) {
+export function TodayLayout(p: { walk: ReactNode; status?: ReactNode; due?: ReactNode; banner?: ReactNode; line: ReactNode; season?: ReactNode; rings: ReactNode; moment: ReactNode; football?: ReactNode; next: ReactNode; shape?: ReactNode; fx?: ReactNode; log: ReactNode; handle: ReactNode; overlays?: ReactNode; before?: ReactNode; light?: CSSProperties; glow?: boolean }) {
   return (
     <>
       {p.before}
       {p.overlays}
-      <div className={`page td-page lv lv-tab${p.glow ? ' lv-glow' : ''}`} style={p.tint}>
-        <Aurora />
+      <div className={`page td-page k-page k-light today${p.glow ? ' td-glow' : ''}`} style={p.light}>
         {p.fx}
         <h1 className="sr-only">Today</h1>
         {p.walk}
-        {p.status}
         {p.line}
-        {p.due}
         {p.rings}
+        {p.moment}
         {p.football}
+        {p.status}
+        {p.due}
         {p.banner}
         {p.season}
-        {p.moment}
         {p.next}
+        {p.shape}
         {p.log}
       </div>
       {p.handle}

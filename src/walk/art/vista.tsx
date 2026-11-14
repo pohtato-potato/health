@@ -183,7 +183,7 @@ function Moon({ at: [x, y], phase, full, shade }: { at: [number, number]; phase:
 
 export function Vista({ region, part, todayKm, landmark, landmarkScale = 1, festive, moon }: { region: RegionId; part: PartOfDay; todayKm: number; landmark?: Landmark; landmarkScale?: number; festive?: Festive; moon?: MoonSky }) {
   const base = lightFor(part, region);
-  const sky = festive ? festiveSky(festive, base.sky) : base.sky;
+  const sky = festiveSky(festive, base.sky);
   // The land leans toward the region's aurora, as the board painted it: mauve far off, plum close to, strongest
   // in the low light of dawn and dusk.
   const tint = auroraFor(region)['--lv-a'];

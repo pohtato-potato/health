@@ -94,11 +94,11 @@ export function CaughtWindow({ date, days }: { date: DayKey; days: Day[] }) {
   const said = typeof at === 'number' ? `You pledged ${clockOf(at)}.` : win !== undefined ? `Your sleepy window is around ${clockOf(win)}.` : 'When you felt sleepy, did you go?';
   return (
     <div className="col" style={{ gap: 8 }}>
-      <span className="lbl">Caught the window?</span>
+      <span className="lbl">Caught the sleepy window?</span>
       <span className="t14 q">{said} Just for Reports; it never changes a match.</span>
       <div className="md-yn" role="group" aria-label="Caught the window?">
         <button type="button" aria-pressed={v === true} onClick={() => void setCaughtWindow(date, v === true ? undefined : true)}>Yes</button>
-        <button type="button" aria-pressed={v === false} onClick={() => void setCaughtWindow(date, v === false ? undefined : false)}>No</button>
+        <button type="button" aria-pressed={v === false} onClick={() => void setCaughtWindow(date, v === false ? undefined : false)}>Missed it</button>
       </div>
     </div>
   );

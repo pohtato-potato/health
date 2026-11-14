@@ -1,0 +1,111 @@
+/* Food on the kit (look pass L3; board four, "Food, in the maintenance weeks"). */
+.page.fd-page { gap: 10px; padding-bottom: calc(104px + var(--safe-bottom)); font-family: var(--sans); }
+.fd-date { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: -6px; font-size: 15px; color: var(--k-quiet); }
+.fd-dbtn { width: 44px; height: 44px; display: grid; place-items: center; border: 0; background: none; color: var(--k-cream); cursor: pointer; }
+.fd-dbtn:disabled { opacity: 0.3; cursor: default; }
+.fd-lead { margin-top: 4px; }
+.fd-kcal { font-size: 72px; }
+@media (max-width: 359px) { .fd-kcal { font-size: 60px; } }
+.fd-cal { position: relative; height: 26px; border-radius: 999px; background: rgba(237, 230, 218, 0.12); overflow: hidden; }
+.fd-cal i { position: absolute; top: 0; bottom: 0; display: block; }
+.fd-cal .v { left: 0; border-radius: 999px; background: var(--kcal); box-shadow: 0 0 14px -2px var(--kcal); }
+.fd-cal .ok { border-left: 2px solid #8fc9b0; border-right: 2px solid #8fc9b0; background: rgba(143, 201, 176, 0.32); z-index: 1; }
+.fd-scale { font-size: 14px; }
+.fd-pro { height: 10px; border-radius: 999px; background: rgba(237, 230, 218, 0.12); overflow: hidden; margin-top: 4px; }
+.fd-pro i { display: block; height: 100%; border-radius: 999px; background: var(--protein); }
+.fd-pro.closed i { box-shadow: 0 0 12px var(--protein); }
+.fd-meal { gap: 0; }
+.fd-meal > .k-row { min-height: 32px; }
+.fd-meal > .k-row b { font-family: var(--serif); font-weight: 600; font-size: 17px; }
+.fd-mname { font-size: 15px; }
+.fd-meal.empty { flex-direction: row; align-items: center; gap: 12px; min-height: 52px; background: linear-gradient(180deg, rgba(237, 230, 218, 0.08), rgba(237, 230, 218, 0.03)); }
+.fd-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 52px; padding: 6px 0; border: 0; border-top: 1px solid rgba(237, 230, 218, 0.14); background: none; color: var(--k-cream); font: inherit; text-align: left; cursor: pointer; width: 100%; }
+.fd-row b { font: 600 17px var(--serif); }
+.fd-portion, .fd-p { font-size: 14px; }
+.fd-p { color: var(--protein); }
+.fd-mfoot { display: flex; flex-wrap: wrap; gap: 0 18px; border-top: 1px solid rgba(237, 230, 218, 0.14); }
+.fd-link { min-height: 44px; padding: 0; border: 0; background: none; color: var(--k-cream); font: 700 15px var(--sans); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.fd-week { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 6px; }
+.fd-week .k-q { font-size: 14px; }
+.fd-meals { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.fd-meals li { display: grid; grid-template-columns: 82px 1fr auto; align-items: center; gap: 10px; font-size: 15px; }
+.fd-mbar { height: 8px; border-radius: 999px; background: rgba(237, 230, 218, 0.12); overflow: hidden; }
+.fd-mbar i { display: block; height: 100%; background: var(--protein); border-radius: 999px; }
+.fd-done { padding: 4px 14px; }
+.fd-done .li, .fd-done > * { background: none; border: 0; }
+.fd-page .maint-read { border: 0; border-radius: 20px; background: linear-gradient(180deg, color-mix(in srgb, var(--sleep) 22%, #10122a), color-mix(in srgb, var(--sleep) 7%, #10122a)); }
+.fd-page .md-card { border-radius: 20px; }
+/* Add food glows; Night out sits beside it, quiet. They ride at the bottom, in reach of the right thumb; the page leaves room. */
+.fd-acts { position: fixed; z-index: 10; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; bottom: 0; display: flex; gap: 8px; padding: 14px 22px calc(18px + var(--safe-bottom)); background: linear-gradient(transparent, rgba(14, 11, 28, 0.92) 40%); }
+.fd-add { flex: 1; }
+.fd-night { flex: 0 0 120px; background: rgba(14, 11, 28, 0.6); }
+
+/* Add food (board three): "Add to dinner" with Label beside it, the search, your usuals as pills, the same as
+   yesterday in a lavender panel with the one glowing action. */
+.af-head .k-title { font-size: 26px; }
+.af-label { min-height: 44px; min-width: 44px; padding: 0 2px; border: 0; background: none; color: var(--k-cream); font: 700 15px var(--sans); cursor: pointer; }
+.af-search { border-radius: 14px; background: rgba(237, 230, 218, 0.10); border-color: transparent; }
+.af-sect { margin: 6px 0 0; }
+.af-pill { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: 999px; border: 0; background: rgba(237, 230, 218, 0.12); color: var(--k-cream); font: 700 15px var(--sans); cursor: pointer; }
+.af-pill span { font-weight: 400; font-size: 14px; color: var(--k-quiet); }
+.af-yday { gap: 0; padding: 4px 14px; }
+.af-yrow { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 46px; border-top: 1px solid rgba(237, 230, 218, 0.14); font-size: 15px; }
+.af-yrow:first-child { border-top: 0; }
+.af-yrow b { font: 600 16px var(--serif); white-space: nowrap; }
+
+/* The morning log (board three): "Good morning"; lights out (lavender) and woke (blue) panels with their wheels;
+   how rested in five even boxes, the pick lit in the action colour; the sleepy window; the weigh-in in a gold panel;
+   then where today, the questions, the checklist; "Save the morning" glows at the bottom of the sheet, in reach. */
+.ml-sheet { display: flex; flex-direction: column; gap: 10px; }
+.ml-sleep { gap: 8px; }
+.ml-wheel { align-items: stretch; padding: 10px 10px 8px; gap: 0; }
+.ml-wheel > .col { align-items: flex-start !important; }
+.ml-wheel > .col > .t12 { font-size: 14px; color: color-mix(in srgb, var(--ink) 26%, #e4e0ee); }
+.ml-wheel .wheel-row.on, .ml-wheel .wheel-row[aria-selected='true'] { font-family: var(--serif); color: var(--ink); }
+.ml-wheel > .k-q { font-size: 14px; }
+.ml-same { align-self: flex-start; align-items: center; }
+.ml-same.on { background: color-mix(in srgb, var(--sleep) 30%, transparent); box-shadow: inset 0 0 0 2px var(--sleep); }
+.ml-sheet .k-sect { margin-top: 6px; }
+.ml-seg { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.ml-seg button { min-height: 48px; border-radius: 14px; border: 1.5px solid rgba(237, 230, 218, 0.7); background: transparent; color: var(--k-cream); font: 700 17px var(--sans); cursor: pointer; }
+.ml-seg button[aria-checked='true'] { background: var(--act); border-color: var(--act); color: var(--act-ink); box-shadow: 0 8px 18px -8px var(--act); }
+.ml-window .lbl { font: 700 14px var(--sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--k-quiet); }
+.ml-window .t14 { font-size: 14px; }
+.ml-window .md-yn button { border-color: rgba(237, 230, 218, 0.7); color: var(--k-cream); }
+.ml-window .md-yn button[aria-pressed='true'] { background: var(--act); border-color: var(--act); color: var(--act-ink); }
+.ml-weigh { gap: 6px; }
+.ml-wlb { color: var(--ink); }
+.ml-kg { font: 600 28px var(--serif); color: var(--k-cream); white-space: nowrap; }
+.ml-place { gap: 8px; }
+.ml-place .lbl { color: var(--ink); font-weight: 700; }
+.ml-q { justify-content: space-between; }
+.ml-save { position: sticky; bottom: 0; z-index: 2; margin: 4px -4px 0; padding: 12px 4px calc(6px + var(--safe-bottom)); background: linear-gradient(rgba(20, 18, 44, 0), #16142e 38%); }
+.ml-sheet .chip.on { color: #16142e; }
+
+/* Close the day (board three): the moon on the night light, the day in one panel, tonight's match in coral, the
+   meals and the checklist, and the moon button at the bottom, in reach of the thumb. */
+.cd-page { --k-bg: radial-gradient(120% 60% at 80% 0%, #2c3a66 0%, transparent 60%), linear-gradient(180deg, #0f1638, #0a0e26); padding-bottom: calc(24px + var(--safe-bottom)); }
+:root[data-themed] .cd-page { --k-bg: radial-gradient(120% 60% at 80% 0%, color-mix(in srgb, var(--th-w1) 70%, #2c3a66), transparent 60%), linear-gradient(180deg, #0f1638, #0a0e26); }
+.cd-moon { align-self: center; position: relative; width: 120px; height: 120px; margin: 4px 0 0; }
+.cd-moon::before { content: ''; position: absolute; inset: 14px 22px 14px 6px; border-radius: 50%; background: #f3ecdc; box-shadow: 0 0 40px 6px rgba(147, 195, 220, 0.45); }
+.cd-moon i { position: absolute; width: 80px; height: 80px; border-radius: 50%; top: 4px; right: 4px; background: #0d1434; }
+.cd-where { text-align: center; margin: 0; font-size: 14px; }
+.cd-sum { padding: 2px 14px; gap: 0; --ink: var(--k-pearl); }
+.cd-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 52px; border: 0; border-top: 1px solid rgba(237, 230, 218, 0.14); background: none; padding: 0; color: var(--k-cream); font: 400 15px var(--sans); text-align: left; width: 100%; }
+.cd-row:first-child { border-top: 0; }
+button.cd-row { cursor: pointer; }
+.cd-v { font: 600 24px var(--serif); white-space: nowrap; }
+.cd-yn { display: inline-flex; gap: 6px; }
+.cd-yn button { min-height: 44px; min-width: 64px; padding: 0 12px; border-radius: 999px; border: 1.5px solid rgba(237, 230, 218, 0.6); background: transparent; color: var(--k-cream); font: 700 15px var(--sans); cursor: pointer; }
+.cd-yn button[aria-checked='true'] { background: var(--k-cream); border-color: var(--k-cream); color: #10122a; }
+.cd-slots { padding: 0 14px; }
+.cd-slots > .col:first-child { border-top: 0 !important; }
+.cd-go { position: sticky; bottom: 0; z-index: 3; display: flex; flex-direction: column; gap: 6px; margin: 6px -4px 0; padding: 18px 4px calc(10px + var(--safe-bottom)); background: linear-gradient(rgba(10, 14, 38, 0), #0a0e26 16px); }
+.cd-go .k-q { margin: 0; text-align: center; font-size: 14px; }
+.cd-page .td-moonbtn { width: 100%; justify-content: center; min-height: 56px; border-radius: 999px; border: 0; background: linear-gradient(180deg, #3d3a86, #2a2766); color: #ede6da; font: 700 16px var(--sans); box-shadow: 0 10px 26px -6px #93c3dc; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.cd-page .td-moonbtn svg { width: 20px; height: 20px; fill: #ede6da; }
+/* Targets of 44 px or more on the logging pages (design check, 340 px). */
+.td-page .td-num { min-height: 44px; }
+.cd-page .item { min-height: 44px; }
+.sheet .round.sm { min-width: 44px; min-height: 44px; }
+.sheet .link.t13 { min-height: 44px; display: inline-flex; align-items: center; font-size: 14px; }
