@@ -46,6 +46,12 @@ import type { Ctx } from '../players/attributes';
 import { formationFor } from '../tree/rotation';
 import { engineOf, healNow, rotationOf, stageCapacity, treeAbilities, treeDay, treeMatch, treeSeasonEnd, type TreeCtx } from './tree';
 import { LEAGUE, TIER_BANDS, tierName } from '../data/load';
+import { braboVotes, motionById, seasonRules, sitCongress } from '../congress/congress';
+import { bondDay, bondsOf, castById, closeResearch, emptyBonds, perksHeld } from '../cast/bonds';
+import { SEATS } from '../content/desk';
+import { lobbiesFor } from '../desk/jobs/lobby';
+import { opinionOf } from '../market/relations';
+import { relationSourceOf } from './market';
 import { academyIds, creditMatch, nightOptsFor, playerCtx, playersDay, rebuildPlayers, squadNight, type Roster } from './players';
 import { signFreeAgents } from '../rotation/freeAgents';
 import { chemistryAfter, moraleAfter, type Tactic } from '../rotation/night';
@@ -67,7 +73,7 @@ export async function playDue(now = Date.now()): Promise<StoredMatch[]> {
   return playThrough(yesterday, null);
 }
 
-const USER_KEYS = ['buzz', 'wcCountry', 'ownSponsor', 'captain', 'captains', 'captainWeek', 'slots', 'sponsorStyle', 'awakeSeen', 'seenSeasonEnd', 'sheet', 'tactics', 'bedtime', 'treeUser', 'globeUser', 'around', 'desk'] as const satisfies readonly (keyof FbSave)[];
+const USER_KEYS = ['buzz', 'wcCountry', 'ownSponsor', 'captain', 'captains', 'captainWeek', 'slots', 'sponsorStyle', 'awakeSeen', 'seenSeasonEnd', 'sheet', 'tactics', 'bedtime', 'treeUser', 'globeUser', 'around', 'desk', 'ballot', 'castSeen'] as const satisfies readonly (keyof FbSave)[];
 /**
  * Engine 2 arrives: rebuilds the players from history once (spec §16), crediting the stored matches and keeping only
  * youngsters tied to a real habit. Everything else in the save stays. Safe to call any time; it runs once.
@@ -275,14 +281,14 @@ function playDay(w: World, date: DayKey, auto: boolean, last = false) {
 
 function tablesNow(w: World): Record<Tier, Row[]> {
   const out = {} as Record<Tier, Row[]>;
-  for (const t of TIERS) out[t] = standings(w.season.results[t], Object.keys(w.season.tierOf).filter((id) => w.season.tierOf[id] === t), w.season.deductions);
+  for (const t of TIERS) out[t] = standings(w.season.results[t], Object.keys(w.season.tierOf).filter((id) => w.season.tierOf[id] === t), w.season.deductions, rulesOf(w).awayWin);
   return out;
 }
 function playoffSemis(w: World, date: DayKey, plan: DayPlan, auto: boolean, before: number): number {
   const tables = tablesNow(w);
   let n = 0;
   for (const t of TIERS.filter((x) => x > 1)) {
-    const semis = playoffPairs(tables[t]);
+    const semis = playoffPairs(tables[t], rulesOf(w).upDown);
     const winners: string[] = [];
     for (const [h, a] of semis) {
       let score: [number, number], pens: [number, number] | undefined;
@@ -323,7 +329,7 @@ function endSeason(w: World, date: DayKey) {
   const form = new Map<DayKey, AxisValues>();
   for (const x of [...w.past, ...w.matches]) if (!x.rotation && x.date > addDays(date, -28) && x.date <= date && !form.has(x.date)) form.set(x.date, x.values);
   const double = doubleUp(tables, OWN, w.season.tierOf[OWN], formRating([...form.values()]), form.size, TIER_BANDS);
-  const moves = seasonEnd(tables, winners, double);
+  const moves = seasonEnd(tables, winners, double, rulesOf(w).upDown);
   w.season.final = { tables, up: moves.up, down: moves.down, ...(double ? { double } : {}) };
   if (double) w.news.push({ id: `${date}:double`, date, kind: 'club', text: `Double promotion. Champions of ${tierName(double.from)}, and playing like a side rated ${double.rating} over the last four weeks, above anything in ${tierName((double.from - 1) as Tier)}: Brabo go straight up to ${tierName((double.from - 2) as Tier)}. ${clubById(double.swap).name} finished fourth from bottom there and go down with the bottom three to make room.` });
   const tierOf = applyMoves(w.season.tierOf, moves);
@@ -331,7 +337,7 @@ function endSeason(w: World, date: DayKey) {
   const turn = worldTurn([...w.clubs.values()].map((c) => {
     const def = clubById(c.id);
     return { id: c.id, name: def.name, rating: c.rating, tier: tierOf[c.id] ?? c.tier, kind: def.kind, abilities: def.known.map((a) => a.name) };
-  }), r);
+  }), r, { trouble: rulesOf(w).trouble, bands: TIER_BANDS });
   const moved = applyChanges([...w.clubs.values()], turn.changes);
   for (const c of moved) w.clubs.set(c.id, { ...c, tier: tierOf[c.id] ?? c.tier, style: turn.styles[c.id] ?? c.style });
   turn.headlines.forEach((x, i) => w.news.push({ id: `${date}:world:${i}`, date, kind: 'world', text: x.text, clubId: x.clubId }));
@@ -388,6 +394,7 @@ function playEventDay(w: World, date: DayKey, auto: boolean) {
     const ded = w.season.nextDeductions ?? {};
     w.oldSeasons.push(w.season);
     w.season = newSeason(next, addDays(date, 1), [...w.clubs.values()], ded, w.season.final?.tables[1].slice(0, 4).map((r) => r.id));
+    congressSits(w, next, addDays(date, 1));
     w.save.season = next;
     w.save.phase = 'season';
     w.save.event = undefined;
@@ -623,6 +630,8 @@ function clubDay(w: World, date: DayKey) {
   deskDay(w, date);
   groundDay(w, date, input);
   treeDay(treeCtx(w), date, w.squad.filter((y) => (y.status === 'growing' || y.status === 'promoted') && youthDone(w, y, date)).length);
+  // The cast (step 4): bond points from the day's habits, asks met, and research from perks at Close the day.
+  castDay(w, date);
   // Layer 4: loans come and go, trials, youngsters grow (sessions from the linked habit, growth from kept bedtimes).
   globeDay(w, date, w.save.season);
   w.ctx = playerCtx(w.h, w.save, w.squad);
@@ -677,11 +686,13 @@ function seasonMoney(w: World, date: DayKey, tables: Record<Tier, Row[]>, up: Pa
   const done = doneBundles(w);
   const shop = (done.includes('shop-2') ? 0.1 : 0) + (done.includes('shop-3') ? 0.1 : 0);
   const capShare = w.save.moved ? (capacityOf(true, done) + stageCapacity(done)) / TENANT_CAPACITY : 1;
-  const total = incomeFor(tier, pos, promoted, sponsorMoney, capShare * (1 + shop));
-  const prizeMoney = Math.round((total - sponsorMoney) * 1000) / 1000;
+  // The congress's `solidarity`: a share of Crown League TV money passed down to every club below, Brabo included.
+  const solidarity = solidarityMoney(tier, rulesOf(w).solidarity);
+  const total = incomeFor(tier, pos, promoted, sponsorMoney, capShare * (1 + shop)) + solidarity;
+  const prizeMoney = Math.round((total - sponsorMoney - solidarity) * 1000) / 1000;
   const reach = reachOf(w.season.continental, OWN);
   const cont = reach ? contPrize(reach) : 0;
-  w.save.income = { season: w.save.season, lines: [{ name: 'TV, gate and prize money', amount: prizeMoney }, { name: 'Sponsors', amount: Math.round(sponsorMoney * 1000) / 1000 }, ...(cont ? [{ name: 'The Continental Cup', amount: cont }] : [])] };
+  w.save.income = { season: w.save.season, lines: [{ name: 'TV, gate and prize money', amount: prizeMoney }, ...(solidarity ? [{ name: solidarity > 0 ? 'Solidarity money' : 'Solidarity money passed down', amount: Math.round(solidarity * 1000) / 1000 }] : []), { name: 'Sponsors', amount: Math.round(sponsorMoney * 1000) / 1000 }, ...(cont ? [{ name: 'The Continental Cup', amount: cont }] : [])] };
   w.save.budget = Math.round((w.save.budget + total + cont) * 1000) / 1000;
   const nextTier = (promoted ? tier - 1 : tier) as Tier;
   const taken = new Set(w.save.sponsors.map((s) => s.slot));
@@ -703,6 +714,47 @@ function deskDay(w: World, date: DayKey) {
   if (club.loans !== g.loans) w.save.globe = { ...g, loans: club.loans };
   if (club.offers !== (w.save.offers ?? [])) w.save.offers = club.offers;
   if (club.sponsors !== (w.save.sponsors ?? [])) w.save.sponsors = club.sponsors;
+}
+/** The season's rules: the usual, or the twists the congress passed before it (congress/congress.ts). */
+const rulesOf = (w: World) => seasonRules(w.save.congress, w.season.id);
+/** Solidarity money for a season at `tier` (millions): the Crown League gives a share; every club below gets a cut. */
+function solidarityMoney(tier: Tier, pct: number): number {
+  if (!pct) return 0;
+  const tv = (LEAGUE.income as unknown as Record<string, { tv: number }>)['1'].tv;
+  const pot = (tv * pct) / 100;
+  return tier === 1 ? -pot : (pot * CLUBS_PER_TIER) / (CLUBS_PER_TIER * (TIERS.length - 1));
+}
+const CLUBS_PER_TIER = 18;
+/** The congress sits as a new season begins: Brabo's ballot and the votes won by lobbying, counted (spec §6). */
+function congressSits(w: World, season: number, on: DayKey) {
+  if ((w.save.congress ?? []).some((c) => c.season === season)) return;
+  const clubs = [...w.clubs.values()].filter((c) => !c.folded && SEATS[c.id]).map((c) => c.id);
+  const rel = relationSourceOf(w.save, [...w.past, ...w.matches]);
+  const opinion = (club: string) => opinionOf(rel, club);
+  const rec = sitCongress(season, on, clubs, opinion, w.save.ballot?.[season] ?? {}, lobbiesFor(w.save.desk?.spends ?? [], season), braboVotes());
+  w.save.congress = [...(w.save.congress ?? []), rec];
+  const said = rec.motions.map((m) => { const def = motionById(m.id)!; return `${m.passed ? def.passed : def.fell} (${m.for}–${m.against}).`; }).join(' ');
+  w.news.push({ id: `${on}:congress`, date: on, kind: 'club', text: `The federation congress: ${said}` });
+}
+/** The cast's day: habit points, asks met, and research from `research-close` perks. Days before bonds began never count. */
+function castDay(w: World, date: DayKey) {
+  const eng = engineOf(w.save);
+  const m = eng.days.find((d) => d.date === date)?.m ?? {};
+  const before = w.save.bonds ?? emptyBonds(date);
+  const held = perksHeld(bondsOf(w.save.desk, before));
+  const { bonds, met } = bondDay(before, w.save.desk, date, m, eng.days);
+  w.save.bonds = bonds;
+  for (const a of met) {
+    const who = castById(a.member)!;
+    w.news.push({ id: `${date}:ask:${a.spend}`, date, kind: 'club', text: `${who.name}: ${who.asks[a.ask]?.thanks ?? 'Thank you.'}` });
+  }
+  const research = closeResearch(held, m);
+  if (research) {
+    const e = structuredClone(eng);
+    e.earned += research;
+    e.gains = [...e.gains, { on: date, n: research, why: 'desk' as const, note: 'The cast' }].slice(-60);
+    w.save.tree = e;
+  }
 }
 /** The world as the tree's hooks see it (store/tree.ts). */
 const treeCtx = (w: World): TreeCtx => ({ h: w.h, save: w.save, season: w.season, bundles: w.bundles, news: w.news, clubs: w.clubs, matches: () => [...w.past, ...w.matches] });

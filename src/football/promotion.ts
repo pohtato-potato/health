@@ -3,9 +3,13 @@ import { parityRating } from './engine';
 import type { Row } from './table';
 import { AXES, TIERS, type AxisValues, type Tier } from './types';
 
-/** Playoff semi-finals: 3rd v 6th and 4th v 5th (one match each, the higher finisher at home). */
-export function playoffPairs(table: Row[]): [string, string][] {
-  return [[table[2].id, table[5].id], [table[3].id, table[4].id]];
+/**
+ * Playoff semi-finals: 3rd v 6th and 4th v 5th (one match each, the higher finisher at home). With four up
+ * (`upDown` 4, the congress's `four-up`), the top three go up and the play-off is 4th v 7th and 5th v 6th.
+ */
+export function playoffPairs(table: Row[], upDown: 3 | 4 = 3): [string, string][] {
+  const o = upDown - 3;
+  return [[table[2 + o].id, table[5 + o].id], [table[3 + o].id, table[4 + o].id]];
 }
 /** A double promotion: `id` goes from `from` straight up two, and `swap` (fourth from bottom two divisions up) also goes down. */
 export interface DoubleUp { id: string; from: Tier; swap: string; rating: number }
@@ -35,12 +39,13 @@ export function doubleUp(tables: Record<Tier, Row[]>, id: string, tier: Tier, fo
 }
 
 /** Who moves. `playoffWinners[t]` is the club that won tier t's playoff final. Tier 1 has no promotion; tier 6 no relegation. */
-export function seasonEnd(tables: Record<Tier, Row[]>, playoffWinners: Partial<Record<Tier, string>>, double?: DoubleUp): SeasonMoves {
+export function seasonEnd(tables: Record<Tier, Row[]>, playoffWinners: Partial<Record<Tier, string>>, double?: DoubleUp, upDown: 3 | 4 = 3): SeasonMoves {
   const up: SeasonMoves['up'] = {}, down: SeasonMoves['down'] = {};
   for (const t of TIERS) {
     const tb = tables[t];
-    if (t > 1) up[t] = [tb[0].id, tb[1].id, playoffWinners[t] ?? tb[2].id];
-    if (t < 6) down[t] = tb.slice(-3).map((r) => r.id);
+    const auto = tb.slice(0, upDown - 1).map((r) => r.id);
+    if (t > 1) up[t] = [...auto, playoffWinners[t] ?? tb[upDown - 1].id];
+    if (t < 6) down[t] = tb.slice(-upDown).map((r) => r.id);
   }
   // Every division keeps 18: the club fourth from bottom where the champions land drops with the bottom three.
   if (double) down[(double.from - 2) as Tier] = [double.swap, ...(down[(double.from - 2) as Tier] ?? [])];

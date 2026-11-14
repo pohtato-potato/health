@@ -8,7 +8,11 @@ export interface Headline { kind: 'world'; text: string; clubId: string }
 const gauss = (r: () => number) => Math.sqrt(-2 * Math.log(1 - r())) * Math.cos(2 * Math.PI * r());
 
 /** One season's turn of the world: drift, then the named events, then club abilities that move ratings. */
-export function worldTurn(clubs: WorldClub[], r: () => number): { changes: RatingChange[]; headlines: Headline[]; deductions: Record<string, number>; styles: Record<string, string> } {
+/**
+ * `trouble` (the congress's `spending-rule`): how much likelier financial trouble is for a club rated above its
+ * division's band (`bands`). At 1, every club is as likely, as before.
+ */
+export function worldTurn(clubs: WorldClub[], r: () => number, o: { trouble?: number; bands?: Record<string, [number, number]> } = {}): { changes: RatingChange[]; headlines: Headline[]; deductions: Record<string, number>; styles: Record<string, string> } {
   const others = clubs.filter((c) => c.kind !== 'own' && c.kind !== 'old');
   const changes: RatingChange[] = [], headlines: Headline[] = [];
   const deductions: Record<string, number> = {}, styles: Record<string, string> = {};
@@ -22,7 +26,8 @@ export function worldTurn(clubs: WorldClub[], r: () => number): { changes: Ratin
   for (let i = 0; i < signings; i++) { const c = pick(r, others); changes.push({ id: c.id, d: 3, why: 'record signing' }); say(c, `${c.name} break their transfer record.`); }
   { const c = pick(r, others); changes.push({ id: c.id, d: 4, why: 'takeover' }); say(c, `New money at ${c.name}. The fans have questions.`); }
   if (r() < 0.5) { const c = pick(r, others); changes.push({ id: c.id, d: -4, why: 'asset strippers' }); say(c, `${c.name}'s new owners sell the training ground. Protests outside.`); }
-  { const c = pick(r, others); deductions[c.id] = 6 + Math.floor(r() * 7); say(c, `${c.name} in financial trouble: a ${deductions[c.id]}-point deduction next season.`); }
+  { const c = (o.trouble ?? 1) > 1 && o.bands ? weighted(r, others, (x) => (x.rating > (o.bands![String(x.tier)]?.[1] ?? Infinity) ? o.trouble! : 1)) : pick(r, others);
+    deductions[c.id] = 6 + Math.floor(r() * 7); say(c, `${c.name} in financial trouble: a ${deductions[c.id]}-point deduction next season.`); }
   for (const c of others) for (const a of c.abilities ?? []) {
     if (a === 'Lakeside money') changes.push({ id: c.id, d: 3, why: a });
     if (a === 'Fallen giant' && c.tier > (c.id === 's04' ? 2 : 1)) changes.push({ id: c.id, d: 4, why: a });
@@ -35,6 +40,13 @@ export function worldTurn(clubs: WorldClub[], r: () => number): { changes: Ratin
   for (const ch of changes) net.set(ch.id, (net.get(ch.id) ?? 0) + ch.d);
   for (const c of others) if (c.abilities?.includes('Swabian thrift') && (net.get(c.id) ?? 0) < -2) changes.push({ id: c.id, d: -2 - (net.get(c.id) ?? 0), why: 'Swabian thrift' });
   return { changes, headlines, deductions, styles };
+}
+/** One club, each as likely as its weight. */
+function weighted<T>(r: () => number, xs: T[], w: (x: T) => number): T {
+  const total = xs.reduce((t, x) => t + w(x), 0);
+  let at = r() * total;
+  for (const x of xs) { at -= w(x); if (at < 0) return x; }
+  return xs[xs.length - 1];
 }
 export function applyChanges<T extends { id: string; rating: number }>(clubs: T[], changes: RatingChange[]): T[] {
   const net = new Map<string, number>();

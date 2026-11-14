@@ -14,6 +14,8 @@ import type { Axis } from '../types';
 import type { Fact } from '../fog/fog';
 import type { SlotBusy, TalkRound, TalkRow } from '../market/market';
 import type { MoveKind } from '../market/relations';
+import type { CastId } from '../content/desk/types';
+import type { HeldPerk } from '../cast/bonds';
 
 export type DieValue = 1 | 2 | 3 | 4 | 5 | 6;
 /** One die: an axis's score yesterday (1–20) as 1–6 by fixed bands, with the reason for its number. */
@@ -67,7 +69,13 @@ export type Effect =
   /** Fork 3: a sponsor deal from talks, folded at 4 am: signed on the terms reached, bonus paid. */
   | { kind: 'sponsor'; slot: string; brand: string; perSeason: number; seasons: number; bonus: number }
   /** Fork 3: a club's opinion of Brabo moves (market/relations.ts). Read from the log. Fork 4's lobbying can use it too. */
-  | { kind: 'opinion'; club: string; d: number; why: string; move: MoveKind };
+  | { kind: 'opinion'; club: string; d: number; why: string; move: MoveKind }
+  /** Fork 4: a club's vote won for the congress before `season` (congress/congress.ts). Read from the log. */
+  | { kind: 'lobby'; season: number; motion: string; side: 'for' | 'against'; club: string }
+  /** Fork 4: bond points with a cast member from time at the desk (cast/bonds.ts). Read from the log. */
+  | { kind: 'bond'; member: CastId; n: number }
+  /** Fork 4: a cast member asked for something (their `asks[ask]`); met by a real habit, it brings bond points. */
+  | { kind: 'ask'; member: CastId; ask: number };
 
 /** A chance in a job, shown before you commit (honest dice: the odds shown are the odds used, seeded). */
 export interface Risk { pct: number; line: string }
@@ -109,6 +117,8 @@ export interface DeskState {
   courses: CourseResult[];
   /** A course left halfway: the answers so far and the question the lifeline was used on (kept, so it's used once). */
   drafts?: Record<string, CourseDraft>;
+  /** Fork 4 (`negotiate-reroll`): spends whose round of talks was taken back, once a talk. Their effects no longer count. */
+  backs?: string[];
 }
 export interface CourseDraft { answers: (string | null)[]; helped?: string }
 export const emptyDesk = (): DeskState => ({ dice: {}, spends: [], clocks: [], courses: [] });
@@ -148,7 +158,8 @@ export interface DeskView {
   /** How much is known of tonight's opponent already (met, a lead, or watched). */
   oppKnown: 'none' | 'style' | 'full';
   youth: { id: string; name: string; axis: Axis; growth: number; potential: 3 | 4 | 5 }[];
-  projects: { id: string; name: string; worst: { what: string; have: number; count: number } }[];
+  /** `fresh`: no die has pushed it yet (the cast's head start applies). */
+  projects: { id: string; name: string; worst: { what: string; have: number; count: number }; fresh?: boolean }[];
   columnLines: { id: string; text: string; to?: string; letter?: string }[];
   /** Question ids in the course pool (bank plus the owner's import), and those already answered in a course. */
   questions: string[];
@@ -160,6 +171,30 @@ export interface DeskView {
   world?: WorldView;
   /** Fork 3: the loan market and sponsor offers, for studying a target and negotiating. */
   market?: MarketView;
+  /** Fork 4: the congress ahead, for lobbying (only in the fortnight before it). */
+  congress?: CongressView;
+  /** Fork 4: the cast's bonds, for time with the cast. */
+  cast?: CastView;
+  /** Fork 4: the cast's perks held today. None touches a rating or a match's odds. */
+  perks?: HeldPerk[];
+}
+/** Fork 4: what the lobby job sees. */
+export interface CongressView {
+  /** The season the congress sets the twists for. */
+  season: number;
+  open: boolean;
+  /** Days left of the season's fortnight, while the season runs. */
+  daysLeft?: number;
+  /** The ballot, with Brabo's vote on each so far. */
+  motions: { id: string; name: string; brabo: 'for' | 'against' | 'abstain' }[];
+  /** Every league club with a seat, and its opinion of Brabo. */
+  clubs: { id: string; name: string; opinion: number }[];
+  /** Votes already won by lobbying for this congress. */
+  lobbied: { club: string; motion: string; side: 'for' | 'against' }[];
+}
+/** Fork 4: what the cast job sees. */
+export interface CastView {
+  members: { id: CastId; name: string; role: string; points: number; rank: number; toNext: number; tone: 'warm' | 'cool'; askOpen: boolean }[];
 }
 /** Fork 3: what the study and negotiate jobs see. Opinions are worked out by the store (market/relations.ts). */
 export interface MarketView {
@@ -174,6 +209,8 @@ export interface MarketView {
   slot?: SlotBusy;
   /** Sponsor offers waiting (between seasons): a sponsor talk uses the same screen. */
   offers: { slot: string; brand: string; what: string; risk: string; perSeason: number; seasons: number }[];
+  /** Fork 4: the season's loan-market fees as a share (0.8 under the congress's `loan-cap`). */
+  feeShare?: number;
 }
 /** Every fogged club the scouts can reach: league clubs by tier (0 = abroad), with what is known of each. */
 export interface WorldView { ownTier: number; clubs: { id: string; name: string; tier: number; facts: Fact[] }[] }

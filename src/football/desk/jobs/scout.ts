@@ -32,7 +32,9 @@ function clockFor(v: DeskView, target: string): Omit<Clock, 'opened'> & { filled
   const open = openClock(v, target);
   if (open) return { ...open, fresh: false };
   const n = scoutClocks(v).filter((c) => c.target === target).length;
-  return { id: `scout:${target}:${n + 1}`, job: 'scout', target, name: `Scout: ${targetName(v, target)}`, size: clockSize(target), filled: 0, fresh: true };
+  // The cast's `clock-head-start` perk on scouting: a new clock starts with segments filled (never past full less one).
+  const head = Math.min(clockSize(target) - 1, perkValue(v.perks ?? [], 'clock-head-start', 'scout'));
+  return { id: `scout:${target}:${n + 1}`, job: 'scout', target, name: `Scout: ${targetName(v, target)}`, size: clockSize(target), filled: head, fresh: true };
 }
 
 interface Plan { clock: ReturnType<typeof clockFor>; n: 1 | 2; done: boolean; thin: boolean; risk?: Risk & { kind: 'lead' | 'thin' }; reveal: Record<string, Fact[]>; ba: [number, number] }
@@ -116,7 +118,7 @@ export const scout: JobDef = {
 };
 
 function effectsOf(p: Plan, target: string): Effect[] {
-  const out: Effect[] = [{ kind: 'clock', clock: p.clock.id, n: p.n }];
+  const out: Effect[] = [{ kind: 'clock', clock: p.clock.id, n: p.n + (p.clock.fresh ? p.clock.filled : 0) }];
   if (p.done) out.push({ kind: 'scout', target, reveal: p.reveal, before: p.ba[0], after: p.ba[1], ...(p.thin ? { thin: true } : {}) });
   return out;
 }

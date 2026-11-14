@@ -1,4 +1,7 @@
 // Rows in the fb* tables. Football writes only to these.
+import type { Ballot, CongressRecord } from '../congress/congress';
+import type { BondState } from '../cast/bonds';
+import type { CastId } from '../content/desk/types';
 import type { DoubleUp } from '../promotion';
 import type { DayKey } from '../../domain/dates';
 import type { Bracket } from '../cups';
@@ -126,6 +129,14 @@ export interface FbSave {
   desk?: DeskState;
   /** The world in fog (desk spec §4, Fork 2): stamped once with the clubs met before the fog came (12.8 a). */
   fog?: FogState;
+  /** Fork 4: every congress as it sat (engine side, written as a new season begins): the season's rule twists. */
+  congress?: CongressRecord[];
+  /** Fork 4: Brabo's votes, by the season the congress is for. A user key in play.ts. */
+  ballot?: Record<number, Ballot>;
+  /** Fork 4: the cast's bonds as the days folded them in (engine side). */
+  bonds?: BondState;
+  /** Fork 4: the highest rank scene seen, by cast member. A user key in play.ts. */
+  castSeen?: Partial<Record<CastId, number>>;
 }
 
 /** What a league match needs to be finished later: who, where, and the night as it was set at 4 am. */

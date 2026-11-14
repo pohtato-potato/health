@@ -11,6 +11,7 @@ import { CUP_COMPS, opinionOf, type RelationSource } from '../market/relations';
 import type { FbSave, StoredMatch } from './tables';
 import { globeOf } from './globe';
 import { OWN } from './season';
+import { seasonRules, voteMoves } from '../congress/congress';
 
 const nameOf = (id: string) => { try { return clubById(id).name; } catch { return 'A club'; } };
 const deskOf = (s: Pick<FbSave, 'desk'>): DeskState | undefined => s.desk;
@@ -21,7 +22,7 @@ export const cupTies = (matches: Pick<StoredMatch, 'opp' | 'date' | 'result' | '
 
 /** What relations are worked out from. `matches`: Brabo's stored matches (only cup ties count). */
 export function relationSourceOf(save: FbSave, matches: Pick<StoredMatch, 'opp' | 'date' | 'result' | 'comp'>[]): RelationSource {
-  return { rivals: save.rivals.map((r) => r.clubId), desk: deskOf(save), ties: cupTies(matches), stays: globeOf(save).loans };
+  return { rivals: save.rivals.map((r) => r.clubId), desk: deskOf(save), ties: cupTies(matches), stays: globeOf(save).loans, votes: voteMoves(save.congress) };
 }
 export async function loadRelations(save: FbSave): Promise<RelationSource> {
   return relationSourceOf(save, await db.fbMatches.where('comp').anyOf(CUP_COMPS).toArray());
@@ -29,7 +30,7 @@ export async function loadRelations(save: FbSave): Promise<RelationSource> {
 
 /** Every round of talks in the desk's log, with its day. */
 export const talkRows = (desk: DeskState | undefined): TalkRow[] =>
-  (desk?.spends ?? []).flatMap((s) => s.effects.flatMap((e) => (e.kind === 'talk' ? [{ day: s.day, e }] : [])));
+  (desk?.spends ?? []).filter((s) => !desk?.backs?.includes(s.id)).flatMap((s) => s.effects.flatMap((e) => (e.kind === 'talk' ? [{ day: s.day, e }] : [])));
 
 /** Deals struck and not yet folded in (their day hasn't played): they hold the market slot already. */
 export function pendingDeals(save: FbSave): { loan: string; days: number; day: DayKey }[] {
@@ -48,7 +49,7 @@ export function marketViewOf(save: FbSave, date: DayKey, tierOf: Record<string, 
     ...l, clubName: nameOf(l.club), opinion: opinionOf(rel, l.club), poach: (tierOf?.[l.club] ?? -1) === ownTier,
   }));
   return {
-    ownTier, budget: save.budget, leads, talks: talkRows(save.desk),
+    ownTier, budget: save.budget, leads, talks: talkRows(save.desk), feeShare: seasonRules(save.congress, save.season).loanFee,
     slot: marketSlot(globeOf(save).loans, pendingDeals(save), date),
     offers: (save.offers ?? []).map((o) => ({ slot: o.slot, brand: o.brand, what: o.what, risk: o.risk, perSeason: o.perSeason, seasons: o.seasons })),
   };

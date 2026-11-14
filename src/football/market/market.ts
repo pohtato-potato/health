@@ -113,8 +113,9 @@ export type Terms = LoanTerms | SponsorTerms;
 /** A friend at +100 asks a fifth less; a club at −100 a fifth more. */
 export const feeFactor = (opinion: number) => 1 - clamp(-100, 100, opinion) / 500;
 /** Their opening terms: a week, the fee for the player's tier at Brabo's division, and he starts every match. */
-export function openingLoan(tier: LoanTier, ownTier: Tier, opinion: number): LoanTerms {
-  return { kind: 'loan', days: OPEN_DAYS, fee: r3(wage(FEE_UNITS[tier], ownTier) * feeFactor(opinion)), promise: true };
+export function openingLoan(tier: LoanTier, ownTier: Tier, opinion: number, share = 1): LoanTerms {
+  // `share`: the season's loan-market fees (0.8 in a season the congress voted the `loan-cap`).
+  return { kind: 'loan', days: OPEN_DAYS, fee: r3(wage(FEE_UNITS[tier], ownTier) * feeFactor(opinion) * share), promise: true };
 }
 export const openingSponsor = (o: { perSeason: number; seasons: number }): SponsorTerms => ({ kind: 'sponsor', perSeason: o.perSeason, seasons: o.seasons, bonus: 0 });
 export const startMood = (opinion: number) => clamp(1, MOOD_MAX, MOOD_START + (opinion >= 25 ? 1 : 0) - (opinion <= -25 ? 1 : 0));

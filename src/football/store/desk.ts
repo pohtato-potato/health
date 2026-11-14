@@ -94,7 +94,8 @@ export async function deskView(t: Pick<Tonight, 'save' | 'date' | 'fixture'>): P
       const prog = states.get(p.id)?.progress ?? {};
       const open = p.needs.filter((n) => (prog[n.what] ?? 0) < n.count);
       const w = (open.length ? open : p.needs).reduce((b, n) => ((prog[n.what] ?? 0) / n.count < (prog[b.what] ?? 0) / b.count ? n : b));
-      return { id: p.id, name: p.name, worst: { what: NEED[w.what] ?? w.what, have: Math.min(w.count, prog[w.what] ?? 0) + pendingPush(desk, p.id, save.lastPlayed), count: w.count } };
+      const fresh = !desk.spends.some((s) => s.effects.some((e) => e.kind === 'project' && e.id === p.id));
+      return { id: p.id, name: p.name, fresh, worst: { what: NEED[w.what] ?? w.what, have: Math.min(w.count, prog[w.what] ?? 0) + pendingPush(desk, p.id, save.lastPlayed), count: w.count } };
     })
     .map((p) => ({ ...p, worst: { ...p.worst, have: Math.min(p.worst.count, p.worst.have) } }));
   const today = spendsOn(desk, date);
