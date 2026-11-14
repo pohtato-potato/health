@@ -51,7 +51,7 @@ describe('seeding from the real clubs', () => {
     expect(seeds).toHaveLength(WORLD_CLUBS.length - 1);
   });
   it('with Brabo in Division Three and one Old Self in Eight, every division holds the draft clubs', () => {
-    const old = { id: 'os1', tier: 8 as const, name: 'AFC October 2026', nickname: 'The Walkers', rating: 64, month: '2026-10', standIn: false };
+    const old = { id: 'os1', tier: 8 as unknown as 1, name: 'AFC October 2026', nickname: 'The Walkers', rating: 64, month: '2026-10', standIn: false };
     const out = seedWorld2(seeds, { id: 'bra', style: 'grit', rating: 34 }, 3, [old]);
     for (const p of PYRAMID) expect(out.filter((c) => c.tier === p.no && !c.pool && !c.folded)).toHaveLength(DIVISION_SIZE);
     for (const w of WORLD_CLUBS.filter((c) => c.place === 'pyramid')) expect(out.find((c) => c.id === w.id)!.tier).toBe(w.division);
