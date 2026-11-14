@@ -1,5 +1,5 @@
 // Everything the tree's screens show, worked out once from the save. Pure apart from the live query.
-import { worldOf } from '../../../football/pyramid/shape';
+import { seasonMoneyScale, worldOf } from '../../../football/pyramid/shape';
 import { weekStart } from '../../../domain/dates';
 import { BUNDLES, isOpen as bundleOpen } from '../../../football/ground';
 import { BOON_CHOICES } from '../../../football/content/season';
