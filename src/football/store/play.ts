@@ -39,7 +39,7 @@ import { settle2, tableDrift } from '../pyramid/drift';
 import { redrawUp } from '../pyramid/cups';
 import { LEVEL_DAYS, placeBrabo, typicalNight, winRate, type LevelNight, type Placing, type SimClub } from '../pyramid/level';
 import { rollOldSelves2, seatOldSelves } from '../pyramid/oldSelves';
-import { POOL, shapeOf, stageIn, stageOf, worldOf } from '../pyramid/shape';
+import { POOL, seasonMoneyScale, shapeOf, stageIn, stageOf, worldOf } from '../pyramid/shape';
 import { AXES, TIERS, type AxisValues, type CallPick, type Comp, type MatchEvents, type Mod, type Result, type Tier } from '../types';
 import { axisInputFor, bestAxis, comebackOn, condCapFor, conditions, loadHealth, medItems, medsTaken, nightFor, type Health } from './gather';
 import { backLine, cleanBill, dressingRoom, lowLogNight, lowLogOn, meetingDue, onInjuryList, typicalShape, type MedDay } from '../squadCare';
@@ -453,7 +453,7 @@ function endSeason2(w: World, date: DayKey) {
   if (moves.level) {
     const l = moves.level, pct = Math.round(l.rate * 100);
     w.news.push({ id: `${date}:level`, date, kind: 'club', text: l.dir === 'up'
-      ? `Up two. Champions of ${shape.name(from)}, and the last four weeks would still win ${pct}% of matches in ${shape.name(l.to)}: Brabo go straight there. ${clubById(l.swap).name} finished fourth from bottom there and go down a division to make room.`
+      ? `Up two. Champions of ${shape.name(from)}, and the last four weeks would still win ${pct}% of matches in ${shape.name(l.to + 1)}: Brabo go straight past it to ${shape.name(l.to)}. ${clubById(l.swap).name} finished fourth from bottom there and go down a division to make room.`
       : `Down two. Relegated from ${shape.name(from)}, and the last four weeks would win only ${pct}% of matches in ${shape.name(l.to - 1)}: Brabo go down to ${shape.name(l.to)}. ${clubById(l.swap).name} go up a division in their place.` });
   }
   const divOf = applyMoves2(w.season.tierOf, moves);
@@ -888,18 +888,22 @@ function seasonMoney(w: World, date: DayKey, tables: Record<Tier, Row[]>, up: Pa
   const done = doneBundles(w);
   const shop = (done.includes('shop-2') ? 0.1 : 0) + (done.includes('shop-3') ? 0.1 : 0);
   const capShare = w.save.moved ? (capacityOf(true, done) + stageCapacity(done)) / TENANT_CAPACITY : 1;
-  const total = incomeFor(tier, pos, promoted, sponsorMoney, capShare * (1 + shop));
-  const prizeMoney = Math.round((total - sponsorMoney) * 1000) / 1000;
+  // World 2: every season's money by two thirds, so the pace per real day is unchanged (owner, 15 Nov).
+  const k = seasonMoneyScale(w.season);
+  const m3 = (x: number) => Math.round(x * k * 1000) / 1000;
+  const total = m3(incomeFor(tier, pos, promoted, sponsorMoney, capShare * (1 + shop)));
+  const sponsorPaid = m3(sponsorMoney);
+  const prizeMoney = Math.round((total - sponsorPaid) * 1000) / 1000;
   const reach = reachOf(w.season.continental, OWN);
-  const cont = reach ? contPrize(reach) : 0;
-  w.save.income = { season: w.save.season, lines: [{ name: 'TV, gate and prize money', amount: prizeMoney }, { name: 'Sponsors', amount: Math.round(sponsorMoney * 1000) / 1000 }, ...(cont ? [{ name: 'The Continental Cup', amount: cont }] : [])] };
+  const cont = reach ? m3(contPrize(reach)) : 0;
+  w.save.income = { season: w.save.season, lines: [{ name: 'TV, gate and prize money', amount: prizeMoney }, { name: 'Sponsors', amount: sponsorPaid }, ...(cont ? [{ name: 'The Continental Cup', amount: cont }] : [])] };
   w.save.budget = Math.round((w.save.budget + total + cont) * 1000) / 1000;
   const taken = new Set(w.save.sponsors.map((s) => s.slot));
   const partners = w.save.sponsors.filter((s) => s.slot === 'partner').length;
   w.save.offers = OPEN.filter((o) => (o.from === undefined || nextTier <= o.from) && (o.slot === 'partner' ? partners < 3 : !taken.has(o.slot)))
     .flatMap((o) => offersFor(o.slot, nextTier, r));
   const row = (LEAGUE.income as unknown as Record<string, { tv: number; gate: number }>)[String(tier)];
-  return { gate: row.gate * capShare, tv: row.tv, sponsors: sponsorMoney, shop: row.gate * capShare * shop, continental: cont };
+  return { gate: row.gate * capShare * k, tv: row.tv * k, sponsors: sponsorPaid, shop: row.gate * capShare * shop * k, continental: cont };
 }
 /** The desk's day folded into the world: research, growth, project days and tomorrow's column (desk/fold.ts). */
 function deskDay(w: World, date: DayKey) {

@@ -27,6 +27,12 @@ export const PYRAMID: DivisionDef[] = [
   { no: 7, name: 'Division Seven', band: [67, 72] },
   { no: 8, name: 'Division Eight', band: [62, 67] },
 ];
+/**
+ * Season money in world 2 (owner, 15 Nov, choice b): a season is 28 days, not 42, so everything paid once a season is
+ * scaled by two thirds and the money per real day stays what it was.
+ */
+export const SEASON_MONEY_2 = 2 / 3;
+export const seasonMoneyScale = (x: { world?: WorldVersion } | undefined | null) => (worldOf(x) === 2 ? SEASON_MONEY_2 : 1);
 /** Clubs in a world-2 division. */
 export const DIVISION_SIZE = 12;
 /** The outside pool's place in a `tierOf` map or on an `FbClub`: one below the last division. Never a league. */

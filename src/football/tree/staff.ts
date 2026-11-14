@@ -13,12 +13,13 @@ import { hiredStaff, moneyShare, ruleValue, slots, type Active } from './researc
 export interface WageBill { paid: number; budget: number; staff: { id: string; amount: number; paid: boolean }[]; leave: string[] }
 
 /** Pays the season's wages in hiring order. Anyone the budget can't cover goes on leave; nothing is borrowed. */
-export function payWages(researched: string[], tier: Tier, budget: number): WageBill {
+/** `scale`: world 2 pays a 28-day season's wages, two thirds of a 42-day one (owner, 15 Nov). */
+export function payWages(researched: string[], tier: Tier, budget: number, scale = 1): WageBill {
   let left = budget;
   const staff: WageBill['staff'] = [];
   const order = researched.map((id) => STAFF.find((s) => s.tech === id)).filter((s): s is StaffDef => Boolean(s));
   for (const s of order) {
-    const amount = wage(s.wageUnits, tier);
+    const amount = Math.round(wage(s.wageUnits, tier) * scale * 1000) / 1000;
     const ok = left >= amount;
     if (ok) left = Math.round((left - amount) * 1000) / 1000;
     staff.push({ id: s.id, amount, paid: ok });
@@ -26,8 +27,8 @@ export function payWages(researched: string[], tier: Tier, budget: number): Wage
   return { paid: Math.round((budget - left) * 1000) / 1000, budget: left, staff, leave: staff.filter((s) => !s.paid).map((s) => s.id) };
 }
 /** This season's wage bill if it were paid today: every hired member. */
-export const wageBill = (researched: string[], tier: Tier) =>
-  Math.round(hiredStaff(researched).reduce((t, s) => t + wage(s.wageUnits, tier), 0) * 1000) / 1000;
+export const wageBill = (researched: string[], tier: Tier, scale = 1) =>
+  Math.round(hiredStaff(researched).reduce((t, s) => t + Math.round(wage(s.wageUnits, tier) * scale * 1000) / 1000, 0) * 1000) / 1000;
 
 /** The club doctor's level from experience (days every medicine was kept since hiring). */
 export function doctorLevel(xp: number): number {

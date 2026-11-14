@@ -4,9 +4,12 @@
 import type { Row } from '../table';
 import { PYRAMID, type Division } from './shape';
 
-/** After a title: over this simulated win rate in the division above the landing one, go up two. */
+/**
+ * After a title: over this simulated win rate in the division it lands in (the one above), go up two. LG-4 (15 Nov)
+ * corrected both checks to the spec's wording: LG-3 read the rate in the division beyond the landing one.
+ */
 export const LEVEL_UP = 0.55;
-/** After relegation: under this simulated win rate in the division below the landing one, go down two. */
+/** After relegation: under this simulated win rate in the division it lands in (the one below), go down two. */
 export const LEVEL_DOWN = 0.25;
 
 /** Brabo moved one extra step by the level check, and the club that moved the other way to make room. */
@@ -51,14 +54,14 @@ export function seasonEnd2(tables: Record<Division, Row[]>, playoffWinners: Part
     const tb = tables[home];
     const pos = tb.findIndex((r) => r.id === o.own);
     if (pos === 0 && home - 2 >= divs[0]) {
-      const to = home - 2, rate = o.rateIn(to);
+      const to = home - 2, rate = o.rateIn(home - 1);
       if (rate > LEVEL_UP) {
         // Room is made by the best finisher there not already going down: fourth from bottom.
         const swap = tables[to].map((r) => r.id).filter((id) => !(down[to] ?? []).includes(id)).pop()!;
         level = { id: o.own, from: home, to, dir: 'up', swap, rate };
       }
     } else if ((down[home] ?? []).includes(o.own) && home + 2 <= last) {
-      const to = home + 2, rate = o.rateIn(to);
+      const to = home + 2, rate = o.rateIn(home + 1);
       if (rate < LEVEL_DOWN) {
         // Room is made by the best finisher there not already going up.
         const swap = tables[to].map((r) => r.id).find((id) => !(up[to] ?? []).includes(id))!;

@@ -18,7 +18,7 @@ import type { MatchCtx } from '../engine';
 import type { Row } from '../table';
 import type { BraboAbility, Tier } from '../types';
 import { addMetrics, dayMetrics } from '../tree/metrics';
-import { stageIn, worldOf } from '../pyramid/shape';
+import { stageIn, worldOf, seasonMoneyScale } from '../pyramid/shape';
 import { projectDay, projectOpen, TREE_PROJECTS } from '../tree/projects';
 import { activeEffects, erasOpen, eurekasDue, lessonFor, LOGGED_DAY, settle, techById, type Active } from '../tree/research';
 import { boardDef, boardFor, boonsThisSeason, bountiesPicked, bountyProgress, objectiveMet, strengthOf, trackDue, type SeasonFacts } from '../tree/season';
@@ -265,7 +265,7 @@ export function treeSeasonEnd(c: TreeCtx, date: DayKey, tables: Record<Tier, Row
     s.budget = Math.round((s.budget + sum) * 1000) / 1000;
     s.income = s.income ? { ...s.income, lines: [...s.income.lines, ...lines] } : { season: s.season, lines };
   }
-  const bill = payWages(researchedOf(s), tier, s.budget);
+  const bill = payWages(researchedOf(s), tier, s.budget, seasonMoneyScale(c.season));
   s.budget = bill.budget;
   const back = eng.leave.filter((id) => !bill.leave.includes(id));
   const off = bill.leave.filter((id) => !eng.leave.includes(id));

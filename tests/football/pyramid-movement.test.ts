@@ -69,9 +69,9 @@ describe('moving at a season end', () => {
 });
 
 describe('the level check (Brabo only)', () => {
-  it('after a title, over 55% in the division above the landing one: up two, and the club fourth from bottom there makes room', () => {
+  it('after a title, over 55% in the division it lands in: up two, and the club fourth from bottom there makes room', () => {
     const { tables, tierOf } = world(5, 1);
-    const m = seasonEnd2(tables, {}, { own: 'bra', pool: POOL, rateIn: (d) => (d === 3 ? 0.6 : 0.8) });
+    const m = seasonEnd2(tables, {}, { own: 'bra', pool: POOL, rateIn: (d) => (d === 4 ? 0.6 : 0.3) });
     expect(m.level).toMatchObject({ id: 'bra', from: 5, to: 3, swap: 'd3-9', dir: 'up' });
     expect(m.level!.rate).toBeCloseTo(0.6);
     const after = applyMoves2(tierOf, m);
@@ -88,9 +88,9 @@ describe('the level check (Brabo only)', () => {
     const { tables } = world(5, 2);
     expect(seasonEnd2(tables, {}, { own: 'bra', pool: POOL, rateIn: () => 0.9 }).level).toBeUndefined();
   });
-  it('after relegation, under 25% in the division below the landing one: down two, the best finisher not promoted there makes room', () => {
+  it('after relegation, under 25% in the division it lands in: down two, the best finisher not promoted there makes room', () => {
     const { tables, tierOf } = world(3, 12);
-    const m = seasonEnd2(tables, { 5: 'd5-4' }, { own: 'bra', pool: POOL, rateIn: (d) => (d === 5 ? 0.2 : 0.5) });
+    const m = seasonEnd2(tables, { 5: 'd5-4' }, { own: 'bra', pool: POOL, rateIn: (d) => (d === 4 ? 0.2 : 0.5) });
     expect(m.level).toMatchObject({ id: 'bra', from: 3, to: 5, swap: 'd5-3', dir: 'down' });
     const after = applyMoves2(tierOf, m);
     expect(after.bra).toBe(5);
@@ -110,5 +110,26 @@ describe('the level check (Brabo only)', () => {
     const m = seasonEnd2(tables, {}, { own: 'bra', pool: POOL, rateIn: () => 0.99 });
     expect(m.up[1]).toBeUndefined();
     expect(m.level).toBeUndefined();
+  });
+});
+
+describe('the level check reads the division Brabo lands in (LG-4, spec §7)', () => {
+  it('up: the rate is read in the division above, not two above', () => {
+    const asked: number[] = [];
+    seasonEnd2(world(5, 1).tables, {}, { own: 'bra', pool: POOL, rateIn: (d) => { asked.push(d); return 0.5; } });
+    expect(asked).toEqual([4]);
+  });
+  it('down: the rate is read in the division below, not two below', () => {
+    const asked: number[] = [];
+    seasonEnd2(world(3, 12).tables, {}, { own: 'bra', pool: POOL, rateIn: (d) => { asked.push(d); return 0.5; } });
+    expect(asked).toEqual([4]);
+  });
+  it('a high rate two above but not one above moves Brabo one step only', () => {
+    expect(seasonEnd2(world(5, 1).tables, {}, { own: 'bra', pool: POOL, rateIn: (d) => (d === 3 ? 0.9 : 0.5) }).level).toBeUndefined();
+  });
+  it('Division Eight is the floor (owner, 15 Nov): relegated from Seven at any rate lands in Eight', () => {
+    const { tables, tierOf } = world(7, 12);
+    const m = seasonEnd2(tables, {}, { own: 'bra', pool: POOL, rateIn: () => 0 });
+    expect(applyMoves2(tierOf, m).bra).toBe(8);
   });
 });

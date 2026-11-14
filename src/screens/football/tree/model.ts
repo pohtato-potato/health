@@ -57,7 +57,7 @@ export function modelOf(t: TreeView) {
     week: weekStart(t.today),
     track: trackSteps(eng, season, worldOf(t.save)),
     staff,
-    wages: wageBill(researched, t.stage),
+    wages: wageBill(researched, t.stage, seasonMoneyScale(t.save)),
     doctor: { xp: eng.doctorXp, level: doctorLevel(eng.doctorXp), next: doctorNext(eng.doctorXp) },
   };
 }
