@@ -65,7 +65,9 @@ describe('Tonight: the day of the season and the league matchday', () => {
     const out = html(<TonightView t={{ ...t, save, fixture: fixtureFor(save, season) }} />);
     const said = new Set([...out.matchAll(/Matchday (\d+)/g)].map((m) => m[1]));
     expect(said.size).toBeLessThanOrEqual(1);
-    expect(out).toContain(`Day 8 of ${SEASON_DAYS}`);
+    // One number for tonight: the matchday leads, and the day of the season no longer sits beside it.
+    expect(said.size).toBe(1);
+    expect(out).not.toContain(`Day 8 of ${SEASON_DAYS}`);
   });
 });
 

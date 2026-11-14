@@ -29,9 +29,16 @@ describe('tab bar A', () => {
       expect(app).toContain(`'${r}': { el: () => <Football />, tab: 'football' }`);
   });
 
-  it('the Football home renders 4 segment buttons', () => {
+  it('the Football home renders the four words, underlined where you are', () => {
     const out = html(<FootballHome section="league" />);
     expect([...out.matchAll(/<a [^>]*href="#\/football[^"]*"/g)]).toHaveLength(4);
-    expect(out).toMatch(/class="on"[^>]*>League</);
+    expect(out).toMatch(/aria-current="page"[^>]*>League</);
+  });
+  it('a page inside a section shows one way back and its name, not the four words', () => {
+    const out = html(<FootballHome section="club" inner={{ title: 'The tree', back: 'Club', to: '/football/club' }} />);
+    expect([...out.matchAll(/<a [^>]*href="#\/football[^"]*"/g)]).toHaveLength(0);
+    expect(out).toContain('k-back');
+    expect(out).toMatch(/<h1[^>]*>The tree<\/h1>/);
+    expect(out).toContain('Club');
   });
 });

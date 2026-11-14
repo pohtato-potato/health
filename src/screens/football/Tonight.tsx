@@ -64,7 +64,8 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
       {catchUp}
       {t.morning.intl && <p className="fb-s fb-ctr"><b>No game tonight: the season waits for the break.</b> Next up, once it's over:</p>}
       <div className="fb-row">
-        <span className="fb-lb">{f?.label ?? 'Between seasons'}</span>
+        {/* One number for tonight (look review bug 6): the matchday, the same one the league uses. */}
+        <span className="fb-lb">{f ? (f.round ?? f.label) : 'Between seasons'}</span>
         <span className="fb-s">{t.morning.intl ? 'After the break' : 'Half-time 6 pm'}</span>
       </div>
       {f && (
@@ -81,7 +82,7 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
             </figure>
           </div>
           <h2 className="fb-hl">{t.opp ? `${t.morning.intl ? 'Next' : 'Tonight'}: ${t.opp.name}` : f.round ?? 'Tonight'}</h2>
-          <p className="fb-s fb-ctr">{[f.round, f.opp ? (f.braboHome ? 'Home' : 'Away') : undefined].filter(Boolean).join(' · ')}</p>
+          <p className="fb-s fb-ctr">{[f.round ? undefined : f.label, f.opp ? (f.braboHome ? 'Home' : 'Away') : undefined].filter(Boolean).join(' · ')}</p>
           {t.also && <p className="fb-s fb-ctr"><b>{t.also}</b></p>}
         </>
       )}

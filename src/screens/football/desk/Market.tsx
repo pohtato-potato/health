@@ -1,6 +1,7 @@
 // The loan market (desk spec §5, w-loan A) and loan talks (w3-haggle). Scouted targets sit beside packs; a market
 // loan has a slot of its own. Talks are three rounds, a die each, with their mood, what your scout knows and your
 // replies with the odds in colour. Every tap is a desk spend (store/desk.ts); deals land at 4 am.
+import { BackLink } from '../../../ui/kit/Kit';
 import { useMemo, useState, type CSSProperties } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../../db/db';
@@ -35,9 +36,8 @@ const MOOD_INK = ['#ff7a76', '#ffad6b', '#f2c46d', '#8fb3f0', '#8fdcb6'];
 const oddsInk = (pct: number) => (pct >= 100 ? '#f2c46d' : pct >= 50 ? '#8fb3f0' : '#a9b0c4');
 
 const Page = ({ children }: { children: React.ReactNode }) => <main className="md-page desk"><div className="md-in">{children}</div></main>;
-const Back = ({ to, label, params }: { to: string; label: string; params?: Record<string, string> }) => (
-  <button type="button" className="md-q dk-back" onClick={() => go(to, params)}>{label}</button>
-);
+/** One way back (navigation A): drawn, on the left of the page's name. */
+const Back = ({ to, label, params }: { to: string; label: string; params?: Record<string, string> }) => <BackLink label={label} onClick={() => go(to, params)} />;
 
 /** A target's crest: its club's, once its kit is known. */
 const kitKnown = (m: DeskModel, club?: string) => Boolean(club && m.view.world?.clubs.find((c) => c.id === club)?.facts.includes('kit'));

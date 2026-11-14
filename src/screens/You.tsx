@@ -19,7 +19,8 @@ import { Icon } from '../ui/Icon';
 import { RegionFrameView } from '../ui/live/RegionFrame';
 import { useLevel } from './Character';
 import { Browse } from './you/Browse';
-import { ClockCard } from './you/ClockCard';
+import { ClockChip } from './you/ClockCard';
+import { Sect, Title } from '../ui/kit/Kit';
 import { Doors } from './you/Doors';
 import { DueLines, readStorySeen } from './you/DueLines';
 import { FilmPoster } from './you/FilmPoster';
@@ -77,33 +78,35 @@ export function You() {
   const steps = trendRows(today, momentum).find((r) => r.area === 'steps');
 
   const subs = {
-    Reports: due.some((d) => d.id === 'story') ? 'Last week is ready' : 'Your weeks and months',
-    Earned: lv ? `${fmtInt(lv.unlocked.size)} earned so far` : 'What you have earned',
-    Body: 'Photos and measurements',
+    Reports: due.some((d) => d.id === 'story') ? 'Week is in' : 'Weeks, months',
+    Earned: lv ? fmtInt(lv.unlocked.size) : 'Earned',
+    Body: 'Photos',
     Tracks: steps ? `Steps ${steps.word.toLowerCase()}` : 'Every measure',
-    Insights: finding ? 'One new finding' : 'Patterns over time',
+    Insights: finding ? 'One new' : 'Patterns',
   };
 
+  // Look pass (board one, "You: proposed"): momentum leads over its chart, four trend tiles, then the pages as doors.
   return (
     <RegionFrameView km={km} className="yu-page">
-      <div className="yu-stack">
-        <header className="yu-top">
-          <div>
-            <h1>You</h1>
-            <span className="yu-q">Day {fmtInt(dayN)}{total ? ` of ${fmtInt(total)}` : ''}{title ? ` · ${title}` : ''}</span>
-          </div>
-          <button type="button" className="icon-btn yu-settings" aria-label="Settings" onClick={() => go('/settings')}><Icon name="more" size={22} /></button>
+      <div className="yu-stack k-page">
+        <header className="k-row" style={{ alignItems: 'flex-start' }}>
+          <Title lg under={`${title ? `${title} · ` : ''}day ${fmtInt(dayN)}${total ? ` of ${fmtInt(total)}` : ''}`}>You</Title>
+          <span className="k-row" style={{ gap: 4, alignItems: 'flex-start' }}>
+            {settings.goalDate && <ClockChip start={start} end={settings.goalDate} today={today} />}
+            <button type="button" className="icon-btn yu-settings" aria-label="Settings" onClick={() => go('/settings')}><Icon name="more" size={22} /></button>
+          </span>
         </header>
-        <FilmPoster today={today} days={days} sessions={browse.sessions} sets={browse.sets} />
-        {settings.goalDate && <ClockCard start={start} end={settings.goalDate} today={today} />}
         <MomentumPanel today={today} input={momentum} />
-        <LeagueLine />
         <DueLines items={due} today={today} />
         {returnedAfterGap(days, today) && <div className="voice">{spokenLine(settings, today, 'returned', today)}</div>}
+        <Sect>Look closer</Sect>
+        <Doors subs={subs} />
+        <LeagueLine />
         <FindingCard finding={finding} />
         <TrophyCase trophies={trophies} />
-        <Doors subs={subs} />
+        <FilmPoster today={today} days={days} sessions={browse.sessions} sets={browse.sets} />
         <Browse input={browse} />
+        <Sect>Today’s lift</Sect>
         <TodaysLift lift={lift} />
         <HowsToday today={today} input={slow} stat={bored} />
       </div>

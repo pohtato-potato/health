@@ -106,7 +106,6 @@ export function UnitRoute({ unit }: { unit: string }) {
   const list = players.filter((p) => p.unit === u).sort((a, b) => (a.status === 'left' ? 1 : 0) - (b.status === 'left' ? 1 : 0) || b.overall - a.overall);
   return (
     <div className="pl-page">
-      <button type="button" className="fb-btn sm" onClick={() => go('/football/club', undefined, { replace: true })}>← The eleven</button>
       <h2 className="fb-t">{u}</h2>
       <p className="pl-sub">Plays in {UNIT_WHERE[u]}. Starts: the highest match ratings, or your pick on the team sheet. The number is tonight’s match rating; the bar is freshness.</p>
       <div className="pl-list">{list.length ? list.map((p) => <Row key={p.id} p={p} starts={xi.has(p.id)} />) : <p className="fb-s">No players yet.</p>}</div>
@@ -143,7 +142,6 @@ export function PlayerPage({ id }: { id: string }) {
   const legend = p.card.tier === 'legend';
   return (
     <div className="pl-page" style={uc(p.unit)}>
-      <button type="button" className="fb-btn sm" onClick={() => go('/football/unit', { u: p.unit })}>← {p.unit}</button>
       <div className={`pl-hero${legend ? ' lg' : ''}`}>
         <TiltCard card={p.card} art={p.art} seed={p.id} player={p} label={`${p.name}, ${stepName(p.card)} card`} />
         <div className="pl-heroinfo">

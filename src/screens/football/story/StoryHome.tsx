@@ -16,6 +16,7 @@ import { RivalsView } from './Rivals';
 import { RivalryView } from './Rivalry';
 import { SettingsView } from './Settings';
 import { SeasonDoors } from '../tree/SeasonScreens';
+import { Door, Doors, Sect } from '../../../ui/kit/Kit';
 
 export const STORY_VIEWS = [
   { id: 'rivals', label: 'Rivals' },
@@ -36,17 +37,23 @@ export const useStory = () => useLiveQuery(loadStory, []);
 export function StoryView({ s, view, extra }: { s: Story; view: StoryViewId; extra?: Partial<Record<StoryViewId, ReactNode>> }) {
   return (
     <>
-      <nav className="fb-subseg five" aria-label="Story">
-        {STORY_VIEWS.map((v) => (
-          <button key={v.id} type="button" aria-pressed={view === v.id} className={view === v.id ? 'on' : undefined} onClick={() => go('/football/story', v.id === 'rivals' ? undefined : { view: v.id }, { replace: true })}>{v.label}</button>
-        ))}
-      </nav>
-      <SeasonDoors />
+      {view === 'rivals' && <SeasonDoors />}
       {view === 'rivals' && <RivalsView rivals={s.l.save.rivals} matches={s.all} />}
       {view === 'seasons' && <SeasonsView list={s.seasons.map((x) => summarise(x, s.all, s.seasons))} kitOf={(n) => kitName(s, n)} crestOf={(n) => crestName(s, n)} />}
       {view === 'moments' && <MomentsView upsets={upsets(s.all, s.seasons)} seasons={s.seasons.map((x) => summarise(x, s.all, s.seasons))} />}
       {view === 'olds' && <OldSelves clubs={[...s.l.clubs.values()]} tierOf={s.l.season.tierOf} retired={s.l.save.retired} />}
       {view === 'settings' && <SettingsView s={s.l.save} />}
+      {view === 'rivals' && (
+        <>
+          <Sect>More of the story</Sect>
+          <Doors two label="More of the story">
+            <Door icon="book" name="Seasons" value={`${s.seasons.length} so far`} onClick={() => go('/football/story', { view: 'seasons' })} />
+            <Door icon="pack" name="Moments" value={`${upsets(s.all, s.seasons).length} upsets`} ink="#f2c46d" onClick={() => go('/football/story', { view: 'moments' })} />
+            <Door icon="people" name="Old Selves" value={`${s.l.save.retired?.length ?? 0} retired`} onClick={() => go('/football/story', { view: 'olds' })} />
+            <Door icon="list" name="Settings" value="Football rules" onClick={() => go('/football/story', { view: 'settings' })} />
+          </Doors>
+        </>
+      )}
       {extra?.[view] ?? null}
     </>
   );
@@ -67,7 +74,6 @@ export function RivalRoute({ id }: { id: string }) {
   const r = s.l.save.rivals.find((x) => x.clubId === id) ?? (id === 'ant' ? { clubId: 'ant', how: 'legend' as const, since: '' } : undefined);
   return (
     <>
-      <button type="button" className="fb-btn sm" onClick={() => go('/football/story', undefined, { replace: true })}>← Rivals</button>
       {r ? <RivalryView r={r} matches={s.all} /> : <p className="fb-s">Not a rival any more.</p>}
     </>
   );

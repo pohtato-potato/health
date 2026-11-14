@@ -182,7 +182,6 @@ export function BlendRoute() {
   const morale = t.save.morale ?? 0;
   return (
     <div className="pl-page">
-      <button type="button" className="fb-btn sm" onClick={() => go('/football', undefined, { replace: true })}>← Tonight</button>
       <h2 className="fb-t">How tonight adds up</h2>
       <p className="pl-sub rt-left">Today decides 70%, the squad 30%. Everything else together moves an axis by 3 at most.</p>
       <div className="rt-bl">
@@ -229,7 +228,6 @@ export function TeamSheetRoute() {
   const date = dayOfLogging(Date.now());
   return (
     <div className="pl-page">
-      <button type="button" className="fb-btn sm" onClick={() => go('/football/club', undefined, { replace: true })}>← The eleven</button>
       <span className="pl-sub rt-left">{new Date(`${date}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'long' })} · change it any day</span>
       <h2 className="fb-t">Team sheet</h2>
       <div className="rt-fm" aria-label="Formations">
