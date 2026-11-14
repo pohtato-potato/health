@@ -51,6 +51,8 @@ export interface Targets {
 export interface TargetsRecord {
   from: DayKey;
   targets: Targets;
+  /** The phase's own name from the plan, e.g. "Maintenance" (optional; Food's phase line says "These aims" without it). */
+  name?: string;
 }
 
 export interface ChecklistItem {

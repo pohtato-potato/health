@@ -24,6 +24,12 @@ export const RIPPLE: Record<ThemeId, string> = {
   retro: 'M-40,-40 L40,-40 L40,40 L-40,40 Z', // a pixel
   antimatter: polar(() => 46, 6), // a hexagon
   platinum: star(4, 48, 30), // a cut stone
+  monsoon: polar((t) => 40 + 6 * Math.sin(6 * t)), // a raindrop's ring
+  matchday: polar(() => 46, 64), // the centre circle
+  aurora: polar((t) => 40 + 8 * Math.sin(3 * t)), // a ribbon
+  glacier: polar(() => 46, 8), // a cut crystal
+  blossom: polar((t) => 34 + 14 * Math.abs(Math.cos(2.5 * t))), // five petals
+  reef: polar((t) => 40 + 6 * Math.cos(9 * t)), // a coral
 };
 
 /** The three ring colours per theme, for the rest ring and the recap rings: always three different hues. */
@@ -37,4 +43,10 @@ export const RINGS: Record<ThemeId, [string, string, string]> = {
   retro: ['#6ff07a', '#f6d743', '#ff5f5f'],
   antimatter: ['#4ff5e6', '#ff5fd2', '#b7ff5f'],
   platinum: ['#dde8f2', '#f2c8a0', '#c9a7e8'],
+  monsoon: ['#5abeaa', '#6cc8ff', '#c2b2ff'],
+  matchday: ['#ff7a1a', '#b478ff', '#5fe08a'],
+  aurora: ['#5ff0b0', '#8a7dff', '#ff8ad8'],
+  glacier: ['#7fd6ff', '#c2a8ff', '#7ff0b0'],
+  blossom: ['#ff9cc8', '#9df0c8', '#d9a8ff'],
+  reef: ['#ff7f6a', '#42e0d0', '#ffd36b'],
 };

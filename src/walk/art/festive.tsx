@@ -9,10 +9,17 @@ const SKIES: Record<Festive, [string, string, string]> = {
   birthday: ['#1c1534', '#5c4290', '#f7c96b'],
 };
 
-/** The sky's three stops, pulled toward the festival's colours. */
+let worn: [string, string, string] | undefined;
+/** The theme being worn sets Walk's sky (look pass, rule 10); Dusk leaves the scene's own. Set by useThemeClass. */
+export function wearSky(sky: [string, string, string] | undefined) {
+  worn = sky;
+}
+
+/** The sky's three stops, pulled toward the festival's colours, or else toward the worn theme's sky. */
 export function festiveSky(f: Festive | undefined, sky: [string, string, string]): [string, string, string] {
-  if (!f) return sky;
-  return sky.map((c, i) => mix(c, SKIES[f][i], 0.5)) as [string, string, string];
+  const to = f ? SKIES[f] : worn;
+  if (!to) return sky;
+  return sky.map((c, i) => mix(c, to[i], 0.5)) as [string, string, string];
 }
 
 /** Decorations over the scene: lanterns and sparks for Diwali, drifting colour for Holi, paper bunting for a birthday. */

@@ -54,6 +54,12 @@ const PATHS: Record<string, ReactNode> = {
       <path d="M8 14h2.2M14.4 20.3h2.2" />
     </>
   ),
+  body: (
+    <>
+      <circle cx="12" cy="4.5" r="2.5" />
+      <path d="M12 7.5V15M7 10h10M12 15l-3.5 6.5M12 15l3.5 6.5" />
+    </>
+  ),
   weight: (
     <>
       <rect x="4" y="4" width="16" height="16" rx="4" />

@@ -21,10 +21,11 @@ import { checklistSlots, morningQuestions, swapSentence } from '../state/derived
 import { placeOptions } from '../domain/places';
 import { ensurePlace, setOfficeDay } from '../db/actions';
 import { isOfficeDay } from '../domain/officeUsual';
-import { CaughtWindow } from '../screens/Pledge';
+import { CaughtWindow, clockOf } from '../screens/Pledge';
 import { PlaceIcon } from '../ui/PlaceIcon';
 import { StatusRow } from '../ui/StatusRow';
 import { undoEdit } from '../db/edits';
+import '../styles/food.css';
 
 export function MorningLog() {
   const settings = useSettings();
@@ -32,7 +33,7 @@ export function MorningLog() {
   const days = useAllDays();
   const sessions = useSessions();
   const sets = useAllSets();
-  if (!settings || !days || !sessions || !sets) return <Sheet title="Morning log">{null}</Sheet>;
+  if (!settings || !days || !sessions || !sets) return <Sheet title="Good morning">{null}</Sheet>;
   return <MorningForm key={date} settings={settings} today={date} onDate={setDate} days={days} questions={morningQuestions(settings.plan, sessions, sets, date)} />;
 }
 
@@ -110,10 +111,61 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
     }
   };
 
+  const pledged = yesterday?.pledge?.at;
   return (
-    <Sheet title="Morning log" sub={fmtDayLong(today)}>
-      <DateChip value={today} onChange={onDate} />
-      <div className="panel col gap10">
+    <Sheet title="Good morning" sub={fmtDayLong(today)}>
+      <div className="ml-sheet">
+        <div className="grid2 ml-sleep">
+          <div className="k-panel ml-wheel" style={{ '--ink': 'var(--protein)' } as React.CSSProperties}>
+            {/* Both ends take any time of day: a sleepless night can mean asleep at 7 am and awake at 2 pm. */}
+            <SleepWheel label="Lights out" value={asleep} hint={lastSleep?.asleep ?? 23 * 60} from={ASLEEP_FROM} onChange={editAsleep} />
+            <span className="k-q tn">{typeof pledged === 'number' ? `pledged ${clockOf(pledged)}` : ' '}</span>
+          </div>
+          <div className="k-panel ml-wheel" style={{ '--ink': 'var(--sleep)' } as React.CSSProperties}>
+            <SleepWheel label="Woke" value={woke} hint={lastSleep?.woke ?? 7 * 60} from={WOKE_FROM} onChange={editWoke} />
+            <span className="k-q tn">{sleepLen !== undefined ? `${fmtDuration(sleepLen).replace(/ m$/, '')} asleep` : ' '}</span>
+          </div>
+        </div>
+        {lastSleep && (
+          <button type="button" className={`af-pill ml-same${carried ? ' on' : ''}`} aria-pressed={carried} onClick={sameAsYesterday}>
+            Same as yesterday
+          </button>
+        )}
+
+        <h3 className="k-sect">How rested?</h3>
+        <div className="ml-seg" role="radiogroup" aria-label="How rested">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <button key={n} type="button" role="radio" aria-checked={rested === n} onClick={() => setRested(rested === n ? undefined : n)}>
+              {n}
+            </button>
+          ))}
+        </div>
+        <div className="ml-window">
+          <CaughtWindow date={today} days={days} />
+        </div>
+
+      <div className="k-panel ml-weigh" style={{ '--ink': 'var(--k-gold)' } as React.CSSProperties}>
+        <div className="k-row">
+          <span className="k-col">
+            <b className="ml-wlb">Weigh-in</b>
+            <span className="k-q">{weight === undefined ? 'Not yet? Save now, add it after.' : lastWeight ? `last ${lastWeight.toFixed(1)} kg` : 'drag to set'}</span>
+          </span>
+          <b className="ml-kg tn">{weight === undefined ? '—' : weight.toFixed(1)} kg</b>
+        </div>
+        <div style={{ opacity: weight === undefined ? 0.45 : 1 }}>
+          <Dial value={weight ?? lastWeight ?? 75} step={0.1} min={35} max={200} major={10} onChange={setWeight} label="Weight in kg" unit="kg" />
+        </div>
+        {trendNow !== undefined && weight !== undefined && (
+          <div className="ml-trend" aria-live="polite">
+            <span><b className="tn">{trendNow.toFixed(1)}</b> kg trend</span>
+            <small>today’s reading {weight.toFixed(1)} kg</small>
+          </div>
+        )}
+        <div className="k-q">After the toilet, before food or water. Leave it if you didn't weigh. The trend is the number that matters; a single morning moves with water.</div>
+      </div>
+
+        <DateChip value={today} onChange={onDate} />
+      <div className="k-panel ml-place" style={{ '--ink': 'var(--k-pearl)' } as React.CSSProperties}>
         <div className="row base">
           <span className="lbl">Where today</span>
           <span className="t12 q">change any time</span>
@@ -158,76 +210,8 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
         })()}
       </div>
 
-      <div className="panel col gap8">
-        <div className="row base">
-          <span className="lbl">Weight</span>
-          <span className="t12 q">{weight === undefined ? 'drag to set' : lastWeight ? `last ${lastWeight.toFixed(1)}` : ''}</span>
-        </div>
-        <div style={{ opacity: weight === undefined ? 0.45 : 1 }}>
-          <Dial value={weight ?? lastWeight ?? 75} step={0.1} min={35} max={200} major={10} onChange={setWeight} label="Weight in kg" unit="kg" />
-        </div>
-        {trendNow !== undefined && weight !== undefined && (
-          <div className="ml-trend" aria-live="polite">
-            <span><b className="tn">{trendNow.toFixed(1)}</b> kg trend</span>
-            <small>today’s reading {weight.toFixed(1)} kg</small>
-          </div>
-        )}
-        <div className="t13 q">After the toilet, before food or water. Leave it if you didn't weigh. The trend is the number that matters; a single morning moves with water.</div>
-      </div>
-
-      <div className="panel col gap10">
-        <div className="row base">
-          <span className="lbl" style={{ color: 'var(--sleep)' }}>
-            Sleep
-          </span>
-          {lastSleep && (
-            <button type="button" className={`chip sm${carried ? ' on' : ''}`} aria-pressed={carried} onClick={sameAsYesterday}>
-              Same as yesterday
-            </button>
-          )}
-        </div>
-        <div className="grid2">
-          {/* Both ends take any time of day: a sleepless night can mean asleep at 7 am and awake at 2 pm. */}
-          <SleepWheel label="Asleep" value={asleep} hint={lastSleep?.asleep ?? 23 * 60} from={ASLEEP_FROM} onChange={editAsleep} />
-          <SleepWheel label="Woke" value={woke} hint={lastSleep?.woke ?? 7 * 60} from={WOKE_FROM} onChange={editWoke} />
-        </div>
-        <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-          <span className="t13 q tn" style={{ whiteSpace: 'nowrap' }}>
-            {sleepLen !== undefined ? `${fmtDuration(sleepLen)} · how rested` : 'How rested'}
-          </span>
-          <div className="row" role="radiogroup" aria-label="How rested" style={{ gap: 6 }}>
-            {[1, 2, 3, 4, 5].map((n) => (
-              <button key={n} type="button" role="radio" aria-checked={rested === n} className={`round sm${rested === n ? ' on' : ''}`} onClick={() => setRested(rested === n ? undefined : n)}>
-                {n}
-              </button>
-            ))}
-          </div>
-        </div>
-        <CaughtWindow date={today} days={days} />
-      </div>
-
-      {settings.prefs.confirmSteps && (
-        <label className="panel flabel">
-          <span className="lbl" style={{ color: 'var(--steps)' }}>
-            Yesterday's final steps
-          </span>
-          <IntField value={steps} onChange={setSteps} placeholder="From Samsung Health" label="Yesterday's final steps" />
-          <span className="t12 q lh">
-            {yesterday?.steps !== undefined && yesterday.stepsAt ? `You logged ${fmtInt(yesterday.steps)} at ${fmtTime(yesterday.stepsAt)}. The final count is ready by now.` : 'The final count is ready by now.'}
-          </span>
-        </label>
-      )}
-
-      <div className="panel col gap10">
-        <button type="button" className="row tap44" aria-expanded={more} onClick={() => setMore(!more)} style={{ minHeight: 44 }}>
-          <span className="t15">Body</span>
-          <span className="t13 q">{bodyTileWords(body ?? [], today)}</span>
-        </button>
-        {more && <BodyChart date={today} entries={body ?? []} />}
-      </div>
-
       {questions.map((q) => (
-        <div key={q.id} className="row">
+        <div key={q.id} className="k-panel flat ml-q">
           <div className="col gap2">
             <div className="t15">{q.question ?? q.label}</div>
             {q.hint && <div className="t12 q">{q.hint}</div>}
@@ -242,10 +226,9 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
           </div>
         </div>
       ))}
-
       {morningSlots.length > 0 && (
         <div className="col gap8">
-          <div className="lbl">Morning checklist</div>
+          <h3 className="k-sect">Morning checklist</h3>
           <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
             {morningSlots.map((s) => (
               <button key={s.key} type="button" role="switch" aria-checked={!!ticks[s.key]} className={`chip sm${ticks[s.key] ? ' on' : ''}`} onClick={() => setTicks({ ...ticks, [s.key]: !ticks[s.key] })}>
@@ -255,10 +238,31 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
           </div>
         </div>
       )}
+      {settings.prefs.confirmSteps && (
+        <label className="k-panel flabel" style={{ '--ink': 'var(--steps)' } as React.CSSProperties}>
+          <span className="lbl" style={{ color: 'var(--steps)' }}>
+            Yesterday's final steps
+          </span>
+          <IntField value={steps} onChange={setSteps} placeholder="From Samsung Health" label="Yesterday's final steps" />
+          <span className="t12 q lh">
+            {yesterday?.steps !== undefined && yesterday.stepsAt ? `You logged ${fmtInt(yesterday.steps)} at ${fmtTime(yesterday.stepsAt)}. The final count is ready by now.` : 'The final count is ready by now.'}
+          </span>
+        </label>
+      )}
+      <div className="k-panel">
+        <button type="button" className="row tap44" aria-expanded={more} onClick={() => setMore(!more)} style={{ minHeight: 44 }}>
+          <span className="t15">Body</span>
+          <span className="t13 q">{bodyTileWords(body ?? [], today)}</span>
+        </button>
+        {more && <BodyChart date={today} entries={body ?? []} />}
+      </div>
 
-      <button type="button" className="btn lg block" onClick={save} disabled={saving}>
-        {weight === undefined && !day?.weightKg ? 'Save, weigh-in to come' : 'Save'}
-      </button>
+        <div className="ml-save">
+          <button type="button" className="k-act wide" onClick={save} disabled={saving}>
+            Save the morning
+          </button>
+        </div>
+      </div>
     </Sheet>
   );
 }

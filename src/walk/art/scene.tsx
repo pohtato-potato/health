@@ -51,7 +51,7 @@ export function Scene({ city, region: regionIn, part, people = false, landmarkSc
   const lm = city ? landmarkFor(city) : undefined;
   const region = regionIn ?? lm?.region ?? 'plains';
   const base = lightFor(part, region);
-  const light = festive ? { ...base, sky: festiveSky(festive, base.sky) } : base;
+  const light = { ...base, sky: festiveSky(festive, base.sky) };
   const shapes = useMemo(() => {
     const rnd = seeded(REGIONS.indexOf(region) * 977 + 13);
     const { amp, bumps } = RELIEF[region];

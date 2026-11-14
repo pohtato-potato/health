@@ -1664,18 +1664,18 @@ textarea.field {
   --gold-text: #c6d1de;
 }
 :root.theme-retro {
-  --ink: #070a07;
-  --deep: #040604;
-  --surface: #0e140e;
-  --raised: #131c13;
-  --hairline: #1f2e1f;
-  --divider: #162216;
-  --track: #1a261a;
-  --btn-border: #2c422c;
-  --text: #c8f7c5;
-  --quiet: #7fae7c;
-  --dim: #6a9467;
-  --voice: #b5eab1;
+  --ink: #0c0a1e;
+  --deep: #07061a;
+  --surface: #161230;
+  --raised: #1d183c;
+  --hairline: #33295a;
+  --divider: #231c44;
+  --track: #2a2250;
+  --btn-border: #43387a;
+  --text: #f1ecff;
+  --quiet: #c6bde6;
+  --dim: #9d93c4;
+  --voice: #ffd2ea;
   --gold: #f6d743;
   --serif: 'DM Mono', ui-monospace, monospace;
 }
@@ -1702,6 +1702,15 @@ textarea.field {
   --gold-rule: #2b3139;
   --gold-text: #cfd6dd;
 }
+
+/* The look pass's own themes (15 Nov). Their light, action colour, rings and sky come from src/domain/themes.ts;
+   these set the older surfaces to match. */
+:root.theme-monsoon { --ink: #07141a; --deep: #050e12; --surface: #0e1f26; --raised: #142a32; --hairline: #234049; --divider: #18303a; --track: #1c3640; }
+:root.theme-matchday { --ink: #0a0c1c; --deep: #06071a; --surface: #131630; --raised: #1a1d3c; --hairline: #2c2f58; --divider: #1e2142; --track: #24284c; }
+:root.theme-aurora { --ink: #061018; --deep: #040b12; --surface: #0d1c26; --raised: #132632; --hairline: #224050; --divider: #172e3a; --track: #1b3442; }
+:root.theme-glacier { --ink: #07101c; --deep: #050b14; --surface: #0f1b2c; --raised: #152438; --hairline: #253a56; --divider: #1a2a40; --track: #1e3048; --text: #eef8ff; }
+:root.theme-blossom { --ink: #150c18; --deep: #0e0811; --surface: #1f1424; --raised: #281a2e; --hairline: #43304b; --divider: #2e2034; --track: #33243a; }
+:root.theme-reef { --ink: #061420; --deep: #040e17; --surface: #0d1f2e; --raised: #13293a; --hairline: #224258; --divider: #173044; --track: #1b384c; }
 
 /* The seasonal strip at the top of Today */
 .season {

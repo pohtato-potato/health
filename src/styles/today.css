@@ -280,3 +280,156 @@
 /* The maintenance read (y-maint): plain lines on a quiet outlined card, never red. */
 .maint-read { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--kcal, #ffb36b) 40%, transparent); }
 .maint-read p { margin: 0; }
+
+/* =====================================================================================================
+ * Look pass L3 (15 Nov): Today on the kit, as boards three ("Today, scrolled") and five ("Today"; "The rings,
+ * close up") draw it. These rules come last and replace the older look above where they overlap.
+ * ===================================================================================================== */
+.k-light.today { --w1: rgba(233, 138, 91, 0.18); --w2: rgba(108, 63, 196, 0.24); --k-bg: radial-gradient(90% 40% at 0% 0%, rgba(233, 138, 91, 0.24), transparent 70%), radial-gradient(90% 50% at 100% 100%, rgba(108, 63, 196, 0.42), transparent 70%), #0e0b1c; }
+.page.td-page { gap: 12px; padding-bottom: calc(var(--tab-h) + var(--safe-bottom) + 92px); font-family: var(--sans); }
+/* A perfect day or a record night lights the page with gold from the top. */
+.k-light.today.td-glow::after { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(80% 36% at 50% 0%, rgba(255, 210, 87, 0.26), transparent 70%); }
+.td-page > .rm-fx { position: fixed; inset: 0; z-index: 1; overflow: hidden; pointer-events: none; }
+
+/* The walk: a short banner, edge to edge; date and place under it, apart from the road. */
+.td-walkwrap { display: flex; flex-direction: column; gap: 8px; margin: calc(-18px - var(--safe-top)) -22px 0; }
+.td-walkwrap > .td-status { padding: 0 22px; }
+.td-walk { position: relative; display: flex; flex-direction: column; gap: 6px; width: 100%; margin: 0; padding: 0; border: 0; background: none; color: var(--k-cream); text-align: left; cursor: pointer; }
+.td-walk-scene { display: block; height: calc(92px + var(--safe-top)); overflow: hidden; -webkit-mask-image: linear-gradient(#000 70%, transparent); mask-image: linear-gradient(#000 70%, transparent); }
+.td-walk-scene .band { display: block; height: 100%; margin: 0; border-radius: 0; }
+.td-walk-scene .band svg { display: block; width: 100%; height: 100%; }
+.td-walk-cap { position: static; display: flex; flex-direction: column; gap: 2px; margin: -6px 0 0; padding: 0 22px; }
+.td-walk-line { font-size: 15px; line-height: 1.3; color: var(--k-cream); }
+.td-walk-line b { font-weight: 700; }
+.td-walk-next { margin: 0; font-size: 14px; }
+.td-walk-stamp { top: calc(8px + var(--safe-top)); width: 60px; }
+
+/* The heading: the count of closed rings, the clock, the day's line under it. */
+.td-line-wrap { gap: 2px; }
+.td-headrow { align-items: baseline; }
+.td-head { margin: 0; font: 400 26px/1.15 var(--serif); color: var(--k-cream); }
+.td-head.gold { color: #ffd257; text-shadow: 0 0 18px rgb(255 196 64 / 0.45); }
+.td-clock { font: 400 15px var(--sans); color: var(--k-quiet); white-space: nowrap; }
+.td-line { margin: 0; padding: 2px 0; min-height: 44px; border: 0; background: none; text-align: left; font: 400 15px/1.35 var(--sans); color: var(--k-quiet); cursor: pointer; }
+.td-line:disabled { cursor: default; }
+.td-line-voice { font: italic 400 17px/1.3 var(--serif); color: var(--voice, var(--k-cream)); }
+.td-line-voice.gold { color: #ffd257; }
+.td-line-flag { color: var(--k-coral); font-weight: 700; }
+
+/* The rings (the lead) and their numbers. */
+.td-rings { gap: 8px; }
+.td-rings-row { display: flex; align-items: center; gap: 14px; }
+.lr, .lr-spin { width: 164px; height: 164px; }
+.lr .gr, .lr-themed svg, .lr-chainbox { width: 164px; height: 164px; }
+.lr-themed svg { filter: drop-shadow(0 0 5px rgb(255 255 255 / 0.18)); }
+.gr .gr-reveal { transition: stroke-dasharray 1.3s cubic-bezier(0.3, 0.7, 0.2, 1); }
+.gr .gr-head { transition: transform 1.3s cubic-bezier(0.3, 0.7, 0.2, 1); }
+.gr .gr-band path, .gr .gr-band circle { transition: stroke 0.6s, fill 0.6s; }
+.gr .gr-band.closed .gr-line { filter: brightness(1.12); }
+.td-nums { flex: 1; gap: 4px; }
+.td-num { --c: var(--k-cream); display: flex; flex-wrap: nowrap; align-items: baseline; gap: 6px; min-height: 40px; padding: 0; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; color: var(--k-quiet); }
+.td-num b { font: 600 30px/1.05 var(--serif); color: var(--c); white-space: nowrap; letter-spacing: -0.01em; }
+.td-num > span { font-size: 14px; color: var(--k-quiet); white-space: nowrap; }
+/* A met goal: the number turns radiant, its own colour lifted toward white with a soft glow; the unit lights too. */
+.td-num.rad b { font-size: 32px; color: color-mix(in srgb, var(--c) 70%, #fff); text-shadow: 0 0 16px var(--c), 0 0 3px var(--c); }
+.td-num.rad > span { color: var(--c); font-weight: 700; }
+.td-num[style*="ffd257"] b { color: #ffd257 !important; text-shadow: 0 0 14px rgb(255 196 64 / 0.55); }
+.td-ringmore { font-size: 15px; color: var(--k-quiet); }
+.td-stepin input { border-radius: 14px; border: 1px solid rgba(237, 230, 218, 0.3); background: rgba(16, 18, 42, 0.7); color: var(--k-cream); }
+@media (max-width: 359px) {
+  .lr, .lr-spin, .lr .gr, .lr-themed svg, .lr-chainbox { width: 140px; height: 140px; }
+  .td-num b { font-size: 27px; }
+  .td-num.rad b { font-size: 28px; }
+  .td-rings-row { gap: 10px; }
+}
+
+/* The one lit panel: the next thing to log, with the page's one glowing action. */
+.td-moment.k-panel { flex-direction: row; align-items: center; gap: 12px; padding: 14px 14px 14px 16px; box-shadow: none; }
+.td-moment-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.td-moment-title { font: 700 16px/1.25 var(--sans); color: var(--k-cream); }
+.td-moment-sub { font-size: 15px; line-height: 1.3; }
+.td-moment-btn { flex: none; }
+.td-moment.gold { border: 1px solid color-mix(in srgb, #ffd257 60%, transparent); }
+.td-moment.gold .td-moment-title { color: #ffd257; font: 600 22px/1.15 var(--serif); }
+
+/* Football's panel: last night's result, tonight's opponent. */
+.tm-res.k-panel { display: flex; flex-direction: row; align-items: center; gap: 10px; padding: 12px 34px 12px 16px; min-height: 72px; grid-template-areas: none; }
+.tm-res .tm-rs { flex: none; display: flex; flex-direction: column; }
+.tm-res .tm-score { font: 600 26px/1 var(--serif); }
+.tm-res.r-W .tm-score { color: #8fc9b0; }
+.tm-res.r-D .tm-score { color: #93c3dc; }
+.tm-res.r-L .tm-score { color: #d0cbe0; }
+.tm-res .tm-rs .k-q, .tm-res .tm-vs .k-q { font-size: 14px; font-weight: 400; }
+.tm-res .tm-crest { flex: 1; display: flex; justify-content: center; opacity: 0.9; min-width: 0; }
+.tm-res .tm-vs { flex: none; display: flex; flex-direction: column; align-items: flex-end; text-align: right; gap: 0; max-width: 46%; }
+.tm-res .tm-vs b { font-size: 16px; line-height: 1.2; overflow-wrap: anywhere; }
+.tm-match.k-panel { --ink: #ff9a4d; align-items: center; text-align: center; gap: 8px; padding: 14px; border-radius: 20px; background: radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--t1) 26%, transparent), transparent 60%), radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--t2) 26%, transparent), transparent 60%), linear-gradient(180deg, color-mix(in srgb, #ff9a4d 18%, #10122a), color-mix(in srgb, #ff9a4d 6%, #10122a)); }
+.tm-match .tm-watch { min-height: 48px; border-radius: 999px; background: transparent; color: var(--k-cream); border: 2px solid var(--k-cream); font-size: 16px; font-weight: 700; }
+
+/* Training on Today: a coral panel (the training ink), tappable into Train. */
+.td-next { --ink: var(--k-coral); position: relative; padding: 12px 14px; gap: 12px; border: 1px solid color-mix(in srgb, var(--ink) 46%, transparent); border-radius: 20px; background: linear-gradient(180deg, color-mix(in srgb, var(--ink) 22%, #10122a), color-mix(in srgb, var(--ink) 7%, #10122a) 90%); }
+.td-next-title { font: 600 20px/1.2 var(--serif); }
+.td-next-sub { color: color-mix(in srgb, var(--ink) 26%, #e4e0ee); }
+.td-next-ready { color: #8fc9b0; }
+.td-next .btn.sm { min-height: 44px; border-radius: 999px; background: transparent; border: 2px solid var(--k-cream); color: var(--k-cream); }
+.td-records { --ink: #ffd257; }
+
+/* The day's other panels, on the kit: status, what is due, office usual, banners, the season. */
+.td-chip { border-color: rgba(237, 230, 218, 0.45); }
+.td-statusset { border-radius: 20px; border: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--k-pearl) 18%, #10122a), color-mix(in srgb, var(--k-pearl) 6%, #10122a)); }
+.td-duecard { border-width: 1px; border-radius: 20px; }
+.td-banner { padding: 12px 14px; border: 0; border-radius: 20px; background: linear-gradient(180deg, color-mix(in srgb, var(--k-pearl) 16%, #10122a), color-mix(in srgb, var(--k-pearl) 5%, #10122a)); }
+.td-banner-act { border-color: rgba(237, 230, 218, 0.55); }
+.office-usual-btn { border-radius: 20px; border: 1px solid color-mix(in srgb, var(--kcal) 46%, transparent); background: linear-gradient(180deg, color-mix(in srgb, var(--kcal) 22%, #10122a), color-mix(in srgb, var(--kcal) 7%, #10122a)); box-shadow: none; color: var(--k-cream); }
+.td-page .season { border-radius: 20px; }
+
+/* Scrolled: tonight's shape, quick add, the meals, the body log, the checklist (board three). */
+.tm-shape { gap: 8px; padding: 0; border: 0; border-radius: 0; background: none; }
+.tm-shape > .tm-h { margin: 14px 0 0; }
+.tm-vsx { margin: 0; display: flex; align-items: center; gap: 6px; font-size: 15px; color: var(--k-quiet); }
+.tm-shape > .tm-ln { padding: 10px 14px; border-radius: 20px; background: linear-gradient(180deg, color-mix(in srgb, var(--ax-routine) 20%, #10122a), color-mix(in srgb, var(--ax-routine) 6%, #10122a)); }
+.td-log { gap: 10px; padding-top: 0; }
+.td-log > .k-sect { margin-top: 14px; }
+.td-quick { flex-wrap: wrap; overflow: visible; margin: 0; padding: 0; gap: 8px; }
+.td-food { flex: none; flex-direction: row; align-items: center; gap: 6px; min-height: 44px; min-width: 0; padding: 6px 14px; border-radius: 999px; border: 0; background: rgba(237, 230, 218, 0.10); color: var(--k-cream); }
+.td-food b { font-size: 15px; font-weight: 700; }
+.td-food span { font-size: 14px; color: var(--k-quiet); }
+.td-page .td-food, .td-page .log-search { border-color: transparent; background: rgba(237, 230, 218, 0.10); }
+.td-meals.k-panel { display: flex; flex-direction: column; gap: 0; padding: 4px 14px; grid-template-columns: none; }
+.td-meal { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0; border: 0; border-radius: 0; background: none; border-top: 1px solid rgba(237, 230, 218, 0.14); }
+.td-meal:first-child { border-top: 0; }
+.td-meal-open { flex: 1; display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 8px; min-height: 48px; padding: 0; border: 0; background: none; color: var(--k-cream); font: inherit; text-align: left; cursor: pointer; }
+.td-meal-name { font-size: 15px; color: var(--k-cream); }
+.td-meal-v { font: 600 18px var(--serif); white-space: nowrap; }
+.td-meal-v.k-q { font: 400 15px var(--sans); font-style: italic; }
+.td-same { min-height: 44px; padding: 0 2px; border: 0; background: none; color: #8fc9b0; font: 700 15px var(--sans); cursor: pointer; white-space: nowrap; }
+.td-chips.k-panel { display: flex; flex-direction: column; flex-wrap: nowrap; gap: 0; padding: 4px 14px; }
+.td-hold { position: relative; overflow: hidden; isolation: isolate; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 48px; width: auto; margin: 0 -14px; padding: 0 14px; border: 0; border-top: 1px solid rgba(237, 230, 218, 0.14); background: none; color: var(--k-cream); font: 400 15px var(--sans); text-align: left; cursor: pointer; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.td-hold:first-child { border-top: 0; }
+.td-hold-name { flex: 1; min-width: 0; }
+.td-hold-on { color: #8fc9b0; display: inline-flex; }
+.td-hold-off { color: var(--k-quiet); font-size: 15px; }
+.td-hold-fill { background: color-mix(in srgb, #8fc9b0 35%, transparent); }
+.td-hint { margin: 0; font-size: 14px; }
+
+/* The moon Close the day, above the tab bar: one wide button on the night-blue, its glow falling below it. */
+.td-handle { position: fixed; z-index: 19; left: 50%; transform: translateX(-50%); width: min(calc(100% - 32px), 520px); bottom: calc(var(--tab-h) + var(--safe-bottom) + 10px); display: block; min-height: 0; padding: 0; border: 0; border-radius: 999px; background: none; box-shadow: none; cursor: default; }
+.td-moonbtn { width: 100%; justify-content: center; min-height: 54px; padding: 0 20px; border-radius: 999px; border: 0; background: linear-gradient(180deg, #3d3a86, #2a2766); color: #ede6da; font: 700 16px var(--sans); box-shadow: 0 10px 24px -8px #93c3dc; }
+.td-moonbtn svg { fill: #ede6da; }
+.td-moonbtn.gold { background: linear-gradient(180deg, #ffd257, #e9a92c); color: #2a1a00; box-shadow: 0 10px 26px -8px #ffd257; }
+.td-moonbtn.gold svg { fill: #2a1a00; }
+.td-drawer { background: #171a3a; font-family: var(--sans); }
+.td-dtile { border-radius: 20px; border: 1px solid color-mix(in srgb, var(--k-pearl) 40%, transparent); background: linear-gradient(180deg, color-mix(in srgb, var(--k-pearl) 16%, #10122a), color-mix(in srgb, var(--k-pearl) 5%, #10122a)); color: var(--k-cream); }
+button.td-clock { min-height: 44px; min-width: 44px; padding: 0 0 0 8px; border: 0; background: none; cursor: pointer; text-align: right; }
+.td-page .td-meal { flex-direction: row; justify-content: space-between; min-height: 48px; padding: 0; border: 0; border-top: 1px solid rgba(237, 230, 218, 0.14); border-radius: 0; background: none; }
+.td-page .td-meal:first-child { border-top: 0; }
+
+/* Design check fixes (15 Nov, L3): the lit panel wraps its glowing action under the words when they need the room;
+   the moon button sits at the end of the page, in the flow, so nothing fixed ever covers content. */
+.td-moment.k-panel { flex-wrap: wrap; }
+.td-moment-text { flex: 1 1 160px; }
+.td-moment-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin: 0; }
+.td-moment-link { min-height: 44px; padding: 0; border: 0; background: none; color: var(--k-cream); font: 700 15px var(--sans); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.page.td-page { padding-bottom: calc(var(--tab-h) + var(--safe-bottom) + 24px); }
+.td-handle { position: static; transform: none; width: 100%; margin-top: 8px; }
+.td-moment-btn.gold.k-act { background: #ffd257; color: #241a00; box-shadow: 0 10px 24px -8px #ffd257; }

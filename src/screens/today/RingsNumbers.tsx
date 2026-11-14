@@ -39,7 +39,7 @@ export function CountUp({ text, play }: { text: string; play: number }) {
   );
 }
 
-export type RingRow = { key: 'kcal' | 'protein' | 'steps' | 'sleep'; name: string; value: string; unit: string; target: string; ink: string; known: boolean };
+export type RingRow = { key: 'kcal' | 'protein' | 'steps' | 'sleep'; name: string; value: string; unit: string; target: string; ink: string; known: boolean; /** The goal is met: the number turns radiant with a soft glow, in its own colour. */ done?: boolean };
 
 /**
  * The rings with only their numbers beside them, each in its ring's ink with a tiny unit. Tapping a number shows
@@ -55,7 +55,7 @@ export function RingsNumbers({ rows, rings, closed, of = 4, onLogFood, onLogSlee
         {rings}
         <div className="td-nums">
           {rows.map((r) => (
-            <button key={r.key} type="button" className="td-num" style={{ color: r.ink }} aria-expanded={shown === r.key} aria-label={`${r.name} ${r.value} ${r.unit}. Show target`} onClick={() => setShown(shown === r.key ? null : r.key)}>
+            <button key={r.key} type="button" className={`td-num${r.done ? ' rad' : ''}`} style={{ '--c': r.ink } as React.CSSProperties} aria-expanded={shown === r.key} aria-label={`${r.name} ${r.value} ${r.unit}${r.done ? ', goal met' : ''}. Show target`} onClick={() => setShown(shown === r.key ? null : r.key)}>
               <CountUp text={r.value} play={play} />
               <span>{r.unit}</span>
             </button>
@@ -78,16 +78,16 @@ export function RingsNumbers({ rows, rings, closed, of = 4, onLogFood, onLogSlee
               }}
             >
               <input type="number" inputMode="numeric" min={0} aria-label="Steps today" value={steps} placeholder={more.known ? more.value.replace(/,/g, '') : ''} onChange={(e) => setSteps(e.target.value)} />
-              <button type="submit" className="btn sm">
+              <button type="submit" className="k-act sm quiet">
                 Save
               </button>
             </form>
           ) : more.key === 'sleep' ? (
-            <button type="button" className="btn sm" onClick={onLogSleep}>
+            <button type="button" className="k-act sm quiet" onClick={onLogSleep}>
               Morning log
             </button>
           ) : (
-            <button type="button" className="btn sm" onClick={onLogFood}>
+            <button type="button" className="k-act sm quiet" onClick={onLogFood}>
               Log food
             </button>
           )}

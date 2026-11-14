@@ -34,19 +34,34 @@ describe('ring moments: each plays once a day', () => {
 });
 
 describe('the living rings', () => {
-  const base = { progress: [1, 0.5, 0] as [number, number, number], label: 'Rings: 1 of 3 closed', center: '1/3', goldCount: 0, spin: 0, play: 0, onTap: () => {} };
-  it('is a button with words, and draws the true progress on first render', () => {
+  const base = { progress: [1, 0.5, 0, 0.2], label: 'Rings: 1 of 4 closed', design: 'solid' as const, inks: ['#a00001', '#a00002', '#a00003', '#a00004'], goldCount: 0, spin: 0, play: 0, onTap: () => {} };
+  it('is a button with words, and draws the true progress on first render, with nothing in the middle', () => {
     const html = renderToStaticMarkup(<LiveRings {...base} />);
     expect(html).toContain('<button');
-    expect(html).toContain('Rings: 1 of 3 closed. Tap to spin them.');
-    expect(html).toContain('1/3');
+    expect(html).toContain('Rings: 1 of 4 closed. Tap to spin them.');
+    expect(html).not.toContain('1/4');
+    expect(html).not.toContain('<text');
+  });
+  it('glows in each band\'s ink, and a closed ring gets its bright edge', () => {
+    const html = renderToStaticMarkup(<LiveRings {...base} />);
+    for (const ink of base.inks) expect(html).toContain(ink);
+    expect(html).toContain('feGaussianBlur');
+    expect(html.match(/gr-edge/g)).toHaveLength(1);
   });
   it('wears gold only as told, and draws the star chain only on a perfect day', () => {
-    expect(renderToStaticMarkup(<LiveRings {...base} />)).not.toContain('var(--gold)');
+    expect(renderToStaticMarkup(<LiveRings {...base} />)).not.toContain('#ffd257');
     expect(renderToStaticMarkup(<LiveRings {...base} />)).not.toContain('lr-chain');
-    const perfect = renderToStaticMarkup(<LiveRings {...base} progress={[1, 1, 1]} center="3/3" goldCount={3} chain="still" />);
-    expect(perfect).toContain('var(--gold)');
+    const perfect = renderToStaticMarkup(<LiveRings {...base} progress={[1, 1, 1, 1]} goldCount={4} chain="still" />);
+    expect(perfect).toContain('#ffd257');
+    for (const ink of base.inks) expect(perfect).not.toContain(ink);
     expect(perfect).toContain('lr-chain');
+  });
+  it('draws every theme\'s ring design', async () => {
+    const { THEMES } = await import('../src/domain/themes');
+    for (const t of THEMES) {
+      const html = renderToStaticMarkup(<LiveRings {...base} design={t.look.ring.design} inks={t.look.ring.inks} />);
+      expect(html, t.id).toContain(t.look.ring.inks[0]);
+    }
   });
   it('the numbers start at their true value before they count up', () => {
     const html = renderToStaticMarkup(<RingsNumbers rows={[{ key: 'kcal', name: 'Calories', value: '1,640', unit: 'kcal', target: 't', ink: 'x', known: true }]} rings={null} closed={0} onLogFood={() => {}} onSaveSteps={() => {}} showCopyHint={false} />);
