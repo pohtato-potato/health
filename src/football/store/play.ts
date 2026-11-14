@@ -545,6 +545,8 @@ function braboMaybe(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: str
   const input: MatchInput = {
     seed, values, opp, home: braboHome, neutral,
     typical: typicalFor([...nights.values()]),
+    // The rating rules this match is set up under: stamped so a paused match finishes by the rules it began with.
+    parity: 2,
     fog: AXES.filter((a) => flags[a] === 'not-logged'),
     fuelSpread: rotation || flags.Fuel ? 0 : nightOutSpread(w.h, date, night.input.targets),
     captain: slots.has('armband') ? w.save.captain : undefined,

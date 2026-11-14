@@ -46,6 +46,8 @@ export function pausedInput(p: PausedMatch, save: FbSave, o: { watch: boolean; p
   const rival = p.rivalTwist === 'rival' ? save.rivals.find((r) => r.clubId === p.prep.oppId) : undefined;
   return {
     ...p.input,
+    // Paused before the 14 Nov rating fix (no stamp): it finishes on the old table and the full typical count.
+    parity: p.input.parity ?? 1,
     rival: rival ? twistOf(rival) : p.rivalTwist === 'antigoon' ? rivalTwist(ANTIGOON, 'legend') : undefined,
     plan: enginePlan({ baked: p.prep.tactic.pick, plan: { ...plan, card }, half2: o.half2 ?? p.half2, read: readFor(p, save).mods }),
     calls: o.picks ?? p.picks,
