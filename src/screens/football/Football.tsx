@@ -29,6 +29,8 @@ import { DeskDoor, DeskRoute } from './desk/Desk';
 import { MarketRoute } from './desk/Market';
 import { Atlas } from './world/Atlas';
 import type { StoredMatch } from '../../football/store/tables';
+import { techDoor } from '../../football/tree/research';
+import { Moved } from '../reports/Moved';
 
 const SECTION: Record<string, FbSection> = { '/football': 'tonight', '/football/club': 'club', '/football/league': 'league', '/football/story': 'story' };
 
@@ -100,7 +102,8 @@ export function Football() {
   if (path === '/football/card') return <FootballHome section="club"><CardMomentRoute id={params.get('id') ?? ''} /></FootballHome>;
   // Engine 2, layer 3: the tree.
   const tree: Record<string, () => ReactNode> = {
-    '/football/tech': () => <TechPage id={params.get('id') ?? ''} />,
+    // A link to a tech that is missing or unknown lands on the tree, never on an empty page.
+    '/football/tech': () => { const d = techDoor(params.get('id')); return d.path === '/football/tech' ? <TechPage id={d.params.id} /> : <Moved to={d.path} params={d.params} />; },
     '/football/era': () => <EraMoment e={params.get('e') ?? ''} />,
     '/football/eureka': () => <EurekaMoment id={params.get('id') ?? ''} />,
     '/football/projects': () => <ProjectsPage />,

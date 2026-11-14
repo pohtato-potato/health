@@ -14,6 +14,17 @@
 .md-h { font: 700 26px/1.15 var(--fr); margin: 0; color: #fff; }
 .md-big { font: 700 56px/1 var(--fr); color: #0d0f20; font-variant-numeric: tabular-nums; }
 .md-fill { flex: 1; }
+/* Until 14 Nov the match's rules in football.css shared the names md-tile, md-opt and md-strip with the ones below, and
+   parts of them showed through here. The match now has its own names (mt-); the parts that showed are kept so the
+   parcel and the pledge look as they did. */
+.md-tile { justify-content: space-between; cursor: pointer; }
+.md-tile > span { display: flex; flex-direction: column; gap: 2px; }
+.md-tile b { font: 700 16px var(--sans); }
+.md-tile small { font: 400 15px var(--sans); }
+.md-tile:disabled { cursor: default; opacity: .55; }
+.md-opt > span { display: flex; flex-direction: column; gap: 2px; }
+.md-opt b { font: 700 16px var(--sans); }
+.md-opt small { font: 400 15px/1.35 var(--sans); }
 .md-tile { --ink: var(--cream); border-radius: 16px; border: 2px solid var(--ink); box-shadow: 0 0 18px -4px var(--ink), inset 0 0 22px -10px var(--ink); background: #0f0c26;
   min-height: 74px; display: flex; align-items: center; gap: 12px; padding: 10px 14px; color: var(--cream); font: 600 17px var(--ab); text-align: left; width: 100%; }
 .md-tile.col { flex-direction: column; align-items: stretch; }
@@ -41,7 +52,7 @@
 .md-opt { --ink: rgba(237,230,218,.5); border-radius: 16px; border: 2px solid var(--ink); box-shadow: 0 0 14px -8px var(--ink); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 52px; background: transparent; color: var(--cream); font: 600 16px var(--ab); text-align: left; width: 100%; cursor: pointer; }
 .md-opt[aria-pressed='true'] { --ink: #93c3dc; background: rgba(147,195,220,.12); }
 .md-opt .n { font: 700 20px var(--fr); white-space: nowrap; }
-.md-strip { display: flex; gap: 6px; flex-wrap: wrap; }
+.md-strip { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; min-height: 14px; }
 .md-strip i { width: 38px; height: 10px; border-radius: 5px; background: rgba(237,230,218,.22); display: block; }
 .md-strip i.on { background: #93c3dc; box-shadow: 0 0 8px #93c3dc; }
 .md-v1 { color: #f2c46d; } .md-v2 { color: #8fc9b0; } .md-v3 { color: #8fb3f0; } .md-v4 { color: #e98a5b; } .md-v5 { color: #a9b0c4; }

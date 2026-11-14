@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../../db/db';
 import { COURSE_SIZE, eyeChoices, eyeLevel, isRight, PASS_AT, toNextEye } from '../../../football/desk/course';
-import { coursePasses, unspentResearch } from '../../../football/desk/rules';
+import { coursePasses, spendsOn, trayOf, unspentResearch } from '../../../football/desk/rules';
 import type { Die, JobDef, JobId } from '../../../football/desk/types';
 import { speakers, voiceLine } from '../../../football/desk/words';
 import { clearMine, courseSheet, saveDraft, finishCourse, freezeDice, importMine, jobById, jobsForDesk, loadDesk, spendAt, useMineCount, type CourseSheet, type DeskModel } from '../../../football/store/desk';
@@ -49,12 +49,12 @@ function JobArt({ id, ring, colour }: { id: JobId; ring?: { filled: number; size
   );
 }
 
-function Tray({ dice, left, held, onPick }: { dice: Die[]; left: Die[]; held?: Die; onPick: (d: Die) => void }) {
-  if (!dice.length) return <div className="dk-tray empty">No dice today: nothing was logged yesterday.</div>;
+function Tray({ tray, held, onPick }: { tray: ReturnType<typeof trayOf>; held?: Die; onPick: (d: Die) => void }) {
+  if (!tray.dice.length) return <div className="dk-tray empty">No dice today: nothing was logged yesterday.</div>;
   return (
     <div className="dk-tray" role="group" aria-label="Your dice">
-      {dice.map((d) => {
-        const free = left.some((x) => x.axis === d.axis);
+      {tray.dice.map(({ die: d, spent }) => {
+        const free = !spent;
         return (
           <button key={d.axis} type="button" className={`dk-die${free ? '' : ' spent'}`} style={ink(d.axis)} disabled={!free}
             aria-pressed={held?.axis === d.axis} aria-label={`${d.axis} ${d.value}${free ? '' : ', spent'}: ${d.reason}`} onClick={() => onPick(d)}>{d.value}</button>
@@ -120,10 +120,12 @@ export function DeskRoute() {
   return <DeskHome m={m} />;
 }
 
-/** d3-home: the jobs on top, the dice in a tray at the bottom within reach of the thumb. */
+/** d3-home: the jobs on top, then the dice in their tray. The tray follows the list; it is never pinned over it. */
 function DeskHome({ m }: { m: DeskModel }) {
   const [held, setHeld] = useState<Die | undefined>();
   const jobs = jobsForDesk(m.view);
+  // One list for the count and the tray, so a dimmed die and the number always agree.
+  const tray = trayOf(m.dice, spendsOn(m.desk, m.date));
   const open = (j: JobDef) => {
     // Talks have their own screen (w3-haggle): straight back into the open talk, else the market to pick one.
     if (j.id === 'negotiate') { const live = liveTalk(m.view); go(live ? '/football/desk/talk' : '/football/market', live ? { talk: live.talk } : undefined); return; }
@@ -131,7 +133,7 @@ function DeskHome({ m }: { m: DeskModel }) {
   };
   return (
     <Page>
-      <div className="md-top"><span className="md-cap">The desk · {weekday(m.date)}</span><span className="md-q">Dice left: {m.left.length}</span></div>
+      <div className="md-top"><span className="md-cap">The desk · {weekday(m.date)}</span><span className="md-q dk-count">{tray.label}</span></div>
       <h1 className="dk-h">{m.shut ? 'The desk is closed for the night' : `${WORDS[jobs.length] ?? jobs.length} ${jobs.length === 1 ? 'thing' : 'things'} on your desk`}</h1>
       {m.shut && <p className="md-q" style={{ margin: 0 }}>{m.left.length ? `${WORDS[m.left.length]} ${m.left.length === 1 ? 'die' : 'dice'} left over: ${unspentResearch(m.left.length) ? `+${unspentResearch(m.left.length)} research when the night plays` : 'it takes two for a point of research'}.` : 'Every die was spent.'} New dice come with the morning.</p>}
       {m.courseOpen && <button type="button" className="md-btn" onClick={() => go('/football/desk/course', { spend: m.courseOpen! })}>Finish today’s course</button>}
@@ -150,8 +152,8 @@ function DeskHome({ m }: { m: DeskModel }) {
       <div className="md-fill" />
       {!m.shut && (
         <div className="dk-foot">
-          <span className="md-cap">{held ? `Holding ${held.axis} · ${held.value}. Pick a job.` : 'Your dice. Pick one up.'}</span>
-          <Tray dice={m.dice} left={m.left} held={held} onPick={(d) => setHeld(held?.axis === d.axis ? undefined : d)} />
+          <span className="md-cap">{held ? `Holding ${held.axis} · ${held.value}. Pick a job.` : tray.left.length ? 'Your dice. Pick one up.' : 'Every die is spent.'}</span>
+          <Tray tray={tray} held={held} onPick={(d) => setHeld(held?.axis === d.axis ? undefined : d)} />
         </div>
       )}
     </Page>
@@ -227,7 +229,7 @@ function SpendPage({ m, def, first, pick }: { m: DeskModel; def: JobDef; first?:
       {def.id === 'course' && <EyeNote passes={coursePasses(m.desk)} />}
       <div className="md-fill" />
       <div className="dk-foot flow">
-      <Tray dice={m.dice} left={m.left} held={held} onPick={setHeld} />
+      <Tray tray={trayOf(m.dice, spendsOn(m.desk, m.date))} held={held} onPick={setHeld} />
       <button type="button" className="md-btn" disabled={!held || busy || Boolean(blocked) || (targets.length > 0 && !target)} onClick={() => void spend()}>
         {held ? `Spend the ${held.value}` : 'Pick up a die'}
       </button>

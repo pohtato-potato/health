@@ -509,19 +509,25 @@ button.fb-todaycard { cursor: pointer; }
 :root[data-ft='L'] .fb-au { background: linear-gradient(175deg, #3a1628, #1c0b14 70%); --a: #7a3a55; --c: #5a2a48; }
 
 /* ---------- Matchday depth (spec 2026-11-12 §3): before kick-off, live, a call, a goal, half-time, full time ---------- */
-.md-page .fb-page { display: flex; flex-direction: column; gap: 12px; }
-.md-score { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+/* The match's own names (mt-): the parcel, the pledge and the desk use md-page, md-score, md-strip, md-opts, md-opt,
+   md-card and md-tile for different things in matchday.css, and two rules under one name bent both. */
+/* The match pages have sat inside the parcel's page box since the two were merged; its margins, type and ink are kept
+   here. Its flex column is not: it shrank a page to the width of its widest child. */
+.mt-page { min-height: 100dvh; color: #ede6da; font: 16px/1.4 'Atkinson Hyperlegible Next', var(--sans);
+  padding: calc(var(--safe-top, 0px) + 18px) 16px calc(var(--safe-bottom, 0px) + 110px); overflow-x: hidden; }
+.mt-page .fb-page { display: flex; flex-direction: column; gap: 12px; }
+.mt-score { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .md-side { display: inline-flex; align-items: center; gap: 8px; min-width: 0; font: 400 22px/1.1 var(--serif); }
 .md-side b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .md-side .fb-num { font-size: 26px; }
-.md-score.big .md-side { font-size: 24px; }
-.md-score.big .md-side .fb-num { font-size: 36px; font-style: italic; }
-.md-strip { display: grid; grid-template-columns: repeat(15, 1fr); gap: 4px; align-items: center; height: 14px; }
-.md-strip i { height: 4px; border-radius: 3px; background: rgba(243,238,230,.18); }
-.md-strip i.atk { background: var(--fb-or); box-shadow: 0 0 8px var(--fb-or); }
-.md-strip i.def { background: #8fc0ff; box-shadow: 0 0 8px #8fc0ff; }
-.md-strip i.goal { height: 9px; }
-.md-strip i.future { opacity: .35; }
+.mt-score.big .md-side { font-size: 24px; }
+.mt-score.big .md-side .fb-num { font-size: 36px; font-style: italic; }
+.mt-strip { display: grid; grid-template-columns: repeat(15, 1fr); gap: 4px; align-items: center; height: 14px; }
+.mt-strip i { height: 4px; border-radius: 3px; background: rgba(243,238,230,.18); }
+.mt-strip i.atk { background: var(--fb-or); box-shadow: 0 0 8px var(--fb-or); }
+.mt-strip i.def { background: #8fc0ff; box-shadow: 0 0 8px #8fc0ff; }
+.mt-strip i.goal { height: 9px; }
+.mt-strip i.future { opacity: .35; }
 .md-shots { display: block; width: 100%; height: auto; }
 .md-shots .pl { fill: none; stroke: rgba(243,238,230,.4); stroke-width: 1.2; }
 .md-shots circle { fill: none; stroke-width: 2.4; }
@@ -573,18 +579,18 @@ button.md-chip { min-height: 44px; cursor: pointer; }
 .md-res { font: 700 18px var(--sans); }
 .md-whistle { font: italic 400 36px/1 var(--serif); text-align: center; margin: 12px 0; }
 .md-ask { font: 400 26px/1.2 var(--serif); margin: 4px 0; }
-.md-opts { display: flex; flex-direction: column; gap: 10px; }
-.md-opt { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 64px; padding: 10px 14px; border-radius: 16px; border: 2px solid; background: rgba(11,16,34,.35); color: var(--fb-ink); text-align: left; cursor: pointer; box-shadow: 0 0 16px -6px currentColor; }
-.md-opt > span { display: flex; flex-direction: column; gap: 2px; }
-.md-opt b { font: 700 16px var(--sans); }
-.md-opt small { font: 400 15px/1.35 var(--sans); }
+.mt-opts { display: flex; flex-direction: column; gap: 10px; }
+.mt-opt { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 64px; padding: 10px 14px; border-radius: 16px; border: 2px solid; background: rgba(11,16,34,.35); color: var(--fb-ink); text-align: left; cursor: pointer; box-shadow: 0 0 16px -6px currentColor; }
+.mt-opt > span { display: flex; flex-direction: column; gap: 2px; }
+.mt-opt b { font: 700 16px var(--sans); }
+.mt-opt small { font: 400 15px/1.35 var(--sans); }
 .md-odds { font: italic 400 30px/1 var(--serif) !important; flex: none; }
 .md-goal .fb-page { align-items: stretch; }
 .md-gword { font: italic 800 72px/0.95 var(--serif); letter-spacing: -.01em; text-shadow: 0 0 30px var(--a); }
 .md-tag { align-self: flex-start; padding: 6px 12px; border-radius: 999px; border: 1.5px solid #ffd56a; color: #ffd56a; font: 700 14px var(--sans); }
 .md-scorer { display: flex; align-items: center; gap: 14px; }
 .md-scorer > span { display: flex; flex-direction: column; }
-.md-card { width: 108px; flex: none; }
+.mt-card { width: 108px; flex: none; }
 .md-gcrest { align-self: center; }
 .md-studio { margin: 0; display: flex; flex-direction: column; gap: 2px; font: 400 15px/1.4 var(--sans); }
 .md-studio b { font: 700 15px var(--sans); }
@@ -593,12 +599,12 @@ button.md-chip { min-height: 44px; cursor: pointer; }
 .md-ft { display: flex; flex-direction: column; gap: 10px; }
 .md-potm { color: var(--fb-or-soft); }
 .md-pick { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
-.md-tile { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 64px; padding: 10px 14px; border-radius: 16px; border: 2px solid; background: transparent; color: var(--fb-ink); text-align: left; cursor: pointer; box-shadow: 0 0 16px -6px currentColor; }
-.md-tile > span { display: flex; flex-direction: column; gap: 2px; }
-.md-tile b { font: 700 16px var(--sans); }
-.md-tile small { font: 400 15px var(--sans); }
-.md-tile:disabled { cursor: default; opacity: .55; }
-.md-tile.on { opacity: 1; background: rgba(243,238,230,.08); }
+.mt-tile { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 64px; padding: 10px 14px; border-radius: 16px; border: 2px solid; background: transparent; color: var(--fb-ink); text-align: left; cursor: pointer; box-shadow: 0 0 16px -6px currentColor; }
+.mt-tile > span { display: flex; flex-direction: column; gap: 2px; }
+.mt-tile b { font: 700 16px var(--sans); }
+.mt-tile small { font: 400 15px var(--sans); }
+.mt-tile:disabled { cursor: default; opacity: .55; }
+.mt-tile.on { opacity: 1; background: rgba(243,238,230,.08); }
 .md-plus { font: italic 400 28px var(--serif) !important; }
 .md-took { font: 700 14px var(--sans); color: #3fd98a; }
 .md-wait .md-wduel { display: flex; align-items: center; justify-content: center; gap: 10px; font: 400 22px var(--serif); flex-wrap: wrap; }

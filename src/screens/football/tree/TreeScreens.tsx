@@ -129,7 +129,7 @@ export function TechPage({ id }: { id: string }) {
   const m = useModel();
   if (!m) return null;
   const t = TECHS.find((x) => x.id === id);
-  if (!t) return <p className="fb-s">No such tech.</p>;
+  if (!t) return null;
   const st = techState(t, m.researched);
   const e = eraOf(t.era);
   const cost = m.cost(t.id);

@@ -12,7 +12,7 @@ import type { FbSave, FbSeason } from './tables';
 export interface Fixture {
   day: number;
   comp: Comp;
-  /** "Matchday 19 of 42", or the event's day. */
+  /** "Day 19 of 42", the day of the season (league and cup nights both count), or the event's day. */
   label: string;
   round?: string;
   /** Empty when the opponent is drawn on the night (friendlies, events, playoffs). */
@@ -47,7 +47,7 @@ export function fixtureFor(save: FbSave, season: FbSeason): Fixture | undefined 
   }
   if (save.day > SEASON_DAYS) return undefined;
   const plan = seasonDays()[save.day - 1];
-  const label = `Matchday ${save.day} of ${SEASON_DAYS}`;
+  const label = `Day ${save.day} of ${SEASON_DAYS}`;
   const tier = season.tierOf[OWN] as Tier;
   if (plan.kind === 'league') {
     const pair = season.fixtures[tier]?.[plan.matchday! - 1]?.find(([h, a]) => h === OWN || a === OWN);
