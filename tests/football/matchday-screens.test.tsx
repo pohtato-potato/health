@@ -78,7 +78,7 @@ describe('matchday screens', () => {
     const m = (await finishWithAssistant())!;
     const s = await save();
     const out = html(<FullTimeView m={m} save={s} />);
-    expect(out).toContain('md-strip');
+    expect(out).toContain('mt-strip');
     expect(out).toContain('md-shots');
     expect(out).toContain('your assistant');
     const pick = html(<PickOfThree matchId="x" pick={{ tiles: [{ kind: 'card', axis: 'Pace' }, { kind: 'scout', club: 'hul' }, { kind: 'research', n: 2 }] }} name={() => 'Hull'} />);

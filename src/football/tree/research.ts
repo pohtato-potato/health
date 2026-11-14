@@ -21,6 +21,9 @@ export const LOGGED_DAY = 1;
 export const BOARD_MET = 10;
 
 export const techById = (id: string): TechDef | undefined => TECHS.find((t) => t.id === id);
+/** Where a link to a tech lands: its page, or the tree when the id is missing or is not a tech. */
+export const techDoor = (id?: string | null): { path: string; params: Record<string, string> } =>
+  (id && techById(id) ? { path: '/football/tech', params: { id } } : { path: '/football/club', params: { view: 'tree' } });
 export const eraIndex = (e: EraId) => ERA_IDS.indexOf(e);
 
 /** Research banked: everything earned, plus pack research and duplicates, minus what techs cost. */

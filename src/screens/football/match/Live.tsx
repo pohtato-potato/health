@@ -56,7 +56,7 @@ export function PreKickOff({ p, save, onKickOff, onSkip }: { p: PausedMatch; sav
   const tactic = save.tactics?.[p.date] ? { pick: save.tactics[p.date], by: 'you' as const } : p.prep.tactic;
   const style = STYLES[p.style];
   return (
-    <Aurora className="md-page">
+    <Aurora className="mt-page">
       <main className="fb-page">
         <div className="fb-row"><span className="fb-lb">Last night · {TIER_NAMES[String(p.prep.braboTier)] ?? `Division ${p.prep.braboTier}`}{p.prep.matchday ? ` · matchday ${p.prep.matchday}` : ''}</span><span className="fb-s">{p.prep.braboHome ? 'Home' : 'Away'}</span></div>
         <div className="md-opp">
@@ -122,7 +122,7 @@ function LivePlay({ p, save, onEnd }: { p: PausedMatch; save: FbSave; onEnd: () 
     if (st.stop?.kind === 'call') return <CallView offer={st.stop.offer} p={p} save={save} chances={st.chances} onPick={(pick) => once(() => recordLive({ pick }))} />;
     if (st.stop?.kind === 'half') return <HalfView p={p} save={save} chances={st.chances} score={score} onGo={(half2) => once(() => recordLive({ halfSeen: true, half2 }))} />;
     return (
-      <Aurora className="md-page">
+      <Aurora className="mt-page">
         <main className="fb-page">
           <ScoreBar save={save} oppId={p.prep.oppId} braboHome={p.prep.braboHome} score={score} big />
           <p className="md-whistle">Full time</p>
@@ -135,7 +135,7 @@ function LivePlay({ p, save, onEnd }: { p: PausedMatch; save: FbSave; onEnd: () 
   const chain = moveChain(c, k, p.prep.xi, credits.find((x) => x.i === k)?.name);
   const chips = oddsChips(c.mods, c.type);
   return (
-    <Aurora className={`md-page md-live ${c.side}`}>
+    <Aurora className={`mt-page md-live ${c.side}`}>
       <main className="fb-page">
         <ScoreBar save={save} oppId={p.prep.oppId} braboHome={p.prep.braboHome} score={score} big />
         <div className="md-stadium">
@@ -175,22 +175,22 @@ export function CallView({ offer, p, save, chances, onPick }: { offer: CallOffer
   const take = offer.options[0], shoot = offer.options[1], keep = offer.options[2];
   const score = offer.score;
   return (
-    <Aurora className="md-page md-callpage">
+    <Aurora className="mt-page md-callpage">
       <main className="fb-page">
         <ScoreBar save={save} oppId={p.prep.oppId} braboHome={p.prep.braboHome} score={score} />
         <div className="fb-row"><span className="fb-s">{offer.minute} minutes</span><span className="fb-s">Call {offer.n} of {offer.of}</span></div>
         <MomentumStrip chances={chances} upTo={offer.minute} />
         <h2 className="md-ask">{(SITUATION[take.type!] ?? 'A chance is on.').replace('{opp}', opp.short || opp.name)} What do you shout?</h2>
-        <div className="md-opts">
-          <button type="button" className="md-opt" style={{ borderColor: AXIS_INK[take.axis!] }} onClick={() => onPick('take')}>
+        <div className="mt-opts">
+          <button type="button" className="mt-opt" style={{ borderColor: AXIS_INK[take.axis!] }} onClick={() => onPick('take')}>
             <span><b style={{ color: AXIS_INK[take.axis!] }}>{TAKE_LABEL[take.type!] ?? 'Take it on'}</b><small>{take.axis} takes it on. {fair(take.pct)}</small></span>
             <b className="fb-num md-odds" style={pctInk(take.pct)}>{take.pct}%</b>
           </button>
-          <button type="button" className="md-opt" style={{ borderColor: AXIS_INK.Power }} onClick={() => onPick('shoot')}>
+          <button type="button" className="mt-opt" style={{ borderColor: AXIS_INK.Power }} onClick={() => onPick('shoot')}>
             <span><b style={{ color: AXIS_INK.Power }}>Shoot on sight</b><small>From range. Unlikely, but a screamer if it lands.</small></span>
             <b className="fb-num md-odds" style={pctInk(shoot.pct)}>{shoot.pct}%</b>
           </button>
-          <button type="button" className="md-opt" style={{ borderColor: AXIS_INK.Routine }} onClick={() => onPick('keep')}>
+          <button type="button" className="mt-opt" style={{ borderColor: AXIS_INK.Routine }} onClick={() => onPick('keep')}>
             <span><b style={{ color: AXIS_INK.Routine }}>Keep the ball</b><small>{keep.pct ? 'No chance now. Their next attack is 15 points easier to stop.' : 'No chance now. They have no attack left to stop.'}</small></span>
             <b className="fb-num md-odds" style={{ color: '#3fd98a' }}>Safe</b>
           </button>
@@ -209,14 +209,14 @@ function GoalView({ c, p, save, score, credit, onOn }: { c: ChanceEvent; p: Paus
   const screamer = ours && c.type === 'Long shot' && c.pct < 20;
   const colours = ours ? ['#ff8a3d', '#c2b2ff'] : [opp.colours[0] ?? '#7fb8ff', opp.colours[1] ?? '#141414'];
   return (
-    <Aurora className="md-page md-goal" a={colours[0]} c={colours[1]}>
+    <Aurora className="mt-page md-goal" a={colours[0]} c={colours[1]}>
       <main className="fb-page" role="alert">
         <span className="fb-lb">{c.minute} minutes</span>
         <b className="md-gword">{ours ? 'GOAL' : 'They score'}</b>
         <span className="md-tag">{screamer ? `SCREAMER · ${c.pct}% and in` : ours ? `${c.type} · ${c.pct}% and in` : `${c.type} · ${c.pct}% to stop it`}</span>
         {ours && credit && (
           <div className="md-scorer">
-            {player && <div className="md-card"><PlayerCard card={player.card} art={player.art} seed={player.id} player={player} /></div>}
+            {player && <div className="mt-card"><PlayerCard card={player.card} art={player.art} seed={player.id} player={player} /></div>}
             <span><b className="md-oname">{credit.name}</b><span className="fb-s">{credit.unit}</span></span>
           </div>
         )}
@@ -238,7 +238,7 @@ export function HalfView({ p, save, chances, score, onGo }: { p: PausedMatch; sa
   const n = [shots.filter((c) => c.side === 'atk').length, shots.filter((c) => c.side === 'def').length];
   const lines = halfLines(p, chances, score);
   return (
-    <Aurora className="md-page">
+    <Aurora className="mt-page">
       <main className="fb-page">
         <div className="fb-row"><span className="fb-lb">Half-time</span><span className="fb-s">In the studio</span></div>
         <ScoreBar save={save} oppId={p.prep.oppId} braboHome={p.prep.braboHome} score={score} big />

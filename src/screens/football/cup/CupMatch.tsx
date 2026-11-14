@@ -124,9 +124,27 @@ function Hand({ s, recycling, onTap, onRead }: { s: MatchState; recycling: boole
   const held = useRef(false);
   const down = (c: Card) => { held.current = false; timer.current = window.setTimeout(() => { held.current = true; onRead(c); }, HOLD_MS); };
   const cancel = () => window.clearTimeout(timer.current);
+  // The row shows three cards and the edge of a fourth; a tag at each end counts the cards waiting off it (+2).
+  const row = useRef<HTMLDivElement>(null);
+  const [more, setMore] = useState({ l: 0, r: 0 });
+  const count = () => {
+    const el = row.current;
+    if (!el) return;
+    const b = el.getBoundingClientRect();
+    let l = 0, r = 0;
+    for (const k of Array.from(el.children)) {
+      const q = k.getBoundingClientRect(), mid = (q.left + q.right) / 2;
+      if (mid < b.left) l++; else if (mid > b.right) r++;
+    }
+    setMore((p) => (p.l === l && p.r === r ? p : { l, r }));
+  };
+  useEffect(count, [s.hand.length]);
   if (!s.hand.length) return <p className="cup-q">No cards left this spell. End the spell.</p>;
   return (
-    <div className="cup-hand" aria-label="Your hand. Tap to play, press and hold to read.">
+    <div className="cup-handwrap">
+    {more.l > 0 && <span className="cup-more l" aria-hidden="true">+{more.l}</span>}
+    {more.r > 0 && <span className="cup-more r" aria-hidden="true">+{more.r}</span>}
+    <div ref={row} className="cup-hand" onScroll={count} aria-label={`Your hand: ${s.hand.length} ${s.hand.length === 1 ? 'card' : 'cards'}. Swipe sideways for the rest. Tap to play, press and hold to read.`}>
       {s.hand.map((c) => {
         const why = c.kind === 'total' ? (s.basics.some((k) => !blocked(s, c.id, k)) ? null : 'Nothing to play as') : blocked(s, c.id);
         const off = recycling ? false : !!why;
@@ -143,6 +161,7 @@ function Hand({ s, recycling, onTap, onRead }: { s: MatchState; recycling: boole
           </button>
         );
       })}
+    </div>
     </div>
   );
 }
@@ -224,6 +243,16 @@ export function MatchScreen({ s, label, commit }: { s: MatchState; label: string
   const [goal, setGoal] = useState<{ f: Feed; after: number } | null>(null);
   const [burst, setBurst] = useState<string[]>([]);
   const [kicked, setKicked] = useState(!s.club.elite || (s.played ?? 0) > 0 || s.spell > 1);
+  // Recycle and End the spell never start behind the tab bar: on a short screen each spell opens scrolled just far
+  // enough for them to clear it. Nothing is pinned, so nothing covers the hand or the pitch.
+  const acts = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = acts.current;
+    if (!el) return;
+    const bar = document.querySelector('.tabbar')?.getBoundingClientRect().top ?? window.innerHeight;
+    const under = el.getBoundingClientRect().bottom + 6 - bar;
+    if (under > 0) window.scrollBy(0, under);
+  }, [s.spell, s.phase, kicked]);
   const step = (n: MatchState) => {
     if (n === s) return;
     commit(n);
@@ -275,7 +304,7 @@ export function MatchScreen({ s, label, commit }: { s: MatchState; label: string
       {s.inPlay.length > 0 && <p className="cup-q">In play: {s.inPlay.map((c) => cardName(c)).join(', ')}</p>}
       {recycling && <p className="cup-q">Tap a card to drop it and draw another. {s.freeRecycles ? 'Free.' : `Costs ${TUNE.recycleCost} stamina.`}</p>}
       <Hand s={s} recycling={recycling} onTap={tap} onRead={setRead} />
-      <div className="cup-acts">
+      <div className="cup-acts" ref={acts}>
         <button type="button" className={`cup-btn ghost ${recycling ? 'on' : ''}`} disabled={!recycling && !canRecycle(s)} aria-pressed={recycling} onClick={() => setRecycling(!recycling)}>
           <span>{recycling ? 'Done' : `Recycle${s.freeRecycles ? ` (${s.freeRecycles} free)` : ''}`}</span>
         </button>

@@ -22,7 +22,7 @@ export function ScoreBar({ save, oppId, braboHome, score, big = false }: { save:
   const own = <Art svg={crestSvg(save.crest.step, save.crest.opt, 28)} />, them = <Art svg={clubCrest(opp, 28)} />;
   const sides = braboHome ? [['Brabo', own, score[0]], [opp.short || opp.name, them, score[1]]] as const : [[opp.short || opp.name, them, score[1]], ['Brabo', own, score[0]]] as const;
   return (
-    <header className={`md-score${big ? ' big' : ''}`} aria-label={`${sides[0][0]} ${sides[0][2]}, ${sides[1][0]} ${sides[1][2]}`}>
+    <header className={`mt-score${big ? ' big' : ''}`} aria-label={`${sides[0][0]} ${sides[0][2]}, ${sides[1][0]} ${sides[1][2]}`}>
       <span className="md-side">{sides[0][1]}<b>{sides[0][0]}</b><b className="fb-num">{sides[0][2]}</b></span>
       <span className="md-side r"><b className="fb-num">{sides[1][2]}</b><b>{sides[1][0]}</b>{sides[1][1]}</span>
     </header>
@@ -38,7 +38,7 @@ export function MomentumStrip({ chances, upTo = 90 }: { chances: ChanceEvent[]; 
     return { side, goal: Boolean(goal), past: k * 6 < upTo };
   });
   return (
-    <div className="md-strip" role="img" aria-label="Momentum across the ninety minutes">
+    <div className="mt-strip" role="img" aria-label="Momentum across the ninety minutes">
       {cells.map((c, k) => <i key={k} className={`${c.side ?? ''}${c.goal ? ' goal' : ''}${c.past ? '' : ' future'}`} />)}
     </div>
   );
@@ -174,7 +174,7 @@ export function PickOfThree({ matchId, pick, name }: { matchId: string; pick: { 
         const w = pickWords(t, name);
         const on = pick.chosen === k;
         return (
-          <button key={k} type="button" className={`md-tile${on ? ' on' : ''}`} style={{ borderColor: t.kind === 'card' ? AXIS_INK[t.axis] : ink[k % 3] }} disabled={pick.chosen !== undefined} aria-pressed={on} onClick={() => void choosePick(matchId, k)}>
+          <button key={k} type="button" className={`mt-tile${on ? ' on' : ''}`} style={{ borderColor: t.kind === 'card' ? AXIS_INK[t.axis] : ink[k % 3] }} disabled={pick.chosen !== undefined} aria-pressed={on} onClick={() => void choosePick(matchId, k)}>
             <span><b>{w.title}</b><small>{w.line}</small></span>
             {t.kind === 'research' && <b className="fb-num md-plus">+{t.n}</b>}
             {on && <b className="md-took">Taken</b>}

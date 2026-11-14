@@ -23,7 +23,7 @@ describe('Tonight', () => {
     const t = (await loadTonight('2026-11-06'))!;
     expect(t.fixture?.comp).toBe('league');
     const out = html(<TonightView t={t} />);
-    expect(out).toContain('Matchday 1 of 42');
+    expect(out).toContain('Day 1 of 42');
     expect(out).toContain('Brabo United');
     expect(out).toContain(t.opp!.name);
     // with no history every axis is "no data": fogged, shown as ?
