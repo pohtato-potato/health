@@ -73,14 +73,14 @@ export interface SeasonFacts {
   derbyWins: number;
   /** Longest run of home league matches without a loss. */
   homeUnbeaten: number;
-  /** Antigoon in the same division and below us, or in a lower division. */
+  /** The legend rival (Antigoon, or Royal Antwerp in world 2) in the same division and below us, or in a lower division. */
   aboveRival: boolean | undefined;
   /** Rounds reached in each cup, by name ('Last 32', 'Quarter-final', … and 'win'). */
   bigcup: string[];
   tiercup: string[];
   continental?: 'group' | 'r16' | 'qf' | 'sf' | 'final';
   inContinental: boolean;
-  /** Antigoon in the same division (the derby is possible). */
+  /** The legend rival in the same division (the derby is possible). */
   derbyOn: boolean;
 }
 const ROUND: Record<string, string[]> = { r3: ['Last 32'], qf: ['Quarter-final'], sf: ['Semi-final'], final: ['Final'], win: ['win'] };

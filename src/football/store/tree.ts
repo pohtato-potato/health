@@ -13,7 +13,7 @@ import { BOOSTS } from '../content/packs';
 import { ERAS } from '../content/tree';
 import type { Reward } from '../content/types';
 import { reachOf } from '../continental';
-import { ANTIGOON } from '../rivals';
+import { legendId } from '../rivals';
 import type { MatchCtx } from '../engine';
 import type { Row } from '../table';
 import type { BraboAbility, Tier } from '../types';
@@ -162,7 +162,7 @@ export function treeDay(c: TreeCtx, date: DayKey, youthDays: number) {
     const ids = Object.keys(c.season.tierOf).filter((id) => c.season.tierOf[id] === tier && id !== OWN);
     const own = c.clubs.get(OWN)?.rating ?? 50;
     const strength = strengthOf(own, ids.map((id) => c.clubs.get(id)?.rating ?? 50));
-    const derbyOn = c.season.tierOf[ANTIGOON] === tier;
+    const derbyOn = c.season.tierOf[legendId()] === tier;
     const objs = boardFor(s.season, strength, { inContinental: Boolean(c.season.continental?.field.includes(OWN)), derbyOn, divisionSize: ids.length + 1, topTier: tier === 1 }, worldOf(s));
     eng.board = [...eng.board, { season: s.season, strength, ids: objs.map((o) => o.id) }];
   }
@@ -220,8 +220,8 @@ export function seasonFacts(c: Pick<TreeCtx, 'season' | 'save'> & { matches: Sto
   const reached = (b?: { rounds: { name: string; ties: { home: string; away: string | null }[] }[]; winner?: string }) =>
     b ? [...b.rounds.filter((r) => r.ties.some((t) => t.home === OWN || t.away === OWN)).map((r) => r.name), ...(b.winner === OWN ? ['win'] : [])] : [];
   const tc = Object.values(c.season.tiercups).find((b) => b.rounds.some((r) => r.ties.some((t) => t.home === OWN || t.away === OWN)));
-  const ant = c.season.tierOf[ANTIGOON];
-  const antPos = rows.findIndex((r) => r.id === ANTIGOON) + 1;
+  const ant = c.season.tierOf[legendId()];
+  const antPos = rows.findIndex((r) => r.id === legendId()) + 1;
   const reach = reachOf(c.season.continental, OWN);
   const contMap = { phase: 'group', qf: 'r16', sf: 'sf', final: 'final', winner: 'final' } as const;
   return {
@@ -229,7 +229,7 @@ export function seasonFacts(c: Pick<TreeCtx, 'season' | 'save'> & { matches: Sto
     playoffs: Boolean(c.season.playoffs[tier]?.semis?.some(([h, aw]) => h === OWN || aw === OWN)),
     goals: rows.find((r) => r.id === OWN)?.gf ?? 0,
     cleanSheets: mine.filter((m) => m.score[1] === 0).length,
-    derbyWins: mine.filter((m) => m.opp === ANTIGOON && m.result === 'W').length,
+    derbyWins: mine.filter((m) => m.opp === legendId() && m.result === 'W').length,
     homeUnbeaten: best,
     aboveRival: ant === undefined ? undefined : ant > tier ? true : ant < tier ? false : antPos ? pos < antPos : undefined,
     bigcup: reached(c.season.bigcup), tiercup: reached(tc),

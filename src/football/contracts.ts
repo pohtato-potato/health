@@ -1,4 +1,5 @@
 // Contracts, youth and trading (spec §8.5).
+import { clubById, clubWorld } from './data/load';
 import type { YouthDef } from './data/load';
 import { shuffle } from './rng';
 import type { AxisInput } from './axes';
@@ -70,11 +71,14 @@ export const renew = (c: Contract, today: DayKey): Contract => newContract(c.hab
 export const letRun = (c: Contract, today: DayKey): Contract => newContract(c.habit, today, c.weight);
 
 const BUYERS = ['Night Owls FC', 'Kiel Sunday XI', 'Rotterdam Ramblers', 'Lyon Dockers', 'Ghent Ferrymen'];
+/** World 2 (LG-4): real clubs from outside the league buy a habit Brabo sell. */
+const BUYERS_2 = ['wre', 'stp', 'ase', 's04', 'sve'];
 const STAFF = ['a fitness coach', 'a kit man', 'a scout'];
 /** A buyer's bid for a listed habit: money, a youth slot or a staff member. Same habit and season, same bid. */
 export function bidFor(habit: HabitId, season: number): { buyer: string; fee: TradeFee } {
   const r = rng(hashSeed('bid', habit, String(season)));
-  const buyer = BUYERS[Math.floor(r() * BUYERS.length)];
+  const k0 = Math.floor(r() * BUYERS.length);
+  const buyer = clubWorld() === 2 ? clubById(BUYERS_2[k0]).name : BUYERS[k0];
   const k = r();
   const fee: TradeFee = k < 0.5 ? { kind: 'money', amount: Math.round((0.05 + r() * 0.2) * 100) / 100 } : k < 0.8 ? { kind: 'youth' } : { kind: 'staff', role: STAFF[Math.floor(r() * STAFF.length)] };
   return { buyer, fee };

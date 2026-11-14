@@ -1,7 +1,7 @@
 // Typed access to the generated league data, plus the private youth entries when present.
 import { NATIONS } from '../events';
 import league from './league.json';
-import { ABROAD } from './continental';
+import { ABROAD, WORLD_CHAMPS_2 } from './continental';
 import { WORLD_CLUBS, type WorldClub } from './world';
 import type { Axis, AxisValues, Tier } from '../types';
 
@@ -47,7 +47,7 @@ export function worldDef(w: WorldClub): ClubDef {
     kitReal: old?.kitReal ?? false, known: w.known, hidden: w.hidden, shrinks: w.shrinks, presses: w.presses,
   };
 }
-const w2 = new Map<string, ClubDef>(WORLD_CLUBS.map((w) => [w.id, worldDef(w)]));
+const w2 = new Map<string, ClubDef>([...WORLD_CLUBS.map((w) => [w.id, worldDef(w)] as const), ...WORLD_CHAMPS_2.map((c) => [c.id, c] as const)]);
 // Brabo in world 2 rents Berchem Sport's ground (owner, 15 Nov), in place of Zurenborg Athletic's.
 const own = base.get('bra');
 if (own) w2.set('bra', { ...own, ground: `${RENTED_GROUND_2} (tenants of ${w2.get(LANDLORDS_2)!.name})`, lore: own.lore });
@@ -60,8 +60,24 @@ export const clubWorld = () => current;
  * reads world.json first, and league.json only for Brabo, the Old Selves and retired clubs named in old records.
  */
 export function setClubWorld(v: 1 | 2) { current = v; }
+/**
+ * Words that name Brabo's made-up neighbours, as world 2 says them (owner, 15 Nov): Royal Antwerp is the legend rival,
+ * Berchem Sport the landlords, and Brabo rent their ground, Het Rooi. World 1 keeps every word as it was.
+ */
+export function neighbourWords(s: string): string {
+  if (current !== 2) return s;
+  return s
+    .replace(/An Antigoon fan/g, 'A Royal Antwerp fan')
+    .replace(/Antigoon FC|Antigoon/g, 'Royal Antwerp')
+    .replace(/Zurenborg Athletic|Zurenborg/g, 'Berchem Sport')
+    .replace(/Stadion aan de Stroom/g, RENTED_GROUND_2)
+    // Letters on the desk that named made-up clubs lose the name (LG-2's list).
+    .replace(/^SC Schachmatt supporters' club$/, 'A chess club in Borgerhout')
+    .replace(/^A baker from Los Panaderos$/, 'A baker in Antwerp')
+    .replace(/^Duivenbond Gent$/, 'A pigeon club in Ghent');
+}
 /** A club of league.json or the clubs abroad that world 2 no longer has: shown only in old records (spec §11). */
-export const isRetired = (id: string) => base.has(id) && !w2.has(id) && !/^os\d$/.test(id);
+export const isRetired = (id: string) => base.has(id) && !w2.has(id) && !/^os\d$/.test(id) && id !== 'bra';
 /** Retired clubs' names and colours, for old matches and news. */
 export const RETIRED: { id: string; name: string; colours: string[] }[] = [...base.values()].filter((c) => isRetired(c.id)).map((c) => ({ id: c.id, name: c.name, colours: c.colours }));
 

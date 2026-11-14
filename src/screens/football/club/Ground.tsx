@@ -1,4 +1,5 @@
 // The ground, sealed: only what exists, plus the next project's name and a teasing line.
+import { neighbourWords } from '../../../football/data/load';
 import { BUNDLES, capacityOf, homeGround, isOpen, isShut, PLACES, type BundleDef, type Need } from '../../../football/ground';
 import { euros } from '../../../football/money';
 import type { Club } from '../../../football/store/club';
@@ -27,7 +28,7 @@ export function GroundView({ c, onMove }: { c: Club; onMove?: (on: boolean) => v
       <section className="fb-card hot" aria-label="Home ground">
         <span className="fb-lb">{s.moved ? 'Home' : 'Tenants'}</span>
         <b className="fb-t">{homeGround(Boolean(s.moved))}</b>
-        <span className="fb-s">{s.moved ? `Capacity ${capacityOf(true, done).toLocaleString('en-GB')}.` : 'Zurenborg Athletic’s ground. They keep the good dressing room.'}</span>
+        <span className="fb-s">{s.moved ? `Capacity ${capacityOf(true, done).toLocaleString('en-GB')}.` : neighbourWords('Zurenborg Athletic’s ground. They keep the good dressing room.')}</span>
         {!s.moved && done.includes('kaai-stand') && (
           <button type="button" className={`fb-btn sm${s.moveAtBreak ? ' pri' : ''}`} aria-pressed={Boolean(s.moveAtBreak)} onClick={() => onMove?.(!s.moveAtBreak)}>
             {s.moveAtBreak ? '✓ Moving at the next break' : 'Move to Kaai 42 at the next break'}

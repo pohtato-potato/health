@@ -3,7 +3,7 @@ import { clubById, tierName } from '../../../football/data/load';
 import type { ClubPageData } from '../../../football/store/league';
 import { go } from '../../../router';
 import { clubFog } from '../../../football/store/fog';
-import { CLUB_LORE } from '../../../football/fog/words';
+import { loreOf } from '../../../football/fog/words';
 
 export function Wiki({ d }: { d: ClubPageData }) {
   const c = clubById(d.id);
@@ -14,7 +14,7 @@ export function Wiki({ d }: { d: ClubPageData }) {
     <article className="fb-wiki" aria-label={`${c.name} wiki`}>
       <h2 className="fb-t">{c.name}</h2>
       <span className="fb-s">{[c.nickname, c.city, c.country, c.founded ? `founded ${c.founded}` : ''].filter(Boolean).join(' · ')}</span>
-      {k.has('history') ? <p className="fb-wikitext">{CLUB_LORE[d.id]?.history ?? c.lore}</p> : <div className="fg-fog"><span>Their history</span><b aria-hidden="true">?</b></div>}
+      {k.has('history') ? <p className="fb-wikitext">{loreOf(d.id)?.history ?? c.lore}</p> : <div className="fg-fog"><span>Their history</span><b aria-hidden="true">?</b></div>}
       <dl className="fb-facts">
         <dt>Ground</dt><dd>{c.ground || 'Unknown'}</dd>
         <dt>Style</dt><dd>{k.has('style') ? c.style : '?'}</dd>

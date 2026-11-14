@@ -12,7 +12,7 @@ import { position } from '../../../football/table';
 import { go } from '../../../router';
 import { Art, scoreLine } from '../Tonight';
 import { CLUB_CLOCK } from '../../../football/fog/fog';
-import { CLUB_LORE } from '../../../football/fog/words';
+import { loreOf } from '../../../football/fog/words';
 import { clubFog } from '../../../football/store/fog';
 import { deskOf } from '../../../football/store/desk';
 import { clockFilled } from '../../../football/desk/rules';
@@ -41,7 +41,7 @@ export function ClubPageView({ d, wiki = false }: { d: ClubPageData; wiki?: bool
   const own = { step: l.save.crest.step, opt: l.save.crest.opt };
   const live = l.clubs.get(id);
   const style = live?.style ?? c.style;
-  const lore = CLUB_LORE[id];
+  const lore = loreOf(id);
   const hidden = c.hidden ?? lore?.hiddenNew;
   const desk = deskOf(l.save);
   const road = desk.clocks.find((x) => x.job === 'scout' && x.target === id && clockFilled(desk, x) < x.size);

@@ -2,7 +2,7 @@
 // from abroad. A league phase of 8 nights, each a double-header with that night's league match, then the top 8
 // play a quarter-final, semi-final and final. Win it and the Club World Cup replaces the next event.
 import type { Bracket, Tie } from './cups';
-import { CONT_INVENTED, CONT_REAL, WORLD_CHAMPS } from './data/continental';
+import { CONT_INVENTED, CONT_REAL, worldChamps } from './data/continental';
 import { hashSeed, rng, shuffle } from './rng';
 import { standings, type Played, type Row } from './table';
 
@@ -116,8 +116,8 @@ export function reachOf(c: Continental | undefined, id: string): ContReach | und
 
 /** The Club World Cup: Brabo and the champions of the other continents, one round a night. */
 export const CWC_DAYS = { qf: 1, sf: 2, third: 3, final: 4 } as const;
-export function newClubWorld(season: number): Bracket {
-  const ids = shuffle(rng(hashSeed('clubworld', String(season))), ['bra', ...WORLD_CHAMPS.map((c) => c.id)]);
+export function newClubWorld(season: number, world: 1 | 2 = 1): Bracket {
+  const ids = shuffle(rng(hashSeed('clubworld', String(season))), ['bra', ...worldChamps(world).map((c) => c.id)]);
   const qf: Tie[] = [0, 2, 4, 6].map((i) => ({ home: ids[i], away: ids[i + 1] }));
   return { id: 'clubworld', name: CWC_NAME, size: 8, rounds: [{ name: 'Quarter-final', day: CWC_DAYS.qf, ties: qf }, { name: 'Semi-final', day: CWC_DAYS.sf, ties: [] }, { name: 'Final', day: CWC_DAYS.final, ties: [] }] };
 }

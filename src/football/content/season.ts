@@ -2,6 +2,7 @@
 // Boons last one season only, the one thing a new season resets. Bounties are real-habit tasks,
 // three picked of six each Sunday. Nothing here rewards eating less, and nothing scolds.
 import type { BoardObjective, BoonDef, BountyDef, Reward, TrackStep } from './types';
+import { neighbourWords } from '../data/load';
 
 /** Picks on days 1, 15 and 29: choose 1 of 3. */
 export const BOON_DAYS = [1, 15, 29];
@@ -105,12 +106,12 @@ export const BOARD: BoardObjective[] = [
     met: '“Sixty goals. The scoreboard operator asks for a raise.”', missed: '“Fewer goals than hoped. The nets are still in good condition.”' },
   { id: 'o-clean-sheets', text: 'Keep 12 clean sheets.', for: ['low', 'mid'], goal: { kind: 'clean-sheets', n: 12 },
     met: '“Twelve clean sheets. The laundry has noticed.”', missed: '“Fewer clean sheets than hoped. The laundry copes.”' },
-  { id: 'o-derby', text: 'Beat Antigoon at least once.', for: ['low', 'mid', 'high'], goal: { kind: 'derby', wins: 1 },
-    met: '“Antigoon beaten. Nobody in the boardroom will stop smiling.”', missed: '“No derby win. Next season, then.”' },
+  { id: 'o-derby', get text() { return neighbourWords('Beat Antigoon at least once.'); }, for: ['low', 'mid', 'high'], goal: { kind: 'derby', wins: 1 },
+    get met() { return neighbourWords('“Antigoon beaten. Nobody in the boardroom will stop smiling.”'); }, missed: '“No derby win. Next season, then.”' },
   { id: 'o-home', text: 'Go 8 home matches unbeaten.', for: ['mid', 'high'], goal: { kind: 'home-unbeaten', matches: 8 },
     met: '“Eight unbeaten at home. The quay is a hard place to visit.”', missed: '“Home form wobbled. The groundsman blames the wind.”' },
-  { id: 'o-above-rival', text: 'Finish above Antigoon.', for: ['low', 'mid', 'high'], goal: { kind: 'above-rival' },
-    met: '“Above Antigoon. Print the table twice.”', missed: '“Below Antigoon. We have all seen the table.”' },
+  { id: 'o-above-rival', get text() { return neighbourWords('Finish above Antigoon.'); }, for: ['low', 'mid', 'high'], goal: { kind: 'above-rival' },
+    get met() { return neighbourWords('“Above Antigoon. Print the table twice.”'); }, get missed() { return neighbourWords('“Below Antigoon. We have all seen the table.”'); } },
   { id: 'o-continental', text: 'Get out of the continental group.', for: ['high'], goal: { kind: 'continental', round: 'r16' },
     met: '“Out of the group. Passports stay in pockets a while longer.”', missed: '“Out in the group. A fine trip, all the same.”' },
 ];

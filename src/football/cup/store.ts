@@ -6,7 +6,7 @@ import { eyeChoices } from '../desk/course';
 import { coursePasses } from '../desk/rules';
 import { db } from '../../db/db';
 import { dayOfLogging, type DayKey } from '../../domain/dates';
-import { ABROAD } from '../data/continental';
+import { ABROAD, WORLD_CHAMPS_2 } from '../data/continental';
 import { CLUBS, clubById, rememberClubs } from '../data/load';
 import { loanById } from '../globe/loans';
 import { hashSeed } from '../rng';
@@ -64,7 +64,8 @@ export async function runCtx(): Promise<RunCtx> {
       const s = live.get(c.id);
       return { id: c.id, name: d.name, short: d.short, rating: s?.rating ?? c.rating ?? 40, tier: s?.tier ?? c.tier, style: s?.style ?? c.style, colours: d.colours, country: c.country, kind: c.kind };
     }),
-    ...ABROAD.map((c) => ({ id: c.id, name: c.name, short: c.short, rating: c.rating ?? 70, tier: c.tier, style: c.style, colours: c.colours, country: c.country, kind: c.kind, abroad: true })),
+    // World 2: the clubs abroad are the stored pool (above); only the Club World Cup's champions are added.
+    ...(w2 ? WORLD_CHAMPS_2 : ABROAD).map((c) => ({ id: c.id, name: c.name, short: c.short, rating: c.rating ?? 70, tier: c.tier, style: c.style, colours: c.colours, country: c.country, kind: c.kind, abroad: true })),
   ];
   const today = fogToday();
   const scouted = save ? clubs.filter((c) => isScoutedBy(save, c.id, today)).map((c) => c.id) : [];

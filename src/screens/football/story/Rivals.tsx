@@ -1,7 +1,7 @@
-// Rivals: Antigoon FC always, then up to three earned, each with how it started and its modifier.
+// Rivals: the legend rival always (Antigoon FC in world 1, Royal Antwerp in world 2), then up to three earned, each with how it started and its modifier.
 import { clubCrest } from '../../../football/art/crest';
 import { clubById } from '../../../football/data/load';
-import { howText, MAX_EARNED, rivalList, twistOf, type Rival } from '../../../football/rivals';
+import { howText, legendId, MAX_EARNED, rivalList, twistOf, type Rival } from '../../../football/rivals';
 import { headToHead } from '../../../football/store/league';
 import type { StoredMatch } from '../../../football/store/tables';
 import { go } from '../../../router';
@@ -31,7 +31,7 @@ export function RivalsView({ rivals, matches }: { rivals: Rival[]; matches: Stor
           );
         })}
       </ul>
-      <p className="fb-s">A club becomes a rival by beating you on a big night, three times running, or by a single goal. Beat one five times in a row and it fades. Antigoon never fades.</p>
+      <p className="fb-s">A club becomes a rival by beating you on a big night, three times running, or by a single goal. Beat one five times in a row and it fades. {clubById(legendId()).name} never fades.</p>
     </>
   );
 }

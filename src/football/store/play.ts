@@ -8,7 +8,7 @@ import { addDays, dayOfLogging, daysBetween, weekday, type DayKey } from '../../
 import { daysOf, leagueMatchdays, seasonDays, seasonLength, type DayPlan } from '../calendar';
 import { breakBeforeFor, LEAGUE_MATCHDAYS, matchdaysBefore, matchIdFor, PACE_PER_DAY, paceOn, slotKey, titleSafe } from '../pace';
 import { advance, penalties, type Bracket } from '../cups';
-import { clubById, rememberClubs } from '../data/load';
+import { clubById, LANDLORDS_2, rememberClubs } from '../data/load';
 import { cards, physio, redCardMod, rotationShape, usesRotation } from '../discipline';
 import { playMatch, typicalFor, type MatchCtx, type MatchInput, type MatchPlan } from '../engine';
 import { deskFold, type ClubWorld } from '../desk/fold';
@@ -17,18 +17,18 @@ import { diceFrozen } from './desk';
 import { isScouted, pausedInput, readFor, readScouted, scoutLevel } from './paused';
 import { pickOffer } from '../matchday';
 import { CONT_NAME, CWC_DAYS, CWC_NAME, contPrize, koFromTable, newClubWorld, phaseTable, reachOf } from '../continental';
-import { WORLD_CHAMPS } from '../data/continental';
+import { worldChamps } from '../data/continental';
 import { calledUp, EVENTS, NATIONS, nationBar, nextEvent, worldCupGroups, worldCupRun } from '../events';
 import { rollOldSelves } from '../oldSelves';
 import { opponentFor } from '../opponent';
 import { simResult } from '../otherMatches';
 import { applyMoves, doubleUp, formRating, playoffPairs, seasonEnd } from '../promotion';
-import { afterMatch, ANTIGOON, howText, migrateRivals, rivalTwist, twistOf, weakestAxis, type Meeting } from '../rivals';
+import { afterMatch, legendId, howText, migrateRivals, rivalTwist, twistOf, weakestAxis, type Meeting } from '../rivals';
 import { hashSeed, rng, pick } from '../rng';
 import { contractDay, keptOn, intake, newContract } from '../contracts';
 import { nationId, YOUTH_POOL } from '../data/load';
 import { crestStepFor } from '../kits';
-import { BUNDLES, bundleDay, capacityOf, dayCounts, groundAbilities, isOpen, TENANT_CAPACITY } from '../ground';
+import { BUNDLES, bundleDay, capacityOf, dayCounts, groundAbilities, homeGround, isOpen, TENANT_CAPACITY } from '../ground';
 import { dodgyCollapse, incomeFor, offers as offersFor, type Slot } from '../money';
 import { HABITS, habitById, armbandHarmony, averageOf, momentsOf, TRAIT } from '../squad';
 import { abilityFor, braboAbilities } from '../data/abilities';
@@ -476,7 +476,7 @@ function endSeason2(w: World, date: DayKey) {
   const up = to < from;
   const base = seasonMoney(w, date, tables, moves.up, stageOf(to));
   treeSeasonEnd(treeCtx(w), date, tables, up, base);
-  tenancyAtSeasonEnd(w, date, tables);
+  tenancyAtSeasonEnd(w, date, tables, up);
   if (up && crestStepFor(stageOf(to)) > w.save.crest.step) w.save.crestPending = crestStepFor(stageOf(to));
   globeSeasonEnd(w, date, w.save.season);
   const ev = nextEvent(w.save.season, w.save.eventState, rng(hashSeed('event', String(w.save.season))));
@@ -668,7 +668,7 @@ function braboMaybe(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: str
   const club = w.clubs.get(oppId);
   const def = clubById(oppId);
   const rival = w.save.rivals.find((r) => r.clubId === oppId);
-  const derby = Boolean(rival) || oppId === 'zur' || oppId === ANTIGOON;
+  const derby = Boolean(rival) || oppId === 'zur' || oppId === legendId();
   const opp = opponentFor(def, { rating: club?.rating, derby });
   const firstMeeting = !w.save.met.includes(oppId);
   const lastMine = [...w.past, ...w.matches].filter((m) => m.date < date).pop();
@@ -703,19 +703,19 @@ function braboMaybe(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: str
     abilities: [...braboAbilities(w.save.slots), ...(w.save.engine === 2 ? traitAbilities(team.xi, w.roster) : awakenedTraits(w.save)), ...groundAbilities(doneBundles(w)), ...tree.abilities, ...loanAbilities(w.save, team.loansPlayed, date, globeRules(w.save, w.bundles.values()).loan)],
     bench: benchFor(w, date), pre, conds, ctx,
     condCap: rotation ? undefined : condCapFor(w.h, date),
-    rival: rival ? twistOf(rival) : oppId === ANTIGOON ? rivalTwist(ANTIGOON, 'legend') : undefined,
+    rival: rival ? twistOf(rival) : oppId === legendId() ? rivalTwist(legendId(), 'legend') : undefined,
   };
   const prep: PausedPrep = {
     day: plan.day, matchday: plan.matchday, comp, round, home, away, oppId, braboHome, values, flags, xi: team.xi,
     setPiece: tonight.setPiece, tactic: tonight.tactic, nudges: team.nudges.length ? team.nudges : undefined, loansPlayed: team.loansPlayed,
-    rotation, sick, auto, derby, vsHigher: Boolean(ctx.vsHigher), rival: Boolean(rival) || oppId === ANTIGOON, oldSelf: Boolean(club?.old), braboTier,
+    rotation, sick, auto, derby, vsHigher: Boolean(ctx.vsHigher), rival: Boolean(rival) || oppId === legendId(), oldSelf: Boolean(club?.old), braboTier,
     ...(w.slot ? { slot: w.slot } : {}),
   };
   if (comp === 'league') {
     // Matchday (spec §2.3–2.5): a league night has calls, and plays the plan (tempo, the read, a card) set for it.
     const p: PausedMatch = {
       id: matchIdFor(date, leg, w.slot), date, season: w.save.season, input: { ...input, rival: undefined } as PausedMatch['input'],
-      rivalTwist: rival ? 'rival' : oppId === ANTIGOON ? 'antigoon' : undefined,
+      rivalTwist: rival ? 'rival' : oppId === legendId() ? 'antigoon' : undefined,
       style: club?.style ?? def.style, scouted: readScouted(scoutLevel(w.save, oppId, date)), prep, picks: [],
     };
     if (wait) {
@@ -801,7 +801,7 @@ function braboTail(w: World, date: DayKey, prep: PausedPrep, events: MatchEvents
   const run = [...w.past, ...w.matches].filter((x) => !x.rotation);
   let streak = 0;
   for (let k = run.length - 1; k >= 0 && run[k].result === m.result; k--) streak++;
-  const situation = situationOf(m, { rival: Boolean(rival) || oppId === ANTIGOON, oldSelf: Boolean(club?.old), streak });
+  const situation = situationOf(m, { rival: Boolean(rival) || oppId === legendId(), oldSelf: Boolean(club?.old), streak });
   const lines = matchLines(m, factsFor(m, braboTier, streak, situation), w.used);
   w.news.push(...lines);
   w.used.push(...lines.map((n) => ({ id: n.lineId!, date: m.date })));
@@ -956,23 +956,32 @@ function lockedOutTonight(w: World, plan: DayPlan, date: DayKey): boolean {
   w.news.push({ id: `${date}:locked`, date, kind: 'back', text: 'Locked out! The landlords say the good dressing room is “unavailable”. Brabo change in the corridor and play tonight as if away.' });
   return true;
 }
-/** The rent rise the first season Brabo finish above the landlords, and moving day at the break. */
-function tenancyAtSeasonEnd(w: World, date: DayKey, tables: Record<Tier, Row[]>) {
+/**
+ * The rent rise, and moving day at the break. World 1: the first season Brabo finish above the landlords. World 2: the
+ * landlords (Berchem Sport) play outside the league, so it comes the first season Brabo go up a division.
+ */
+function tenancyAtSeasonEnd(w: World, date: DayKey, tables: Record<Tier, Row[]>, wentUp = false) {
   if (!w.save.moved && !w.save.rentRaised) {
-    const t = w.season.tierOf[OWN], zt = w.season.tierOf['zur'];
-    const pos = (id: string, tier: Tier) => tables[tier].findIndex((r) => r.id === id);
-    const above = zt === undefined ? false : t < zt || (t === zt && pos(OWN, t) < pos('zur', zt));
+    let above = false;
+    if (worldOf(w.season) === 2) above = wentUp;
+    else {
+      const t = w.season.tierOf[OWN], zt = w.season.tierOf['zur'];
+      const pos = (id: string, tier: Tier) => tables[tier].findIndex((r) => r.id === id);
+      above = zt === undefined ? false : t < zt || (t === zt && pos(OWN, t) < pos('zur', zt));
+    }
     if (above) {
       w.save.rentRaised = true;
       w.save.budget = Math.round((w.save.budget - 0.02) * 1000) / 1000;
-      w.news.push({ id: `${date}:rent`, date, kind: 'back', text: 'Rent rise! Zurenborg Athletic put the rent up the season their tenants finish above them. €20k a season, and a lot of muttering.' });
+      w.news.push({ id: `${date}:rent`, date, kind: 'back', text: worldOf(w.season) === 2
+        ? `Rent rise! ${clubById(LANDLORDS_2).name} put the rent up the season their tenants go up a division. €20k a season, and a lot of muttering.`
+        : 'Rent rise! Zurenborg Athletic put the rent up the season their tenants finish above them. €20k a season, and a lot of muttering.' });
     }
   }
   if (!w.save.moved && w.save.moveAtBreak && doneBundles(w).includes('kaai-stand')) {
     w.save.moved = true;
     w.save.moveAtBreak = false;
     w.save.openings = [...(w.save.openings ?? []), 'moving-day'];
-    w.news.push({ id: `${date}:farewell`, date, kind: 'club', text: 'Farewell, Stadion aan de Stroom. Moving day: next season starts at Kaai 42.' });
+    w.news.push({ id: `${date}:farewell`, date, kind: 'club', text: `Farewell, ${homeGround(false)}. Moving day: next season starts at Kaai 42.` });
   }
 }
 
@@ -1068,11 +1077,11 @@ function koRound(w: World, date: DayKey, plan: DayPlan, auto: boolean, b: Bracke
 /** The Club World Cup over four event days: quarter-final, semi-final, a third night, the final. Brabo play every night. */
 function clubWorldDay(w: World, date: DayKey, plan: DayPlan, auto: boolean) {
   const day = w.save.day;
-  if (!w.season.clubworld) w.season.clubworld = newClubWorld(w.save.season);
+  if (!w.season.clubworld) w.season.clubworld = newClubWorld(w.save.season, worldOf(w.season));
   let b = w.season.clubworld;
   const label = (x: string) => `${CWC_NAME}, ${x}`;
   const inRound = (ri: number) => b.rounds[ri]?.ties.some((t) => t.home === OWN || t.away === OWN);
-  const champs = WORLD_CHAMPS.map((c) => c.id);
+  const champs = worldChamps(worldOf(w.season)).map((c) => c.id);
   const friendly = (why: string) => {
     const met = new Set([...w.matches, ...w.past].filter((m) => m.comp === 'clubworld' || m.round?.startsWith(CWC_NAME)).map((m) => m.opp));
     const opp = pick(rng(hashSeed(date, 'cwc-friendly')), champs.filter((id) => !met.has(id)).length ? champs.filter((id) => !met.has(id)) : champs);
