@@ -23,6 +23,7 @@ import type { MatchdayPlan, PickTile } from '../matchday';
 import type { DeskState } from '../desk/types';
 import type { FogState } from '../fog/fog';
 import type { LeaguePace } from '../pace';
+import type { Redrawn } from '../pyramid/redraw';
 
 export type CrestOpt = 'a' | 'b' | 'c' | 'd' | 'e';
 export interface FbSave {
@@ -135,6 +136,8 @@ export interface FbSave {
    * (eight divisions of 12, 28 days, placement by level). Set only by the migration (LG-4); every season carries it too.
    */
   world?: 1 | 2;
+  /** The world redrawn (LG-4): when the move was made, where Brabo was placed, the founding weeks, the gifts. */
+  redrawn?: Redrawn;
 }
 
 /** What a league match needs to be finished later: who, where, and the night as it was set at 4 am. */

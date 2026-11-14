@@ -300,7 +300,7 @@ function lineAfter(r: TalkRound, c: TalkCtx, words: Record<string, string | numb
 
 /** The market's door, beside packs (w-loan A): it never takes from a pack. */
 export function MarketDoor() {
-  const n = useLiveQuery(async () => { const s = await db.fbSave.get('save'); return leadsFrom(loanLeads(s?.desk)).length; }, []);
+  const n = useLiveQuery(async () => { const s = await db.fbSave.get('save'); return leadsFrom(loanLeads(s?.desk, s?.redrawn?.on)).length; }, []);
   if (n === undefined) return null;
   return (
     <button type="button" className="fbt-btn wide" onClick={() => go('/football/market')}>
