@@ -37,8 +37,10 @@ export interface Continental {
 }
 
 /** The top 4 plus 12 from abroad: 9 real clubs and 3 invented ones, drawn by season. */
-export function drawField(season: number, top4: string[]): string[] {
+export function drawField(season: number, top4: string[], abroad?: string[]): string[] {
   const r = rng(hashSeed('continental', String(season)));
+  // World 2 (league spec §6): the twelve come from the outside pool of real clubs.
+  if (abroad) return [...top4.slice(0, 4), ...shuffle(r, [...abroad].sort()).slice(0, 16 - Math.min(4, top4.length))];
   const real = shuffle(r, CONT_REAL.map((c) => c.id)).slice(0, 9);
   const made = shuffle(r, CONT_INVENTED.map((c) => c.id)).slice(0, 3);
   return [...top4.slice(0, 4), ...real, ...made];
@@ -59,8 +61,8 @@ function phaseRounds(ids: string[]): [string, string][][] {
   return out;
 }
 
-export function newContinental(season: number, top4: string[]): Continental {
-  const field = drawField(season, top4);
+export function newContinental(season: number, top4: string[], abroad?: string[]): Continental {
+  const field = drawField(season, top4, abroad);
   const order = shuffle(rng(hashSeed('continental-draw', String(season))), field);
   return { field, rounds: balance(phaseRounds(order)), results: [] };
 }
