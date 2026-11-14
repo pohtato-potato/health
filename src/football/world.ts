@@ -8,14 +8,16 @@ export interface Headline { kind: 'world'; text: string; clubId: string }
 const gauss = (r: () => number) => Math.sqrt(-2 * Math.log(1 - r())) * Math.cos(2 * Math.PI * r());
 
 /** One season's turn of the world: drift, then the named events, then club abilities that move ratings. */
-export function worldTurn(clubs: WorldClub[], r: () => number): { changes: RatingChange[]; headlines: Headline[]; deductions: Record<string, number>; styles: Record<string, string> } {
+export function worldTurn(clubs: WorldClub[], r: () => number, o: { /** World 2 drifts by finish instead (pyramid/drift.ts). */ form?: boolean } = {}): { changes: RatingChange[]; headlines: Headline[]; deductions: Record<string, number>; styles: Record<string, string> } {
   const others = clubs.filter((c) => c.kind !== 'own' && c.kind !== 'old');
   const changes: RatingChange[] = [], headlines: Headline[] = [];
   const deductions: Record<string, number> = {}, styles: Record<string, string> = {};
   const say = (c: WorldClub, text: string) => headlines.push({ kind: 'world', text, clubId: c.id });
   for (const c of others) {
-    const d = Math.round(gauss(r) * 1.5);
-    if (d) changes.push({ id: c.id, d, why: 'form' });
+    if (o.form !== false) {
+      const d = Math.round(gauss(r) * 1.5);
+      if (d) changes.push({ id: c.id, d, why: 'form' });
+    }
     if (r() < 1 / 6) { styles[c.id] = pick(r, ['press', 'possession', 'low-block', 'direct', 'counter', 'grit']); say(c, `${c.name} sack the manager. The new one wants a different game.`); }
   }
   const signings = 2 + Math.floor(r() * 3);
