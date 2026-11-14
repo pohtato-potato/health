@@ -6,6 +6,8 @@
 //   globeMatch    after a match: loan appearances and goals
 //   globeSeasonEnd at the season's end: youngsters not promoted leave, kindly
 // Taps (moments seen, tying a trialist) are in store/globeActions.ts.
+import { perkValue } from '../cast/bonds';
+import { perksOfSave } from './cast';
 import { daysBetween, type DayKey } from '../../domain/dates';
 import { DUTY_LINES, DUTY_QUIET, FAREWELLS } from '../content/words';
 import { nationByCode } from '../content/nations';
@@ -69,7 +71,11 @@ export function rulesFrom(a: Active): GlobeRules {
     researchDuty: ruleValue(a, 'research-duty', 0),
   };
 }
-export const globeRules = (save: FbSave, bundles: Iterable<FbBundle>) => rulesFrom(activeFor(save, bundles));
+export const globeRules = (save: FbSave, bundles: Iterable<FbBundle>): GlobeRules => {
+  const r = rulesFrom(activeFor(save, bundles));
+  // The cast's `trials-extra-day` perk: a second trial day each week, as the tree's rule gives it.
+  return perkValue(perksOfSave(save), 'trials-extra-day') > 0 ? { ...r, trials: { ...r.trials, extraDay: true } } : r;
+};
 
 /** What the hooks need from play.ts's world. */
 export interface GlobeWorld {

@@ -111,11 +111,12 @@ export const clockSize = (target: string) => (scopeOf(target).kind === 'club' ? 
  * What a finished trip brings back. A club: the next four facts in order (a thin trip, one fewer). A division or the
  * clubs abroad: each club's surface (kit, rating, style); a thin trip leaves the style out.
  */
-export function revealFor(target: string, clubs: { id: string; facts: Set<Fact> }[], thin = false): Record<string, Fact[]> {
+/** `extra`: finds added to a club trip by the cast's `scout-known` perk (one more find, about 5 known %, per 5 points). */
+export function revealFor(target: string, clubs: { id: string; facts: Set<Fact> }[], thin = false, extra = 0): Record<string, Fact[]> {
   const sc = scopeOf(target);
   if (sc.kind === 'club') {
     const c = clubs.find((x) => x.id === sc.id);
-    const f = nextFacts(c?.facts ?? new Set(), CLUB_FINDS);
+    const f = nextFacts(c?.facts ?? new Set(), CLUB_FINDS + Math.max(0, Math.floor(extra / 5)));
     return { [sc.id]: thin ? f.slice(0, Math.max(1, f.length - 1)) : f };
   }
   const out: Record<string, Fact[]> = {};

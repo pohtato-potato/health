@@ -47,7 +47,8 @@ import { formationFor } from '../tree/rotation';
 import { engineOf, healNow, rotationOf, stageCapacity, treeAbilities, treeDay, treeMatch, treeSeasonEnd, type TreeCtx } from './tree';
 import { LEAGUE, TIER_BANDS, tierName } from '../data/load';
 import { braboVotes, motionById, seasonRules, sitCongress } from '../congress/congress';
-import { bondDay, bondsOf, castById, closeResearch, emptyBonds, perksHeld } from '../cast/bonds';
+import { bondDay, bondsOf, castById, closeResearch, emptyBonds, perkValue, perksHeld } from '../cast/bonds';
+import { perksOfSave } from './cast';
 import { SEATS } from '../content/desk';
 import { lobbiesFor } from '../desk/jobs/lobby';
 import { opinionOf } from '../market/relations';
@@ -707,7 +708,7 @@ function deskDay(w: World, date: DayKey) {
   const eng = structuredClone(engineOf(w.save));
   const g = globeOf(w.save);
   const club: ClubWorld = { budget: w.save.budget, loans: g.loans, offers: w.save.offers ?? [], sponsors: w.save.sponsors ?? [], season: w.save.season, phase: w.save.phase };
-  deskFold(w.save.desk, date, diceFrozen(w.save, w.h, date), { eng, squad: w.squad, bundles: w.bundles, needs: (id) => PROJECTS.find((p) => p.id === id)?.needs, news: w.news, club });
+  deskFold(w.save.desk, date, diceFrozen(w.save, w.h, date), { unspentBonus: perkValue(perksOfSave(w.save), 'unspent-research'), eng, squad: w.squad, bundles: w.bundles, needs: (id) => PROJECTS.find((p) => p.id === id)?.needs, news: w.news, club });
   w.save.tree = eng;
   // Fork 3: deals struck in talks (the market loan's own slot, sponsors signed on the terms reached).
   w.save.budget = club.budget;

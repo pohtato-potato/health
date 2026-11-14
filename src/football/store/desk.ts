@@ -24,6 +24,10 @@ import { worldView } from './fog';
 import { loadRelations, marketViewOf } from './market';
 import { OWN } from './season';
 import { researchedOf } from './tree';
+import { congressViewOf } from './congress';
+import { perksOfSave, castViewOf } from './cast';
+import { restDieBonus } from '../cast/bonds';
+import { dayMetrics } from '../tree/metrics';
 import type { FbSave } from './tables';
 import type { Tonight } from './hooks';
 import { fixtureFor } from './tonight';
@@ -46,7 +50,17 @@ export function diceOn(h: Health, date: DayKey): Die[] {
 }
 
 /** The dice a day hands over: frozen in the save once seen, so a later edit to yesterday never reshuffles them. */
-export const diceFrozen = (save: FbSave, h: Health, date: DayKey): Die[] => save.desk?.dice[date] ?? diceOn(h, date);
+export const diceFrozen = (save: FbSave, h: Health, date: DayKey): Die[] => save.desk?.dice[date] ?? withPerks(diceOn(h, date), save, h, date);
+/**
+ * The cast's `rest-day-dice` perk: on a planned rest day kept as rest (yesterday), the Rest die counts one higher for
+ * each holder whose condition held, up to 6. A die, never a rating.
+ */
+function withPerks(dice: Die[], save: FbSave, h: Health, date: DayKey): Die[] {
+  const held = perksOfSave(save);
+  if (!held.some((p) => p.key === 'rest-day-dice')) return dice;
+  const up = restDieBonus(held, dayMetrics(h, addDays(date, -1), { bedtime: save.bedtime }));
+  return up ? dice.map((d) => (d.axis === 'Rest' ? { ...d, value: Math.min(6, d.value + up) as Die['value'], reason: `${d.reason}, and a rest day kept` } : d)) : dice;
+}
 
 /** Each need in plain words, for the project row. */
 const NEED: Record<string, string> = { steps: 'step days', training: 'sessions', sleep: 'nights slept', protein: 'protein days', kcal: 'calorie days', bedtime: 'bedtimes kept', meds: 'medicine days', youth: 'academy sessions', logged: 'days logged', closed: 'days closed' };
@@ -110,6 +124,7 @@ export async function deskView(t: Pick<Tonight, 'save' | 'date' | 'fixture'>): P
   };
   const last = await db.fbMatches.where('date').below(date).last();
   const pool = await questionPool();
+  const rel = await loadRelations(save);
   return {
     date,
     opp: opp ? { id: opp.id, name: opp.name, style: opp.style } : undefined,
@@ -122,7 +137,10 @@ export async function deskView(t: Pick<Tonight, 'save' | 'date' | 'fixture'>): P
     spentToday,
     clocks: desk.clocks.map((c) => ({ ...c, filled: clockFilled(desk, c) })),
     world: worldView(save, season?.tierOf),
-    market: marketViewOf(save, date, season?.tierOf, await loadRelations(save)),
+    market: marketViewOf(save, date, season?.tierOf, rel),
+    congress: await congressViewOf(save, rel),
+    cast: castViewOf(save, date),
+    perks: perksOfSave(save),
   };
 }
 

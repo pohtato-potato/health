@@ -14,6 +14,8 @@ import { spendsOn, unspentResearch } from './rules';
 import type { DeskState, Die, Effect } from './types';
 
 export interface FoldWorld {
+  /** Fork 4: dice counted extra toward unspent research (the cast's `unspent-research` perk). */
+  unspentBonus?: number;
   eng: TreeEngine;
   squad: { id: string; status: string; growth?: number; name: string }[];
   bundles: Map<string, { id: string; progress: Record<string, number>; done?: DayKey }>;
@@ -100,5 +102,6 @@ export function deskFold(desk: DeskState | undefined, date: DayKey, dice: Die[],
   const spent = desk ? spendsOn(desk, date) : [];
   for (const s of spent) for (const e of s.effects) foldEffect(w, e, date);
   const left = dice.filter((d) => !spent.some((s) => s.axis === d.axis)).length;
-  gain(w.eng, date, unspentResearch(left), 'Dice left on the desk');
+  // The cast's `unspent-research` perk: research one die sooner, never past the day's cap.
+  gain(w.eng, date, left ? unspentResearch(left + (w.unspentBonus ?? 0)) : 0, 'Dice left on the desk');
 }
