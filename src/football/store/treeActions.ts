@@ -1,5 +1,6 @@
 // Taps on the tree. Each writes save.treeUser only, inside one transaction, so a match playing at the same time
 // never loses a tap (play.ts keeps treeUser as a user key). Also the read the tree's screens use.
+import { stageIn } from '../pyramid/shape';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { dayOfLogging, weekStart, type DayKey } from '../../domain/dates';
@@ -75,7 +76,10 @@ export const seeRunningLow = (pool: PoolId) => editUser((u, s) => {
 export interface TreeView {
   save: FbSave;
   season: FbSeason | undefined;
+  /** The division. */
   tier: Tier;
+  /** Its stage (spec §9): what projects and wages read. */
+  stage: Tier;
   bundles: FbBundle[];
   built: string[];
   today: DayKey;
@@ -96,6 +100,6 @@ export async function loadTree(now = Date.now()): Promise<TreeView | null> {
     const rows = standings(season.results[tier] ?? [], Object.keys(season.tierOf).filter((id) => season.tierOf[id] === tier), season.deductions);
     facts = seasonFacts({ season, save, matches: await db.fbMatches.where('season').equals(save.season).sortBy('date') }, { [tier]: rows } as Record<Tier, typeof rows>, false);
   }
-  return { save, season, tier, bundles, built: builtOf(bundles), today: dayOfLogging(now), low: runningLowNow(u, engineOf(save).bountiesDone, save.globe?.met), facts };
+  return { save, season, tier, stage: stageIn(season, tier), bundles, built: builtOf(bundles), today: dayOfLogging(now), low: runningLowNow(u, engineOf(save).bountiesDone, save.globe?.met), facts };
 }
 export const useTree = () => useLiveQuery(() => loadTree(), []);

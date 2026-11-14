@@ -308,7 +308,7 @@ export function StaffPage() {
         <b>{x.s.name}{doc ? ` · level ${m.doctor.level}` : ''}{x.leave ? ' · on leave' : ''}</b>
         <small>{x.s.text}</small>
         {doc && <small>{m.doctor.xp} days with every medicine kept{m.doctor.next ? ` · next level at ${m.doctor.next}` : ' · top level'}</small>}
-        <small className="fbt-from">{era.name} · {x.tech.name}{x.hired ? ` · ${euros(wage(x.s.wageUnits, m.t.tier))} a season` : ''}</small>
+        <small className="fbt-from">{era.name} · {x.tech.name}{x.hired ? ` · ${euros(wage(x.s.wageUnits, m.t.stage))} a season` : ''}</small>
       </Viewable>
     );
   };

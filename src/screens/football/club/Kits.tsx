@@ -24,7 +24,7 @@ export function KitsView({ c, act = {} }: { c: Club; act?: KitActions }) {
         <section className="fb-card hot" aria-label="Launch day">
           <span className="fb-lb">Launch day · season {next}</span>
           <p className="fb-s">The kit maker has designs for each slot. Pick one; the rest go back in the drawer.</p>
-          {slotsOpen(c.tier).map((slot) => {
+          {slotsOpen(c.stage ?? c.tier).map((slot) => {
             const picked = s.kits?.find((k) => k.season === next && k.slot === slot)?.id;
             return (
               <fieldset key={slot} className="fb-kitpick">

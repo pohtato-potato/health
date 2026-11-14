@@ -18,6 +18,7 @@ import type { MatchCtx } from '../engine';
 import type { Row } from '../table';
 import type { BraboAbility, Tier } from '../types';
 import { addMetrics, dayMetrics } from '../tree/metrics';
+import { stageIn } from '../pyramid/shape';
 import { projectDay, projectOpen, TREE_PROJECTS } from '../tree/projects';
 import { activeEffects, erasOpen, eurekasDue, lessonFor, LOGGED_DAY, settle, techById, type Active } from '../tree/research';
 import { boardFor, boonsThisSeason, bountiesPicked, bountyProgress, objectiveMet, strengthOf, trackDue, type SeasonFacts } from '../tree/season';
@@ -129,7 +130,8 @@ export function treeDay(c: TreeCtx, date: DayKey, youthDays: number) {
 
   // 5. Projects from the tree: new stages and journeys.
   const tier = c.season.tierOf[OWN];
-  const g = { tier, moved: Boolean(s.moved), done: builtOf(c.bundles.values()), researched: researched() };
+  // Projects open by stage (spec §9); the board below reads the division itself.
+  const g = { tier: stageIn(c.season, tier), moved: Boolean(s.moved), done: builtOf(c.bundles.values()), researched: researched() };
   for (const p of TREE_PROJECTS) {
     if (!projectOpen(p, g)) continue;
     const cur = c.bundles.get(p.id) ?? { id: p.id, progress: {} };
@@ -255,7 +257,7 @@ export function treeSeasonEnd(c: TreeCtx, date: DayKey, tables: Record<Tier, Row
     }
   }
   if (promoted) earnPack(eng, date, 'promotion', s.season);
-  const tier = c.season.tierOf[OWN];
+  const tier = stageIn(c.season, c.season.tierOf[OWN]);
   const a = activeFor(s, c.bundles.values());
   const lines = treeIncome(a, tier, base);
   if (lines.length) {

@@ -1,6 +1,7 @@
 // Cup runs' only writer: the run in progress (cupRuns, saved after every card and every stop), the record book
 // (cupBook) and finished runs (cupDone, summary only). A run never touches the league: the only writes outside these
 // tables are the research and the album card a run pays (spec §11), into the tree as its own gain.
+import { lastDivision, stageIn, stageOf, worldOf } from '../pyramid/shape';
 import { eyeChoices } from '../desk/course';
 import { coursePasses } from '../desk/rules';
 import { db } from '../../db/db';
@@ -51,8 +52,14 @@ export async function runCtx(): Promise<RunCtx> {
   const stored = await db.fbClubs.toArray();
   rememberClubs(stored);
   const live = new Map(stored.map((c) => [c.id, c]));
+  // World 2 (league spec §9): the clubs are the stored world's, and each cup's levels read the club's stage.
+  const w2 = worldOf(season) === 2;
   const clubs = [
-    ...CLUBS.filter((c) => !live.get(c.id)?.folded).map((c) => {
+    ...(w2 ? stored.filter((c) => !c.folded).map((c) => {
+      const d = clubById(c.id);
+      return { id: c.id, name: d.name, short: d.short, rating: c.rating, tier: c.pool ? 0 : stageOf(c.tier), style: c.style, colours: d.colours, country: d.country, kind: c.old ? 'old' : d.kind, ...(c.pool ? { abroad: true } : {}) };
+    }) : []),
+    ...CLUBS.filter((c) => !w2 && !live.get(c.id)?.folded).map((c) => {
       const d = clubById(c.id);
       const s = live.get(c.id);
       return { id: c.id, name: d.name, short: d.short, rating: s?.rating ?? c.rating ?? 40, tier: s?.tier ?? c.tier, style: s?.style ?? c.style, colours: d.colours, country: c.country, kind: c.kind };
@@ -61,7 +68,7 @@ export async function runCtx(): Promise<RunCtx> {
   ];
   const today = fogToday();
   const scouted = save ? clubs.filter((c) => isScoutedBy(save, c.id, today)).map((c) => c.id) : [];
-  return { clubs, scouted, ownTier: season?.tierOf[OWN] ?? 6 };
+  return { clubs, scouted, ownTier: stageIn(season, season?.tierOf[OWN] ?? lastDivision(season)) };
 }
 
 /** The run in progress (a layer-2 try match is dropped: it has no map). */

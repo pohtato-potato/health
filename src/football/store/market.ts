@@ -1,5 +1,6 @@
 // The loan market and relations, read from the save (desk spec §5, Fork 3). Nothing here writes: talks and studies
 // are desk spends (store/desk.ts `spendAt`), deals are folded at 4 am (desk/fold.ts).
+import { stageIn } from '../pyramid/shape';
 import { db } from '../../db/db';
 import type { DayKey } from '../../domain/dates';
 import { clubById } from '../data/load';
@@ -48,7 +49,7 @@ export function marketViewOf(save: FbSave, date: DayKey, tierOf: Record<string, 
     ...l, clubName: nameOf(l.club), opinion: opinionOf(rel, l.club), poach: (tierOf?.[l.club] ?? -1) === ownTier,
   }));
   return {
-    ownTier, budget: save.budget, leads, talks: talkRows(save.desk),
+    ownTier, ownStage: stageIn(save, ownTier), budget: save.budget, leads, talks: talkRows(save.desk),
     slot: marketSlot(globeOf(save).loans, pendingDeals(save), date),
     offers: (save.offers ?? []).map((o) => ({ slot: o.slot, brand: o.brand, what: o.what, risk: o.risk, perSeason: o.perSeason, seasons: o.seasons })),
   };

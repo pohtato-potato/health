@@ -21,7 +21,7 @@ export function modelOf(t: TreeView) {
   const eurekas = eng.eurekas.map((e) => e.id);
   const a = activeFor(t.save, t.bundles);
   const states = new Map(t.bundles.map((b) => [b.id, b]));
-  const gates = { tier: t.tier, moved: Boolean(t.save.moved), done: t.built, researched, budget: t.save.budget };
+  const gates = { tier: t.stage, moved: Boolean(t.save.moved), done: t.built, researched, budget: t.save.budget };
   const open = (p: ProjectDef) => (p.source === 'ground' ? bundleOpen(BUNDLES.find((b) => b.id === p.id)!, gates) : projectOpen(p, gates));
   /** "18 of 25" for its least-finished need; money waiting shows as "waiting for €400k". */
   const progress = (id: string) => {
@@ -56,7 +56,7 @@ export function modelOf(t: TreeView) {
     week: weekStart(t.today),
     track: trackSteps(eng, season),
     staff,
-    wages: wageBill(researched, t.tier),
+    wages: wageBill(researched, t.stage),
     doctor: { xp: eng.doctorXp, level: doctorLevel(eng.doctorXp), next: doctorNext(eng.doctorXp) },
   };
 }

@@ -59,4 +59,6 @@ export function clubById(id: string): ClubDef {
   if (!c) throw new Error(`unknown club ${id}`);
   return c;
 }
-export const tierName = (t: Tier) => TIER_NAMES[String(t)];
+/** World 2 (ledger O38) runs to Division Eight, with the outside pool one below; the first six names are shared. */
+const MORE_NAMES: Record<string, string> = { 7: 'Division Seven', 8: 'Division Eight', 9: 'The clubs abroad' };
+export const tierName = (t: Tier) => TIER_NAMES[String(t)] ?? MORE_NAMES[String(t)];
