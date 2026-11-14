@@ -1,4 +1,6 @@
 // The story of each season: its finish, cup runs, upsets both ways, and Season Wrapped (spec §5.6–5.7).
+import { seasonLength } from './calendar';
+import { worldOf } from './pyramid/shape';
 import { tierName } from './data/load';
 import type { Bracket } from './cups';
 import { CONT_NAME } from './continental';
@@ -55,12 +57,12 @@ export function summarise(s: FbSeason, matches: StoredMatch[], all: FbSeason[]):
   const ct = s.continental;
   const contLine = ct?.ko ? cupRun(ct.ko) : ct?.field.includes(OWN) && ct.results.length === 8 ? `${CONT_NAME}: out in the league phase` : ct?.field.includes(OWN) && ct.results.length ? `${CONT_NAME}: league phase, ${ct.results.length} of 8 played` : undefined;
   const cups = [contLine, cupRun(s.clubworld), cupRun(s.bigcup), ...Object.values(s.tiercups).map(cupRun)].filter(Boolean) as string[];
-  const verdict = s.final?.double?.id === OWN ? 'Two divisions in one go. Nobody down there could live with us.'
+  const verdict = s.final?.double?.id === OWN || (s.final?.level?.id === OWN && s.final.level.dir === 'up') ? 'Two divisions in one go. Nobody down there could live with us.'
     : move === 'up' ? 'Up we go. Told you. I always said this squad had it.'
     : move === 'down' ? 'Down. Fine. We regroup, we sulk for a day, we go again.'
       : !s.final ? 'Too early to judge. I’m judging anyway: promising.'
         : pos && pos <= 6 ? 'So close I can taste it. Next year.' : 'Mid-table. The wilderness. We were better than that, mostly.';
-  const nextTier = (s.final?.double?.id === OWN ? tier - 2 : move === 'up' ? tier - 1 : move === 'down' ? tier + 1 : tier) as Tier;
-  const next = s.final ? `Season ${s.id + 1} in ${tierName(nextTier)}.` : `${42 - Math.max(0, ...ms.map((m) => m.day))} days left this season.`;
+  const nextTier = (s.final?.level?.id === OWN ? s.final.level.to : s.final?.double?.id === OWN ? tier - 2 : move === 'up' ? tier - 1 : move === 'down' ? tier + 1 : tier) as Tier;
+  const next = s.final ? `Season ${s.id + 1} in ${tierName(nextTier)}.` : `${seasonLength(worldOf(s)) - Math.max(0, ...ms.map((m) => m.day))} days left this season.`;
   return { season: s.id, tier, pos, move, cups, best: bestAxisOf(ms), record, moments, upsets: upsets(ms, all), verdict, next };
 }

@@ -8,7 +8,7 @@
 import { treeRotation } from '../tree/rotation';
 import { addDays, daysBetween, weekStart, type DayKey } from '../../domain/dates';
 import { paceOn, paceWeekDone } from '../pace';
-import { BOARD, BOUNTIES, BOARD_RESEARCH, TRACK_KIT_PIECES, TRACK_THEMES } from '../content/season';
+import { BOUNTIES, BOARD_RESEARCH, TRACK_KIT_PIECES, TRACK_THEMES } from '../content/season';
 import { BOOSTS } from '../content/packs';
 import { ERAS } from '../content/tree';
 import type { Reward } from '../content/types';
@@ -18,10 +18,10 @@ import type { MatchCtx } from '../engine';
 import type { Row } from '../table';
 import type { BraboAbility, Tier } from '../types';
 import { addMetrics, dayMetrics } from '../tree/metrics';
-import { stageIn } from '../pyramid/shape';
+import { stageIn, worldOf } from '../pyramid/shape';
 import { projectDay, projectOpen, TREE_PROJECTS } from '../tree/projects';
 import { activeEffects, erasOpen, eurekasDue, lessonFor, LOGGED_DAY, settle, techById, type Active } from '../tree/research';
-import { boardFor, boonsThisSeason, bountiesPicked, bountyProgress, objectiveMet, strengthOf, trackDue, type SeasonFacts } from '../tree/season';
+import { boardDef, boardFor, boonsThisSeason, bountiesPicked, bountyProgress, objectiveMet, strengthOf, trackDue, type SeasonFacts } from '../tree/season';
 import { boostsWaiting } from '../tree/packs';
 import { doctorLevel, healDays, payWages, treeIncome } from '../tree/staff';
 import { emptyEngine, emptyUser, type PackSource, type ResearchWhy, type TreeEngine, type TreeUser } from '../tree/types';
@@ -116,7 +116,7 @@ export function treeDay(c: TreeCtx, date: DayKey, youthDays: number) {
     }
   }
   // Track rewards (after bounties, so a catch-up step pays the same day).
-  if (s.phase === 'season') for (const step of trackDue(eng, s.season)) {
+  if (s.phase === 'season') for (const step of trackDue(eng, s.season, worldOf(s))) {
     eng.trackPaid = [...eng.trackPaid, `${s.season}:${step.step}`];
     pay(eng, step.reward!, date, s.season, 'track', `Track day ${step.step}`);
   }
@@ -163,7 +163,7 @@ export function treeDay(c: TreeCtx, date: DayKey, youthDays: number) {
     const own = c.clubs.get(OWN)?.rating ?? 50;
     const strength = strengthOf(own, ids.map((id) => c.clubs.get(id)?.rating ?? 50));
     const derbyOn = c.season.tierOf[ANTIGOON] === tier;
-    const objs = boardFor(s.season, strength, { inContinental: Boolean(c.season.continental?.field.includes(OWN)), derbyOn, divisionSize: ids.length + 1, topTier: tier === 1 });
+    const objs = boardFor(s.season, strength, { inContinental: Boolean(c.season.continental?.field.includes(OWN)), derbyOn, divisionSize: ids.length + 1, topTier: tier === 1 }, worldOf(s));
     eng.board = [...eng.board, { season: s.season, strength, ids: objs.map((o) => o.id) }];
   }
   s.tree = eng;
@@ -249,9 +249,9 @@ export function treeSeasonEnd(c: TreeCtx, date: DayKey, tables: Record<Tier, Row
   const facts = seasonFacts({ season: c.season, save: s, matches: c.matches() }, tables, promoted);
   const set = eng.board.find((b) => b.season === s.season);
   if (set && !set.verdicts) {
-    set.verdicts = set.ids.map((id) => ({ id, met: objectiveMet(BOARD.find((o) => o.id === id)!, facts) }));
+    set.verdicts = set.ids.map((id) => ({ id, met: objectiveMet(boardDef(id, worldOf(s)), facts) }));
     for (const v of set.verdicts) {
-      const o = BOARD.find((x) => x.id === v.id)!;
+      const o = boardDef(v.id, worldOf(s));
       if (v.met) gain(eng, date, BOARD_RESEARCH, 'board', o.text);
       c.news.push({ id: `${date}:board:${o.id}`, date, kind: 'club', text: `From the chairman: ${v.met ? o.met : o.missed}` });
     }

@@ -5,6 +5,8 @@ import type { BoardObjective, BoonDef, BountyDef, Reward, TrackStep } from './ty
 
 /** Picks on days 1, 15 and 29: choose 1 of 3. */
 export const BOON_DAYS = [1, 15, 29];
+/** World 2's 28 days (ledger O38): the three picks at the same thirds of the season. */
+export const BOON_DAYS_2 = [1, 10, 19];
 export const BOON_CHOICES = 3;
 
 export const BOONS: BoonDef[] = [
@@ -128,6 +130,28 @@ const at = (step: number): { reward: Reward | null; label: string } => {
   return { reward: null, label: '' };
 };
 export const TRACK: TrackStep[] = Array.from({ length: 42 }, (_, i) => ({ step: i + 1, ...at(i + 1) }));
+/**
+ * World 2's track (ledger O38): 28 steps, one a logged day, with every reward of the 42-step track kept, each at its
+ * old step's place in the season (old step × 2/3, rounded): nothing is lost to the shorter season.
+ */
+export const TRACK_2: TrackStep[] = Array.from({ length: 28 }, (_, i) => {
+  const old = TRACK.find((s) => s.reward && Math.round(s.step / 1.5) === i + 1);
+  return { step: i + 1, reward: old?.reward ?? null, label: old?.label ?? '' };
+});
+/**
+ * World 2's board (ledger O38): objectives counted against 18 clubs and 34 matchdays, rescaled to 12 and 22. Places
+ * by the share of the table, totals by the share of the season (goals 60 → 40, clean sheets 12 → 8, home run 8 → 5).
+ */
+export const BOARD_2: Record<string, Partial<BoardObjective>> = {
+  'o-survive': { goal: { kind: 'position', atBest: 9 } },
+  'o-top-half': { goal: { kind: 'position', atBest: 6 } },
+  'o-top-six': { text: 'Finish in the top four.', goal: { kind: 'position', atBest: 4 }, met: '“Top four. Somebody frame the table.”', missed: '“Outside the four. We move on.”' },
+  'o-tiercup-sf': { text: 'Reach the pair cup semi-final.' },
+  'o-tiercup-win': { text: 'Win the pair cup.' },
+  'o-goals': { text: 'Score 40 goals in the league.', goal: { kind: 'goals', n: 40 }, met: '“Forty goals. The scoreboard operator asks for a raise.”' },
+  'o-clean-sheets': { text: 'Keep 8 clean sheets.', goal: { kind: 'clean-sheets', n: 8 }, met: '“Eight clean sheets. The laundry has noticed.”' },
+  'o-home': { text: 'Go 5 home matches unbeaten.', goal: { kind: 'home-unbeaten', matches: 5 }, met: '“Five unbeaten at home. The quay is a hard place to visit.”' },
+};
 
 /** The kit pieces the season track's day-21 step gives, in order, one a season. */
 export const TRACK_KIT_PIECES = [

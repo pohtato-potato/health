@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { NATIONS, nationBar } from '../../../football/events';
 import type { Slot } from '../../../football/money';
 import { setBedtime, setFbSetting, setLeaguePace, setOwnSponsor } from '../../../football/store/save';
-import { PACE_TITLE, paceLine } from '../../../football/pace';
+import { PACE_RETIRED, PACE_TITLE, paceLine } from '../../../football/pace';
 import { clock } from '../../../football/players/attributes';
 import type { FbSave } from '../../../football/store/tables';
 import { SLOT_NAME } from '../club/Money';
@@ -40,6 +40,8 @@ function LowLogRow({ s }: { s: FbSave }) {
  * season is one match a day again by itself. Shown only during a season, or after it to say it has ended.
  */
 export function PaceRow({ s, onPace = (v) => void setLeaguePace(v) }: { s: FbSave; onPace?: (on: boolean) => void }) {
+  // Retired (ledger O38): one league match a day; the switch is hidden and a save with it on plays as off.
+  if (PACE_RETIRED) return null;
   const mine = s.pace && s.pace.season === s.season ? s.pace : undefined;
   // Once its season is over the switch goes: a note says so through the next season, then the row is gone.
   const ended = Boolean(s.pace && (s.pace.season < s.season || s.phase !== 'season'));

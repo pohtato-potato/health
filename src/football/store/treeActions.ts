@@ -1,6 +1,6 @@
 // Taps on the tree. Each writes save.treeUser only, inside one transaction, so a match playing at the same time
 // never loses a tap (play.ts keeps treeUser as a user key). Also the read the tree's screens use.
-import { stageIn } from '../pyramid/shape';
+import { stageIn, worldOf } from '../pyramid/shape';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { dayOfLogging, weekStart, type DayKey } from '../../domain/dates';
@@ -37,7 +37,7 @@ export const clearTarget = () => editUser((u) => ({ ...u, target: undefined }));
 
 /** Pick a boon at an open pick. */
 export const pickBoon = (id: string) => editUser((u, s, b) => {
-  const pick = boonPickOpen(u, s.season, s.day, engineOf(s).boonExtra?.[s.season] ?? 0);
+  const pick = boonPickOpen(u, s.season, s.day, engineOf(s).boonExtra?.[s.season] ?? 0, worldOf(s));
   if (!pick || s.phase !== 'season') return undefined;
   const offer = boonOffer(u, s.season, pick, ruleValue(activeFor(s, b), 'boon-choices', BOON_CHOICES));
   if (!offer.some((x) => x.id === id)) return undefined;

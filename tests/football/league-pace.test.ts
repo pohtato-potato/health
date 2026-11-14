@@ -1,4 +1,6 @@
 // League pace (O36): three league matchdays a day for the rest of one season, behind a switch that is off by default.
+// Retired by the league rebuild (ledger O38, spec 2026-11-14 §6): the switch is hidden and a save with it on plays as
+// off. The tests of what it did are kept, skipped, until a later tidy removes the code; 'retired' below is what holds.
 import 'fake-indexeddb/auto';
 import './helpers/windowStub';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -40,7 +42,7 @@ describe('the rules', () => {
     expect(matchdaysBefore(43)).toBe(34);
     expect(matchdaysBefore(6)).toBe(4); // day 5 is a Big Cup day
   });
-  it('the pace counts only in its season, from its first day, and stops at its last', () => {
+  it.skip('the pace counts only in its season, from its first day, and stops at its last', () => {
     const s = { season: 2, phase: 'season', pace: { season: 2, from: '2026-11-20', to: '2026-11-25' } };
     expect(paceOn(s, '2026-11-19')).toBe(false);
     expect(paceOn(s, '2026-11-20')).toBe(true);
@@ -81,7 +83,7 @@ describe('off by default', () => {
   });
 });
 
-describe('three a day', () => {
+describe.skip('three a day (retired)', () => {
   it('each day plays three league matchdays; the last waits, the first two are finished by the assistant', async () => {
     await setLeaguePace(true, START);
     await kickOff(START);
@@ -198,7 +200,7 @@ describe('three a day', () => {
   });
 });
 
-describe('the title is safe: the season ends that day', () => {
+describe.skip('the title is safe: the season ends that day (retired)', () => {
   /** Made-up: every other club in Brabo's division docked 200 points, so the title is safe after any league match. */
   async function dockTheRest() {
     const season = (await db.fbSeasons.get(1))!;
@@ -269,7 +271,7 @@ describe('the title is safe: the season ends that day', () => {
 });
 
 describe('the screens', () => {
-  it('the settings switch: off by default, says what it does, and goes once its season is over', async () => {
+  it.skip('the settings switch: off by default, says what it does, and goes once its season is over', async () => {
     const { PaceRow } = await import('../../src/screens/football/story/Settings');
     const { createElement } = await import('react');
     const { renderToStaticMarkup: html } = await import('react-dom/server');
@@ -286,7 +288,7 @@ describe('the screens', () => {
     expect(html(createElement(PaceRow, { s: { ...s, season: 3, pace: { season: 1, from: START } } }))).toBe('');
   });
 
-  it('the parcel shows the night’s three: the waiting one leads, the other two under it with Watch or Skip', async () => {
+  it.skip('the parcel shows the night’s three: the waiting one leads, the other two under it with Watch or Skip', async () => {
     const { loadParcel } = await import('../../src/football/store/around');
     const { NightResults } = await import('../../src/screens/football/Parcel');
     const { createElement } = await import('react');
@@ -307,5 +309,20 @@ describe('the screens', () => {
     const after = await loadParcel({ ...(t as object), save: (await db.fbSave.get('save'))! } as never);
     expect(after.result?.round).toBe('Matchday 3');
     expect(after.others).toHaveLength(2);
+  });
+});
+
+describe('retired (ledger O38)', () => {
+  it('the pace is never on, whatever the save holds', () => {
+    expect(paceOn({ season: 2, phase: 'season', pace: { season: 2, from: '2026-11-20' } }, '2026-11-21')).toBe(false);
+  });
+  it('a save with the switch on plays one league match a day', async () => {
+    await setLeaguePace(true, START);
+    await kickOff(START);
+    const ms = (await all()).filter((m) => m.comp === 'league' || m.date === START);
+    expect(ms.filter((m) => m.date === START && m.comp === 'league').length + (await pausedMatch() ? 1 : 0)).toBe(1);
+    await kickOff(addDays(START, 1));
+    const two = (await all()).filter((m) => m.date === addDays(START, 1) && m.comp === 'league').length + (await pausedMatch() ? 1 : 0);
+    expect(two).toBeLessThanOrEqual(1);
   });
 });
