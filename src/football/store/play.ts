@@ -37,7 +37,7 @@ import { applyChanges, worldTurn } from '../world';
 import { applyMoves2, seasonEnd2 } from '../pyramid/movement';
 import { settle2, tableDrift } from '../pyramid/drift';
 import { redrawUp } from '../pyramid/cups';
-import { LEVEL_DAYS, typicalNight, winRate, type LevelNight } from '../pyramid/level';
+import { LEVEL_DAYS, placeBrabo, typicalNight, winRate, type LevelNight, type Placing, type SimClub } from '../pyramid/level';
 import { rollOldSelves2, seatOldSelves } from '../pyramid/oldSelves';
 import { POOL, shapeOf, stageIn, stageOf, worldOf } from '../pyramid/shape';
 import { AXES, TIERS, type AxisValues, type CallPick, type Comp, type MatchEvents, type Mod, type Result, type Tier } from '../types';
@@ -537,6 +537,20 @@ export function levelNightIn(w: Pick<World, 'h' | 'save' | 'bundles'>, date: Day
     stack: slots.has('stack') ? save.earned.filter((e) => e.date > addDays(date, -7)).length : 0,
     abilities: [...braboAbilities(save.slots), ...groundAbilities(done), ...treeAbilities({ save, bundles: w.bundles }, ctx, true).abilities, ...loanAbilities(save, loans, date, globeRules(save, w.bundles.values()).loan)],
   };
+}
+
+/**
+ * Brabo's level and placing now (league spec §7, decision 3a): gathers the last 28 days' real nights and tonight's
+ * bonuses from the save, then simulates them against each division given. LG-4 calls this to start the new world,
+ * and after any absence of 28 days or more. Reads only.
+ */
+export async function braboPlacing(date: DayKey, divisions: Record<number, SimClub[]>): Promise<Placing & { night?: LevelNight }> {
+  const save = await db.fbSave.get('save');
+  if (!save) return { ...placeBrabo(undefined, divisions) };
+  const h = await loadHealth();
+  const bundles = new Map((await db.fbBundles.toArray()).map((b) => [b.id, b]));
+  const night = levelNightIn({ h, save, bundles }, date);
+  return { ...placeBrabo(night, divisions), ...(night ? { night } : {}) };
 }
 
 /** The newest finished month joins the Old Selves; the weakest retires. */
