@@ -191,3 +191,21 @@ export async function linkYouth(id: string, link: YouthLink | undefined) {
     if (y && y.status === 'growing') await db.fbSquad.put({ ...y, link, sessions: [], growth: y.growth ?? 0, grown: y.grown ?? [], logged: [] });
   });
 }
+
+/**
+ * League pace (O36): the settings switch. On plays three league matchdays for each day from today's logging day, for
+ * this season only. Off before any of them were played forgets it; off afterwards stops it after the last day played.
+ */
+export async function setLeaguePace(on: boolean, today: DayKey = dayOfLogging(Date.now())): Promise<void> {
+  await db.transaction('rw', db.fbSave, async () => {
+    const s = await db.fbSave.get('save');
+    if (!s || s.phase !== 'season') return;
+    const next = { ...s };
+    // A day already played keeps its pace: the switch counts from the first day not yet played.
+    const first = s.lastPlayed && s.lastPlayed >= today ? addDays(s.lastPlayed, 1) : today;
+    if (on) next.pace = { season: s.season, from: first };
+    else if (!s.pace || s.pace.season !== s.season || !s.lastPlayed || s.lastPlayed < s.pace.from) delete next.pace;
+    else next.pace = { ...s.pace, to: s.lastPlayed };
+    await db.fbSave.put(next);
+  });
+}

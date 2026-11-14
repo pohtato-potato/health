@@ -6,7 +6,8 @@
 //   treeSeasonEnd at the season's end: the board's verdicts, the tree's money, wages and leave, a promotion pack
 // Taps (research, boons, bounties, packs, moments seen) write save.treeUser only, in store/treeActions.ts.
 import { treeRotation } from '../tree/rotation';
-import { addDays, weekStart, type DayKey } from '../../domain/dates';
+import { addDays, daysBetween, weekStart, type DayKey } from '../../domain/dates';
+import { paceOn, paceWeekDone } from '../pace';
 import { BOARD, BOUNTIES, BOARD_RESEARCH, TRACK_KIT_PIECES, TRACK_THEMES } from '../content/season';
 import { BOOSTS } from '../content/packs';
 import { ERAS } from '../content/tree';
@@ -97,7 +98,8 @@ export function treeDay(c: TreeCtx, date: DayKey, youthDays: number) {
   if (s.phase === 'season') {
     if (eng.track.season !== s.season) eng.track = { season: s.season, steps: [], catchups: 0 };
     if (m.logged && !eng.track.steps.includes(date)) eng.track = { ...eng.track, steps: [...eng.track.steps, date] };
-    if (s.day % 7 === 0 && !(s.globe?.breaks ?? []).some((b) => b.days.includes(date)) && eng.days.some((d) => d.date > addDays(date, -7) && d.m.logged)) earnPack(eng, date, 'week-finished', s.season);
+    // League pace (O36): the week's pack counts real weeks of the pace, not season days that now pass three at a time.
+    if ((paceOn(s, date) ? paceWeekDone(s.pace!, date, daysBetween) : s.day % 7 === 0) && !(s.globe?.breaks ?? []).some((b) => b.days.includes(date)) && eng.days.some((d) => d.date > addDays(date, -7) && d.m.logged)) earnPack(eng, date, 'week-finished', s.season);
   }
 
   // 3. Bounties picked this week.
