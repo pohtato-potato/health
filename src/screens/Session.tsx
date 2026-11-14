@@ -36,6 +36,7 @@ import { HALF_RULES, halfWhy, lighterOn, sickOn } from '../domain/deload';
 import { heavyFirstOffer, heavyFirstOrder, isDumbbellKind } from '../domain/gym';
 import { loadBlocks } from '../domain/sessionEdges';
 import { dayKey } from '../domain/dates';
+import { easyStartOn, nextWeight, weightCanChange } from '../domain/trainWeek';
 import { readinessFor } from '../state/readinessFor';
 import { go, useRoute } from '../router';
 import { Icon } from '../ui/Icon';
@@ -104,6 +105,16 @@ export function SessionScreen() {
         if (yes) half = 'sick';
       }
       const tempo = Object.fromEntries(exs.map((ex) => [ex.id, statusOf(ex).tempo]));
+      const placeHere: Place = hasGym(plan) ? place ?? placeOfSession(plan, sessionId) : 'home';
+      // The first gym week: fewer sets, stopping short, while loads are found. A half-set night already asks less.
+      const easy = half ? undefined : easyStartOn(plan, sessions, today, placeHere);
+      // Weights changed on Train for next time.
+      const loadSet: Record<string, number> = {};
+      for (const e of exs) {
+        if (!weightCanChange(e) || !settings.loadNext?.[e.id]) continue;
+        const kg = nextWeight(e.id, statusOf(e), settings.loadNext, sets);
+        if (kg !== null) loadSet[e.id] = kg;
+      }
       const ready = readinessFor(settings, today, days, sessions, sets, flagEvents(plan, sessions, days).map((e) => e.date));
       await startSession({
         session: sessionId,
@@ -118,6 +129,8 @@ export function SessionScreen() {
         place: hasGym(plan) ? place ?? placeOfSession(plan, sessionId) : undefined,
         half,
         heavyFirst,
+        easy: easy && { sets: easy.sets, rir: easy.rir },
+        loadSet,
       });
       starting.current = false;
       if (Date.now() - APP_START < 60_000) void bump('leeroy');

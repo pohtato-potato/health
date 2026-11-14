@@ -297,6 +297,8 @@ export interface Settings {
   machineUnits?: Record<string, 'kg' | 'lb' | 'stack'>;
   /** Home or gym: the last one picked on Train, so the card opens on it. */
   lastPlace?: 'home' | 'gym';
+  /** Weights changed on Train or with "From now on" during a set: used next time, until a set of that exercise is logged after it. */
+  loadNext?: Record<string, { kg: number; at: number }>;
   readinessWeights?: { at: number; weights: import('./readiness').Weights; sessions: number };
   createdAt: number;
 }
@@ -501,6 +503,10 @@ export interface TrainingSession {
   protectAsked?: boolean;
   /** Tonight's load per exercise, picked on the set screen (gym kit has no plate table to suggest one). */
   loadSet?: Record<string, number>;
+  /** A weight changed for one set only ("This set only"): the row it is for and the load. */
+  loadOnce?: { key: string; kg: number };
+  /** The first gym week's easy start: fewer sets, stopping a few reps short, while loads are found. */
+  easy?: { sets: number; rir: number };
 }
 
 /** Why a session is at half sets. */

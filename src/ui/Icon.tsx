@@ -34,6 +34,11 @@ const PATHS: Record<string, ReactNode> = {
     </>
   ),
   plus: <path d="M12 5v14M5 12h14" />,
+  minus: <path d="M5 12h14" />,
+  /** A gym machine: the frame, the weight stack and its pin. */
+  gym: <path d="M5 20V5h14v15M3 20h18M9 8h6v8H9zM9 10.7h6M9 13.3h6M15 12h2.5" />,
+  /** A body, front: for sets per muscle. */
+  body: <path d="M12 3.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 9.5h10l-1.5 5.5H8.5zM8.5 15l.5 5.5M15.5 15l-.5 5.5M7 9.5l-2 5M17 9.5l2 5" />,
   close: <path d="M6 6l12 12M18 6L6 18" />,
   right: <path d="M9 5l7 7-7 7" />,
   left: <path d="M15 5l-7 7 7 7" />,

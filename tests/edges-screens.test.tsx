@@ -98,7 +98,12 @@ import { SessionLook, SetsLook } from '../src/screens/live/QuickLooks';
 describe('the record moment', () => {
   const rec = (p: Partial<Parameters<typeof RecordScreen>[0]> = {}) =>
     renderToStaticMarkup(<RecordScreen name="Romanian deadlift" kg={10} value="19" was={{ value: '18', date: '2026-10-03' }} onGo={noop} {...p} />);
-  it('names the old best and when', () => expect(rec()).toContain('Your best was 18, on 3 Oct.'));
+  it('names the old best and when', () => {
+    const h = rec();
+    expect(h).toMatch(/Old best<\/span><b class="num tn">18<\/b>/);
+    expect(h).toContain('3 Oct');
+    expect(h).toContain('A new best');
+  });
   it('is gold', () => expect(rec()).toMatch(/class="lv [^"]*st-record/));
   it('names the song when known', () => expect(rec({ song: 'Midnight City · M83' })).toContain('Midnight City · M83'));
 });

@@ -1,25 +1,85 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// The kit's sheet reads the route at import; Node has no window.
+vi.hoisted(() => {
+  const g = globalThis as unknown as { window?: unknown };
+  g.window ??= { location: { hash: '' }, addEventListener: () => {}, removeEventListener: () => {} };
+});
 import { renderToStaticMarkup } from 'react-dom/server';
-import { TonightCard, UpNextCard } from '../src/screens/train/Cards';
+import { TonightCard } from '../src/screens/train/Cards';
+import { BodyPanel, ExerciseBlock, MuscleBars, WeekLead } from '../src/screens/train/Week';
 import { BodyCard, FourWeeksCard, MonthCard, PlanCard, RecordsCard, RecentCard } from '../src/screens/train/Sections';
 
 const noop = () => {};
-const blocks = [
-  { kg: 10, items: [{ name: 'Romanian deadlift', light: false }] },
-  { kg: 5, items: [{ name: 'Lean-away lateral raise', light: false }] },
+const MUSCLES = [
+  { name: 'Side delts', muscles: ['side-delts' as const], sets: 7, lo: 10, hi: 16, state: 'low' as const },
+  { name: 'Chest', muscles: ['chest' as const], sets: 8, lo: 6, hi: 12, state: 'ok' as const },
+  { name: 'Biceps', muscles: ['biceps' as const], sets: 18, lo: 8, hi: 14, state: 'high' as const },
 ];
 
-describe('up next', () => {
-  const h = renderToStaticMarkup(<UpNextCard name="Session C" usual={{ min: 92, fromHistory: true }} changes={1} heavier={2} focus="Head in line" blocks={blocks} swaps={0} onStart={noop} onShort={noop} chips={[]} />);
-  it('says how long, the plates, what is ready and the focus', () => {
-    expect(h).toContain('usually <b>92 min</b>');
-    expect(h).toContain('one plate change');
-    expect(h).toContain('2 ready to go heavier');
-    expect(h).toContain('form focus: head in line');
+describe('the week (look pass L2)', () => {
+  const h = renderToStaticMarkup(
+    <WeekLead
+      words="Two done, two to go"
+      done={[{ code: 'GA', day: 'Tue', place: 'gym' }, { code: 'HA', day: 'Thu', place: 'home' }]}
+      picks={[{ id: 'GB', code: 'GB', focus: 'Legs and arms', minutes: 60, place: 'gym' }, { id: 'HB', code: 'HB', focus: 'Chest and arms', minutes: 65, place: 'home' }]}
+      picked="GB"
+      onPick={noop}
+      also={[{ id: 'GA', label: 'repeat GA' }]}
+      allDone={false}
+    />,
+  );
+  it('says the count, any order, and what was done', () => {
+    expect(h).toContain('Two done, two to go');
+    expect(h).toContain('any order');
+    expect(h).toContain('GA Tue');
   });
-  it('lists the whole plan in load blocks', () => {
-    expect(h).toContain('Plates change · 10 → 5 kg');
-    expect(h).toContain('Start Session C');
+  it('offers what is left as picks, one chosen', () => {
+    expect(h).toContain('Which one today?');
+    expect(h).toMatch(/role="radio" aria-checked="true" aria-label="GB, at the gym: [^"]+" class="tr-pick gym on"/);
+    expect(h).toMatch(/aria-checked="false" aria-label="[^"]+, at home: [^"]+" class="tr-pick home"/);
+    expect(h).toContain('repeat GA');
+  });
+});
+
+describe('the exercises', () => {
+  const h = renderToStaticMarkup(
+    <ExerciseBlock
+      ink="#9db4d6"
+      head="Plates change · at 10 kg"
+      groups={[
+        [{ id: 'a', name: 'Machine row', target: '3 × 10–12', effort: 'stop 2–3 short', weight: { text: '35 kg', label: 'Machine row: 35 kg. Change it', onTap: noop }, up: 'Top of the range last time: try 37.5' }],
+        [
+          { id: 'b', name: 'Cable raise', target: '3 × 12–20', effort: 'to 0–1 left', hard: true, weight: { text: '5 kg', label: 'x', onTap: noop } },
+          { id: 'c', name: 'Made-up fly', target: '2 × 12–15', effort: 'to 0–1 left', hard: true, weight: { text: 'find', label: 'y', onTap: noop } },
+        ],
+      ]}
+    />,
+  );
+  it('weights are buttons, effort is a chip, going up is suggested', () => {
+    expect(h).toMatch(/<button type="button" class="tr-weight"[^>]*>35 kg<\/button>/);
+    expect(h).toContain('stop 2–3 short');
+    expect(h).toMatch(/class="tr-eff hard">to 0–1 left/);
+    expect(h).toContain('Top of the range last time: try 37.5');
+    expect(h).toContain('Plates change · at 10 kg');
+  });
+  it('pairs show as a pair', () => {
+    expect(h).toContain('tr-group pair');
+    expect(h).toContain('back to back');
+  });
+});
+
+describe('the body and sets per muscle', () => {
+  it('the figure panel names the colours and opens the numbers', () => {
+    const h = renderToStaticMarkup(<BodyPanel rows={MUSCLES} onOpen={noop} />);
+    expect(h).toContain('This week on your body');
+    expect(h).toContain('Tap for the numbers');
+    expect(h).toContain('1 on target, 1 low');
+  });
+  it('bars carry the count and the plan range, in words too', () => {
+    const h = renderToStaticMarkup(<MuscleBars rows={MUSCLES} />);
+    expect(h).toContain('Side delts: 7 hard sets, low; the plan asks 10 to 16');
+    expect(h).toContain('Biceps: 18 hard sets, high');
   });
 });
 

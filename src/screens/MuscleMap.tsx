@@ -1,16 +1,15 @@
-import { useState } from 'react';
-import { weekStart } from '../domain/dates';
+// Sets per muscle (look pass L2; board four "This week on your body"): opens from the body figure on Train.
+import { daysBetween } from '../domain/dates';
+import { fmtInt } from '../domain/format';
 import { daysSince, weeklyHardSets } from '../domain/muscles';
-import { MUSCLES, type MuscleId, type SetEntry } from '../domain/types';
-import type { PlanDef } from '../domain/plan';
-import { useAllSets, useSettings, useToday } from '../db/hooks';
+import { realSets } from '../domain/plan';
+import { muscleWeek, weekOf, weekWords } from '../domain/trainWeek';
+import { weekStart } from '../domain/dates';
+import { MUSCLES, type MuscleId } from '../domain/types';
+import { useAllSets, useBody, useSessions, useSettings, useToday } from '../db/hooks';
 import { back, go } from '../router';
-import { BodyHeat } from '../ui/BodyMap';
-import { Icon } from '../ui/Icon';
-
-/** Muscle groups as the Train card shows them. */
-export { GROUPS } from '../domain/muscles';
-import { GROUPS } from '../domain/muscles';
+import { Door, Doors, PageHead, Panel, Sect, type HowThisWorks } from '../ui/kit/Kit';
+import { MUSCLE_INK, MuscleBars } from './train/Week';
 
 const NAMES: Record<MuscleId, string> = {
   chest: 'Chest',
@@ -29,90 +28,71 @@ const NAMES: Record<MuscleId, string> = {
   calves: 'Calves',
 };
 
-export function groupSummary(sets: SetEntry[], plan: PlanDef, today: string) {
-  const hard = weeklyHardSets(sets, plan, weekStart(today));
-  return GROUPS.map((g) => {
-    const since = g.muscles.map((x) => daysSince(x, sets, plan, today)).filter((d): d is number => d !== undefined);
-    return { name: g.name, hard: Math.round(g.muscles.reduce((n, x) => n + (hard[x] ?? 0), 0)), since: since.length ? Math.min(...since) : undefined };
-  });
-}
-
 const ago = (d: number | undefined) => (d === undefined ? 'not yet' : d === 0 ? 'today' : d === 1 ? '1 day ago' : `${d} days ago`);
 
-/** The card on Train: hard sets this week by muscle group, and when each was last worked. */
-/** Train (s7): this week's hard sets on the body, front or back, with a bar per group. */
-export function MuscleCard({ sets, plan, today }: { sets: SetEntry[]; plan: PlanDef; today: string }) {
-  const [side, setSide] = useState<'front' | 'back'>('front');
-  const rows = groupSummary(sets, plan, today).filter((g) => g.hard > 0 || g.since !== undefined);
-  if (!rows.length) return null;
-  const hard = weeklyHardSets(sets, plan, weekStart(today));
-  const most = Math.max(1, ...Object.values(hard).map((v) => v ?? 0));
-  const heat = Object.fromEntries(Object.entries(hard).map(([k, v]) => [k, (v ?? 0) / most]));
-  const top = Math.max(1, ...rows.map((r) => r.hard));
-  return (
-    <div className="card" style={{ gap: 10 }}>
-      <div className="row base">
-        <span className="lbl">This week by muscle</span>
-        <div className="seg" style={{ gridAutoColumns: '58px' }}>
-          {(['front', 'back'] as const).map((x) => (
-            <button key={x} type="button" className={side === x ? 'on' : undefined} onClick={() => setSide(x)} style={{ height: 32, fontSize: 13 }}>
-              {x === 'front' ? 'Front' : 'Back'}
-            </button>
-          ))}
-        </div>
-      </div>
-      <button type="button" className="row top" style={{ gap: 12, textAlign: 'left' }} onClick={() => go('/muscles')}>
-        <span style={{ width: 92, flex: 'none' }}>
-          <BodyHeat heat={heat} side={side} label={`Hard sets this week, ${side}`} />
-        </span>
-        <span className="col gap8 grow">
-          {rows.map((g) => (
-            <span key={g.name} className="col gap2">
-              <span className="row t13">
-                <span>{g.name}</span>
-                <span className="tn q">
-                  {g.hard} · {ago(g.since)}
-                </span>
-              </span>
-              <span className="bar">
-                <i style={{ width: `${(g.hard / top) * 100}%`, background: g.hard >= top * 0.66 ? 'var(--gold)' : g.hard >= top * 0.33 ? 'var(--apricot)' : 'var(--sage)' }} />
-              </span>
-            </span>
-          ))}
-        </span>
-      </button>
-    </div>
-  );
-}
+const HOW: HowThisWorks = {
+  title: 'How sets per muscle work',
+  steps: [
+    { icon: 'check', ink: MUSCLE_INK.ok, head: 'A hard set', line: 'A working set taken to three reps or fewer from failure. Unrated sets count; warm-ups and drops don’t.' },
+    { icon: 'train', ink: '#ff9a76', head: 'Its main muscles', line: 'Each set counts once for every row its main muscles are in. A helping muscle counts half in the list below.' },
+    { icon: 'list', ink: '#9db4d6', head: 'The plan’s range', line: 'The dashed marks are what the plan asks for each week, or a general range when it doesn’t say.' },
+    { icon: 'calendar', ink: '#ede6da', head: 'Monday to Sunday', line: 'The count starts again each Monday.' },
+  ],
+  chips: [
+    { ink: MUSCLE_INK.ok, text: 'green on target' },
+    { ink: MUSCLE_INK.low, text: 'yellow low' },
+    { ink: MUSCLE_INK.high, text: 'blue high' },
+  ],
+};
 
 export function MuscleMapPage() {
   const settings = useSettings();
   const sets = useAllSets();
+  const sessions = useSessions();
+  const body = useBody();
   const today = useToday();
-  if (!settings?.plan || !sets) return <div className="page bare" />;
+  if (!settings?.plan || !sets || !sessions) return <div className="page bare" />;
   const plan = settings.plan;
+  const rows = muscleWeek(sets, plan, today);
+  const week = weekOf(plan, sessions, today);
+  const toGo = Math.max(0, week.target - week.doneCount);
   const hard = weeklyHardSets(sets, plan, weekStart(today));
-  const most = Math.max(1, ...Object.values(hard).map((v) => v ?? 0));
-  const heat = Object.fromEntries(Object.entries(hard).map(([k, v]) => [k, (v ?? 0) / most]));
+  const records = realSets(sets).filter((s) => s.mark === '!!').length;
   return (
-    <div className="page bare">
-      <button type="button" className="backlink" onClick={() => back('/train')}>
-        <Icon name="left" size={20} stroke={1.8} />
-        Train
-      </button>
-      <h1 className="h1">Muscles this week</h1>
-      <BodyHeat heat={heat} label="Hard sets this week, brighter where there were more" />
-      <div className="card" style={{ gap: 0 }}>
-        {MUSCLES.map((x) => (
-          <div key={x} className="row t14" style={{ minHeight: 40, borderTop: '1px solid var(--divider)' }}>
-            <span>{NAMES[x]}</span>
-            <span className="tn q">
-              {Math.round((hard[x] ?? 0) * 10) / 10} hard · {ago(daysSince(x, sets, plan, today))}
-            </span>
-          </div>
-        ))}
+    <div className="page bare tr-kit k-light tr-gym">
+      <div className="k-page">
+        <PageHead back="Train" onBack={() => back('/train')} title="Sets per muscle" help={HOW} />
+        <span className="k-q">
+          This week on your body: hard sets so far, against what the plan asks for. {toGo ? `${weekWords(0, toGo).replace(' to do', '')} session${toGo === 1 ? '' : 's'} to go.` : weekWords(week.doneCount, week.target) + '.'}
+        </span>
+        <MuscleBars rows={rows} />
+        <span className="tr-legend">
+          <span><b style={{ color: MUSCLE_INK.ok }}>Green</b> on target</span>
+          <span><b style={{ color: MUSCLE_INK.low }}>Yellow</b> low</span>
+          <span><b style={{ color: MUSCLE_INK.high }}>Blue</b> high</span>
+        </span>
+        <span className="k-q">The dashed marks are the plan’s range for each muscle.</span>
+
+        <Sect>Around training</Sect>
+        <Doors label="Around training">
+          <Door icon="win" ink="#f2c46d" name="Records" value={fmtInt(records)} onClick={() => go('/records')} />
+          <Door icon="list" name="The plan" value={plan.planVersion ? `v${plan.planVersion}` : plan.name} onClick={() => go('/plan')} />
+          <Door icon="body" name="Body log" value={String((body ?? []).filter((b) => daysBetween(b.date, today) < 7).length || '–')} onClick={() => go('/body')} />
+        </Doors>
+
+        <Sect>Each muscle</Sect>
+        <Panel ink="#9db4d6" className="tr-bars">
+          {MUSCLES.map((x) => (
+            <div key={x} className="k-row" style={{ minHeight: 40 }}>
+              <span>{NAMES[x]}</span>
+              <span className="k-q">
+                {Math.round((hard[x] ?? 0) * 10) / 10} hard · {ago(daysSince(x, sets, plan, today))}
+              </span>
+            </div>
+          ))}
+        </Panel>
+        <span className="k-q">Here a muscle helping out counts half.</span>
       </div>
-      <div className="t12 d lh">A hard set is one taken to three reps or fewer from failure. A muscle helping out counts half.</div>
     </div>
   );
 }

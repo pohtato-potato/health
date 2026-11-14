@@ -248,7 +248,8 @@ export function App() {
       <RegionRoot />
       <Suspense fallback={<div className="page" />}>{page.el()}</Suspense>
       {page.tab && <TabBar active={page.tab} />}
-      {page.tab && <ResumePill />}
+      {/* Train shows its own "Back to the session" panel, so the floating pill would only cover it. */}
+      {page.tab && route.path !== '/train' && <ResumePill />}
       {sheet && SHEETS[sheet]?.()}
       <CelebrationWatcher />
       <AchievementWatcher />

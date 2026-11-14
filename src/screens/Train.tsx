@@ -1,35 +1,57 @@
+import { useState } from 'react';
 import { addDays, daysBetween } from '../domain/dates';
 import { fmtDayMonth, fmtInt, weekdayName } from '../domain/format';
 import { fmtKg } from '../domain/loads';
 import { fmtSet } from '../domain/setText';
-import { allExercises, buildSession, extraSessions, findSession, realSets, valueOfSet } from '../domain/plan';
+import { allExercises, buildSession, extraSessions, findSession, groupExercises, hasGym, placeOfSession, realSets, targetText, valueOfSet, type ExerciseDef, type PlanDef } from '../domain/plan';
 import { cardBack, cardFor, TIERS } from '../domain/cards';
 import { POSES, poseFor } from '../domain/poses';
 import { CardsRow } from './train/ExerciseCard';
 import { removeExercise } from '../domain/planEdit';
 import { loggedLater, neglectedExercises, suspiciousSets } from '../domain/trainingChecks';
-import { askConfirm } from '../ui/Confirm';
+import { askChoice, askConfirm } from '../ui/Confirm';
 import type { SetEntry, Settings, TrainingSession } from '../domain/types';
-import { devGlow, regionTint } from '../ui/live/regionTint';
-import { dayGlow } from '../domain/dayGlow';
-import { kmFromSteps } from '../domain/walk';
-import { useActiveSession, useAllDays, useAllSets, useAllSetsWithSkips, useBody, useEntries, useSessions, useSettings, useToday } from '../db/hooks';
-import { go, openSheet, useRoute } from '../router';
+import { useActiveSession, useAllDays, useAllSets, useAllSetsWithSkips, useBody, useNow, useSessions, useSettings, useToday } from '../db/hooks';
+import { go, openSheet } from '../router';
 import { Icon } from '../ui/Icon';
-import { dayRings, doneSessions, nextUp, triggersMet, weeksFor } from '../state/derived';
-import { TrainNextUp } from './train/TrainNextUp';
+import { doneSessions, nextUp, triggersMet, weeksFor } from '../state/derived';
 import { sessionStats } from './SessionDone';
 import { HALF_RULES, HALF_TEXT, halfWhy, lighterCase, lighterOn, sickOn } from '../domain/deload';
-import { gymLoadLabel, heavyFirstOffer, isDumbbellKind, unitFor, weekGuide } from '../domain/gym';
-import { hasGym, type LoadKind, type Place } from '../domain/plan';
+import { GYM_SAFETY, heavyFirstOffer, isDumbbellKind, isGymKind, machineKey, unitFor, unitLabel } from '../domain/gym';
 import { placeFor } from '../domain/places';
 import { TRIP_SESSION_ID } from '../domain/trip';
 import { markSetsSkipped, patchSettings } from '../db/actions';
 import { loadBlocks, plateChanges, usualLength } from '../domain/sessionEdges';
-import { filmDue, formFocus, fourWeeksAgo, heroFor, monthSoFar, tonight, volumeLine, weekVolume } from '../domain/trainView';
-import { Aurora } from '../ui/live/Aurora';
-import { TonightCard, UpNextCard } from './train/Cards';
-import { BodyCard, FourWeeksCard, MonthCard, PlanCard, RecentCard, RecordsCard } from './train/Sections';
+import { filmDue, formFocus, fourWeeksAgo, monthSoFar, tonight } from '../domain/trainView';
+import { alsoOffer, easyStartOf, easyStartOn, effortOf, effortText, goUpHint, muscleWeek, nextWeight, stepWeight, suggestNext, weekOf, weekWords, weightCanChange } from '../domain/trainWeek';
+import { TonightCard } from './train/Cards';
+import { FourWeeksCard, MonthCard, PlanCard, RecentCard, RecordsCard } from './train/Sections';
+import { BodyPanel, ExerciseBlock, WeekLead, WeightSheet, type ExRow, type Pick, type Place } from './train/Week';
+import { Action, Door, Doors, Empty, HelpButton, Panel, Sect, type HowThisWorks } from '../ui/kit/Kit';
+import { clock } from './NextUpCard';
+
+const WORDS = ['no', 'one', 'two', 'three', 'four', 'five'];
+/** A session's short name: its id when the plan uses codes (G1, H2), else its name. */
+const codeOf = (plan: PlanDef, id: string) => (id.length <= 3 ? id : findSession(plan, id)?.name ?? id);
+
+/** "How this works" for Train: four steps and the week's numbers. */
+function trainHow(plan: PlanDef, target: number, easy: { days: number; sets: number; rir: number } | undefined): HowThisWorks {
+  const t = plan.weeklyTarget;
+  return {
+    title: 'How Train works',
+    steps: [
+      { icon: 'calendar', ink: '#9db4d6', head: 'Any order', line: 'Pick today’s session from what is left this week, or repeat one. Nothing is tied to a weekday.' },
+      { icon: 'bolt', ink: '#ff9a76', head: 'Where to stop', line: 'Each exercise says how many reps to leave: small lifts close to failure, big ones a few short.' },
+      { icon: 'weight', ink: '#ede6da', head: 'Weights you can change', line: 'Tap a weight to change it for next time. When every set reached the top of the range, it suggests going up.' },
+      { icon: 'win', ink: '#f2c46d', head: 'Records turn gold', line: 'Beat your best at a weight and the whole screen turns gold, at home or in the gym.' },
+    ],
+    chips: [
+      { ink: '#9db4d6', text: t && (t.gym !== undefined || t.home !== undefined) ? `${t.gym ?? 0} gym + ${t.home ?? 0} home` : `${target} a week` },
+      ...(easy ? [{ ink: '#d9e8f3', text: `first gym week: ${easy.sets} sets, ${easy.rir} short` }] : []),
+      { ink: '#f2c46d', text: 'records in gold' },
+    ],
+  };
+}
 
 export function Train() {
   const settings = useSettings();
@@ -38,29 +60,37 @@ export function Train() {
   const sets = useAllSets();
   const days = useAllDays();
   const active = useActiveSession();
-  const entries = useEntries(today);
-  const route = useRoute();
   const withSkips = useAllSetsWithSkips();
   const body = useBody();
-  if (!settings || !sessions || !sets || !days || active === undefined || !entries) return <div className="page" />;
+  const now = useNow(active ? 1000 : 60_000);
+  const [picked, setPicked] = useState<string | undefined>();
+  const [weightFor, setWeightFor] = useState<string | undefined>();
+  if (!settings || !sessions || !sets || !days || active === undefined) return <div className="page" />;
 
   const plan = settings.plan;
   if (!plan) {
     return (
-      <div className="page">
-        <h1 className="h1">Train</h1>
-        <TrainNextUp settings={settings} up={undefined} active={null} trainedToday={[]} weeks={{ thisWeek: 0, perWeek: 4 }} />
+      <div className="page tr-kit tr-home k-light">
+        <div className="k-page">
+          <h1 className="k-title lg">Train</h1>
+          <Empty icon="train" ink="#ff9a76" title="No plan yet" line="Add one, and Train runs it: the week, the weights and every rule.">
+            <Action onClick={() => openSheet('session-settings')}>Add a plan</Action>
+          </Empty>
+        </div>
       </div>
     );
   }
 
   const gym = hasGym(plan);
-  // Home or gym, picked on the card; the last pick is remembered so the card opens on it.
-  const setPlacePick = (pl: Place) => void patchSettings({ lastPlace: pl });
-  const place: Place = gym ? settings.lastPlace ?? 'home' : 'home';
-  const up = nextUp(settings, sessions, sets, days, false, place, body ?? []);
   const weeks = weeksFor(settings, sessions, today, days);
   const done = doneSessions(sessions);
+  const week = weekOf(plan, sessions, today, weeks.perWeek);
+  const loopNext = (pl: Place) => nextUp(settings, sessions, sets, days, false, pl, body ?? [])?.sessionId ?? week.slots[0]?.sessionId ?? plan.sessions[0].id;
+  const suggested = suggestNext(plan, week, sessions, loopNext);
+  const pick = picked && findSession(plan, picked) ? picked : suggested;
+  const place: Place = gym ? placeOfSession(plan, pick) : 'home';
+  const up = nextUp(settings, sessions, sets, days, false, place, body ?? [], pick);
+  const def = findSession(plan, pick);
   const trainedToday = done.filter((s) => s.date === today);
   const triggers = triggersMet(plan, sets);
   const lighterInput = { sessions, sets: withSkips ?? sets, days, body: body ?? [], occasions: settings.occasions, lighterWeek: settings.lighterWeek };
@@ -70,13 +100,11 @@ export function Train() {
   const sickToday = sickOn(today, days, settings.occasions);
   const todayDay = days.find((d) => d.date === today);
   const isTripDay = placeFor(todayDay, settings).kind === 'trip' || todayDay?.status === 'travelling';
+  const easy = halfTonight ? undefined : easyStartOn(plan, sessions, today, place);
   const tn = active ? undefined : tonight(sessions, sets, today);
-  const next = up ? findSession(plan, up.sessionId) : undefined;
-  const hero = heroFor({ active: !!active, tonight: !!tn, trainedToday: trainedToday.length > 0, up: !!up });
   const nameOf = (id: string) => findSession(plan, id)?.name ?? `Session ${id}`;
-  const focusId = tn?.session.session ?? up?.sessionId;
-  const four = focusId ? fourWeeksAgo(sessions, sets, focusId, today) : undefined;
-  const volume = weekVolume(sets, plan, today);
+  const four = fourWeeksAgo(sessions, sets, tn?.session.session ?? pick, today);
+  const muscles = muscleWeek(sets, plan, today);
   const month = monthSoFar(sessions, sets, today);
   const d = new Date(`${today}T12:00:00`);
   const monthName = d.toLocaleString('en-IN', { month: 'long' });
@@ -87,7 +115,6 @@ export function Train() {
     .sort((x, y) => y.at - x.at)
     .filter((x) => !seen.has(x.exerciseId) && seen.add(x.exerciseId))
     .slice(0, 3);
-  // Each exercise's sets, gathered once for the cards.
   const setsByEx = new Map<string, SetEntry[]>();
   for (const s of realSets(sets)) {
     const list = setsByEx.get(s.exerciseId);
@@ -95,187 +122,295 @@ export function Train() {
     else setsByEx.set(s.exerciseId, [s]);
   }
 
-  // The region is the ground; tonight's session, if it went well, is the light on it (the full colour is for the live session).
-  const walkKm = kmFromSteps(days.reduce((n, d) => n + (d.steps ?? 0), 0));
-  const perfect = dayRings(settings, today, todayDay, entries).rings.perfect;
-  const trainLight = devGlow(dayGlow({ perfect, session: tn && { records: tn.records.length, checks: tn.checks, formAvg: tn.formAvg } }), route.params);
+  // Today's session as it will be built, swaps in their slots, with each weight as it stands for next time.
+  const exs = buildSession(plan, pick, { swaps: up?.swaps, equipment: settings.equipment });
+  const statusOf = (id: string) => up?.exercises.find((e) => e.id === id)?.status;
+  const weightOf = (ex: ExerciseDef) => {
+    const st = statusOf(ex.id);
+    return st ? nextWeight(ex.id, st, settings.loadNext, sets) : null;
+  };
+  const dumbbellKg = (ex: ExerciseDef) => (isDumbbellKind(ex.load) ? weightOf(ex) : null);
+  const blocks = loadBlocks(exs, dumbbellKg);
+  const heavy = place === 'home' ? heavyFirstOffer(blocks) : undefined;
+  const startArgs = (extra: Record<string, string> = {}) => ({ start: pick, ...(gym ? { place } : {}), ...extra });
+  const usual = usualLength(sessions, sets, pick, def?.minutes ?? 60);
+  const changes = plateChanges(blocks);
+  const focus = formFocus(sets, plan, pick);
+  const row = (ex: ExerciseDef): ExRow => {
+    const st = statusOf(ex.id);
+    const kg = weightOf(ex);
+    const eff = effortOf(ex, plan, easy);
+    const unit = unitLabel(ex.load, unitFor(ex, settings));
+    const can = weightCanChange(ex);
+    const text = kg === null ? (isGymKind(ex.load) ? 'find' : ex.load === 'body' ? 'body' : '') : `${fmtKg(kg)} ${unit}`;
+    const extras = [st?.tempo ? '3 s lowering' : '', ex.lead ? `${ex.lead === 'L' ? 'left' : 'right'} first` : ''].filter(Boolean).join(' · ');
+    return {
+      id: ex.id,
+      name: st?.name ?? ex.name,
+      target: targetText(easy ? { ...ex, sets: Math.min(ex.sets, easy.sets) } : ex).replace(' each side', ' a side'),
+      extra: extras || undefined,
+      effort: effortText(eff),
+      hard: !!eff && eff[0] <= 1,
+      weight: text ? { text, label: `${st?.name ?? ex.name}: ${text}${can ? '. Change it' : ''}`, onTap: can ? () => setWeightFor(ex.id) : undefined } : undefined,
+      up: st && !easy && !halfTonight ? goUpHint(ex, st, kg, settings) : undefined,
+    };
+  };
+  const inkFor = place === 'gym' ? '#9db4d6' : '#e9a07a';
+  const exBlocks =
+    place === 'gym' || blocks.every((b) => b.kg === null)
+      ? [{ head: undefined as string | undefined, groups: groupExercises(exs).map((g) => g.map(row)) }]
+      : blocks.map((b, i) => ({
+          head: b.kg === null ? undefined : `${i > 0 && blocks[i - 1].kg !== null && blocks[i - 1].kg !== b.kg ? 'Plates change · at' : 'At'} ${fmtKg(b.kg)} kg`,
+          groups: groupExercises(b.exs).map((g) => g.map(row)),
+        }));
+
+  const editing = weightFor ? exs.find((e) => e.id === weightFor) : undefined;
+  const picks: Pick[] = (week.left.length ? week.left : week.slots.map((s) => s.sessionId)).map((id) => ({ id, code: codeOf(plan, id), focus: findSession(plan, id)?.focus || nameOf(id), minutes: findSession(plan, id)?.minutes ?? 60, place: gym ? placeOfSession(plan, id) : 'home' }));
+  const also = week.left.length ? alsoOffer(plan, week).map((id) => ({ id, label: extraSessions(plan).some((x) => x.id === id) ? nameOf(id).toLowerCase() : `repeat ${codeOf(plan, id)}` })) : extraSessions(plan).map((x) => ({ id: x.id, label: x.name.toLowerCase() }));
+  const safety = (plan.gymSafety?.[0] ?? GYM_SAFETY[0]).text.split(/(?<=\.)\s/).slice(0, 2).join(' ');
+  const how = trainHow(plan, week.target, easyStartOf(plan));
+  const activeDef = active ? findSession(plan, active.session) : undefined;
+  const activeSets = active ? sets.filter((s) => s.sessionId === active.id && !s.drop).length : 0;
+
   return (
-    <div className={`page lv lv-tab${trainLight ? ' lv-glow' : ''}`} style={regionTint(walkKm, trainLight)}>
-      <Aurora />
-      <div className="lv-tr-head">
-        <h1 className="lv-h1">Train</h1>
-        <div className="lv-tr-week" aria-label={`${Math.min(weeks.thisWeek, weeks.perWeek)} of ${weeks.perWeek} sessions this week`}>
-          {Array.from({ length: weeks.perWeek }, (_, i) => (
-            <i key={i} className={i < weeks.thisWeek ? 'on' : ''} />
-          ))}
-          <span>
-            {Math.min(weeks.thisWeek, weeks.perWeek)} of {weeks.perWeek} this week
+    <div className={`page tr-kit k-light ${place === 'gym' ? 'tr-gym' : 'tr-home'}`}>
+      <div className="k-page">
+        <header className="k-row tr-head">
+          <h1 className="k-title lg">Train</h1>
+          <span className="k-row" style={{ gap: 2 }}>
+            <HelpButton how={how} />
+            <button type="button" className="k-help" aria-label="Session settings, the plan and import" onClick={() => openSheet('session-settings')}>
+              <Icon name="more" size={24} stroke={2} />
+            </button>
           </span>
-        </div>
-        <button type="button" className="icon-btn" aria-label="Session settings" onClick={() => openSheet('session-settings')}><Icon name="more" size={22} /></button>
-      </div>
+        </header>
 
-      {triggers.map((t) => (
-        <div key={t.id} className="lv-card gold">
-          <div className="lv-kicker gold">{t.title}</div>
-          <div className="lv-small">{t.message}</div>
-        </div>
-      ))}
+        {triggers.map((t) => (
+          <Panel key={t.id} ink="#f2c46d">
+            <b className="k-lb">{t.title}</b>
+            <span>{t.message}</span>
+          </Panel>
+        ))}
 
-      {hero === 'resume' || hero === 'nextup' ? (
-        <TrainNextUp settings={settings} up={up} active={active} trainedToday={trainedToday} weeks={weeks} />
-      ) : hero === 'tonight' && tn ? (
-        <TonightCard
-          name={nameOf(tn.session.session)}
-          records={tn.records.map((r) => `${r.exercise} ${fmtSet(r)}`)}
-          mins={tn.mins}
-          later={tn.later}
-          sets={tn.sets}
-          liftMin={tn.liftMin}
-          quality={tn.quality}
-          checks={tn.checks}
-          next={up ? `Next is ${nameOf(up.sessionId)}.` : undefined}
-          onReplay={() => go('/session/replay', { id: tn.session.id })}
-        />
-      ) : (
-        up &&
-        (() => {
-          // As the session will build it, swaps in their slots.
-          const exs = buildSession(plan, up.sessionId, { swaps: up.swaps, equipment: settings.equipment });
-          // Dumbbell loads only: a gym stack number is never a plate change.
-          const kgOf = (ex: { id: string; load: LoadKind }) => (isDumbbellKind(ex.load) ? up.exercises.find((e) => e.id === ex.id)?.status.loadKg ?? null : null);
-          const blocks = loadBlocks(exs, kgOf);
-          const heavy = heavyFirstOffer(blocks);
-          const startArgs = (extra: Record<string, string> = {}) => ({ start: up.sessionId, ...(gym ? { place } : {}), ...extra });
-          const otherPlace: Place = place === 'home' ? 'gym' : 'home';
-          return (
-            <UpNextCard
-              name={next?.name ?? `Session ${up.sessionId}`}
-              usual={usualLength(sessions, sets, up.sessionId, next?.minutes ?? 60)}
-              changes={plateChanges(blocks)}
-              heavier={up.exercises.filter((e) => e.status.advice && e.status.advice.kind !== 'maxed').length}
-              focus={formFocus(sets, plan, up.sessionId)}
-              blocks={blocks.map((b) => ({
-                kg: b.kg,
-                items: b.exs.map((ex) => {
-                  const st = up.exercises.find((e) => e.id === ex.id)?.status;
-                  return { name: st?.name ?? ex.name, light: false, load: gymLoadLabel(ex.load, st?.loadKg, unitFor(ex, settings)) };
-                }),
-              }))}
-              swaps={up.swaps.length}
-              onStart={() => go('/session', startArgs())}
-              place={
-                gym
-                  ? {
-                      value: place,
-                      home: nameOf(place === 'home' ? up.sessionId : nextUp(settings, sessions, sets, days, false, 'home')?.sessionId ?? ''),
-                      gym: nameOf(place === 'gym' ? up.sessionId : nextUp(settings, sessions, sets, days, false, 'gym')?.sessionId ?? ''),
-                      onPick: setPlacePick,
-                      guide: weekGuide(plan, sessions, today),
-                    }
-                  : undefined
-              }
-              half={halfTonight ? `${HALF_TEXT[halfTonight]}: ${HALF_RULES.toLowerCase()}` : sickToday ? `Marked sick today: the lighter version is offered when you start.` : undefined}
-              heavy={heavy ? { label: `Start with the ${fmtKg(heavy.heavyKg)} kg block?`, onClick: () => go('/session', startArgs({ heavy: '1' })) } : undefined}
-              onShort={() => openSheet('short', { session: up.sessionId })}
-              chips={[
-                ...(isTripDay ? [{ label: 'Trip workout instead', onClick: () => go('/session', { start: TRIP_SESSION_ID }) }] : []),
-                ...extraSessions(plan).map((x) => ({ label: `${x.name} tonight`, onClick: () => go('/session', { start: x.id }) })),
-              ]}
-              note={
-                [
-                  heavy ? `Either order works; with the ${fmtKg(heavy.heavyKg)} kg block first, the ${fmtKg(heavy.lightKg)} kg work is kept for after it.` : '',
-                  extraSessions(plan).length ? `An extra session counts toward the week; ${next?.name ?? `Session ${up.sessionId}`} stays next.` : '',
-                  gym ? `A ${otherPlace} session never moves the ${place} rotation.` : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ') || undefined
-              }
+        {active ? (
+          <>
+            <Panel ink="#8fc9b0">
+              <span className="k-lb">In progress · {clock(now - active.startedAt)}</span>
+              <span className="k-title">{activeDef?.name ?? `Session ${active.session}`}</span>
+              <span className="k-q">
+                {activeSets} set{activeSets === 1 ? '' : 's'} logged{active.short ? ' · short session' : ''}
+              </span>
+            </Panel>
+            <Action wide onClick={() => go('/session')}>Back to the session</Action>
+          </>
+        ) : (
+          <>
+            <WeekLead
+              words={weekWords(week.doneCount, week.target)}
+              done={week.slots.filter((s) => s.done).map((s) => ({ code: codeOf(plan, s.sessionId), day: s.done!.day, place: s.place }))}
+              picks={picks}
+              picked={pick}
+              onPick={setPicked}
+              also={also}
+              allDone={!week.left.length}
             />
-          );
-        })()
-      )}
 
-      {lighterNow ? (
-        <div className="lv-card">
-          <div className="lv-card-h">Lighter week</div>
-          <div className="lv-small">Same exercises: {HALF_RULES.toLowerCase()} Until {fmtDayMonth(settings.lighterWeek!.to)}.</div>
-        </div>
-      ) : (
-        lighter.due &&
-        (!settings.lighterDismissed || daysBetween(settings.lighterDismissed, today) >= 7) && (
-          <div className="lv-card">
-            <div className="lv-card-h">A lighter week?</div>
-            {lighter.evidence.map((e) => (
-              <div key={e} className="lv-small">
-                {e}
-              </div>
-            ))}
-            <div className="lv-small">Two of the coach’s five signs hold. A lighter week keeps the same exercises: {HALF_RULES.toLowerCase()} Your call.</div>
-            <div className="lv-actions">
-              <button type="button" className="lv-ghost" onClick={() => patchSettings({ lighterDismissed: today })}>
-                Not now
-              </button>
-              <button type="button" className="lv-primary" onClick={() => patchSettings({ lighterWeek: { from: today, to: addDays(today, 6) } })}>
-                Take it
-              </button>
+            {tn && (
+              <TonightCard
+                name={nameOf(tn.session.session)}
+                records={tn.records.map((r) => `${r.exercise} ${fmtSet(r)}`)}
+                mins={tn.mins}
+                later={tn.later}
+                sets={tn.sets}
+                liftMin={tn.liftMin}
+                quality={tn.quality}
+                checks={tn.checks}
+                onReplay={() => go('/session/replay', { id: tn.session.id })}
+              />
+            )}
+
+            <BodyPanel rows={muscles} onOpen={() => go('/muscles')} />
+
+            <div className="k-row end tr-session-h">
+              <span className="k-col">
+                <span className="k-title">{codeOf(plan, pick)}</span>
+                <span className="k-q">{def?.focus || def?.name}</span>
+              </span>
+              <span className="k-col k-r">
+                <b className="k-num">{usual.min} min</b>
+                <span className="k-q">{changes > 0 ? `${WORDS[changes] ?? changes} plate change${changes === 1 ? '' : 's'}` : `${exs.length} exercises`}</span>
+              </span>
             </div>
-          </div>
-        )
-      )}
 
-      <TidyCards settings={settings} sessions={sessions} sets={sets} />
+            {easy && (
+              <Panel ink="#d9e8f3">
+                <span className="tr-panel-h">
+                  <Icon name="gym" size={20} stroke={1.8} />
+                  <b>First gym week</b>
+                </span>
+                <span>
+                  {WORDS[easy.sets] ? `${WORDS[easy.sets][0].toUpperCase()}${WORDS[easy.sets].slice(1)}` : easy.sets} sets of everything, stopping {WORDS[easy.rir] ?? easy.rir} short, while you find your loads. {easy.daysLeft} day{easy.daysLeft === 1 ? '' : 's'} left.
+                </span>
+              </Panel>
+            )}
+            {(halfTonight || sickToday) && (
+              <Panel ink="#93c3dc">
+                <b className="k-lb">{halfTonight ? `${HALF_TEXT[halfTonight]}: half sets` : 'Marked sick today'}</b>
+                <span>{halfTonight ? HALF_RULES : 'The lighter version is offered when you start.'}</span>
+              </Panel>
+            )}
 
-      {four && focusId && <FourWeeksCard name={nameOf(focusId)} then={four.then} rows={four.rows} />}
+            {exBlocks.map((b, i) => (
+              <ExerciseBlock key={i} head={b.head} groups={b.groups} ink={inkFor} />
+            ))}
+            {(up?.swaps.length ?? 0) > 0 && <span className="k-q">{up!.swaps.length} swapped out for a joint flag.</span>}
+            {focus && <span className="k-q">Form focus: {focus.toLowerCase()}.</span>}
+            {place === 'gym' && (
+              <span className="tr-note">
+                <Icon name="wind" size={22} stroke={1.8} />
+                {safety}
+              </span>
+            )}
+            <span className="k-q">Tap any weight to change it. It stays changed for next time.</span>
 
-      <BodyCard rows={volume} line={volumeLine(volume)} onOpen={() => go('/muscles')} />
+            <div className="tr-also">
+              <button type="button" className="tr-chipbtn" onClick={() => openSheet('short', { session: pick })}>
+                Short on time
+              </button>
+              {heavy && (
+                <button type="button" className="tr-chipbtn" onClick={() => go('/session', startArgs({ heavy: '1' }))}>
+                  Start with the {fmtKg(heavy.heavyKg)} kg block
+                </button>
+              )}
+              {isTripDay && (
+                <button type="button" className="tr-chipbtn" onClick={() => go('/session', { start: TRIP_SESSION_ID })}>
+                  Trip workout instead
+                </button>
+              )}
+            </div>
 
-      <RecordsCard total={allRecords.length} rows={recs.map((r) => ({ what: fmtSet(r), name: r.exercise, when: r.date === today ? 'tonight' : fmtDayMonth(r.date) }))} onAll={() => go('/records')} />
+            <Action wide quiet={trainedToday.length > 0} onClick={() => go('/session', startArgs())}>
+              Start {codeOf(plan, pick)}
+            </Action>
+          </>
+        )}
 
-      <CardsRow
-        cards={[...new Map(allExercises(plan).map((e) => [e.id, e])).values()]
-          .map((ex) => {
-            const mine = setsByEx.get(ex.id) ?? [];
-            return { ex, card: cardFor(ex, mine), back: cardBack(mine) };
-          })
-          .filter((c) => c.card.logged)
-          .sort((a, b) => TIERS.indexOf(b.card.tier) - TIERS.indexOf(a.card.tier) || a.ex.name.localeCompare(b.ex.name))
-          .map(({ ex, card, back }) => ({ key: ex.id, name: ex.name, pose: POSES[poseFor(ex)], tier: card.tier, next: card.next, seed: ex.id, back }))}
-      />
+        {lighterNow ? (
+          <Panel ink="#93c3dc">
+            <b className="k-lb">Lighter week</b>
+            <span>Same exercises: {HALF_RULES.toLowerCase()} Until {fmtDayMonth(settings.lighterWeek!.to)}.</span>
+          </Panel>
+        ) : (
+          lighter.due &&
+          (!settings.lighterDismissed || daysBetween(settings.lighterDismissed, today) >= 7) && (
+            <Panel ink="#93c3dc">
+              <b className="k-lb">A lighter week?</b>
+              {lighter.evidence.map((e) => (
+                <span key={e}>{e}</span>
+              ))}
+              <span className="k-q">Two of the coach’s five signs hold. A lighter week keeps the same exercises: {HALF_RULES.toLowerCase()} Your call.</span>
+              <span className="tr-also">
+                <button type="button" className="tr-chipbtn" onClick={() => patchSettings({ lighterDismissed: today })}>
+                  Not now
+                </button>
+                <button type="button" className="tr-chipbtn on" onClick={() => patchSettings({ lighterWeek: { from: today, to: addDays(today, 6) } })}>
+                  Take it
+                </button>
+              </span>
+            </Panel>
+          )
+        )}
 
-      <div className="lv-card">
-        <div className="lv-tr-cardhead">
-          <span className="lv-card-h">Bounties</span>
-          <button type="button" className="lv-link" onClick={() => go('/football/bounties')}>
-            This week ›
-          </button>
-        </div>
-        <div className="lv-small">Training jobs sit in Football's one bounty list, with the rest. Every week has at least one.</div>
+        <TidyCards settings={settings} sessions={sessions} sets={sets} />
+
+        <Sect>Around training</Sect>
+        <Doors label="Around training">
+          <Door icon="win" ink="#f2c46d" name="Records" value={fmtInt(allRecords.length)} onClick={() => go('/records')} />
+          <Door icon="list" name="The plan" value={plan.planVersion ? `v${plan.planVersion}` : plan.name} onClick={() => go('/plan')} />
+          <Door icon="body" name="Body log" value={String((body ?? []).filter((b) => daysBetween(b.date, today) < 7).length || '–')} onClick={() => go('/body')} />
+        </Doors>
+
+        {four && <FourWeeksCard name={nameOf(tn?.session.session ?? pick)} then={four.then} rows={four.rows} />}
+
+        <RecordsCard total={allRecords.length} rows={recs.map((r) => ({ what: fmtSet(r), name: r.exercise, when: r.date === today ? 'tonight' : fmtDayMonth(r.date) }))} onAll={() => go('/records')} />
+
+        <CardsRow
+          cards={[...new Map(allExercises(plan).map((e) => [e.id, e])).values()]
+            .map((ex) => {
+              const mine = setsByEx.get(ex.id) ?? [];
+              return { ex, card: cardFor(ex, mine), back: cardBack(mine) };
+            })
+            .filter((c) => c.card.logged)
+            .sort((a, b) => TIERS.indexOf(b.card.tier) - TIERS.indexOf(a.card.tier) || a.ex.name.localeCompare(b.ex.name))
+            .map(({ ex, card, back }) => ({ key: ex.id, name: ex.name, pose: POSES[poseFor(ex)], tier: card.tier, next: card.next, seed: ex.id, back }))}
+        />
+
+        <Panel ink="#ff9a76" onClick={() => go('/football/bounties')} label="Bounties: training jobs in Football's bounty list, this week">
+          <b className="k-lb">Bounties</b>
+          <span>Training jobs sit in Football's one bounty list, with the rest. Every week has at least one.</span>
+        </Panel>
+
+        <MonthCard month={monthName} next={`1 ${nextMonth}`} m={month} film={filmDue(sessions, today)} onFilm={() => go('/film')} />
+
+        <RecentCard
+          rows={[...done]
+            .reverse()
+            .slice(0, 6)
+            .map((s) => {
+              const mine = sets.filter((x) => x.sessionId === s.id);
+              const st = sessionStats(mine, plan);
+              const mins = Math.round(((s.endedAt ?? s.startedAt) - s.startedAt) / 60000);
+              return {
+                id: s.id,
+                title: `${weekdayName(s.date)} · ${nameOf(s.session)}`,
+                sub: `${loggedLater(mine) ? 'logged later' : `${mins} min`} · ${st.sets} set${st.sets === 1 ? '' : 's'}${st.kg ? ` · ${fmtInt(st.kg)} kg moved` : ''}${s.short ? ' · short' : ''}`,
+                records: st.records,
+              };
+            })}
+          onOpen={(id) => go('/session/view', { id })}
+        />
+
+        <PlanCard name={plan.name} version={plan.planVersion} sessions={plan.sessions.map((x) => x.id)} since={plan.from} warmup={plan.warmup} rules={plan.rules ?? []} onOpen={() => go('/plan')} />
       </div>
 
-      <MonthCard month={monthName} next={`1 ${nextMonth}`} m={month} film={filmDue(sessions, today)} onFilm={() => go('/film')} />
-
-      <RecentCard
-        rows={[...done]
-          .reverse()
-          .slice(0, 6)
-          .map((s) => {
-            const mine = sets.filter((x) => x.sessionId === s.id);
-            const st = sessionStats(mine, plan);
-            const mins = Math.round(((s.endedAt ?? s.startedAt) - s.startedAt) / 60000);
-            return {
-              id: s.id,
-              title: `${weekdayName(s.date)} · ${nameOf(s.session)}`,
-              sub: `${loggedLater(mine) ? 'logged later' : `${mins} min`} · ${st.sets} set${st.sets === 1 ? '' : 's'}${st.kg ? ` · ${fmtInt(st.kg)} kg moved` : ''}${s.short ? ' · short' : ''}`,
-              records: st.records,
-            };
-          })}
-        onOpen={(id) => go('/session/view', { id })}
-      />
-
-      <PlanCard name={plan.name} version={plan.planVersion} sessions={plan.sessions.map((x) => x.id)} since={plan.from} warmup={plan.warmup} rules={plan.rules ?? []} onOpen={() => go('/plan')} />
+      {editing && (
+        <WeightSheet
+          name={statusOf(editing.id)?.name ?? editing.name}
+          kg={weightOf(editing)}
+          unit={unitLabel(editing.load, unitFor(editing, settings))}
+          step={(kg, dir) => stepWeight(editing, kg, dir, settings)}
+          note={isGymKind(editing.load) ? 'The number this machine shows. Never compared with another machine.' : 'From the dumbbells you have.'}
+          onType={isGymKind(editing.load) ? () => void typeWeight(editing, weightOf(editing), settings).then(() => setWeightFor(undefined)) : undefined}
+          onSave={(kg) => void keepWeight(editing.id, kg).then(() => setWeightFor(undefined))}
+          onClose={() => setWeightFor(undefined)}
+        />
+      )}
     </div>
   );
+}
+
+/** A weight kept for next time: used when that exercise is next started, until a set of it is logged. */
+export function keepWeight(exId: string, kg: number) {
+  return patchSettings((s) => ({ loadNext: { ...s.loadNext, [exId]: { kg, at: Date.now() } } }));
+}
+
+/** The exact number for a gym machine, and the unit its stack shows (remembered per machine). */
+async function typeWeight(ex: ExerciseDef, current: number | null, settings: Settings) {
+  const unit = unitFor(ex, settings);
+  const stacky = ex.load === 'stack' || ex.load === 'assist';
+  const res = await askChoice({
+    title: 'Next time',
+    body: ex.load === 'barbell' ? 'Total kg, bar included.' : ex.load === 'plates' ? 'Plates added, not the sled.' : 'The number this machine’s stack shows.',
+    input: { label: `In ${unitLabel(ex.load, unit)}`, value: current?.toString() ?? '', inputMode: 'decimal' },
+    options: [
+      { id: 'save', label: 'Keep it', primary: true },
+      ...(stacky ? (['kg', 'lb', 'stack'] as const).map((u) => ({ id: `unit:${u}`, label: u === 'stack' ? 'This stack shows plain numbers' : `This stack is in ${u}` })) : []),
+    ],
+  });
+  if (!res) return;
+  if (res.id.startsWith('unit:')) await patchSettings((s) => ({ machineUnits: { ...s.machineUnits, [machineKey(ex)]: res.id.slice(5) as 'kg' | 'lb' | 'stack' } }));
+  const v = parseFloat(res.text);
+  if (Number.isFinite(v) && v >= 0) await keepWeight(ex.id, v);
 }
 
 /** Housekeeping the log needs: sets that look unfinished, and exercises that keep getting left out. */
@@ -289,47 +424,47 @@ function TidyCards({ settings, sessions, sets }: { settings: Settings; sessions:
   return (
     <>
       {odd.length > 0 && (
-        <div className="lv-card">
-          <div className="lbl">Sets that look unfinished</div>
-          <div className="t14 lh">
+        <Panel ink="#e8d27a">
+          <b className="k-lb">Sets that look unfinished</b>
+          <span>
             {odd.length} saved set{odd.length === 1 ? '' : 's'} look{odd.length === 1 ? 's' : ''} like a placeholder: 1 rep with no weight, or under a third of the sets around {odd.length === 1 ? 'it' : 'them'}. They count toward records and volume until skipped.
-          </div>
-          <div className="t13 q lh">{lines.join(' · ')}{odd.length > lines.length ? ` · and ${odd.length - lines.length} more` : ''}</div>
-          <div className="row" style={{ gap: 10 }}>
-            <button type="button" className="btn ghost grow" onClick={() => void patchSettings((s) => ({ keptSets: [...(s.keptSets ?? []), ...odd.map((x) => x.id)] }))}>
+          </span>
+          <span className="k-q">{lines.join(' · ')}{odd.length > lines.length ? ` · and ${odd.length - lines.length} more` : ''}</span>
+          <span className="tr-also">
+            <button type="button" className="tr-chipbtn" onClick={() => void patchSettings((s) => ({ keptSets: [...(s.keptSets ?? []), ...odd.map((x) => x.id)] }))}>
               They’re real
             </button>
             <button
               type="button"
-              className="btn grow"
+              className="tr-chipbtn on"
               onClick={async () => {
                 if (await askConfirm({ title: `Mark ${odd.length} set${odd.length === 1 ? '' : 's'} skipped?`, body: 'They stay in the session as skipped and leave records, volume and progression.', yes: 'Mark skipped' })) await markSetsSkipped(odd.map((x) => x.id));
               }}
             >
               Mark skipped
             </button>
-          </div>
-        </div>
+          </span>
+        </Panel>
       )}
       {left.map((n) => {
         const flagged = plan.flags.some((f) => f.swap && (f.swap.from === n.exerciseId || f.swap.to === n.exerciseId));
         return (
-          <div key={n.exerciseId} className="lv-card">
-            <div className="lbl">Always skipped</div>
-            <div className="t15 lh">
+          <Panel key={n.exerciseId} ink="#e8d27a">
+            <b className="k-lb">Always skipped</b>
+            <span>
               {n.name} was left out of the last {n.missed} {findSession(plan, n.sessionId)?.name ?? n.sessionId} sessions. Move it, swap it, or drop it from the plan?
-            </div>
-            <div className="row wrap" style={{ gap: 8 }}>
-              <button type="button" className="btn ghost grow" onClick={() => void patchSettings((s) => ({ neglectDismissed: { ...s.neglectDismissed, [n.exerciseId]: Date.now() } }))}>
+            </span>
+            <span className="tr-also">
+              <button type="button" className="tr-chipbtn" onClick={() => void patchSettings((s) => ({ neglectDismissed: { ...s.neglectDismissed, [n.exerciseId]: Date.now() } }))}>
                 Keep it
               </button>
-              <button type="button" className="btn ghost grow" onClick={() => go('/plan')}>
+              <button type="button" className="tr-chipbtn" onClick={() => go('/plan')}>
                 Move or swap
               </button>
               {!flagged && (
                 <button
                   type="button"
-                  className="btn grow"
+                  className="tr-chipbtn"
                   onClick={async () => {
                     if (!(await askConfirm({ title: `Drop ${n.name} from the plan?`, body: 'Its history stays. You can add it back in the plan editor.', yes: 'Drop it' }))) return;
                     await patchSettings((s) => (s.plan ? { plan: { ...s.plan, sessions: s.plan.sessions.map((x) => (x.id === n.sessionId ? removeExercise(x, n.exerciseId) : x)) } } : {}));
@@ -338,11 +473,10 @@ function TidyCards({ settings, sessions, sets }: { settings: Settings; sessions:
                   Drop it
                 </button>
               )}
-            </div>
-          </div>
+            </span>
+          </Panel>
         );
       })}
     </>
   );
 }
-
