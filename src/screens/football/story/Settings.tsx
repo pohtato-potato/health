@@ -94,7 +94,7 @@ export function SettingsView({ s, onBuzz = (v) => void setFbSetting('buzz', v), 
     <>
       <section className="fb-card fb-setrow" aria-label="Match times">
         <span className="fb-lb">Match times</span>
-        <p className="fb-s">Each day’s match plays the next morning, once the day is done, and waits for you. Closing a past day plays it straight away. One match a night; double-headers play two from the same night.</p>
+        <p className="fb-s">Each day’s match plays the next morning, once the day is done, and waits for you. Closing a past day plays it straight away. One match a night; double-headers play two from the same night. The switch below can make it three for this season.</p>
       </section>
       <PaceRow s={s} />
       <section className="fb-card fb-setrow" aria-label="Which habit plays which axis">

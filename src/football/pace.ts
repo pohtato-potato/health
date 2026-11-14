@@ -66,7 +66,7 @@ export function paceNight(day: number, breakBefore: (d: number) => boolean): { m
     if (d > day && breakBefore(d)) break;
     const p = plan[d - 1];
     if (p.kind === 'league') matchdays.push(p.matchday!);
-    else if (p.round) rounds.push(p.round);
+    else if (p.round) rounds.push(`${p.kind === 'bigcup' ? 'the Big Cup' : p.kind === 'tiercup' ? 'the tier cup' : 'cup night'}: ${p.round}`);
   }
   return { matchdays, rounds };
 }

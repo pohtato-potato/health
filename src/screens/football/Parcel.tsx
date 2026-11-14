@@ -173,7 +173,7 @@ export function NightResults({ ms }: { ms: StoredMatch[] }) {
                   <button type="button" className="md-btn ghost sm" onClick={() => void storedGate.skip(m)}>Skip</button>
                 </span>
               ) : (
-                <span className="md-night-score"><b>{h[0]}–{h[1]}</b> {RESULT_WORD[m.result]}{m.pens ? `, ${m.pens[0]}–${m.pens[1]} on penalties` : ''} <button type="button" className="md-btn ghost sm" onClick={() => go('/football/match', { id: m.id })}>Watch it</button></span>
+                <span className="md-night-score"><span><b>{h[0]}–{h[1]}</b> {RESULT_WORD[m.result]}{m.pens ? `, ${m.pens[0]}–${m.pens[1]} on penalties` : ''}</span> <button type="button" className="md-btn ghost sm" onClick={() => go('/football/match', { id: m.id })}>Watch it</button></span>
               )}
             </li>
           );

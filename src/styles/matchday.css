@@ -75,7 +75,7 @@
 .md-night li { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid rgba(237,230,218,.2); }
 .md-night-what { font-size: 16px; }
 .md-night-btns { display: flex; gap: 8px; } .md-night-btns > * { flex: 1; }
-.md-night-score { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 16px; }
+.md-night-score { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 16px; }
 .md-night-score b { font: 600 20px var(--fr); }
 .md-btn.sm { min-height: 44px; font-size: 16px; padding: 0 14px; }
-.md-night-score .md-btn.sm { width: auto; margin-left: auto; }
+.md-night-score .md-btn.sm { width: auto; }

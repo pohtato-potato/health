@@ -59,7 +59,7 @@ describe('the rules', () => {
     expect(paceWeekDone(p, '2026-11-08', daysBetween)).toBe(false);
   });
   it('the night ahead: three matchdays, cup rounds on the way, and a stop before a break', () => {
-    expect(paceNight(4, () => false)).toEqual({ matchdays: [4, 5, 6], rounds: ['Last 128 and Last 64'] });
+    expect(paceNight(4, () => false)).toEqual({ matchdays: [4, 5, 6], rounds: ['the Big Cup: Last 128 and Last 64'] });
     expect(paceNight(12, (d) => d === 14).matchdays).toEqual([10, 11]);
     expect(matchdayList([4, 5, 6])).toBe('Matchdays 4, 5 and 6');
     expect(matchdayList([9])).toBe('Matchday 9');
