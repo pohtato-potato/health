@@ -28,6 +28,11 @@ async function logDays() {
     });
   }
 }
+/** The save without Fork 4's own records (congress, ballot, bonds, scenes seen), which a version-1 save now gains. */
+const withoutFork4 = (save: object) => {
+  const { congress: _c, ballot: _b, bonds: _o, castSeen: _s, ...rest } = save as Record<string, unknown>;
+  return rest;
+};
 const digest = (x: unknown) => createHash('sha256').update(JSON.stringify(x)).digest('hex').slice(0, 16);
 
 describe('a version-1 save replays as before', { timeout: 300_000 }, () => {
@@ -49,7 +54,8 @@ describe('a version-1 save replays as before', { timeout: 300_000 }, () => {
       events: digest(matches.map((m) => m.events)),
       seasons: digest(seasons),
       clubs: digest(clubs),
-      save: digest({ ...save }),
+      // Fork 4 (congress and the cast) adds its own keys to the save; everything else in it must not move.
+      save: digest(withoutFork4(save)),
       count: String(matches.length),
     };
     if (process.env.WORLD1_PRINT) console.log(JSON.stringify(print, null, 2));

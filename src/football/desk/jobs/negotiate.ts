@@ -12,7 +12,8 @@ import {
 } from '../../market/market';
 import { MOVE } from '../../market/relations';
 import type { Tier } from '../../types';
-import type { DeskView, Die, Effect, JobDef, Target } from '../types';
+import type { DeskState, DeskView, Die, Effect, JobDef, Target } from '../types';
+import { perkValue, type HeldPerk } from '../../cast/bonds';
 import { leadTaken, studiedIn } from './leads';
 
 export const SPONSOR_PREFIX = 'sp:';
@@ -54,7 +55,7 @@ export function talkCtx(v: DeskView, talk: string): TalkCtx | undefined {
   const lead = m.leads.find((l) => l.key === talk);
   const def = lead && loanById(lead.loan);
   if (!lead || !def) return undefined;
-  const opening = openingLoan(def.tier, (m.ownStage ?? m.ownTier) as Tier, lead.opinion);
+  const opening = openingLoan(def.tier, (m.ownStage ?? m.ownTier) as Tier, lead.opinion, m.feeShare ?? 1);
   const studied = studiedIn(v, talk);
   return {
     talk, kind: 'loan', name: def.name, who: lead.clubName, club: lead.club, loan: lead.loan, opinion: lead.opinion, poach: lead.poach,
@@ -178,3 +179,18 @@ export function dayInWords(d: DayKey): string {
   return `the ${n}${s}`;
 }
 export const untilFor = (date: DayKey, days: number) => dayInWords(addDays(date, days));
+
+/**
+ * The scout's `negotiate-reroll` perk: once a talk, the last round's reply can be taken back, when its push failed
+ * (a deal is never undone). Returns the spend to take back, or undefined. The die stays spent; the round, its mood
+ * drop and any cooling it caused no longer count.
+ */
+export function takeBackable(desk: DeskState | undefined, perks: HeldPerk[] | undefined): string | undefined {
+  if (!desk || perkValue(perks ?? [], 'negotiate-reroll') <= 0) return undefined;
+  const backs = new Set(desk.backs ?? []);
+  const rounds = desk.spends.filter((s) => !backs.has(s.id)).flatMap((s) => s.effects.flatMap((e) => (e.kind === 'talk' ? [{ s, e }] : [])));
+  const last = rounds[rounds.length - 1];
+  if (!last || last.e.hit || last.e.end === 'deal') return undefined;
+  const used = desk.spends.some((s) => backs.has(s.id) && s.effects.some((e) => e.kind === 'talk' && e.talk === last.e.talk && e.n === last.e.n));
+  return used ? undefined : last.s.id;
+}

@@ -1,5 +1,7 @@
 // Matchday depth (spec 2026-11-12 §2.4–2.6): the owner's taps around the league match. The plan for a day (tempo,
 // width, a tactic card; the tactic itself stays with `setTactic`) and the pick of three after a win.
+import { emptyBonds } from '../cast/bonds';
+import type { CastId } from '../content/desk/types';
 import { db } from '../../db/db';
 import { addDays, type DayKey } from '../../domain/dates';
 import { CARD_MAX, type MatchdayPlan } from '../matchday';
@@ -28,6 +30,9 @@ export async function choosePick(matchId: string, i: number): Promise<boolean> {
     if (t.kind === 'card') {
       if ((save.tacticCards ?? []).length >= CARD_MAX) return false;
       save.tacticCards = [...(save.tacticCards ?? []), t.axis];
+    } else if (t.kind === 'bond') {
+      const b = save.bonds ?? emptyBonds(m.date);
+      save.bonds = { ...b, picks: { ...b.picks, [t.member]: (b.picks[t.member as CastId] ?? 0) + t.n } };
     } else if (t.kind === 'scout') {
       save.scouted = [...new Set([...(save.scouted ?? []), t.club])];
     } else {

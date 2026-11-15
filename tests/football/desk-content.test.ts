@@ -1,6 +1,7 @@
 // Step 4's content (the desk, the cast, the fogged world, the congress, the coaching course) is well
 // formed: every club covered, every job and axis voiced, every question with exactly one answer, and
 // the standing rules hold in every line.
+import { WORLD_CLUBS } from '../../src/football/data/world';
 import { describe, expect, it } from 'vitest';
 import { ABROAD } from '../../src/football/data/continental';
 import { CLUBS, LEAGUE } from '../../src/football/data/load';
@@ -120,7 +121,8 @@ describe('owners, regions and the congress', () => {
     expect(Object.keys(D.SEATS).length).toBe(LEAGUE.clubs.length);
     for (const k of ['fan-owned', 'state-fund', 'old-family', 'data-company'] as const)
       expect(Object.values(D.SEATS).some((s) => s.owner === k), k).toBe(true);
-    for (const r of regions) expect(Object.values(D.SEATS).some((s) => s.region === r), r).toBe(true);
+    // Every region seats someone: league.json's clubs, or world 2's real clubs (the new regions).
+    for (const r of regions) expect(Object.values(D.SEATS).some((s) => s.region === r) || WORLD_CLUBS.some((c) => c.seat.region === r), r).toBe(true);
   });
   it('has twenty motions, each a distinct twist, with valid leans', () => {
     expect(D.MOTIONS).toHaveLength(20);

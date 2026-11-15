@@ -6,11 +6,13 @@ import { hashSeed, rng, shuffle } from '../rng';
 import { newCard, titleOf } from './cards';
 import { clubSpec, SIGNATURE_OF, type ClubSpec } from './clubs';
 import { eventById, EVENTS, type EventFx } from './events';
-import { heirloomById, HEIRLOOMS, type HeirloomId } from './heirlooms';
+import { CAST_HEIRLOOMS, heirloomById, HEIRLOOMS, type HeirloomId } from './heirlooms';
 import { cupByN, twists } from './ladder';
 import { makeMap, type CupMap, type StopKind } from './map';
 import { combosOf, newMatch, outcome, TUNE, type MatchMods, type MatchState } from './match';
-import { POOL } from './pool';
+import { MEAL_CARD, POOL } from './pool';
+/** The card pool a run draws from: the cast's meal card only when the run carries it. */
+const poolOf = (r: RunState) => POOL.filter((d) => d.id !== MEAL_CARD || r.cast?.includes(MEAL_CARD));
 import type { AnyKind, Card, Level } from './types';
 
 /** A club as the run needs it: the league's data with the rating it plays at in the league. */
@@ -58,6 +60,10 @@ export interface RunState {
   over?: 'won' | 'lost' | 'abandoned';
   /** Extra card choices after a win: the manager's eye from the desk's coaching course, set when the run starts. */
   eye?: number;
+  /** The cast's items this run carries in its pool: heirloom ids and the meal card (Fork 4). */
+  cast?: string[];
+  /** The tape gun has been used this run. */
+  tapeUsed?: boolean;
 }
 
 const copy = (r: RunState): RunState => JSON.parse(JSON.stringify(r)) as RunState;
@@ -67,7 +73,7 @@ const NO_UPGRADE: AnyKind[] = ['punt', 'total', 'loan', 'thunderbolt'];
 export const canUpgrade = (c: Card) => c.level !== 'great' && !NO_UPGRADE.includes(c.kind);
 const up = (lv: Level): Level => (lv === 'basic' ? 'good' : 'great');
 
-export function startRun(o: { cup: number; seed: number; date: DayKey; now: number; deck: Card[]; eye?: number }): RunState {
+export function startRun(o: { cup: number; seed: number; date: DayKey; now: number; deck: Card[]; eye?: number; cast?: string[] }): RunState {
   const tw = twists(o.cup);
   const deck = o.deck.map((c) => ({ ...c }));
   if (tw.extraPunt) deck.push({ id: 'cup-punt', kind: 'punt', level: 'basic', axis: null });
@@ -77,6 +83,7 @@ export function startRun(o: { cup: number; seed: number; date: DayKey; now: numb
     seenEvents: [], met: [], lore: [],
     stats: { played: 0, won: 0, goalsFor: 0, goalsAgainst: 0, combos: {}, beaten: [], cards: 0 },
     ...(o.eye ? { eye: o.eye } : {}),
+    ...(o.cast?.length ? { cast: [...o.cast] } : {}),
   };
 }
 
@@ -134,7 +141,8 @@ export function enter(r0: RunState, node: number, ctx: RunCtx): RunState {
   if (n.kind === 'match' || n.kind === 'elite' || n.kind === 'final') {
     const club = clubFor(r, node, ctx);
     const elite = n.kind !== 'match' || tw.allElite;
-    const mods: MatchMods = { heir: [...r.heirlooms], threatPlus: tw.threatPlus, lineMul: elite ? tw.eliteLine : 1, ...r.gift };
+    const mods: MatchMods = { heir: [...r.heirlooms], threatPlus: tw.threatPlus, lineMul: elite ? tw.eliteLine : 1, ...r.gift,
+      ...(r.heirlooms.includes('tape-gun') && !r.tapeUsed ? { tapeGun: true } : {}), ...(isLastFinal(r, node) ? { lastMatch: true } : {}) };
     r.gift = undefined;
     r.met.push(club.id);
     const match = newMatch({ seed: hashSeed('cup-match', String(r.seed), String(node)), deck: r.deck, club, fitness: r.fitness, mods });
@@ -174,6 +182,7 @@ export function updateMatch(r0: RunState, match: MatchState): RunState {
   s.cards += match.played ?? 0;
   for (const c of combosOf(match)) s.combos[c] = (s.combos[c] ?? 0) + 1;
   r.fitness = match.fitness;
+  if (match.tapeUsed) r.tapeUsed = true;
   if (o === 'L') { r.over = 'lost'; return r; }
   s.won++;
   if (!s.beaten.includes(st.club.id)) s.beaten.push(st.club.id);
@@ -200,12 +209,13 @@ function levelFrom(x: number, w: number[]): Level { return x < w[0] ? 'basic' : 
 function offerCards(r: RunState, node: number, n: number, w: number[]): Card[] {
   const rr = rand(r, 'offer', node);
   const owned = new Set(r.deck.map((c) => c.kind));
-  const fresh = POOL.filter((d) => !owned.has(d.id));
-  const pick = shuffle(rr, fresh.length >= n ? fresh : POOL).slice(0, n);
+  const pool = poolOf(r);
+  const fresh = pool.filter((d) => !owned.has(d.id));
+  const pick = shuffle(rr, fresh.length >= n ? fresh : pool).slice(0, n);
   return pick.map((d, i) => newCard(`o${node}-${i}`, d.id, levelFrom(rr(), w)));
 }
 function heirloomFor(r: RunState, node: number): HeirloomId | undefined {
-  const left = HEIRLOOMS.filter((h) => !r.heirlooms.includes(h.id));
+  const left = HEIRLOOMS.filter((h) => !r.heirlooms.includes(h.id) && (!CAST_HEIRLOOMS.includes(h.id) || r.cast?.includes(h.id)));
   if (!left.length) return undefined;
   return left[Math.floor(rand(r, 'heir', node)() * left.length)].id;
 }
@@ -309,7 +319,8 @@ export function choose(r0: RunState, i: number): RunState {
   if (f.fitness) r.fitness = Math.max(0, Math.min(maxFit(), r.fitness + f.fitness));
   if (f.card) { addCard(r, newCard('e', f.card.kind, f.card.level)); got.push(`${titleOf(f.card.kind)} (${f.card.level})`); }
   if (f.randomCard) {
-    const d = POOL[Math.floor(rand(r, 'ecard', s.node)() * POOL.length)];
+    const pool = poolOf(r);
+    const d = pool[Math.floor(rand(r, 'ecard', s.node)() * pool.length)];
     addCard(r, newCard('e', d.id, f.randomCard)); got.push(`${d.title} (${f.randomCard})`);
   }
   if (f.heirloom) { const h = heirloomFor(r, s.node + 2000); if (h) { r.heirlooms.push(h); got.push(heirloomById(h)!.name); } }

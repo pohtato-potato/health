@@ -1,5 +1,6 @@
 // Matchday §4–§5 (Fork B): the morning parcel, the ground at night and the target talks, read and written.
 // Football writes only to its own tables, except the target talks, which set the Health target the owner signs.
+import { castNote, type CastNote } from './cast';
 import { db } from '../../db/db';
 import { getSettings, setTargets } from '../../db/actions';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -89,6 +90,8 @@ export interface Parcel {
   dice: Die[];
   /** Scouts back this morning (Fork 2, p3-scout): trips that ended yesterday, and loan targets a 6 turned up. */
   scouts: ReturnType<typeof morningReports>;
+  /** Fork 4: the cast's note, and a rank scene waiting. */
+  cast?: CastNote;
   today: Pick<Day, 'date' | 'status' | 'physio'>;
   /** When the day was closed: shown on the night page only. */
   sealAt?: number;
@@ -118,16 +121,18 @@ export async function loadParcel(t: Tonight): Promise<Parcel> {
   const waiting = t.save.paused;
   const dice = diceFrozen(t.save, h, date);
   const scouts = morningReports(t.save, date, (await db.fbSeasons.get(t.save.season))?.tierOf);
+  const cast = castNote(t.save, date);
   const tiles = parcelTiles({
     result: Boolean(waiting || result),
     table: physioDue(day),
     talks: talks.length > 0,
     scout: Boolean(t.morning.scout) || scouts.reports.length > 0 || scouts.leads.length > 0,
     academy: t.morning.grew.length > 0,
+    cast: Boolean(cast),
     dice: dice.length > 0,
     pack: packs > 0,
   });
-  return { tiles, due: parcelDue(aroundOf(t.save).parcel, date, shut, tiles), shut, waiting, result, others, talks, packs, dice, scouts, today: day, sealAt: day.seal?.at };
+  return { tiles, due: parcelDue(aroundOf(t.save).parcel, date, shut, tiles), shut, waiting, result, others, talks, packs, dice, scouts, cast, today: day, sealAt: day.seal?.at };
 }
 
 /** True from Close the day until the 4 am roll-over: packs and results wait for the morning. */

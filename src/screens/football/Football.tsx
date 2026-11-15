@@ -31,6 +31,7 @@ import { loadParcel } from '../../football/store/around';
 import { NightGround, ParcelView } from './Parcel';
 import { DeskRoute } from './desk/Desk';
 import { MarketRoute } from './desk/Market';
+import { CastRoute, CongressRoute } from './desk/Congress';
 import { Atlas } from './world/Atlas';
 import { Redrawn, RedrawnDoor } from './world/Redrawn';
 import type { StoredMatch } from '../../football/store/tables';
@@ -152,6 +153,8 @@ export function Football() {
   if (path === '/football/redrawn') return <FootballHome section="tonight" inner={{ title: 'New world', back: 'Tonight', to: '/football' }}><Redrawn /></FootballHome>;
   if (path === '/football/atlas') return <FootballHome section="league" inner={{ title: 'The atlas', back: 'League', to: '/football/league' }}><Atlas /></FootballHome>;
   if (path === '/football/club-page') return <FootballHome section="league" inner={{ title: 'A club', back: 'League', to: '/football/league' }}><ClubPage id={params.get('id') ?? ''} wiki={params.get('wiki') === '1'} /></FootballHome>;
+  if (path === '/football/congress') return <CongressRoute />;
+  if (path === '/football/cast') return <CastRoute />;
   if (path === '/football/wrapped') return <WrappedRoute season={Number(params.get('season') ?? 1)} />;
   if (path === '/football/rival') return <FootballHome section="story" inner={{ title: 'A rival', back: 'Rivals', to: '/football/story', params: { view: 'rivals' }, help: storyHow(legendName(save.rivals), trackOf(worldOf(save))) }}><RivalRoute id={params.get('id') ?? ''} /></FootballHome>;
   if (path === '/football/player' && params.get('id')) return <PlayerFrame id={params.get('id')!} />;

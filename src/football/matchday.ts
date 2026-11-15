@@ -1,5 +1,6 @@
 // Matchday depth (spec 2026-11-12 §2.4–2.6). Pure: the plan (tactic, tempo, width), the read against a scouted club,
 // what the engine is handed for the plan per half, and the pick of three after a win. Small by design.
+import { CAST } from './content/desk/cast';
 import type { MatchPlan, Tempo } from './engine';
 import { hashSeed, rng, shuffle } from './rng';
 import { TACTIC_FX, TACTIC_NAME, type Tactic } from './rotation/night';
@@ -79,13 +80,14 @@ export function enginePlan(o: { baked: Tactic; plan: MatchdayPlan; half2?: Tacti
 }
 
 /** One tile of the pick of three. A bond point joins the pool with the desk and the cast (step 4): the seam is here. */
-export type PickTile = { kind: 'card'; axis: Axis } | { kind: 'scout'; club: string } | { kind: 'research'; n: number };
+export type PickTile = { kind: 'card'; axis: Axis } | { kind: 'scout'; club: string } | { kind: 'research'; n: number } | { kind: 'bond'; member: string; n: number };
 /**
  * Three tiles after a win, seeded by the day: a tactic card (+1 on a named axis in a later league match of your
  * choosing), a scouting lead (one club in your division marked scouted), research +2. Never league points.
  * `unscouted`: clubs in your division you have not scouted. `held`: tactic cards already held.
  */
-export function pickOffer(seed: string, unscouted: string[], held: number): PickTile[] {
+/** `cast`: the cast's ids (Fork 4): a bond tile joins the pool, and three of the four are offered. */
+export function pickOffer(seed: string, unscouted: string[], held: number, cast: string[] = []): PickTile[] {
   const r = rng(hashSeed('pick-of-three', seed));
   const clubs = shuffle(r, unscouted);
   const axes = shuffle(r, AXES);
@@ -95,9 +97,15 @@ export function pickOffer(seed: string, unscouted: string[], held: number): Pick
   tiles.push({ kind: 'research', n: 2 });
   // A full hand of cards: a second lead instead, if there is a club left to scout.
   if (tiles.length < 3 && held >= CARD_MAX && clubs[1]) tiles.splice(1, 0, { kind: 'scout', club: clubs[1] });
-  return shuffle(r, tiles);
+  if (!cast.length) return shuffle(r, tiles);
+  const rb = rng(hashSeed('pick-of-three', seed, 'bond'));
+  tiles.push({ kind: 'bond', member: cast[Math.floor(rb() * cast.length)], n: BOND_PICK });
+  return shuffle(rb, tiles).slice(0, 3);
 }
+/** Bond points from a bond tile: the same as PICK_POINTS in the cast's bond rules. */
+export const BOND_PICK = 2;
 export const pickWords = (t: PickTile, name: (id: string) => string): { title: string; line: string } =>
+  t.kind === 'bond' ? { title: 'Time with the cast', line: `+${t.n} bond with ${CAST.find((c) => c.id === t.member)?.name ?? name(t.member)}` } :
   t.kind === 'card' ? { title: 'A tactic card', line: `+1 ${t.axis} in a league match of your choosing` }
     : t.kind === 'scout' ? { title: 'A scouting lead', line: `${name(t.club)}: their style and weak side` }
       : { title: 'Research', line: `+${t.n} toward your next tech` };

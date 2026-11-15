@@ -1,6 +1,7 @@
 // Watch tonight's opponent (spec §3): one die, no clock. Marks tonight's league opponent scouted for the tactics
 // board through Fork A's read (`matchday.ts` readOf): style and weak side on a 3 or more, style only on a 1 or 2.
 import { qualityOf, type JobDef } from '../types';
+import { perkValue } from '../../cast/bonds';
 
 export const watch: JobDef = {
   id: 'watch',
@@ -13,13 +14,14 @@ export const watch: JobDef = {
   }),
   blocked: (v) => (!v.opp ? 'No league match tonight' : v.oppKnown === 'full' ? 'Already scouted' : undefined),
   preview(die, v) {
-    const full = qualityOf(die.value) !== 'badly';
+    // The cast's `watch-both` perk: style and weak side on any die.
+    const full = qualityOf(die.value) !== 'badly' || perkValue(v.perks ?? [], 'watch-both') > 0;
     const name = v.opp?.name ?? 'Tonight’s opponent';
     return {
       head: full ? 'Done.' : 'Half a look.',
       line: full ? `${name}: their style and their weak side, on the tactics board tonight.` : `${name}: their style only. The weak side stays a guess.`,
       gain: full ? 'Both' : 'Style',
-      others: full ? 'A 1 or 2 would show their style only.' : 'A 3 or more would show their weak side too.',
+      others: full ? (qualityOf(die.value) === 'badly' ? 'Any die shows both, with the cast’s help.' : perkValue(v.perks ?? [], 'watch-both') > 0 ? 'Any die shows both, with the cast’s help.' : 'A 1 or 2 would show their style only.') : 'A 3 or more would show their weak side too.',
       effects: v.opp ? [{ kind: 'watch', club: v.opp.id, level: full ? 'full' : 'style' }] : [],
     };
   },

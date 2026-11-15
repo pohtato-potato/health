@@ -78,3 +78,28 @@
 .md-btn[aria-disabled='true'] { opacity: .6; }
 .mk-card .md-row b { text-align: right; }
 .mk-table { margin: 0; font-weight: 700; }
+
+/* Fork 4 on the kit: the congress hall and the cast (filled panels from kit.css; these only draw what is inside them). */
+.cg-motion { gap: 10px; }
+.cg-motion .k-title { font-size: 22px; }
+.cg-seats { display: flex; gap: 3px; height: 14px; border-radius: 7px; overflow: hidden; }
+.cg-bar { flex-basis: 0; min-width: 0; }
+.cg-bar.for { background: #8fdcb6; box-shadow: 0 0 10px #8fdcb6; }
+.cg-bar.ag { background: #ff9a76; box-shadow: 0 0 10px #ff9a76; }
+.cg-bar.abs { background: rgba(237, 230, 218, .25); }
+.cg-count { font: 600 20px/1.1 var(--serif); text-align: right; white-space: nowrap; }
+.cg-count .k-q { font: 400 15px var(--sans); }
+.cg-vote { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.cg-vote .k-pill { padding: 0 6px; }
+.cg-mrow { display: flex; gap: 12px; align-items: center; width: 100%; }
+.cg-sil { flex: none; width: 48px; height: 48px; border-radius: 50% 50% 14px 14px; background: radial-gradient(circle at 50% 32%, rgba(237,230,218,.5) 0 22%, transparent 23%),
+  radial-gradient(ellipse at 50% 100%, rgba(237,230,218,.4) 0 48%, transparent 49%); border: 1.5px solid var(--ink, #f4aedb); }
+.cg-sil.big { width: 96px; height: 96px; box-shadow: 0 0 30px -6px var(--ink); }
+.cg-rank { font: 600 34px/1 var(--serif); color: var(--ink); text-shadow: 0 0 14px var(--ink); }
+.cg-rank.sm { font-size: 24px; min-width: 28px; }
+.cg-pips { display: flex; gap: 5px; margin: 4px 0; }
+.cg-pips i { display: block; flex: 1; max-width: 22px; height: 8px; border-radius: 4px; background: rgba(237, 230, 218, .25); }
+.cg-lead { display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; }
+.cg-big { font: 600 88px/.9 var(--serif); color: #93c3dc; text-shadow: 0 0 24px #93c3dc; animation: cg-land .7s cubic-bezier(.2, 1.4, .4, 1) both; }
+.cg-scene { margin: 0; font-size: 17px; line-height: 1.5; }
+@keyframes cg-land { from { transform: scale(1.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }

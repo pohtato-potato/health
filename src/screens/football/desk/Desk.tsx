@@ -17,6 +17,9 @@ import type { HowThisWorks } from '../../../ui/kit/Kit';
 import { CORAL, DESK_HOW, GREEN, Note, PanelTop } from '../club/Bits';
 import { liveTalk } from '../../../football/desk/jobs/negotiate';
 import { TalkPage } from './Market';
+import { scenesWaiting } from '../../../football/store/cast';
+import { castById } from '../../../football/cast/bonds';
+import type { CastId } from '../../../football/content/desk/types';
 import '../../../styles/matchday.css';
 import '../../../styles/desk.css';
 import '../../../styles/club.css';
@@ -27,6 +30,8 @@ const SECTION: Record<string, string> = { quant: 'Quant', verbal: 'Verbal', lr: 
 const sec = (x?: string) => (x ? SECTION[x] ?? x : '');
 /** A long list of targets (the scout's clubs) shows this many until asked for all. */
 const TARGETS_SHOWN = 8;
+/** The cast's own colour (the parcel's cast tile, the cast pages). */
+const CAST_INK = '#f4aedb';
 const ink = (axis: Die['axis']) => ({ '--ink': AXIS_INK[axis] }) as CSSProperties;
 
 /** The job's drawing, with its ring when it is a clock (d3-home). */
@@ -42,6 +47,8 @@ function JobArt({ id, ring, colour }: { id: JobId; ring?: { filled: number; size
     scout: 'M12 22 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M20 22 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M14 18 L16 12 H24 L26 18',
     study: 'M13 12 H24 L28 16 V29 H13 Z M24 12 V16 H28 M16 20 H25 M16 24 H22',
     negotiate: 'M10 22 L15 17 L20 20 L25 17 L30 22 M15 17 L12 14 M25 17 L28 14 M17 23 L20 26 L23 23',
+    lobby: 'M12 29 H28 M14 29 V19 M20 29 V19 M26 29 V19 M11 19 H29 L20 12 Z',
+    cast: 'M14 18 a3 3 0 1 0 0.01 0 M26 18 a3 3 0 1 0 0.01 0 M9 29 Q14 21 19 29 M21 29 Q26 21 31 29',
   };
   return (
     <svg className="dk-art" viewBox="0 0 40 40" style={{ '--ink': colour } as CSSProperties} aria-hidden="true">
@@ -128,6 +135,8 @@ export function DeskRoute() {
  * fifth job never sits under the tray, and nothing is pinned over the list. */
 function DeskHome({ m }: { m: DeskModel }) {
   const [held, setHeld] = useState<Die | undefined>();
+  const t = useTonight();
+  const waiting = t ? scenesWaiting(t.save)[0] : undefined;
   const jobs = jobsForDesk(m.view);
   // One list for the count and the tray, so a dimmed die and the number always agree.
   const tray = trayOf(m.dice, spendsOn(m.desk, m.date));
@@ -153,6 +162,7 @@ function DeskHome({ m }: { m: DeskModel }) {
         </>
       )}
       {m.courseOpen && <Action wide onClick={() => go('/football/desk/course', { spend: m.courseOpen! })}>Finish today’s course</Action>}
+      {waiting && <SceneDoor scene={waiting} />}
       <Sect>On your desk</Sect>
       <div className="kb-rows">
         {jobs.map((j) => {
@@ -208,6 +218,7 @@ function SpendPage({ m, def, first, pick }: { m: DeskModel; def: JobDef; first?:
           </span>
         </Panel>
         {def.id !== 'watch' && <Note>{def.id === 'column' ? 'It runs in tomorrow’s paper.' : def.id === 'scout' ? 'A scout’s report comes with the morning parcel.' : def.id === 'study' ? 'It shows in the loan market now.' : 'It counts when the day plays, at 4 am. The desk shows it now.'}</Note>}
+        {def.id === 'cast' && <SceneDoor replace />}
         <Action wide onClick={() => go('/football/desk', undefined, { replace: true })}>Back to the desk</Action>
       </Page>
     );
@@ -247,7 +258,18 @@ function SpendPage({ m, def, first, pick }: { m: DeskModel; def: JobDef; first?:
   );
 }
 
-/** The manager's eye, and the owner's own questions: shown with the coaching course. */
+/** After time with the cast: a rank reached today shows its scene straight away. */
+function SceneDoor({ scene, replace }: { scene?: { member: CastId; rank: number }; replace?: boolean }) {
+  const t = useTonight();
+  const w = scene ?? (t ? scenesWaiting(t.save)[0] : undefined);
+  if (!w) return null;
+  return (
+    <Panel ink={CAST_INK} onClick={() => go('/football/cast', { scene: `${w.member}:${w.rank}` }, replace ? { replace: true } : undefined)}>
+      <span className="k-col"><b>Rank {w.rank} with {castById(w.member)!.name}</b><span className="k-q">A new scene is waiting</span></span>
+    </Panel>
+  );
+}
+
 function EyeNote({ passes }: { passes: number }) {
   const mine = useMineCount();
   const more = eyeChoices(passes), next = toNextEye(passes);

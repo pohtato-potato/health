@@ -27,6 +27,11 @@ export interface EndOpts {
   pool: { id: string; rating: number }[];
   /** Brabo's simulated win rate (0–1) in a division, for the level check. Absent: no check. */
   rateIn?: (d: Division) => number;
+  /**
+   * The congress's `four-up` (ledger O34): 4 moves the top three up with the winner of a playoff between 4th and 7th,
+   * and the bottom four down (and four out of the last division to the pool). Absent or 3: the usual rules.
+   */
+  upDown?: 3 | 4;
 }
 
 /** Pool clubs rated nearest a band: by distance to it, then the higher rating, then the id. */
@@ -39,13 +44,14 @@ export function seasonEnd2(tables: Record<Division, Row[]>, playoffWinners: Part
   const divs = Object.keys(tables).map(Number).sort((a, b) => a - b);
   const last = divs[divs.length - 1];
   const up: Moves2['up'] = {}, down: Moves2['down'] = {};
+  const n = o.upDown ?? 3;
   for (const d of divs) {
     const tb = tables[d];
-    if (d > divs[0]) up[d] = [tb[0].id, tb[1].id, playoffWinners[d] ?? tb[2].id];
-    if (d < last) down[d] = tb.slice(-3).map((r) => r.id);
+    if (d > divs[0]) up[d] = [...tb.slice(0, n - 1).map((r) => r.id), playoffWinners[d] ?? tb[n - 1].id];
+    if (d < last) down[d] = tb.slice(-n).map((r) => r.id);
   }
-  // The bottom of the pyramid: three out to the pool. Brabo never leave it; the club above them goes instead.
-  const bottom = tables[last].map((r) => r.id).filter((id) => id !== o.own).slice(-3);
+  // The bottom of the pyramid: three (or four) out to the pool. Brabo never leave it; the club above them goes instead.
+  const bottom = tables[last].map((r) => r.id).filter((id) => id !== o.own).slice(-n);
   const pool = { out: bottom, in: poolSwapIn(o.pool, PYRAMID[last - 1]?.band ?? [0, 0], bottom.length) };
 
   let level: LevelMove | undefined;
@@ -56,7 +62,7 @@ export function seasonEnd2(tables: Record<Division, Row[]>, playoffWinners: Part
     if (pos === 0 && home - 2 >= divs[0]) {
       const to = home - 2, rate = o.rateIn(home - 1);
       if (rate > LEVEL_UP) {
-        // Room is made by the best finisher there not already going down: fourth from bottom.
+        // Room is made by the best finisher there not already going down: just above the drop.
         const swap = tables[to].map((r) => r.id).filter((id) => !(down[to] ?? []).includes(id)).pop()!;
         level = { id: o.own, from: home, to, dir: 'up', swap, rate };
       }

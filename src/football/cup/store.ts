@@ -1,6 +1,8 @@
 // Cup runs' only writer: the run in progress (cupRuns, saved after every card and every stop), the record book
 // (cupBook) and finished runs (cupDone, summary only). A run never touches the league: the only writes outside these
 // tables are the research and the album card a run pays (spec §11), into the tree as its own gain.
+import { perksOfSave } from '../store/cast';
+import { MEAL_CARD } from './pool';
 import { lastDivision, stageIn, stageOf, worldOf } from '../pyramid/shape';
 import { eyeChoices } from '../desk/course';
 import { coursePasses } from '../desk/rules';
@@ -87,7 +89,10 @@ export async function startCupRun(cup: number, now = Date.now()): Promise<CupRun
   const date = dayOfLogging(now);
   const deal = await dealToday(date);
   const save = await db.fbSave.get('save');
-  const run = startRun({ cup, seed: hashSeed('cup-run', date, String(now)), date, now, deck: deal.cards, eye: eyeChoices(coursePasses(save?.desk)) });
+  // The cast's heirlooms and meal card join this run's pool once a bond rank brings them (Fork 4).
+  const held = save ? perksOfSave(save) : [];
+  const cast = [...held.filter((p) => p.key === 'heirloom' && p.item).map((p) => p.item!), ...(held.some((p) => p.key === 'meal-card') ? [MEAL_CARD] : [])];
+  const run = startRun({ cup, seed: hashSeed('cup-run', date, String(now)), date, now, deck: deal.cards, eye: eyeChoices(coursePasses(save?.desk)), cast });
   const rec: CupRun = { id: 'current', kind: 'run', deal, run };
   await db.cupRuns.put(rec);
   return rec;

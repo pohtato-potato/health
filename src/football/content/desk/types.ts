@@ -125,7 +125,9 @@ export type RegionId =
   | 'castile' | 'catalonia' | 'basque' | 'andalusia' | 'spain-east' | 'spain-north' | 'canaries'
   | 'bavaria' | 'rhine-ruhr' | 'germany-north' | 'germany-east' | 'germany-south-west'
   | 'italy-north' | 'italy-centre-south' | 'paris' | 'france-south' | 'france-north' | 'rhone-alps'
-  | 'alps-danube' | 'nordic' | 'portugal' | 'memory';
+  | 'alps-danube' | 'nordic' | 'portugal' | 'memory'
+  // World 2's new regions (world.json `newRegions`), for real clubs outside the first list's countries.
+  | 'brussels' | 'france-west' | 'scotland' | 'greece' | 'turkiye' | 'central-europe' | 'balkans';
 
 export interface RegionDef { id: RegionId; name: string; country: string; pride: string }
 

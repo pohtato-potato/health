@@ -2,6 +2,7 @@
 // abroad. When the clock is full the scout comes back with the morning parcel and the fog lifts (fog/fog.ts).
 // Honest dice: a 6 has a shown chance to turn up a loan target (kept for Fork 3's market), and a 1 or 2 that ends a
 // trip has a shown chance of a thin report (one find fewer). Both are drawn from the spend's seeded `r`.
+import { perkValue } from '../../cast/bonds';
 import { LOANS } from '../../content/loans';
 import { tierName } from '../../data/load';
 import { beforeAfter, clockSize, factList, LEAD_PCT, pctOf, revealFor, scopeOf, THIN_PCT, type Fact } from '../../fog/fog';
@@ -23,7 +24,7 @@ export const targetName = (v: DeskView, target: string) => {
 };
 const seenOf = (cs: Club[]) => (cs.length ? Math.round(cs.reduce((t, c) => t + pctOf(c.facts), 0) / cs.length) : 100);
 /** Still something to find: a club not fully known, or a division with a club whose surface is fogged. */
-const findable = (v: DeskView, target: string) => Object.values(revealFor(target, covered(v, target))).some((f) => f.length > 0);
+const findable = (v: DeskView, target: string) => Object.values(revealFor(target, covered(v, target), false, perkValue(v.perks ?? [], 'scout-known'))).some((f) => f.length > 0);
 
 const scoutClocks = (v: DeskView) => v.clocks.filter((c) => c.job === 'scout');
 const openClock = (v: DeskView, target: string) => scoutClocks(v).find((c) => c.target === target && c.filled < c.size);
@@ -32,14 +33,16 @@ function clockFor(v: DeskView, target: string): Omit<Clock, 'opened'> & { filled
   const open = openClock(v, target);
   if (open) return { ...open, fresh: false };
   const n = scoutClocks(v).filter((c) => c.target === target).length;
-  return { id: `scout:${target}:${n + 1}`, job: 'scout', target, name: `Scout: ${targetName(v, target)}`, size: clockSize(target), filled: 0, fresh: true };
+  // The cast's `clock-head-start` perk on scouting: a new clock starts with segments filled (never past full less one).
+  const head = Math.min(clockSize(target) - 1, perkValue(v.perks ?? [], 'clock-head-start', 'scout'));
+  return { id: `scout:${target}:${n + 1}`, job: 'scout', target, name: `Scout: ${targetName(v, target)}`, size: clockSize(target), filled: head, fresh: true };
 }
 
 interface Plan { clock: ReturnType<typeof clockFor>; n: 1 | 2; done: boolean; thin: boolean; risk?: Risk & { kind: 'lead' | 'thin' }; reveal: Record<string, Fact[]>; ba: [number, number] }
 function plan(die: Die, v: DeskView, target: string, thin = false): Plan {
   const clock = clockFor(v, target), n = segmentsFor(die.value), done = clock.filled + n >= clock.size;
   const cs = covered(v, target);
-  const reveal = done ? revealFor(target, cs, thin) : {};
+  const reveal = done ? revealFor(target, cs, thin, perkValue(v.perks ?? [], 'scout-known')) : {};
   const sc = scopeOf(target);
   const where = sc.kind === 'club' ? targetName(v, target) : `a club in ${targetName(v, target)}`;
   const risk = die.value === 6 ? { kind: 'lead' as const, pct: LEAD_PCT, line: `a 6 can turn up a loan target at ${where}.` }
@@ -116,7 +119,7 @@ export const scout: JobDef = {
 };
 
 function effectsOf(p: Plan, target: string): Effect[] {
-  const out: Effect[] = [{ kind: 'clock', clock: p.clock.id, n: p.n }];
+  const out: Effect[] = [{ kind: 'clock', clock: p.clock.id, n: p.n + (p.clock.fresh ? p.clock.filled : 0) }];
   if (p.done) out.push({ kind: 'scout', target, reveal: p.reveal, before: p.ba[0], after: p.ba[1], ...(p.thin ? { thin: true } : {}) });
   return out;
 }

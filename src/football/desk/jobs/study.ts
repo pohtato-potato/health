@@ -2,6 +2,7 @@
 // and signature move; the second, where their club will give in talks and where it won't. Better knowledge gives
 // leverage in talks (market/market.ts `pushOdds`). The study shows at once: no report to wait for.
 import { leadTaken, studiedIn } from './leads';
+import { perkValue } from '../../cast/bonds';
 import { STUDY_CLOCK, studyClockId, targetKnown } from '../../market/market';
 import { loanById } from '../../globe/loans';
 import { segmentsFor, type Clock, type DeskView, type Die, type Effect, type JobDef, type Target } from '../types';
@@ -12,10 +13,12 @@ const open = (v: DeskView) => (v.market?.leads ?? []).filter((l) => !leadTaken(v
 const UNCOVERS = ['', 'their rating and signature move', 'where their club will give, and where it won’t'];
 function plan(die: Die, v: DeskView, key: string) {
   const lead = v.market!.leads.find((l) => l.key === key)!;
-  const had = studiedIn(v, key), n = segmentsFor(die.value), after = Math.min(STUDY_CLOCK, had + n);
-  const found = [had < 1 && after >= 1 ? UNCOVERS[1] : '', had < 2 && after >= 2 ? UNCOVERS[2] : ''].filter(Boolean).join(', and ');
+  // The cast's `clock-head-start` perk on studying: a new study starts with a segment filled.
+  const head = studyClock(v, key) ? 0 : Math.min(STUDY_CLOCK - 1, perkValue(v.perks ?? [], 'clock-head-start', 'study'));
+  const base = studiedIn(v, key), had = base + head, n = segmentsFor(die.value), after = Math.min(STUDY_CLOCK, had + n);
+  const found = [base < 1 && after >= 1 ? UNCOVERS[1] : '', base < 2 && after >= 2 ? UNCOVERS[2] : ''].filter(Boolean).join(', and ');
   const clock: Omit<Clock, 'opened'> = { id: studyClockId(key), job: 'study', target: key, name: `Study: ${loanById(lead.loan)?.name ?? 'a target'}`, size: STUDY_CLOCK };
-  return { lead, had, n, after, found, clock, fresh: !studyClock(v, key) };
+  return { lead, base, had, n, after, found, clock, fresh: !studyClock(v, key) };
 }
 
 export const study: JobDef = {
@@ -41,8 +44,8 @@ export const study: JobDef = {
     const name = loanById(p.lead.loan)?.name ?? 'The target';
     return {
       head: die.value >= 5 ? 'Great.' : 'Done.',
-      line: `${name}: you learn ${p.found}. Known ${targetKnown(p.had)}% to ${targetKnown(p.after)}%.`,
-      gain: `+${Math.min(p.n, STUDY_CLOCK - p.had)}`,
+      line: `${name}: you learn ${p.found}. Known ${targetKnown(p.base)}% to ${targetKnown(p.after)}%.${p.had > p.base ? ' The cast gave you a head start.' : ''}`,
+      gain: `+${p.after - p.base}`,
       others: p.n === 2 ? 'A 1 to 4 would fill one.' : p.had === 0 ? 'A 5 or 6 would study them in one go.' : 'Any die finishes it.',
       effects: effectsOf(p),
     };
@@ -55,4 +58,4 @@ export const study: JobDef = {
   },
 };
 
-const effectsOf = (p: ReturnType<typeof plan>): Effect[] => [{ kind: 'clock', clock: p.clock.id, n: Math.min(p.n, STUDY_CLOCK - p.had) }];
+const effectsOf = (p: ReturnType<typeof plan>): Effect[] => [{ kind: 'clock', clock: p.clock.id, n: p.after - p.base }];

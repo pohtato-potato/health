@@ -201,6 +201,7 @@ const PATHS: Record<string, ReactNode> = {
   book: <g transform="scale(.6667)"><path d="M18 9c-3-2-8-3-12-2v20c4-1 9 0 12 2 3-2 8-3 12-2V7c-4-1-9 0-12 2zM18 9v20" /></g>,
   route: <g transform="scale(.6667)"><circle cx="9" cy="27" r="3" /><circle cx="27" cy="9" r="3" /><path d="M12 27h9a4 4 0 0 0 0-8h-6a4 4 0 0 1 0-8h9" /></g>,
   map: <g transform="scale(.6667)"><path d="M5 9l8-3 10 3 8-3v21l-8 3-10-3-8 3zM13 6v21M23 9v21" /></g>,
+  hall: <g transform="scale(.6667)"><path d="M5 30h26M8 30V16M14 30V16M22 30V16M28 30V16M4 16h28L18 6z" /></g>,
   help: <g transform="scale(.6667)"><path d="M13 13a5 5 0 1 1 7 4.6c-1.3.6-2 1.6-2 3V22" /><circle cx="18" cy="27.5" r=".6" /></g>,
   more: (
     <>

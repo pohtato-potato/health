@@ -115,21 +115,21 @@ describe('quality and clocks', () => {
     expect(openClocks(d)).toEqual([]);
   });
 
-  // A stand-in long job (scout and study are real jobs now, so the stand-in borrows the unbuilt 'lobby' id).
+  // A stand-in long job. Every job id is real now, so the stand-in borrows 'lobby' and goes first in the list.
   it('a long job opens its clock in the same spend that fills it', () => {
     const study: JobDef = {
       id: 'lobby', ink: '#fff', open: () => true, card: () => ({ title: '', line: '', chip: '' }),
       preview: () => ({ head: '', line: '', gain: '', others: '', effects: [] }),
       spend: (dd) => ({ opens: [{ id: 'k-div5', job: 'lobby', target: 'div-5', name: 'Division Five', size: 4 }], effects: [{ kind: 'clock', clock: 'k-div5', n: segmentsFor(dd.value) }] }),
     };
-    JOBS.push(study);
+    JOBS.unshift(study);
     try {
       const d = deskWith([die('Pace', 6)]);
       const r = spendDie(d, view(), die('Pace', 6), 'lobby');
       if ('error' in r) throw new Error(r.error);
       expect(r.desk.clocks).toEqual([{ id: 'k-div5', job: 'lobby', target: 'div-5', name: 'Division Five', size: 4, opened: '2030-03-05' }]);
       expect(clockFilled(r.desk, r.desk.clocks[0])).toBe(2);
-    } finally { JOBS.pop(); }
+    } finally { JOBS.shift(); }
   });
 });
 

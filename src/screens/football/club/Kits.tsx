@@ -6,6 +6,8 @@ import { CREST_LINES, launchOptions, slotsOpen, SPONSOR_STYLES, type KitSlot } f
 import type { Club } from '../../../football/store/club';
 import { kitFor, kitWall, type WallKit } from '../../../football/store/kitWall';
 import { Art } from '../Tonight';
+import { perkValue } from '../../../football/cast/bonds';
+import { perksOfSave } from '../../../football/store/cast';
 import { Hero, Panel, Sect } from '../../../ui/kit/Kit';
 import { BLUE, GOLD, LAV, PanelTop } from './Bits';
 
@@ -36,7 +38,7 @@ export function KitsView({ c, act = {} }: { c: Club; act?: KitActions }) {
               <fieldset key={slot} className="k-col" style={{ border: 0, padding: 0, margin: 0, gap: 6 }}>
                 <legend className="k-q" style={{ padding: 0, marginBottom: 6 }}>{SLOT[slot]}</legend>
                 <div className="kn-kits">
-                  {launchOptions(slot, next).map((id) => {
+                  {launchOptions(slot, next, perkValue(perksOfSave(s), 'kit-pick')).map((id) => {
                     const k = kitFor(id, next, c.matches);
                     if (!k) return null;
                     return (

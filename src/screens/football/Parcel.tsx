@@ -1,6 +1,7 @@
 // The morning parcel (matchday §4, k-parcel, p3-shut, p3-result, p3-scout) and the ground at night (d-closed B,
 // p3-night). The parcel has its own dawn look: sealed tiles, each edged in its own colour, opened one at a time.
 // The result tile offers Watch or Skip before any score; it calls the match only through `matchGate`.
+import type { CastNote } from '../../football/store/cast';
 import { useEffect, useState } from 'react';
 import { answerPhysio } from '../../db/actions';
 import { PHYSIO_ANSWERS, physioLine, type PhysioAnswer } from '../../domain/treatment';
@@ -97,6 +98,7 @@ export function ParcelView({ t, p: live }: { t: Tonight; p: Parcel }) {
         {k === 'talks' && <TalksTile offers={p.talks} date={t.date} onNext={next} last={last} />}
         {k === 'scout' && <ScoutTile t={t} scouts={p.scouts} onNext={next} last={last} />}
         {k === 'academy' && <AcademyTile t={t} onNext={next} last={last} />}
+        {k === 'cast' && p.cast && <CastTile note={p.cast} onNext={next} last={last} />}
         {k === 'dice' && <DiceTile dice={p.dice} date={t.date} onNext={next} last={last} />}
         {k === 'pack' && <PackTile n={p.packs} date={t.date} onNext={next} last={last} />}
         </div>
@@ -319,6 +321,24 @@ function AcademyTile({ t, onNext, last }: { t: Tonight; onNext: () => void; last
       <p className="md-q">Kept bedtimes and kept lights-out pledges grow them.</p>
       <div className="md-btns">
         <Action wide quiet onClick={() => go('/football/academy')}>The academy</Action>
+        <Next onNext={onNext} last={last} />
+      </div>
+    </>
+  );
+}
+
+/** The cast's note (Fork B's seam): a line or two, warm or cool, and a rank scene waiting. */
+function CastTile({ note, onNext, last }: { note: CastNote; onNext: () => void; last: boolean }) {
+  return (
+    <>
+      {note.lines.map((l) => (
+        <div key={l.member} className="md-tile col" style={{ '--ink': TILE.cast.ink } as React.CSSProperties}>
+          <b style={{ color: TILE.cast.ink }}>{l.name}</b>
+          <span>{l.text}</span>
+        </div>
+      ))}
+      <div className="md-btns">
+        {note.scene && <Action wide quiet onClick={() => go('/football/cast', { scene: `${note.scene!.member}:${note.scene!.rank}` })}>A new scene</Action>}
         <Next onNext={onNext} last={last} />
       </div>
     </>

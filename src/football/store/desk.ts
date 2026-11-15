@@ -25,6 +25,11 @@ import { worldView } from './fog';
 import { loadRelations, marketViewOf } from './market';
 import { OWN } from './season';
 import { researchedOf } from './tree';
+import { takeBackable } from '../desk/jobs/negotiate';
+import { congressViewOf } from './congress';
+import { perksOfSave, castViewOf } from './cast';
+import { restDieBonus } from '../cast/bonds';
+import { dayMetrics } from '../tree/metrics';
 import type { FbSave } from './tables';
 import type { Tonight } from './hooks';
 import { fixtureFor } from './tonight';
@@ -47,7 +52,17 @@ export function diceOn(h: Health, date: DayKey): Die[] {
 }
 
 /** The dice a day hands over: frozen in the save once seen, so a later edit to yesterday never reshuffles them. */
-export const diceFrozen = (save: FbSave, h: Health, date: DayKey): Die[] => save.desk?.dice[date] ?? diceOn(h, date);
+export const diceFrozen = (save: FbSave, h: Health, date: DayKey): Die[] => save.desk?.dice[date] ?? withPerks(diceOn(h, date), save, h, date);
+/**
+ * The cast's `rest-day-dice` perk: on a planned rest day kept as rest (yesterday), the Rest die counts one higher for
+ * each holder whose condition held, up to 6. A die, never a rating.
+ */
+function withPerks(dice: Die[], save: FbSave, h: Health, date: DayKey): Die[] {
+  const held = perksOfSave(save);
+  if (!held.some((p) => p.key === 'rest-day-dice')) return dice;
+  const up = restDieBonus(held, dayMetrics(h, addDays(date, -1), { bedtime: save.bedtime }));
+  return up ? dice.map((d) => (d.axis === 'Rest' ? { ...d, value: Math.min(6, d.value + up) as Die['value'], reason: `${d.reason}, and a rest day kept` } : d)) : dice;
+}
 
 /** Each need in plain words, for the project row. */
 const NEED: Record<string, string> = { steps: 'step days', training: 'sessions', sleep: 'nights slept', protein: 'protein days', kcal: 'calorie days', bedtime: 'bedtimes kept', meds: 'medicine days', youth: 'academy sessions', logged: 'days logged', closed: 'days closed' };
@@ -95,7 +110,8 @@ export async function deskView(t: Pick<Tonight, 'save' | 'date' | 'fixture'>): P
       const prog = states.get(p.id)?.progress ?? {};
       const open = p.needs.filter((n) => (prog[n.what] ?? 0) < n.count);
       const w = (open.length ? open : p.needs).reduce((b, n) => ((prog[n.what] ?? 0) / n.count < (prog[b.what] ?? 0) / b.count ? n : b));
-      return { id: p.id, name: p.name, worst: { what: NEED[w.what] ?? w.what, have: Math.min(w.count, prog[w.what] ?? 0) + pendingPush(desk, p.id, save.lastPlayed), count: w.count } };
+      const fresh = !desk.spends.some((s) => s.effects.some((e) => e.kind === 'project' && e.id === p.id));
+      return { id: p.id, name: p.name, fresh, worst: { what: NEED[w.what] ?? w.what, have: Math.min(w.count, prog[w.what] ?? 0) + pendingPush(desk, p.id, save.lastPlayed), count: w.count } };
     })
     .map((p) => ({ ...p, worst: { ...p.worst, have: Math.min(p.worst.count, p.worst.have) } }));
   const today = spendsOn(desk, date);
@@ -110,6 +126,7 @@ export async function deskView(t: Pick<Tonight, 'save' | 'date' | 'fixture'>): P
   };
   const last = await db.fbMatches.where('date').below(date).last();
   const pool = await questionPool();
+  const rel = await loadRelations(save);
   return {
     date,
     opp: opp ? { id: opp.id, name: opp.name, style: opp.style } : undefined,
@@ -122,7 +139,10 @@ export async function deskView(t: Pick<Tonight, 'save' | 'date' | 'fixture'>): P
     spentToday,
     clocks: desk.clocks.map((c) => ({ ...c, filled: clockFilled(desk, c) })),
     world: worldView(save, season?.tierOf),
-    market: marketViewOf(save, date, season?.tierOf, await loadRelations(save)),
+    market: marketViewOf(save, date, season?.tierOf, rel),
+    congress: await congressViewOf(save, rel),
+    cast: castViewOf(save, date),
+    perks: perksOfSave(save),
   };
 }
 
@@ -254,3 +274,15 @@ export const useMineCount = () => useLiveQuery(() => db.deskQuestions.count(), [
 
 export const jobsForDesk = (v: DeskView) => JOBS.filter((j) => j.open(v));
 export { jobById, spendSeed };
+
+/** The cast's `negotiate-reroll`: take the last failed reply of a talk back, once a talk (desk/jobs/negotiate.ts). */
+export async function takeBack(spendId: string): Promise<boolean> {
+  return db.transaction('rw', db.fbSave, async () => {
+    const s = await db.fbSave.get('save');
+    if (!s) return false;
+    const desk = deskOf(s);
+    if (takeBackable(desk, perksOfSave(s)) !== spendId) return false;
+    await db.fbSave.put({ ...s, desk: { ...desk, backs: [...(desk.backs ?? []), spendId] } });
+    return true;
+  });
+}

@@ -38,6 +38,10 @@ export interface MatchMods {
   lineMul?: number;
   /** An event's gift: the first finish gets more shot, the first spell more cover, or their attacks are seen ahead. */
   firstShot?: number; firstCover?: number; see?: boolean;
+  /** The tape gun is still unused this run (Fork 4). */
+  tapeGun?: boolean;
+  /** The last match of the run (the radio scarf). */
+  lastMatch?: boolean;
 }
 
 export type FeedKind = 'spell' | 'combo' | 'goal' | 'near' | 'break' | 'disallowed' | 'dealt' | 'fitness' | 'conceded' | 'signature' | 'pens' | 'full';
@@ -94,7 +98,7 @@ export interface MatchState {
   mods?: MatchMods;
   /** Cover that carries into next spell. */
   keepNext?: number;
-  passedSpell?: boolean; recycledSpell?: boolean; coverCards?: number; firstFinish?: boolean; scarfUsed?: boolean; bootsUsed?: boolean;
+  passedSpell?: boolean; recycledSpell?: boolean; coverCards?: number; firstFinish?: boolean; scarfUsed?: boolean; bootsUsed?: boolean; tapeUsed?: boolean;
   /** Cards played this match, for the record book. */
   played?: number;
   /** Fitness at kick-off, for full time. */
@@ -240,7 +244,11 @@ const through = (s: MatchState) => (has(s, 'linesman-flag') ? TUNE.linesman : TU
 export function costOf(s: MatchState, c: Card, as?: AnyKind): number {
   const k = actsAs(c, as).kind;
   if (roleOf(k) === 'pass' && s.freePass) return 0;
-  return c.kind === 'total' ? CARD.cost.total : baseCost(k);
+  let cost = c.kind === 'total' ? CARD.cost.total : baseCost(k);
+  // The cast's heirlooms: the 1987 tape (the first card while fit) and the Radio Stroom scarf (Rest in the last match).
+  if (has(s, 'tape-1987') && !s.played && s.fitness >= TUNE.fitness) cost -= 1;
+  if (has(s, 'radio-scarf') && s.mods?.lastMatch && c.axis === 'Rest') cost -= 1;
+  return Math.max(0, cost);
 }
 
 /** Why a card cannot be played now, or null when it can. */
@@ -502,6 +510,13 @@ export function recycle(s0: MatchState, id: string): MatchState {
 }
 export const canRecycle = (s: MatchState) => s.phase === 'play' && s.hand.length > 0 && (s.freeRecycles > 0 || (has(s, 'needle') && !s.recycledSpell) || s.stamina >= TUNE.recycleCost);
 
+/** The tape gun: once a run, a spent squad plays on at full fitness. */
+function tape(s: MatchState) {
+  if (s.fitness > 0 || !has(s, 'tape-gun') || !s.mods?.tapeGun || s.tapeUsed) return;
+  s.tapeUsed = true;
+  s.fitness = TUNE.fitness;
+  say(s, 'fitness', 'The physio\'s tape gun: strapped up, and the squad plays on at full fitness.');
+}
 // --- their attack and the end of a spell -----------------------------------------------------------------------------
 function attack(s: MatchState) {
   const threat = threatNow(s);
@@ -523,9 +538,11 @@ function attack(s: MatchState) {
       if (s.club.style === 'setpiece') s.carryThreat += TUNE.setpiece;
       const note = scarf ? ' The lucky scarf: it would have been a goal.' : '';
       say(s, 'fitness', `Their attack, ${threat}, gets past your cover, ${cover}. You lose ${was - s.fitness} fitness.${note}${s.fitness === 0 ? ' Your squad is spent: cover counts half.' : ''}`);
+      tape(s);
     } else {
       s.score[1]++;
       lose(TUNE.goalFit);
+      tape(s);
       say(s, 'conceded', `They score. Their attack, ${threat}, against your cover, ${cover}.`);
     }
   }

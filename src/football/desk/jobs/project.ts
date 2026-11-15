@@ -1,6 +1,7 @@
 // Push a building project (spec §3, content/projects.ts): a die adds to the project's own clock, its needs. Like any
 // clock: 1 day on the least-finished need, or 2 on a 5 or 6. Never backwards; the money is still paid as before.
 import { qualityOf, segmentsFor, type JobDef } from '../types';
+import { perkValue } from '../../cast/bonds';
 
 export const project: JobDef = {
   id: 'project',
@@ -12,13 +13,16 @@ export const project: JobDef = {
   },
   targets: (v) => v.projects.map((p) => ({ id: p.id, name: p.name, line: `${fmt(p.worst.have)} of ${fmt(p.worst.count)} ${p.worst.what}` })),
   preview(die, v, target) {
-    const n = segmentsFor(die.value), q = qualityOf(die.value);
+    const q = qualityOf(die.value);
     const p = v.projects.find((x) => x.id === target) ?? v.projects[0];
+    // The cast's `clock-head-start` perk on building: a project's first push from the desk starts a day ahead.
+    const head = p?.fresh ? perkValue(v.perks ?? [], 'clock-head-start', 'build') : 0;
+    const n = segmentsFor(die.value) + head;
     return {
       head: q === 'well' ? 'Great.' : 'Done.',
-      line: p ? `${p.name}: ${n === 2 ? 'two days' : 'a day'} added to ${p.worst.what} (${fmt(p.worst.have)} of ${fmt(p.worst.count)}).` : 'Nothing being built.',
+      line: p ? `${p.name}: ${n === 1 ? 'a day' : `${n} days`} added to ${p.worst.what} (${fmt(p.worst.have)} of ${fmt(p.worst.count)}).${head ? ' One is the cast’s head start.' : ''}` : 'Nothing being built.',
       gain: `+${n}`,
-      others: n === 2 ? 'A 1 to 4 would add one.' : 'A 5 or 6 would add two.',
+      others: segmentsFor(die.value) === 2 ? 'A 1 to 4 would add one less.' : 'A 5 or 6 would add one more.',
       effects: p ? [{ kind: 'project', id: p.id, n }] : [],
     };
   },

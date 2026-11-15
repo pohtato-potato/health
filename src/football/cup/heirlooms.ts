@@ -5,7 +5,9 @@
 export type HeirloomId =
   | 'match-ball' | 'rake' | 'scarf' | 'physio-bag' | 'napkin' | 'turnstile' | 'armband' | 'boot-bag' | 'needle' | 'chalkboard'
   | 'notebook' | 'stopwatch' | 'floodlight' | 'corner-flag' | 'drum' | 'heavy-pitch' | 'water-crate' | 'programme' | 'spare-boots'
-  | 'linesman-flag' | 'studs' | 'ticket-stub' | 'club-tie' | 'hamper' | 'boot-room-key';
+  | 'linesman-flag' | 'studs' | 'ticket-stub' | 'club-tie' | 'hamper' | 'boot-room-key'
+  // The cast's three (Fork 4): in the pool only once a bond rank brings them.
+  | 'tape-gun' | 'tape-1987' | 'radio-scarf';
 
 export type HeirloomArt = 'ball' | 'rake' | 'scarf' | 'bag' | 'napkin' | 'turnstile' | 'armband' | 'boot' | 'needle' | 'board' | 'book' | 'watch'
   | 'bulb' | 'flag' | 'drum' | 'boot2' | 'crate' | 'programme' | 'key' | 'tie' | 'ticket' | 'hamper' | 'whistleless';
@@ -38,7 +40,12 @@ export const HEIRLOOMS: HeirloomDef[] = [
   { id: 'club-tie', name: 'The club tie', rule: 'Everything at the stall costs a fifth less.', art: 'tie', where: 'run' },
   { id: 'hamper', name: 'The kit hamper', rule: 'Rest stops recover 10% more.', art: 'hamper', where: 'run' },
   { id: 'boot-room-key', name: 'The boot-room key', rule: 'After a win you choose from one more card.', art: 'key', where: 'run' },
+  { id: 'tape-gun', name: 'The physio\'s tape gun', rule: 'Once a run, when your squad is spent, it plays on at full fitness.', art: 'bag', where: 'run' },
+  { id: 'tape-1987', name: 'The kit man\'s 1987 tape', rule: 'Your first card each match costs 1 less while your squad is at full fitness.', art: 'needle', where: 'match' },
+  { id: 'radio-scarf', name: 'The Radio Stroom scarf', rule: 'Rest cards cost 1 less in the last match of a run.', art: 'scarf', where: 'match' },
 ];
+/** The cast's heirlooms: drawn only when the run carries them (a bond rank's `heirloom` perk). */
+export const CAST_HEIRLOOMS: HeirloomId[] = ['tape-gun', 'tape-1987', 'radio-scarf'];
 
 const BY = new Map(HEIRLOOMS.map((h) => [h.id, h]));
 export const heirloomById = (id: string): HeirloomDef | undefined => BY.get(id as HeirloomId);

@@ -104,15 +104,15 @@ export const MOTIONS: Motion[] = [
   {
     id: 'four-up', name: 'Four up, four down', twist: { key: 'four-up', value: 4 },
     text: 'Promote and relegate four clubs between each division.',
-    plays: 'Four clubs go up and four come down in every division this season.',
+    plays: 'Four clubs go up and four come down between every pair of divisions this season: the top three go up with the winner of a playoff between 4th and 7th, and the bottom four go down. Brabo\'s level check is unchanged.',
     leans: { 'fan-owned': 1, celebrity: 1, municipal: 1, 'state-fund': -2, 'investment-fund': -2, billionaire: -1 },
     passed: 'Four up, four down: the pyramid shuffles harder',
     fell: 'Three up, three down stays',
   },
   {
     id: 'spending-rule', name: 'Spend what you earn', twist: { key: 'spending-rule', value: 2 },
-    text: 'Clubs spending beyond their income lose points.',
-    plays: 'The "Financial trouble" world event is twice as likely for clubs above their division\'s band. A careful season keeps you safe, always.',
+    text: 'Clubs that spend beyond their means are likelier to land in financial trouble.',
+    plays: 'At the season\'s end, the "Financial trouble" news (that club starts the next season with points taken off) is twice as likely to land on a club rated above its division\'s band. It never lands on Brabo.',
     leans: { 'fan-owned': 2, 'works-team': 2, municipal: 2, 'old-family': 1, 'state-fund': -2, billionaire: -2 },
     passed: 'Spend what you earn becomes the rule; accountants everywhere cheer',
     fell: 'No rule; the spending goes on',

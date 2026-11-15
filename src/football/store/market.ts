@@ -12,6 +12,7 @@ import { CUP_COMPS, opinionOf, type RelationSource } from '../market/relations';
 import type { FbSave, StoredMatch } from './tables';
 import { globeOf } from './globe';
 import { OWN } from './season';
+import { seasonRules, voteMoves } from '../congress/congress';
 
 const nameOf = (id: string) => { try { return clubById(id).name; } catch { return 'A club'; } };
 const deskOf = (s: Pick<FbSave, 'desk'>): DeskState | undefined => s.desk;
@@ -28,6 +29,7 @@ export function relationSourceOf(save: FbSave, matches: Pick<StoredMatch, 'opp' 
   return {
     rivals: save.rivals.map((r) => r.clubId), desk: on && desk ? { ...desk, spends: desk.spends.filter((s) => s.day >= on) } : desk,
     ties: cupTies(on ? matches.filter((m) => m.date >= on) : matches), stays: on ? globeOf(save).loans.filter((l) => l.from >= on) : globeOf(save).loans,
+    votes: voteMoves(on ? save.congress?.filter((c) => c.on >= on) : save.congress),
   };
 }
 export async function loadRelations(save: FbSave): Promise<RelationSource> {
@@ -36,7 +38,7 @@ export async function loadRelations(save: FbSave): Promise<RelationSource> {
 
 /** Every round of talks in the desk's log, with its day. */
 export const talkRows = (desk: DeskState | undefined): TalkRow[] =>
-  (desk?.spends ?? []).flatMap((s) => s.effects.flatMap((e) => (e.kind === 'talk' ? [{ day: s.day, e }] : [])));
+  (desk?.spends ?? []).filter((s) => !desk?.backs?.includes(s.id)).flatMap((s) => s.effects.flatMap((e) => (e.kind === 'talk' ? [{ day: s.day, e }] : [])));
 
 /** Deals struck and not yet folded in (their day hasn't played): they hold the market slot already. */
 export function pendingDeals(save: FbSave): { loan: string; days: number; day: DayKey }[] {
@@ -55,7 +57,7 @@ export function marketViewOf(save: FbSave, date: DayKey, tierOf: Record<string, 
     ...l, clubName: nameOf(l.club), opinion: opinionOf(rel, l.club), poach: (tierOf?.[l.club] ?? -1) === ownTier,
   }));
   return {
-    ownTier, ownStage: stageIn(save, ownTier), budget: save.budget, leads, talks: talkRows(save.desk),
+    ownTier, ownStage: stageIn(save, ownTier), budget: save.budget, leads, talks: talkRows(save.desk), feeShare: seasonRules(save.congress, save.season).loanFee,
     slot: marketSlot(globeOf(save).loans, pendingDeals(save), date),
     offers: (save.offers ?? []).map((o) => ({ slot: o.slot, brand: o.brand, what: o.what, risk: o.risk, perSeason: o.perSeason, seasons: o.seasons })),
   };

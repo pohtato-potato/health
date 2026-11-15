@@ -53,7 +53,9 @@ export function movesOf(src: RelationSource, club: string): Move[] {
   const out: Move[] = [];
   if (src.rivals.includes(club)) out.push({ club, d: RIVAL_START, why: 'A named rival', kind: 'rival' });
   const dated: Move[] = [];
+  const backs = new Set(src.desk?.backs ?? []);
   for (const s of src.desk?.spends ?? []) {
+    if (backs.has(s.id)) continue;
     for (const e of s.effects) if (e.kind === 'opinion' && e.club === club) dated.push({ club, d: e.d, why: e.why, day: s.day, kind: e.move });
   }
   for (const t of src.ties) {

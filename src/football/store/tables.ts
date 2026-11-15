@@ -1,4 +1,7 @@
 // Rows in the fb* tables. Football writes only to these.
+import type { Ballot, CongressRecord } from '../congress/congress';
+import type { BondState } from '../cast/bonds';
+import type { CastId } from '../content/desk/types';
 import type { DoubleUp } from '../promotion';
 import type { LevelMove } from '../pyramid/movement';
 import type { DayKey } from '../../domain/dates';
@@ -138,6 +141,14 @@ export interface FbSave {
   world?: 1 | 2;
   /** The world redrawn (LG-4): when the move was made, where Brabo was placed, the founding weeks, the gifts. */
   redrawn?: Redrawn;
+  /** Fork 4: every congress as it sat (engine side, written as a new season begins): the season's rule twists. */
+  congress?: CongressRecord[];
+  /** Fork 4: Brabo's votes, by the season the congress is for. A user key in play.ts. */
+  ballot?: Record<number, Ballot>;
+  /** Fork 4: the cast's bonds as the days folded them in (engine side). */
+  bonds?: BondState;
+  /** Fork 4: the highest rank scene seen, by cast member. A user key in play.ts. */
+  castSeen?: Partial<Record<CastId, number>>;
 }
 
 /** What a league match needs to be finished later: who, where, and the night as it was set at 4 am. */

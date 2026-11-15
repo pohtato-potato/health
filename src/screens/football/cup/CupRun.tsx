@@ -1,6 +1,7 @@
 // A cup run, in the tactics-board world (spec §6–§8, §13; visual rounds 1–3): the map with the route lit, and every
 // kind of stop: matches (with full time, the card pick and an elite club's heirloom), the physio's room, the stall,
 // story events and the final; then the run's end, lost or won. Saved after every card and every stop.
+import { cupSpeaker } from '../../../football/cast/bonds';
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { buzz } from '../../../audio';
@@ -377,7 +378,7 @@ function EventScreen({ r, st, onChoose, onLeave }: { r: RunState; st: Extract<St
     <div className="cup-board cup-event">
       <CupHead back="Cups" onBack={toCups} title={e.title.toUpperCase()} />
       <p className="cup-under">{r.coins} coins · fitness {r.fitness}</p>
-      {e.cast && <div className="cup-speaker"><Silhouette size={56} /><p className="cup-cap">{CAST_NAME[e.cast] ?? e.cast}</p></div>}
+      {e.cast && <div className="cup-speaker"><Silhouette size={56} /><p className="cup-cap">{cupSpeaker(e.cast) ?? CAST_NAME[e.cast] ?? e.cast}</p></div>}
       <p className="cup-read-col">{e.text}</p>
       {e.voices?.map(([a, v]) => <p key={a} className="cup-voice"><b style={{ color: AXIS_INK[a] }}>{a.toUpperCase()}</b> — {v}</p>)}
       {chosen ? (

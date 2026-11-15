@@ -14,7 +14,7 @@ import {
 } from '../../../football/content/desk';
 import { tierName } from '../../../football/data/load';
 import { leadTaken, studiedIn } from '../../../football/desk/jobs/leads';
-import { liveTalk, optionsFor, talkBlocked, talkCtx, talkList, untilFor, type TalkCtx } from '../../../football/desk/jobs/negotiate';
+import { liveTalk, optionsFor, takeBackable, talkBlocked, talkCtx, talkList, untilFor, type TalkCtx } from '../../../football/desk/jobs/negotiate';
 import type { Die, Effect } from '../../../football/desk/types';
 import { speakers, voiceLine } from '../../../football/desk/words';
 import { loanById, LOAN_TIER_NAME } from '../../../football/globe/loans';
@@ -22,7 +22,7 @@ import { leadsFrom, coolingUntil, MOOD_MAX, MOOD_NAME, OPEN_DAYS, ratingShown, R
 import { euros } from '../../../football/money';
 import { loanLeads } from '../../../football/fog/fog';
 import { hashSeed } from '../../../football/rng';
-import { loadDesk, spendAt, type DeskModel } from '../../../football/store/desk';
+import { loadDesk, spendAt, takeBack, type DeskModel } from '../../../football/store/desk';
 import { globeOf } from '../../../football/store/globe';
 import { useTonight } from '../../../football/store/hooks';
 import type { Tier } from '../../../football/types';
@@ -224,6 +224,8 @@ function Talk({ m, c }: { m: DeskModel; c: TalkCtx }) {
   };
 
   // Their line: the reaction to your last reply, or their opening.
+  const lastRound = m.desk.spends.filter((x) => !m.desk.backs?.includes(x.id)).flatMap((x) => x.effects.flatMap((e) => (e.kind === 'talk' ? [{ id: x.id, e }] : []))).pop();
+  const back = lastRound && lastRound.e.talk === c.talk && takeBackable(m.desk, v.perks) === lastRound.id ? lastRound.id : undefined;
   const reaction = said ? lineAfter(said.round, c, words) : c.kind === 'sponsor' ? fill(SPONSOR_OPEN, words) : fill(pickOf(TALK_OPEN, c.talk, s.n), words);
   if (said?.round.end) return <TalkEnd m={m} c={c} round={said.round} line={reaction} />;
   const facts = c.kind === 'loan' && loan ? [`${loan.unit}`, (() => { const r = ratingShown(c.talk, loan.tier, c.studied); return r.lo === r.hi ? `rated ${r.lo}` : `rated ${r.lo} to ${r.hi}`; })(), `known ${targetKnown(c.studied)}%`] : [`a ${v.market?.offers.find((o) => `sp:${o.slot}:${o.brand}` === c.talk)?.slot ?? ''} deal`];
@@ -235,6 +237,7 @@ function Talk({ m, c }: { m: DeskModel; c: TalkCtx }) {
         <span style={{ flex: 1, minWidth: 0 }}><b className="nm">{c.name}</b><br /><span className="k-q">{c.kind === 'loan' ? `from ${c.who} · ` : 'Sponsor talks · '}{facts.join(' · ')}</span></span>
       </div>
       {said && <Panel ink={said.round.hit ? GREEN : CORAL} flat><b style={{ color: said.round.hit ? GREEN : CORAL }}>{said.round.hit ? 'It came off' : 'No luck'} ({said.round.pct}%).</b></Panel>}
+      {back && <button type="button" className="k-back" onClick={() => void takeBack(back).then((ok) => { if (ok) setSaid(undefined); })}>Take that reply back · once a talk</button>}
       <Panel ink={mood}>
         <p className="km-say">{reaction}</p>
         <div className="k-row"><span className="k-q">Their mood</span><b style={{ color: mood }}>{MOOD_NAME[s.mood]}</b></div>
