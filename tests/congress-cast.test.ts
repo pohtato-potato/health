@@ -122,8 +122,8 @@ describe('the congress sits', () => {
     expect(seasonRules([mk(four.id, false)], 3).awayWin).toBe(3);
     expect(twistsOf([mk(four.id, true)], 3).has('away-win-four')).toBe(true);
     const all: CongressRecord = { season: 7, on: '2030-01-01', moves: [], motions: BALLOT_POOL.map((m) => ({ id: m.id, for: 2, against: 1, abstain: 0, passed: true, brabo: 'abstain', votes: 1, lobbied: [], pulled: [] })) };
-    expect(seasonRules([all], 7)).toEqual({ awayWin: 4, upDown: 3, loanFee: 0.8, solidarity: 10, trouble: 2 });
-    expect(WIRED).not.toContain('four-up');
+    expect(seasonRules([all], 7)).toEqual({ awayWin: 4, upDown: 4, loanFee: 0.8, solidarity: 10, trouble: 2 });
+    expect(WIRED).toContain('four-up');
   });
 
   it('how Brabo votes reaches relations through Fork 3’s hook, dated the day it sat', () => {

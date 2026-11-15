@@ -53,7 +53,7 @@ import type { Ctx } from '../players/attributes';
 import { formationFor } from '../tree/rotation';
 import { engineOf, healNow, rotationOf, stageCapacity, treeAbilities, treeDay, treeMatch, treeSeasonEnd, type TreeCtx } from './tree';
 import { LEAGUE, TIER_BANDS, tierName } from '../data/load';
-import { braboVotes, motionById, seasonRules, sitCongress } from '../congress/congress';
+import { braboVotes, motionById, seasonRules, sitCongress, solidarityMoney } from '../congress/congress';
 import { CAST_IDS, bondDay, bondsOf, castById, closeResearch, emptyBonds, perkValue, perksHeld } from '../cast/bonds';
 import { perksOfSave } from './cast';
 import { lobbiesFor } from '../desk/jobs/lobby';
@@ -901,7 +901,7 @@ function seasonMoney(w: World, date: DayKey, tables: Record<Tier, Row[]>, up: Pa
   const k = seasonMoneyScale(w.season);
   const m3 = (x: number) => Math.round(x * k * 1000) / 1000;
   // The congress's `solidarity`: a share of Crown League TV money passed down to every league club below, Brabo included.
-  const solidarity = m3(solidarityMoney(div, rulesOf(w).solidarity, w.season.tierOf, lastDivision(w.season)));
+  const solidarity = m3(solidarityMoney(div, rulesOf(w).solidarity, w.season.tierOf, lastDivision(w.season), (LEAGUE.income as unknown as Record<string, { tv: number }>)['1'].tv));
   const total = m3(incomeFor(tier, pos, promoted, sponsorMoney, capShare * (1 + shop))) + solidarity;
   const sponsorPaid = m3(sponsorMoney);
   const prizeMoney = Math.round((total - sponsorPaid - solidarity) * 1000) / 1000;
@@ -931,19 +931,6 @@ function deskDay(w: World, date: DayKey) {
 }
 /** The season's rules: the usual, or the twists the congress passed before it (congress/congress.ts). */
 const rulesOf = (w: World) => seasonRules(w.save.congress, w.season.id);
-/**
- * Solidarity money for a season in division `div` (millions, before the world's money scale): each Crown League club
- * gives pct% of its TV money, and the pot is shared by every league club below it, from Division Two to the last
- * division, so the real sizes count (18 a division in world 1, 12 in world 2) and the outside pool never shares.
- */
-function solidarityMoney(div: number, pct: number, tierOf: Record<string, number>, last: number): number {
-  if (!pct) return 0;
-  const tv = (LEAGUE.income as unknown as Record<string, { tv: number }>)['1'].tv;
-  const divs = Object.values(tierOf);
-  const top = divs.filter((t) => t === 1).length, below = divs.filter((t) => t > 1 && t <= last).length;
-  const share = (tv * pct) / 100;
-  return div === 1 ? -share : below ? (share * top) / below : 0;
-}
 /** The congress sits as a new season begins: Brabo's ballot and the votes won by lobbying, counted (spec §6). */
 function congressSits(w: World, season: number, on: DayKey) {
   if ((w.save.congress ?? []).some((c) => c.season === season)) return;

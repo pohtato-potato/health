@@ -3,23 +3,23 @@
 // - Before every season the federation votes on 2 or 3 motions, drawn by the season's seed from the writing chat's
 //   twenty (`content/desk/motions.ts`). Only motions whose rule twist the game can play are drawn (`WIRED`): a motion
 //   that passed and then did nothing would be a lie. The rest join the ballot as their rules are wired.
-// - Each club leans by its owner kind and its region's pride (`SEATS`), and a friend or a foe of Brabo is pulled
+// - Each club leans by its owner kind and its region's pride (`seatOf`: league.json's clubs, or world 2's from world.json), and a friend or a foe of Brabo is pulled
 //   toward or away from Brabo's vote. Brabo starts with 1 vote (`braboVotes`, the seam for the mission tree, step 5).
 // - Lobbying (a desk job in the fortnight before a congress) wins one club's vote at a shown risk of annoying another.
 // - Motions that pass are that season's rule twists (`twistsOf`). How Brabo votes moves opinions (`voteMoves`, fed to
 //   relations as `votes`). Nothing here touches a match's odds through relations.
 import type { DayKey } from '../../domain/dates';
-import { MOTIONS, SEATS, type Lean, type Motion, type TwistKey } from '../content/desk';
+import { MOTIONS, seatOf, type Lean, type Motion, type TwistKey } from '../content/desk';
 import type { Move } from '../market/relations';
 import { hashSeed, rng, shuffle } from '../rng';
 
 /**
- * The twists the game plays today. A motion is drawn for a ballot only when its twist is here.
- * `four-up` is wired (promotion.ts `upDown`) but kept off the ballot: the league rebuild (spec 2026-11-14, eight
- * divisions of 12) rewrites promotion, so it returns once its rule is re-fitted there. Every twist here reads the
- * pyramid as it is (clubs per division, bands), never a fixed size.
+ * The twists the game plays today. A motion is drawn for a ballot only when its twist is here. Every twist here reads
+ * the pyramid as it is (clubs per division, bands), never a fixed size. `four-up` plays in both worlds: world 1's
+ * `seasonEnd` and world 2's `seasonEnd2` (top three up, a playoff of 4th to 7th, bottom four down; the level check
+ * unchanged).
  */
-export const WIRED: TwistKey[] = ['away-win-four', 'loan-cap', 'solidarity', 'spending-rule'];
+export const WIRED: TwistKey[] = ['away-win-four', 'four-up', 'loan-cap', 'solidarity', 'spending-rule'];
 export const BALLOT_POOL: Motion[] = MOTIONS.filter((m) => WIRED.includes(m.twist.key));
 export const motionById = (id: string): Motion | undefined => MOTIONS.find((m) => m.id === id);
 
@@ -64,11 +64,10 @@ export const lobbyDaysLeft = (phase: 'season' | 'event', day: number, seasonDays
 const clampLean = (x: number): Lean => Math.max(-2, Math.min(2, Math.round(x))) as Lean;
 /**
  * How a club's seat leans on a motion: its owner kind plus its region's pride, −2 to 2. Old selves sit neutral, and so
- * does a club with no seat yet (a new real club before the writing chat gives it one): it still votes, pulled only by
- * its opinion of Brabo or a lobby. Owners are never made up for a real club.
+ * does a club with no seat (`seatOf` has none for it): it still votes, pulled only by its opinion of Brabo or a lobby.
  */
 export function seatLean(m: Motion, club: string): Lean {
-  const seat = SEATS[club];
+  const seat = seatOf(club);
   if (!seat || seat.owner === 'old-self') return 0;
   return clampLean((m.leans[seat.owner] ?? 0) + (m.regions?.[seat.region] ?? 0));
 }
@@ -171,10 +170,10 @@ export const lobbyRisk = (die: number, cut = 0): number =>
  */
 export function annoyedBy(m: Motion, lobbied: string, side: 'for' | 'against', clubs: string[], taken: string[] = []): string | undefined {
   const d = side === 'for' ? 1 : -1;
-  const region = SEATS[lobbied]?.region;
+  const region = seatOf(lobbied)?.region;
   const pool = clubs.filter((c) => c !== OWN_ID && c !== lobbied && !taken.includes(c) && Math.sign(seatLean(m, c)) === -d);
   pool.sort((a, b) => Math.abs(seatLean(m, b)) - Math.abs(seatLean(m, a))
-    || Number(SEATS[b]?.region === region) - Number(SEATS[a]?.region === region) || a.localeCompare(b));
+    || Number(seatOf(b)?.region === region) - Number(seatOf(a)?.region === region) || a.localeCompare(b));
   return pool[0];
 }
 
@@ -217,4 +216,17 @@ export function seasonRules(records: CongressRecord[] | undefined, season: numbe
     solidarity: t.get('solidarity') ?? 0,
     trouble: t.has('spending-rule') ? t.get('spending-rule')! : 1,
   };
+}
+
+/**
+ * Solidarity money for a season in division `div` (millions, before the world's money scale): each Crown League club
+ * gives pct% of its TV money (`tv`), and the pot is shared by every league club below it, from Division Two to the
+ * last division. So the real sizes count (18 a division in world 1, 12 in world 2) and the outside pool never shares.
+ */
+export function solidarityMoney(div: number, pct: number, tierOf: Record<string, number>, last: number, tv: number): number {
+  if (!pct) return 0;
+  const divs = Object.values(tierOf);
+  const top = divs.filter((t) => t === 1).length, below = divs.filter((t) => t > 1 && t <= last).length;
+  const share = (tv * pct) / 100;
+  return div === 1 ? -share : below ? (share * top) / below : 0;
 }

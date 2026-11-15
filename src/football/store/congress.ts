@@ -15,7 +15,7 @@ export const nextCongress = (save: Pick<FbSave, 'season'>) => save.season + 1;
 
 export async function congressViewOf(save: FbSave, rel: RelationSource): Promise<CongressView> {
   const season = nextCongress(save);
-  const clubs = (await db.fbClubs.toArray()).filter((c) => !c.folded && c.id !== 'bra').map((c) => ({ id: c.id, name: nameOf(c.id), opinion: opinionOf(rel, c.id) }));
+  const clubs = (await db.fbClubs.toArray()).filter((c) => !c.folded && !c.pool && c.id !== 'bra').map((c) => ({ id: c.id, name: nameOf(c.id), opinion: opinionOf(rel, c.id) }));
   const ballot = save.ballot?.[season] ?? {};
   return {
     season,

@@ -1,6 +1,7 @@
 // Owners and regions (spec §6): who owns each club in the pyramid and where its pride lives. These
 // decide how a club leans at the congress (motions.ts `leans` and `regions`). Every club in
-// league.json has a seat, Brabo included.
+// league.json has a seat, Brabo included; world 2's real clubs carry theirs in world.json (`seatOf`).
+import { WORLD, worldClub } from '../../data/world';
 import type { ClubSeat, OwnerKindDef, RegionDef } from './types';
 
 export const OWNER_KINDS: OwnerKindDef[] = [
@@ -45,6 +46,8 @@ export const REGIONS: RegionDef[] = [
   { id: 'nordic', name: 'The Nordic North', country: 'NO', pride: 'Saunas, midnight sun and absolutely no complaints about the cold.' },
   { id: 'portugal', name: 'Portugal', country: 'PT', pride: 'Longing, and very good wingers.' },
   { id: 'memory', name: 'Memory', country: 'BE', pride: 'Your own past months; they are from wherever you were.' },
+  // World 2's new regions, from world.json.
+  ...WORLD.newRegions,
 ];
 
 const S = (owner: ClubSeat['owner'], region: ClubSeat['region']): ClubSeat => ({ owner, region });
@@ -88,3 +91,9 @@ export const SEATS: Record<string, ClubSeat> = {
   os1: S('old-self', 'memory'), os2: S('old-self', 'memory'), os3: S('old-self', 'memory'), os4: S('old-self', 'memory'),
   os5: S('old-self', 'memory'), os6: S('old-self', 'memory'), os7: S('old-self', 'memory'),
 };
+
+/**
+ * A club's seat in either world: league.json's clubs from `SEATS`, world 2's real clubs from world.json. The two agree
+ * on every club they share, so world 1 reads exactly what it did. Undefined: no seat (the club votes neutral).
+ */
+export const seatOf = (club: string): ClubSeat | undefined => SEATS[club] ?? worldClub(club)?.seat;
