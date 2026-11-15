@@ -19,6 +19,7 @@ import { Icon } from '../../../ui/Icon';
 import { worldOf } from '../../../football/pyramid/shape';
 import { PAIRCUP_ID } from '../../../football/pyramid/cups';
 import { EveryDivision, FullTable2, LeagueHome2 } from './League2';
+import { CongressDoor } from '../desk/Congress';
 
 export const LEAGUE_VIEWS = [
   { id: 'table', label: 'Table' },
@@ -61,6 +62,7 @@ export function LeagueView({ l, view, tier, extra, n }: { l: League; view: Leagu
             <Door icon="ground" name="The pyramid" value={tierName(mine)} onClick={() => set({ view: 'pyramid' })} />
             <Door icon="list" name="Calendar" value={l.save.phase === 'season' ? `Day ${l.save.day}` : 'Break'} onClick={() => set({ view: 'calendar' })} />
             <Door icon="pack" name="The cups" value={l.season.bigcup ? 'This season' : 'None yet'} ink="#f2c46d" onClick={() => set({ view: 'cups' })} />
+            <CongressDoor save={l.save} />
           </Doors>
         </>
       )}

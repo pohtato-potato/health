@@ -16,6 +16,7 @@ import { Action, Door, Doors, Hero, Panel, Sect } from '../../../ui/kit/Kit';
 import { atlasOf } from '../world/Atlas';
 import { BackPageCard } from './News';
 import { Table } from './Table';
+import { CongressDoor } from '../desk/Congress';
 
 const S2 = shapeOf({ world: 2 });
 const GOLD = '#f2c46d';
@@ -45,6 +46,7 @@ export function LeagueHome2({ l, n }: { l: League; n?: { news: FbNews[]; matches
         <Door icon="pack" name="The cups" value={cupRound} ink={GOLD} onClick={() => set({ view: 'cups' })} />
         <Door icon="list" name="Calendar" value={l.save.phase === 'season' ? `Day ${l.save.day}` : 'Break'} onClick={() => set({ view: 'calendar' })} />
         <Door icon="ground" name="Every division" value={`${S2.divisions.length} divisions`} onClick={() => set({ view: 'divisions' })} />
+        <CongressDoor save={l.save} />
       </Doors>
     </>
   );

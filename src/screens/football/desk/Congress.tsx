@@ -1,23 +1,65 @@
-// The congress hall and the cast (desk spec §6–7; Fork 4). A plain hall in the aurora look until step 5 draws it:
-// the motions, a seat count for each, and your vote. The cast: seven people, their ranks, and each rank's scene
-// (d3-rank). Taps write only user keys (`save.ballot`, `save.castSeen`).
-import { type CSSProperties } from 'react';
+// The congress hall and the cast (desk spec §6–7; Fork 4), on the kit (look pass): one lead, filled panels in each
+// thing's colour, one glowing action, one way back and the page's name, rules behind the "?". The hall is a door on
+// League; the cast is a door on Club. Taps write only user keys (`save.ballot`, `save.castSeen`).
+import type { CSSProperties } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { motionById, type Vote } from '../../../football/congress/congress';
-import { castById, perksAt, RANK_AT } from '../../../football/cast/bonds';
+import { LOBBY_DAYS, LOBBY_RISK, lobbyOpen, motionById, type Vote } from '../../../football/congress/congress';
+import { seasonLength } from '../../../football/calendar';
+import { worldOf } from '../../../football/pyramid/shape';
+import { askDef, askOpen, asksOf, castById, MAX_RANK, perksAt, RANK_AT } from '../../../football/cast/bonds';
 import type { CastId } from '../../../football/content/desk/types';
 import { castVote, hallOf, lastCongress } from '../../../football/store/congress';
-import { scenesWaiting, seeScene } from '../../../football/store/cast';
+import { bondsOfSave, scenesWaiting, seeScene } from '../../../football/store/cast';
 import { loadDesk } from '../../../football/store/desk';
 import { useTonight } from '../../../football/store/hooks';
+import type { FbSave } from '../../../football/store/tables';
 import { go, useRoute } from '../../../router';
-import '../../../styles/matchday.css';
+import { Action, Door, Empty, Hero, Panel, Sect, Title, type HowThisWorks } from '../../../ui/kit/Kit';
+import { BLUE, CORAL, GOLD, GREEN, LAV, PINK } from '../club/Bits';
+import { FootballHome } from '../FootballHome';
 import '../../../styles/desk.css';
 
-const Page = ({ children, tone }: { children: React.ReactNode; tone?: string }) => <main className={`md-page desk${tone ? ` ${tone}` : ''}`}><div className="md-in">{children}</div></main>;
-const Back = ({ to, label }: { to: string; label: string }) => <button type="button" className="md-q dk-back" onClick={() => go(to)}>{label}</button>;
-const FOR = '#8fdcb6', AGAINST = '#ff9a8a', PINK = '#f4aedb';
 const VOTE_WORD: Record<Vote, string> = { for: 'For', against: 'Against', abstain: 'Abstain' };
+
+export const CONGRESS_HOW: HowThisWorks = {
+  title: 'How the congress works',
+  steps: [
+    { icon: 'hall', ink: GOLD, head: 'Motions before each season', line: 'Two or three motions are drawn. The congress sits as the new season begins, and what passes is that season’s rule.' },
+    { icon: 'people', ink: LAV, head: 'Clubs lean by who owns them', line: 'Owners and home regions pull each club one way. A club with no seat votes neutral.' },
+    { icon: 'deal', ink: GREEN, head: 'Friends follow your vote', line: 'Clubs that like Brabo drift toward your vote, rivals away. Clubs that care strongly remember how you voted.' },
+    { icon: 'desk', ink: CORAL, head: 'Lobby in the last fortnight', line: 'At the desk, one die wins one club’s vote, at a risk you see first of annoying another club.' },
+  ],
+  chips: [
+    { text: 'Brabo: 1 vote', ink: GOLD },
+    { text: 'passes on more for than against', ink: GREEN },
+    { text: `lobbying: last ${LOBBY_DAYS} days`, ink: CORAL },
+    { text: `risk ${LOBBY_RISK.well}–${LOBBY_RISK.badly}%`, ink: CORAL },
+    { text: 'never touches a match', ink: LAV },
+  ],
+};
+
+export const CAST_HOW: HowThisWorks = {
+  title: 'How the cast works',
+  steps: [
+    { icon: 'people', ink: PINK, head: 'Seven people around the club', line: 'Each one cares about one real habit of yours.' },
+    { icon: 'check', ink: GREEN, head: 'Bonds grow, never shrink', line: 'Time at the desk, a day their habit counts, an ask met, or a bond tile after a win. Nothing is ever taken away.' },
+    { icon: 'win', ink: GOLD, head: 'Ten ranks each', line: 'Each rank has a short scene. Some leave one small thing changed for good.' },
+    { icon: 'moon', ink: BLUE, head: 'A cool tone costs nothing', line: 'Weeks away only cool how they talk to you. Ranks stay.' },
+  ],
+  chips: [{ text: `${MAX_RANK} ranks each`, ink: PINK }, { text: 'habit day +1', ink: GREEN }, { text: 'ask met +4', ink: GOLD }, { text: 'never touches a match', ink: LAV }],
+};
+
+/** A page inside a section: one way back and its name, the "?" with its rules. */
+function Page({ title, back, to, params, help, section, children }: { title: string; back: string; to: string; params?: Record<string, string>; help?: HowThisWorks; section: 'league' | 'club'; children: React.ReactNode }) {
+  return <FootballHome section={section} inner={{ title, back, to, params, help }}><div className="k-page">{children}</div></FootballHome>;
+}
+const NoClub = ({ title, section }: { title: string; section: 'league' | 'club' }) => (
+  <Page title={title} back={section === 'league' ? 'League' : 'Club'} to={section === 'league' ? '/football/league' : '/football/club'} section={section}>
+    <Empty icon={section === 'league' ? 'hall' : 'people'} ink={section === 'league' ? GOLD : PINK} title="Not yet" line="Football starts once you found the club." />
+  </Page>
+);
+
+// ---------------------------------------------------------------- the congress hall
 
 /** /football/congress */
 export function CongressRoute() {
@@ -25,50 +67,50 @@ export function CongressRoute() {
   const m = useLiveQuery(async () => (t ? loadDesk(t) : null), [t]);
   if (t === undefined || m === undefined) return null;
   const c = m?.view.congress;
-  if (!t || !m || !c) return <Page><p className="fb-s">Football starts once you found the club.</p></Page>;
+  if (!t || !m || !c) return <NoClub title="The congress" section="league" />;
   const hall = hallOf(c);
+  const passing = hall.filter((h) => h.passing).length;
+  const voted = hall.some((h) => h.brabo !== 'abstain');
   const last = lastCongress(t.save);
+  const when = c.open ? (c.daysLeft !== undefined ? `${c.daysLeft} ${c.daysLeft === 1 ? 'day' : 'days'} left to lobby` : 'lobbying until the new season') : `lobbying opens ${LOBBY_DAYS} days before the season ends`;
   return (
-    <Page>
-      <div className="md-top"><span className="md-cap">The federation congress</span><Back to="/football/desk" label="The desk" /></div>
-      <h1 className="dk-h">Before season {c.season}</h1>
-      <p className="md-q" style={{ margin: 0 }}>
-        {c.open ? `The clubs are talking. ${c.daysLeft !== undefined ? `${c.daysLeft} ${c.daysLeft === 1 ? 'day' : 'days'} of the season left to lobby, then the event days.` : 'The congress sits when the new season begins.'}`
-          : 'The congress sits when the new season begins. Lobbying opens in the last fortnight of the season.'}
-      </p>
-      <div className="md-row"><span>Your votes</span><b className="num">1</b></div>
+    <Page title="Congress" back="League" to="/football/league" help={CONGRESS_HOW} section="league">
+      <Hero value={`${passing}/${hall.length}`} ink={GOLD} label="passing as it stands" under={`Before season ${c.season} · ${when}`} />
       {hall.map((h) => {
         const def = motionById(h.id)!;
-        const total = h.for + h.against + h.abstain;
+        const ink = h.passing ? GREEN : CORAL;
         return (
-          <section key={h.id} className="cg-motion" style={{ '--ink': h.passing ? FOR : AGAINST } as CSSProperties} aria-label={def.name}>
-            <h2 className="cg-name">{def.name}</h2>
-            <p style={{ margin: 0 }}>{def.text}</p>
-            <p className="md-q" style={{ margin: 0 }}><b>If it passes:</b> {def.plays}</p>
+          <Panel key={h.id} ink={ink} className="cg-motion">
+            <Title as="h2" under={def.text}>{def.name}</Title>
             <div className="cg-seats" role="img" aria-label={`${h.for} for, ${h.against} against, ${h.abstain} abstaining`}>
               <span className="cg-bar for" style={{ flexGrow: h.for }} />
               <span className="cg-bar abs" style={{ flexGrow: h.abstain }} />
               <span className="cg-bar ag" style={{ flexGrow: h.against }} />
             </div>
-            <div className="md-row"><span>As it stands</span><b className="num" style={{ color: h.passing ? FOR : AGAINST }}>{h.for}–{h.against}{h.abstain ? `, ${h.abstain} abstain` : ''} of {total}</b></div>
-            <div className="md-row"><span>Lobbied your way</span><b className="num">{h.lobbied}</b></div>
-            <fieldset className="cg-vote">
-              <legend className="md-cap">Your vote</legend>
+            <div className="k-row"><span className="k-q">As it stands</span><b className="cg-count" style={{ color: ink }}>{h.for}–{h.against}{h.abstain ? ` · ${h.abstain} abstain` : ''}</b></div>
+            {h.lobbied > 0 && <div className="k-row"><span className="k-q">Won by lobbying</span><b>{h.lobbied}</b></div>}
+            <span><b className="k-lb">If it passes</b> <span className="k-q">{def.plays}</span></span>
+            <div className="k-pills cg-vote" role="radiogroup" aria-label={`Your vote on ${def.name}`}>
               {(['for', 'against', 'abstain'] as Vote[]).map((v) => (
-                <button key={v} type="button" className={`md-btn${h.brabo === v ? '' : ' ghost'}`} aria-pressed={h.brabo === v} onClick={() => void castVote(c.season, h.id, v)}>{VOTE_WORD[v]}</button>
+                <button key={v} type="button" role="radio" className="k-pill" aria-checked={h.brabo === v} onClick={() => void castVote(c.season, h.id, v)}>{VOTE_WORD[v]}</button>
               ))}
-            </fieldset>
-          </section>
+            </div>
+          </Panel>
         );
       })}
-      {c.open && hall.some((h) => h.brabo !== 'abstain') && <button type="button" className="md-btn" onClick={() => go('/football/desk/job', { id: 'lobby' })}>Lobby a club: one die</button>}
-      <p className="md-q" style={{ margin: 0 }}>Clubs lean by who owns them and where they are from. Friends of Brabo drift toward your vote, rivals away. Clubs that care strongly remember how you voted.</p>
+      {c.open && voted && <Action wide onClick={() => go('/football/desk/job', { id: 'lobby' })}>Lobby a club · one die</Action>}
       {last && (
         <>
-          <span className="md-cap">This season’s rules, from the last congress</span>
+          <Sect>This season’s rules</Sect>
           {last.motions.map((r) => {
             const def = motionById(r.id)!;
-            return <div key={r.id} className="md-row"><span>{def.name}</span><b style={{ color: r.passed ? FOR : AGAINST }}>{r.passed ? 'In force' : 'Fell'} · {r.for}–{r.against}</b></div>;
+            const ink = r.passed ? GREEN : 'rgba(237, 230, 218, 0.5)';
+            return (
+              <Panel key={r.id} ink={ink} flat>
+                <span className="k-col" style={{ flex: 1 }}><b>{def.name}</b><span className="k-q">{r.passed ? def.passed : def.fell}</span></span>
+                <b className="cg-count" style={{ color: r.passed ? GREEN : undefined }}>{r.passed ? 'In force' : 'Fell'}<br /><span className="k-q">{r.for}–{r.against}</span></b>
+              </Panel>
+            );
           })}
         </>
       )}
@@ -76,86 +118,143 @@ export function CongressRoute() {
   );
 }
 
-/** The congress door on the desk and the football home: the ballot ahead, or the rules in force. */
-export function CongressDoor() {
-  const t = useTonight();
-  if (!t) return null;
-  const last = lastCongress(t.save);
+/** The congress door on League: lobbying while it is open, else the rules in force this season. */
+export function CongressDoor({ save }: { save: Pick<FbSave, 'congress' | 'season' | 'phase' | 'day' | 'world'> }) {
+  const last = lastCongress(save);
   const n = last?.motions.filter((x) => x.passed).length ?? 0;
-  return (
-    <button type="button" className="fbt-btn wide" onClick={() => go('/football/congress')}>
-      The congress · {last ? `${n} ${n === 1 ? 'rule' : 'rules'} in force this season` : `votes before season ${t.save.season + 1}`}
-    </button>
-  );
+  const value = lobbyOpen(save.phase, save.day, seasonLength(worldOf(save))) ? 'Lobbying' : last ? `${n} in force` : 'No rules yet';
+  return <Door icon="hall" name="The congress" value={value} ink={GOLD} onClick={() => go('/football/congress')} />;
 }
 
-/** /football/cast, and /football/cast?scene=member:rank for a rank scene (d3-rank). */
+// ---------------------------------------------------------------- the cast
+
+/** The cast door on Club: scenes waiting ("2 new"), or the ranks between you all. */
+export function CastDoor({ save }: { save: Pick<FbSave, 'desk' | 'bonds' | 'castSeen'> }) {
+  const waiting = scenesWaiting(save).length;
+  const ranks = bondsOfSave(save).reduce((n, b) => n + b.rank, 0);
+  return <Door icon="people" name="The cast" value={waiting ? `${waiting} new` : ranks} ink={PINK} onClick={() => go('/football/cast')} />;
+}
+
+/** /football/cast, /football/cast?member=id, and /football/cast?scene=member:rank for a rank scene (d3-rank). */
 export function CastRoute() {
   const t = useTonight();
   const route = useRoute();
   const m = useLiveQuery(async () => (t ? loadDesk(t) : null), [t]);
   if (t === undefined || m === undefined) return null;
-  if (!t || !m) return <Page><p className="fb-s">Football starts once you found the club.</p></Page>;
+  if (!t || !m) return <NoClub title="The cast" section="club" />;
   const scene = route.params.get('scene');
   if (scene) {
     const [member, rank] = scene.split(':');
     return <RankScene member={member as CastId} rank={Number(rank)} />;
   }
+  const one = route.params.get('member');
   const members = m.view.cast?.members ?? [];
+  const x = one ? members.find((y) => y.id === one) : undefined;
+  if (x) return <Member save={t.save} date={t.date} member={x} />;
   const waiting = scenesWaiting(t.save);
+  const ranks = members.reduce((n, y) => n + y.rank, 0);
   return (
-    <Page>
-      <div className="md-top"><span className="md-cap">The people around the club</span><Back to="/football/desk" label="The desk" /></div>
-      <h1 className="dk-h">The cast</h1>
-      {waiting[0] && <button type="button" className="md-btn" onClick={() => go('/football/cast', { scene: `${waiting[0].member}:${waiting[0].rank}` })}>A new scene with {castById(waiting[0].member)!.name}</button>}
-      {members.map((x) => (
-        <section key={x.id} className="cg-member" style={{ '--ink': PINK } as CSSProperties}>
-          <i className="cg-sil" aria-hidden="true" />
-          <span style={{ flex: 1 }}>
-            <b>{x.name}</b><br /><span className="md-q">{x.role}</span>
-            <Pips rank={x.rank} />
-            <span className="md-q">{x.rank >= 10 ? 'Rank 10' : `${x.toNext} to rank ${x.rank + 1}`}{x.askOpen ? ' · an ask is open' : ''}</span>
+    <Page title="The cast" back="Club" to="/football/club" help={CAST_HOW} section="club">
+      <Hero value={ranks} ink={PINK} label={ranks === 1 ? 'rank between you' : 'ranks between you'} under={`of ${members.length * MAX_RANK} · nothing is ever taken away`} />
+      {waiting[0] && (
+        <Panel ink={GOLD} onClick={() => go('/football/cast', { scene: `${waiting[0].member}:${waiting[0].rank}` })} label={`A new scene with ${castById(waiting[0].member)!.name}`}>
+          <span className="k-col"><b>Rank {waiting[0].rank} with {castById(waiting[0].member)!.name}</b><span className="k-q">{waiting.length > 1 ? `A new scene, and ${waiting.length - 1} more after it` : 'A new scene is waiting'}</span></span>
+        </Panel>
+      )}
+      {members.map((y) => (
+        <Panel key={y.id} ink={PINK} onClick={() => go('/football/cast', { member: y.id })} label={`${y.name}, ${y.role}: rank ${y.rank}`} className="cg-member">
+          <span className="cg-mrow">
+            <i className="cg-sil" aria-hidden="true" />
+            <span className="k-col" style={{ flex: 1 }}>
+              <b>{y.name}</b>
+              <span className="k-q">{y.role}</span>
+              <Pips rank={y.rank} />
+              <span className="k-q">{y.rank >= MAX_RANK ? `Rank ${MAX_RANK}` : `${y.toNext} to rank ${y.rank + 1}`}{y.askOpen ? ' · an ask is open' : ''}</span>
+            </span>
+            <span className="cg-rank" aria-hidden="true">{y.rank}</span>
           </span>
-          <span className="cg-rank num" aria-label={`Rank ${x.rank}`}>{x.rank}</span>
-        </section>
+        </Panel>
       ))}
-      <p className="md-q" style={{ margin: 0 }}>Bonds grow with time at the desk and with the habits each one cares about. Nothing is ever taken away.</p>
-      <button type="button" className="md-btn ghost" onClick={() => go('/football/desk/job', { id: 'cast' })}>Time with the cast: one die</button>
+      <Action wide onClick={() => go('/football/desk/job', { id: 'cast' })}>Time with the cast · one die</Action>
     </Page>
   );
 }
 
 const Pips = ({ rank, ink = PINK }: { rank: number; ink?: string }) => (
-  <span className="cg-pips" role="img" aria-label={`Rank ${rank} of 10`}>
-    {RANK_AT.map((_, i) => <i key={i} style={{ background: i < rank ? ink : undefined }} />)}
+  <span className="cg-pips" role="img" aria-label={`Rank ${rank} of ${MAX_RANK}`}>
+    {RANK_AT.map((_, i) => <i key={i} style={i < rank ? { background: ink, boxShadow: `0 0 6px ${ink}` } : undefined} />)}
   </span>
 );
 
-/** d3-rank: a short scene, the rank landing large, and the one thing it changes for good. */
-function RankScene({ member, rank }: { member: CastId; rank: number }) {
-  const c = castById(member);
-  const r = c?.ranks.find((x) => x.rank === rank);
-  if (!c || !r) return <Page><Back to="/football/cast" label="The cast" /></Page>;
-  const fresh = perksAt(member, rank).filter((p) => !perksAt(member, rank - 1).includes(p));
-  const done = () => { void seeScene(member, rank).then(() => go('/football/desk')); };
+type MemberRow = NonNullable<Awaited<ReturnType<typeof loadDesk>>>['view']['cast'] extends infer V ? V extends { members: (infer M)[] } ? M : never : never;
+
+/** One person: their rank leading, who they are, what they care about, what stays changed, and their scenes. */
+function Member({ save, date, member: x }: { save: FbSave; date: string; member: MemberRow }) {
+  const c = castById(x.id)!;
+  const perks = perksAt(x.id, x.rank);
+  const ask = asksOf(save.desk).find((a) => a.member === x.id && askOpen(a, save.bonds, date));
+  const seen = save.castSeen?.[x.id] ?? 0;
   return (
-    <Page tone="rank">
-      <div className="md-top"><span className="md-cap">{c.role}</span><span className="md-q">Bond</span></div>
-      <div className="cg-rankhead">
-        <i className="cg-sil big" aria-hidden="true" />
-        <span><span className="md-cap">Rank</span><br /><span className="cg-big num">{rank}</span></span>
+    <Page title={c.name} back="Cast" to="/football/cast" help={CAST_HOW} section="club">
+      <div className="cg-lead">
+        <i className="cg-sil big" aria-hidden="true" style={{ '--ink': PINK } as CSSProperties} />
+        <Hero value={x.rank} ink={PINK} label={`Rank of ${MAX_RANK}`} under={x.rank >= MAX_RANK ? 'The bond is whole' : `${x.toNext} to rank ${x.rank + 1}`} />
       </div>
-      <h1 className="dk-h" style={{ margin: 0 }}>{r.title}</h1>
-      <p className="cg-scene">{r.scene}</p>
-      {fresh.map((p) => (
-        <div key={p.key + (p.job ?? '') + (p.item ?? '')} className="md-tile" style={{ '--ink': '#93c3dc' } as CSSProperties}>
-          <span style={{ flex: 1 }}><b style={{ color: '#93c3dc' }}>New for good</b><br />{p.text}</span>
-        </div>
+      <Pips rank={x.rank} />
+      <Panel ink={PINK}>
+        <b className="k-lb">{c.role}</b>
+        <span>{c.who}</span>
+      </Panel>
+      <Panel ink={GREEN}>
+        <b className="k-lb">Cares about</b>
+        <span>{c.cares.text}</span>
+        <span className="k-q">{x.tone === 'warm' ? 'Warm with you lately.' : 'A little cool lately. It costs nothing.'}</span>
+      </Panel>
+      {ask && (
+        <Panel ink={GOLD}>
+          <b className="k-lb">An ask is open</b>
+          <span>{askDef(ask)?.text}</span>
+        </Panel>
+      )}
+      {perks.length > 0 && <Sect>Changed for good</Sect>}
+      {perks.map((p, i) => <Panel key={`${p.key}-${i}`} ink={BLUE} flat><span>{p.text}</span></Panel>)}
+      {seen > 0 && <Sect>Scenes</Sect>}
+      {c.ranks.filter((r) => r.rank <= seen).map((r) => (
+        <Panel key={r.rank} ink={LAV} onClick={() => go('/football/cast', { scene: `${x.id}:${r.rank}`, from: x.id })} label={`Rank ${r.rank}: ${r.title}`}>
+          <span className="k-row" style={{ justifyContent: 'flex-start' }}><b className="cg-rank sm">{r.rank}</b><b>{r.title}</b></span>
+        </Panel>
       ))}
-      <Pips rank={rank} ink="#93c3dc" />
-      <div className="md-fill" />
-      <button type="button" className="md-btn" onClick={done}>Back to the desk</button>
+      <Action wide onClick={() => go('/football/desk/job', { id: 'cast', target: x.id })}>Time with {c.name} · one die</Action>
     </Page>
   );
 }
 
+/** d3-rank: a short scene, the rank landing large, and the one thing it changes for good. */
+function RankScene({ member, rank }: { member: CastId; rank: number }) {
+  const { params } = useRoute();
+  const from = params.get('from');
+  const back = from ? { back: castById(from)?.name.split(' ')[0] ?? 'Cast', to: '/football/cast', params: { member: from } } : { back: 'Cast', to: '/football/cast' };
+  const c = castById(member);
+  const r = c?.ranks.find((x) => x.rank === rank);
+  if (!c || !r) return <Page title="The cast" back="Club" to="/football/club" section="club"><Empty icon="people" ink={PINK} title="No such scene" line="It may belong to another save." /></Page>;
+  const fresh = perksAt(member, rank).filter((p) => !perksAt(member, rank - 1).includes(p));
+  const done = () => { void seeScene(member, rank).then(() => go(back.to, back.params, { replace: true })); };
+  return (
+    <Page title={`Rank ${rank}`} back={back.back} to={back.to} params={back.params} help={CAST_HOW} section="club">
+      <div className="cg-lead">
+        <i className="cg-sil big" aria-hidden="true" style={{ '--ink': BLUE } as CSSProperties} />
+        <span className="k-col"><span className="cg-big" aria-label={`Rank ${rank}`}>{rank}</span><b>{c.name}</b><span className="k-q">{c.role}</span></span>
+      </div>
+      <Title as="h2">{r.title}</Title>
+      <p className="cg-scene">{r.scene}</p>
+      {fresh.map((p, i) => (
+        <Panel key={`${p.key}-${i}`} ink={BLUE}>
+          <b className="k-lb">New for good</b>
+          <span>{p.text}</span>
+        </Panel>
+      ))}
+      <Pips rank={rank} ink={BLUE} />
+      <Action wide onClick={done}>Done</Action>
+    </Page>
+  );
+}

@@ -338,7 +338,7 @@ function CastTile({ note, onNext, last }: { note: CastNote; onNext: () => void; 
         </div>
       ))}
       <div className="md-btns">
-        {note.scene && <button type="button" className="md-btn ghost" onClick={() => go('/football/cast', { scene: `${note.scene!.member}:${note.scene!.rank}` })}>A new scene</button>}
+        {note.scene && <Action wide quiet onClick={() => go('/football/cast', { scene: `${note.scene!.member}:${note.scene!.rank}` })}>A new scene</Action>}
         <Next onNext={onNext} last={last} />
       </div>
     </>

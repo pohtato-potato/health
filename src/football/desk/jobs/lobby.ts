@@ -39,7 +39,7 @@ export const lobby: JobDef = {
     const c = v.congress;
     const left = c?.daysLeft;
     return {
-      title: 'Lobby before the congress', ask: 'Whose vote do you go after?',
+      title: 'Lobby a club', ask: 'Whose vote do you go after before the congress?',
       line: !c ? '' : voted(v).length
         ? `${c.motions.length} motions before season ${c.season}. ${c.lobbied.length} ${c.lobbied.length === 1 ? 'vote' : 'votes'} won so far.`
         : 'Cast your vote in the congress hall first, then win others to it.',

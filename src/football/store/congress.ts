@@ -1,7 +1,8 @@
 // The congress, read and voted (desk spec §6; Fork 4). Brabo's ballot is a user key (`save.ballot`), so a tap is
 // never lost to a match playing. The congress itself sits in play.ts as a new season begins.
 import { db } from '../../db/db';
-import { SEASON_DAYS } from '../calendar';
+import { seasonLength } from '../calendar';
+import { worldOf } from '../pyramid/shape';
 import { ballotFor, braboVotes, lobbyDaysLeft, lobbyOpen, seatLean, tally, twistsOf, type CongressRecord, type Vote } from '../congress/congress';
 import { clubById } from '../data/load';
 import type { CongressView } from '../desk/types';
@@ -19,8 +20,9 @@ export async function congressViewOf(save: FbSave, rel: RelationSource): Promise
   const ballot = save.ballot?.[season] ?? {};
   return {
     season,
-    open: lobbyOpen(save.phase, save.day, SEASON_DAYS),
-    daysLeft: lobbyDaysLeft(save.phase, save.day, SEASON_DAYS),
+    // The season's real length: 42 days in world 1, 28 in world 2. Lobbying is the last fortnight of either.
+    open: lobbyOpen(save.phase, save.day, seasonLength(worldOf(save))),
+    daysLeft: lobbyDaysLeft(save.phase, save.day, seasonLength(worldOf(save))),
     motions: ballotFor(season).map((m) => ({ id: m.id, name: m.name, brabo: ballot[m.id] ?? 'abstain' })),
     clubs,
     lobbied: lobbiesFor(save.desk?.spends ?? [], season),

@@ -31,6 +31,7 @@ import { AXES } from '../../../football/types';
 import { euros } from '../../../football/money';
 import { fmtCount } from '../../../football/tree/words';
 import { VALUE_INK, valueTier } from '../../../ui/inks';
+import { CastDoor } from '../desk/Congress';
 
 export const CLUB_VIEWS = [
   { id: 'squad', label: 'Squad' },
@@ -147,6 +148,7 @@ function ClubFront({ c }: { c: Club }) {
         <Door icon="people" name="Squad" value={squad} onClick={() => go('/football/club', { view: 'squad' })} />
         <Door icon="tree" name="The tree" value={tree ? `${fmtCount(tree.bank)} pts` : 'Research'} ink="#c2b2ff" onClick={() => go('/football/club', { view: 'tree' })} />
         <Door icon="desk" name="The desk" value={desk ? (desk.shut ? 'Shut' : desk.left.length ? count(desk.left.length, 'die', 'dice') : 'Spent') : '–'} ink="#93c3dc" onClick={() => go('/football/desk')} />
+        <CastDoor save={c.save} />
         <Door icon="deal" name="Deals" value={c.members.length} onClick={() => go('/football/club', { view: 'deals' })} />
         <Door icon="pack" name="Packs" value={packs || 'None'} ink="#f2c46d" onClick={() => go('/football/packs')} />
         <Door icon="ground" name="The ground" value={building || done.length} ink="#ff9a76" onClick={() => go('/football/club', { view: 'ground' })} />
