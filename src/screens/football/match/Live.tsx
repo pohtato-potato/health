@@ -2,9 +2,9 @@
 // radar-as-stadium (r3-live), a call (r3-call), a goal (lg-goal), half-time (lg-half), then full time. Every number
 // here comes from the same rebuilt input the store finishes with, so what you watch is what is stored.
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { db } from '../../../db/db';
-import { clubCrest } from '../../../football/art/crest';
+import { clubCrest, crestSvg } from '../../../football/art/crest';
 import { clubById, STYLES, TIER_NAMES } from '../../../football/data/load';
 import { nextChance, startMatch, type CallOffer, type MatchState } from '../../../football/engine';
 import { weakSide, type Width } from '../../../football/matchday';
@@ -24,7 +24,11 @@ import { FullTime } from '../FullTime';
 import { Art } from '../Tonight';
 import { PlayerCard } from '../players/Card';
 import { buzz } from '../Match';
-import { ElevenDots, MomentumStrip, moveChain, oddsChips, pctInk, PlanPanel, ScoreBar, ShotMap } from './MatchBits';
+import { ElevenDots, MomentumStrip, moveChain, oddsChips, pctInk, PlanPanel, ShotMap } from './MatchBits';
+import { Action, Chip, HelpButton, Panel } from '../../../ui/kit/Kit';
+import { CALL_HOW, MATCH_HOW } from '../howDaily';
+import { Gremlin, Pundit } from '../Studio';
+import '../../../styles/look-tonight.css';
 import { Pitch } from './Pitch';
 
 const run = (st: MatchState) => { while (nextChance(st)) { /* to the next stop */ } return st; };
@@ -44,6 +48,15 @@ export function LiveRoute() {
   return <LivePlay p={p} save={save} onEnd={end} />;
 }
 
+/** One match screen: it fills the screen above the tab bar and never scrolls, its one action at the foot. */
+function Fit({ className, children, label }: { className?: string; children: ReactNode; label?: string }) {
+  return (
+    <Aurora className={`mt-page lt-fitpage ${className ?? ''}`}>
+      <main className="fb-page lt-fit" aria-label={label}>{children}</main>
+    </Aurora>
+  );
+}
+
 /** Before kick-off (lg-pre). */
 export function PreKickOff({ p, save, onKickOff, onSkip }: { p: PausedMatch; save: FbSave; onKickOff: () => void; onSkip: () => void }) {
   const opp = clubById(p.prep.oppId);
@@ -56,32 +69,48 @@ export function PreKickOff({ p, save, onKickOff, onSkip }: { p: PausedMatch; sav
   const tactic = save.tactics?.[p.date] ? { pick: save.tactics[p.date], by: 'you' as const } : p.prep.tactic;
   const style = STYLES[p.style];
   return (
-    <Aurora className="mt-page">
-      <main className="fb-page">
-        <div className="fb-row"><span className="fb-lb">Last night · {TIER_NAMES[String(p.prep.braboTier)] ?? `Division ${p.prep.braboTier}`}{p.prep.matchday ? ` · matchday ${p.prep.matchday}` : ''}</span><span className="fb-s">{p.prep.braboHome ? 'Home' : 'Away'}</span></div>
-        <div className="md-opp">
-          <Art svg={clubCrest(opp, 48)} />
-          <span><b className="md-oname">{opp.name}</b><span className="fb-s">Rated {Math.round(rating)}{gap ? ` · ${Math.abs(gap)} division${Math.abs(gap) === 1 ? '' : 's'} ${gap > 0 ? 'above' : 'below'} you` : ' · your division'}</span></span>
-        </div>
-        <div className="md-chips">
-          {opp.known.slice(0, 2).map((a) => <span key={a.name} className="md-chip" style={{ color: '#ff9a76', borderColor: '#ff9a76' }}>{a.name}</span>)}
-          {style?.say && <span className="md-chip" style={{ color: '#93c3dc', borderColor: '#93c3dc' }}>{style.say}</span>}
-          {read.weakKnown && <span className="md-chip" style={{ color: '#8fdcb6', borderColor: '#8fdcb6' }}>{WEAK_CHIP[weakSide(p.prep.oppId)]}</span>}
-        </div>
-        <PlanPanel date={p.date} tactic={tactic} plan={plan} read={read} xi={[]} cards={save.tacticCards ?? []} />
-        <span className="fb-lb">Your eleven</span>
-        <ElevenDots xi={p.prep.xi} />
-        <div className="fb-btns md-foot">
-          <button type="button" className="fb-btn pri wide" onClick={onKickOff}>Kick off</button>
-          <button type="button" className="fb-btn wide" onClick={onSkip}>Skip to the result</button>
-        </div>
-      </main>
-    </Aurora>
+    <Fit className="lt-pre" label="Before kick-off">
+      <div className="lt-mtop">
+        <span className="lt-cap">Last night · {TIER_NAMES[String(p.prep.braboTier)] ?? `Division ${p.prep.braboTier}`}{p.prep.matchday ? ` · matchday ${p.prep.matchday}` : ''} · {p.prep.braboHome ? 'home' : 'away'}</span>
+        <HelpButton how={MATCH_HOW} />
+      </div>
+      <div className="md-opp">
+        <Art svg={clubCrest(opp, 48)} />
+        <span><b className="md-oname">{opp.name}</b><span className="k-q">Rated {Math.round(rating)}{gap ? ` · ${Math.abs(gap)} division${Math.abs(gap) === 1 ? '' : 's'} ${gap > 0 ? 'above' : 'below'} you` : ' · your division'}</span></span>
+      </div>
+      <div className="k-chips">
+        {opp.known.slice(0, 2).map((a) => <Chip key={a.name} ink="#ff9a76">{a.name}</Chip>)}
+        {style?.say && <Chip ink="#93c3dc">{style.say}</Chip>}
+        {read.weakKnown && <Chip ink="#8fdcb6">{WEAK_CHIP[weakSide(p.prep.oppId)]}</Chip>}
+      </div>
+      <PlanPanel date={p.date} tactic={tactic} plan={plan} read={read} xi={[]} cards={save.tacticCards ?? []} compact />
+      <div className="lt-eleven"><span className="lt-cap">Your eleven</span><ElevenDots xi={p.prep.xi} /></div>
+      <div className="lt-foot">
+        <Action wide onClick={onKickOff}>Kick off</Action>
+        <button type="button" className="lt-skip" onClick={onSkip}>Skip to the result</button>
+      </div>
+    </Fit>
   );
 }
 
 type Phase = 'enter' | 'shot' | 'result';
 const MS: Record<Phase, number> = { enter: 1800, shot: 1300, result: 1400 };
+
+/** The score with both crests, big in the middle, and the clock under it: what leads every match screen. */
+function Scoreboard({ p, save, score, minute, label }: { p: PausedMatch; save: FbSave; score: [number, number]; minute?: number; label?: ReactNode }) {
+  const opp = clubById(p.prep.oppId);
+  const own = <Art svg={crestSvg(save.crest.step, save.crest.opt, 34)} />, them = <Art svg={clubCrest(opp, 34)} />;
+  const name = opp.short || opp.name;
+  const [l, r] = p.prep.braboHome ? [['Brabo', own, score[0]], [name, them, score[1]]] as const : [[name, them, score[1]], ['Brabo', own, score[0]]] as const;
+  return (
+    <header className="lt-board" aria-label={`${l[0]} ${l[2]}, ${r[0]} ${r[2]}${minute !== undefined ? `, ${minute} minutes` : ''}`}>
+      <span className="lt-side">{l[1]}<b>{l[0]}</b></span>
+      <b className="lt-score" key={`${score[0]}-${score[1]}`}>{l[2]}<i>–</i>{r[2]}</b>
+      <span className="lt-side r"><b>{r[0]}</b>{r[1]}</span>
+      {(minute !== undefined || label) && <span className="lt-clock">{label ?? <><b>{minute}′</b> of 90</>}</span>}
+    </header>
+  );
+}
 
 /** Live (r3-live), with the calls, the goals and half-time as they come. */
 function LivePlay({ p, save, onEnd }: { p: PausedMatch; save: FbSave; onEnd: () => void }) {
@@ -115,48 +144,47 @@ function LivePlay({ p, save, onEnd }: { p: PausedMatch; save: FbSave; onEnd: () 
   const upTo = st.chances.slice(0, c ? k + (phase === 'result' ? 1 : 0) : k);
   const score: [number, number] = [upTo.filter((x) => x.side === 'atk' && x.ok && !x.kept).length, upTo.filter((x) => x.side === 'def' && !x.ok).length];
   const minute = c ? c.minute : st.stop?.kind === 'half' ? 45 : st.stop?.kind === 'call' ? st.stop.offer.minute : 90;
-  const skip = <button type="button" className="fb-btn wide" onClick={onEnd}>Skip to the result</button>;
 
   if (goal !== null) return <GoalView c={st.chances[goal]} p={p} save={save} score={score} credit={credits.find((x) => x.i === goal)} onOn={() => { setGoal(null); setK(goal + 1); setPhase('enter'); }} />;
   if (!c) {
     if (st.stop?.kind === 'call') return <CallView offer={st.stop.offer} p={p} save={save} chances={st.chances} onPick={(pick) => once(() => recordLive({ pick }))} />;
     if (st.stop?.kind === 'half') return <HalfView p={p} save={save} chances={st.chances} score={score} onGo={(half2) => once(() => recordLive({ halfSeen: true, half2 }))} />;
+    // The final whistle (lg-full's first beat): the score, the ninety minutes as a strip and a map, then full time.
+    const won = score[0] > score[1], lost = score[0] < score[1];
     return (
-      <Aurora className="mt-page">
-        <main className="fb-page">
-          <ScoreBar save={save} oppId={p.prep.oppId} braboHome={p.prep.braboHome} score={score} big />
-          <p className="md-whistle">Full time</p>
-          <MomentumStrip chances={st.chances} />
-          <button type="button" className="fb-btn pri wide" onClick={onEnd}>See full time</button>
-        </main>
-      </Aurora>
+      <Fit className={`lt-whistle ${won ? 'w' : lost ? 'l' : 'd'}`} label="Full time">
+        <Scoreboard p={p} save={save} score={score} label={<b>Full time</b>} />
+        <p className="lt-word">{won ? 'A win.' : lost ? 'A defeat.' : 'A draw.'}</p>
+        <MomentumStrip chances={st.chances} />
+        <div className="lt-map"><ShotMap chances={st.chances} /></div>
+        <div className="lt-foot"><Action wide onClick={onEnd}>See full time</Action></div>
+      </Fit>
     );
   }
   const chain = moveChain(c, k, p.prep.xi, credits.find((x) => x.i === k)?.name);
   const chips = oddsChips(c.mods, c.type);
   return (
-    <Aurora className={`mt-page md-live ${c.side}`}>
-      <main className="fb-page">
-        <ScoreBar save={save} oppId={p.prep.oppId} braboHome={p.prep.braboHome} score={score} big />
-        <div className="md-stadium">
-          <Pitch s={{ chance: c, ball: phase === 'enter' ? undefined : c.land, flying: phase === 'shot', zoom: false, save: phase === 'result' && c.side === 'def' && c.ok, resultKey: k }} dots={st.chances.slice(0, k)} entry={phase !== 'enter'} />
-        </div>
+    <Fit className={`md-live lt-live ${c.side}`} label="The match, live">
+      <Scoreboard p={p} save={save} score={score} minute={minute} />
+      <MomentumStrip chances={upTo} upTo={minute} />
+      <div className="md-stadium lt-stadium">
+        <i className="lt-flood" aria-hidden="true" />
+        <Pitch s={{ chance: c, ball: phase === 'enter' ? undefined : c.land, flying: phase === 'shot', zoom: false, save: phase === 'result' && c.side === 'def' && c.ok, resultKey: k }} dots={st.chances.slice(0, k)} entry={phase !== 'enter'} />
+      </div>
+      <div className="lt-now" key={k}>
         {chain.length > 0 && (
           <ol className="md-chain" aria-label="The move">
             {chain.map((n, i) => <li key={n} className={i === chain.length - 1 ? 'last' : undefined}>{n}</li>)}
           </ol>
         )}
-        <div className="md-now">
-          <span className="fb-lb">{c.minute}′ · {c.type}</span>
-          <p><b className="fb-num md-pct" style={pctInk(c.pct)}>{c.pct}%</b> <span className="fb-s">{c.side === 'atk' ? 'to score' : 'to stop it'}</span></p>
-          {phase === 'result' && <p className="md-res">{isGoal(c) ? (c.side === 'atk' ? 'Goal!' : 'They score.') : c.side === 'atk' ? 'It stays out.' : 'Stopped.'}</p>}
+        <div className="k-row lt-chance">
+          <span className="k-col"><span className="lt-cap">{c.minute}′ · {c.type}</span>{phase === 'result' ? <b className={`lt-res ${isGoal(c) ? (c.side === 'atk' ? 'g' : 'x') : ''}`}>{isGoal(c) ? (c.side === 'atk' ? 'Goal!' : 'They score.') : c.side === 'atk' ? 'It stays out.' : 'Stopped.'}</b> : <span className="k-q">{c.side === 'atk' ? 'Your chance' : 'Their chance'}</span>}</span>
+          <span className="lt-pct"><b className="fb-num" style={pctInk(c.pct)}>{c.pct}%</b><span className="k-q">{c.side === 'atk' ? 'to score' : 'to stop it'}</span></span>
         </div>
-        {chips.length > 0 && <div className="md-chips">{chips.map((x) => <span key={x.text} className="md-chip" style={{ color: AXIS_INK[x.axis], borderColor: AXIS_INK[x.axis] }}>{x.text}</span>)}</div>}
-        <MomentumStrip chances={upTo} upTo={minute} />
-        <div className="fb-row"><span className="fb-s">Kick-off</span><span className="fb-s">{minute}′ of 90</span></div>
-        {skip}
-      </main>
-    </Aurora>
+        {chips.length > 0 && <div className="lt-chips">{chips.map((x) => <Chip key={x.text} ink={AXIS_INK[x.axis]}>{x.text}</Chip>)}</div>}
+      </div>
+      <div className="lt-foot"><button type="button" className="lt-skip" onClick={onEnd}>Skip to the result</button></div>
+    </Fit>
   );
 }
 
@@ -169,35 +197,33 @@ const SITUATION: Record<string, string> = {
 const TAKE_LABEL: Record<string, string> = { 'Counter-attack': 'Run at them', 'Set piece': 'Go for the set piece', 'Through ball': 'Thread it through', 'Tap-in': 'Get bodies in the box' };
 const fair = (pct: number) => (pct >= 55 ? 'A good chance.' : pct >= 30 ? 'A fair chance.' : 'A long way out.');
 
-/** A call (r3-call): three options, the odds in value-scale colour, each in its axis ink. */
+/** A call (r3-call): three options stacked, each a full filled choice in its axis ink, saying what it risks. */
 export function CallView({ offer, p, save, chances, onPick }: { offer: CallOffer; p: PausedMatch; save: FbSave; chances: ChanceEvent[]; onPick: (pick: CallPick) => void }) {
   const opp = clubById(p.prep.oppId);
   const take = offer.options[0], shoot = offer.options[1], keep = offer.options[2];
-  const score = offer.score;
+  const opts: { pick: CallPick; ink: string; name: string; line: string; odds: ReactNode; style?: CSSProperties }[] = [
+    { pick: 'take', ink: AXIS_INK[take.axis!], name: TAKE_LABEL[take.type!] ?? 'Take it on', line: `${take.axis} takes it on. ${fair(take.pct)}`, odds: `${take.pct}%`, style: pctInk(take.pct) },
+    { pick: 'shoot', ink: AXIS_INK.Power, name: 'Shoot on sight', line: 'From range. Unlikely, but a screamer if it lands.', odds: `${shoot.pct}%`, style: pctInk(shoot.pct) },
+    { pick: 'keep', ink: AXIS_INK.Routine, name: 'Keep the ball', line: keep.pct ? `No chance now. Their next attack is ${keep.pct} points easier to stop.` : 'No chance now. They have no attack left to stop.', odds: 'Safe', style: { color: '#8fdcb6' } },
+  ];
   return (
-    <Aurora className="mt-page md-callpage">
-      <main className="fb-page">
-        <ScoreBar save={save} oppId={p.prep.oppId} braboHome={p.prep.braboHome} score={score} />
-        <div className="fb-row"><span className="fb-s">{offer.minute} minutes</span><span className="fb-s">Call {offer.n} of {offer.of}</span></div>
-        <MomentumStrip chances={chances} upTo={offer.minute} />
+    <Fit className="md-callpage lt-call" label={`Call ${offer.n} of ${offer.of}`}>
+      <Scoreboard p={p} save={save} score={offer.score} label={<><b>{offer.minute}′</b> · call {offer.n} of {offer.of}</>} />
+      <MomentumStrip chances={chances} upTo={offer.minute} />
+      <div className="lt-ask">
         <h2 className="md-ask">{(SITUATION[take.type!] ?? 'A chance is on.').replace('{opp}', opp.short || opp.name)} What do you shout?</h2>
-        <div className="mt-opts">
-          <button type="button" className="mt-opt" style={{ borderColor: AXIS_INK[take.axis!] }} onClick={() => onPick('take')}>
-            <span><b style={{ color: AXIS_INK[take.axis!] }}>{TAKE_LABEL[take.type!] ?? 'Take it on'}</b><small>{take.axis} takes it on. {fair(take.pct)}</small></span>
-            <b className="fb-num md-odds" style={pctInk(take.pct)}>{take.pct}%</b>
+        <HelpButton how={CALL_HOW} />
+      </div>
+      <div className="mt-opts lt-opts">
+        {opts.map((o, i) => (
+          <button key={o.pick} type="button" className="mt-opt lt-opt" style={{ ['--ink' as string]: o.ink, ['--i' as string]: i } as CSSProperties} onClick={() => onPick(o.pick)}>
+            <span><b style={{ color: o.ink }}>{o.name}</b><small>{o.line}</small></span>
+            <b className="fb-num md-odds" style={o.style}>{o.odds}</b>
           </button>
-          <button type="button" className="mt-opt" style={{ borderColor: AXIS_INK.Power }} onClick={() => onPick('shoot')}>
-            <span><b style={{ color: AXIS_INK.Power }}>Shoot on sight</b><small>From range. Unlikely, but a screamer if it lands.</small></span>
-            <b className="fb-num md-odds" style={pctInk(shoot.pct)}>{shoot.pct}%</b>
-          </button>
-          <button type="button" className="mt-opt" style={{ borderColor: AXIS_INK.Routine }} onClick={() => onPick('keep')}>
-            <span><b style={{ color: AXIS_INK.Routine }}>Keep the ball</b><small>{keep.pct ? 'No chance now. Their next attack is 15 points easier to stop.' : 'No chance now. They have no attack left to stop.'}</small></span>
-            <b className="fb-num md-odds" style={{ color: '#3fd98a' }}>Safe</b>
-          </button>
-        </div>
-        <p className="fb-s">The odds come from tonight’s numbers. If you are not watching, your assistant takes the best odds.</p>
-      </main>
-    </Aurora>
+        ))}
+      </div>
+      <p className="k-q lt-note">The odds come from tonight’s numbers. If you are not watching, your assistant takes the best odds.</p>
+    </Fit>
   );
 }
 
@@ -209,21 +235,21 @@ function GoalView({ c, p, save, score, credit, onOn }: { c: ChanceEvent; p: Paus
   const screamer = ours && c.type === 'Long shot' && c.pct < 20;
   const colours = ours ? ['#ff8a3d', '#c2b2ff'] : [opp.colours[0] ?? '#7fb8ff', opp.colours[1] ?? '#141414'];
   return (
-    <Aurora className="mt-page md-goal" a={colours[0]} c={colours[1]}>
-      <main className="fb-page" role="alert">
-        <span className="fb-lb">{c.minute} minutes</span>
+    <Aurora className={`mt-page lt-fitpage md-goal lt-goal ${ours ? 'ours' : 'theirs'}`} a={colours[0]} c={colours[1]}>
+      <main className="fb-page lt-fit" role="alert">
+        <span className="lt-cap">{c.minute} minutes</span>
         <b className="md-gword">{ours ? 'GOAL' : 'They score'}</b>
         <span className="md-tag">{screamer ? `SCREAMER · ${c.pct}% and in` : ours ? `${c.type} · ${c.pct}% and in` : `${c.type} · ${c.pct}% to stop it`}</span>
         {ours && credit && (
           <div className="md-scorer">
             {player && <div className="mt-card"><PlayerCard card={player.card} art={player.art} seed={player.id} player={player} /></div>}
-            <span><b className="md-oname">{credit.name}</b><span className="fb-s">{credit.unit}</span></span>
+            <span><b className="md-oname">{credit.name}</b><span className="k-q">{credit.unit}</span></span>
           </div>
         )}
         {!ours && <Art svg={clubCrest(opp, 72)} className="md-gcrest" />}
-        <div className="md-stadium sm"><Pitch s={{ chance: c, ball: c.land, flying: false, zoom: false, save: false, resultKey: 0 }} /></div>
-        <ScoreBar save={save} oppId={p.prep.oppId} braboHome={p.prep.braboHome} score={score} big />
-        <button type="button" className="fb-btn pri wide" onClick={onOn}>Carry on</button>
+        <div className="md-stadium sm lt-stadium"><Pitch s={{ chance: c, ball: c.land, flying: false, zoom: false, save: false, resultKey: 0 }} /></div>
+        <Scoreboard p={p} save={save} score={score} />
+        <div className="lt-foot"><Action wide onClick={onOn}>Carry on</Action></div>
       </main>
     </Aurora>
   );
@@ -238,22 +264,20 @@ export function HalfView({ p, save, chances, score, onGo }: { p: PausedMatch; sa
   const n = [shots.filter((c) => c.side === 'atk').length, shots.filter((c) => c.side === 'def').length];
   const lines = halfLines(p, chances, score);
   return (
-    <Aurora className="mt-page">
-      <main className="fb-page">
-        <div className="fb-row"><span className="fb-lb">Half-time</span><span className="fb-s">In the studio</span></div>
-        <ScoreBar save={save} oppId={p.prep.oppId} braboHome={p.prep.braboHome} score={score} big />
-        <p className="md-studio g"><b>The Gremlin</b>{lines[0]}</p>
-        <p className="md-studio p"><b>The pundit</b>{lines[1]}</p>
-        <ShotMap chances={chances} label="Shot map so far" />
-        <div className="fb-row"><span>Chances</span><b className="fb-num">{n[0]} v {n[1]}</b></div>
-        <div className="fb-row"><span>Expected goals</span><b className="fb-num">{xg[0].toFixed(1)} v {xg[1].toFixed(1)}</b></div>
-        <span className="fb-lb">Change the plan?</span>
-        <div className="md-seg3">
-          {TACTICS.map((t) => <button key={t} type="button" className={pick === t ? 'on' : undefined} aria-pressed={pick === t} onClick={() => setPick(t)}>{TACTIC_NAME[t]}</button>)}
-        </div>
-        <div className="fb-btns md-foot"><button type="button" className="fb-btn pri wide" onClick={() => onGo(pick === (plan.tactic ?? p.prep.tactic.pick) ? null : pick)}>Second half</button></div>
-      </main>
-    </Aurora>
+    <Fit className="lt-half" label="Half-time">
+      <Scoreboard p={p} save={save} score={score} label={<><b>Half-time</b> · in the studio</>} />
+      <div className="lt-voice g"><Gremlin /><span><b>The Gremlin</b><span>{lines[0]}</span></span></div>
+      <div className="lt-voice p"><Pundit /><span><b>The pundit</b><span>{lines[1]}</span></span></div>
+      <Panel className="lt-map"><ShotMap chances={chances} label="Shot map so far" />
+        <div className="k-row"><span className="k-q">Chances</span><b className="fb-num">{n[0]} v {n[1]}</b></div>
+        <div className="k-row"><span className="k-q">Expected goals</span><b className="fb-num">{xg[0].toFixed(1)} v {xg[1].toFixed(1)}</b></div>
+      </Panel>
+      <span className="lt-cap">Change the plan?</span>
+      <div className="md-seg3">
+        {TACTICS.map((t) => <button key={t} type="button" className={pick === t ? 'on' : undefined} aria-pressed={pick === t} onClick={() => setPick(t)}>{TACTIC_NAME[t]}</button>)}
+      </div>
+      <div className="lt-foot"><Action wide onClick={() => onGo(pick === (plan.tactic ?? p.prep.tactic.pick) ? null : pick)}>Second half</Action></div>
+    </Fit>
   );
 }
 

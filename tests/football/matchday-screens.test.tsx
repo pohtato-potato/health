@@ -14,6 +14,11 @@ import { FullTimeView } from '../../src/screens/football/FullTime';
 import { CallView, HalfView, PreKickOff } from '../../src/screens/football/match/Live';
 import { PickOfThree } from '../../src/screens/football/match/MatchBits';
 import { TonightView } from '../../src/screens/football/Tonight';
+import type { Tonight as TonightData } from '../../src/football/store/hooks';
+
+/** A pending moment (opening night) shows alone on Tonight (look pass L4); clear it to see the rest. */
+const calm = (t: TonightData): TonightData => ({ ...t, save: { ...t.save, openings: [] } });
+
 
 let n = 0;
 beforeEach(async () => {
@@ -28,7 +33,7 @@ describe('matchday screens', () => {
   it('the morning after: last night waits with Watch and Skip, and no score', async () => {
     await kickOff('2026-11-06');
     const t = (await loadTonight('2026-11-07'))!;
-    const out = html(<TonightView t={t} />);
+    const out = html(<TonightView t={calm(t)} />);
     expect(out).toContain('Last night');
     expect(out).toMatch(/>Watch</);
     expect(out).toMatch(/>Skip</);
@@ -36,8 +41,8 @@ describe('matchday screens', () => {
   });
   it('Tonight shows the plan with tempo and width in place of the plain tactic picker', async () => {
     const t = (await loadTonight('2026-11-06'))!;
-    const out = html(<TonightView t={t} />);
-    expect(out).toContain('Your plan');
+    const out = html(<TonightView t={calm(t)} />);
+    expect(out).toContain('Plan');
     expect(out).toContain('Tempo');
     expect(out).toContain('Width');
     expect(out).toContain('Not scouted yet');

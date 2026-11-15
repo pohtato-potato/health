@@ -117,10 +117,10 @@ export function ElevenDots({ xi }: { xi: XiPlace[] }) {
  * Before kick-off (lg-pre): the plan with the tempo and width dials, the scouted read, the eleven. The tactic is the
  * existing per-day pick (tap the assistant's to choose it yourself, tap yours again to give it back).
  */
-export function PlanPanel({ date, tactic, plan, read, xi, cards }: { date: string; tactic: { pick: Tactic; by: 'you' | 'assistant' }; plan: MatchdayPlan; read?: Read; xi: XiPlace[]; cards: Axis[] }) {
+export function PlanPanel({ date, tactic, plan, read, xi, cards, compact = false }: { date: string; tactic: { pick: Tactic; by: 'you' | 'assistant' }; plan: MatchdayPlan; read?: Read; xi: XiPlace[]; cards: Axis[]; compact?: boolean }) {
   const tempo = plan.tempo ?? 'normal', width = plan.width ?? 'middle';
   return (
-    <section className="md-plan" aria-label="Your plan">
+    <section className={`md-plan${compact ? ' compact' : ''}`} aria-label="Your plan">
       <div className="fb-row"><span className="fb-lb">Your plan</span><span className="fb-s">{tactic.by === 'assistant' ? 'the assistant’s pick' : 'your pick'}</span></div>
       <div className="md-seg3">
         {TACTICS.map((t) => (
@@ -129,7 +129,7 @@ export function PlanPanel({ date, tactic, plan, read, xi, cards }: { date: strin
           </button>
         ))}
       </div>
-      <p className="fb-s">{tacticWords(tactic.pick)}</p>
+      {!compact && <p className="fb-s">{tacticWords(tactic.pick)}</p>}
       <div className="md-dial">
         <div className="fb-row"><span>Tempo</span><b>{TEMPO_NAME[tempo]}</b></div>
         <div className="md-bars" role="radiogroup" aria-label="Tempo">
@@ -137,7 +137,7 @@ export function PlanPanel({ date, tactic, plan, read, xi, cards }: { date: strin
             <button key={t} type="button" role="radio" aria-checked={tempo === t} aria-label={TEMPO_NAME[t]} className={k <= TEMPOS.indexOf(tempo) ? 'lit' : undefined} onClick={() => void setPlan(date, { tempo: t })}><i /></button>
           ))}
         </div>
-        <p className="fb-s">{tempo === 'quick' ? 'One more chance each way.' : tempo === 'patient' ? 'One fewer chance each way.' : 'The usual number of chances.'}</p>
+        {!compact && <p className="fb-s">{tempo === 'quick' ? 'One more chance each way.' : tempo === 'patient' ? 'One fewer chance each way.' : 'The usual number of chances.'}</p>}
       </div>
       <div className="md-dial">
         <div className="fb-row"><span>Width</span><b>{WIDTH_NAME[width]}</b></div>
@@ -174,7 +174,7 @@ export function PickOfThree({ matchId, pick, name }: { matchId: string; pick: { 
         const w = pickWords(t, name);
         const on = pick.chosen === k;
         return (
-          <button key={k} type="button" className={`mt-tile${on ? ' on' : ''}`} style={{ borderColor: t.kind === 'card' ? AXIS_INK[t.axis] : ink[k % 3] }} disabled={pick.chosen !== undefined} aria-pressed={on} onClick={() => void choosePick(matchId, k)}>
+          <button key={k} type="button" className={`mt-tile lt-tile${on ? ' on' : ''}`} style={{ ['--ink' as string]: t.kind === 'card' ? AXIS_INK[t.axis] : ink[k % 3] } as React.CSSProperties} disabled={pick.chosen !== undefined} aria-pressed={on} onClick={() => void choosePick(matchId, k)}>
             <span><b>{w.title}</b><small>{w.line}</small></span>
             {t.kind === 'research' && <b className="fb-num md-plus">+{t.n}</b>}
             {on && <b className="md-took">Taken</b>}
