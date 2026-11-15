@@ -30,12 +30,12 @@ export function Table({ tier, rows, day, form, waiting = false, kitKnown, world 
     const pos = i + 1;
     if (pos === 3 && tier > 1) out.push(<Cut key="up" kind="up" text="Top two go up" />);
     if (pos === 7 && tier > 1) out.push(<Cut key="po" kind="po" text="3rd to 6th: playoffs" />);
-    if (pos === rows.length - 2 && rows.length > 6 && (tier < last || world === 2)) out.push(<Cut key="down" kind="down" text={tier < last ? 'Bottom three go down' : world === 2 ? 'Bottom three make way for clubs from abroad' : 'Bottom three go down'} />);
+    if (pos === rows.length - 2 && rows.length > 6 && (tier < last || world === 2)) out.push(<Cut key="down" kind="down" text={tier < last ? 'Bottom three go down' : world === 2 ? 'Bottom three swap out' : 'Bottom three go down'} />);
     const me = r.id === OWN;
     const club = me ? 'Brabo United' : clubById(r.id).name;
     out.push(
       <li key={r.id} className={`fb-trow${me ? ' me' : ''}`} style={{ '--k': clubColour(r.id) } as React.CSSProperties}>
-        <a href={`#/football/club-page?id=${encodeURIComponent(r.id)}`} aria-label={`${pos}, ${club}, ${r.pts} points${r.form.length ? `, form ${r.form.map((x) => WORD[x]).join(' ')}` : ''}`}>
+        <Row href={limit ? undefined : `#/football/club-page?id=${encodeURIComponent(r.id)}`} label={`${pos}, ${club}, ${r.pts} points${r.form.length ? `, form ${r.form.map((x) => WORD[x]).join(' ')}` : ''}`}>
           <span className="fb-tpos">{pos}</span>
           {me || !kitKnown || kitKnown(r.id) ? <span className="fb-tring" aria-hidden="true" /> : <Unknown size={20} />}
           <span className="fb-tname">
@@ -44,13 +44,13 @@ export function Table({ tier, rows, day, form, waiting = false, kitKnown, world 
             <span className="fb-form" aria-hidden="true">{r.form.length ? r.form.map((x, k) => <ResultMark key={k} r={x} />) : <span className="fb-s">No games yet</span>}</span>
           </span>
           <span className="fb-tpts">{r.pts}<small>pts</small></span>
-        </a>
+        </Row>
       </li>,
     );
   });
   return (
     <section className="fb-table" style={{ '--t': `var(--fb-t${tier})` } as React.CSSProperties} aria-label={`${name(tier)} table`}>
-      <div className="fb-row"><span className="fb-t fb-tiername">{name(tier)}</span>{day && <span className="fb-s">{day}</span>}</div>
+      {!limit && <div className="fb-row"><span className="fb-t fb-tiername">{name(tier)}</span>{day && <span className="fb-s">{day}</span>}</div>}
       <ol className="fb-trows">{out}</ol>
       {onAll && limit && rows.length > limit && <button type="button" className="fb-btn sm fb-seeall" onClick={onAll}>See all {rows.length}</button>}
       {!limit && world === 1 && <Notes1 tier={tier} rows={rows} form={form} />}
@@ -64,6 +64,11 @@ export function Table({ tier, rows, day, form, waiting = false, kitKnown, world 
       )}
     </section>
   );
+}
+
+/** A table row: a link to the club's page, or (in a tappable preview, which is itself the button) a plain row. */
+function Row({ href, label, children }: { href?: string; label: string; children: React.ReactNode }) {
+  return href ? <a href={href} aria-label={label}>{children}</a> : <span className="fb-trow-in" aria-label={label}>{children}</span>;
 }
 
 function Notes1({ tier, rows, form }: { tier: Tier; rows: Row[]; form?: number }) {

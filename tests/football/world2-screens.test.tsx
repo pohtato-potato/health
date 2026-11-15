@@ -83,7 +83,7 @@ describe('world 2 screens', { timeout: 300_000 }, () => {
   it('Division Eight swaps with the clubs abroad; the Crown League has no promotion line', () => {
     const t8 = 8 as unknown as Tier;
     const eight = html(<Table tier={t8} rows={l.tables[t8]} world={2} />);
-    expect(eight).toContain('make way for clubs from abroad');
+    expect(eight).toContain('Bottom three swap out');
     const crown = html(<Table tier={1} rows={l.tables[1]} world={2} />);
     expect(crown).not.toContain('Top two go up');
     expect(crown).toContain('Bottom three go down');

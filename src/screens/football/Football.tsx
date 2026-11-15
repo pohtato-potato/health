@@ -136,7 +136,7 @@ export function Football() {
   if (path === '/football/desk' || path.startsWith('/football/desk/')) return <DeskRoute />;
   if (path === '/football/cup' || path === '/football/cup/run' || path === '/football/cup/match') return <CupRoute path={path} />;
   if (path === '/football/market') return <MarketRoute />;
-  if (path === '/football/redrawn') return <FootballHome section="tonight" inner={{ title: 'The world redrawn', back: 'Tonight', to: '/football' }}><Redrawn /></FootballHome>;
+  if (path === '/football/redrawn') return <FootballHome section="tonight" inner={{ title: 'New world', back: 'Tonight', to: '/football' }}><Redrawn /></FootballHome>;
   if (path === '/football/atlas') return <FootballHome section="league" inner={{ title: 'The atlas', back: 'League', to: '/football/league' }}><Atlas /></FootballHome>;
   if (path === '/football/club-page') return <FootballHome section="league" inner={{ title: 'A club', back: 'League', to: '/football/league' }}><ClubPage id={params.get('id') ?? ''} wiki={params.get('wiki') === '1'} /></FootballHome>;
   if (path === '/football/wrapped') return <WrappedRoute season={Number(params.get('season') ?? 1)} />;

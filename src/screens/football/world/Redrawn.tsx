@@ -57,10 +57,12 @@ function Before() {
       <Sect>Where Brabo start</Sect>
       <Hero value={plan.division} ink={`var(--fb-t${plan.division})`} label={plan.divisionName} under={`of ${S2.divisions.length} divisions`} />
       <Panel ink={`var(--fb-t${plan.division})`}>
-        <p className="fb-s" style={{ margin: 0 }}>
+        {plan.nights === 0 ? (
+          <p className="fb-s" style={{ margin: 0 }}>No nights logged in the last four weeks yet, so Brabo start at the bottom and climb from there.</p>
+        ) : <p className="fb-s" style={{ margin: 0 }}>
           Your last {plan.nights} {plan.nights === 1 ? 'night' : 'nights'}{plan.short ? ' (fewer than four weeks, so this is a first guess)' : ''}, played against
           every division, would win {pct(r.w)} here. Over a season of {md} matchdays that is about <b>{w} won, {d} drawn, {md - w - d} lost</b>.
-        </p>
+        </p>}
       </Panel>
       <Sect>Who you meet</Sect>
       <ul className="fb-redrawn-vs">
