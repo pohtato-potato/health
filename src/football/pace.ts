@@ -14,8 +14,14 @@ export const LEAGUE_MATCHDAYS = seasonDays().filter((d) => d.kind === 'league').
 /** Stored on the save: the season it is for, the first logging day it plays, and the last if it was turned off. */
 export interface LeaguePace { season: number; from: DayKey; to?: DayKey }
 
-/** Whether `date` plays at three a day: only in the season the switch was turned on for, from that day on. */
+/**
+ * Retired (ledger O38, league spec §6): one league match a day. The switch is hidden and a save that has it on plays
+ * as off. The rest of this file stays until a later tidy removes it.
+ */
+export const PACE_RETIRED = true;
+/** Whether `date` plays at three a day: never, since the switch was retired. */
 export function paceOn(save: { pace?: LeaguePace; season: number; phase: string }, date: DayKey): boolean {
+  if (PACE_RETIRED) return false;
   const p = save.pace;
   return Boolean(p && save.phase === 'season' && p.season === save.season && date >= p.from && (!p.to || date <= p.to));
 }

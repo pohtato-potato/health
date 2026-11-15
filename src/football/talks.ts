@@ -10,6 +10,8 @@ export type TalkPick = 'sign' | 'haggle' | 'hold';
 export interface TalkOutcome { season: number; habit: TalkHabit; pick: TalkPick; from: number; to: number; on: DayKey; until?: DayKey }
 
 export const TALK_DAYS = 42;
+/** World 2 (ledger O38): the ask looks back over one 28-day season. */
+export const TALK_DAYS_2 = 28;
 /** Talks are held in a season's first week. */
 export const TALK_WINDOW = 7;
 export const TALK_UNIT: Record<TalkHabit, number> = { steps: 500, protein: 5 };
@@ -22,8 +24,8 @@ const median = (xs: number[]) => { const s = [...xs].sort((a, b) => a - b); cons
 const roundTo = (x: number, u: number) => Math.round(x / u) * u;
 
 /** The days the ask looks at: the six weeks before `today`. */
-export function talkWindow(today: DayKey): { from: DayKey; to: DayKey } {
-  return { from: addDays(today, -TALK_DAYS), to: addDays(today, -1) };
+export function talkWindow(today: DayKey, world: 1 | 2 = 1): { from: DayKey; to: DayKey } {
+  return { from: addDays(today, -(world === 2 ? TALK_DAYS_2 : TALK_DAYS)), to: addDays(today, -1) };
 }
 
 /** The agent's ask from the logged days' values, or undefined when it would not raise the target. */

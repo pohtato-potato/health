@@ -1,7 +1,8 @@
 // The tree's screens (rounds six to eight, as pinned): the tree in six eras, a tech, a eureka, entering a new era,
 // projects on the Kaai skyline, the staff room and the board. Words in Atkinson Hyperlegible Next, numbers and titles
 // in Fraunces. Every state has a word beside its colour or line.
-import { Fragment, type CSSProperties, type ReactNode } from 'react';
+import { seasonMoneyScale } from '../../../football/pyramid/shape';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { ERAS, TECHS } from '../../../football/content/tree';
 import { BOARD } from '../../../football/content/season';
 import { PROJECTS } from '../../../football/content/projects';
@@ -73,12 +74,7 @@ export function TreeHome() {
       </div>
       <Bar pct={(doneNow / 8) * 100} c={TREE_INK} label={`${doneNow} of 8 researched in ${now.name}`} />
       <Aim m={m} target={target} />
-      {ERAS.map((e, i) => (
-        <Fragment key={e.id}>
-          <Era m={m} id={e.id} n={i} />
-          {i === 0 && <Waiting m={m} skip={aimFor(m, target) ? undefined : 0} />}
-        </Fragment>
-      ))}
+      <Eras m={m} skip={aimFor(m, target) ? undefined : 0} />
       <Note>Every tech has its own small picture. Filled is done, gold is within reach. Tap any to read it.</Note>
       <Sect>Around the tree</Sect>
       <Doors two label="The tree's rooms">
@@ -88,6 +84,36 @@ export function TreeHome() {
         <Door icon="pack" name="Packs" value={m.packsWaiting.length ? `${m.packsWaiting.length} to open` : 'The album'} ink="#ff9a76" onClick={() => go('/football/packs')} />
       </Doors>
     </div>
+  );
+}
+
+/** The eras, in order. A leading run of eras already fully researched (a world-2 save arrives with several) folds
+ *  into one panel under the first era with work left, so that era comes straight after the lead; the panel opens
+ *  them in place. Waiting chips sit under the first era drawn. */
+function Eras({ m, skip }: { m: Model; skip?: number }) {
+  const [showDone, setShowDone] = useState(false);
+  const full = (id: EraId) => TECHS.filter((t) => t.era === id).every((t) => m.researched.includes(t.id));
+  let folded = 0;
+  while (folded < ERAS.length - 1 && full(ERAS[folded].id)) folded++;
+  const era = (i: number) => <Era key={ERAS[i].id} m={m} id={ERAS[i].id} n={i} />;
+  return (
+    <>
+      {era(folded)}
+      <Waiting m={m} skip={skip} />
+      {folded > 0 && (
+        <Panel ink={TREE_INK}>
+          <div className="kt-aim">
+            <span className="kt-aim-t">
+              <b style={{ color: TREE_INK }}>{folded === 1 ? `Era ${ROMAN[0]}` : `Eras ${ROMAN[0]}–${ROMAN[folded - 1]}`} · all researched</b>
+              <span className="k-q">{ERAS.slice(0, folded).map((e) => e.name).join(', ')}</span>
+            </span>
+            <button type="button" className="k-act sm quiet" aria-expanded={showDone} onClick={() => setShowDone((v) => !v)}>{showDone ? 'Hide' : 'Show'}</button>
+          </div>
+        </Panel>
+      )}
+      {showDone && ERAS.slice(0, folded).map((_, i) => era(i))}
+      {ERAS.slice(folded + 1).map((_, k) => era(folded + 1 + k))}
+    </>
   );
 }
 
@@ -446,7 +472,7 @@ export function StaffPage() {
     const doc = x.s.id === 'club-doctor' && x.hired;
     return (
       <Viewable key={x.s.id} className="k-panel" style={{ ['--ink' as string]: x.hired ? era.colour : '#a9a7b8' } as CSSProperties} view={() => staffView(x.s.name, x.s.text, era, `${era.name} · ${x.tech.name}`)}>
-        <PanelTop name={`${x.s.name}${doc ? ` · level ${m.doctor.level}` : ''}`} c={x.hired ? era.colour : '#c4c1cf'} right={x.leave ? 'on leave' : x.hired ? euros(wage(x.s.wageUnits, m.t.tier)) : undefined} />
+        <PanelTop name={`${x.s.name}${doc ? ` · level ${m.doctor.level}` : ''}`} c={x.hired ? era.colour : '#c4c1cf'} right={x.leave ? 'on leave' : x.hired ? euros(wage(x.s.wageUnits, m.t.stage) * seasonMoneyScale(m.t.save)) : undefined} />
         <span className="k-q">{x.s.text}</span>
         {doc && <span className="k-q">{m.doctor.xp} days with every medicine kept{m.doctor.next ? ` · next level at ${m.doctor.next}` : ' · top level'}</span>}
         <span className="k-q kb-small">{era.name} · {x.tech.name}</span>
@@ -463,7 +489,7 @@ export function StaffPage() {
       {saving.length > 0 && <><Sect>Saving for</Sect><div className="kb-rows">{saving.map(row)}</div></>}
       <Sect>Further up the tree</Sect>
       <div className="kb-rows">{later.map(row)}</div>
-      <Note>One wage unit is {euros(WAGE_UNIT[m.t.tier])} a season in this division.</Note>
+      <Note>One wage unit is {euros(WAGE_UNIT[m.t.stage] * seasonMoneyScale(m.t.save))} a season in this division.</Note>
     </div>
   );
 }

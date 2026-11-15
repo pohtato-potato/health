@@ -30,7 +30,7 @@ export function KitsView({ c, act = {} }: { c: Club; act?: KitActions }) {
         <Panel ink={GOLD}>
           <PanelTop name={`Launch day · season ${next}`} c={GOLD} />
           <span>The kit maker has designs for each slot. Pick one; the rest go back in the drawer.</span>
-          {slotsOpen(c.tier).map((slot) => {
+          {slotsOpen(c.stage ?? c.tier).map((slot) => {
             const picked = s.kits?.find((k) => k.season === next && k.slot === slot)?.id;
             return (
               <fieldset key={slot} className="k-col" style={{ border: 0, padding: 0, margin: 0, gap: 6 }}>
@@ -50,7 +50,7 @@ export function KitsView({ c, act = {} }: { c: Club; act?: KitActions }) {
               </fieldset>
             );
           })}
-          {!slotsOpen(c.tier).includes('third') && <span className="k-q">The third kit opens in Division Four.</span>}
+          {!slotsOpen(c.stage ?? c.tier).includes('third') && <span className="k-q">The third kit opens in Division Four.</span>}
         </Panel>
       )}
       <Panel ink={LAV}>

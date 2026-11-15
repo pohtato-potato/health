@@ -1,4 +1,5 @@
 // The ground, sealed: only what exists, plus the next project's name and a teasing line.
+import { neighbourWords } from '../../../football/data/load';
 import { BUNDLES, capacityOf, homeGround, isOpen, isShut, PLACES, type BundleDef, type Need } from '../../../football/ground';
 import { euros } from '../../../football/money';
 import type { Club } from '../../../football/store/club';
@@ -26,23 +27,23 @@ export function GroundView({ c, onMove }: { c: Club; onMove?: (on: boolean) => v
   const s = c.save;
   const states = new Map((c.bundles ?? []).map((b) => [b.id, b]));
   const done = [...states.values()].filter((b) => b.done).map((b) => b.id);
-  const g = { tier: c.tier, moved: Boolean(s.moved), done, budget: s.budget };
+  const g = { tier: c.stage ?? c.tier, moved: Boolean(s.moved), done, budget: s.budget };
   const open = BUNDLES.filter((b) => isOpen(b, g));
   const sealed = BUNDLES.find((b) => !done.includes(b.id) && !isOpen(b, g));
   const built = BUNDLES.filter((b) => done.includes(b.id));
   /** The one project list, shared with the tree's Projects page. */
   const tree = useModel();
   const building = tree ? tree.projectsOpen.filter((p) => !tree.states.get(p.id)?.done).length : open.length;
-  const stage = kaaiStage(c.tier);
+  const stage = kaaiStage(c.stage ?? c.tier);
   const canMove = !s.moved && done.includes('kaai-stand');
   return (
     <div className="k-page">
-      <div className="kg-kaai"><Kaai tier={c.tier} done={done} height={110} /></div>
+      <div className="kg-kaai"><Kaai tier={c.stage ?? c.tier} done={done} height={110} /></div>
       <div className="kb-lead">
         <Hero value={building} ink="#ff9a76" label="being built" />
         <span className="k-r k-q">{s.moved ? `${homeGround(true)} · holds ${capacityOf(true, done).toLocaleString('en-GB')}` : `Tenants at ${homeGround(false)}`}</span>
       </div>
-      {!s.moved && <Note>Zurenborg Athletic’s ground. They keep the good dressing room.</Note>}
+      {!s.moved && <Note>{neighbourWords('Zurenborg Athletic’s ground. They keep the good dressing room.')}</Note>}
       {canMove && (s.moveAtBreak
         ? <Panel ink="#8fdcb6" flat><Icon name="check" size={24} color="#8fdcb6" /><span style={{ flex: 1 }}><b>Moving to Kaai 42 at the next break</b></span><Action quiet sm onClick={() => onMove?.(false)}>Stay</Action></Panel>
         : <Action wide onClick={() => onMove?.(true)}>Move to Kaai 42 at the next break</Action>)}
@@ -71,7 +72,7 @@ export function GroundView({ c, onMove }: { c: Club; onMove?: (on: boolean) => v
       {([1, 2, 3] as const).map((k) => (
         <div key={k} className={`kg-stage${k === stage ? ' now' : ''}`}>
           <h3 className="k-sect kg-sh">{k === stage ? `Now · ${STAGE_NAME[k - 1]}` : STAGE_NAME[k - 1]}</h3>
-          <div className="kg-kaai"><Kaai tier={c.tier} done={k === stage ? done : k === 1 ? [] : SIDES} stage={k} height={92} /></div>
+          <div className="kg-kaai"><Kaai tier={c.stage ?? c.tier} done={k === stage ? done : k === 1 ? [] : SIDES} stage={k} height={92} /></div>
           <span className="k-q">{STAGE_LINE[k - 1]}</span>
         </div>
       ))}
