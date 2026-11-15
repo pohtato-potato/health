@@ -145,14 +145,16 @@ function DeskHome({ m }: { m: DeskModel }) {
     if (j.id === 'negotiate') { const live = liveTalk(m.view); go(live ? '/football/desk/talk' : '/football/market', live ? { talk: live.talk } : undefined); return; }
     go('/football/desk/job', { id: j.id, ...(held ? { die: held.axis } : {}) });
   };
-  const yesterday = WEEKDAY[(new Date(`${m.date}T12:00:00`).getDay() + 6) % 7];
+  // Finding 8: name the desk's own day too, so "from Saturday" never reads as the day it reopens.
+  const dow = new Date(`${m.date}T12:00:00`).getDay();
+  const yesterday = WEEKDAY[(dow + 6) % 7], day = WEEKDAY[dow];
   const left = tray.left.length;
   return (
     <Page title="The desk" back="Club" to="/football/club" help={DESK_HOW}>
       <div className="kb-lead">
         <Hero value={m.shut ? 'Shut' : left} ink="#93c3dc" label={m.shut ? 'for the night' : left === 1 ? 'die left' : 'dice left'} />
-        <span className="k-r k-q">from {yesterday}</span>
       </div>
+      <p className="k-q" style={{ margin: 0 }}>{day}’s desk, with dice from {yesterday}’s logs.</p>
       {m.shut ? (
         <Note>{m.left.length ? `${WORDS[m.left.length]} ${m.left.length === 1 ? 'die' : 'dice'} left over: ${unspentResearch(m.left.length) ? `+${unspentResearch(m.left.length)} research when the night plays` : 'it takes two for a point of research'}.` : 'Every die was spent.'} New dice come with the morning.</Note>
       ) : (

@@ -335,3 +335,27 @@ button.k-rowl { cursor: pointer; }
 .dk-cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px 0; margin-inline: -20px; }
 /* Tidy: a drawn chevron or arrow sitting in a line of text keeps to the text's middle. */
 .lv-link svg, .lv-small svg, .lv-tr-arrow svg, .lv-tr-up svg, .td-duet b svg, .fb-btn svg, .sess svg, .rt-lbn svg { vertical-align: -3px; display: inline-block; }
+
+/* Door families (ledger O40): colour says what kind of place a door opens. The fill carries the family colour, the
+   name is in it, the value stays cream; text keeps 4.5:1 or more on every fill, high contrast on or off. */
+.k-fams { display: flex; flex-direction: column; gap: 6px; }
+.k-fam { display: flex; flex-direction: column; gap: 8px; }
+.k-sect.fam { color: var(--ink); }
+.k-sect.fam::after { background: color-mix(in srgb, var(--ink) 40%, transparent); }
+.k-door.fam {
+  background: linear-gradient(150deg, color-mix(in srgb, var(--ink) 20%, #141730), color-mix(in srgb, var(--ink) 9%, #10122a));
+  border: 1.5px solid color-mix(in srgb, var(--ink) 62%, transparent);
+}
+.k-door.fam .nm { color: var(--ink); }
+/* Waiting: a chip with words, never a different colour. */
+.k-door .k-count { align-self: flex-start; margin-top: 4px; padding: 2px 9px; border-radius: 999px; background: var(--ink, var(--k-cream)); color: #10121f; font: 700 14px/1.35 var(--sans); }
+/* Locked or empty: dimmed, a dashed edge, and why in words (no opacity, so the words keep their contrast). */
+.k-door.locked { background: #12142a; border: 1.5px dashed color-mix(in srgb, var(--ink) 60%, transparent); }
+.k-door.locked .lk { font-size: 15px; line-height: 1.25; color: var(--k-quiet); }
+.k-door.locked .nm { color: color-mix(in srgb, var(--ink) 75%, #c4c1cf); }
+.k-door.locked > svg:first-child { opacity: 0.7; }
+/* Inside a page, the header's small line says which family you landed in. */
+.k-head-fam { display: block; font: 700 14px/1.3 var(--sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); margin-top: 2px; }
+html.contrast .k-door.fam { background: #0b0c1a; border-color: var(--ink); }
+html.contrast .k-door.locked { background: #0b0c1a; }
+html.contrast .k-door.locked .lk, html.contrast .k-door.locked .nm { color: var(--k-cream); }

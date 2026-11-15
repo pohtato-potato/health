@@ -11,7 +11,7 @@ import { headToHead } from '../../../football/store/league';
 import type { StoredMatch } from '../../../football/store/tables';
 import { bountiesPicked, trackOf } from '../../../football/tree/season';
 import { go } from '../../../router';
-import { Door, Doors, Panel } from '../../../ui/kit/Kit';
+import { Door, Doors, FamilyDoors, Panel } from '../../../ui/kit/Kit';
 import { useModel } from '../tree/model';
 import { Art } from '../Tonight';
 import type { Story } from './StoryHome';
@@ -75,13 +75,15 @@ export function StoryLead({ s }: { s: Story }) {
     <div className="lt-story">
       {m && <TrackLead n={m.track} track={trackOf(worldOf(s.l.save))} />}
       <RivalPanel r={list[0]} matches={s.all} />
-      <Doors two label="More of the story">
-        <Door line icon="list" ink="#8fdcb6" name="Bounties" value={picked < BOUNTIES_PICKED ? `Pick ${BOUNTIES_PICKED - picked} this week` : `${picked} picked`} onClick={() => go('/football/bounties')} />
-        <Door line icon="book" ink="#c2b2ff" name="Seasons" value={`Season ${s.l.save.season}`} onClick={view('seasons')} />
-        <Door line icon="pack" ink={GOLD} name="Moments" value={`${ups} upsets`} onClick={view('moments')} />
-        <Door line icon="kit" ink="#93c3dc" name="Old selves" value={`${olds} met`} onClick={view('olds')} />
-        <Door line icon="shield" ink={CORAL} name="Rivals" value={`${list.length - 1} of ${MAX_EARNED} earned`} onClick={view('rivals')} />
-        <Door line icon="more" ink="#f4aedb" name="Settings" value="Football rules" onClick={view('settings')} />
+      <FamilyDoors two label="More of the story" groups={{ record: [
+        <Door key="seasons" line icon="book" family="record" name="Seasons" value={`Season ${s.l.save.season}`} onClick={view('seasons')} />,
+        <Door key="moments" line icon="pack" family="record" name="Moments" value={`${ups} upsets`} onClick={view('moments')} />,
+        <Door key="rivals" line icon="shield" family="record" name="Rivals" value={`${list.length - 1} of ${MAX_EARNED} earned`} onClick={view('rivals')} />,
+        <Door key="olds" line icon="kit" family="record" name="Old selves" value={`${olds} met`} onClick={view('olds')} />,
+        <Door key="bounties" line icon="list" family="record" name="Bounties" value={`${picked} picked`} count={picked < BOUNTIES_PICKED ? `${BOUNTIES_PICKED - picked} to pick this week` : undefined} onClick={() => go('/football/bounties')} />,
+      ] }} />
+      <Doors two label="Settings">
+        <Door line icon="more" name="Settings" value="Football rules" onClick={view('settings')} />
       </Doors>
     </div>
   );

@@ -12,7 +12,7 @@ import { OWN } from '../../../football/store/season';
 import type { FbNews, StoredMatch } from '../../../football/store/tables';
 import type { Tier } from '../../../football/types';
 import { go } from '../../../router';
-import { Action, Door, Doors, Hero, Panel, Sect } from '../../../ui/kit/Kit';
+import { Action, Door, FamilyDoors, Hero, Panel, Sect } from '../../../ui/kit/Kit';
 import { atlasOf } from '../world/Atlas';
 import { BackPageCard } from './News';
 import { Table } from './Table';
@@ -41,13 +41,13 @@ export function LeagueHome2({ l, n }: { l: League; n?: { news: FbNews[]; matches
       </Panel>
       {n && <BackPageCard news={n.news} matches={n.matches} today={n.today} more />}
       <Sect>Around the league</Sect>
-      <Doors two label="Around the league">
-        <Door icon="scope" name="The atlas" value={`${atlasOf(l).seen}% seen`} onClick={() => go('/football/atlas')} />
-        <Door icon="pack" name="The cups" value={cupRound} ink={GOLD} onClick={() => set({ view: 'cups' })} />
-        <Door icon="list" name="Calendar" value={l.save.phase === 'season' ? `Day ${l.save.day}` : 'Break'} onClick={() => set({ view: 'calendar' })} />
-        <Door icon="ground" name="Every division" value={`${S2.divisions.length} divisions`} onClick={() => set({ view: 'divisions' })} />
-        <CongressDoor save={l.save} />
-      </Doors>
+      <FamilyDoors two label="Around the league" groups={{ world: [
+        <Door key="div" icon="ground" name="Every division" value={`${S2.divisions.length} divisions`} family="world" onClick={() => set({ view: 'divisions' })} />,
+        <Door key="atlas" icon="scope" name="The atlas" value={`${atlasOf(l).seen}% seen`} family="world" onClick={() => go('/football/atlas')} />,
+        <Door key="cups" icon="pack" name="The cups" value={cupRound} family="world" onClick={() => set({ view: 'cups' })} />,
+        <Door key="cal" icon="list" name="Calendar" value={l.save.phase === 'season' ? `Day ${l.save.day}` : 'Break'} family="world" onClick={() => set({ view: 'calendar' })} />,
+        <CongressDoor key="congress" save={l.save} />,
+      ] }} />
     </>
   );
 }
@@ -77,8 +77,12 @@ export function EveryDivision({ l, tier }: { l: League; tier?: Tier }) {
   const seen = (d: number) => a.layers.find((x) => x.t === d);
   const layer = seen(on);
   const [pa, pb] = pairOf(mine);
+  // Finding 13 (O40): a tap opened the table below the steps while the page jumped to the top, so it looked as if
+  // nothing happened. The chosen division's table is brought into view instead.
+  const open = (d: number) => { set({ view: 'divisions', tier: String(d) }); requestAnimationFrame(() => document.getElementById('fb-div-table')?.scrollIntoView({ block: 'start' })); };
   return (
     <>
+      <p className="k-q" style={{ margin: 0 }}>Tap a division to open its full table.</p>
       <ol className="fb-steps" aria-label="Every division">
         {S2.divisions.map((d, i) => {
           const [lo, hi] = S2.band(d);
@@ -86,14 +90,16 @@ export function EveryDivision({ l, tier }: { l: League; tier?: Tier }) {
           return (
             <li key={d} style={{ '--t': `var(--fb-t${d})`, '--w': `${58 + i * 6}%` } as React.CSSProperties}>
               <button type="button" className={`fb-step${d === on ? ' on' : ''}${d === mine ? ' you' : ''}`} aria-pressed={d === on}
-                aria-label={`${S2.name(d)}${d === mine ? ', yours' : ''}: ratings ${lo} to ${hi}, ${pct}% seen`} onClick={() => set({ view: 'divisions', tier: String(d) })}>
+                aria-label={`${S2.name(d)}${d === mine ? ', yours' : ''}: ratings ${lo} to ${hi}, ${pct}% seen`} onClick={() => open(d)}>
                 <b>{S2.name(d)}{d === mine ? ' · you' : ''}</b><span>{pct}%</span>
               </button>
             </li>
           );
         })}
       </ol>
-      <Table tier={on as Tier} rows={l.tables[on as Tier] ?? []} world={2} kitKnown={(id) => clubFog(l.save, id).facts.has('kit')} day={`Ratings ${S2.band(on).join('–')}`} />
+      <div id="fb-div-table" style={{ scrollMarginTop: 72 }}>
+        <Table tier={on as Tier} rows={l.tables[on as Tier] ?? []} world={2} kitKnown={(id) => clubFog(l.save, id).facts.has('kit')} day={`${on === mine ? 'Your division · ' : ''}ratings ${S2.band(on).join('–')}`} />
+      </div>
       <Panel flat>
         <p className="fb-s" style={{ margin: 0 }}>
           {on === mine ? 'Your division. ' : on === pa || on === pb ? 'You meet these clubs in the Pair Cup. ' : ''}

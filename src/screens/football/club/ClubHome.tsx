@@ -17,8 +17,9 @@ import { TreeHome } from '../tree/TreeScreens';
 import { useWorldDoors } from '../world/WorldScreens';
 import { useModel } from '../tree/model';
 import { Kaai } from './Kaai';
+import { kaaiStory } from '../../../football/ground';
 import { Art } from '../Tonight';
-import { Action, Door, Doors, Hero, Panel, Sect, Title, type HowThisWorks } from '../../../ui/kit/Kit';
+import { Action, Door, Doors, FamilyDoors, Hero, Panel, Sect, Title, type HowThisWorks } from '../../../ui/kit/Kit';
 import { usePlayers, useSheet, useTonight } from '../../../football/store/hooks';
 import { loadLeague } from '../../../football/store/league';
 import { loadDesk } from '../../../football/store/desk';
@@ -112,9 +113,13 @@ function ClubFront({ c }: { c: Club }) {
   const packs = tree?.packsWaiting.length ?? 0;
   const building = tree ? tree.projectsOpen.filter((p) => !tree.states.get(p.id)?.done).length : 0;
   const squad = players.filter((p) => p.status === 'squad').length;
+  const hired = tree?.staff.filter((s) => s.hired).length ?? 0;
+  const board = tree?.eng.board.find((b) => b.season === c.save.season);
+  const offers = c.save.offers?.length ?? 0;
   return (
     <div className="k-page kc-club">
-      <div className="kc-kaai-wrap"><Kaai tier={c.tier} done={done} /></div>
+      <div className="kc-kaai-wrap"><Kaai tier={c.stage ?? c.tier} done={done} site={!c.save.moved && !done.includes('kaai-stand')} /></div>
+      <p className="k-q kc-story">{kaaiStory(done, Boolean(c.save.moved))}</p>
       <div className="k-row">
         <span className="k-row" style={{ justifyContent: 'flex-start' }}>
           <Art svg={crestSvg(c.save.crest.step, c.save.crest.opt, 44, `${own.name} crest`)} />
@@ -143,26 +148,32 @@ function ClubFront({ c }: { c: Club }) {
       <Sect>The eleven · {sheet?.save.sheet?.formation ?? '4-3-3'}</Sect>
       {xi.length === 0 ? <p className="k-q">Log a habit and it signs for the club. The eleven fills as players sign.</p> : <Pitch xi={xi} />}
       <Sect>Around the club</Sect>
-      <Doors label="Around the club">
-        <Door icon="sheet" name="Team sheet" value={sheet?.save.sheet ? 'Yours' : 'Auto'} onClick={() => go('/football/sheet')} />
-        <Door icon="people" name="Squad" value={squad} onClick={() => go('/football/club', { view: 'squad' })} />
-        <Door icon="tree" name="The tree" value={tree ? `${fmtCount(tree.bank)} pts` : 'Research'} ink="#c2b2ff" onClick={() => go('/football/club', { view: 'tree' })} />
-        <Door icon="desk" name="The desk" value={desk ? (desk.shut ? 'Shut' : desk.left.length ? count(desk.left.length, 'die', 'dice') : 'Spent') : '–'} ink="#93c3dc" onClick={() => go('/football/desk')} />
-        <CastDoor save={c.save} />
-        <Door icon="deal" name="Deals" value={c.members.length} onClick={() => go('/football/club', { view: 'deals' })} />
-        <Door icon="pack" name="Packs" value={packs || 'None'} ink="#f2c46d" onClick={() => go('/football/packs')} />
-        <Door icon="ground" name="The ground" value={building || done.length} ink="#ff9a76" onClick={() => go('/football/club', { view: 'ground' })} />
-        <Door icon="money" name="Money" value={euros(c.save.budget)} onClick={() => go('/football/club', { view: 'money' })} />
-        <Door icon="kit" name="Kits" value={kitWall(c.save, c.matches).length} onClick={() => go('/football/club', { view: 'kits' })} />
-      </Doors>
-      {world && (
-        <>
-          <Sect>The wider world</Sect>
-          <Doors two label="The wider world">
-            {world.map((d) => <Door key={d.to} icon={d.icon} name={d.label} value={d.sub} onClick={() => go(d.to)} />)}
-          </Doors>
-        </>
-      )}
+      <FamilyDoors label="Around the club" groups={{
+        people: [
+          <Door key="sheet" icon="sheet" name="Team sheet" value={sheet?.save.sheet ? 'Yours' : 'Auto'} family="people" onClick={() => go('/football/sheet')} />,
+          <Door key="squad" icon="people" name="Squad" value={squad} family="people" onClick={() => go('/football/club', { view: 'squad' })} />,
+          tree && <Door key="staff" icon="people" name="Staff" value={hired ? `${hired} hired` : 'None yet'} family="people" onClick={() => go('/football/staff')} />,
+          <CastDoor key="cast" save={c.save} />,
+          ...(world ?? []).filter((d) => d.family === 'people').map((d) => <Door key={d.to} icon={d.icon} name={d.label} value={d.sub} count={d.count} family="people" onClick={() => go(d.to)} />),
+        ],
+        place: [
+          <Door key="ground" icon="ground" name="The ground" value={`${done.length} built`} family="place" onClick={() => go('/football/club', { view: 'ground' })} />,
+          tree && <Door key="projects" icon="ground" name="Projects" value={building ? `${building} open` : 'None open'} family="place" onClick={() => go('/football/projects')} />,
+          <Door key="kits" icon="kit" name="Kits" value={kitWall(c.save, c.matches).length} family="place" onClick={() => go('/football/club', { view: 'kits' })} />,
+        ],
+        money: [
+          <Door key="money" icon="money" name="Money" value={c.save.budget >= 10 ? `€${Math.round(c.save.budget)}m` : euros(c.save.budget)} count={offers ? `${offers} ${offers === 1 ? 'offer' : 'offers'} to sign` : undefined} family="money" onClick={() => go('/football/club', { view: 'money' })} />,
+          <Door key="deals" icon="deal" name="Deals" value={c.members.length} family="money" onClick={() => go('/football/club', { view: 'deals' })} />,
+          ...(world ?? []).filter((d) => d.family === 'money').map((d) => <Door key={d.to} icon={d.icon} name={d.label} value={d.sub} count={d.count} family="money" onClick={() => go(d.to)} />),
+          <Door key="packs" icon="pack" name="Packs" value={packs} count={packs ? `${packs} to open` : undefined} locked={packs ? undefined : 'None to open yet'} family="money" onClick={() => go('/football/packs')} />,
+        ],
+        plans: [
+          <Door key="tree" icon="tree" name="The tree" value={tree ? `${fmtCount(tree.bank)} pts` : 'Research'} family="plans" onClick={() => go('/football/club', { view: 'tree' })} />,
+          tree?.boonPick && <Door key="boon" icon="pack" name="The season’s boon" value="Pick one" count="1 to pick" family="plans" onClick={() => go('/football/boon')} />,
+          tree && <Door key="board" icon="sheet" name="The board" value="Two goals" locked={board ? undefined : 'Set on the season’s first day'} family="plans" onClick={() => go('/football/board')} />,
+          <Door key="desk" icon="desk" name="The desk" value={desk ? (desk.shut ? 'Shut' : desk.left.length ? count(desk.left.length, 'die', 'dice') : 'Spent') : '–'} family="plans" onClick={() => go('/football/desk')} />,
+        ],
+      }} />
     </div>
   );
 }

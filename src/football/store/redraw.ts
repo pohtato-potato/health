@@ -9,12 +9,12 @@ import { WORLD_CLUBS } from '../data/world';
 import type { OldSelf } from '../oldSelves';
 import { type LevelNight, type Rate } from '../pyramid/level';
 import { rollOldSelves2 } from '../pyramid/oldSelves';
-import { closeAsFounding, FOUNDING_SEASON, foundingRecord, giftedBundles, rekeySeason, redrawSave, type FoundingRecord, type Gifts } from '../pyramid/redraw';
+import { arrivalMoneyNews, closeAsFounding, FOUNDING_SEASON, foundingRecord, giftedBundles, rekeySeason, redrawSave, type FoundingRecord, type Gifts } from '../pyramid/redraw';
 import { POOL, PYRAMID, shapeOf, stageOf } from '../pyramid/shape';
 import { realSeeds, seedWorld2 } from '../pyramid/world';
 import type { Tier } from '../types';
 import { loadHealth } from './gather';
-import { braboPlacing, finishPaused, monthsFromHealth2, playDue } from './play';
+import { braboPlacing, finishPaused, monthsFromHealth2, playDue, repairPlaced } from './play';
 import { newSeason2, OWN } from './season';
 import type { FbClub, FbNews, FbSave } from './tables';
 
@@ -126,6 +126,7 @@ export async function redrawWorld(now = Date.now(), opts: RedrawOpts = {}): Prom
   const plan = await planRedraw(on, opts);
   if (!plan) return undefined;
   await writeRedraw(plan);
+  await repairPlaced(); // a move on a trial day holds that day's trial (ledger O40)
   return plan;
 }
 
@@ -153,6 +154,7 @@ export async function writeRedraw(plan: RedrawPlan) {
       text: `The world redrawn. Ninety-six real clubs in eight divisions of twelve. Brabo start Season ${founding + 1} in ${plan.divisionName}, renting ${clubById('bra').ground.split(' (')[0]} from ${clubById(LANDLORDS_2).name}.`,
     };
     await db.fbNews.put(news);
+    if (plan.save.redrawn?.budget !== undefined) await db.fbNews.put(arrivalMoneyNews(on, plan.save.redrawn.budget, plan.save.redrawn.division));
     await db.fbSave.put(plan.save);
   });
   rememberClubs(clubs);

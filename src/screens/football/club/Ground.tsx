@@ -1,6 +1,6 @@
 // The ground, sealed: only what exists, plus the next project's name and a teasing line.
 import { neighbourWords } from '../../../football/data/load';
-import { BUNDLES, capacityOf, homeGround, isOpen, isShut, PLACES, type BundleDef, type Need } from '../../../football/ground';
+import { BUNDLES, capacityOf, homeGround, isOpen, isShut, kaaiStory, PLACES, type BundleDef, type Need } from '../../../football/ground';
 import { euros } from '../../../football/money';
 import type { Club } from '../../../football/store/club';
 import type { FbBundle } from '../../../football/store/tables';
@@ -38,12 +38,12 @@ export function GroundView({ c, onMove }: { c: Club; onMove?: (on: boolean) => v
   const canMove = !s.moved && done.includes('kaai-stand');
   return (
     <div className="k-page">
-      <div className="kg-kaai"><Kaai tier={c.stage ?? c.tier} done={done} height={110} /></div>
+      <div className="kg-kaai"><Kaai tier={c.stage ?? c.tier} done={done} height={110} site={!s.moved && !done.includes('kaai-stand')} /></div>
       <div className="kb-lead">
-        <Hero value={building} ink="#ff9a76" label="being built" />
+        <Hero value={building} ink="#ff9a76" label="open to build" />
         <span className="k-r k-q">{s.moved ? `${homeGround(true)} · holds ${capacityOf(true, done).toLocaleString('en-GB')}` : `Tenants at ${homeGround(false)}`}</span>
       </div>
-      {!s.moved && <Note>{neighbourWords('Zurenborg Athletic’s ground. They keep the good dressing room.')}</Note>}
+      <Note>{kaaiStory(done, Boolean(s.moved))}{s.moved ? '' : ` ${neighbourWords('They keep the good dressing room.')}`}</Note>
       {canMove && (s.moveAtBreak
         ? <Panel ink="#8fdcb6" flat><Icon name="check" size={24} color="#8fdcb6" /><span style={{ flex: 1 }}><b>Moving to Kaai 42 at the next break</b></span><Action quiet sm onClick={() => onMove?.(false)}>Stay</Action></Panel>
         : <Action wide onClick={() => onMove?.(true)}>Move to Kaai 42 at the next break</Action>)}

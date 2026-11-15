@@ -29,7 +29,7 @@ import { contractDay, keptOn, intake, newContract } from '../contracts';
 import { nationId, YOUTH_POOL } from '../data/load';
 import { crestStepFor } from '../kits';
 import { BUNDLES, bundleDay, capacityOf, dayCounts, groundAbilities, homeGround, isOpen, TENANT_CAPACITY } from '../ground';
-import { dodgyCollapse, incomeFor, offers as offersFor, type Slot } from '../money';
+import { dodgyCollapse, incomeFor, KIT_SPONSOR_TECH, openOffers } from '../money';
 import { HABITS, habitById, armbandHarmony, averageOf, momentsOf, TRAIT } from '../squad';
 import { abilityFor, braboAbilities } from '../data/abilities';
 import { standings, type Played, type Row } from '../table';
@@ -63,12 +63,13 @@ import { academyIds, creditMatch, nightOptsFor, playerCtx, playersDay, rebuildPl
 import { signFreeAgents } from '../rotation/freeAgents';
 import { chemistryAfter, moraleAfter, type Tactic } from '../rotation/night';
 import { traitAbilities } from '../rotation/traits';
-import { breakStarts, globeAfterPlayers, globeDay, globeOf, globeMatch, globeNight, globeRules, globeSeasonEnd, isBreakDay, loanAbilities, restedForLeague } from './globe';
+import { breakStarts, globeAfterPlayers, globeDay, globeOf, globeMatch, globeNight, globeRules, globeSeasonEnd, isBreakDay, loanAbilities, restedForLeague, trialsOn } from './globe';
+import { arrivalMoneyNews, arrivalOffers, startingBudget } from '../pyramid/redraw';
 
 export const CATCH_UP_CAP = 42;
 const resultOf = (s: [number, number], pens?: [number, number]): Result => (s[0] > s[1] || (pens && pens[0] > pens[1]) ? 'W' : s[0] < s[1] || (pens && pens[0] < pens[1]) ? 'L' : 'D');
 
-interface World { /** League pace (O36): the match's place in its day; 0 is the one-a-day match. */ slot: number; bundles: Map<string, FbBundle>; squad: FbSquadRow[]; save: FbSave; season: FbSeason; oldSeasons: FbSeason[]; clubs: Map<string, FbClub>; matches: StoredMatch[]; news: FbNews[]; h: Health; past: StoredMatch[]; used: { id: string; date: DayKey }[]; roster: Roster; ctx: Ctx }
+interface World { /** League pace (O36): the match's place in its day; 0 is the one-a-day match. */ slot: number; /** The chance (O40): a dry run collects each Brabo match's engine input here, by date. */ probe?: { date: DayKey; input: MatchInput }[]; bundles: Map<string, FbBundle>; squad: FbSquadRow[]; save: FbSave; season: FbSeason; oldSeasons: FbSeason[]; clubs: Map<string, FbClub>; matches: StoredMatch[]; news: FbNews[]; h: Health; past: StoredMatch[]; used: { id: string; date: DayKey }[]; roster: Roster; ctx: Ctx }
 
 /** Plays every unplayed day up to and including `date`, in order. Days before `date` count as auto-played. */
 export async function kickOff(date: DayKey): Promise<StoredMatch[]> {
@@ -118,9 +119,69 @@ export async function migrateSave(): Promise<boolean> {
   });
 }
 
+/**
+ * The chance (ledger O40, letter 1a): tonight's match exactly as the engine would set it up if the day closed now (the
+ * night's values so far, the stack, captain, abilities, the plan, home or away, the opponent as it is), worked out by a
+ * dry run of the days still to play. Nothing is written and no real dice are rolled: the dry run plays on copies, and
+ * the input it returns is played out on its own fixed seeds (football/chance.ts). Undefined when there is no match.
+ */
+export async function tonightInput(date: DayKey): Promise<{ input: MatchInput; usual?: AxisValues } | undefined> {
+  const save = await db.fbSave.get('save');
+  if (!save || save.engine !== 2) return undefined;
+  const from = save.lastPlayed ? addDays(save.lastPlayed, 1) : save.founded;
+  // Today closed already (Close the day, before 4 am): Tonight shows the next match, so the chance is for that one.
+  if (date < from && save.paused?.date !== date) date = from;
+  const start = daysBetween(from, date) + 1 > CATCH_UP_CAP ? addDays(date, -(CATCH_UP_CAP - 1)) : from;
+  const w = await loadWorld(save, start < date ? start : date);
+  // A usual night (the placing's level night): the median of the real nights in the 28 days up to yesterday.
+  const usual = levelNightIn(w, addDays(date, -1))?.values;
+  if (save.paused?.date === date) return { input: pausedInput(save.paused, save, { watch: false }), ...(usual ? { usual } : {}) };
+  w.probe = [];
+  if (w.save.paused) finishPausedIn(w, false);
+  // As "Close the day" plays it: the days before tonight as the 4 am rule would, tonight as a closed day.
+  for (let d = start; d <= date; d = addDays(d, 1)) { clubDay(w, d); playDate(w, d, d !== date, d === date); }
+  const input = w.probe.find((x) => x.date === date)?.input;
+  return input ? { input, ...(usual ? { usual } : {}) } : undefined;
+}
+
+/**
+ * Ledger O40, once per save placed in world 2: money on arrival (the starting budget and sponsor offers) for a save
+ * placed before it existed, and the weekly trial the move day skipped when the move was made on a trial day (its
+ * trialists are only brought while they can still be tied). Marked on `redrawn`, so it never runs twice.
+ */
+export async function repairPlaced(): Promise<boolean> {
+  const save = await db.fbSave.get('save');
+  const r = save?.redrawn;
+  if (!save || save.world !== 2 || !r || (r.budget !== undefined && r.trials)) return false;
+  const w = await loadWorld(save, r.on);
+  const fix: NonNullable<FbSave['redrawn']> = { ...r };
+  if (r.budget === undefined) {
+    const budget = startingBudget(r.division);
+    w.save.budget = Math.round((w.save.budget + budget) * 1000) / 1000;
+    if (!(w.save.offers ?? []).length) w.save.offers = arrivalOffers(w.save, r.division, r.on);
+    fix.budget = budget;
+    w.news.push(arrivalMoneyNews(r.on, budget, r.division));
+  }
+  if (!r.trials) {
+    const hold = globeRules(w.save, w.bundles.values()).trials.hold;
+    if (daysBetween(r.on, w.save.lastPlayed ?? r.on) < hold) w.save.globe = trialsOn(w, globeOf(w.save), r.on, w.save.season);
+    fix.trials = true;
+  }
+  w.save.redrawn = fix;
+  return db.transaction('rw', [db.fbSave, db.fbSquad, db.fbNews], async () => {
+    const cur = await db.fbSave.get('save');
+    if (!cur?.redrawn || cur.redrawn.budget !== r.budget || cur.redrawn.trials !== r.trials) return false; // another tab repaired first
+    await db.fbSave.put({ ...cur, budget: w.save.budget, offers: w.save.offers, globe: w.save.globe, redrawn: fix });
+    if (w.squad.length) await db.fbSquad.bulkPut(w.squad);
+    if (w.news.length) await db.fbNews.bulkPut(w.news);
+    return true;
+  });
+}
+
 async function playThrough(until: DayKey, closed: DayKey | null): Promise<StoredMatch[]> {
   await upgradeSave();
   await migrateSave();
+  await repairPlaced();
   const save = await db.fbSave.get('save');
   if (!save) return [];
   const from = save.lastPlayed ? addDays(save.lastPlayed, 1) : save.founded;
@@ -725,6 +786,7 @@ function braboMaybe(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: str
       rivalTwist: rival ? 'rival' : oppId === legendId() ? 'antigoon' : undefined,
       style: club?.style ?? def.style, scouted: readScouted(scoutLevel(w.save, oppId, date)), prep, picks: [],
     };
+    w.probe?.push({ date, input: pausedInput(p, w.save, { watch: false }) });
     if (wait) {
       // Set up and stopped: the owner watches or skips it; the next 4 am finishes it with the assistant.
       w.save.paused = p;
@@ -733,6 +795,7 @@ function braboMaybe(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: str
     const full = pausedInput(p, w.save, { watch: false });
     return braboTail(w, date, prep, playMatch(full), full.plan, undefined, readFor(p, w.save).line, leg);
   }
+  w.probe?.push({ date, input });
   const events = playMatch(input);
   let pens: [number, number] | undefined;
   if (events.score[0] === events.score[1] && comp !== 'friendly' && comp !== 'event' && !(comp === 'worldcup' && leg) && !(comp === 'continental' && round?.includes('league phase'))) pens = penalties(values.Routine * 5, opp.rating, rng(hashSeed(String(seed), 'pens')));
@@ -880,7 +943,6 @@ export function youthIntake(season: number, date: DayKey, extra = 0, academy = f
   const more = extra ? intake(YOUTH_POOL.filter((y) => !picked.includes(y) && y.kind === 'habit'), r, false).slice(0, extra) : [];
   return [...picked, ...more].map((y, i) => ({ id: `s${season}:y${i}`, kind: 'youth' as const, name: y.name, axis: y.axis, potential: (academy ? Math.min(5, y.potential + 1) : y.potential) as 3 | 4 | 5, what: y.what, exercise: y.kind === 'exercise', season, logged: [], status: 'growing' as const })).map((y) => ({ ...y, id: `${y.id}:${date}` }));
 }
-const OPEN: { slot: Slot; from?: Tier }[] = [{ slot: 'shirt' }, { slot: 'kit' }, { slot: 'sleeve', from: 4 }, { slot: 'partner' }];
 /** Season end: income in, dodgy sponsors may fold, offers arrive for open slots. */
 function seasonMoney(w: World, date: DayKey, tables: Record<Tier, Row[]>, up: Partial<Record<Tier, string[]>>, nextTier: Tier) {
   const div = w.season.tierOf[OWN];
@@ -909,10 +971,8 @@ function seasonMoney(w: World, date: DayKey, tables: Record<Tier, Row[]>, up: Pa
   const cont = reach ? m3(contPrize(reach)) : 0;
   w.save.income = { season: w.save.season, lines: [{ name: 'TV, gate and prize money', amount: prizeMoney }, ...(solidarity ? [{ name: solidarity > 0 ? 'Solidarity money' : 'Solidarity money passed down', amount: solidarity }] : []), { name: 'Sponsors', amount: sponsorPaid }, ...(cont ? [{ name: 'The Continental Cup', amount: cont }] : [])] };
   w.save.budget = Math.round((w.save.budget + total + cont) * 1000) / 1000;
-  const taken = new Set(w.save.sponsors.map((s) => s.slot));
-  const partners = w.save.sponsors.filter((s) => s.slot === 'partner').length;
-  w.save.offers = OPEN.filter((o) => (o.from === undefined || nextTier <= o.from) && (o.slot === 'partner' ? partners < 3 : !taken.has(o.slot)))
-    .flatMap((o) => offersFor(o.slot, nextTier, r));
+  // The kit maker's slot waits for the Kit sponsor tech in world 2 (O40); world 1 plays exactly as it always did.
+  w.save.offers = openOffers(w.save.sponsors, nextTier, worldOf(w.save) !== 2 || (w.save.treeUser?.researched ?? []).some((x) => x.id === KIT_SPONSOR_TECH), r);
   const row = (LEAGUE.income as unknown as Record<string, { tv: number; gate: number }>)[String(tier)];
   return { gate: row.gate * capShare * k, tv: row.tv * k, sponsors: sponsorPaid, shop: row.gate * capShare * shop * k, continental: cont };
 }

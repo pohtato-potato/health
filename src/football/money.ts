@@ -41,6 +41,18 @@ export function offers(slot: Slot, tier: Tier, r: () => number): Offer[] {
   }
   return out;
 }
+/**
+ * The sponsor slots that take offers. Sleeve opens at stage 4; the kit maker's slot opens with the tree's Kit sponsor
+ * (ledger O40: the tech said so and nothing read it); partners take up to three.
+ */
+const OPEN: { slot: Slot; from?: Tier }[] = [{ slot: 'shirt' }, { slot: 'kit' }, { slot: 'sleeve', from: 4 }, { slot: 'partner' }];
+export const KIT_SPONSOR_TECH = 's-kitsponsor';
+export function openOffers(signed: Pick<Offer, 'slot'>[], tier: Tier, kitSlot: boolean, r: () => number): Offer[] {
+  const taken = new Set(signed.map((s) => s.slot));
+  const partners = signed.filter((s) => s.slot === 'partner').length;
+  return OPEN.filter((o) => (o.from === undefined || tier <= o.from) && (o.slot !== 'kit' || kitSlot) && (o.slot === 'partner' ? partners < 3 : !taken.has(o.slot)))
+    .flatMap((o) => offers(o.slot, tier, r));
+}
 /** Dodgy sponsors collapse 1 season in 4. */
 export const dodgyCollapse = (r: () => number) => r() < 0.25;
 /** Millions in words people read: €820k under a million, €1.25m above. */

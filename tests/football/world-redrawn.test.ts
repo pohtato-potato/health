@@ -13,7 +13,7 @@ import { WORLD_CLUBS } from '../../src/football/data/world';
 import { ERA_IDS } from '../../src/football/content/types';
 import { TECHS } from '../../src/football/content/tree';
 import { crestStepFor, slotsOpen } from '../../src/football/kits';
-import { eraForStage, FOUNDING_SEASON, giftedBuildings, seasonName } from '../../src/football/pyramid/redraw';
+import { eraForStage, FOUNDING_SEASON, giftedBuildings, seasonName, startingBudget } from '../../src/football/pyramid/redraw';
 import { POOL, stageOf } from '../../src/football/pyramid/shape';
 import { playDue } from '../../src/football/store/play';
 import { planRedraw, redrawWorld } from '../../src/football/store/redraw';
@@ -122,7 +122,9 @@ describe('the world redrawn', { timeout: 600_000 }, () => {
   });
 
   it('keeps the players, money, contracts, kits, crest and settings', async () => {
-    expect(after.budget).toBe(before.budget);
+    // Money on arrival (ledger O40): the old bank plus one careful season's income for the division placed in.
+    expect(after.redrawn?.budget).toBe(startingBudget(after.redrawn!.division));
+    expect(after.budget).toBeCloseTo(before.budget + after.redrawn!.budget!, 3);
     expect(after.contracts).toEqual(before.contracts);
     expect(after.crest).toEqual(before.crest);
     expect(after.shirt).toBe(before.shirt);

@@ -110,6 +110,19 @@ export function loansOn(save: FbSave, date: DayKey, rules: LoanRules): LoanStay[
   return atClub([...g.loans, ...startLoans(g.loans, userOf(save).opened, g.met, date, rules)], date);
 }
 
+/** A trial day brings trialists (Sunday, and midweek with the extra day). Mutates the squad and news; returns the globe. */
+export function trialsOn(w: GlobeWorld, g: GlobeEngine, date: DayKey, season: number, rules = globeRules(w.save, w.bundles.values())): GlobeEngine {
+  const s = w.save;
+  const kind = trialDay(date, rules.trials.extraDay);
+  if (!kind || s.phase !== 'season' || g.trials.some((t) => t.on === date)) return g;
+  const week = sleepWeek(w.h, date, s.bedtime ?? undefined);
+  const taken = new Set([...w.squad.map((y) => y.name), ...[...w.roster.values()].map((p) => p.name)].map((n) => n.trim().toLowerCase()));
+  const came = trialists(YOUTH_POOL, week, date, season, taken, rules.trials, kind);
+  w.squad = [...w.squad, ...came];
+  if (came.length) w.news.push({ id: `${date}:trials`, date, kind: 'club', text: `${came.length === 1 ? 'One came' : `${came.length} came`} to the trials: ${came.map((y) => y.name).join(' and ')}. Tie them to a habit in the academy.` });
+  return { ...g, trials: [...g.trials, { on: date, style: week.style, came: came.map((y) => y.id) }].slice(-12) };
+}
+
 /** Every day, after the tree: loans, trials, youngsters, nations and duty. Mutates the world it's given. */
 export function globeDay(w: GlobeWorld, date: DayKey, season: number) {
   const s = w.save;
@@ -141,15 +154,7 @@ export function globeDay(w: GlobeWorld, date: DayKey, season: number) {
     w.news.push({ id: `${date}:trial-out:${y.id}`, date, kind: 'club', text: farewell(y) });
     return { ...y, status: 'left' as const, leftOn: date };
   });
-  const kind = trialDay(date, rules.trials.extraDay);
-  if (kind && s.phase === 'season' && !sick && !g.trials.some((t) => t.on === date)) {
-    const week = sleepWeek(w.h, date, s.bedtime ?? undefined);
-    const taken = new Set([...w.squad.map((y) => y.name), ...[...w.roster.values()].map((p) => p.name)].map((n) => n.trim().toLowerCase()));
-    const came = trialists(YOUTH_POOL, week, date, season, taken, rules.trials, kind);
-    w.squad = [...w.squad, ...came];
-    g = { ...g, trials: [...g.trials, { on: date, style: week.style, came: came.map((y) => y.id) }].slice(-12) };
-    if (came.length) w.news.push({ id: `${date}:trials`, date, kind: 'club', text: `${came.length === 1 ? 'One came' : `${came.length} came`} to the trials: ${came.map((y) => y.name).join(' and ')}. Tie them to a habit in the academy.` });
-  }
+  if (!sick) g = trialsOn(w, g, date, season, rules);
 
   // 3. Youngsters: sessions from their habit, growth from kept bedtimes (×1.5 with a loan in the unit).
   w.squad = w.squad.map((y) => {

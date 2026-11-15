@@ -128,3 +128,15 @@ export function groundAbilities(done: string[]): BraboAbility[] {
 }
 /** Brabo's home: the landlords' ground (world 2: Het Rooi, Berchem Sport's) until the move to Kaai 42. */
 export const homeGround = (moved: boolean) => (moved ? 'Kaai 42' : neighbourWords('Stadion aan de Stroom'));
+
+/**
+ * The Kaai's story in one line, the same on Club, the ground and the tree (ledger O40): Brabo rent the landlords'
+ * ground until moving day; Kaai 42 is built on the quay stand by stand, and the move is the owner's to make.
+ */
+export function kaaiStory(done: string[], moved: boolean): string {
+  const rent = `${neighbourWords('Brabo rent Stadion aan de Stroom from Zurenborg Athletic')}`;
+  if (moved) return 'Home is Kaai 42, on the quay.';
+  if (done.includes('kaai-stand')) return `The Kaai Stand is up: moving day can be booked for the next break. Until then, ${rent}.`;
+  if (done.includes('plot')) return `Kaai 42 is being built on the quay: the plot is the club’s and the Kaai Stand is next. Until moving day, ${rent}.`;
+  return `${rent}. Kaai 42 starts with the plot at the quay.`;
+}

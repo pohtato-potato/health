@@ -109,7 +109,7 @@ export const TECHS: TechDef[] = [
     effects: [{ kind: 'staff', staff: 'commercial-manager' }, { kind: 'slot', slot: 'sponsor-sleeve', add: 1 }, { kind: 'slot', slot: 'sponsor-partner', add: 1 }],
     eureka: t('logged', 30, 'Anything logged on 30 days.') },
   { id: 'r-kaai42', name: 'Kaai 42', era: 'pro', cost: cost('pro'), prereqs: ['p-minibus'],
-    text: 'Hires a groundsman, and the corner stands join the projects.',
+    text: 'Hires a groundsman for the home pitch, and the corner stands of Kaai 42 join the projects, for after moving day.',
     effects: [{ kind: 'staff', staff: 'groundsman' }, { kind: 'project', project: 'kaai-corners' }],
     eureka: t('steps', 20, 'The step goal on 20 days.') },
   { id: 'r-videoroom', name: 'Video room', era: 'pro', cost: cost('pro'), prereqs: ['p-4231'],
