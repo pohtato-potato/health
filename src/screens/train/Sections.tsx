@@ -22,7 +22,7 @@ export function FourWeeksCard({ name, then, rows }: { name: string; then: DayKey
           <span className="grow">{r.name}</span>
           <span className="q num tn">{r.then}</span>
           <span className="lv-tr-arrow" aria-label="to">
-            <Icon name="right" size={16} />
+            <Icon name="arrow" size={16} />
           </span>
           <span className={`num tn${r.up ? ' lv-tr-up' : ''}`}>
             {r.now}

@@ -161,7 +161,7 @@ export function LimitBreakRoute({ id }: { id: string }) {
       <span className="pl-kick">Limit break</span>
       <h2 className="fb-t">{p.name}</h2>
       <div className="rt-lbc"><PlayerCard card={p.card} art={p.art} seed={p.id} player={p} label={`${p.name}, ${stepName(p.card)} card, cracked with light`} />{CRACKS}</div>
-      {l.from != null && <div className="rt-lbn" aria-label={`Rating ${l.from} to ${l.to}`}><span className="pl-num">{l.from}</span><i aria-hidden="true"><Icon name="right" size={16} /></i><b className="pl-num">{l.to}</b></div>}
+      {l.from != null && <div className="rt-lbn" aria-label={`Rating ${l.from} to ${l.to}`}><span className="pl-num">{l.from}</span><i aria-hidden="true"><Icon name="arrow" size={16} /></i><b className="pl-num">{l.to}</b></div>}
       <p className="pl-sub">{l.what ? `${l.what[0].toUpperCase()}${l.what.slice(1)}.` : ''} The scale resets: the next stretch of progress counts again.</p>
       <div className="rt-rw">
         {lead && <span>{ATTR_NAME[lead] ?? lead} now leads</span>}
