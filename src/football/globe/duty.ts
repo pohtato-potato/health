@@ -15,16 +15,19 @@ import type { BreakPlayed, DutyRow } from './types';
 export const BREAK_DAYS = 3;
 /** The season days each break comes before. Day 14 and day 30 are league nights; the cups never fall in a break. */
 export const BREAK_BEFORE: Record<1 | 2, number> = { 1: 14, 2: 30 };
+/** World 2's 28-day season (ledger O38): the same places, rescaled. Days 10 and 20 are league nights. */
+export const BREAK_BEFORE_2: Record<1 | 2, number> = { 1: 10, 2: 20 };
+export const breakBefore = (world: 1 | 2 = 1) => (world === 2 ? BREAK_BEFORE_2 : BREAK_BEFORE);
 export const DUTY_NEEDS = 2;
 export const DUTY_ATTR = 2;
 export const CALL_UPS = 6;
 export const CALL_UP_BEST = 3;
 
 /** The break the next day to play belongs to, if any: `day` is the season day waiting to play. */
-export function breakDue(phase: string, season: number, day: number, breaks: BreakPlayed[]): { n: 1 | 2; done: number } | undefined {
+export function breakDue(phase: string, season: number, day: number, breaks: BreakPlayed[], world: 1 | 2 = 1): { n: 1 | 2; done: number } | undefined {
   if (phase !== 'season') return undefined;
   for (const n of [1, 2] as const) {
-    if (BREAK_BEFORE[n] !== day) continue;
+    if (breakBefore(world)[n] !== day) continue;
     const b = breaks.find((x) => x.season === season && x.n === n);
     if ((b?.days.length ?? 0) < BREAK_DAYS) return { n, done: b?.days.length ?? 0 };
   }

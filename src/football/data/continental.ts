@@ -52,3 +52,24 @@ export const WORLD_CHAMPS: ClubDef[] = ([
 ] as Row[]).map(make('quirky'));
 
 export const ABROAD: ClubDef[] = [...CONT_REAL, ...CONT_INVENTED, ...WORLD_CHAMPS];
+
+/**
+ * World 2 (LG-4, owner 15 Nov): the Club World Cup's field is real champions of the other continents, in place of the
+ * seven invented ones. Facts are true; ratings sit on world 2's scale, near the Crown League's band. The invented seven
+ * stay for world 1, which is unchanged.
+ */
+type Champ = [id: string, name: string, short: string, nickname: string, city: string, country: string, founded: number, rating: number, style: string, colours: [string, string], ground: string, lore: string];
+export const WORLD_CHAMPS_2: ClubDef[] = ([
+  ['cw2-fla', 'Flamengo', 'FLA', 'Mengão', 'Rio de Janeiro', 'BR', 1895, 100, 'possession', ['#c4122e', '#111111'], 'Maracanã', 'Began as a rowing club in 1895. In 1981 they won the Copa Libertadores and then beat Liverpool 3–0 in Tokyo.'],
+  ['cw2-riv', 'River Plate', 'RIV', 'Los Millonarios', 'Buenos Aires', 'AR', 1901, 99, 'press', ['#ffffff', '#e30613'], 'Estadio Monumental', 'Named after the English name for the Río de la Plata. Won the 2018 Copa Libertadores final against Boca Juniors, played in Madrid.'],
+  ['cw2-ahl', 'Al Ahly', 'AHL', 'Club of the Century', 'Cairo', 'EG', 1907, 96, 'grit', ['#d71920', '#ffffff'], 'Cairo International Stadium', 'Named African club of the twentieth century by CAF in 2000, and have won the CAF Champions League more times than anyone.'],
+  ['cw2-ura', 'Urawa Red Diamonds', 'URA', 'Reds', 'Saitama', 'JP', 1950, 95, 'press', ['#e6002d', '#111111'], 'Saitama Stadium 2002', 'Began in 1950 as the works team of Mitsubishi Heavy Industries. Asian champions in 2007, 2017 and 2022.'],
+  ['cw2-mty', 'Monterrey', 'MTY', 'Rayados', 'Monterrey', 'MX', 1945, 96, 'direct', ['#0b2a5b', '#ffffff'], 'Estadio BBVA', 'Won the CONCACAF Champions League three years running, from 2011 to 2013.'],
+  ['cw2-sun', 'Mamelodi Sundowns', 'SUN', 'The Brazilians', 'Pretoria', 'ZA', 1970, 94, 'possession', ['#fdd116', '#0b5ca8'], 'Loftus Versfeld', 'Called the Brazilians for their yellow and blue. African champions in 2016.'],
+  ['cw2-akl', 'Auckland City', 'AKL', 'The Navy Blues', 'Auckland', 'NZ', 2004, 90, 'grit', ['#003da5', '#ffffff'], 'Kiwitea Street', 'Oceania champions many times over. Finished third at the 2014 Club World Cup, beating Cruz Azul on penalties.'],
+] as Champ[]).map(([id, name, short, nickname, city, country, founded, rating, style, colours, ground, lore]) => ({
+  id, name, short, nickname, city, country, founded, ground, colours, crest: '', tier: 1, rating, elite: false, style, kind: 'real' as const, lore,
+  sponsor: '', kitMaker: '', sponsorReal: false, kitReal: false, known: [], shrinks: {}, presses: {},
+}));
+/** The Club World Cup's champions in a world. */
+export const worldChamps = (world: 1 | 2) => (world === 2 ? WORLD_CHAMPS_2 : WORLD_CHAMPS);

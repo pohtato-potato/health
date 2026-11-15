@@ -1,5 +1,6 @@
 // The rotation's choices (layer 2): the team sheet, the morning tactic, buy-backs and seen limit breaks.
 // The only writers for these fields; play.ts reads them on match nights.
+import { lastDivision, stageIn } from '../pyramid/shape';
 import { db } from '../../db/db';
 import { addDays, dayOfLogging, type DayKey } from '../../domain/dates';
 import { euros } from '../money';
@@ -47,11 +48,11 @@ export async function seeLimitBreak(playerId: string) {
   });
 }
 
-/** The division we play in now (for the buy-back clause). */
+/** The stage of the division we play in now (for the buy-back clause's wage units; world 2 maps through stageOf). */
 export async function braboTier() {
   const save = await db.fbSave.get('save');
   const season = save ? await db.fbSeasons.get(save.season) : undefined;
-  return season?.tierOf[OWN] ?? 6;
+  return stageIn(season, season?.tierOf[OWN] ?? lastDivision(season));
 }
 
 /** Pays a free agent's clause from the budget and brings it home (spec §6). Returns why not, when it can't. */

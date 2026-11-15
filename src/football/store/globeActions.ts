@@ -1,5 +1,6 @@
 // Taps on the world, and the reads its screens use. Taps write save.globeUser (a user key in play.ts) or a youngster's
 // row; play.ts keeps a trialist tied by a tap while days play.
+import { worldOf } from '../pyramid/shape';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { dayOfLogging, type DayKey } from '../../domain/dates';
@@ -55,7 +56,7 @@ export interface BreakView { n: 1 | 2; day: number; rows: (Pick<DutyRow, 'player
 /** The international break the next day to play belongs to, with its call-ups and the days each was logged. */
 export function breakView(save: FbSave, players: FbPlayer[], h: Health, today: DayKey): BreakView | undefined {
   const g = globeOf(save);
-  const due = breakDue(save.phase, save.season, save.day, g.breaks);
+  const due = breakDue(save.phase, save.season, save.day, g.breaks, worldOf(save));
   if (!due) return undefined;
   const rows = g.duty.filter((d) => d.season === save.season && d.n === due.n);
   const list = rows.length ? rows : callUps(players, g.nations).map(({ player, nation }) => ({ player: player.id, name: player.name, nation, days: [] as DayKey[] }));

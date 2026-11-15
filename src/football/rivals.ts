@@ -1,8 +1,12 @@
-// Rivals (spec §8.7): Antigoon always, up to three earned, each with the modifier its start gives it.
+// Rivals (spec §8.7): the legend rival always (Antigoon in world 1, Royal Antwerp in world 2), up to three earned, each
+// with the modifier its start gives it.
+import { clubWorld, RIVAL_2 } from './data/load';
 import { LIT } from './radar';
 import { AXES, type Axis, type Comp, type Mod, type RivalTwist, type Side } from './types';
 
 export const ANTIGOON = 'ant';
+/** The legend rival of the world being played: the giant of the story (world 1), Royal Antwerp (world 2, owner 15 Nov). */
+export const legendId = () => (clubWorld() === 2 ? RIVAL_2 : ANTIGOON);
 export const MAX_EARNED = 3;
 export type RivalHow = 'legend' | 'cup' | 'final' | 'derby' | 'lastday' | 'three' | 'close';
 /** Saves from before 9 Nov may hold 'fouram' (the retired "Night shift", which read when a match played: decision C3). */
@@ -21,12 +25,14 @@ export function rivalTwist(clubId: string, how: RivalHow, best: Axis = 'Pace', w
   const make = (name: string, text: string, mods: RivalTwist['mods']): RivalTwist => ({ id: `${clubId}:${how}`, name, text, mods });
   switch (how) {
     case 'legend': {
-      return make("Giant's hand", 'Their first chance in each half is a big chance.', (() => {
+      // World 2: Royal Antwerp's nickname, "The Great Old"; the same rule as the giant's.
+      const name = clubWorld() === 2 ? 'The Great Old' : "Giant's hand";
+      return make(name, 'Their first chance in each half is a big chance.', (() => {
         let seen1 = false, seen2 = false;
         return (minute: number, side: Side) => {
           if (side !== 'def') return [];
-          if (minute <= 45 && !seen1) { seen1 = true; return lit('def', -2, "Giant's hand"); }
-          if (minute > 45 && !seen2) { seen2 = true; return lit('def', -2, "Giant's hand"); }
+          if (minute <= 45 && !seen1) { seen1 = true; return lit('def', -2, name); }
+          if (minute > 45 && !seen2) { seen2 = true; return lit('def', -2, name); }
           return [];
         };
       })());
@@ -58,7 +64,9 @@ export function twistOf(r: Rival): RivalTwist {
   return rivalTwist(x.clubId, x.how, x.best, x.weak);
 }
 /** How a saved rivalry started, in words (old saves included). */
-export const howText = (r: Rival): string => HOW_TEXT[migrateRival(r).how];
+/** World 2's legend (owner, 15 Nov): Royal Antwerp, the city's big club, in place of the giant of the story. */
+const LEGEND_2 = 'The big neighbour: Royal Antwerp, number 1 on Belgium\'s register of clubs.';
+export const howText = (r: Rival): string => (r.how === 'legend' && clubWorld() === 2 ? LEGEND_2 : HOW_TEXT[migrateRival(r).how]);
 /** Your weakest axis in a night's logged values (ties go to the first in axis order). */
 export function weakestAxis(v: Record<Axis, number>): Axis {
   return AXES.reduce((w, a) => (v[a] < v[w] ? a : w), AXES[0]);
@@ -75,16 +83,16 @@ export function rivalBorn(history: Meeting[], m: Meeting): RivalHow | null {
   if (m.margin === 1) return 'close';
   return null;
 }
-/** Five Brabo wins in a row against a rival fade it (Antigoon never fades). */
+/** Five Brabo wins in a row against a rival fade it (the legend rival never fades). */
 export function fades(history: Meeting[], clubId: string): boolean {
-  if (clubId === ANTIGOON) return false;
+  if (clubId === legendId()) return false;
   const last = history.filter((h) => h.clubId === clubId).slice(-5);
   return last.length === 5 && last.every((h) => h.result === 'W');
 }
 /** Add a rival if there is room among the three earned. */
 export function addRival(rivals: Rival[], r: Rival): Rival[] {
-  if (r.clubId === ANTIGOON || rivals.some((x) => x.clubId === r.clubId)) return rivals;
-  if (rivals.filter((x) => x.clubId !== ANTIGOON).length >= MAX_EARNED) return rivals;
+  if (r.clubId === legendId() || rivals.some((x) => x.clubId === r.clubId)) return rivals;
+  if (rivals.filter((x) => x.clubId !== legendId()).length >= MAX_EARNED) return rivals;
   return [...rivals, r];
 }
 
@@ -93,15 +101,15 @@ export function afterMatch(rivals: Rival[], history: Meeting[], m: Meeting, date
   const all = [...history, m];
   const existing = rivals.find((r) => r.clubId === m.clubId);
   if (existing && fades(all, m.clubId)) return { rivals: rivals.filter((r) => r.clubId !== m.clubId), faded: m.clubId };
-  if (existing || m.clubId === ANTIGOON) return { rivals };
+  if (existing || m.clubId === legendId()) return { rivals };
   const how = rivalBorn(history, m);
   if (!how) return { rivals };
   const r: Rival & { how: RivalHow } = how === 'close' ? { clubId: m.clubId, how, since: date, best, weak } : { clubId: m.clubId, how, since: date, best };
   const next = addRival(rivals, r);
   return next === rivals ? { rivals } : { rivals: next, born: r };
 }
-/** The rivals shown: Antigoon first, always, then the earned ones (never more than three). */
+/** The rivals shown: the legend rival first, always, then the earned ones (never more than three). */
 export function rivalList(rivals: Rival[]): Rival[] {
-  const ant = rivals.find((r) => r.clubId === ANTIGOON) ?? { clubId: ANTIGOON, how: 'legend' as const, since: '' };
-  return [ant, ...rivals.filter((r) => r.clubId !== ANTIGOON).slice(0, MAX_EARNED)];
+  const ant = rivals.find((r) => r.clubId === legendId()) ?? { clubId: legendId(), how: 'legend' as const, since: '' };
+  return [ant, ...rivals.filter((r) => r.clubId !== legendId()).slice(0, MAX_EARNED)];
 }

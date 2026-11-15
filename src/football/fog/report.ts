@@ -3,7 +3,7 @@
 import type { DayKey } from '../../domain/dates';
 import { hashSeed } from '../rng';
 import { FACTS, factList, scopeOf, type Fact, type ScoutEffect } from './fog';
-import { CLUB_LORE, DIVISION_REPORTS, SCOUT_REPORT, SCOUT_THIN, STILL_HIDDEN, type Finding } from './words';
+import { loreOf, DIVISION_REPORTS, SCOUT_REPORT, SCOUT_THIN, STILL_HIDDEN, type Finding } from './words';
 
 export interface ScoutReport {
   target: string;
@@ -43,7 +43,7 @@ export function reportOf(e: ScoutEffect, day: DayKey, o: { name: (target: string
     const found = FACTS.filter((f) => (e.reveal[sc.id] ?? []).includes(f));
     const now = o.known(sc.id);
     const hidden = FACTS.filter((f) => !now.has(f));
-    const lore = CLUB_LORE[sc.id];
+    const lore = loreOf(sc.id);
     const v = { club: name, before: e.before, after: e.after, manager: lore?.manager.name ?? 'their manager', found: factList(hidden.slice(0, 2)) };
     const best = found.length ? FINDING[found[found.length - 1]] : 'nothing-new';
     const line = e.thin ? pick(SCOUT_THIN, seed) : fill(pick(SCOUT_REPORT[best], seed), v);

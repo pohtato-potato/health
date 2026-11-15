@@ -1,6 +1,9 @@
 // The season run (round six, pinned; track stars centred in round eight): pick a boon, the season track, bounties.
 import type { CSSProperties } from 'react';
-import { BOUNTIES, BOUNTIES_PICKED, TRACK } from '../../../football/content/season';
+import { BOUNTIES, BOUNTIES_PICKED, BOON_DAYS, BOON_DAYS_2 } from '../../../football/content/season';
+import { trackOf } from '../../../football/tree/season';
+import { seasonLength } from '../../../football/calendar';
+import { worldOf } from '../../../football/pyramid/shape';
 import { pickBoon, pickBounty } from '../../../football/store/treeActions';
 import { boonsThisSeason, bountiesPicked, bountyOffer, bountyProgress, isTrainingBounty } from '../../../football/tree/season';
 import { fmtCount } from '../../../football/tree/words';
@@ -23,7 +26,7 @@ export function BoonPage() {
   const held = boonsThisSeason(m.user, s.season).map((id) => BOONS.find((b) => b.id === id)!);
   return (
     <div className="k-page">
-      <Title under={`Season ${s.season} · day ${s.day}${m.boonPick ? ` · boon ${m.boonPick > 3 ? 'extra' : `${m.boonPick} of 3`}` : ''}`}>{m.boonPick ? 'Pick one for this season' : 'This season’s boons'}</Title>
+      <Title under={`Season ${s.season} · day ${Math.min(s.day, seasonLength(worldOf(s)))}${m.boonPick ? ` · boon ${m.boonPick > 3 ? 'extra' : `${m.boonPick} of 3`}` : ''}`}>{m.boonPick ? 'Pick one for this season' : 'This season’s boons'}</Title>
       {m.boonPick ? (
         <div className="kb-rows">
           {m.boonOffer.map((b, i) => (
@@ -32,7 +35,7 @@ export function BoonPage() {
             </Panel>
           ))}
         </div>
-      ) : <Note>The next pick comes on day {[1, 15, 29].find((d) => d > s.day) ?? 'one of next season'}.</Note>}
+      ) : <Note>The next pick comes on day {(worldOf(s) === 2 ? BOON_DAYS_2 : BOON_DAYS).find((d) => d > s.day) ?? 'one of next season'}.</Note>}
       {held.length > 0 && (
         <>
           <Sect>Held this season</Sect>
@@ -46,19 +49,23 @@ export function BoonPage() {
   );
 }
 
-/** The season track: 42 steps, one for each day you log anything, a reward each seventh step. */
+/** The season track: a step for each day of the season (42, or 28 in world 2), one for each day you log anything, a reward each seventh step. */
 export function TrackPage() {
   const m = useModel();
   if (!m) return null;
   const n = m.track;
-  const big = TRACK.filter((s) => s.step % 7 === 0);
+  const world = worldOf(m.t.save);
+  const TRACK = trackOf(world);
+  // The big rewards: every seventh day of 42; in world 2 the same rewards at their rescaled steps (TRACK_2).
+  const isBig = (step: number) => (world === 2 ? trackOf(1).some((o) => o.step % 7 === 0 && Math.round(o.step / 1.5) === step) : step % 7 === 0);
+  const big = TRACK.filter((s) => isBig(s.step));
   return (
     <TreePage>
       <Back to="/football/story" label="Story" />
-      <div className="fbt-head"><h1 className="fbt-t1">Season track</h1><span className="fbt-cap"><b className="fbt-n">{n}</b> of 42</span></div>
-      <div className="fbt-track" role="img" aria-label={`${n} of 42 steps reached`}>
+      <div className="fbt-head"><h1 className="fbt-t1">Season track</h1><span className="fbt-cap"><b className="fbt-n">{n}</b> of {TRACK.length}</span></div>
+      <div className="fbt-track" role="img" aria-label={`${n} of ${TRACK.length} steps reached`}>
         {TRACK.map((s) => {
-          const done = s.step <= n, now = s.step === n + 1, rw = s.step % 7 === 0;
+          const done = s.step <= n, now = s.step === n + 1, rw = isBig(s.step);
           return <span key={s.step} className={`${done ? 'dn' : ''}${now ? ' now' : ''}${rw ? ' rw' : ''}${s.reward && !rw ? ' sm' : ''}`}>{rw ? STAR : s.reward ? <i aria-hidden="true" /> : null}</span>;
         })}
       </div>
@@ -122,7 +129,7 @@ export function SeasonDoors() {
   const picked = bountiesPicked(m.user, m.week).length;
   return (
     <nav className="fbt-doors two" aria-label="This season">
-      <button type="button" className="fbt-door" style={col('#ffd56a')} onClick={() => go('/football/track')}><b>Season track</b><small>{m.track} of 42</small></button>
+      <button type="button" className="fbt-door" style={col('#ffd56a')} onClick={() => go('/football/track')}><b>Season track</b><small>{m.track} of {trackOf(worldOf(m.t.save)).length}</small></button>
       <button type="button" className="fbt-door" style={col('#8fdcb6')} onClick={() => go('/football/bounties')}><b>Bounties</b><small>{picked < BOUNTIES_PICKED ? `Pick ${BOUNTIES_PICKED - picked} this week` : '3 picked'}</small></button>
     </nav>
   );

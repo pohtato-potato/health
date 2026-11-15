@@ -7,9 +7,9 @@ import { clamp, type Axis, type AxisValues } from './types';
  * your night's parity rating. At gap 0 each side converts t of its chances. A positive gap is squared and
  * damped (gap² ÷ C, then G × tanh(· ÷ G); a negative gap, where you are stronger, is damped by Gd instead), widens both landing regions by s per point and adds
  * per × gap × (value ÷ ref) to each of the club's modifiers, never less than floor (11 Nov: every club keeps its
- * character, even against a stronger Brabo). `top` is the parity rating of an all-18 night.
+ * character, even against a stronger Brabo). The parity table itself is `PARITY` in engine.ts.
  */
-export const CAL = { t: 0.45, s: 0.006, per: 0.03, G: 22, Gd: 45, C: 12, top: 72, ref: 12, floor: 0.4 };
+export const CAL = { t: 0.45, s: 0.006, per: 0.03, G: 22, Gd: 45, C: 12, ref: 12, floor: 0.4 };
 /** Nominal reach from the rating alone (spec §7.4), shown before a match. */
 export const reachFor = (rating: number) => clamp(0.4 + 0.005 * rating, 0.4, 0.92);
 /** A club's modifier budget from its rating; a small floor keeps a low-rated club's style (its weights) visible. */

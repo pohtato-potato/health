@@ -1,4 +1,5 @@
 // Everything the tree's screens show, worked out once from the save. Pure apart from the live query.
+import { seasonMoneyScale, worldOf } from '../../../football/pyramid/shape';
 import { weekStart } from '../../../domain/dates';
 import { BUNDLES, isOpen as bundleOpen } from '../../../football/ground';
 import { BOON_CHOICES } from '../../../football/content/season';
@@ -21,7 +22,7 @@ export function modelOf(t: TreeView) {
   const eurekas = eng.eurekas.map((e) => e.id);
   const a = activeFor(t.save, t.bundles);
   const states = new Map(t.bundles.map((b) => [b.id, b]));
-  const gates = { tier: t.tier, moved: Boolean(t.save.moved), done: t.built, researched, budget: t.save.budget };
+  const gates = { tier: t.stage, moved: Boolean(t.save.moved), done: t.built, researched, budget: t.save.budget };
   const open = (p: ProjectDef) => (p.source === 'ground' ? bundleOpen(BUNDLES.find((b) => b.id === p.id)!, gates) : projectOpen(p, gates));
   /** "18 of 25" for its least-finished need; money waiting shows as "waiting for €400k". */
   const progress = (id: string) => {
@@ -35,7 +36,7 @@ export function modelOf(t: TreeView) {
   };
   const season = t.save.season;
   const extra = eng.boonExtra?.[season] ?? 0;
-  const pick = t.save.phase === 'season' ? boonPickOpen(user, season, t.save.day, extra) : undefined;
+  const pick = t.save.phase === 'season' ? boonPickOpen(user, season, t.save.day, extra, worldOf(t.save)) : undefined;
   const opened = new Set(user.opened.map((o) => o.id));
   const leave = new Set(eng.leave);
   const staff = STAFF.map((s) => ({
@@ -54,9 +55,9 @@ export function modelOf(t: TreeView) {
     boonOffer: pick ? boonOffer(user, season, pick, ruleValue(a, 'boon-choices', BOON_CHOICES)) : [],
     packsWaiting: eng.packs.filter((p) => !opened.has(p.id)),
     week: weekStart(t.today),
-    track: trackSteps(eng, season),
+    track: trackSteps(eng, season, worldOf(t.save)),
     staff,
-    wages: wageBill(researched, t.tier),
+    wages: wageBill(researched, t.stage, seasonMoneyScale(t.save)),
     doctor: { xp: eng.doctorXp, level: doctorLevel(eng.doctorXp), next: doctorNext(eng.doctorXp) },
   };
 }

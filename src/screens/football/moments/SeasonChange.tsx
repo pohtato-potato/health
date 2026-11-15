@@ -5,18 +5,19 @@ import type { SeasonChange as Change } from '../../../football/seasonChange';
 import type { Tier } from '../../../football/types';
 import { OWN } from '../../../football/store/season';
 import { Aurora } from '../FootballHome';
+import { seasonName } from '../../../football/pyramid/redraw';
 
 const nm = (id: string) => (id === OWN ? 'Brabo United' : clubById(id).name);
 const ord = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th'}`;
 
 export function SeasonChangeView({ c, onDone }: { c: Change; onDone: () => void }) {
-  const title = c.double ? 'Double promotion' : c.move === 'up' ? 'Promoted' : c.move === 'down' ? 'Relegated' : `Another season in ${tierName(c.from)}`;
+  const title = c.level === 'up' ? 'Up two divisions' : c.level === 'down' ? 'Down two divisions' : c.double ? 'Double promotion' : c.move === 'up' ? 'Promoted' : c.move === 'down' ? 'Relegated' : `Another season in ${tierName(c.from)}`;
   const tone = c.move === 'up' ? 'up' : c.move === 'down' ? 'down' : 'stay';
   return (
     <div className="fb-moment" role="dialog" aria-modal="true" aria-label={title}>
       <Aurora a={c.move === 'down' ? '#3a2a6a' : '#6c3fc4'} c={c.move === 'down' ? '#2a3a6a' : '#ff7a1a'}>
         <main className={`fb-page fb-seasonend ${tone}`}>
-          <span className="fb-lb">Season {c.season} · {tierName(c.from)} · finished {ord(c.pos)}</span>
+          <span className="fb-lb">{seasonName(c.season)} · {tierName(c.from)} · finished {ord(c.pos)}</span>
           <h2 className="fb-momtitle">{title}</h2>
           {c.playoff && (
             <section className="fb-card gold" aria-label="Playoff final">
@@ -25,6 +26,8 @@ export function SeasonChangeView({ c, onDone }: { c: Change; onDone: () => void 
               {c.playoff.winner && <p className="fb-s">{c.playoff.winner === OWN ? 'Won it. Up you go.' : `${nm(c.playoff.winner)} won it.`}</p>}
             </section>
           )}
+          {c.level === 'up' && <p className="fb-s">Champions, and the level check says you would win more than half your nights in {tierName((c.from - 1) as Tier)}: straight up to {tierName(c.to)}.</p>}
+          {c.level === 'down' && <p className="fb-s">Relegated, and the level check says you would win too few nights in {tierName((c.from + 1) as Tier)}: down to {tierName(c.to)}, where the nights are yours to win.</p>}
           {c.double && <p className="fb-s">Champions, and playing above anything in {tierName((c.from - 1) as Tier)}: straight up to {tierName(c.to)}.</p>}
           {c.up.length > 0 && (
             <section className="fb-card" aria-label="Going up">

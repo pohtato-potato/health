@@ -1,6 +1,7 @@
 // The manager's desk (desk spec §2–3, §8, §13), read and written. Taps write only `save.desk` (a user key in
 // play.ts) and the owner's own questions (`deskQuestions`, on the phone only). Everything that changes the world is
 // folded in when the day plays at 4 am (`desk/fold.ts`, called from play.ts).
+import { lastDivision, stageIn } from '../pyramid/shape';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { addDays, type DayKey } from '../../domain/dates';
@@ -88,7 +89,7 @@ export async function deskView(t: Pick<Tonight, 'save' | 'date' | 'fixture'>): P
   const season = await db.fbSeasons.get(save.season);
   const states = new Map(bundles.map((b) => [b.id, b]));
   const built = bundles.filter((b) => b.done).map((b) => b.id);
-  const gates = { tier: season?.tierOf[OWN] ?? 6, moved: Boolean(save.moved), done: built, researched: researchedOf(save), budget: save.budget };
+  const gates = { tier: stageIn(season, season?.tierOf[OWN] ?? lastDivision(season)), moved: Boolean(save.moved), done: built, researched: researchedOf(save), budget: save.budget };
   const projects = PROJECTS.filter((p) => (p.source === 'ground' ? bundleOpen(BUNDLES.find((b) => b.id === p.id)!, gates) : projectOpen(p, gates)) && p.needs.length)
     .map((p) => {
       const prog = states.get(p.id)?.progress ?? {};

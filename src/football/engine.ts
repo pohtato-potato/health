@@ -44,8 +44,13 @@ export interface MatchInput {
    * of its logged value, evenly, so it swings more but averages the same. 0 or absent: Fuel plays as logged.
    */
   fuelSpread?: number;
-  /** Your typical shape (`typicalFor`): chances are sized against it, so a better night than usual scores and saves more. */
+  /**
+   * Your typical shape (`typicalFor`): chances are sized against a point between it and tonight (TYPICAL_WEIGHT of the
+   * way to it), so a better night than usual scores and saves more.
+   */
   typical?: AxisValues;
+  /** The rating rules (`ParityRules`): absent means today's. Only a match paused before the 14 Nov fix carries 1. */
+  parity?: ParityRules;
   /**
    * Matchday (spec §2.4): tempo, and mods for the whole match (the read, a tactic card) or one half (the plan per
    * half: a change at half-time counts from the next chance). Each applies on the side whose axes it names.
@@ -154,16 +159,43 @@ export function typicalFor(nights: AxisValues[]): AxisValues | undefined {
   return out;
 }
 
-/** Your night as a club rating: typical tier values against each tier's middle rating. */
-export function parityRating(v: AxisValues): number {
-  const PARITY: [number, number][] = [[1, 10], [6, 28], [8, 37.5], [10, 48], [12, 56], [14, 66], [16, 76], [18, CAL.top], [20, CAL.top + 10]];
+/**
+ * The shape chances are sized against. With too little history: tonight's, an unlogged axis as FOG_REF. With a
+ * typical shape: each logged axis TYPICAL_WEIGHT of the way from tonight to typical (all the way under rules 1), and an
+ * unlogged axis at typical, as before the fix, so fog costs what it did.
+ */
+export function refFor(base: AxisValues, typical: AxisValues | undefined, fog: Axis[] = [], rules: ParityRules = 2): AxisValues {
+  if (!typical) return { ...base, ...Object.fromEntries(fog.map((a) => [a, FOG_REF])) };
+  if (rules === 1) return typical;
+  const out = {} as AxisValues;
+  for (const a of AXES) out[a] = fog.includes(a) ? typical[a] : base[a] + TYPICAL_WEIGHT * (typical[a] - base[a]);
+  return out;
+}
+/**
+ * Your night as a club rating: the average of the six axes read off a table of tier values against each tier's middle
+ * rating. The table rises all the way (14 Nov, ledger O38): a better night never rates lower than a worse one. Up to an
+ * average of 16 it is as before; above it, 18 is 82 and 20 is 88 (it was 72 and 82, so 16 to 18 used to fall).
+ */
+export const PARITY: [number, number][] = [[1, 10], [6, 28], [8, 37.5], [10, 48], [12, 56], [14, 66], [16, 76], [18, 82], [20, 88]];
+/** The table before 14 Nov, kept only so a match set up before the fix finishes as it began. */
+export const PARITY_1: [number, number][] = [[1, 10], [6, 28], [8, 37.5], [10, 48], [12, 56], [14, 66], [16, 76], [18, 72], [20, 82]];
+/** Which rating rules a match plays by: 2 from 14 Nov; 1 for a match paused before then. */
+export type ParityRules = 1 | 2;
+export function parityRating(v: AxisValues, rules: ParityRules = 2): number {
+  const table = rules === 1 ? PARITY_1 : PARITY;
   const x = (v.Pace + v.Power + v.Fuel + v.Rest + v.Routine + v.Shape) / 6;
-  for (let i = 1; i < PARITY.length; i++) if (x <= PARITY[i][0]) {
-    const [x0, y0] = PARITY[i - 1], [x1, y1] = PARITY[i];
+  for (let i = 1; i < table.length; i++) if (x <= table[i][0]) {
+    const [x0, y0] = table[i - 1], [x1, y1] = table[i];
     return y0 + ((y1 - y0) * (x - x0)) / (x1 - x0);
   }
   return 95;
 }
+/**
+ * How much of the gap between tonight and your typical shape the chance sizing counts. A better night than usual
+ * already rates higher (the rating gap), so counting the history in full counted it twice; it is halved (14 Nov,
+ * ledger O38, decision 5a). Rules 1 kept the full count.
+ */
+export const TYPICAL_WEIGHT = 0.5;
 /** The region radius at which a shape covers `target` of it. */
 export function evenRegion(v: AxisValues, side: Side, target: number): number {
   const shape = shapeOf(v, side);
@@ -177,8 +209,8 @@ export function evenRegion(v: AxisValues, side: Side, target: number): number {
  * typical shape; tonight's when there is no history) meets its quality at an even match, widened by s per point of
  * gap. `k` sizes the club's own modifiers: never below CAL.floor, so a weaker club still plays its own way.
  */
-export function matchup(v: AxisValues, opp: Opponent, ref: AxisValues = v): { gap: number; k: number; widen: number; region: (side: Side, q: number) => number } {
-  const raw = opp.rating - parityRating(v);
+export function matchup(v: AxisValues, opp: Opponent, ref: AxisValues = v, rules: ParityRules = 2): { gap: number; k: number; widen: number; region: (side: Side, q: number) => number } {
+  const raw = opp.rating - parityRating(v, rules);
   const bent = raw > 0 && CAL.C ? (raw * raw) / CAL.C : raw;
   // A stronger club's lead is damped hard (G) so giant-killings stay possible; your own lead keeps a wider cap (Gd).
   const cap = bent > 0 ? CAL.G : CAL.Gd;
@@ -337,8 +369,10 @@ export function startMatch(m: MatchInput): MatchState {
   const tempo = m.plan?.tempo === 'quick' ? 1 : m.plan?.tempo === 'patient' ? -1 : 0;
   const total = chanceCount(r()) + 2 * tempo;
   // Sized against your typical shape; with too little history, tonight's, where an unlogged axis counts as no data.
-  const ref = m.typical ?? { ...base, ...Object.fromEntries((m.fog ?? []).map((a) => [a, FOG_REF])) };
-  const mu = matchup(base, m.opp, ref);
+  // Since 14 Nov only half the way from tonight's to the typical shape, so a better night than usual is not counted twice.
+  const rules = m.parity ?? 2;
+  const ref = refFor(base, m.typical, m.fog, rules);
+  const mu = matchup(base, m.opp, ref, rules);
   // the club's modifiers keep their shape (weights) and take their size from the gap
   const weights = (t: Partial<AxisValues>) => {
     const tot = Object.values(t).reduce((a, b) => a + Math.abs(b ?? 0), 0) || 1;

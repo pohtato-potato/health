@@ -1,4 +1,5 @@
 // The Club section's read: the squad as six members, the bench, abilities and awakenings.
+import { lastDivision, stageIn } from '../pyramid/shape';
 import { db } from '../../db/db';
 import { addDays, dayOfLogging, type DayKey } from '../../domain/dates';
 import { rememberClubs } from '../data/load';
@@ -26,7 +27,7 @@ export interface Member {
   awakened: number[];
   trait?: string;
 }
-export interface Club { save: FbSave; tier: Tier; members: Member[]; bench: FbSquadRow[]; matches: StoredMatch[]; youth?: FbSquadRow[]; today?: DayKey; bundles?: FbBundle[] }
+export interface Club { save: FbSave; /** The division. */ tier: Tier; /** Its stage (spec §9): what kit slots and shown ratings read. Absent: the tier. */ stage?: Tier; members: Member[]; bench: FbSquadRow[]; matches: StoredMatch[]; youth?: FbSquadRow[]; today?: DayKey; bundles?: FbBundle[] }
 
 /** Pure: the six members from the save and recent matches (newest last). */
 export function membersOf(save: FbSave, matches: StoredMatch[], tier: Tier, today: DayKey, knock?: 'knock' | 'injury'): Member[] {
@@ -53,7 +54,9 @@ export async function loadClub(now = Date.now()): Promise<Club | null> {
   if (!save) return null;
   rememberClubs(await db.fbClubs.toArray());
   const season = await db.fbSeasons.get(save.season);
-  const tier = (season?.tierOf[OWN] ?? 6) as Tier;
+  const tier = (season?.tierOf[OWN] ?? lastDivision(season)) as Tier;
+  // Shown ratings and kit slots are against the stage (spec §9): world 2's divisions map to the six old tiers.
+  const stage = stageIn(season, tier);
   const today = dayOfLogging(now);
   const matches = await db.fbMatches.where('date').aboveOrEqual(addDays(today, -60)).toArray();
   const k = tonightKnocks(await loadHealth(), today, save.physioRoom).find((m) => m.kind === 'knock');
@@ -61,6 +64,6 @@ export async function loadClub(now = Date.now()): Promise<Club | null> {
   const squad = await db.fbSquad.toArray();
   const bench = squad.filter((y) => y.status === 'promoted');
   const youth = squad.filter((y) => y.status === 'growing');
-  return { save, tier, members: membersOf(save, matches, tier, today, knock), bench, matches, youth, today, bundles: await db.fbBundles.toArray() };
+  return { save, tier, stage, members: membersOf(save, matches, stage, today, knock), bench, matches, youth, today, bundles: await db.fbBundles.toArray() };
 }
 export const axisOrder = AXES;

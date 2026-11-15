@@ -6,7 +6,8 @@ import { monthAverage } from '../oldSelves';
 import { DOUBLE_MIN_NIGHTS, formRating } from '../promotion';
 import { addDays } from '../../domain/dates';
 import { standings, type Row } from '../table';
-import { TIERS, type Tier } from '../types';
+import type { Tier } from '../types';
+import { shapeOf } from '../pyramid/shape';
 import { OWN } from './season';
 import type { DayKey } from '../../domain/dates';
 import type { FbClub, FbNews, FbSave, FbSeason, StoredMatch } from './tables';
@@ -25,7 +26,7 @@ export interface League {
 
 export function tablesFor(season: FbSeason): Record<Tier, Row[]> {
   const out = {} as Record<Tier, Row[]>;
-  for (const t of TIERS) out[t] = standings(season.results[t], Object.keys(season.tierOf).filter((id) => season.tierOf[id] === t), season.deductions);
+  for (const t of shapeOf(season).divisions) out[t] = standings(season.results[t] ?? [], Object.keys(season.tierOf).filter((id) => season.tierOf[id] === t), season.deductions);
   return out;
 }
 
@@ -57,8 +58,8 @@ export async function loadLeague(): Promise<League | null> {
 
 export type Gap = 'gap-up' | 'gap-even' | 'gap-down';
 /** How a tier's rating band sits against yours: above you, at your level, or below. Words always go with the colour. */
-export function gapOf(rating: number, tier: Tier): { cls: Gap; word: string } {
-  const [lo, hi] = TIER_BANDS[String(tier)];
+export function gapOf(rating: number, tier: Tier, band: [number, number] = TIER_BANDS[String(tier)]): { cls: Gap; word: string } {
+  const [lo, hi] = band;
   if (rating > hi) return { cls: 'gap-down', word: 'below you' };
   if (rating >= lo - 3) return { cls: 'gap-even', word: 'your level' };
   return { cls: 'gap-up', word: lo - rating > 15 ? 'far above' : 'above' };
