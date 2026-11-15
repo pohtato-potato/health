@@ -252,3 +252,5 @@
 .lt-set .fb-btn.sm { min-height: 44px; }
 /* Story's doors as drawn: each filled in its own ink rather than the page's light. */
 .lt-story .k-door { background: linear-gradient(180deg, color-mix(in srgb, var(--ink) 26%, #10122a), color-mix(in srgb, var(--ink) 8%, #10122a) 92%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14); }
+/* Morning banners from the world screens (academy trials, loans…) that sit on Tonight: their small line at 14 px. */
+.lt-page .fbt-banner small { font-size: 14px; line-height: 1.3; }
