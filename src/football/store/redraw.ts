@@ -60,25 +60,35 @@ export async function planRedraw(on: DayKey, opts: RedrawOpts = {}): Promise<Red
   }
 }
 
+/**
+ * Where Brabo go in world 2 and the world around them: the placing simulates every division of LG-2's draft with
+ * Brabo left out (the 28 days up to the day before `on`), then the real clubs are seeded with Brabo there. Shared by
+ * the move and by founding a new club (owner, 15 Nov: new clubs start in world 2). Leaves the registry on world 2.
+ */
+export async function placeBrabo(on: DayKey, own: { id: string; style: FbClub['style']; rating: number }, force?: number) {
+  const h = await loadHealth();
+  setClubWorld(2);
+  const seeds = realSeeds(WORLD_CLUBS);
+  const olds = rollOldSelves2([], monthsFromHealth2(h, on), []).joined;
+  const draft = seedWorld2(seeds, own, DRAFT_DIVISION, olds).filter((c) => !c.pool && !c.folded && c.id !== OWN);
+  const divisions = Object.fromEntries(PYRAMID.map((p) => [p.no, draft.filter((c) => c.tier === p.no).map((c) => ({ id: c.id, rating: c.rating, style: c.style }))]));
+  const placing = await braboPlacing(addDays(on, -1), divisions);
+  const division = force && force >= 1 && force <= PYRAMID.length ? force : placing.division;
+  const clubs = seedWorld2(seeds, own, division, olds) as FbClub[];
+  rememberClubs(clubs);
+  return { division, clubs, olds, placing };
+}
+
 /** Dev and tests only (store/dev.ts): put the save in a chosen division instead of where the placing puts it. */
 export interface RedrawOpts { division?: number }
 
 async function plan(save: FbSave, on: DayKey, opts: RedrawOpts): Promise<RedrawPlan> {
-  const h = await loadHealth();
   const own = (await db.fbClubs.get(OWN))!;
   const matches = (await db.fbMatches.where('season').equals(save.season).toArray());
   const done = (await db.fbBundles.toArray()).filter((b) => b.done).map((b) => b.id);
 
-  setClubWorld(2);
-  const seeds = realSeeds(WORLD_CLUBS);
-  const olds = rollOldSelves2([], monthsFromHealth2(h, on), []).joined;
-  const ownSeed = { id: OWN, style: own.style, rating: own.rating };
-  // Placing: every division of the draft, Brabo left out.
-  const draft = seedWorld2(seeds, ownSeed, DRAFT_DIVISION, olds).filter((c) => !c.pool && !c.folded && c.id !== OWN);
-  const divisions = Object.fromEntries(PYRAMID.map((p) => [p.no, draft.filter((c) => c.tier === p.no).map((c) => ({ id: c.id, rating: c.rating, style: c.style }))]));
-  const placing = await braboPlacing(addDays(on, -1), divisions);
-  const division = opts.division && opts.division >= 1 && opts.division <= PYRAMID.length ? opts.division : placing.division;
-  const clubs = seedWorld2(seeds, ownSeed, division, olds) as FbClub[];
+  const placed = await placeBrabo(on, { id: OWN, style: own.style, rating: own.rating }, opts.division);
+  const { division, clubs, placing, olds } = placed;
   const vs = clubs.filter((c) => c.tier === division && !c.pool && !c.folded && c.id !== OWN).map((c) => c.id);
 
   const founding = save.season === 1 ? FOUNDING_SEASON : save.season;

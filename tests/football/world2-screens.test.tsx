@@ -118,4 +118,27 @@ describe('world 2 screens', { timeout: 300_000 }, () => {
     expect(c.to).toBe(6);
     for (const r of c.ratings) { expect(Number.isFinite(r.before)).toBe(true); expect(Number.isFinite(r.after)).toBe(true); }
   });
+
+  it('a new club founds straight into world 2 (owner, 15 Nov), placed, with the legend and its stage', async () => {
+    setDatabase(new HealthDB('fb-w2-found'));
+    await db.open();
+    await setTargets(TARGETS, '2026-01-01');
+    await foundClub('2026-11-10', { shirt: 'A1', crest: 'a', world: 2 });
+    const save = (await db.fbSave.get('save'))!;
+    expect(save.world).toBe(2);
+    expect(save.season).toBe(1);
+    expect(save.rivals[0]).toMatchObject({ clubId: 'rafc', how: 'legend' });
+    const s1 = (await db.fbSeasons.get(1))!;
+    expect(s1.world).toBe(2);
+    expect(s1.start).toBe('2026-11-10');
+    expect(save.redrawn!.division).toBe(s1.tierOf[OWN]);
+    expect(save.redrawn!.founding.p).toBe(0);
+    await playDue(noon('2026-11-12'));
+    const ms = await db.fbMatches.where('season').equals(1).toArray();
+    expect(ms.filter((m) => m.comp === 'league')).toHaveLength(2);
+    for (const m of ms) expect(s1.tierOf[m.opp]).toBe(save.redrawn!.division);
+    setDatabase(new HealthDB('fb-w2-screens'));
+    await db.open();
+    setClubWorld(2);
+  });
 });

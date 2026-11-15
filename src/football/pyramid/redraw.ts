@@ -21,6 +21,7 @@ import { standings, type Row } from '../table';
 import type { Tier } from '../types';
 import type { FbBundle, FbSave, FbSeason, StoredMatch } from '../store/tables';
 import type { Rate } from './level';
+import { emptyUser } from '../tree/types';
 
 export const FOUNDING_SEASON = 0;
 export const FOUNDING_NAME = 'The founding weeks';
@@ -136,7 +137,7 @@ export function redrawSave(save: FbSave, o: RedrawInput): { save: FbSave; gifts:
   const gifts: Gifts = { eras, techs, buildings, ...(crest ? { crest } : {}) };
   const keep = (id: string) => o.exists(id) && !/^os\d$/.test(id);
   const earned = save.rivals.filter((r) => r.how !== 'legend' && keep(r.clubId));
-  const user = save.treeUser;
+  const user = save.treeUser ?? (techs.length || eras.length > 1 ? emptyUser() : undefined);
   const out: FbSave = {
     ...save,
     world: 2, season: o.season, phase: 'season', day: 1, event: undefined, lastPlayed: o.on, paused: undefined, pace: undefined,

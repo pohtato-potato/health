@@ -106,9 +106,9 @@ function Arrived({ save }: { save: FbSave }) {
           {!g.techs.length && !g.buildings.length && !g.crest && <li>Nothing more: the club had all of it already.</li>}
         </ul>
       </Panel>
-      <Panel flat>
+      {r.founding.p > 0 && <Panel flat>
         <p className="fb-s" style={{ margin: 0 }}>{FOUNDING_NAME}: played {r.founding.p}, won {r.founding.w}, drawn {r.founding.d}, lost {r.founding.l}. In the record book as season 0.</p>
-      </Panel>
+      </Panel>}
       <Action wide onClick={() => void done()}>To Tonight</Action>
     </>
   );
