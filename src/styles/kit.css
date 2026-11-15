@@ -99,7 +99,8 @@ button.k-panel, a.k-panel { cursor: pointer; text-decoration: none; min-height: 
   color: var(--k-cream); font: inherit; text-align: left; cursor: pointer; text-decoration: none;
 }
 .k-door .k-arrow { position: absolute; right: 9px; top: 12px; color: color-mix(in srgb, var(--ink) 80%, #fff); }
-.k-door b.v { font: 600 20px/1.15 var(--serif); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--k-cream); }
+/* Tidy: a door's live value reads whole; a long one wraps to a second line (the row of doors grows with it). */
+.k-door b.v { font: 600 20px/1.15 var(--serif); max-width: 100%; overflow-wrap: anywhere; text-wrap: balance; color: var(--k-cream); }
 .k-door .nm { font-weight: 700; font-size: 15px; line-height: 1.15; overflow-wrap: anywhere; }
 
 /* ---- the one glowing action a page: its glow falls below it, like a real light ---- */
@@ -332,3 +333,5 @@ button.k-rowl { cursor: pointer; }
 /* Tidy (look pass leftovers): the drinks month runs to its card's edges (the card's side padding is 20 px), so each
    day is a 44 px target at 360 px; at 340 px it is 42 px. */
 .dk-cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px 0; margin-inline: -20px; }
+/* Tidy: a drawn chevron or arrow sitting in a line of text keeps to the text's middle. */
+.lv-link svg, .lv-small svg, .lv-tr-arrow svg, .lv-tr-up svg, .td-duet b svg, .fb-btn svg, .sess svg, .rt-lbn svg { vertical-align: -3px; display: inline-block; }

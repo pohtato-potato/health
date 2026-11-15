@@ -3,6 +3,7 @@ import { dayKey, daysBetween, weekStart, weekday, type DayKey } from '../../doma
 import { storyWeek } from '../../domain/weekly';
 import type { Measurement, Settings } from '../../domain/types';
 import { go } from '../../router';
+import { Icon } from '../../ui/Icon';
 
 export interface Due { id: 'medical' | 'waist'; title: string; sub: string; path: string; params?: Record<string, string> }
 
@@ -34,7 +35,7 @@ export function DueCard({ due }: { due: Due[] }) {
           <svg className="td-dueic" viewBox="0 0 24 24" aria-hidden="true">
             {d.id === 'medical' ? <path d="M12 21 C5 16 3 12 3 8.5 A4.5 4.5 0 0 1 12 6 A4.5 4.5 0 0 1 21 8.5 C21 12 19 16 12 21 Z M12 10 V15 M9.5 12.5 H14.5" /> : <path d="M3 9 H21 V15 H3 Z M7 9 V12 M11 9 V13 M15 9 V12 M19 9 V12" />}
           </svg>
-          <span className="td-duet"><b>{d.title} ›</b><span>{d.sub}</span></span>
+          <span className="td-duet"><b>{d.title} <Icon name="right" size={16} stroke={2.2} /></b><span>{d.sub}</span></span>
           <span className="td-duego">Due today</span>
         </button>
       ))}

@@ -23,7 +23,7 @@ export function HabitLineView({ text, sub }: { text: string; sub?: string }) {
 
 export interface LineData { text: string; sub?: string }
 
-/** "Power 12 → 15 for tonight". Nothing without a club, or while the axis is still settling in (no data yet). */
+/** "Power 12 to 15 for tonight" (words, not a typed arrow). Nothing without a club, or while the axis is still settling in (no data yet). */
 export async function habitLineFor(axis: Axis, date: DayKey): Promise<LineData | null> {
   if (!(await db.fbSave.get('save'))) return null;
   const h = await loadHealth();
@@ -31,7 +31,7 @@ export async function habitLineFor(axis: Axis, date: DayKey): Promise<LineData |
   if (night.flags[axis] === 'no-data') return null;
   const to = night.values[axis];
   const last = (await db.fbMatches.where('date').below(date).toArray()).filter((m) => !m.rotation).pop();
-  const text = last ? `${axis} ${last.values[axis]} → ${to} for tonight` : `${axis} ${to} for tonight`;
+  const text = last ? `${axis} ${last.values[axis]} to ${to} for tonight` : `${axis} ${to} for tonight`;
   if (axis !== 'Pace') return { text };
   const next = paceNext(h.days.get(date)?.steps ?? 0);
   return { text, sub: next ? `${fmtInt(next.more)} more steps makes it ${next.to}` : 'As high as Pace goes.' };

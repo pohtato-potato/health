@@ -4,12 +4,15 @@ import { gapOf } from '../../../football/store/league';
 import { OWN } from '../../../football/store/season';
 import { TIERS, type Tier } from '../../../football/types';
 import { clubById } from '../../../football/data/load';
+import { useHeaded } from '../FootballHome';
 
 export function Pyramid({ tierOf, rating, onTier }: { tierOf: Record<string, Tier>; rating: number; onTier?: (t: Tier) => void }) {
   const mine = tierOf[OWN];
+  // Tidy: inside its own page the header already names it; only the rating stays.
+  const headed = useHeaded();
   return (
     <section className="fb-pyr" aria-label="The pyramid">
-      <div className="fb-row"><span className="fb-t">The pyramid</span><span className="fb-s">You · {rating}</span></div>
+      <div className="fb-row">{headed ? <span /> : <span className="fb-t">The pyramid</span>}<span className="fb-s">You · {rating}</span></div>
       <ol className="fb-pyrows">
         {TIERS.map((t, i) => {
           const [lo, hi] = TIER_BANDS[String(t)];
