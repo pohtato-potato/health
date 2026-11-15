@@ -5,6 +5,7 @@ import { filmFrames, type FilmFrame } from '../domain/monthReport';
 import { constellationFor, skyStars } from '../domain/nightSky';
 import { back, go, useRoute } from '../router';
 import { CountUp } from '../ui/you/CountUp';
+import { Icon } from '../ui/Icon';
 import { GOLD } from '../ui/you/palette';
 import { TrailDrawing } from '../walk/ui/TrailDrawing';
 import { Grades } from './reports/Grades';
@@ -48,7 +49,7 @@ function Frame({ f, month }: { f: FilmFrame; month: string }) {
         <>
           <div className="yu-f-big" style={{ fontSize: 46 }}>The assessment</div>
           <Grades grades={f.grades} />
-          <button type="button" className="btn" onClick={(e) => { e.stopPropagation(); go('/reports/month', { m: month }); }}>Read the full report</button>
+          <button type="button" className="k-act wide" onClick={(e) => { e.stopPropagation(); go('/reports/month', { m: month }); }}>Read the full report</button>
         </>
       );
   }
@@ -66,7 +67,7 @@ export function MonthlyFilmPage() {
   if (!frames.length) {
     return (
       <div className="yu-film" style={{ background: 'linear-gradient(165deg,#3a1f6e,#141a4a 70%)' }}>
-        <button type="button" className="yu-close" onClick={close}>Close</button>
+        <button type="button" className="yu-close k-close" onClick={close} aria-label="Close the film"><Icon name="close" size={22} stroke={2.2} /><span>Close</span></button>
         <div className="yu-film-b"><div className="yu-f-s">Nothing was logged this month, so there's no film yet.</div></div>
       </div>
     );
@@ -77,9 +78,9 @@ export function MonthlyFilmPage() {
     <div className="yu-film" style={{ background: f.ground }} onClick={() => setI(Math.min(frames.length - 1, k + 1))}>
       <div className="yu-film-glow" />
       <div className="yu-bars" aria-hidden="true">{frames.map((_, n) => <i key={n} className={n <= k ? 'on' : undefined} />)}</div>
-      <button type="button" className="yu-close" onClick={close}>Close</button>
+      <button type="button" className="yu-close k-close" onClick={close} aria-label="Close the film"><Icon name="close" size={22} stroke={2.2} /><span>Close</span></button>
       <div className="yu-film-b" key={k} aria-live="polite"><Frame f={f} month={month} /></div>
-      {k > 0 && <button type="button" className="yu-film-prev" onClick={(e) => { e.stopPropagation(); setI(k - 1); }}>Back</button>}
+      {k > 0 && <button type="button" className="yu-film-prev" onClick={(e) => { e.stopPropagation(); setI(k - 1); }}><Icon name="left" size={20} stroke={2.2} />Back</button>}
       {k < frames.length - 1 && <span className="yu-film-hint">Tap to go on</span>}
     </div>
   );

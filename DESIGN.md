@@ -97,6 +97,8 @@ A theme changes four things everywhere: the light behind each page, the action c
 
 Drawn in layered dusk: flat layers of land, the lit road, the milestone and the walker, at dawn, day, dusk and night.
 
+In code it is one system, `Layered` in `src/walk/art/Layered.tsx`, with its data in `land.ts`: the region gives the three layers' outlines, its own colours and what grows on it; the hour gives the sky, the sun or moon and how far the land is pulled toward that light; the worn theme tints the sky. Colours mix in OKLCH (`oklch.ts`) and steer round dark orange-yellow, so nothing turns brown or olive. The road is gold, green by night; the walker is cream by night. Motion is transform and opacity only. `WalkScene` draws it for where the walk is; `#/proto/scenes` (development) shows every region at every hour.
+
 ### 12. Checks before anything is called done
 
 - 360 × 745 px and 340 × 700 px, dark mode, with realistic data.

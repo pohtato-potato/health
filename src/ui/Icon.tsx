@@ -34,6 +34,10 @@ const PATHS: Record<string, ReactNode> = {
     </>
   ),
   plus: <path d="M12 5v14M5 12h14" />,
+  minus: <path d="M5 12h14" />,
+  /** A gym machine: the frame, the weight stack and its pin. */
+  gym: <path d="M5 20V5h14v15M3 20h18M9 8h6v8H9zM9 10.7h6M9 13.3h6M15 12h2.5" />,
+  // `body` (a figure, front) is defined once, further down: the later definition was the one in use.
   close: <path d="M6 6l12 12M18 6L6 18" />,
   right: <path d="M9 5l7 7-7 7" />,
   left: <path d="M15 5l-7 7 7 7" />,
@@ -52,6 +56,12 @@ const PATHS: Record<string, ReactNode> = {
       <ellipse cx="9" cy="8" rx="2.6" ry="3.8" />
       <ellipse cx="15.5" cy="14.5" rx="2.6" ry="3.8" />
       <path d="M8 14h2.2M14.4 20.3h2.2" />
+    </>
+  ),
+  body: (
+    <>
+      <circle cx="12" cy="4.5" r="2.5" />
+      <path d="M12 7.5V15M7 10h10M12 15l-3.5 6.5M12 15l3.5 6.5" />
     </>
   ),
   weight: (

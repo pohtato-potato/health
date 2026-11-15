@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { daysBetween, type DayKey } from '../../domain/dates';
 import type { RouteRun } from '../../domain/types';
-import { Icon } from '../../ui/Icon';
+import { Action, BackLink, Chip, HelpButton, Hero, Sect, Title, type HowThisWorks } from '../../ui/kit/Kit';
 import { RECORD_NAMES, kindOf, type RouteDef } from '../../walk/catalogue';
 import { finishedOn, runState } from '../../walk/runs';
 import { targetLine } from '../../walk/shelf';
@@ -12,12 +12,24 @@ import { inkStyle } from '../../walk/ui/RouteArt';
 import { RouteMap } from '../../walk/ui/RouteMap';
 import { endsOf } from './JoinMoment';
 import { TAKEN } from './Shelf';
-import { Odometer, ThenLine } from './RouteNumbers';
+import { ThenLine } from './RouteNumbers';
 import { Sources } from './Sources';
 import { WalkFrame } from './WalkFrame';
 import { auroraFor, auroraForInk } from '../../walk/page';
 
 const fmt = (n: number) => Math.round(n).toLocaleString('en-IN');
+
+/** What the "?" on a route opens: how routes walk with your steps (kit rule 4: rules behind a "?"). */
+export const ROUTE_HOW: HowThisWorks = {
+  title: 'How routes work',
+  steps: [
+    { icon: 'steps', ink: '#8fdcb6', head: 'Same steps, more roads', line: 'Every step you log walks India and each route you have joined, all at once.' },
+    { icon: 'route', ink: '#f2c46d', head: 'Places on the shelf', line: 'Two challenges and two expeditions at a time. Set one down to free its place.' },
+    { icon: 'book', ink: '#c2b2ff', head: 'Pages as you go', line: 'Each stretch opens its page of the road; book routes keep their story in step.' },
+    { icon: 'calendar', ink: '#93c3dc', head: 'A target, if you like', line: 'A challenge can carry a date to aim for. Nothing happens if you miss it.' },
+  ],
+  chips: [{ ink: '#f2c46d', text: '2 challenges' }, { ink: '#93c3dc', text: '2 expeditions' }],
+};
 const KIND = { challenge: 'Challenge', expedition: 'Expedition' };
 
 /** A stale link, or a draft opened in a production build: said plainly. */
@@ -26,9 +38,7 @@ export function NotOnShelf({ onShelf }: { onShelf: () => void }) {
     <WalkFrame as="main" tint={auroraFor('plains')}>
       <h1 className="walk-title">This route isn’t on the shelf</h1>
       <p className="walk-para">It may still be being written, or the link is old.</p>
-      <button type="button" className="walk-primary" onClick={onShelf}>
-        See the routes
-      </button>
+      <Action onClick={onShelf}>See the routes</Action>
     </WalkFrame>
   );
 }
@@ -97,21 +107,10 @@ export function RoutePageView(p: {
 
   return (
     <WalkFrame as="main" className={`walk-route${kind === 'expedition' ? ' exp' : ''}`} tint={auroraForInk(def.ink)} style={inkStyle(def.id)}>
-      <button type="button" className="backlink" onClick={p.onBack}>
-        <Icon name="left" size={20} stroke={1.8} />
-        Walk
-      </button>
-      <header className="walk-head">
-        <span className="walk-kind walk-route-kind">
-          <MarkShape mark={sig.mark} />
-          {def.book ? 'Book route' : KIND[kind]} · {def.era}
-        </span>
-        <h1 className="walk-title">{def.name}</h1>
-        <p className="walk-sub">
-          {endsOf(def)} · {RECORD_NAMES[def.record]}
-        </p>
-      </header>
-
+      <div className="k-row">
+        <BackLink label="Walk" onClick={p.onBack} />
+        <HelpButton how={ROUTE_HOW} />
+      </div>
       <section className="walk-route-map" aria-label="The whole road">
         <RouteMap id={def.id} km={km} />
         {def.turn !== undefined && (
@@ -126,12 +125,21 @@ export function RoutePageView(p: {
         )}
       </section>
 
-      <Odometer km={km} of={def.km} about={kind === 'expedition'}>
-        of {kind === 'expedition' ? 'about ' : ''}
-        {fmt(def.km)} km · {pct}%{day > 0 ? ` · your day ${fmt(day)}` : ''}
-        {state && state !== 'walking' ? ` · ${state === 'finished' ? 'Finished' : 'Set down'}` : ''}
-      </Odometer>
-
+      <Title lg under={`${endsOf(def)} · ${RECORD_NAMES[def.record]}`}>{def.name}</Title>
+      <div className="k-chips">
+        <span className="walk-kind walk-route-kind">
+          <MarkShape mark={sig.mark} />
+          {def.book ? 'Book route' : KIND[kind]} · {def.era}
+        </span>
+        {state && state !== 'walking' && <Chip ink={state === 'finished' ? 'var(--k-gold)' : undefined}>{state === 'finished' ? 'Finished' : 'Set down'}</Chip>}
+      </div>
+      <Hero
+        value={fmt(km)}
+        ink="var(--route-ink)"
+        size="md"
+        label={`of ${kind === 'expedition' ? 'about ' : ''}${fmt(def.km)} km`}
+        under={`${pct}%${day > 0 ? ` · your day ${fmt(day)}` : ''}`}
+      />
       {def.record !== 'none' && def.years && <Years theirs={def.years.theirs} note={def.years.note} yours={def.km / Math.max(p.usualKm, 0.1) / 365} />}
       {def.record !== 'none' && !def.years && def.then && run && (thenAt ?? def.then.places[0]) && (
         <ThenLine
@@ -150,9 +158,7 @@ export function RoutePageView(p: {
           <p className="walk-para">
             It waits here while you read on in the book. {waiting > 0 ? `${waiting} ${waiting === 1 ? 'chapter' : 'chapters'} waiting since you paused.` : 'Nothing new yet.'}
           </p>
-          <button type="button" className="walk-primary" onClick={p.onResume}>
-            Resume the story
-          </button>
+          <Action onClick={p.onResume}>Resume the story</Action>
         </section>
       )}
 
@@ -197,11 +203,8 @@ export function RoutePageView(p: {
       )}
 
       <section className="walk-collection" aria-label={`${sig.title}: ${got} of ${sig.marks.length}`}>
-        <h2 className="walk-h2">{sig.title}</h2>
-        <p className="walk-sub">{sig.note}</p>
-        <p className="walk-route-count">
-          <b>{got}</b> of {fmt(sig.marks.length)}
-        </p>
+        <Title as="h2" under={sig.note}>{sig.title}</Title>
+        <Hero value={got} ink="var(--route-ink)" size="sm" label={`of ${fmt(sig.marks.length)}`} />
         <ol className="walk-marks">
           {sig.marks.slice(0, 24).map((m, i) => (
             <li key={i} className={i < got ? 'on' : ''}>
@@ -214,8 +217,8 @@ export function RoutePageView(p: {
       </section>
 
       <section className="walk-section">
-        <h2 className="walk-h2">The places</h2>
-        <ol className="walk-halts">
+        <Sect>The places</Sect>
+        <ol className="walk-halts k-panel">
           {def.places.map((x, i) => {
             const next = def.places.findIndex((y) => y.km > km);
             const from = Math.max(0, (next < 0 ? def.places.length : next) - 3);
@@ -237,8 +240,8 @@ export function RoutePageView(p: {
 
       {def.chronicle && def.chronicle.length > 0 && (
         <section className="walk-section">
-          <h2 className="walk-h2">The chronicle</h2>
-          <ol className="walk-chron">
+          <Sect>The chronicle</Sect>
+          <ol className="walk-chron k-panel">
             {def.chronicle.map((e) => (
               <li key={e.when + e.place}>
                 <span className="walk-chron-when">
@@ -278,9 +281,9 @@ export function RoutePageView(p: {
       <div className="walk-end-btns">
         {!run &&
           (p.free[kind] > 0 ? (
-            <button type="button" className="walk-primary" onClick={p.onJoin}>
+            <Action wide onClick={p.onJoin}>
               Join this walk
-            </button>
+            </Action>
           ) : (
             <p className="walk-para">{TAKEN[kind]}</p>
           ))}
@@ -291,14 +294,14 @@ export function RoutePageView(p: {
         )}
         {state === 'set down' &&
           (p.free[kind] > 0 ? (
-            <button type="button" className="walk-primary" onClick={p.onUp}>
+            <Action wide onClick={p.onUp}>
               Pick it up
-            </button>
+            </Action>
           ) : (
             <p className="walk-para">{TAKEN[kind]}</p>
           ))}
         {run && !finished && kind === 'challenge' && (
-          <label className="walk-target">
+          <label className="walk-target k-panel">
             <span>{run.target && aim ? 'Change the target date' : 'Add a target date (optional)'}</span>
             <input type="date" min={p.today} value={aim ? run.target : ''} onChange={(e) => p.onTarget(e.target.value || undefined)} />
           </label>

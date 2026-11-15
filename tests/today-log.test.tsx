@@ -29,18 +29,17 @@ describe('UsualChips', () => {
 
 describe('MealTiles', () => {
   const noop = () => {};
-  it('a logged tile shows kcal on one line and "21 g protein" on its own line', () => {
+  it('a logged row shows protein then kcal, as drawn ("21 g · 310")', () => {
     const html = renderToStaticMarkup(<MealTiles meals={[{ meal: 'breakfast', kcal: 310, protein: 21, canRepeat: false }]} onOpen={noop} onRepeat={noop} />);
     expect(html).toContain('>310<');
-    expect(html).toContain('>kcal<');
-    expect(html).toContain('>21 g protein<');
+    expect(html).toContain('>21 g<');
+    expect(html).toContain('21 g protein, 310 kcal');
   });
-  it('an empty tile shows "Empty" and offers "Same as yesterday" only when it can', () => {
+  it('an empty row says "not yet", or offers "Same as yesterday" when it can', () => {
     const can = renderToStaticMarkup(<MealTiles meals={[{ meal: 'lunch', canRepeat: true }]} onOpen={noop} onRepeat={noop} />);
-    expect(can).toContain('Empty');
     expect(can).toContain('Same as yesterday');
     const cannot = renderToStaticMarkup(<MealTiles meals={[{ meal: 'lunch', canRepeat: false }]} onOpen={noop} onRepeat={noop} />);
-    expect(cannot).toContain('Empty');
+    expect(cannot).toContain('not yet');
     expect(cannot).not.toContain('Same as yesterday');
   });
 });
@@ -48,9 +47,10 @@ describe('MealTiles', () => {
 describe('ChecklistChips', () => {
   it('says "taken" when ticked, in words as well as colour', () => {
     const html = renderToStaticMarkup(<ChecklistChips items={[{ key: 'm1:0', name: 'Test tablet', on: true }, { key: 'm2:0', name: 'Test drops', on: false }]} onToggle={() => {}} />);
-    expect(html).toContain('Test tablet · taken');
-    expect(html).toContain('Test drops');
-    expect(html).not.toContain('Test drops · taken');
+    expect(html).toContain('Test tablet, taken');
+    expect(html).toContain('Test drops, to do');
+    expect(html).toContain('>to do<');
+    expect(html).not.toContain('Test drops, taken');
   });
 });
 

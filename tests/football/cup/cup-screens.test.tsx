@@ -90,6 +90,6 @@ describe('cup runs: the store', () => {
     const d = await dealToday('2026-11-08');
     const out = html(<DealView deal={d} title="How your deck was dealt" />);
     for (const a of ['Pace', 'Power', 'Fuel', 'Rest', 'Routine', 'Shape']) expect(out).toContain(`>${a}<`);
-    expect(out.match(/class="cup-dr extra"/g)).toHaveLength(3);
+    expect(out.match(/\bcup-dr extra"/g)).toHaveLength(3);
   });
 });

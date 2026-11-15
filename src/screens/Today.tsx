@@ -24,7 +24,7 @@ import { STOPS, STRETCHES } from '../walk/content';
 import { stepsByDay } from '../walk/runs';
 import { skyLine } from '../walk/sky';
 import { arrivalFor } from '../walk/arrivals';
-import { Scene } from '../walk/art/scene';
+import { WalkScene } from '../walk/WalkScene';
 import { landmarkFor } from '../walk/art/landmarks';
 import { positionAt } from '../domain/walk';
 import { StampTemplate } from './walk/Arrival';
@@ -34,6 +34,13 @@ import { LiveRings } from './today/LiveRings';
 import { RingMomentFx } from './today/RingMomentFx';
 import { useRingMoment } from './today/useRingMoment';
 import { RING_WORD, ringsGold } from '../domain/ringMoments';
+import { RING_GOLD } from '../ui/rings/GlowRings';
+import { lookOf } from '../domain/themes';
+import { useLiveTheme } from '../ui/live/useLiveTheme';
+import { Panel, Sect } from '../ui/kit/Kit';
+import { Icon } from '../ui/Icon';
+import { MEAL_NAMES } from '../domain/types';
+import { closedWords, glanceUnder } from './today/TodayLine';
 import { TodayLayout } from './today/TodayLayout';
 import { DrawerHandle, TodayDrawer } from './today/TodayDrawer';
 import { proteinState } from '../domain/proteinState';
@@ -43,7 +50,7 @@ import { sameAsYesterday, usualFoods } from '../domain/usual';
 import { mealForTime, portionFor } from '../domain/foods';
 import { checklistSlots } from '../state/derived';
 import type { Meal } from '../domain/types';
-import { MomentCard } from './today/MomentCard';
+import { MomentCard, type NextKind } from './today/MomentCard';
 import { useGapAdd } from './today/useGapAdd';
 import { useAddUsual } from './today/useAddUsual';
 import { momentFor } from '../domain/todayMoment';
@@ -54,7 +61,7 @@ import { logMinutes } from '../domain/todayMoment';
 import { placeFor } from '../domain/places';
 import { proteinGap } from '../domain/proteinGap';
 import { go, openSheet, useRoute } from '../router';
-import { devGlow, regionTint } from '../ui/live/regionTint';
+import { devGlow } from '../ui/live/regionTint';
 import { dayGlow } from '../domain/dayGlow';
 import { useMoments } from '../ui/Moments';
 import { useToast } from '../ui/Toasts';
@@ -86,6 +93,7 @@ const MatchToday = lazy(() => import('./today/MatchToday').then((m) => ({ defaul
 export function Today() {
   const unlocked = useUnlockedIds();
   const settings = useSettings();
+  const theme = useLiveTheme(settings);
   const today = useToday();
   const days = useAllDays();
   const entries = useEntries(today);
@@ -200,7 +208,7 @@ export function Today() {
   const festive = prefOn(settings.prefs, 'seasonal') ? (seasonalThemeOn(today, settings.birthday) as Festive | undefined) : undefined;
   // The scene is the place, as the arrival's welcome draws it (the fort at Gwalior), every day, not only on arrival.
   const pos = positionAt(walkKm);
-  const scene = <Scene city={scenePlace(walkKm, pos.from, pos.done ? undefined : pos.to, (n) => !!landmarkFor(n))} part={partOfDay(new Date(nowMs))} landmarkScale={1.6} festive={festive} />;
+  const scene = <WalkScene km={walkKm} todayKm={kmFromSteps(day?.steps ?? 0)} view="band" place={scenePlace(walkKm, pos.from, pos.done ? undefined : pos.to, (n) => !!landmarkFor(n))} part={partOfDay(new Date(nowMs))} landmarkScale={1.3} festive={festive} />;
   // How the day went lights the land: gold for a perfect day or a record night, green for a session in range.
   const tn = tonight(sessions, sets, today);
   const glow = devGlow(dayGlow({ perfect: rings.perfect, session: tn && { records: tn.records.length, checks: tn.checks, formAvg: tn.formAvg } }), route.params);
@@ -220,85 +228,105 @@ export function Today() {
     toast({ text: `${m.charAt(0).toUpperCase() + m.slice(1)}: same as yesterday`, sub: `${added.length} item${added.length === 1 ? '' : 's'} added`, action: { label: 'Undo', run: () => added.forEach((e) => void deleteEntry(e.id)) } });
   };
   const slots = checklistSlots(settings, today);
+  const look = lookOf(theme);
+  const closedFlags = { kcal: rings.kcal.closed, protein: rings.protein.closed, steps: rings.steps.closed, sleep: rings.sleep.closed };
+  const momentKind = momentFor({ minutes: logMinutes(nowMs), status: day?.status, morningDone: !!day?.morning, perfect: rings.perfect, dayClosed: !!day?.foodDone, proteinGapG: gap.gapG, stepsLeft: Math.max(0, stepsLeft), stepsKnown: day?.steps !== undefined });
+  const weighIn = weighInToCome(day, settings.places ?? []);
+  // The morning log is the next thing to log at any hour until it is in (rest, a closed day and a perfect day aside).
+  const morningOpen = !day?.morning && !['rest', 'closed', 'perfect'].includes(momentKind);
+  const nextKind: NextKind = morningOpen ? 'morning' : weighIn && !['rest', 'closed', 'morning', 'perfect'].includes(momentKind) ? 'weighin' : momentKind;
+  const ringGold = ringsGold({ counting: goldCount, perfect: rings.perfect, played: perfectPlayed });
+  const goldNums = rings.perfect && ringGold >= rings.of;
+  const rowInk = (k: keyof typeof METRIC_INK) => (goldNums ? RING_GOLD : METRIC_INK[k]);
   return (
     <TodayLayout
-      tint={regionTint(walkKm, glow)}
       glow={!!glow}
       fx={<RingMomentFx playing={playing} />}
       overlays={
         <>
           {drawerOpen && (
-      <TodayDrawer
-        voice={flag ? line : lineForTheDay(today, moment, line)}
-        body={bodyTileWords(body, today)}
-        protein={{ text: proteinState({ gapG: gap.gapG, closed: rings.protein.closed, dayClosed: !!day?.foodDone }), foods: gap.picks.map((p) => p.name).join(' and ') }}
-        dayClosed={!!day?.foodDone}
-        onBody={() => go('/body')}
-        onAddGap={addGap}
-        onCloseDay={() => go('/close')}
-        onClose={() => setDrawerOpen(false)}
-      />
-    )}
+            <TodayDrawer
+              voice={flag ? line : lineForTheDay(today, moment, line)}
+              body={bodyTileWords(body, today)}
+              protein={{ text: proteinState({ gapG: gap.gapG, closed: rings.protein.closed, dayClosed: !!day?.foodDone }), foods: gap.picks.map((p) => p.name).join(' and ') }}
+              dayClosed={!!day?.foodDone}
+              onBody={() => go('/body')}
+              onAddGap={addGap}
+              onCloseDay={() => go('/close')}
+              onClose={() => setDrawerOpen(false)}
+            />
+          )}
         </>
       }
-      walk={<WalkTop caption={caption} scene={scene} stamp={stamp} onOpen={() => go('/walk')} />}
-      status={<><StatusChip today={today} days={days} />{weighInToCome(day, settings.places ?? []) && <button type="button" className="td-chip td-weighin" onClick={() => openSheet('morning')}>Weigh-in to come</button>}</>}
+      walk={<WalkTop caption={caption} scene={scene} stamp={stamp} status={<StatusChip today={today} days={days} />} onOpen={() => go('/walk')} />}
       due={<DueCard due={dueToday({ today, settings, checkins: checkins.map((c) => c.date), measurements })} />}
-      banner={<><OfficeUsual /><Banners /></>}
-      line={<TodayLine text={playing?.kind === 'ring' ? `${RING_WORD[playing.ring]} closed` : lineText} kind={playing?.kind === 'ring' ? 'voice' : lineKind} gold={moment === 'perfect'} clock={fmtTime(nowMs)} why={themeDay ? { name: themeDay.name, text: themeDay.why } : undefined} />}
+      banner={<><OfficeUsual /><Banners noMorning={morningOpen} /></>}
+      line={
+        <TodayLine
+          head={playing?.kind === 'ring' ? `${RING_WORD[playing.ring]} closed` : closedWords(rings.closed, rings.of)}
+          text={lineKind === 'glance' ? glanceUnder(lineText) : lineText}
+          kind={lineKind}
+          gold={moment === 'perfect'}
+          clock={fmtTime(nowMs)}
+          why={themeDay ? { name: themeDay.name, text: themeDay.why } : undefined}
+          onOpen={() => setDrawerOpen(true)}
+        />
+      }
       season={<SeasonStrip settings={settings} today={today} />}
       rings={
         <RingsNumbers
-        rows={[
-          { key: 'kcal', name: 'Calories', value: fmtInt(totals.kcal), unit: 'kcal', target: `${fmtInt(targets.kcalMin)}–${fmtInt(targets.kcalMax)} kcal`, ink: rings.perfect ? 'var(--gold)' : 'var(--kcal)', known: true },
-          { key: 'protein', name: 'Protein', value: String(Math.round(totals.protein)), unit: 'g', target: `of ${targets.proteinG} g`, ink: rings.perfect ? 'var(--gold)' : 'var(--protein)', known: true },
-          { key: 'steps', name: 'Steps', value: day?.steps !== undefined ? fmtInt(totals.steps) : '—', unit: 'steps', target: `${totals.eased ? 'eased to ' : 'of '}${fmtInt(stepsGoal(targets, totals.eased))}`, ink: rings.perfect ? 'var(--gold)' : 'var(--steps)', known: day?.steps !== undefined },
-          { key: 'sleep', name: 'Sleep', value: sleepMin !== undefined ? fmtDuration(sleepMin) : '—', unit: 'sleep', target: `last night · aim ${fmtDuration(targets.sleepMin)}`, ink: rings.perfect ? 'var(--gold)' : 'var(--sleep)', known: sleepMin !== undefined },
-        ]}
-        closed={rings.closed}
-        of={rings.of}
-        play={ringPlay}
-        rings={
-          <div className="td-ringfig" onPointerDown={konami.onPointerDown} onPointerUp={konami.onPointerUp} onPointerCancel={konami.onPointerCancel} onClickCapture={konami.onClickCapture} style={konami.style}>
-            <LiveRings
-              progress={[rings.kcal.progress, rings.protein.progress, rings.steps.progress, rings.sleep.progress]}
-              label={themeDay ? `Rings for ${themeDay.name}: ${rings.closed} of ${rings.of} closed` : `Rings: ${rings.closed} of ${rings.of} closed`}
-              center={`${rings.closed}/${rings.of}`}
-              style={themeDay?.ring}
-              goldClosed={!!unlocked && hasReward(unlocked, 'Gold rings') && prefOn(settings.prefs, 'goldRings')}
-              goldCount={ringsGold({ counting: goldCount, perfect: rings.perfect, played: perfectPlayed })}
-              chain={rings.perfect ? (playing?.kind === 'perfect' ? 'draw' : 'still') : undefined}
-              spin={ringSpin + (playing?.kind === 'perfect' ? playing.id : 0)}
-              play={ringPlay}
-              onTap={() => {
-                setRingSpin((n) => n + 1);
-                setRingPlay((n) => n + 1);
-              }}
-            />
-          </div>
-        }
-        onLogFood={() => go('/food')}
-        onLogSleep={() => openSheet('morning')}
-        onSaveSteps={(n) => void setSteps(today, n)}
-        showCopyHint={logMinutes(nowMs) >= 19 * 60}
-      />
+          rows={[
+            { key: 'kcal', name: 'Calories', value: fmtInt(totals.kcal), unit: 'kcal', target: `${fmtInt(targets.kcalMin)}–${fmtInt(targets.kcalMax)} kcal`, ink: rowInk('kcal'), known: true, done: closedFlags.kcal },
+            { key: 'protein', name: 'Protein', value: String(Math.round(totals.protein)), unit: 'g protein', target: `of ${targets.proteinG} g`, ink: rowInk('protein'), known: true, done: closedFlags.protein },
+            { key: 'steps', name: 'Steps', value: day?.steps !== undefined ? fmtInt(totals.steps) : '—', unit: 'steps', target: `${totals.eased ? 'eased to ' : 'of '}${fmtInt(stepsGoal(targets, totals.eased))}`, ink: rowInk('steps'), known: day?.steps !== undefined, done: closedFlags.steps },
+            { key: 'sleep', name: 'Sleep', value: sleepMin !== undefined ? fmtDuration(sleepMin).replace(/ m$/, '') : '—', unit: 'sleep', target: `last night · aim ${fmtDuration(targets.sleepMin)}`, ink: rowInk('sleep'), known: sleepMin !== undefined, done: closedFlags.sleep },
+          ]}
+          closed={rings.closed}
+          of={rings.of}
+          play={ringPlay}
+          rings={
+            <div className="td-ringfig" onPointerDown={konami.onPointerDown} onPointerUp={konami.onPointerUp} onPointerCancel={konami.onPointerCancel} onClickCapture={konami.onClickCapture} style={konami.style}>
+              <LiveRings
+                progress={[rings.kcal.progress, rings.protein.progress, rings.steps.progress, rings.sleep.progress]}
+                label={themeDay ? `Rings for ${themeDay.name}: ${rings.closed} of ${rings.of} closed` : `Rings: ${rings.closed} of ${rings.of} closed`}
+                style={themeDay?.ring}
+                design={look.ring.design}
+                inks={look.ring.inks}
+                goldClosed={!!unlocked && hasReward(unlocked, 'Gold rings') && prefOn(settings.prefs, 'goldRings')}
+                goldCount={ringGold}
+                chain={rings.perfect ? (playing?.kind === 'perfect' ? 'draw' : 'still') : undefined}
+                spin={ringSpin + (playing?.kind === 'perfect' ? playing.id : 0)}
+                play={ringPlay}
+                onTap={() => {
+                  setRingSpin((n) => n + 1);
+                  setRingPlay((n) => n + 1);
+                }}
+              />
+            </div>
+          }
+          onLogFood={() => go('/food')}
+          onLogSleep={() => openSheet('morning')}
+          onSaveSteps={(n) => void setSteps(today, n)}
+          showCopyHint={logMinutes(nowMs) >= 19 * 60}
+        />
       }
       moment={
         <MomentCard
-        sheen={playing?.kind === 'perfect'}
-        kind={momentFor({ minutes: logMinutes(nowMs), status: day?.status, morningDone: !!day?.morning, perfect: rings.perfect, dayClosed: !!day?.foodDone, proteinGapG: gap.gapG, stepsLeft: Math.max(0, stepsLeft), stepsKnown: day?.steps !== undefined })}
-        data={{
-          closedRings: rings.closed,
-          ringsOf: rings.of,
-          proteinGapG: gap.gapG,
-          gapFoods: gap.picks.map((p) => p.name).join(' and '),
-          addLabel: `${gap.picks.length === 1 ? 'Add it' : gap.picks.length === 2 ? 'Add both' : 'Add them'} · ${Math.round(gap.picks.reduce((n, p) => n + p.proteinG, 0))} g`,
-          stepsLeft: Math.max(0, stepsLeft),
-          laps: loop ? fmtInt(Math.ceil(Math.max(stepsLeft, 0) / loop)) : undefined,
-          easedTo: totals.eased ? stepsGoal(targets, true) : undefined,
-        }}
-        actions={{ logMorning: () => openSheet('morning'), closeDay: () => go('/close'), addGap, typeSteps: () => openSheet('steps') }}
-      />
+          sheen={playing?.kind === 'perfect'}
+          kind={nextKind}
+          data={{
+            closedRings: rings.closed,
+            ringsOf: rings.of,
+            proteinGapG: gap.gapG,
+            gapFoods: gap.picks.map((p) => p.name).join(' and '),
+            addLabel: `${gap.picks.length === 1 ? 'Add it' : gap.picks.length === 2 ? 'Add both' : 'Add them'} · ${Math.round(gap.picks.reduce((n, p) => n + p.proteinG, 0))} g`,
+            stepsLeft: Math.max(0, stepsLeft),
+            laps: loop ? fmtInt(Math.ceil(Math.max(stepsLeft, 0) / loop)) : undefined,
+            easedTo: totals.eased ? stepsGoal(targets, true) : undefined,
+            food: { meal: MEAL_NAMES[mealNow], usual: usual.slice(0, 2).map((u) => u.food.name).join(', '), logged: !!perMeal[mealNow] },
+          }}
+          actions={{ logMorning: () => openSheet('morning'), closeDay: () => go('/close'), toClose: () => document.querySelector('.td-handle')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), addGap, typeSteps: () => openSheet('steps'), addFood: () => openSheet('addfood', { meal: mealNow }) }}
+        />
       }
       football={<Suspense fallback={null}><MatchToday now={nowMs} /></Suspense>}
       next={recordsTonight.length ? (
@@ -306,38 +334,34 @@ export function Today() {
       ) : (
         <NextUpCard settings={settings} up={up} active={active} trainedToday={trainedToday} weeks={weeks} />
       )}
+      shape={<Suspense fallback={null}><MatchToday now={nowMs} part="shape" /></Suspense>}
       log={
         <section className="td-log" data-section="log" aria-label="Log">
-        {usual.length > 0 && (
-          <>
-            <h2 className="td-h">Your usual {mealNow}</h2>
-            <UsualChips items={usual.map((u) => ({ id: u.food.id, name: u.food.name, portion: portionFor(u.food, u.amount) }))} onAdd={addUsual} />
-          </>
-        )}
-        <LogSearch foods={foods} onAction={(a) => (a.sheet ? openSheet(a.sheet) : go(a.route!))} onFood={(f) => openSheet('addfood', { food: f.id })} onQuick={() => openSheet('quick')} />
-        <button type="button" className="td-bodytile" onClick={() => go('/body')}>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="4.5" r="2.5" /><path d="M12 7.5 V15 M7 10 H17 M12 15 L8.5 21.5 M12 15 L15.5 21.5" /></svg>
-          <span><b>Body log ›</b><span>{bodyTileWords(body, today)}</span></span>
-        </button>
-        <h2 className="td-h">Meals today</h2>
-        <MealTiles meals={MEALS.map((m) => ({ meal: m, kcal: perMeal[m]?.kcal, protein: perMeal[m]?.protein, canRepeat: sameAsYesterday(monthEntries, m, today, 0).length > 0 }))} onOpen={(m) => go('/food', { meal: m })} onRepeat={(m) => void repeat(m)} />
-        {slots.length > 0 && (
-          <>
-            <h2 className="td-h">Checklist</h2>
-            <p className="td-hint">Press and hold to tick.</p>
-            <ChecklistChips items={slots.map((x) => ({ key: x.key, name: slots.filter((y) => y.itemId === x.itemId).length > 1 ? `${x.name} · ${x.slot}` : x.name, on: !!day?.ticks?.[x.key] }))} onToggle={(key, on) => { const slot = slots.find((y) => y.key === key)?.slot ?? 'Daily'; const t = tickFor(today, slot, settings, day, on, Date.now()); void setTick(today, key, on, t.at, t.recordedLate); }} />
-          </>
-        )}
-      </section>
+          <Sect>Quick add</Sect>
+          <UsualChips items={usual.map((u) => ({ id: u.food.id, name: u.food.name, portion: portionFor(u.food, u.amount) }))} onAdd={addUsual} />
+          <LogSearch foods={foods} onAction={(a) => (a.sheet ? openSheet(a.sheet) : go(a.route!))} onFood={(f) => openSheet('addfood', { food: f.id })} onQuick={() => openSheet('quick')} />
+          <Sect>Today’s meals</Sect>
+          <MealTiles meals={MEALS.map((m) => ({ meal: m, kcal: perMeal[m]?.kcal, protein: perMeal[m]?.protein, canRepeat: sameAsYesterday(monthEntries, m, today, 0).length > 0 }))} onOpen={(m) => go('/food', { meal: m })} onRepeat={(m) => void repeat(m)} />
+          <Panel ink="var(--k-pearl)" flat onClick={() => go('/body')} label={`Body log: ${bodyTileWords(body, today)}`}>
+            <Icon name="body" size={26} color="var(--k-pearl)" />
+            <span className="k-col"><b>Body log</b><span className="k-q">{bodyTileWords(body, today)}</span></span>
+          </Panel>
+          {slots.length > 0 && (
+            <>
+              <Sect>Checklist</Sect>
+              <ChecklistChips items={slots.map((x) => ({ key: x.key, name: slots.filter((y) => y.itemId === x.itemId).length > 1 ? `${x.name} · ${x.slot}` : x.name, on: !!day?.ticks?.[x.key] }))} onToggle={(key, on) => { const slot = slots.find((y) => y.key === key)?.slot ?? 'Daily'; const t = tickFor(today, slot, settings, day, on, Date.now()); void setTick(today, key, on, t.at, t.recordedLate); }} />
+              <p className="td-hint k-q">Press and hold a row to tick it.</p>
+            </>
+          )}
+        </section>
       }
-      handle={
-        <div className="td-dock">
-          <DrawerHandle protein={proteinState({ gapG: gap.gapG, closed: rings.protein.closed, dayClosed: !!day?.foodDone })} closeLabel={day?.foodDone || day?.partial ? 'Day closed' : 'Close the day'} onOpen={() => setDrawerOpen(true)} onCloseDay={() => go('/close')} />
-        </div>
-      }
+      handle={<DrawerHandle closeLabel={day?.foodDone || day?.partial ? 'Day closed' : 'Close the day'} gold={rings.perfect && !day?.foodDone} onCloseDay={() => go('/close')} />}
     />
   );
 }
+
+/** The ring numbers keep each metric's own colour on every theme (look pass, rule 10): calories, protein, steps, sleep. */
+const METRIC_INK = { kcal: '#ff8a4d', protein: '#b79bff', steps: '#5ff0b0', sleep: '#6cc8ff' } as const;
 
 function lineForTheDay(today: string, moment: string, line: string): string {
   const key = 'health.line';

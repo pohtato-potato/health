@@ -1,26 +1,24 @@
 import { useSettings, useToday } from '../../db/hooks';
 import { spokenLine } from '../../domain/voice';
-import type { CSSProperties, ReactNode } from 'react';
-import { regionAt } from '../../domain/regions';
+import type { ReactNode } from 'react';
 import { back, useRoute } from '../../router';
-import { Aurora } from '../../ui/live/Aurora';
 import { STOPS, STRETCHES } from '../../walk/content';
-import { auroraFor } from '../../walk/page';
 import { WalkVista } from '../../walk/WalkVista';
 import { StopView } from './StopView';
+import { BackLink } from '../../ui/kit/Kit';
 import { StretchView } from './StretchView';
 
 /** The road's own pages: the land of the place at the top, on the aurora tinted by its region. */
 function RoadPage({ km, children }: { km: number; children: ReactNode }) {
   return (
-    <div className="page lv lv-tab walk2 walk3" style={auroraFor(regionAt(km)) as CSSProperties}>
-      <Aurora />
+    <div className="page walk2 walk3 k-light walk">
       <div className="walk2-col">
         <div className="walk-top2">
           <div className="walk-top2-scene road">
             <WalkVista km={km} />
           </div>
         </div>
+        <BackLink label="Walk" onClick={() => back('/walk')} />
         {children}
       </div>
     </div>

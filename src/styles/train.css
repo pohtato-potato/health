@@ -1,0 +1,189 @@
+/*
+ * Train on the kit (look pass L2, 14 Nov). Boards four and five: the week leads; gym days sit on a cool steel light,
+ * home days on a warm one; weights are buttons; effort chips say where to stop. Training's own ink is coral.
+ */
+.tr-kit { --tr-ink: #ff9a76; --text: var(--k-cream); --lv-b: #1a1c38; }
+.k-light.tr-gym { --w1: rgba(157, 180, 214, 0.20); --w2: rgba(70, 86, 130, 0.30); --k-bg: radial-gradient(90% 42% at 100% 0%, rgba(157, 180, 214, 0.30), transparent 70%), radial-gradient(80% 45% at 0% 100%, rgba(66, 80, 128, 0.42), transparent 70%), #0d1120; }
+.k-light.tr-home { --w1: rgba(233, 160, 122, 0.20); --w2: rgba(108, 63, 196, 0.24); --k-bg: radial-gradient(90% 42% at 0% 0%, rgba(233, 138, 91, 0.32), transparent 70%), radial-gradient(85% 45% at 100% 100%, rgba(108, 63, 196, 0.40), transparent 70%), #120d1e; }
+
+.tr-head { min-height: 48px; }
+
+/* ---- the week ---- */
+.tr-week { display: flex; flex-direction: column; align-items: stretch; gap: 10px; width: 100%; text-align: left; }
+.tr-kit .k-page > * { min-width: 0; }
+.tr-kit .k-page { align-items: stretch; text-align: left; }
+.tr-words { font-size: 17px; }
+.tr-done { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 3px 12px 3px 9px; border-radius: 999px; border: 1.5px solid var(--k-good); color: var(--k-good); font-weight: 700; font-size: 15px; white-space: nowrap; }
+.tr-picks { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 8px; }
+.tr-pick {
+  min-height: 96px; border-radius: 18px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; align-items: flex-start; text-align: left;
+  background: linear-gradient(150deg, var(--w1), var(--w2)); border: 1.5px solid rgba(237, 230, 218, 0.28); color: var(--k-cream); font: inherit; cursor: pointer;
+}
+.tr-pick.gym { --w1: rgba(157, 180, 214, 0.20); --w2: rgba(70, 86, 130, 0.28); }
+.tr-pick.home { --w1: rgba(233, 160, 122, 0.20); --w2: rgba(108, 63, 196, 0.22); }
+.tr-pick.on { border: 2.5px solid var(--k-cream); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3), 0 8px 22px -10px var(--k-cream); }
+.tr-pick-code { display: flex; align-items: center; gap: 6px; }
+.tr-pick-code b { font: 600 24px/1.1 var(--serif); }
+.tr-pick:focus-visible, .tr-chipbtn:focus-visible, .tr-weight:focus-visible, .tr-step:focus-visible { outline: 3px solid var(--k-cream); outline-offset: 2px; }
+.tr-also { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.tr-chipbtn { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid rgba(237, 230, 218, 0.55); background: none; color: var(--k-cream); font: 700 15px var(--sans); cursor: pointer; }
+.tr-or { display: flex; flex-wrap: wrap; align-items: center; gap: 0 10px; }
+.tr-or button { display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--k-cream); font: 700 15px var(--sans); text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+.tr-or button.on { color: var(--act); }
+.tr-chipbtn.on { background: var(--k-cream); color: #14152a; border-color: var(--k-cream); }
+
+/* ---- the session's exercises ---- */
+.tr-session-h { margin-top: 6px; }
+.tr-session-h .k-num { white-space: nowrap; }
+.tr-session-h .k-r { flex: 0 1 auto; min-width: 0; }
+.tr-session-h .k-r .k-q { white-space: normal; text-align: right; }
+.tr-panel-h { display: flex; align-items: center; gap: 8px; }
+.tr-exs { gap: 0; padding-top: 8px; padding-bottom: 8px; }
+.tr-block-h { font-weight: 700; color: var(--ink); padding: 4px 0 2px; }
+.tr-group.sep { border-top: 1px solid rgba(237, 230, 218, 0.16); }
+.tr-ex { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 4px 10px; padding: 8px 0; }
+.tr-ex-text { flex: 1 1 0; }
+.tr-ex-text { gap: 3px; }
+.tr-ex-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.tr-eff { display: inline-flex; align-items: center; min-height: 28px; padding: 1px 10px; border-radius: 999px; border: 1.5px solid rgba(237, 230, 218, 0.7); font-weight: 700; font-size: 14px; white-space: nowrap; }
+.tr-eff.hard { color: #ff9a76; border-color: #ff9a76; }
+.tr-up { flex: 0 1 auto; display: inline-flex; align-items: center; min-height: 28px; margin-top: 2px; padding: 1px 10px; border-radius: 999px; border: 1.5px solid #ffd257; color: #ffd257; font-weight: 700; font-size: 14px; }
+.tr-weight { flex: none; min-width: 64px; min-height: 44px; padding: 0 12px; border-radius: 999px; border: 1.5px solid rgba(237, 230, 218, 0.6); background: rgba(13, 15, 32, 0.35); color: var(--k-cream); font: 600 20px/1 var(--serif); cursor: pointer; white-space: nowrap; }
+.tr-weight.still { border-color: transparent; background: none; font-size: 18px; color: var(--k-quiet); cursor: default; display: inline-flex; align-items: center; }
+.tr-b2b { display: flex; align-items: center; gap: 6px; margin: -2px 0 -4px 14px; color: var(--k-quiet); font-size: 14px; }
+.tr-group.pair { position: relative; }
+.tr-group.pair::before { content: ''; position: absolute; left: -8px; top: 12px; bottom: 12px; width: 3px; border-radius: 2px; background: color-mix(in srgb, var(--ink) 70%, transparent); }
+.tr-note { display: flex; align-items: flex-start; gap: 8px; color: var(--k-quiet); }
+
+/* ---- the body figure ---- */
+.tr-body-in { display: flex; align-items: center; gap: 10px; }
+.tr-body-fig { width: 128px; flex: none; }
+.tr-body-fig svg { width: 100%; height: auto; display: block; }
+.tr-body-fig text { display: none; }
+.tr-body .k-col { gap: 1px; }
+
+/* ---- sets per muscle ---- */
+.tr-bars { gap: 0; padding: 6px 14px; }
+.tr-bar-row { display: grid; grid-template-columns: 92px 1fr 30px; align-items: center; gap: 10px; min-height: 36px; }
+.tr-bar { position: relative; height: 12px; border-radius: 6px; background: rgba(237, 230, 218, 0.14); }
+.tr-bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px; }
+.tr-bar em { position: absolute; top: -4px; bottom: -4px; width: 0; border-left: 2px dashed rgba(255, 255, 255, 0.85); }
+.tr-bar-n { font: 600 20px var(--serif); text-align: right; }
+.tr-kit .tr-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; }
+
+/* ---- the weight sheet ---- */
+.tr-wsheet { display: flex; flex-direction: column; gap: 14px; align-items: center; font-family: var(--sans); padding-bottom: 6px; }
+.tr-stepper { display: flex; align-items: center; justify-content: center; gap: 18px; }
+.tr-stepper-v { min-width: 120px; text-align: center; }
+.tr-stepper-v b { font: 600 44px/1 var(--serif); }
+.tr-step { width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--k-cream); background: none; color: var(--k-cream); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.tr-step:disabled { opacity: 0.4; }
+
+/* ---- the older Train sections, on the kit: filled panels, no outlines, the kit's labels ---- */
+.tr-kit .lv-card {
+  border-radius: 20px; border: 1px solid transparent; padding: 12px 14px; gap: 8px; font-family: var(--sans);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tr-ink) 18%, #10122a), color-mix(in srgb, var(--tr-ink) 5%, #10122a) 90%);
+}
+.tr-kit .lv-card-h { font: 700 14px var(--sans); letter-spacing: 0.1em; color: var(--k-quiet); }
+.tr-kit .lv-small { font-size: 15px; color: var(--k-quiet); }
+.tr-kit .lv-tag { font-size: 14px; }
+.tr-kit .lv-link { color: var(--k-cream); font-weight: 700; min-width: 44px; }
+.tr-kit .lv-row { min-height: 44px; }
+.tr-kit .lv-tr-tonight { --tr-ink: #8fc9b0; }
+.tr-kit .lv-tr-tonight.gold { --tr-ink: #f2c46d; box-shadow: 0 0 36px -6px rgba(242, 196, 109, 0.45); }
+.tr-kit .lv-tr-hero-title { font-weight: 600; font-size: 40px; }
+/* The one glowing action is Start: the finale replay is quiet beside it. */
+.tr-kit .lv-tr-tonight .lv-primary { background: none; color: var(--k-cream); border: 2px solid var(--k-cream); box-shadow: none; min-height: 48px; border-radius: 999px; font: 700 15px var(--sans); }
+.tr-kit .lv-tr-tonight.gold .lv-primary { color: #ffd257; border-color: #ffd257; }
+@media (max-width: 350px) {
+  .tr-body-fig { width: 112px; }
+  .tr-bar-row { grid-template-columns: 84px 1fr 28px; gap: 8px; }
+}
+
+/* ---- a set, running (board five): the weight to hand, the clock or the count, aim and effort ---- */
+.lv-set2 .lv-name, .lv-logged .lv-name { font-size: 28px; }
+.lv-load { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 6px; }
+.lv-stepbtn { width: 56px; height: 56px; flex: none; border-radius: 50%; border: 2px solid var(--text); background: color-mix(in srgb, var(--lv-b) 40%, transparent); color: var(--text); display: grid; place-items: center; padding: 0; cursor: pointer; }
+.lv-stepbtn:disabled { opacity: 0.4; }
+.lv-loadv { display: flex; flex-direction: column; align-items: center; min-width: 110px; min-height: 56px; justify-content: center; text-align: center; color: var(--text); font: 600 17px var(--sans); background: none; border: 0; padding: 0; }
+.lv-loadv b { font: 600 38px/1 var(--serif); }
+.lv-loadv small { font: 400 14px var(--sans); color: color-mix(in srgb, var(--text) 78%, transparent); margin-top: 2px; }
+button.lv-loadv { cursor: pointer; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 6px; }
+.lv-scope { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.lv-scope button { min-height: 44px; border-radius: 999px; border: 1.5px solid var(--text); background: none; color: var(--text); font: 700 15px var(--sans); }
+.lv-scope button.on { background: var(--act, #ff7a1a); border-color: var(--act, #ff7a1a); color: #14152a; }
+.lv-set2 .lv-meta .lv-pill { display: inline-flex; align-items: center; gap: 4px; }
+.lv-set2 .lv-tap { container-type: size; }
+.lv-set2 .lv-countwrap .lv-count { font-size: clamp(44px, 60cqh, 112px); line-height: 1; font-weight: 600; }
+@container (max-height: 84px) { .lv-set2 .lv-word { display: none; } }
+.lv-set2 .lv-count.clock { color: var(--text); letter-spacing: -0.02em; }
+.lv-aimeff { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.lv-mini { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border-radius: 18px; background: linear-gradient(180deg, color-mix(in srgb, var(--text) 16%, #10122a), color-mix(in srgb, var(--text) 5%, #10122a)); font-size: 15px; }
+.lv-mini > span { color: color-mix(in srgb, var(--text) 78%, transparent); }
+.lv-mini b { font-size: 17px; }
+.lv-mini b.num { font: 600 24px/1.1 var(--serif); }
+.lv-breathe { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; color: color-mix(in srgb, var(--text) 85%, transparent); text-align: left; }
+.lv-set2 .lv-actions .lv-ghost { min-width: 118px; }
+
+/* ---- a set, logged (board four): one big number with minus and plus, reps left, form, something hurt ---- */
+.lv-countset { display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 4px; }
+.lv-countset-v { display: flex; flex-direction: column; align-items: center; min-width: 120px; }
+.lv-logged .lv-countset .lv-count { font-size: 96px; font-weight: 600; line-height: 0.95; }
+.lv-logged .lv-word { text-align: center; }
+.lv-logged .lv-rir { flex-direction: column; align-items: stretch; gap: 8px; }
+.lv-rir-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.lv-rir-row .lv-rir-chip { min-width: 0; min-height: 48px; font-weight: 700; }
+.lv-logged .lv-rir-chip.on { background: var(--act, #ff7a1a); border-color: var(--act, #ff7a1a); color: #14152a; }
+.lv-hurt-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.lv-hurt { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid #ff9a9a; color: #ffb3b3; background: none; font: 700 15px var(--sans); }
+
+/* ---- a record (board five, "brighter"): the whole screen gold, rays and sparks ---- */
+.lv-record2 { background: radial-gradient(120% 70% at 50% 38%, rgba(255, 210, 87, 0.55), rgba(120, 78, 10, 0.55) 55%, #1d1404 100%); }
+.lv-rays { position: absolute; inset: -20% -40%; width: 180%; height: 140%; pointer-events: none; animation: lv-rays 60s linear infinite; }
+.lv-rays path { fill: rgba(255, 233, 168, 0.13); }
+@keyframes lv-rays { to { transform: rotate(360deg); } }
+.lv-record2 .lv-record-in { justify-content: flex-start; padding-top: 8px; }
+.lv-rec-title { align-self: flex-start; color: #fff6d6; }
+.lv-rec-sub { align-self: flex-start; color: #fff6d6; font-size: 16px; margin-top: -6px; }
+.lv-rec-num { display: flex; flex-direction: column; align-items: center; margin: 18px 0 14px; }
+.lv-record2 .lv-bloom { font-size: 136px; font-weight: 600; color: #fffbe6; text-shadow: 0 0 8px #fff, 0 0 34px #ffd257, 0 0 90px rgba(255, 210, 87, 0.7); }
+.lv-rec-num b { color: #fff6d6; font-size: 18px; }
+.lv-rec-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
+.lv-mini.gold { background: rgba(36, 23, 4, 0.72); border: 1px solid rgba(255, 210, 87, 0.5); }
+.lv-mini.gold > span { color: #ffe9a8; }
+.lv-mini.gold b { color: #fff6d6; }
+.lv-rec-song { color: #fff6d6; text-align: center; margin: 4px 0 0; }
+.lv-record2 .lv-primary.gold { background: #ffd257; color: #241704; box-shadow: 0 12px 30px -6px #ffd257; }
+@media (max-height: 720px) {
+  .lv-logged .lv-countset .lv-count { font-size: 80px; }
+  .lv-record2 .lv-bloom { font-size: 112px; }
+}
+
+/* Before the first set: its small labels at 14 px like every other line. */
+.lv-guide b { font-size: 14px; }
+.tr-kit .lv-skip, .lv-set2 .lv-skip { min-width: 44px; }
+/* Short screens (an S23 with the status bar): the set screen keeps its buttons in reach by tightening the top. */
+@media (max-height: 800px) {
+  .lv-set2 .lv-hint { display: none; }
+  .lv-set2 .lv-name { font-size: 24px; }
+  .lv-set2 .lv-stepbtn { width: 48px; height: 48px; }
+  .lv-set2 .lv-loadv { min-height: 48px; }
+  .lv-set2 .lv-loadv b { font-size: 32px; }
+  .lv-set2 .lv-mini { padding: 6px 12px; }
+  .lv-set2 .lv-mini b.num { font-size: 20px; }
+}
+@media (max-height: 720px) {
+  .lv-set2 .lv-screen { gap: 8px; }
+  .lv-set2 .lv-tap { gap: 2px; }
+  .lv-set2 .lv-scope { margin-top: 4px; }
+}
+/* Rest: the ring in training's coral (L0: lavender is protein only). */
+.lv-rest-ring .fill { stroke: #ff9a76; }
+/* Rest on short screens: a smaller ring so Ready stays in reach. */
+@media (max-height: 760px) {
+  .lv-rest-ring { width: 176px; height: 176px; margin-top: 0; }
+  .lv-rest-ring svg { width: 100%; height: 100%; }
+  .lv-rest-ring-in b { font-size: 54px; }
+}
+/* The one glowing action on a set (board four and five): Set done, Save, in the kit's orange. */
+.lv-set2 .lv-actions .lv-primary:not(.rest), .lv-logged .lv-primary:not(.gold) { background: var(--act); color: var(--act-ink); box-shadow: 0 10px 24px -8px var(--act); }

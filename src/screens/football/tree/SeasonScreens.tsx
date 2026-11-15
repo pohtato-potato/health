@@ -11,6 +11,8 @@ import { BOONS } from '../../../football/content/season';
 import { go } from '../../../router';
 import { useModel } from './model';
 import { Back, TreePage } from './TreeScreens';
+import { Panel, Sect, Title } from '../../../ui/kit/Kit';
+import { MarkRow, Note } from '../club/Bits';
 
 const col = (c: string) => ({ ['--c' as string]: c }) as CSSProperties;
 const BOON_COLOURS = ['#93c3dc', '#8fdcb6', '#c2b2ff', '#ffd56a'];
@@ -23,26 +25,27 @@ export function BoonPage() {
   const s = m.t.save;
   const held = boonsThisSeason(m.user, s.season).map((id) => BOONS.find((b) => b.id === id)!);
   return (
-    <TreePage>
-      <Back to="/football/club" params={{ view: 'tree' }} label="The tree" />
-      <p className="fbt-cap">Season {s.season} · day {Math.min(s.day, seasonLength(worldOf(s)))}{m.boonPick ? ` · boon ${m.boonPick > 3 ? 'extra' : `${m.boonPick} of 3`}` : ''}</p>
-      <h1 className="fbt-t1">{m.boonPick ? 'Pick one for this season' : 'This season’s boons'}</h1>
+    <div className="k-page">
+      <Title under={`Season ${s.season} · day ${Math.min(s.day, seasonLength(worldOf(s)))}${m.boonPick ? ` · boon ${m.boonPick > 3 ? 'extra' : `${m.boonPick} of 3`}` : ''}`}>{m.boonPick ? 'Pick one for this season' : 'This season’s boons'}</Title>
       {m.boonPick ? (
-        <div className="fbt-boons">
+        <div className="kb-rows">
           {m.boonOffer.map((b, i) => (
-            <button key={b.id} type="button" className="fbt-boon" style={col(BOON_COLOURS[i % BOON_COLOURS.length])} onClick={() => void pickBoon(b.id)}>
-              <b>{b.name}</b><span>{b.text}</span>
-            </button>
+            <Panel key={b.id} ink={BOON_COLOURS[i % BOON_COLOURS.length]} onClick={() => void pickBoon(b.id)} label={`Pick ${b.name}`}>
+              <b style={{ color: BOON_COLOURS[i % BOON_COLOURS.length] }}>{b.name}</b><span className="k-q">{b.text}</span>
+            </Panel>
           ))}
         </div>
-      ) : <p className="fbt-line">The next pick comes on day {(worldOf(s) === 2 ? BOON_DAYS_2 : BOON_DAYS).find((d) => d > s.day) ?? 'one of next season'}.</p>}
+      ) : <Note>The next pick comes on day {(worldOf(s) === 2 ? BOON_DAYS_2 : BOON_DAYS).find((d) => d > s.day) ?? 'one of next season'}.</Note>}
       {held.length > 0 && (
-        <div className="fbt-boons held">
-          {held.map((b, i) => <p key={b.id} className="fbt-boon on" style={col(BOON_COLOURS[i % BOON_COLOURS.length])}><b>✓ {b.name}</b><span>{b.text}</span></p>)}
-        </div>
+        <>
+          <Sect>Held this season</Sect>
+          <div className="kb-rows">
+            {held.map((b, i) => <Panel key={b.id} ink={BOON_COLOURS[i % BOON_COLOURS.length]}><MarkRow icon="check" c={BOON_COLOURS[i % BOON_COLOURS.length]} name={b.name} line={b.text} /></Panel>)}
+          </div>
+        </>
       )}
-      <p className="fbt-line">Boons last this season only. They're the one thing a new season resets.</p>
-    </TreePage>
+      <Note>Boons last this season only. They're the one thing a new season resets.</Note>
+    </div>
   );
 }
 

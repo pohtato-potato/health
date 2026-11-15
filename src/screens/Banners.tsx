@@ -32,7 +32,7 @@ function readDismissed(): { date: string; ids: string[] } | null {
 type Banner = BannerCandidate & { icon: ReactNode; title: string; sub?: string; actions: BannerAction[]; node?: ReactNode };
 
 /** One quiet banner on Today, always in the same slot: a new version, a dose, the morning log, a backup, the week, a check-in, an occasion, installing. Never notifications. */
-export function Banners() {
+export function Banners({ noMorning = false }: { noMorning?: boolean } = {}) {
   const pwa = usePwa();
   const settings = useSettings();
   const days = useAllDays();
@@ -80,7 +80,7 @@ export function Banners() {
   }
 
   const morning = morningLogBanner(!!todayDay?.morning, logMinutes(Date.now()));
-  if (morning)
+  if (morning && !noMorning)
     candidates.push({ id: 'morning-log', priority: morning.priority, anytime: true, icon: <Icon name="sun" size={20} color="var(--apricot)" />, title: morning.text, sub: 'Sleep and the checklist now; the weigh-in can follow', actions: [{ label: 'Log', run: () => openSheet('morning') }] });
 
   if (nudge)

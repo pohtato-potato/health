@@ -10,13 +10,15 @@ describe('proteinState', () => {
 });
 
 describe('DrawerHandle', () => {
-  it('shows the protein state and the moon Close the day, with no Readiness and no + button', () => {
-    const html = renderToStaticMarkup(<DrawerHandle protein="22 g to go" closeLabel="Close the day" onOpen={() => {}} onCloseDay={() => {}} />);
+  it('is the moon Close the day alone, as drawn, with no Readiness and no + button', () => {
+    const html = renderToStaticMarkup(<DrawerHandle closeLabel="Close the day" onCloseDay={() => {}} />);
     expect(html).not.toContain('Ready');
-    expect(html).toContain('22 g to go');
     expect(html).toContain('Close the day');
     expect(html).toContain('td-moonbtn');
-    expect(html).toContain('Open today in detail');
+    expect(html).not.toContain('+');
+  });
+  it('turns gold on a perfect day', () => {
+    expect(renderToStaticMarkup(<DrawerHandle closeLabel="Close the day" gold onCloseDay={() => {}} />)).toContain('td-moonbtn gold');
   });
 });
 

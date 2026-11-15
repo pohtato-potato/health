@@ -4,6 +4,10 @@ import { euros, type Offer, type Risk, type Slot } from '../../../football/money
 import type { Club } from '../../../football/store/club';
 import type { Tier } from '../../../football/types';
 import { WagesCard } from '../tree/TreeScreens';
+import { Action, Hero, Panel, Sect } from '../../../ui/kit/Kit';
+import { BLUE, CORAL, GOLD, GREEN, LAV, Note, PanelTop } from './Bits';
+
+const RISK_INK: Record<Risk, string> = { stable: GREEN, flashy: GOLD, dodgy: CORAL };
 
 export const RISK: Record<Risk, string> = { stable: 'Stable', flashy: 'Flashy', dodgy: 'Dodgy' };
 const RISK_WHY: Record<Risk, string> = { stable: 'Pays steadily.', flashy: 'Pays more, with a habit clause.', dodgy: 'Pays most. 1 in 4 a season it folds.' };
@@ -26,46 +30,50 @@ export function MoneyView({ c, groundBuilt = false, onAccept, onOwn }: { c: Club
   const [name, setName] = useState(s.ownSponsor?.name ?? '');
   const [slot, setSlot] = useState<Slot>((s.ownSponsor?.slot as Slot) ?? 'sleeve');
   return (
-    <>
-      <section className="fb-card hot" aria-label="The budget">
-        <span className="fb-lb">The one budget</span>
-        <b className="fb-num fb-huge">{m(s.budget)}</b>
-        {s.income ? s.income.lines.map((l) => <div key={l.name} className="fb-row"><span className="fb-s">{l.name}, season {s.income!.season}</span><b className="fb-num">{m(l.amount)}</b></div>)
-          : <p className="fb-s">Income lands at the end of each season: TV, the gate, prize money and the sponsors. It grows with promotion.</p>}
-      </section>
+    <div className="k-page">
+      <Hero value={m(s.budget)} ink={GOLD} label="the one budget" />
+      {s.income ? (
+        <Panel ink={GOLD}>
+          <PanelTop name={`Income, season ${s.income.season}`} c={GOLD} />
+          {s.income.lines.map((l) => <div key={l.name} className="k-row"><span>{l.name}</span><b className="k-num" style={{ fontSize: 18 }}>{m(l.amount)}</b></div>)}
+        </Panel>
+      ) : <Note>Income lands at the end of each season: TV, the gate, prize money and the sponsors. It grows with promotion.</Note>}
       <WagesCard />
-      <section className="fb-card" aria-label="Sponsor slots">
-        <span className="fb-lb">Slots</span>
+      <Sect>Sponsor slots</Sect>
+      <Panel ink={BLUE}>
         {slotRows(c.tier, groundBuilt).map((r) => {
           const who = signed.filter((x) => x.slot === r.slot);
           const own = s.ownSponsor?.slot === r.slot ? s.ownSponsor.name : undefined;
+          const text = !r.open ? r.why : [...who.map((x) => `${x.brand} (${RISK[x.risk]})`), ...(own ? [`${own} (your own)`] : [])].join(', ') || 'Empty';
           return (
-            <div key={r.slot} className="fb-row">
-              <span className="fb-lb">{SLOT_NAME[r.slot]}</span>
-              <span className="fb-s fb-right">{!r.open ? r.why : [...who.map((x) => `${x.brand} (${RISK[x.risk]})`), ...(own ? [`${own} (your own)`] : [])].join(', ') || 'Empty'}</span>
+            <div key={r.slot} className="k-row" style={{ minHeight: 36, alignItems: 'baseline', gap: 12, padding: '4px 0' }}>
+              <b>{SLOT_NAME[r.slot]}</b>
+              <span className={r.open && text !== 'Empty' ? undefined : 'k-q'} style={{ textAlign: 'right' }}>{text}</span>
             </div>
           );
         })}
-      </section>
-      <div className="fb-row"><h2 className="fb-t">Offers</h2><span className="fb-s">{(s.offers ?? []).length ? 'between seasons' : 'none now'}</span></div>
-      {(s.offers ?? []).length === 0 && <p className="fb-s">Offers arrive in the days between seasons. Real brands come from Division Three up.</p>}
-      {(s.offers ?? []).map((o, i) => (
-        <section key={`${o.slot}-${o.brand}-${i}`} className={`fb-card fb-offer ${o.risk}`} aria-label={`${o.brand}, ${RISK[o.risk]}`}>
-          <div className="fb-row"><b>{o.brand}</b><span className="fb-tag">{RISK[o.risk]}</span></div>
-          <span className="fb-s">{SLOT_NAME[o.slot]} · {m(o.perSeason)} a season · {o.seasons} {o.seasons === 1 ? 'season' : 'seasons'}</span>
-          <span className="fb-s">{o.line} {RISK_WHY[o.risk]}</span>
-          <button type="button" className="fb-btn sm" onClick={() => onAccept?.(o)}>Sign {o.brand}</button>
-        </section>
-      ))}
-      <p className="fb-s">One habit clause at a time, at most. No betting or alcohol, ever.</p>
-      <form className="fb-card" aria-label="Your own sponsor" onSubmit={(e) => { e.preventDefault(); onOwn?.(name, slot); }}>
-        <span className="fb-lb">Add your own sponsor</span>
-        <input className="fb-input" value={name} maxLength={40} onChange={(e) => setName(e.target.value)} aria-label="Sponsor name" placeholder="A name for the shirt" />
-        <select className="fb-select" value={slot} onChange={(e) => setSlot(e.target.value as Slot)} aria-label="Which slot">
+      </Panel>
+      <Sect>Offers</Sect>
+      {(s.offers ?? []).length === 0 && <Note>None now. Offers arrive in the days between seasons. Real brands come from Division Three up.</Note>}
+      <div className="kb-rows">
+        {(s.offers ?? []).map((o, i) => (
+          <Panel key={`${o.slot}-${o.brand}-${i}`} ink={RISK_INK[o.risk]}>
+            <PanelTop name={o.brand} c={RISK_INK[o.risk]} right={RISK[o.risk]} />
+            <span className="k-q">{SLOT_NAME[o.slot]} · {m(o.perSeason)} a season · {o.seasons} {o.seasons === 1 ? 'season' : 'seasons'}</span>
+            <span>{o.line} {RISK_WHY[o.risk]}</span>
+            <Action onClick={() => onAccept?.(o)}>Sign {o.brand}</Action>
+          </Panel>
+        ))}
+      </div>
+      <Note>One habit clause at a time, at most. No betting or alcohol, ever.</Note>
+      <form className="k-panel" style={{ ['--ink' as string]: LAV }} aria-label="Your own sponsor" onSubmit={(e) => { e.preventDefault(); onOwn?.(name, slot); }}>
+        <PanelTop name="Add your own sponsor" c={LAV} />
+        <input className="kb-input" value={name} maxLength={40} onChange={(e) => setName(e.target.value)} aria-label="Sponsor name" placeholder="A name for the shirt" />
+        <select className="kb-select" value={slot} onChange={(e) => setSlot(e.target.value as Slot)} aria-label="Which slot">
           {(['shirt', 'kit', 'sleeve', 'ground', 'partner'] as Slot[]).map((x) => <option key={x} value={x}>{SLOT_NAME[x]}</option>)}
         </select>
-        <button type="submit" className="fb-btn pri sm">Save</button>
+        <button type="submit" className="k-act quiet">Save</button>
       </form>
-    </>
+    </div>
   );
 }

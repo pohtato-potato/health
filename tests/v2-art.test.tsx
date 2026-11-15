@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { LANDMARKS, landmarkFor } from '../src/walk/art/landmarks';
-import { Scene } from '../src/walk/art/scene';
-import { approachScale } from '../src/walk/WalkScene';
+import { WalkScene } from '../src/walk/WalkScene';
+import { approachScale } from '../src/walk/art/land';
+import { ALL_STOPS } from '../src/domain/walk';
 import { CITIES } from '../src/domain/walk';
 import { REGIONS } from '../src/ui/light';
 import type { PartOfDay } from '../src/domain/dates';
@@ -22,7 +23,7 @@ describe('walk illustrations', () => {
     const parts: PartOfDay[] = ['dawn', 'day', 'dusk', 'night'];
     for (const part of parts) {
       for (const city of ['Gwalior', 'Mumbai', 'Leh', 'Kolkata']) {
-        const html = renderToStaticMarkup(<Scene city={city} part={part} people />);
+        const html = renderToStaticMarkup(<WalkScene km={ALL_STOPS.find((s) => s.name === city)?.km ?? 0} place={city} part={part} />);
         expect(html).not.toMatch(/fill="(undefined|null|NaN|)"/);
         expect(html).not.toMatch(/NaN/);
         expect(html).toContain('<svg');

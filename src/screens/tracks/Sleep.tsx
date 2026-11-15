@@ -8,7 +8,8 @@ import { sri } from '../../domain/sleepRegularity';
 import { bedDrift, todayAndChange, usualRange } from '../../domain/trackStats';
 import { targetsFor } from '../../state/derived';
 import { SleepExtras } from '../TrackExtras';
-import { headInput, dayLabel, kindOn, placeMarkOn, spanDays, type TrackData } from './data';
+import { headInput, dayLabel, kindOn, placeMarkOn, spanDays, trendFor, type TrackData } from './data';
+import { SleepCounts } from './SleepCounts';
 import { changeText, HeroChart, TrackShell } from './Template';
 import { sleepChartSpan, sleepTick, sleepWindows } from '../../domain/insights';
 import { usualWake } from '../../domain/sleepRegularity';
@@ -38,13 +39,25 @@ export function SleepTrack({ data }: { data: TrackData }) {
       track="sleep"
       head={headlineFor('sleep', headInput(data))}
       value={avg !== undefined ? fmtDuration(Math.round(avg)) : '—'}
-      sub={`average · need ${fmtDuration(t.sleepMin)}`}
+      sub="a night"
       change={changeText(ch.delta, (n) => fmtDuration(Math.round(n)), true)}
+      trend={trendFor(data, 'sleep')}
+      chartLabel={`Hours, ${range.length === 14 ? 'two weeks' : `${range.length} nights`}`}
       span={span}
       spans={['14', '30', '90']}
       unit="n"
       onSpan={setSpan}
-      hero={<SleepBands days={all} range={range} officeWake={officeWake} />}
+      hero={
+        <HeroChart
+          label={`Sleep over ${range.length} nights`}
+          color="#6cc8ff"
+          fmt={(n) => fmtDuration(Math.round(n))}
+          target={t.sleepMin}
+          height={150}
+          points={range.map((d) => ({ label: label(d), value: mins.get(d) ?? null, place: placeMarkOn(data, d) }))}
+        />
+      }
+      top={<SleepCounts days={data.days} today={today} />}
       insights={[
         regNow !== undefined && `Regularity ${regNow}${regThen !== undefined && regThen !== regNow ? `, ${regNow > regThen ? 'up' : 'down'} from ${regThen}` : ''}: how alike your sleep and wake times were night to night.`,
         drift !== undefined && Math.abs(drift) >= 15 && `Office nights: asleep ${fmtDuration(Math.abs(drift))} ${drift > 0 ? 'later' : 'earlier'} on average.`,
@@ -53,13 +66,12 @@ export function SleepTrack({ data }: { data: TrackData }) {
       history={{ title: 'Night by night', rows: [...logged].reverse().slice(0, 30).map((d) => [fmtDayShort(d), fmtDuration(mins.get(d)!)]) }}
       views={[
         { label: 'Each night', hero: true, el: null },
+        { label: 'When you slept', el: <div className="k-chart"><b>When you slept</b><SleepBands days={all} range={range} officeWake={officeWake} /></div> },
         { label: 'Balance', el: <BalanceView days={all} today={today} target={t.sleepMin} /> },
         { label: 'Profile', el: (
           <>
-      <div className="card">
-        <div className="lbl" style={{ color: 'var(--sleep)' }}>
-          Hours a night
-        </div>
+      <div className="k-chart">
+        <b>Hours a night, with your usual range</b>
         <HeroChart
           label={`Sleep over ${range.length} nights`}
           color="var(--blue)"
@@ -116,7 +128,7 @@ function SleepBands({ days, range, officeWake }: { days: TrackData['days'] exten
           );
         })}
       </svg>
-      <div className="t12 q">Gold band: your office wake-up · dashed: not logged · rose: under 5 h</div>
+      <div className="k-q">Gold band: your office wake-up · dashed: not logged · rose: under 5 h</div>
     </div>
   );
 }

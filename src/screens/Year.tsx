@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { almanac, dayOneAgainstToday, mostOf, yearReplay, type ReplayFrame } from '../domain/yearPage';
 import { spokenLine } from '../domain/voice';
 import { back } from '../router';
-import { Icon } from '../ui/Icon';
-import { RegionFrameView } from '../ui/live/RegionFrame';
+import { PageHead } from '../ui/kit/Kit';
 import { useMonthInput } from './reports/useMonthInput';
 
 function Replay({ frames, onClose }: { frames: ReplayFrame[]; onClose: () => void }) {
@@ -23,7 +22,7 @@ function Replay({ frames, onClose }: { frames: ReplayFrame[]; onClose: () => voi
 export function YearPage() {
   const input = useMonthInput();
   const [playing, setPlaying] = useState(false);
-  if (!input) return <div className="page" />;
+  if (!input) return <div className="page bare k-page k-light you" />;
   const months = almanac(input);
   const lists = mostOf(input);
   const compare = dayOneAgainstToday(input);
@@ -31,10 +30,9 @@ export function YearPage() {
   const line = spokenLine(input.settings, input.today, 'milestone', `year${input.today}`);
   if (playing && frames.length) return <Replay frames={frames} onClose={() => setPlaying(false)} />;
   return (
-    <RegionFrameView km={0} className="yu-page">
-      <div className="yu-stack">
-        <button type="button" className="backlink" onClick={() => back('/you')}><Icon name="left" size={20} stroke={1.8} />You</button>
-        <h1>Your year</h1>
+    <div className="page bare k-page k-light you yu-page">
+      <div className="k-page">
+        <PageHead back="You" onBack={() => back('/you')} title="Your year" />
         {line && <div className="voice">{line}</div>}
         {!months.length && <div className="yu-card"><b>Nothing here yet</b><span className="yu-q">Your year fills in as you log.</span></div>}
         {frames.length > 0 && <button type="button" className="btn" onClick={() => setPlaying(true)}>Play the replay</button>}
@@ -71,6 +69,6 @@ export function YearPage() {
           </section>
         ))}
       </div>
-    </RegionFrameView>
+    </div>
   );
 }

@@ -30,8 +30,10 @@ describe('RegionFrame: a page Today opens sits on the region aurora', () => {
 });
 
 describe('the pages Today opens opt in, with no list of paths', () => {
-  const PAGES = ['src/screens/FoodToday.tsx', 'src/screens/CloseDay.tsx', 'src/screens/Readiness.tsx', 'src/screens/reports/WeeklyStory.tsx', 'src/screens/CheckIn.tsx'];
+  // Food and Close the day moved to the kit's light in the look pass (L3), as Today did.
+  const PAGES = ['src/screens/Readiness.tsx', 'src/screens/reports/WeeklyStory.tsx', 'src/screens/CheckIn.tsx'];
   it.each(PAGES)('%s uses RegionFrame', (f) => expect(readFileSync(f, 'utf8')).toMatch(/<RegionFrame\b/));
+  it.each(['src/screens/FoodToday.tsx', 'src/screens/CloseDay.tsx'])('%s sits on the kit light', (f) => expect(readFileSync(f, 'utf8')).toMatch(/k-page/));
   it('the prototype path list is gone', () => expect(grepSrc(/REGION_PAGES/)).toEqual([]));
 });
 

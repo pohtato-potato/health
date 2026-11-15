@@ -1,3 +1,4 @@
+import { trendRows, type MomentumArea } from '../../domain/momentum';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { useAllDays, useAllEntries, useAllSets, useMeasurements, useSessions, useSettings, useToday } from '../../db/hooks';
@@ -66,4 +67,10 @@ export const kindOn = (data: Pick<TrackData, 'settings' | 'days'>) => (date: Day
 /** What the headline rules read. */
 export function headInput(data: TrackData): HeadInput {
   return { today: data.today, settings: data.settings, days: [...data.days.values()], entries: data.entries, sessions: data.sessions, sets: data.sets, measurements: data.measurements };
+}
+
+/** The trend word and the "was" for one of momentum's four areas, as You's tiles show it (look pass). */
+export function trendFor(data: TrackData, area: MomentumArea): { word: string; was?: string } | undefined {
+  const row = trendRows(data.today, { settings: data.settings, days: [...data.days.values()], entries: data.entries, sessions: data.sessions }).find((r) => r.area === area);
+  return row ? { word: row.word, was: row.was } : undefined;
 }

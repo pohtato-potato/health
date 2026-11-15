@@ -1,7 +1,7 @@
 // The Club section: the squad first, then deals, money, kits and the ground, one tap apart.
 import type { ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { tierName } from '../../../football/data/load';
+import { tierName, TIER_NAMES } from '../../../football/data/load';
 import { loadClub, type Club } from '../../../football/store/club';
 import { acceptOffer, equipAbility, keepHabit, pickKit, renewContract, sellHabit, setCaptain, setOwnSponsor, setSponsorStyle, bookMove } from '../../../football/store/save';
 import { KitsView } from './Kits';
@@ -18,7 +18,7 @@ import { useWorldDoors } from '../world/WorldScreens';
 import { useModel } from '../tree/model';
 import { Kaai } from './Kaai';
 import { Art } from '../Tonight';
-import { Action, Door, Doors, Panel, Sect, Title, type HowThisWorks } from '../../../ui/kit/Kit';
+import { Action, Door, Doors, Hero, Panel, Sect, Title, type HowThisWorks } from '../../../ui/kit/Kit';
 import { usePlayers, useSheet, useTonight } from '../../../football/store/hooks';
 import { loadLeague } from '../../../football/store/league';
 import { loadDesk } from '../../../football/store/desk';
@@ -60,19 +60,19 @@ export function ClubView({ c, view }: { c: Club; view: ClubViewId; extra?: Parti
 /** The squad page (a door on Club): the six units, then the habits that make the club. */
 function SquadPage({ c }: { c: Club }) {
   const players = usePlayers();
+  const squad = players?.filter((p) => p.status === 'squad') ?? [];
   return (
-    <>
+    <div className="k-page">
       {players && (
-        <div className="pl-units">
-          {AXES.map((u) => (
-            <button key={u} type="button" className="pl-unit" style={{ ['--uc' as string]: UNIT_COLOUR[u] }} onClick={() => go('/football/unit', { u })}>
-              <i aria-hidden="true" /><span><b>{u}</b><small>{players.filter((p) => p.unit === u && p.status === 'squad').length} players</small></span>
-            </button>
-          ))}
-        </div>
+        <>
+          <Hero value={squad.length} ink="#8fdcb6" label={squad.length === 1 ? 'player in the squad' : 'players in the squad'} />
+          <Doors label="The units">
+            {AXES.map((u) => <Door key={u} icon="people" name={u} ink={UNIT_COLOUR[u]} value={squad.filter((p) => p.unit === u).length} onClick={() => go('/football/unit', { u })} />)}
+          </Doors>
+        </>
       )}
       <SquadView c={c} onCaptain={(a) => void setCaptain(a)} onEquip={(id, i) => void equipAbility(id, i)} />
-    </>
+    </div>
   );
 }
 
@@ -84,7 +84,7 @@ const CLUB_HOW: HowThisWorks = {
     { icon: 'tree', ink: '#c2b2ff', head: 'Research grows the club', line: 'Matches and logging earn research for the tree; the tree opens buildings.' },
     { icon: 'ground', ink: '#ff9a76', head: 'The Kaai grows with you', line: 'Every building finished is added to the picture; each division up redraws it larger.' },
   ],
-  chips: [{ text: '11 start', ink: '#ede6da' }, { text: '6 units', ink: '#8fdcb6' }, { text: '6 divisions', ink: '#f2c46d' }],
+  chips: [{ text: '11 start', ink: '#ede6da' }, { text: `${AXES.length} units`, ink: '#8fdcb6' }, { text: `${Object.keys(TIER_NAMES).length} divisions`, ink: '#f2c46d' }],
 };
 
 const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;

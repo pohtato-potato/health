@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { patchSettings } from '../../db/actions';
 import { CONFETTI, hasReward, rewardAch } from '../../domain/rewards';
 import { themeById } from '../../domain/themes';
@@ -16,13 +16,13 @@ export function Rewards({ settings, unlocked, today }: { settings: Settings; unl
   };
   return (
     <>
-      <div className="card yu-rewards" style={{ gap: 12 }}>
+      <div className="k-panel yu-rewards k-reward" style={{ gap: 12, '--ink': '#f2c46d' } as CSSProperties}>
         <button type="button" className="row t15" style={{ minHeight: 44 }} onClick={() => setThemes(true)}>
-          <span>Theme</span>
-          <span className="q">{themeById(settings.theme)?.name ?? 'Dusk'} ›</span>
+          <span className="k-lb">Theme</span>
+          <span className="k-row" style={{ gap: 4 }}>{themeById(settings.theme)?.name ?? 'Dusk'}<Icon name="right" size={16} stroke={2.2} /></span>
         </button>
         <div className="col gap8">
-          <span className="t15">Confetti</span>
+          <span className="k-lb">Confetti</span>
           <div className="row" style={{ flexWrap: 'wrap', gap: 8, justifyContent: 'flex-start' }}>
             {CONFETTI.map((c) => {
               const open = !c.reward || reward(c.reward);
@@ -45,22 +45,22 @@ export function Rewards({ settings, unlocked, today }: { settings: Settings; unl
         </div>
         <label className="row" style={{ minHeight: 52, opacity: reward('Gold rings') ? 1 : 0.5 }}>
           <span className="col gap2">
-            <span className="t15">Gold rings</span>
-            <span className="t12 q">{reward('Gold rings') ? 'Closed rings on Today turn gold' : lockedLine('Gold rings')}</span>
+            <span className="k-lb">Gold rings</span>
+            <span className="k-q">{reward('Gold rings') ? 'Closed rings on Today turn gold' : lockedLine('Gold rings')}</span>
           </span>
           <input type="checkbox" className="sw" disabled={!reward('Gold rings')} checked={reward('Gold rings') && prefOn(settings.prefs, 'goldRings')} onChange={(e) => patchSettings((s) => ({ prefs: { ...s.prefs, goldRings: e.target.checked } }))} />
         </label>
         <label className="row" style={{ minHeight: 52, opacity: reward('Gym mode') ? 1 : 0.5 }}>
           <span className="col gap2">
-            <span className="t15">Gym mode</span>
-            <span className="t12 q">{reward('Gym mode') ? 'Loads come from a full dumbbell rack, not your plates' : lockedLine('Gym mode')}</span>
+            <span className="k-lb">Gym mode</span>
+            <span className="k-q">{reward('Gym mode') ? 'Loads come from a full dumbbell rack, not your plates' : lockedLine('Gym mode')}</span>
           </span>
           <input type="checkbox" className="sw" disabled={!reward('Gym mode')} checked={reward('Gym mode') && !!settings.equipment.gym} onChange={(e) => patchSettings((s) => ({ equipment: { ...s.equipment, gym: e.target.checked } }))} />
         </label>
         <div className="row t15" style={{ minHeight: 44, opacity: reward('A gold route on your map') ? 1 : 0.5 }}>
           <span className="col gap2">
-            <span>Gold route</span>
-            <span className="t12 q">{reward('A gold route on your map') ? 'Your walked route is drawn in gold' : lockedLine('A gold route on your map')}</span>
+            <span className="k-lb">Gold route</span>
+            <span className="k-q">{reward('A gold route on your map') ? 'Your walked route is drawn in gold' : lockedLine('A gold route on your map')}</span>
           </span>
           {!reward('A gold route on your map') && <Icon name="lock" size={16} color="var(--dim)" />}
         </div>

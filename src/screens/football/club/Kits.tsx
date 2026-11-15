@@ -6,6 +6,8 @@ import { CREST_LINES, launchOptions, slotsOpen, SPONSOR_STYLES, type KitSlot } f
 import type { Club } from '../../../football/store/club';
 import { kitFor, kitWall, type WallKit } from '../../../football/store/kitWall';
 import { Art } from '../Tonight';
+import { Hero, Panel, Sect } from '../../../ui/kit/Kit';
+import { BLUE, GOLD, LAV, PanelTop } from './Bits';
 
 const SLOT: Record<KitSlot, string> = { home: 'Home', away: 'Away', third: 'Third' };
 
@@ -19,24 +21,28 @@ export function KitsView({ c, act = {} }: { c: Club; act?: KitActions }) {
   const sp = s.sponsorStyle ?? 'A';
   const sponsor = s.sponsors?.find((x) => x.slot === 'shirt')?.brand ?? (s.ownSponsor?.slot === 'shirt' ? s.ownSponsor.name : undefined);
   return (
-    <>
+    <div className="k-page">
+      <div className="kb-lead">
+        <Hero value={wall.length} ink={BLUE} label={wall.length === 1 ? 'kit on the wall' : 'kits on the wall'} />
+        <span className="k-r k-q">season {s.season}</span>
+      </div>
       {launch && (
-        <section className="fb-card hot" aria-label="Launch day">
-          <span className="fb-lb">Launch day · season {next}</span>
-          <p className="fb-s">The kit maker has designs for each slot. Pick one; the rest go back in the drawer.</p>
+        <Panel ink={GOLD}>
+          <PanelTop name={`Launch day · season ${next}`} c={GOLD} />
+          <span>The kit maker has designs for each slot. Pick one; the rest go back in the drawer.</span>
           {slotsOpen(c.stage ?? c.tier).map((slot) => {
             const picked = s.kits?.find((k) => k.season === next && k.slot === slot)?.id;
             return (
-              <fieldset key={slot} className="fb-kitpick">
-                <legend className="fb-lb">{SLOT[slot]}</legend>
-                <div className="fb-kitgrid">
+              <fieldset key={slot} className="k-col" style={{ border: 0, padding: 0, margin: 0, gap: 6 }}>
+                <legend className="k-q" style={{ padding: 0, marginBottom: 6 }}>{SLOT[slot]}</legend>
+                <div className="kn-kits">
                   {launchOptions(slot, next).map((id) => {
                     const k = kitFor(id, next, c.matches);
                     if (!k) return null;
                     return (
-                      <button key={id} type="button" className={`fb-kitopt${picked === id ? ' on' : ''}`} aria-pressed={picked === id} onClick={() => act.pick?.(next, slot, id)}>
+                      <button key={id} type="button" className="kn-kitopt kn-kit" aria-pressed={picked === id} onClick={() => act.pick?.(next, slot, id)}>
                         <Art svg={kitSvg({ ...k.kit, sp }, 'front', 84, { sponsor })} />
-                        <span className="fb-s">{k.name}</span>
+                        <span>{k.name}</span>
                       </button>
                     );
                   })}
@@ -44,18 +50,18 @@ export function KitsView({ c, act = {} }: { c: Club; act?: KitActions }) {
               </fieldset>
             );
           })}
-          {c.tier > 4 && <p className="fb-s">The third kit opens in Division Four.</p>}
-        </section>
+          {!slotsOpen(c.stage ?? c.tier).includes('third') && <span className="k-q">The third kit opens in Division Four.</span>}
+        </Panel>
       )}
-      <section className="fb-card" aria-label="Sponsor style">
-        <span className="fb-lb">Sponsor on the shirt</span>
-        <div className="fb-chips">
-          {SPONSOR_STYLES.map((x) => <button key={x.id} type="button" className={`fb-chip${sp === x.id ? ' on' : ''}`} aria-pressed={sp === x.id} onClick={() => act.style?.(x.id)}>{x.name}</button>)}
+      <Panel ink={LAV}>
+        <PanelTop name="Sponsor on the shirt" c={LAV} />
+        <div className="kb-chiprow">
+          {SPONSOR_STYLES.map((x) => <button key={x.id} type="button" className="kb-chipbtn" style={{ ['--ink' as string]: LAV }} aria-pressed={sp === x.id} onClick={() => act.style?.(x.id)}>{x.name}</button>)}
         </div>
-      </section>
+      </Panel>
       <KitWall wall={wall} sp={sp} />
       <CrestHistory c={c} />
-    </>
+    </div>
   );
 }
 
@@ -64,33 +70,33 @@ function KitWall({ wall, sp }: { wall: WallKit[]; sp: 'A' | 'B' | 'C' | 'R' }) {
   const seasons = [...new Set(wall.map((k) => k.season))].sort((a, b) => b - a);
   return (
     <>
-      <div className="fb-row"><h2 className="fb-t">The kit wall</h2><span className="fb-s">tap a kit</span></div>
+      <Sect>The kit wall</Sect>
       {seasons.map((season) => (
-        <section key={season} className="fb-card" aria-label={`Season ${season}`}>
-          <span className="fb-lb">Season {season}</span>
-          <div className="fb-kitgrid">
+        <Panel key={season} ink={BLUE}>
+          <PanelTop name={`Season ${season}`} c={BLUE} right="tap a kit" />
+          <div className="kn-kits">
             {wall.filter((k) => k.season === season).map((k) => {
               const key = `${k.season}-${k.slot}`;
               return (
-                <button key={key} type="button" className={`fb-kitopt${open === key ? ' on' : ''}`} aria-expanded={open === key} onClick={() => setOpen(open === key ? null : key)}>
+                <button key={key} type="button" className="kn-kitopt kn-kit" aria-pressed={open === key} aria-expanded={open === key} onClick={() => setOpen(open === key ? null : key)}>
                   <Art svg={kitSvg({ ...k.kit, sp }, 'front', 84, { patch: k.patches[0] })} />
-                  <span className="fb-s">{SLOT[k.slot]}</span>
+                  <span>{SLOT[k.slot]}</span>
                 </button>
               );
             })}
           </div>
           {wall.filter((k) => `${k.season}-${k.slot}` === open).map((k) => (
-            <div key="d" className="fb-kitinfo">
+            <div key="d" className="k-col" style={{ gap: 6 }}>
               <b>{k.name}</b>
-              <span className="fb-s">Worn {k.record.W + k.record.D + k.record.L} {k.record.W + k.record.D + k.record.L === 1 ? 'time' : 'times'}: {k.record.W} won, {k.record.D} drawn, {k.record.L} lost.</span>
-              <div className="fb-kitpair">
+              <span className="k-q">Worn {k.record.W + k.record.D + k.record.L} {k.record.W + k.record.D + k.record.L === 1 ? 'time' : 'times'}: {k.record.W} won, {k.record.D} drawn, {k.record.L} lost.</span>
+              <div className="kb-mrow">
                 <Art svg={kitSvg({ ...k.kit, sp }, 'back', 84, { name: k.collar, label: `${k.name}, back` })} />
-                <span className="fb-s">Throwback: season {k.season}'s {SLOT[k.slot].toLowerCase()} shirt.{k.collar ? ` The collar reads ${k.collar}.` : ''}</span>
+                <span className="k-q">Throwback: season {k.season}'s {SLOT[k.slot].toLowerCase()} shirt.{k.collar ? ` The collar reads ${k.collar}.` : ''}</span>
               </div>
-              {k.patches.length > 0 && <span className="fb-s">Patch nights: {k.patches.map((p) => `${p.round ?? 'Derby'} (${p.text})`).join(', ')}</span>}
+              {k.patches.length > 0 && <span className="k-q">Patch nights: {k.patches.map((p) => `${p.round ?? 'Derby'} (${p.text})`).join(', ')}</span>}
             </div>
           ))}
-        </section>
+        </Panel>
       ))}
     </>
   );
@@ -100,19 +106,19 @@ function CrestHistory({ c }: { c: Club }) {
   const h = c.save.crestHistory ?? [];
   const steps: CrestStep[] = [1, 2, 3, 4, 5];
   return (
-    <section className="fb-card" aria-label="Crests">
-      <div className="fb-row"><span className="fb-lb">Crests</span><span className="fb-s">{c.save.crest.step} of 5</span></div>
+    <Panel ink={GOLD}>
+      <PanelTop name="Crests" c={GOLD} right={`${c.save.crest.step} of ${steps.length}`} />
       {steps.map((st) => {
         const got = st <= c.save.crest.step;
         const pick = h.find((x) => x.step === st)?.opt ?? (st === c.save.crest.step ? c.save.crest.opt : undefined);
         const opt = pick && pick !== 'keep' ? pick : 'a';
         return (
-          <div key={st} className={`fb-crestrow${got ? '' : ' sealed'}`}>
-            {got ? <Art svg={crestSvg(st, opt, 52)} /> : <span className="fb-seal" aria-hidden="true">?</span>}
-            <span className="fb-col"><b>{got ? CREST_LINES[st] : 'Still sealed'}</b><span className="fb-s">Step {st}{got && pick === 'keep' ? ' · kept the old crest' : ''}</span></span>
+          <div key={st} className="kb-mrow" style={{ opacity: got ? 1 : 0.6, minHeight: 56 }}>
+            {got ? <Art svg={crestSvg(st, opt, 52)} /> : <span className="kq-ring" style={{ ['--v' as string]: '#a9a7b8', width: 52, height: 52 }} aria-hidden="true"><b>?</b></span>}
+            <span className="k-col" style={{ gap: 0 }}><b>{got ? CREST_LINES[st] : 'Still sealed'}</b><span className="k-q">Step {st}{got && pick === 'keep' ? ' · kept the old crest' : ''}</span></span>
           </div>
         );
       })}
-    </section>
+    </Panel>
   );
 }

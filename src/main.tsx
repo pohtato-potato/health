@@ -21,6 +21,7 @@ import './styles/football-tree.css';
 import './styles/football-globe.css';
 import './styles/football-cup.css';
 import './styles/kit.css';
+import './styles/train.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';

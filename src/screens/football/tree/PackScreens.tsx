@@ -11,11 +11,18 @@ import type { PackEarned, PackItem } from '../../../football/tree/types';
 import { RUNNING_LOW } from '../../../football/content/words';
 import { go } from '../../../router';
 import { useModel, type Model } from './model';
-import { Back, TreePage } from './TreeScreens';
 import { PackLoan } from '../world/WorldScreens';
 import { Gem, GlassCard, SimpleBack, Viewable, type CardView } from '../../../ui/CardViewer';
 import type { AlbumCard } from '../../../football/content/types';
-import { MarketDoor } from '../desk/Market';
+import { Action, Door, Doors, Empty, Hero, Panel, Sect } from '../../../ui/kit/Kit';
+import { Bar, MarkRow, Note, PanelTop } from '../club/Bits';
+import { Icon, type IconName } from '../../../ui/Icon';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../../../db/db';
+import { leadsFrom } from '../../../football/market/market';
+import { loanLeads } from '../../../football/fog/fog';
+import { crestSvg } from '../../../football/art/crest';
+import { Art } from '../world/Fog';
 
 const RARITY_NAME: Record<Rarity, string> = { bronze: 'Bronze', silver: 'Silver', gold: 'Gold', prism: 'Prism', icon: 'Icon', legend: 'Legend' };
 const SOURCE: Record<PackEarned['source'], string> = { 'week-finished': 'A week finished', 'final-won': 'A final won', promotion: 'Promotion', tech: 'From the tree', bounty: 'A bounty', track: 'The season track', testimonial: 'A testimonial', 'cup-final': 'A cup final reached' };
@@ -26,45 +33,69 @@ export function RunningLow({ pools }: { pools: PoolId[] }) {
   if (!pools.length) return null;
   const p = pools[0];
   return (
-    <section className="fbt-card low" role="status">
-      <span className="fbt-lb">Running low</span>
-      <b className="fbt-t2">{RUNNING_LOW.title.replace('{pool}', POOL_WORD[p])}</b>
-      <span>{RUNNING_LOW.line.replace('{pool}', POOL_WORD[p])}</span>
-      <button type="button" className="fbt-btn sm" onClick={() => void seeRunningLow(p)}>Got it</button>
-    </section>
+    <Panel ink="#ffad6b">
+      <PanelTop name="Running low" c="#ffad6b" />
+      <b>{RUNNING_LOW.title.replace('{pool}', POOL_WORD[p])}</b>
+      <span className="k-q">{RUNNING_LOW.line.replace('{pool}', POOL_WORD[p])}</span>
+      <Action quiet sm onClick={() => void seeRunningLow(p)}>Got it</Action>
+    </Panel>
   );
 }
 
+const PACK_WORD: Record<PackEarned['size'], string> = { big: 'Big pack', single: 'Album card', normal: 'Pack' };
+
+/** Packs (board two, "Packs"): a pack you can see, and one thing to do. Then the album and the market as doors. */
 export function PacksPage() {
   const m = useModel();
   const [showing, setShowing] = useState<string | null>(null);
+  const leads = useLiveQuery(async () => { const sv = await db.fbSave.get('save'); return leadsFrom(loanLeads(sv?.desk)).length; }, []);
   // Matchday §4 (d-closed B): after Close the day, packs are held for the morning.
   const shut = useGroundShut() ?? false;
   if (!m) return null;
   const shown = showing ? m.user.opened.find((o) => o.id === showing) : undefined;
+  const waiting = m.packsWaiting;
+  const first = waiting[0];
+  const open = (id: string) => { if (!shut) void openPackNow(id).then(() => setShowing(id)); };
+  const crest = crestSvg(m.t.save.crest.step, m.t.save.crest.opt, 70, 'The club crest on the pack');
+  const doors = (
+    <Doors two label="From packs">
+      <Door icon="pack" name="The album" value={`${collected(m.user).size} of ${ALBUM_CARDS.length}`} ink="#f2c46d" onClick={() => go('/football/album')} />
+      <Door icon="deal" name="Loan market" value={leads === undefined ? '–' : leads ? `${leads} ${leads === 1 ? 'name' : 'names'}` : 'No names yet'} ink="#8fdcb6" onClick={() => go('/football/market')} />
+    </Doors>
+  );
   return (
-    <TreePage>
-      <Back to="/football/club" params={{ view: 'tree' }} label="The tree" />
-      <div className="fbt-head"><h1 className="fbt-t1">Packs</h1><span className="fbt-cap"><b className="fbt-n">{m.packsWaiting.length}</b> to open</span></div>
+    <div className="k-page">
       <RunningLow pools={m.t.low} />
-      {shown ? <Reveal items={shown.items} onDone={() => setShowing(null)} /> : (
+      {shown ? <Reveal items={shown.items} onDone={() => setShowing(null)} /> : first ? (
         <>
-          {shut && m.packsWaiting.length > 0 && <p className="fbt-line"><b>The ground is shut for the night.</b> Packs wait for the morning parcel.</p>}
-          {m.packsWaiting.length === 0 && <p className="fbt-line">No packs waiting. They come from each week you finish, finals won, promotion, the season track and some bounties.</p>}
-          <div className="fbt-packs">
-            {m.packsWaiting.map((p) => (
-              <button key={p.id} type="button" className={`fbt-pack ${p.size}`} disabled={shut} onClick={() => { if (!shut) void openPackNow(p.id).then(() => setShowing(p.id)); }}>
-                <span className="fbt-lb">{p.size === 'big' ? 'Big pack' : p.size === 'single' ? 'Album card' : 'Pack'}</span>
-                <b>{SOURCE[p.source]}</b><small>{fmtDate(p.on)} · {shut ? 'in the morning' : 'tap to open'}</small>
-              </button>
-            ))}
-          </div>
+          <button type="button" className={`kk-pack ${first.size}`} disabled={shut} onClick={() => open(first.id)} aria-label={shut ? 'A pack, held for the morning' : 'Open the pack'}>
+            <Art svg={crest} />
+          </button>
+          <h2 className="kk-title">{waiting.length === 1 ? `One ${PACK_WORD[first.size].toLowerCase()} to open` : `${waiting.length} packs to open`}</h2>
+          <p className="k-q kk-sub">{SOURCE[first.source]}, {fmtDate(first.on)}. {first.size === 'single' ? 'One album card inside.' : 'Five things inside.'}</p>
+          {shut ? <Panel ink="#93c3dc"><b>The ground is shut for the night.</b><span className="k-q">Packs wait for the morning parcel.</span></Panel>
+            : <Action wide onClick={() => open(first.id)}>Open it</Action>}
+          {doors}
+          {waiting.length > 1 && (
+            <>
+              <Sect>Also waiting</Sect>
+              <div className="kb-rows">
+                {waiting.slice(1).map((p) => (
+                  <Panel key={p.id} ink={p.size === 'big' ? '#ffe27a' : p.size === 'single' ? '#93c3dc' : '#f2c46d'} onClick={shut ? undefined : () => open(p.id)} label={`Open: ${PACK_WORD[p.size]}, ${SOURCE[p.source]}`}>
+                    <MarkRow icon="pack" c={p.size === 'big' ? '#ffe27a' : p.size === 'single' ? '#93c3dc' : '#f2c46d'} name={`${PACK_WORD[p.size]} · ${SOURCE[p.source]}`} line={`${fmtDate(p.on)} · ${shut ? 'in the morning' : 'tap to open'}`} />
+                  </Panel>
+                ))}
+              </div>
+            </>
+          )}
+        </>
+      ) : (
+        <>
+          <Empty icon="pack" ink="#f2c46d" title="No packs waiting" line="They come from each week you finish, finals won, promotion, the season track and some bounties." />
+          {doors}
         </>
       )}
-      <MarketDoor />
-      <button type="button" className="fbt-btn wide" onClick={() => go('/football/album')}>The album · {collected(m.user).size} of {ALBUM_CARDS.length}</button>
-      <p className="fbt-line">Packs never hold players: your cards are your habits. Each duplicate album card becomes research, from 1 for Bronze to 10 for Icon and 15 for Legend.</p>
-    </TreePage>
+    </div>
   );
 }
 
@@ -73,11 +104,9 @@ function Reveal({ items, onDone }: { items: PackItem[]; onDone: () => void }) {
   const [n, setN] = useState(1);
   const all = n >= items.length;
   return (
-    <section className="fbt-reveal" aria-live="polite">
-      <div className="fbt-items">
-        {items.slice(0, n).map((it, i) => <Item key={i} it={it} />)}
-      </div>
-      <button type="button" className="fbt-btn gold wide" onClick={() => (all ? onDone() : setN(n + 1))}>{all ? 'Done' : `Next · ${n} of ${items.length}`}</button>
+    <section className="kk-items" aria-live="polite">
+      {items.slice(0, n).map((it, i) => <Item key={i} it={it} />)}
+      <button type="button" className="k-act wide kb-gold" onClick={() => (all ? onDone() : setN(n + 1))}>{all ? 'Done' : `Next · ${n} of ${items.length}`}</button>
     </section>
   );
 }
@@ -86,11 +115,11 @@ function Item({ it }: { it: PackItem }) {
     const c = ALBUM_CARDS.find((x) => x.id === it.id)!;
     const set = ALBUM.find((s) => s.cards.some((x) => x.id === c.id))!;
     return (
-      <Viewable view={() => albumView(c, set.title)} className={`fbt-item album ${c.rarity}${it.duplicate ? ' dup' : ''}`}>
-        <span className="fbt-lb">{RARITY_NAME[c.rarity]} · {set.title}</span>
-        <b className="fbt-t2">{c.title}</b>
-        <span>{c.fact}</span>
-        {it.duplicate ? <small>Already in the album: <b className="fbt-n">+{it.n}</b> research</small> : <small>New in the album</small>}
+      <Viewable view={() => albumView(c, set.title)} className="k-panel kk-item" style={{ ['--ink' as string]: RARITY_HUE[c.rarity] } as CSSProperties}>
+        <PanelTop name={`${RARITY_NAME[c.rarity]} · ${set.title}`} c={RARITY_HUE[c.rarity]} />
+        <b className="t">{c.title}</b>
+        <span className="k-q">{c.fact}</span>
+        {it.duplicate ? <span className="k-q">Already in the album: <b className="k-num" style={{ fontSize: 18 }}>+{it.n}</b> research</span> : <b style={{ color: '#8fdcb6' }}>New in the album</b>}
       </Viewable>
     );
   }
@@ -98,16 +127,20 @@ function Item({ it }: { it: PackItem }) {
     const b = BOOSTS.find((x) => x.id === it.id)!;
     const kick = b.kind === 'kit-trim' ? 'Kit trim' : 'Boost · one match';
     const view = (): CardView => ({ face: <GlassCard ink="#8fdcb6" tier="silver"><Gem /></GlassCard>, back: <SimpleBack kicker={kick} title={b.name} lines={[b.text]} />, label: `${kick}: ${b.name}` });
-    return <Viewable view={view} className="fbt-item boost"><span className="fbt-lb">{kick}</span><b className="fbt-t2">{b.name}</b><span>{b.text}</span></Viewable>;
+    return <Viewable view={view} className="k-panel kk-item" style={{ ['--ink' as string]: '#8fdcb6' } as CSSProperties}><PanelTop name={kick} c="#8fdcb6" /><b className="t">{b.name}</b><span className="k-q">{b.text}</span></Viewable>;
   }
   if (it.kind === 'research') {
     const view = (): CardView => ({ face: <GlassCard ink="#ffe27a" tier="bronze"><Gem /></GlassCard>, back: <SimpleBack kicker="Research" title={`+${it.n}`} lines={['Into the bank.']} />, label: `Research, plus ${it.n}` });
-    return <Viewable view={view} className="fbt-item research"><span className="fbt-lb">Research</span><b className="fbt-t2 fbt-n">+{it.n}</b><span>Into the bank.</span></Viewable>;
+    return <Viewable view={view} className="k-panel kk-item" style={{ ['--ink' as string]: '#c2b2ff' } as CSSProperties}><PanelTop name="Research" c="#c2b2ff" /><b className="k-num" style={{ color: '#c2b2ff' }}>+{it.n}</b><span className="k-q">Into the bank.</span></Viewable>;
   }
   if (it.kind === 'loan' && it.id) return <PackLoan id={it.id} />;
   return null;
 }
 
+/** Each set's emblem and colour (board two, "The album"). */
+const SET_LOOK: [IconName, string][] = [['ground', '#ff9a76'], ['scope', '#8fdcb6'], ['tree', '#93c3dc'], ['pack', '#f2c46d'], ['desk', '#c2b2ff'], ['sheet', '#f4aedb'], ['map', '#ffd56a'], ['book', '#9fe0e8'], ['win', '#ffb27a'], ['people', '#b9e08a'], ['kit', '#ff7d9c'], ['route', '#d9e8f3']];
+
+/** The album (board two): the count leads, then the sets as tiles with emblem, colour and progress. A tile opens its cards. */
 export function AlbumPage() {
   const m = useModel();
   const [open, setOpen] = useState<string | null>(null);
@@ -115,37 +148,49 @@ export function AlbumPage() {
   const sets = albumProgress(m.user);
   const have = collected(m.user);
   return (
-    <TreePage>
-      <Back to="/football/packs" label="Packs" />
-      <div className="fbt-head"><h1 className="fbt-t1">The album</h1><span className="fbt-cap"><b className="fbt-n">{have.size}</b> of {ALBUM_CARDS.length}</span></div>
+    <div className="k-page">
+      <div className="kb-lead">
+        <Hero value={have.size} ink="#f2c46d" label={`of ${ALBUM_CARDS.length} cards`} />
+        <span className="k-r"><span className="k-q">{sets.length} sets</span></span>
+      </div>
+      <Bar pct={(have.size / Math.max(1, ALBUM_CARDS.length)) * 100} c="#f2c46d" label={`${have.size} of ${ALBUM_CARDS.length} cards`} />
       <RunningLow pools={m.t.low} />
-      <div className="fbt-sets">
-        {sets.map(({ set, have: n, of, done }) => (
-          <section key={set.id} className={`fbt-set${done ? ' dn' : ''}`}>
-            <button type="button" className="fbt-seth" aria-expanded={open === set.id} onClick={() => setOpen(open === set.id ? null : set.id)}>
-              <b>{done ? '✓ ' : ''}{set.title}</b><small>{set.blurb}</small>
-              <span className="fbt-bar" role="img" aria-label={`${n} of ${of}`}><i style={{ width: `${Math.round((n / of) * 100)}%` }} /></span>
-              <small><b className="fbt-n">{n}</b> of {of} · {done ? 'Set reward' : 'Finish it for'}: {set.reward.name}</small>
+      <div className="kb-g2">
+        {sets.flatMap(({ set, have: n, of, done }, i) => {
+          const [icon, c] = SET_LOOK[i % SET_LOOK.length];
+          const tile = (
+            <button key={set.id} type="button" className={`k-panel k-tap ka-set${done ? ' dn' : ''}`} style={{ ['--ink' as string]: c } as CSSProperties} aria-expanded={open === set.id} onClick={() => setOpen(open === set.id ? null : set.id)}>
+              <Icon name={done ? 'check' : icon} size={30} color={c} stroke={1.8} />
+              <b className="nm">{set.title}</b>
+              <Bar pct={(n / of) * 100} c={c} label={`${n} of ${of}`} />
+              <span className="k-q">{n} of {of}</span>
             </button>
-            {open === set.id && (
-              <ol className="fbt-cards">
-                {set.cards.map((c) => (
-                  <li key={c.id} className={`${c.rarity}${have.has(c.id) ? '' : ' miss'}`} style={{ ['--r' as string]: RARITY_HUE[c.rarity] } as CSSProperties}>
-                    {have.has(c.id) ? (
-                      <Viewable view={() => albumView(c, set.title)}>
-                        <b>{c.title}</b><small>{RARITY_NAME[c.rarity]}</small>
-                        <span>{c.fact}</span>
+          );
+          if (open !== set.id) return [tile];
+          return [tile, (
+            <section key={`${set.id}-cards`} className="k-panel ka-open" style={{ ['--ink' as string]: c } as CSSProperties} aria-label={`${set.title}: its cards`}>
+              <PanelTop name={set.title} c={c} right={`${n} of ${of}`} />
+              <span className="k-q">{set.blurb}</span>
+              <span><b>{done ? 'Set reward' : 'Finish it for'}:</b> <span className="k-q">{set.reward.name}</span></span>
+              <ol className="ka-cards">
+                {set.cards.map((card) => (
+                  <li key={card.id} className={have.has(card.id) ? undefined : 'miss'} style={{ ['--r' as string]: RARITY_HUE[card.rarity] } as CSSProperties}>
+                    {have.has(card.id) ? (
+                      <Viewable view={() => albumView(card, set.title)}>
+                        <b>{card.title}</b><span className="k-q kb-small">{RARITY_NAME[card.rarity]}</span>
+                        <span>{card.fact}</span>
                       </Viewable>
-                    ) : <><b>Not found yet</b><small>{RARITY_NAME[c.rarity]}</small></>}
+                    ) : <><b>Not found yet</b><span className="kb-small">{RARITY_NAME[card.rarity]}</span></>}
                   </li>
                 ))}
               </ol>
-            )}
-          </section>
-        ))}
+            </section>
+          )];
+        })}
       </div>
+      <Note>Each set has its own colour and emblem. Finishing one gives its prize.</Note>
       <SetRewards m={m} />
-    </TreePage>
+    </div>
   );
 }
 const RARITY_HUE: Record<Rarity, string> = { bronze: '#e0955a', silver: '#d6e8f5', gold: '#ffcf4a', prism: '#ff7ad9', icon: '#ffa25c', legend: '#ffd56a' };
@@ -161,9 +206,9 @@ function SetRewards({ m }: { m: Model }) {
   const done = albumProgress(m.user).filter((p) => p.done);
   if (!done.length) return null;
   return (
-    <section className="fbt-card" aria-label="Set rewards">
-      <span className="fbt-lb">Set rewards, kept for good</span>
-      {done.map((p) => <p key={p.set.id}><b>{p.set.reward.name}</b> · {p.set.reward.text}</p>)}
-    </section>
+    <>
+      <Sect>Set rewards, kept for good</Sect>
+      <div className="kb-rows">{done.map((p) => <Panel key={p.set.id} ink="#f2c46d"><b style={{ color: '#f2c46d' }}>{p.set.reward.name}</b><span className="k-q">{p.set.reward.text}</span></Panel>)}</div>
+    </>
   );
 }

@@ -5,6 +5,7 @@ import { counter, HOLD_MS, IDLE_PRESS, press, repsSlowing, seconds, setState, st
 import type { ThemeId } from '../../domain/themes';
 import type { LiveCounter } from '../../domain/types';
 import type { Row } from '../session/SetTable';
+import { Icon } from '../../ui/Icon';
 import { LiveFrame, mmss, Primary } from './Frame';
 
 interface Props {
@@ -36,6 +37,16 @@ interface Props {
   onBody?: () => void;
   /** A half-set night: why, and the rule. */
   half?: string;
+  /** Where to stop: "Stop 2–3 short", "To 0–1 left". */
+  effort?: string;
+  /** Done back to back with another exercise: its name. */
+  pair?: string;
+  /** The gym's breathing line. */
+  breathe?: string;
+  /** Minus and plus beside the weight, for good or this set only. */
+  step?: { onStep: (dir: -1 | 1) => void; scope: 'good' | 'once'; onScope: (s: 'good' | 'once') => void; changed: boolean };
+  /** What the number is, under it: "stack · seat 4". */
+  loadNote?: string;
   theme: ThemeId;
   buzz: boolean;
   now: number;
@@ -119,27 +130,60 @@ export function SetScreen(p: Props) {
   const R = 118;
   const C = 2 * Math.PI * R;
 
+  const clockLeads = started && !p.timed && reps === 0;
   return (
-    <LiveFrame state={state} className={tempo ? `tempo-${tempo.phase}` : ''} style={tempo ? ({ '--tempo': tempo.frac } as React.CSSProperties) : undefined} top={p.top}>
+    <LiveFrame state={state} className={`lv-set2${tempo ? ` tempo-${tempo.phase}` : ''}`} style={tempo ? ({ '--tempo': tempo.frac } as React.CSSProperties) : undefined} top={p.top}>
       <div className="lv-ex">
         <h1 className="lv-name">{p.name}</h1>
+        {p.kg !== null || p.onLoad ? (
+          <div className="lv-load">
+            {p.step && (
+              <button type="button" className="lv-stepbtn" aria-label="Lighter" onClick={() => p.step!.onStep(-1)}>
+                <Icon name="minus" size={26} stroke={2.2} />
+              </button>
+            )}
+            {p.onLoad ? (
+              <button type="button" className="lv-loadv" onClick={p.onLoad} aria-label={`${p.kgText ?? 'No load set'}. Type the number`}>
+                <b className="num tn">{p.kg === null ? 'Set' : p.kg}</b> {p.kg === null ? 'the load' : p.unit ?? 'kg'}
+                {p.loadNote && <small>{p.loadNote}</small>}
+              </button>
+            ) : (
+              <span className="lv-loadv">
+                <b className="num tn">{p.kg}</b> {p.unit ?? 'kg'}
+                {p.loadNote && <small>{p.loadNote}</small>}
+              </span>
+            )}
+            {p.step && (
+              <button type="button" className="lv-stepbtn" aria-label="Heavier" onClick={() => p.step!.onStep(1)}>
+                <Icon name="plus" size={26} stroke={2.2} />
+              </button>
+            )}
+          </div>
+        ) : null}
+        {p.step && (
+          <div className="lv-scope" role="radiogroup" aria-label="Weight change: for good or this set only">
+            {(['good', 'once'] as const).map((k) => (
+              <button key={k} type="button" role="radio" aria-checked={p.step!.scope === k} className={p.step!.scope === k ? 'on' : ''} onClick={() => p.step!.onScope(k)}>
+                {k === 'good' ? 'From now on' : 'This set only'}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="lv-meta">
           <span className="lv-pill">
             Set {row.setNo} of {Math.max(row.ex.sets, row.setNo)}
             {row.setNo > row.ex.sets ? ' · extra' : ''}
             {row.drop ? ' · drop' : ''}
           </span>
-          {p.onLoad ? (
-            <button type="button" className="lv-pill lv-pillbtn" onClick={p.onLoad} aria-label={`${p.kgText ?? 'No load set'}. Change the load`}>
-              {p.kgText ?? 'Set the load'} ✎
-            </button>
-          ) : (
-            p.kg !== null && <span className="lv-pill">{p.kgText ?? `${p.kg} kg`}</span>
+          {p.pair && (
+            <span className="lv-pill">
+              <Icon name="link" size={16} stroke={1.8} /> back to back with {p.pair}
+            </span>
           )}
           {p.half && <span className="lv-pill">{p.half}</span>}
-          {runFor !== undefined && (
+          {runFor !== undefined && !clockLeads && (
             <span className="lv-pill tn" aria-label={`Set time ${mmss(runFor)}`}>
-              ⏱ {mmss(runFor)}
+              <Icon name="stopwatch" size={16} stroke={1.8} /> {mmss(runFor)}
             </span>
           )}
           {perSide && (
@@ -165,15 +209,9 @@ export function SetScreen(p: Props) {
         role="button"
         aria-label={p.timed ? `Timed set, ${mmss(reps)} so far` : `Count a rep. ${reps} so far. Hold to mark the burn.`}
       >
-        {(perSide || p.kg !== null) && (
+        {perSide && (
           <div className="lv-ghosts" aria-hidden="true">
-            <span className="lv-bigside">{perSide ? row.side : ''}</span>
-            {p.kg !== null && (
-              <span className="lv-bigkg">
-                {p.kg}
-                <small>{p.unit ?? 'kg'}</small>
-              </span>
-            )}
+            <span className="lv-bigside">{row.side}</span>
           </div>
         )}
         {ripples.map((r) => (
@@ -182,26 +220,15 @@ export function SetScreen(p: Props) {
           </svg>
         ))}
         <div className="lv-countwrap">
-          {tempo && (
+          {tempo && !clockLeads && (
             <svg className="lv-tempo-ring" viewBox="0 0 260 260" aria-hidden="true">
               <circle cx="130" cy="130" r={R} className="track" />
               <circle cx="130" cy="130" r={R} className="arc" strokeDasharray={C} strokeDashoffset={C * tempo.frac} transform="rotate(-90 130 130)" />
             </svg>
           )}
-          <div className={`lv-count num tn ${state}`}>{p.timed ? mmss(reps) : reps}</div>
+          <div className={`lv-count num tn ${clockLeads ? 'clock' : state}`}>{p.timed || clockLeads ? mmss(p.timed ? reps : runFor ?? 0) : reps}</div>
         </div>
-        <div className="lv-word">{stateWord(state, p.bar, p.firstAtLoad)}</div>
-        {p.aim && (
-          <div className="lv-aim">
-            aim <b>{p.aim}</b>
-            {p.bar && !p.firstAtLoad ? (
-              <>
-                {' '}
-                · best <b>{p.bar}</b>
-              </>
-            ) : null}
-          </div>
-        )}
+        <div className="lv-word">{clockLeads ? 'the set is running' : stateWord(state, p.bar, p.firstAtLoad)}</div>
         {tempo && (
           <div className="lv-tempo" aria-label="Tempo on: lower for 3 seconds, lift for 1">
             <span className="lv-tempo-label">Tempo</span>
@@ -218,20 +245,54 @@ export function SetScreen(p: Props) {
           {!p.timed && repsSlowing(c.taps) && <span className="lv-slow"> · reps slowing</span>}
         </div>
       </div>
+      {(p.aim || p.effort) && (
+        <div className="lv-aimeff">
+          {p.aim && (
+            <div className="lv-mini">
+              <span>Aim</span>
+              <b className="num tn">{p.aim}</b>
+              {p.bar && !p.firstAtLoad ? <span>best {p.bar}</span> : null}
+            </div>
+          )}
+          {p.effort && (
+            <div className="lv-mini">
+              <span>Effort</span>
+              <b>{p.effort}</b>
+            </div>
+          )}
+        </div>
+      )}
+      {p.breathe && (
+        <div className="lv-breathe">
+          <Icon name="wind" size={22} stroke={1.8} />
+          {p.breathe}
+        </div>
+      )}
       <div className="lv-actions">
-        <button type="button" className="lv-ghost" disabled={c.taps.length === 0 && c.burnAt === undefined} onClick={() => act({ t: 'undo' })}>
-          {p.timed ? 'Reset' : '−1'}
-        </button>
+        {!p.timed && started ? (
+          <button type="button" className="lv-ghost" disabled={c.burnAt !== undefined} onClick={onHold}>
+            It burns
+          </button>
+        ) : (
+          <button type="button" className="lv-ghost" disabled={c.taps.length === 0 && c.burnAt === undefined} onClick={() => act({ t: 'undo' })}>
+            {p.timed ? 'Reset' : '−1'}
+          </button>
+        )}
         {started ? (
-          <Primary disabled={reps === 0} onClick={p.onDone}>
-            Set done · {p.timed ? mmss(reps) : reps}
+          <Primary disabled={p.timed && reps === 0} onClick={p.onDone}>
+            Set done{reps > 0 ? ` · ${p.timed ? mmss(reps) : reps}` : ''}
           </Primary>
         ) : (
           <Primary onClick={start}>Start set</Primary>
         )}
       </div>
       {/* Kept in place after the first rep, so the buttons above never move. */}
-      <div className="row" style={{ justifyContent: 'center', gap: 8 }}>
+      <div className="row" style={{ justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
+        {!p.timed && started && (
+          <button type="button" className="lv-skip" disabled={c.taps.length === 0} onClick={() => act({ t: 'undo' })}>
+            −1 rep
+          </button>
+        )}
         <button type="button" className="lv-skip" onClick={p.onSkip} disabled={reps > 0} style={reps > 0 ? { visibility: 'hidden' } : undefined}>
           Skip this set
         </button>
