@@ -48,9 +48,12 @@
 .md-read { padding: 10px 14px; border-radius: 16px; background: linear-gradient(180deg, rgba(147, 195, 220, 0.22), rgba(147, 195, 220, 0.06)); font-size: 15px; }
 .md-read.good { background: linear-gradient(180deg, rgba(242, 196, 109, 0.28), rgba(242, 196, 109, 0.08)); }
 .lt-doors .k-doors > :last-child:nth-child(odd) { grid-column: span 2; }
-.lt-plan .k-panel { padding-right: 22px; }
-.lt-plan .k-arrow { right: 4px; width: 14px; }
-.lt-v { font-size: clamp(15px, 4.7vw, 17px); }
+/* A door's live value and a plan word are always read whole: no ellipsis, smaller type (never under 14 px) and a wrap
+   as the last resort. The three plan panels drop the arrow (the hairline edge still says they open the plan). */
+.lt-doors .k-door b.v { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: normal; font-size: clamp(17px, 5.2vw, 20px); padding-right: 14px; }
+.lt-plan .k-panel { padding: 10px; }
+.lt-plan .k-arrow { display: none; }
+.lt-v { font-size: clamp(14px, 4.6vw, 17px); white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: normal; line-height: 1.15; }
 
 /* ---------- The morning parcel (p3-shut, p3-result, p3-scout, p3-dice) and the ground at night (p3-night) ---------- */
 /* Tiles are filled with their own colour now (kit rule 2): a wash of the ink over the dawn, the seal ring in the ink. */

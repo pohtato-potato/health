@@ -114,7 +114,7 @@ function viewInner(section: FbSection, view: string | null, storyHelp?: HowThisW
 }
 /** The "?" on each of Club's own pages (look pass L1). */
 const CLUB_PAGE_HOW: Record<string, HowThisWorks | undefined> = { squad: SQUAD_HOW, tree: TREE_HOW, deals: DEALS_HOW, money: MONEY_HOW, kits: KITS_HOW, ground: GROUND_HOW };
-const PAGE_NAME: Record<string, string> = { Squad: 'The squad', Tree: 'The tree', Ground: 'The ground', Deals: 'Deals', Money: 'Money', Kits: 'Kits', Pyramid: 'The pyramid', Calendar: 'Calendar', Cups: 'The cups', Seasons: 'Seasons', Moments: 'Moments', 'Old Selves': 'Old Selves', Rivals: 'Rivals', Settings: 'Football settings' };
+const PAGE_NAME: Record<string, string> = { Squad: 'The squad', Tree: 'The tree', Ground: 'The ground', Deals: 'Deals', Money: 'Money', Kits: 'Kits', Pyramid: 'The pyramid', Calendar: 'Calendar', Cups: 'The cups', Seasons: 'Seasons', Moments: 'Moments', 'Old Selves': 'Old Selves', Rivals: 'Rivals', Settings: 'Settings' };
 
 /** A player's page goes back to their unit. */
 function PlayerFrame({ id }: { id: string }) {
