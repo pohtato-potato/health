@@ -5,6 +5,7 @@ import type { StoredMatch } from '../../football/store/tables';
 import type { ChanceEvent } from '../../football/types';
 import { go } from '../../router';
 import { scoreLine } from './Tonight';
+import { Action, Panel } from '../../ui/kit/Kit';
 
 const isGoal = (c: ChanceEvent) => (c.side === 'atk' ? c.ok : !c.ok);
 /** A match cut to its key chances: goals and tagged moments, or the biggest chance if nothing went in. */
@@ -18,21 +19,21 @@ export function CatchUp({ ms, shown: start = false }: { ms: StoredMatch[]; shown
   const [shown, setShown] = useState(start);
   if (shown) {
     return (
-      <section className="fb-card pu" aria-label="While you were away">
-        <span className="fb-lb">While you were away</span>
-        <ul className="fb-moments">{ms.map((m) => <li key={m.id}>{m.round ? `${m.round}: ` : ''}{scoreLine(m)}</li>)}</ul>
-        <div className="fb-btns"><button type="button" className="fb-btn pri" onClick={() => void Promise.all(ms.map((m) => markWatched(m.id)))}>Got it</button></div>
-      </section>
+      <Panel ink="#c2b2ff" className="lt-away">
+        <b className="k-lb">While you were away</b>
+        <ul className="lt-list">{ms.map((m) => <li key={m.id}>{m.round ? `${m.round}: ` : ''}{scoreLine(m)}</li>)}</ul>
+        <Action quiet sm onClick={() => void Promise.all(ms.map((m) => markWatched(m.id)))}>Got it</Action>
+      </Panel>
     );
   }
   return (
-    <section className="fb-card pu" aria-label="While you were away">
-      <span className="fb-lb">{ms.length} while you were away</span>
-      <ul className="fb-moments">{ms.map((m) => <li key={m.id}>{m.round ?? m.date} · sealed</li>)}</ul>
-      <div className="fb-btns stack">
-        <button type="button" className="fb-btn" onClick={() => setShown(true)}>Just the results</button>
-        <button type="button" className="fb-btn pri" onClick={() => go('/football/match', { reel: '1' })}>Watch as one reel</button>
+    <Panel ink="#c2b2ff" className="lt-away">
+      <div className="k-row"><b className="k-lb">{ms.length} while you were away</b><span className="k-q">sealed</span></div>
+      <span className="k-q">{ms.length > 4 ? `${ms.slice(0, 3).map((m) => m.round ?? m.date).join(', ')} and ${ms.length - 3} more.` : ms.map((m) => m.round ?? m.date).join(', ')}</span>
+      <div className="lt-two">
+        <Action quiet sm onClick={() => go('/football/match', { reel: '1' })}>Watch as one reel</Action>
+        <Action quiet sm onClick={() => setShown(true)}>Just the results</Action>
       </div>
-    </section>
+    </Panel>
   );
 }

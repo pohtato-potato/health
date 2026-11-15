@@ -16,10 +16,10 @@ import { OldSelves } from './OldSelves';
 import { RivalsView } from './Rivals';
 import { RivalryView } from './Rivalry';
 import { SettingsView } from './Settings';
-import { SeasonDoors } from '../tree/SeasonScreens';
-import { Door, Doors, Sect } from '../../../ui/kit/Kit';
+import { StoryLead } from './StoryLead';
 
 export const STORY_VIEWS = [
+  { id: 'home', label: 'Story' },
   { id: 'rivals', label: 'Rivals' },
   { id: 'seasons', label: 'Seasons' },
   { id: 'moments', label: 'Moments' },
@@ -38,23 +38,12 @@ export const useStory = () => useLiveQuery(loadStory, []);
 export function StoryView({ s, view, extra }: { s: Story; view: StoryViewId; extra?: Partial<Record<StoryViewId, ReactNode>> }) {
   return (
     <>
-      {view === 'rivals' && <SeasonDoors />}
+      {view === 'home' && <StoryLead s={s} />}
       {view === 'rivals' && <RivalsView rivals={s.l.save.rivals} matches={s.all} />}
       {view === 'seasons' && <SeasonsView list={s.seasons.map((x) => summarise(x, s.all, s.seasons))} kitOf={(n) => kitName(s, n)} crestOf={(n) => crestName(s, n)} />}
       {view === 'moments' && <MomentsView upsets={upsets(s.all, s.seasons)} seasons={s.seasons.map((x) => summarise(x, s.all, s.seasons))} />}
       {view === 'olds' && <OldSelves clubs={[...s.l.clubs.values()]} tierOf={s.l.season.tierOf} retired={s.l.save.retired} />}
-      {view === 'settings' && <SettingsView s={s.l.save} />}
-      {view === 'rivals' && (
-        <>
-          <Sect>More of the story</Sect>
-          <Doors two label="More of the story">
-            <Door icon="book" name="Seasons" value={`${s.seasons.length} so far`} onClick={() => go('/football/story', { view: 'seasons' })} />
-            <Door icon="pack" name="Moments" value={`${upsets(s.all, s.seasons).length} upsets`} ink="#f2c46d" onClick={() => go('/football/story', { view: 'moments' })} />
-            <Door icon="people" name="Old Selves" value={`${s.l.save.retired?.length ?? 0} retired`} onClick={() => go('/football/story', { view: 'olds' })} />
-            <Door icon="list" name="Settings" value="Football rules" onClick={() => go('/football/story', { view: 'settings' })} />
-          </Doors>
-        </>
-      )}
+      {view === 'settings' && <div className="lt-set"><SettingsView s={s.l.save} /></div>}
       {extra?.[view] ?? null}
     </>
   );
@@ -64,9 +53,9 @@ export function StoryHome({ extra }: { extra?: (s: Story) => Partial<Record<Stor
   const { params } = useRoute();
   const s = useStory();
   if (s === undefined) return null;
-  if (s === null) return <p className="fb-s">The story starts once you found the club.</p>;
-  const v = (params.get('view') ?? 'rivals') as StoryViewId;
-  return <StoryView s={s} view={STORY_VIEWS.some((x) => x.id === v) ? v : 'rivals'} extra={extra?.(s)} />;
+  if (s === null) return <p className="k-q">The story starts once you found the club.</p>;
+  const v = (params.get('view') ?? 'home') as StoryViewId;
+  return <StoryView s={s} view={STORY_VIEWS.some((x) => x.id === v) ? v : 'home'} extra={extra?.(s)} />;
 }
 
 export function RivalRoute({ id }: { id: string }) {

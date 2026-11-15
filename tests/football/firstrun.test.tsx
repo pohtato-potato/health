@@ -9,6 +9,11 @@ import { foundClub } from '../../src/football/store/save';
 import { CatchUp, keyChances } from '../../src/screens/football/CatchUp';
 import { FIRST_SHIRTS, FirstRun, STEPS } from '../../src/screens/football/FirstRun';
 import { TonightView } from '../../src/screens/football/Tonight';
+import type { Tonight as TonightData } from '../../src/football/store/hooks';
+
+/** A pending moment (opening night) shows alone on Tonight (look pass L4); clear it to see the rest. */
+const calm = (t: TonightData): TonightData => ({ ...t, save: { ...t.save, openings: [] } });
+
 import { playDueDone as playDue } from './helpers/matchday';
 
 let n = 0;
@@ -70,7 +75,7 @@ describe('Catch-up', () => {
     expect(played.length).toBe(3);
     const t = (await loadTonight('2026-11-04'))!;
     expect(t.unwatchedAuto).toHaveLength(3);
-    const out = html(<TonightView t={t} />);
+    const out = html(<TonightView t={calm(t)} />);
     expect(out).toContain('3 while you were away');
     expect(out).toContain('Watch as one reel');
     expect(out).toContain('Just the results');

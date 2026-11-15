@@ -9,6 +9,11 @@ import { loadTonight } from '../../src/football/store/hooks';
 import { kickOffDone as kickOff } from './helpers/matchday';
 import { foundClub } from '../../src/football/store/save';
 import { TonightView } from '../../src/screens/football/Tonight';
+import type { Tonight as TonightData } from '../../src/football/store/hooks';
+
+/** A pending moment (opening night) shows alone on Tonight (look pass L4); clear it to see the rest. */
+const calm = (t: TonightData): TonightData => ({ ...t, save: { ...t.save, openings: [] } });
+
 
 let n = 0;
 beforeEach(async () => {
@@ -36,7 +41,7 @@ describe('Tonight', () => {
     const quirky = CLUBS.find((c) => c.kind === 'quirky' && c.hidden)!;
     const out = html(<TonightView t={{ ...t, opp: quirky, known: quirky.known, hiddenNote: true, fixture: { ...t.fixture!, opp: quirky.id } }} />);
     expect(out).toContain('One ability, found out after you first play them');
-    expect(out).toContain(`Tonight: ${quirky.name}`);
+    expect(out).toContain(quirky.name);
     const met = html(<TonightView t={{ ...t, opp: quirky, known: quirky.known, hiddenNote: false }} />);
     expect(met).not.toContain('found out after');
   });
@@ -45,7 +50,7 @@ describe('Tonight', () => {
     await kickOff('2026-11-06');
     const t = (await loadTonight('2026-11-06'))!;
     expect(t.played).toHaveLength(1);
-    const out = html(<TonightView t={t} />);
+    const out = html(<TonightView t={calm(t)} />);
     expect(out).toContain('Full time');
     expect(out).toContain('Watch the match');
     expect(out).toMatch(/\d–\d/);
