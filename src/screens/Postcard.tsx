@@ -5,7 +5,7 @@ import { ALL_STOPS, CITIES, INDIA_OUTLINE, POSTCARDS, arrivals, kmFromSteps } fr
 import { useAllDays, useSettings } from '../db/hooks';
 import { back, go, useRoute } from '../router';
 import { Icon } from '../ui/Icon';
-import { Scene } from '../walk/art/scene';
+import { WalkScene } from '../walk/WalkScene';
 import { cardFor } from '../walk/cards';
 
 /** One page for each city on the walk: its postcard, sent the day you arrive, and what to eat, hear and see there. */
@@ -58,7 +58,9 @@ export function PostcardPage() {
         Map
       </button>
 
-      <Scene city={stop.name} part={partOfDay(new Date())} people />
+      <div className="walk-scene-card">
+        <WalkScene km={stop.km} place={stop.name} part={partOfDay(new Date())} />
+      </div>
 
       <article className="postcard" aria-label={`Postcard from ${stop.name}`}>
         <div className="row" style={{ alignItems: 'flex-start' }}>
@@ -115,7 +117,7 @@ export function PostcardPage() {
       )}
 
       <div className="row gap10">
-        <button type="button" className="btn lg grow" onClick={() => go('/today')}>
+        <button type="button" className="k-act grow" onClick={() => go('/today')}>
           Keep walking
         </button>
         <button type="button" className="btn lg ghost grow" onClick={() => go('/map')}>

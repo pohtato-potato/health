@@ -4,7 +4,8 @@ import { db } from '../../db/db';
 import { useAllDays, useToday } from '../../db/hooks';
 import { joinRoute } from '../../db/walkRoutes';
 import { back, go } from '../../router';
-import { Icon } from '../../ui/Icon';
+import { BackLink, HelpButton, Title } from '../../ui/kit/Kit';
+import { ROUTE_HOW } from './RoutePage';
 import { Sheet } from '../../ui/Sheet';
 import { useToast } from '../../ui/Toasts';
 import { CATALOGUE, kindOf, type RouteDef } from '../../walk/catalogue';
@@ -47,16 +48,13 @@ export function ShelfPage() {
 
   return (
     <WalkFrame tint={auroraFor(regionAt(kmFromSteps([...steps.values()].reduce((a, b) => a + b, 0))))}>
-      <button type="button" className="backlink" onClick={() => back('/walk')}>
-        <Icon name="left" size={20} stroke={1.8} />
-        Walk
-      </button>
-      <header className="walk-head">
-        <h1 className="walk-title">Routes</h1>
-        <p className="walk-sub">
-          Walk them alongside India, with the same steps. Two challenges and two expeditions at a time; {free.challenge} challenge {free.challenge === 1 ? 'place' : 'places'} and {free.expedition} expedition {free.expedition === 1 ? 'place' : 'places'} free.
-        </p>
-      </header>
+      <div className="k-row">
+        <BackLink label="Walk" onClick={() => back('/walk')} />
+        <HelpButton how={ROUTE_HOW} />
+      </div>
+      <Title lg under={`${free.challenge} challenge ${free.challenge === 1 ? 'place' : 'places'} and ${free.expedition} expedition ${free.expedition === 1 ? 'place' : 'places'} free`}>
+        Choose a walk
+      </Title>
       <ShelfView defs={CATALOGUE} runs={runs} kmById={kmById} pinned={pins} usualKm={usualKm} onOpen={setOpen} onChoose={choose} drafts={import.meta.env.DEV} />
       {def && (
         <Sheet title={def.name} onClose={() => setOpen(undefined)}>

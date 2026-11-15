@@ -56,15 +56,14 @@ describe('the aurora’s colours', () => {
 });
 
 describe('the Walk frame', () => {
-  it('puts the moving aurora and the tint behind any Walk page', () => {
+  it('puts the kit’s Walk light, tinted, behind any Walk page', () => {
     const html = renderToStaticMarkup(
       <WalkFrame tint={auroraFor('coast')} className="x">
         <h1>Hi</h1>
       </WalkFrame>,
     );
-    expect(html).toMatch(/class="page lv lv-tab walk3 x"/);
-    expect(html).toContain('--lv-a:#263d63');
-    expect(html).toContain('class="blob b1"');
+    expect(html).toMatch(/class="page walk3 k-light walk k-page x"/);
+    expect(html).toContain('--walk-glow:#263d63');
     expect(html).toContain('<h1>Hi</h1>');
   });
 });

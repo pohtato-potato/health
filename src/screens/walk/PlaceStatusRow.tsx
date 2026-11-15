@@ -3,6 +3,7 @@ import { placeFor } from '../../domain/places';
 import type { DayKey } from '../../domain/dates';
 import type { Day, Settings } from '../../domain/types';
 import { PlaceIcon } from '../../ui/PlaceIcon';
+import { Icon } from '../../ui/Icon';
 import { STATUSES, StatusRow } from '../../ui/StatusRow';
 
 /**
@@ -33,7 +34,7 @@ export function PlaceStatusRow({
     <div className="walk-place-status">
       <button type="button" className="walk-ps-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
         <span>{summary}</span>
-        <span className="walk-ps-change">{open ? 'Done' : 'Change'}</span>
+        <span className="walk-ps-change">{open ? 'Done' : 'Change'}<Icon name={open ? 'up' : 'down'} size={16} stroke={2.2} /></span>
       </button>
       {open && (
         <>

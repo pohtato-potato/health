@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Scene } from '../../walk/art/scene';
+import { WalkScene } from '../../walk/WalkScene';
 import { CITY_COUNT, type ArrivalInfo } from '../../walk/arrivals';
 import { CITY_FACTS } from '../../walk/content/cities';
 import { REGIONS } from '../../walk/geo';
@@ -82,7 +82,7 @@ function Approach({ a }: { a: ArrivalInfo }) {
   return (
     <div className="walk-arr-full">
       <div className="walk-arr-scene">
-        <Scene city={a.name} part="dusk" people />
+        <WalkScene km={a.km} place={a.name} part="dusk" />
       </div>
       <i className="walk-arr-sweep" aria-hidden="true" />
       <div className="walk-arr-head">

@@ -24,7 +24,7 @@ import { STOPS, STRETCHES } from '../walk/content';
 import { stepsByDay } from '../walk/runs';
 import { skyLine } from '../walk/sky';
 import { arrivalFor } from '../walk/arrivals';
-import { Scene } from '../walk/art/scene';
+import { WalkScene } from '../walk/WalkScene';
 import { landmarkFor } from '../walk/art/landmarks';
 import { positionAt } from '../domain/walk';
 import { StampTemplate } from './walk/Arrival';
@@ -208,7 +208,7 @@ export function Today() {
   const festive = prefOn(settings.prefs, 'seasonal') ? (seasonalThemeOn(today, settings.birthday) as Festive | undefined) : undefined;
   // The scene is the place, as the arrival's welcome draws it (the fort at Gwalior), every day, not only on arrival.
   const pos = positionAt(walkKm);
-  const scene = <Scene city={scenePlace(walkKm, pos.from, pos.done ? undefined : pos.to, (n) => !!landmarkFor(n))} part={partOfDay(new Date(nowMs))} landmarkScale={1.6} festive={festive} />;
+  const scene = <WalkScene km={walkKm} todayKm={kmFromSteps(day?.steps ?? 0)} view="band" place={scenePlace(walkKm, pos.from, pos.done ? undefined : pos.to, (n) => !!landmarkFor(n))} part={partOfDay(new Date(nowMs))} landmarkScale={1.3} festive={festive} />;
   // How the day went lights the land: gold for a perfect day or a record night, green for a session in range.
   const tn = tonight(sessions, sets, today);
   const glow = devGlow(dayGlow({ perfect: rings.perfect, session: tn && { records: tn.records.length, checks: tn.checks, formAvg: tn.formAvg } }), route.params);
