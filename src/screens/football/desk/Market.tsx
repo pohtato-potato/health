@@ -76,7 +76,7 @@ function MarketPage({ m, stays }: { m: DeskModel; stays: Stay[] }) {
   if (!leads.length && !live && !(mk?.offers.length)) {
     return (
       <Page {...MARKET}>
-        <Empty icon="scope" ink={GOLD} title="Nobody on the list yet" line="A scout who rolls a 6 can bring a name back by morning.">
+        <Empty icon="scope" ink={GREEN} title="Nobody on the list yet" line="A scout who rolls a 6 can bring a name back by morning.">
           <Action wide onClick={() => go('/football/desk/job', { id: 'scout' })}>Send a scout</Action>
         </Empty>
         {tiles}
@@ -87,7 +87,7 @@ function MarketPage({ m, stays }: { m: DeskModel; stays: Stay[] }) {
     <Page {...MARKET}>
       {live && <Action wide onClick={() => go('/football/desk/talk', { talk: live.talk })}>Back to talks with {live.who}: round {live.state.round} of {ROUNDS}</Action>}
       <div className="kb-rows">
-        {leads.map((l) => {
+        {leads.map((l, i) => {
           const def = loanById(l.loan)!;
           const st = studiedIn(v, l.key);
           const r = ratingShown(l.key, def.tier, st);
@@ -106,17 +106,17 @@ function MarketPage({ m, stays }: { m: DeskModel; stays: Stay[] }) {
             <Panel key={l.key} ink={u}>
               <div className="km-who">
                 <CrestOrFog id={l.club} known={kitKnown(m, l.club)} size={44} />
-                <span style={{ flex: 1, minWidth: 0 }}><b className="nm">{def.name}</b><br /><span className="k-q">{def.unit} · from {l.clubName} · {LOAN_TIER_NAME[def.tier]}</span></span>
+                <span style={{ flex: 1, minWidth: 0 }}><b className="nm">{def.name}</b><br /><span className="k-q">{def.unit} · from {l.clubName}{c?.state.terms.kind === 'loan' ? ` · ${c.state.terms.days} days` : ''}</span></span>
               </div>
               <div className="k-row"><span className="k-q">Rated</span><b className="k-num" style={{ fontSize: 18 }}>{r.lo === r.hi ? r.lo : `${r.lo} to ${r.hi}`}</b></div>
               <Bar pct={targetKnown(st)} c={u} label={`You know ${targetKnown(st)}% of him`} />
               <div className="k-row"><span className="k-q">You know {targetKnown(st)}% of him</span>{fee !== undefined && <span className="k-q">Fee about {euros(fee)}</span>}</div>
               {status && <b style={{ color: u }}>{status}</b>}
-              <span className="k-q">{st >= 1 ? `${def.trait.name}: ${def.trait.text}` : 'Signature move: study him to find out.'} {def.style}.</span>
+              <span className="k-q">{st >= 1 ? `${def.trait.name}: ${def.trait.text} ` : ''}{LOAN_TIER_NAME[def.tier]}. {def.style}.</span>
               {!taken && (
                 <div className="kb-btns">
-                  {st < STUDY_CLOCK ? <Action quiet onClick={() => go('/football/desk/job', { id: 'study', target: l.key })}>Study him · {st} of {STUDY_CLOCK}</Action> : <span />}
-                  <Action disabled={Boolean(block) && !c?.state.live} onClick={() => go('/football/desk/talk', { talk: l.key })}>{c?.state.live ? 'Back to talks' : 'Open talks'}</Action>
+                  {st < STUDY_CLOCK ? <Action quiet onClick={() => go('/football/desk/job', { id: 'study', target: l.key })}>Study him</Action> : <span />}
+                  <Action quiet={Boolean(live) || i !== leads.findIndex((x) => !leadTaken(v, x.key))} disabled={Boolean(block) && !c?.state.live} onClick={() => go('/football/desk/talk', { talk: l.key })}>{c?.state.live ? 'Back to talks' : 'Open talks'}</Action>
                 </div>
               )}
             </Panel>
@@ -236,7 +236,7 @@ function Talk({ m, c }: { m: DeskModel; c: TalkCtx }) {
       </div>
       {said && <Panel ink={said.round.hit ? GREEN : CORAL} flat><b style={{ color: said.round.hit ? GREEN : CORAL }}>{said.round.hit ? 'It came off' : 'No luck'} ({said.round.pct}%).</b></Panel>}
       <Panel ink={mood}>
-        <p className="km-say">“{reaction}”</p>
+        <p className="km-say">{reaction}</p>
         <div className="k-row"><span className="k-q">Their mood</span><b style={{ color: mood }}>{MOOD_NAME[s.mood]}</b></div>
         <div className="km-mood" style={{ ['--n' as string]: MOOD_MAX }} role="img" aria-label={`Mood ${s.mood} of ${MOOD_MAX}`}>{Array.from({ length: MOOD_MAX }, (_, i) => <i key={i} className={i < s.mood ? 'on' : ''} style={{ '--ink': mood } as CSSProperties} />)}</div>
         <span><span className="k-q">On the table:</span> {termsText(s.terms, c.name)}</span>
@@ -297,7 +297,7 @@ function TalkEnd({ m, c, round, line }: { m: DeskModel; c: TalkCtx; round: TalkR
   return (
     <Page title="Talks over" back="Market" to="/football/market" help={TALK_HOW(ROUNDS)}>
       <h2 className="k-title" style={{ color: ok ? GREEN : CORAL }}>{head}</h2>
-      {line && <Panel ink={ok ? GREEN : CORAL}><p className="km-say">“{line}”</p></Panel>}
+      {line && <Panel ink={ok ? GREEN : CORAL}><p className="km-say">{line}</p></Panel>}
       {ok && <Panel ink={GOLD}><PanelTop name="Agreed" c={GOLD} /><span>{termsText(t, c.name)}</span></Panel>}
       <Note>
         {ok ? (c.kind === 'loan' ? 'The fee leaves the club’s money when tonight plays; the loan arrives the next morning.' : 'Signed when tonight plays.')

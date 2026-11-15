@@ -343,7 +343,7 @@ function QuestionsPage() {
     return [...by.entries()].sort();
   }, []);
   return (
-    <Page title="Your own questions" back="The desk">
+    <Page title="Your own questions" back="Desk">
       <Hero value={count ?? 0} ink="#c2b2ff" label={count === 1 ? 'of your own in the course' : 'of your own in the course'} />
       <span>A JSON or CSV file you prepared. Each question needs the question, the options (or none, for a typed answer), the answer and an explanation; year and section are optional. They mix into the coaching course.</span>
       <Note>Kept only on this phone, in your own backups, never in the app’s code.</Note>

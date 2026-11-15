@@ -11,42 +11,61 @@ import { parseDay } from '../../../domain/dates';
 
 const formatDay = (d: string) => parseDay(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 import type { HabitId } from '../../../football/squad';
+import { db } from '../../../db/db';
+import { leadsFrom } from '../../../football/market/market';
+import { loanLeads } from '../../../football/fog/fog';
+import { go } from '../../../router';
+import { AXIS_INK } from '../../../ui/inks';
+import { Action, Door, Doors, Hero, Panel, Sect } from '../../../ui/kit/Kit';
+import { Bar, CORAL, GOLD, GREEN, LAV, Note, PanelTop } from './Bits';
 
 export interface DealsActions { renew?: (h: HabitId) => void; keep?: (h: HabitId) => void; sell?: (h: HabitId) => void }
 
 const STATE: Record<Contract['state'], string> = { running: 'Running', due: 'Earned a renewal', listed: 'Transfer-listed' };
+const STATE_INK: Record<Contract['state'], string> = { running: GREEN, due: GOLD, listed: LAV };
 
 export function DealsView({ c, act = {} }: { c: Club; act?: DealsActions }) {
   const contracts = c.save.contracts ?? [];
   const listed = contracts.filter((x) => x.state === 'listed');
+  const due = contracts.filter((x) => x.state === 'due').length;
+  const firstDue = contracts.find((x) => x.state === 'due')?.habit;
+  const leads = useLiveQuery(async () => { const s = await db.fbSave.get('save'); return leadsFrom(loanLeads(s?.desk)).length; }, []);
   return (
-    <>
-      <div className="fb-row"><h2 className="fb-t">Contracts</h2><span className="fb-s">4 weeks each</span></div>
-      <section className="fb-card" aria-label="Contracts">
+    <div className="k-page">
+      <div className="kb-lead">
+        <Hero value={contracts.length} ink={GREEN} label={contracts.length === 1 ? 'contract' : 'contracts'} />
+        <span className="k-r k-q">{due ? <b style={{ color: GOLD }}>{due} to renew</b> : '4 weeks each'}</span>
+      </div>
+      <Doors two label="Deals">
+        <Door icon="deal" name="Loan market" ink={GOLD} value={leads ? `${leads} scouted` : 'scouts find players'} onClick={() => go('/football/market')} />
+        <Door icon="people" name="Loans" ink={LAV} value="from packs" onClick={() => go('/football/loans')} />
+      </Doors>
+      <Sect>Contracts</Sect>
+      <div className="kb-rows">
         {contracts.map((k) => {
           const h = habitById(k.habit);
+          const ink = STATE_INK[k.state];
           return (
-            <div key={k.habit} className={`fb-deal ${k.state}`}>
-              <div className="fb-row">
-                <span className="fb-col"><b>{h.label}</b><span className="fb-s">{h.axis} · to {formatDay(k.until)} · kept {k.kept} of {k.days} days</span></span>
-                <span className={`fb-tag${k.state === 'due' ? ' or' : k.state === 'listed' ? ' pu' : ''}`}>{STATE[k.state]}</span>
-              </div>
+            <Panel key={k.habit} ink={AXIS_INK[h.axis]}>
+              <PanelTop name={h.label} c={AXIS_INK[h.axis]} right={<span style={{ color: ink }}>{STATE[k.state]}</span>} />
+              <Bar pct={(k.kept / Math.max(1, k.days)) * 100} c={AXIS_INK[h.axis]} label={`Kept ${k.kept} of ${k.days} days`} />
+              <span className="k-q">{h.axis} · to {formatDay(k.until)} · kept {k.kept} of {k.days} days</span>
               {k.state === 'due' && (
-                <div className="fb-btns two">
-                  <button type="button" className="fb-btn pri sm" onClick={() => act.renew?.(k.habit)}>Renew {h.label}</button>
-                  <button type="button" className="fb-btn sm" onClick={() => act.keep?.(k.habit)}>Let it run</button>
+                <div className="kb-btns">
+                  <Action quiet={k.habit !== firstDue} onClick={() => act.renew?.(k.habit)}>Renew</Action>
+                  <Action quiet onClick={() => act.keep?.(k.habit)}>Let it run</Action>
                 </div>
               )}
-            </div>
+            </Panel>
           );
         })}
-        <p className="fb-s">The line: kept on at least 5 days in 7. A renewal makes the habit's axis 5% heavier, up to 15% over a career. Missing it costs nothing in matches; the habit is listed.</p>
-      </section>
-      {listed.length > 0 && <h2 className="fb-t">Transfer window</h2>}
+      </div>
+      <Note>The line: kept on at least 5 days in 7. A renewal makes the habit's axis 5% heavier, up to 15% over a career. Missing it costs nothing in matches; the habit is listed.</Note>
+      {listed.length > 0 && <Sect>Transfer window</Sect>}
       {listed.map((k) => <Trade key={k.habit} k={k} season={c.save.season} act={act} />)}
-      {(c.save.sold ?? []).length > 0 && <p className="fb-s">Sold: {(c.save.sold ?? []).map((h) => habitById(h).label).join(', ')}. Football stopped tracking them; Health still does.</p>}
+      {(c.save.sold ?? []).length > 0 && <Note>Sold: {(c.save.sold ?? []).map((h) => habitById(h).label).join(', ')}. Football stopped tracking them; Health still does.</Note>}
       <Youth youth={c.youth ?? []} />
-    </>
+    </div>
   );
 }
 
@@ -54,16 +73,16 @@ function Trade({ k, season, act }: { k: Contract; season: number; act: DealsActi
   const h = habitById(k.habit);
   const bid = bidFor(k.habit, season);
   return (
-    <section className="fb-card pu" aria-label={`Bid for ${h.label}`}>
-      <div className="fb-row"><b className="fb-t sm">{h.label}</b><span className="fb-tag pu">Listed</span></div>
-      <p className="fb-s">Kept {k.kept} of {k.days} days on its last contract. {bid.buyer} have bid.</p>
-      <div className="fb-row"><span className="fb-lb">Their bid</span><b>{feeWords(bid.fee)}</b></div>
-      <div className="fb-btns two">
-        <button type="button" className="fb-btn sm" onClick={() => act.sell?.(k.habit)}>Sell</button>
-        <button type="button" className="fb-btn pri sm" onClick={() => act.keep?.(k.habit)}>Keep</button>
+    <Panel ink={LAV}>
+      <PanelTop name={h.label} c={LAV} right="Listed" />
+      <span>Kept {k.kept} of {k.days} days on its last contract. {bid.buyer} have bid.</span>
+      <div className="k-row"><span className="k-q">Their bid</span><b className="k-num" style={{ fontSize: 22, color: GOLD }}>{feeWords(bid.fee)}</b></div>
+      <div className="kb-btns">
+        <Action quiet onClick={() => act.sell?.(k.habit)}>Sell</Action>
+        <Action onClick={() => act.keep?.(k.habit)}>Keep</Action>
       </div>
-      <p className="fb-s">Selling stops Football tracking it. Its history stays, and it may turn up against you later. Health keeps tracking it either way.</p>
-    </section>
+      <span className="k-q">Selling stops Football tracking it. Its history stays, and it may turn up against you later. Health keeps tracking it either way.</span>
+    </Panel>
   );
 }
 
@@ -76,28 +95,31 @@ function Youth({ youth, onLink = (id, l) => void linkYouth(id, l) }: { youth: Fb
   const enc = (l?: YouthLink) => (l ? `${l.kind}:${l.id}` : '');
   return (
     <>
-      <div className="fb-row"><h2 className="fb-t">Youngsters</h2><span className="fb-s">{youth.length ? `intake, season ${youth[0].season}` : 'none growing'}</span></div>
-      {youth.map((y) => (
-        <section key={y.id} className="fb-card" aria-label={y.name}>
-          <div className="fb-row"><b>{y.name}</b><span className="fb-s">{'★'.repeat(y.potential)}<span className="fb-sr"> {y.potential} stars</span></span></div>
-          <span className="fb-s">{y.axis} · {y.what}</span>
-          {y.status === 'growing' && (
-            <label className="fb-col">
-              <span className="fb-s">Tied to</span>
-              <select className="fb-select" value={enc(y.link)} onChange={(e) => { const [kind, ...id] = e.target.value.split(':'); onLink(y.id, e.target.value ? { kind: kind as YouthLink['kind'], id: id.join(':') } : undefined); }}>
-                <option value="">Not tied yet: nothing counts</option>
-                {y.link && !(options?.[y.id] ?? []).some((o) => enc(o.link) === enc(y.link)) && <option value={enc(y.link)}>The current habit</option>}
-                {(options?.[y.id] ?? []).map((o) => <option key={enc(o.link)} value={enc(o.link)}>{o.name}</option>)}
-              </select>
-            </label>
-          )}
-          <div className="fb-bar" role="img" aria-label={`${y.sessions?.length ?? 0} of ${PROMOTE_SESSIONS} sessions`}><i style={{ width: `${Math.min(100, ((y.sessions?.length ?? 0) / PROMOTE_SESSIONS) * 100)}%` }} /></div>
-          <span className="fb-s">{y.sessions?.length ?? 0} of {PROMOTE_SESSIONS} sessions</span>
-          <div className="fb-bar" role="img" aria-label={`Growth ${y.growth ?? 0} of ${PROMOTE_GROWTH}`}><i style={{ width: `${Math.min(100, ((y.growth ?? 0) / PROMOTE_GROWTH) * 100)}%` }} /></div>
-          <span className="fb-s">Growth {y.growth ?? 0} of {PROMOTE_GROWTH}, from nights you kept your bedtime{y.status === 'promoted' ? ' · in the squad' : ''}</span>
-        </section>
-      ))}
-      <p className="fb-s">Tie each youngster to a new habit. A day of that habit is a session; a kept bedtime grows them, twice as much after a rest day. Twelve of each and they join the squad. Days with nothing done never count.</p>
+      <Sect>Youngsters</Sect>
+      <span className="k-q">{youth.length ? `Intake, season ${youth[0].season}` : 'None growing'}</span>
+      <div className="kb-rows">
+        {youth.map((y) => (
+          <Panel key={y.id} ink={AXIS_INK[y.axis]}>
+            <PanelTop name={y.name} c={AXIS_INK[y.axis]} right={<span className="kb-stars" aria-label={`${y.potential} stars`}>{'★'.repeat(y.potential)}</span>} />
+            <span className="k-q">{y.axis} · {y.what}{y.status === 'promoted' ? ' · in the squad' : ''}</span>
+            {y.status === 'growing' && (
+              <label className="k-col" style={{ gap: 4 }}>
+                <span className="k-q">Tied to</span>
+                <select className="kb-select" value={enc(y.link)} onChange={(e) => { const [kind, ...id] = e.target.value.split(':'); onLink(y.id, e.target.value ? { kind: kind as YouthLink['kind'], id: id.join(':') } : undefined); }}>
+                  <option value="">Not tied yet: nothing counts</option>
+                  {y.link && !(options?.[y.id] ?? []).some((o) => enc(o.link) === enc(y.link)) && <option value={enc(y.link)}>The current habit</option>}
+                  {(options?.[y.id] ?? []).map((o) => <option key={enc(o.link)} value={enc(o.link)}>{o.name}</option>)}
+                </select>
+              </label>
+            )}
+            <Bar pct={((y.sessions?.length ?? 0) / PROMOTE_SESSIONS) * 100} c={AXIS_INK[y.axis]} label={`${y.sessions?.length ?? 0} of ${PROMOTE_SESSIONS} sessions`} />
+            <span className="k-q">{y.sessions?.length ?? 0} of {PROMOTE_SESSIONS} sessions</span>
+            <Bar pct={((y.growth ?? 0) / PROMOTE_GROWTH) * 100} c={CORAL} label={`Growth ${y.growth ?? 0} of ${PROMOTE_GROWTH}`} />
+            <span className="k-q">Growth {y.growth ?? 0} of {PROMOTE_GROWTH}, from nights you kept your bedtime</span>
+          </Panel>
+        ))}
+      </div>
+      <Note>Tie each youngster to a new habit. A day of that habit is a session; a kept bedtime grows them, twice as much after a rest day. Twelve of each and they join the squad. Days with nothing done never count.</Note>
     </>
   );
 }

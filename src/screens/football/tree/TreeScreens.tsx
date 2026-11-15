@@ -124,12 +124,15 @@ function layout(techs: TechDef[]): { t: TechDef; x: number; row: number }[] {
   const order = [...techs].sort((a, b) => d(a) - d(b));
   const shape = [3, 2, 3, 3, 3];
   const out: { t: TechDef; x: number; row: number }[] = [];
-  let i = 0;
   const xOf = new Map<string, number>();
-  for (let row = 0; i < order.length; row++) {
-    const n = Math.min(shape[row] ?? 3, order.length - i);
+  const left = [...order];
+  for (let row = 0; left.length; row++) {
+    // A row takes only techs whose prerequisites sit in rows above it, so every line runs downwards.
+    const ready = left.filter((t) => t.prereqs.every((p) => !ids.has(p) || xOf.has(p)));
+    const take = (ready.length ? ready : left).slice(0, shape[row] ?? 3);
+    const n = take.length;
     // Within a row, each tech sits under the parents it comes from, so the lines cross as little as they can.
-    const here = order.slice(i, i + n).map((t, k) => {
+    const here = take.map((t, k) => {
       const px = t.prereqs.map((p) => xOf.get(p)).filter((v): v is number => v !== undefined);
       return { t, k: px.length ? px.reduce((a, b) => a + b, 0) / px.length : 50 + k };
     }).sort((a, b) => a.k - b.k);
@@ -137,14 +140,27 @@ function layout(techs: TechDef[]): { t: TechDef; x: number; row: number }[] {
       const x = n === 1 ? 50 : n === 2 ? 33.3 + j * 33.4 : 16.7 + j * 33.3;
       xOf.set(t.id, x);
       out.push({ t, row, x });
+      left.splice(left.indexOf(t), 1);
     });
-    i += n;
   }
   return out;
 }
 const ROW_H = 116;
 /** Lines leave from under a tech's name and arrive at the top of the next one's box. */
 const LINE_FROM = 84;
+
+type Spot = { t: TechDef; x: number; row: number };
+/** A line from a tech to one that needs it. One that skips rows first drops straight down through the gap between
+ * the techs in the rows it passes (rows alternate three and two across, so the parent's own column is a gap), and only
+ * curves across in the last stretch, so it never runs through another tech or its name. */
+function linkPath(a: Spot, b: Spot, spots: Spot[]): string {
+  const y1 = a.row * ROW_H + LINE_FROM, y2 = b.row * ROW_H - 2;
+  const between = spots.filter((s) => s.row > a.row && s.row < b.row);
+  const clear = between.every((s) => Math.abs(s.x - a.x) > 10);
+  const yc = clear && b.row - a.row > 1 ? (b.row - 1) * ROW_H + LINE_FROM : y1;
+  const my = (yc + y2) / 2;
+  return `M${a.x} ${y1}${yc > y1 ? ` L${a.x} ${yc}` : ''} C${a.x} ${my} ${b.x} ${my} ${b.x} ${y2}`;
+}
 
 function Era({ m, id, n }: { m: Model; id: EraId; n: number }) {
   const e = eraOf(id);
@@ -163,9 +179,8 @@ function Era({ m, id, n }: { m: Model; id: EraId; n: number }) {
       <div className="kt-tree" style={{ height: h }}>
         <svg className="kt-lines" viewBox={`0 0 100 ${h}`} preserveAspectRatio="none" aria-hidden="true">
           {links.map(({ a, b }) => {
-            const y1 = a.row * ROW_H + LINE_FROM, y2 = b.row * ROW_H - 2, my = (y1 + y2) / 2;
             const lit = m.researched.includes(a.t.id) && techState(b.t, m.researched) !== 'locked' && techState(b.t, m.researched) !== 'sealed';
-            return <path key={`${a.t.id}-${b.t.id}`} d={`M${a.x} ${y1} C${a.x} ${my} ${b.x} ${my} ${b.x} ${y2}`} stroke={lit ? TREE_INK : 'rgba(237,230,218,.2)'} />;
+            return <path key={`${a.t.id}-${b.t.id}`} d={linkPath(a, b, spots)} stroke={lit ? TREE_INK : 'rgba(237,230,218,.2)'} />;
           })}
         </svg>
         {spots.map(({ t, x, row }) => {

@@ -39,7 +39,7 @@
 
 /* Filled tabs (the team sheet's formations): the one in use bold with the action underline. */
 .kb-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; }
-.kb-tabs > * { min-height: 44px; display: inline-flex; align-items: center; position: relative; font: 400 16px var(--sans); color: #a9a7b8; background: none; border: 0; padding: 0; cursor: default; white-space: nowrap; }
+.kb-tabs > * { min-height: 44px; min-width: 44px; justify-content: center; display: inline-flex; align-items: center; position: relative; font: 400 16px var(--sans); color: #a9a7b8; background: none; border: 0; padding: 0; cursor: default; white-space: nowrap; }
 .kb-tabs > button { cursor: pointer; color: var(--k-cream); text-decoration: underline; text-decoration-color: rgba(237, 230, 218, 0.35); text-underline-offset: 4px; }
 .kb-tabs > button small { font-size: 15px; color: var(--k-quiet); }
 .kb-tabs > .on { color: #fff; font-weight: 700; font-size: 17px; }
@@ -90,7 +90,7 @@
 .kt-tree { position: relative; }
 .kt-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
 .kt-lines path { fill: none; stroke-width: 2.5; vector-effect: non-scaling-stroke; }
-.kt-node { position: absolute; transform: translate(-50%, 0); width: 33%; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 0; border: 0; background: none; color: var(--k-cream); font: inherit; cursor: pointer; }
+.kt-node, .kt-node.op { position: absolute; transform: translate(-50%, 0); width: 33%; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 0; border: 0; background: none; color: var(--k-cream); font: inherit; cursor: pointer; }
 .kt-node i { width: 56px; height: 56px; border-radius: 14px; display: grid; place-items: center; border: 2.5px solid rgba(237, 230, 218, 0.35); background: #10122a; color: rgba(237, 230, 218, 0.45); font-style: normal; position: relative; }
 .kt-node span { font-size: 14px; line-height: 1.15; text-align: center; color: #a9a7b8; max-width: 100%; overflow-wrap: anywhere; }
 .kt-node.dn i { background: var(--k-tree, #c2b2ff); border-color: var(--k-tree, #c2b2ff); color: #0d0f20; }
@@ -107,7 +107,9 @@
 .kd-die.spent, .kd-die:disabled { border-color: rgba(237, 230, 218, 0.22); color: rgba(237, 230, 218, 0.35); background: rgba(237, 230, 218, 0.05); box-shadow: none; cursor: default; }
 .kd-job .dk-art { width: 40px; height: 40px; flex: none; }
 .kd-job .kb-mrow { gap: 12px; }
-.kd-job[aria-disabled='true'] { opacity: 0.7; }
+.kd-job[aria-disabled="true"] { opacity: 0.7; }
+.k-tap.kd-job { border-color: transparent; padding-right: 14px; }
+.kd-job > .k-arrow { display: none; }
 .kd-say { margin: 0; font-size: 15px; }
 .kd-say b { letter-spacing: 0.06em; }
 .kd-target { min-height: 52px; }
@@ -146,7 +148,7 @@
 .kk-items { display: flex; flex-direction: column; gap: 8px; }
 .kk-item { display: flex; flex-direction: column; gap: 2px; }
 .kk-item b.t { font: 400 20px/1.2 var(--serif); }
-.ka-set { min-height: 118px; gap: 6px; }
+.ka-set { min-height: 118px; gap: 6px; padding-right: 14px; border-color: transparent; text-align: left; align-items: stretch; }
 .ka-set b.nm { color: var(--ink); line-height: 1.2; }
 .ka-set.dn { border-color: var(--k-gold); }
 .ka-open { grid-column: 1 / -1; }
@@ -175,3 +177,13 @@
 .kn-kit { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; font-size: 14px; }
 .kn-kitopt { border-radius: 16px; border: 2px solid rgba(237, 230, 218, 0.25); background: rgba(13, 15, 32, 0.4); padding: 8px 4px; cursor: pointer; color: var(--k-cream); font: inherit; min-height: 44px; }
 .kn-kitopt[aria-pressed='true'] { border-color: var(--k-gold); box-shadow: 0 0 16px -4px var(--k-gold); }
+
+/* Squad members: the rating in its value colour, in a ring (dashed for a knock). */
+.kq-ring { position: relative; flex: none; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; border: 3px solid var(--v); box-shadow: 0 0 12px -3px var(--v); color: var(--v); }
+.kq-ring b { font: 600 22px/1 var(--serif); }
+.kq-ring.knock { border-style: dashed; }
+.kq-ring i { position: absolute; right: -6px; top: -6px; width: 22px; height: 22px; border-radius: 50%; background: var(--k-gold); color: #0d0f20; font: 700 14px/22px var(--sans); font-style: normal; text-align: center; }
+
+/* Trials and the academy keep their moon, inside the lead, clear of the header's "?". */
+.kw-night { position: relative; min-height: 88px; }
+.kw-night .fbg-moon { right: 6px; top: 0; }

@@ -142,7 +142,7 @@ export const PROJECTS_HOW: HowThisWorks = {
   chips: [{ text: 'day totals only', ink: GREEN }, { text: 'never the time you logged', ink: BLUE }],
 };
 
-export const STAFF_HOW = (wages: string): HowThisWorks => ({
+export const STAFF_HOW: HowThisWorks = {
   title: 'How staff work',
   steps: [
     { icon: 'tree', ink: LAV, head: 'Hired from the tree', line: 'Each member of staff comes with one tech. No staff limit.' },
@@ -150,8 +150,8 @@ export const STAFF_HOW = (wages: string): HowThisWorks => ({
     { icon: 'moon', ink: BLUE, head: 'Leave, never debt', line: 'Anyone the budget can’t cover goes on leave until it can.' },
     { icon: 'pill', ink: GREEN, head: 'The doctor levels up', line: 'Days with every medicine kept raise the club doctor’s level.' },
   ],
-  chips: [{ text: `${wages} this season`, ink: GOLD }, { text: 'no debt', ink: GREEN }],
-});
+  chips: [{ text: 'paid once a season', ink: GOLD }, { text: 'no debt', ink: GREEN }],
+};
 
 export const BOARD_HOW: HowThisWorks = {
   title: 'How the board works',

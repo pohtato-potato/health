@@ -32,7 +32,7 @@ import type { StoredMatch } from '../../football/store/tables';
 import { techDoor } from '../../football/tree/research';
 import { Moved } from '../reports/Moved';
 import type { HowThisWorks } from '../../ui/kit/Kit';
-import { ACADEMY_HOW, ALBUM_HOW, BOARD_HOW, BOON_HOW, DEALS_HOW, DUTY_HOW, GROUND_HOW, KITS_HOW, LOANS_HOW, MEMBER_HOW, MONEY_HOW, PACKS_HOW, PLAYER_HOW, PROJECTS_HOW, SHEET_HOW, SQUAD_HOW, TECH_HOW, TREE_HOW, TRIALS_HOW, UNIT_HOW } from './club/Bits';
+import { ACADEMY_HOW, ALBUM_HOW, BOARD_HOW, BOON_HOW, DEALS_HOW, DUTY_HOW, GROUND_HOW, KITS_HOW, LOANS_HOW, MEMBER_HOW, MONEY_HOW, PACKS_HOW, PLAYER_HOW, PROJECTS_HOW, SHEET_HOW, SQUAD_HOW, STAFF_HOW, TECH_HOW, TREE_HOW, TRIALS_HOW, UNIT_HOW } from './club/Bits';
 import { ALBUM, ALBUM_CARDS } from '../../football/content/album';
 import { CHEM_MAX } from '../../football/rotation/night';
 import { BREAK_DAYS, DUTY_ATTR, DUTY_NEEDS } from '../../football/globe/duty';
@@ -89,7 +89,7 @@ const INNER: Record<string, FbInner> = {
   '/football/era': { title: 'A new era', ...TREE_BACK },
   '/football/eureka': { title: 'Eureka', ...TREE_BACK },
   '/football/projects': { title: 'Projects', ...TREE_BACK, help: PROJECTS_HOW },
-  '/football/staff': { title: 'Staff room', ...TREE_BACK },
+  '/football/staff': { title: 'Staff room', ...TREE_BACK, help: STAFF_HOW },
   '/football/board': { title: 'The board', ...TREE_BACK, help: BOARD_HOW },
   '/football/boon': { title: 'Boons', ...TREE_BACK, help: BOON_HOW },
   '/football/packs': { title: 'Packs', ...CLUB_BACK, help: PACKS_HOW },
