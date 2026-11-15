@@ -1,5 +1,5 @@
-// Today's view of tonight's match (release 1): the opponent's shape on the radar, their threat line, the live
-// matchup bar and which axes a log takes ahead. Pure: it reads the engine's numbers and never changes a match.
+// Today's view of tonight's match (release 1): the opponent's shape on the radar, their threat line and which axes a
+// log takes ahead. The chance itself is played out by the engine (chance.ts, ledger O40). Pure: it reads the engine's numbers and never changes a match.
 import { parityRating } from './engine';
 import type { Opponent } from './opponent';
 import { AXES, clamp, type Axis, type AxisValues } from './types';
@@ -62,10 +62,6 @@ export function threatLine(name: string, opp: AxisValues, mine?: Partial<AxisVal
 }
 
 /**
- * The live matchup bar: your share of tonight as it stands, from the same parity rating the engine sizes a match
- * with. 50 is an even match. A presentation of the engine's numbers, never a forecast of the score.
- */
-/**
  * Before the day's first log (whole-app pass, 10 Nov): the axes that only today's logs fill are all still in fog.
  * Power and Shape carry over from the week, so they never count as a log today. The bar then says
  * "nothing logged yet" in place of a 4-to-96 that makes the morning look lost.
@@ -75,9 +71,21 @@ export function nothingLoggedYet(flags: Partial<Record<Axis, string>>): boolean 
   return DAILY_AXES.every((a) => !!flags[a]);
 }
 
-export function matchupShare(mine: AxisValues, opp: Pick<Opponent, 'rating'>): number {
-  const gap = parityRating(mine) - opp.rating;
-  return clamp(Math.round(100 / (1 + Math.exp(-gap / 9))), 3, 97);
+/** Levels the opponent's drawing moves per point of the chance's lead (loss minus win, 0 to 1). */
+export const CHANCE_SPREAD = 8;
+/**
+ * The opponent drawn to agree with the chance (ledger O40): their shape keeps where they bite (oppShape's lifts), but
+ * its size sits around your own night, larger by how much likelier a loss is than a win, smaller the other way. An even
+ * chance draws two shapes of a size; a 10–80 night draws theirs well outside yours. A picture of the chance, never an
+ * input to the match.
+ */
+export function chanceShape(opp: Pick<Opponent, 'rating' | 'shrinks' | 'presses'>, mine: AxisValues, c: { w: number; l: number }): AxisValues {
+  const own = AXES.reduce((t, a) => t + mine[a], 0) / AXES.length;
+  const lifted = oppShape(opp), plain = levelForRating(opp.rating);
+  const base = own + (c.l - c.w) * CHANCE_SPREAD;
+  const out = {} as AxisValues;
+  for (const a of AXES) out[a] = clamp(Math.round(base + (lifted[a] - plain)), 1, 20);
+  return out;
 }
 
 /**

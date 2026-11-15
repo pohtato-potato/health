@@ -19,9 +19,13 @@ import { BUNDLES } from '../ground';
 import { crestStepFor } from '../kits';
 import { standings, type Row } from '../table';
 import type { Tier } from '../types';
-import type { FbBundle, FbSave, FbSeason, StoredMatch } from '../store/tables';
+import type { FbBundle, FbNews, FbSave, FbSeason, StoredMatch } from '../store/tables';
 import type { Rate } from './level';
 import { emptyUser } from '../tree/types';
+import { carefulIncome } from '../content/money';
+import { euros, KIT_SPONSOR_TECH, openOffers } from '../money';
+import { hashSeed, rng } from '../rng';
+import { SEASON_MONEY_2, shapeOf, stageOf } from './shape';
 
 export const FOUNDING_SEASON = 0;
 export const FOUNDING_NAME = 'The founding weeks';
@@ -42,6 +46,10 @@ export interface Redrawn {
   gifts: Gifts;
   /** The arrival ("the club has arrived") has been seen. */
   seen?: boolean;
+  /** Money on arrival (ledger O40, letter 3b): the starting budget given, in millions. Absent on a save placed before it. */
+  budget?: number;
+  /** The weekly trial of the move day has been held (a move on a Sunday skipped it before O40). */
+  trials?: boolean;
 }
 export interface FoundingRecord { p: number; w: number; d: number; l: number; gf: number; ga: number }
 export interface Gifts { eras: EraId[]; techs: string[]; buildings: string[]; crest?: 1 | 2 | 3 | 4 | 5 }
@@ -93,6 +101,18 @@ export function giftedBuildings(stage: Tier, done: string[]): string[] {
 /** Gifted buildings as rows: finished long enough ago that none is shut for building work. */
 export const giftedBundles = (ids: string[], on: DayKey): FbBundle[] =>
   ids.map((id) => ({ id, progress: {}, done: addDays(on, -1 - (BUNDLES.find((b) => b.id === id)!.downtime ?? 0)) }));
+
+/**
+ * Money on arrival (ledger O40, letter 3b): a club placed in a division arrives with one careful season's income at
+ * that division's stage (mid-table TV, gate and prize money and one stable shirt deal, `carefulIncome`), scaled as
+ * world 2 scales a season's money. What a club of that standing would have in the bank; wages stay due as normal.
+ */
+export const startingBudget = (division: number) => Math.round(carefulIncome(stageOf(division)) * SEASON_MONEY_2 * 1000) / 1000;
+/** Sponsor offers on arrival for the slots open at the stage, the kit maker's only with the tree's Kit sponsor. */
+export function arrivalOffers(save: Pick<FbSave, 'sponsors' | 'treeUser'>, division: number, on: DayKey) {
+  const kit = (save.treeUser?.researched ?? []).some((r) => r.id === KIT_SPONSOR_TECH);
+  return openOffers(save.sponsors ?? [], stageOf(division), kit, rng(hashSeed('arrival-offers', on)));
+}
 
 /** Everything stored against season `from` moved to `to`, so the next season of that number starts fresh. */
 export function rekeySeason(save: FbSave, from: number, to: number): FbSave {
@@ -150,6 +170,11 @@ export function redrawSave(save: FbSave, o: RedrawInput): { save: FbSave; gifts:
     ...(user ? { treeUser: { ...user, researched: [...user.researched, ...techs.map((id) => ({ id, on: o.on, cost: 0 }))], seenEras: [...new Set([...user.seenEras, ...eras])] } } : {}),
     redrawn: { ...o.record, on: o.on, gifts },
   };
+  // Money on arrival, and sponsor offers to see and sign straight away (owner, 16 Nov).
+  const budget = startingBudget(o.record.division);
+  out.budget = Math.round(((save.budget ?? 0) + budget) * 1000) / 1000;
+  out.redrawn = { ...out.redrawn!, budget };
+  if (!(save.offers ?? []).length) out.offers = arrivalOffers(out, o.record.division, o.on);
   return { save: out, gifts };
 }
 /** The desk's log and cup ties as relations and the loan market read them: from the move on, in world 2. */
@@ -157,3 +182,9 @@ export const sinceRedrawn = <T extends { day?: DayKey; date?: DayKey }>(xs: T[],
   const on = save.redrawn?.on;
   return on ? xs.filter((x) => (x.day ?? x.date ?? '') >= on) : xs;
 };
+
+/** The arrival's money, as news on the day of the move (the back page's second line that day). */
+export const arrivalMoneyNews = (on: DayKey, budget: number, division: number): FbNews => ({
+  id: `${on}:arrival-money`, date: on, kind: 'club',
+  text: `Money on arrival: ${euros(budget)} in the bank for ${shapeOf({ world: 2 }).name(division)}. Wages are paid at the season’s end as usual. Sponsors have made offers: see Money.`,
+});

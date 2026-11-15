@@ -86,10 +86,19 @@ export async function loadClubPage(id: string): Promise<ClubPageData | null> {
 /** The back page: the newest headline up to today, and a call-back to an earlier result. */
 export interface BackPage { headline?: FbNews; callback?: string }
 export function backPage(news: FbNews[], matches: StoredMatch[], today: DayKey): BackPage {
-  const headline = news.filter((n) => n.kind === 'back' && n.date <= today).sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id))[0];
+  // Finding 11 (O40): the arrival in the new world is the news on its day, and callbacks stay inside the new world.
+  const arrival = news.find((n) => n.id.endsWith(':redrawn') && n.date <= today);
+  const isArrival = (n: FbNews) => n === arrival;
+  const headline = news.filter((n) => (n.kind === 'back' || isArrival(n)) && n.date <= today)
+    .sort((a, b) => b.date.localeCompare(a.date) || Number(isArrival(b)) - Number(isArrival(a)) || b.id.localeCompare(a.id))[0];
   if (!headline) return {};
+  if (isArrival(headline)) {
+    const money = news.find((n) => n.id === `${headline.date}:arrival-money`);
+    return money ? { headline, callback: money.text } : { headline };
+  }
   const m = headline.matchId ? matches.find((x) => x.id === headline.matchId) : undefined;
-  const before = matches.filter((x) => x.date < (m?.date ?? headline.date) && x.comp !== 'friendly').sort((a, b) => b.date.localeCompare(a.date));
+  const before = matches.filter((x) => x.date < (m?.date ?? headline.date) && x.comp !== 'friendly' && (!arrival || x.date >= arrival.date))
+    .sort((a, b) => b.date.localeCompare(a.date));
   const past = (m && before.find((x) => x.opp === m.opp)) ?? before[0];
   if (!past) return { headline };
   const opp = clubById(past.opp).name;

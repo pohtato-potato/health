@@ -59,8 +59,8 @@ export function PacksPage() {
   const crest = crestSvg(m.t.save.crest.step, m.t.save.crest.opt, 70, 'The club crest on the pack');
   const doors = (
     <Doors two label="From packs">
-      <Door icon="pack" name="The album" value={`${collected(m.user).size} of ${ALBUM_CARDS.length}`} ink="#f2c46d" onClick={() => go('/football/album')} />
-      <Door icon="deal" name="Loan market" value={leads === undefined ? '–' : leads ? `${leads} ${leads === 1 ? 'name' : 'names'}` : 'No names yet'} ink="#8fdcb6" onClick={() => go('/football/market')} />
+      <Door icon="pack" name="The album" value={`${collected(m.user).size} of ${ALBUM_CARDS.length}`} family="record" onClick={() => go('/football/album')} />
+      <Door icon="deal" name="Loan market" value={leads === undefined ? '–' : leads ? `${leads} ${leads === 1 ? 'name' : 'names'}` : 'No names yet'} family="money" onClick={() => go('/football/market')} />
     </Doors>
   );
   return (

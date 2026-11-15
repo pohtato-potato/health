@@ -123,7 +123,7 @@ export function CongressDoor({ save }: { save: Pick<FbSave, 'congress' | 'season
   const last = lastCongress(save);
   const n = last?.motions.filter((x) => x.passed).length ?? 0;
   const value = lobbyOpen(save.phase, save.day, seasonLength(worldOf(save))) ? 'Lobbying' : last ? `${n} in force` : 'No rules yet';
-  return <Door icon="hall" name="The congress" value={value} ink={GOLD} onClick={() => go('/football/congress')} />;
+  return <Door icon="hall" name="The congress" value={value} family="world" onClick={() => go('/football/congress')} />;
 }
 
 // ---------------------------------------------------------------- the cast
@@ -132,7 +132,7 @@ export function CongressDoor({ save }: { save: Pick<FbSave, 'congress' | 'season
 export function CastDoor({ save }: { save: Pick<FbSave, 'desk' | 'bonds' | 'castSeen'> }) {
   const waiting = scenesWaiting(save).length;
   const ranks = bondsOfSave(save).reduce((n, b) => n + b.rank, 0);
-  return <Door icon="people" name="The cast" value={waiting ? `${waiting} new` : ranks} ink={PINK} onClick={() => go('/football/cast')} />;
+  return <Door icon="people" name="The cast" value={ranks} count={waiting ? `${waiting} new ${waiting === 1 ? 'scene' : 'scenes'}` : undefined} family="people" onClick={() => go('/football/cast')} />;
 }
 
 /** /football/cast, /football/cast?member=id, and /football/cast?scene=member:rank for a rank scene (d3-rank). */

@@ -3,6 +3,7 @@ import { NATIONS } from '../events';
 import league from './league.json';
 import { ABROAD, WORLD_CHAMPS_2 } from './continental';
 import { WORLD_CLUBS, type WorldClub } from './world';
+import { plainWords } from './plain';
 import type { Axis, AxisValues, Tier } from '../types';
 
 export type When = string; // 'always' | 'home' | 'away' | 'first-15' | 'after-70' | 'home-first-20' | 'level' | 'cup' | …
@@ -27,6 +28,10 @@ export const TIER_BANDS = league.tierBands as unknown as Record<string, [number,
 const priv = import.meta.glob('/private/football-youth.json', { eager: true, import: 'default' }) as Record<string, YouthDef[]>;
 export const YOUTH_POOL: YouthDef[] = [...(league.youth as unknown as YouthDef[]), ...Object.values(priv).flat()];
 
+// Finding 10 (O40): abilities are shown in plain words, once, before any screen reads them.
+for (const c of [...CLUBS, ...ABROAD, ...WORLD_CLUBS] as { known: AbilityDef[]; hidden?: AbilityDef }[]) {
+  for (const a of [...c.known, ...(c.hidden ? [c.hidden] : [])]) a.text = plainWords(a.text);
+}
 const base = new Map([...CLUBS, ...ABROAD].map((c) => [c.id, c]));
 /** Clubs registered by hand (tests, fixtures): they win over both worlds' data. */
 const extra = new Map<string, ClubDef>();

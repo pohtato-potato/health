@@ -14,7 +14,7 @@ import { Pyramid } from './Pyramid';
 import { Table } from './Table';
 import { atlasOf } from '../world/Atlas';
 import { clubFog } from '../../../football/store/fog';
-import { Door, Doors, Sect } from '../../../ui/kit/Kit';
+import { Door, FamilyDoors, Sect } from '../../../ui/kit/Kit';
 import { Icon } from '../../../ui/Icon';
 import { worldOf } from '../../../football/pyramid/shape';
 import { PAIRCUP_ID } from '../../../football/pyramid/cups';
@@ -57,13 +57,13 @@ export function LeagueView({ l, view, tier, extra, n }: { l: League; view: Leagu
       {view === 'table' && !tier && (
         <>
           <Sect>Around the league</Sect>
-          <Doors two label="Around the league">
-            <Door icon="scope" name="The atlas" value={`${atlasOf(l).seen}% seen`} onClick={() => go('/football/atlas')} />
-            <Door icon="ground" name="The pyramid" value={tierName(mine)} onClick={() => set({ view: 'pyramid' })} />
-            <Door icon="list" name="Calendar" value={l.save.phase === 'season' ? `Day ${l.save.day}` : 'Break'} onClick={() => set({ view: 'calendar' })} />
-            <Door icon="pack" name="The cups" value={l.season.bigcup ? 'This season' : 'None yet'} ink="#f2c46d" onClick={() => set({ view: 'cups' })} />
-            <CongressDoor save={l.save} />
-          </Doors>
+          <FamilyDoors two label="Around the league" groups={{ world: [
+            <Door key="pyr" icon="ground" name="The pyramid" value={tierName(mine)} family="world" onClick={() => set({ view: 'pyramid' })} />,
+            <Door key="atlas" icon="scope" name="The atlas" value={`${atlasOf(l).seen}% seen`} family="world" onClick={() => go('/football/atlas')} />,
+            <Door key="cups" icon="pack" name="The cups" value={l.season.bigcup ? 'This season' : 'None yet'} family="world" onClick={() => set({ view: 'cups' })} />,
+            <Door key="cal" icon="list" name="Calendar" value={l.save.phase === 'season' ? `Day ${l.save.day}` : 'Break'} family="world" onClick={() => set({ view: 'calendar' })} />,
+            <CongressDoor key="congress" save={l.save} />,
+          ] }} />
         </>
       )}
       {view === 'pyramid' && <Pyramid tierOf={l.season.tierOf} rating={l.rating} onTier={(x) => set({ tier: String(x) })} />}

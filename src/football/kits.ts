@@ -37,8 +37,9 @@ export const SPONSOR_STYLES: { id: SponsorStyle; name: string }[] = [
 /** The founding shirts (first run) are board 9's direction A. */
 export const FIRST_KITS: Record<string, KitDef> = { A1: BRABO_KITS.A[0], A2: BRABO_KITS.A[1], A3: BRABO_KITS.A[2] };
 
-/** The third kit unlocks in Division Four. */
-export const slotsOpen = (tier: Tier): KitSlot[] => (tier <= 4 ? ['home', 'away', 'third'] : ['home', 'away']);
+/** The third kit unlocks at stage four (world 1's Division Four), or sooner with the kit man (the tree's Kit man, O40). */
+export const KIT_MAN_TECH = 's-kitman';
+export const slotsOpen = (tier: Tier, kitMan = false): KitSlot[] => (tier <= 4 || kitMan ? ['home', 'away', 'third'] : ['home', 'away']);
 export const isAnniversary = (season: number) => season > 0 && season % 5 === 0;
 
 export interface Week { avg: number; result: Result; numbers: string }
@@ -100,5 +101,5 @@ export const CREST_CHANGES: Record<CrestStep, string> = {
   2: 'A single open hand, drawn plainly. No more paint over the landlords’ turret.',
   3: 'The club’s name and its founding year join the hand.',
   4: 'The river and the city’s skyline join in behind the hand.',
-  5: 'A finished crest: shield, hand, river and the year, drawn with care.',
+  5: 'The grown-up crest: the hand drawn bold and finished with care.',
 };

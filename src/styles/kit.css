@@ -99,7 +99,8 @@ button.k-panel, a.k-panel { cursor: pointer; text-decoration: none; min-height: 
   color: var(--k-cream); font: inherit; text-align: left; cursor: pointer; text-decoration: none;
 }
 .k-door .k-arrow { position: absolute; right: 9px; top: 12px; color: color-mix(in srgb, var(--ink) 80%, #fff); }
-.k-door b.v { font: 600 20px/1.15 var(--serif); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--k-cream); }
+/* Tidy: a door's live value reads whole; a long one wraps to a second line (the row of doors grows with it). */
+.k-door b.v { font: 600 20px/1.15 var(--serif); max-width: 100%; overflow-wrap: anywhere; text-wrap: balance; color: var(--k-cream); }
 .k-door .nm { font-weight: 700; font-size: 15px; line-height: 1.15; overflow-wrap: anywhere; }
 
 /* ---- the one glowing action a page: its glow falls below it, like a real light ---- */
@@ -117,11 +118,12 @@ button.k-panel, a.k-panel { cursor: pointer; text-decoration: none; min-height: 
 .k-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 
 /* ---- the page header inside a page: one way back, the page's name, maybe a "?" ---- */
-.k-head { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; min-height: 48px; }
-.k-head .k-title { text-align: center; font-size: 22px; }
+.k-head { display: grid; grid-template-columns: minmax(max-content, 1fr) minmax(0, max-content) minmax(max-content, 1fr); align-items: center; gap: 8px; min-height: 48px; }
+/* Tidy: the way back always reads whole; a long title wraps to a second line instead of squeezing it. */
+.k-head .k-title { text-align: center; font-size: 22px; overflow-wrap: anywhere; }
 .k-head > :last-child { justify-self: end; }
 .k-back { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; min-width: 44px; padding: 0 6px 0 0; border: 0; background: none; color: var(--k-cream); font: 700 15px var(--sans); cursor: pointer; justify-self: start; max-width: 100%; }
-.k-back span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.k-back span { white-space: nowrap; }
 
 /* ---- the "?" and the "how this works" sheet ---- */
 .k-help { width: 44px; height: 44px; flex: none; border-radius: 50%; display: grid; place-items: center; border: 0; background: none; color: var(--k-cream); cursor: pointer; padding: 0; }
@@ -327,3 +329,33 @@ button.k-rowl { cursor: pointer; }
 .ci-k .btn:not(.ghost) { border-radius: 999px; background: var(--act); color: var(--act-ink); border: 0; font-weight: 700; box-shadow: 0 10px 24px -8px var(--act); }
 .ci-k .btn:not(.ghost):disabled { box-shadow: none; opacity: 0.5; }
 .ci-k .btn.ghost { border-radius: 999px; border: 2px solid var(--k-cream); background: transparent; color: var(--k-cream); font-weight: 700; }
+
+/* Tidy (look pass leftovers): the drinks month runs to its card's edges (the card's side padding is 20 px), so each
+   day is a 44 px target at 360 px; at 340 px it is 42 px. */
+.dk-cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px 0; margin-inline: -20px; }
+/* Tidy: a drawn chevron or arrow sitting in a line of text keeps to the text's middle. */
+.lv-link svg, .lv-small svg, .lv-tr-arrow svg, .lv-tr-up svg, .td-duet b svg, .fb-btn svg, .sess svg, .rt-lbn svg { vertical-align: -3px; display: inline-block; }
+
+/* Door families (ledger O40): colour says what kind of place a door opens. The fill carries the family colour, the
+   name is in it, the value stays cream; text keeps 4.5:1 or more on every fill, high contrast on or off. */
+.k-fams { display: flex; flex-direction: column; gap: 6px; }
+.k-fam { display: flex; flex-direction: column; gap: 8px; }
+.k-sect.fam { color: var(--ink); }
+.k-sect.fam::after { background: color-mix(in srgb, var(--ink) 40%, transparent); }
+.k-door.fam {
+  background: linear-gradient(150deg, color-mix(in srgb, var(--ink) 20%, #141730), color-mix(in srgb, var(--ink) 9%, #10122a));
+  border: 1.5px solid color-mix(in srgb, var(--ink) 62%, transparent);
+}
+.k-door.fam .nm { color: var(--ink); }
+/* Waiting: a chip with words, never a different colour. */
+.k-door .k-count { align-self: flex-start; margin-top: 4px; padding: 2px 9px; border-radius: 999px; background: var(--ink, var(--k-cream)); color: #10121f; font: 700 14px/1.35 var(--sans); }
+/* Locked or empty: dimmed, a dashed edge, and why in words (no opacity, so the words keep their contrast). */
+.k-door.locked { background: #12142a; border: 1.5px dashed color-mix(in srgb, var(--ink) 60%, transparent); }
+.k-door.locked .lk { font-size: 15px; line-height: 1.25; color: var(--k-quiet); }
+.k-door.locked .nm { color: color-mix(in srgb, var(--ink) 75%, #c4c1cf); }
+.k-door.locked > svg:first-child { opacity: 0.7; }
+/* Inside a page, the header's small line says which family you landed in. */
+.k-head-fam { display: block; font: 700 14px/1.3 var(--sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); margin-top: 2px; }
+html.contrast .k-door.fam { background: #0b0c1a; border-color: var(--ink); }
+html.contrast .k-door.locked { background: #0b0c1a; }
+html.contrast .k-door.locked .lk, html.contrast .k-door.locked .nm { color: var(--k-cream); }

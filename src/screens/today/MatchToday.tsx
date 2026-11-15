@@ -11,7 +11,8 @@ import { addDays, dayOfLogging, type DayKey } from '../../domain/dates';
 import { prefOn } from '../../domain/types';
 import { clubCrest, crestSvg } from '../../football/art/crest';
 import { clubById, tierName } from '../../football/data/load';
-import { matchupShare, movedAxes, nothingLoggedYet, oppShape, threatLine, wentAhead } from '../../football/matchup';
+import { movedAxes, threatLine, wentAhead } from '../../football/matchup';
+import { ChanceBar, oppDrawing, useChance } from '../football/Chance';
 import { loadTonight, type Tonight } from '../../football/store/hooks';
 import { OWN } from '../../football/store/season';
 import { storedGate } from '../../football/store/matchGate';
@@ -118,7 +119,8 @@ interface Fly { id: number; axis: Axis; delay: number }
 /** Tonight's shape against the opponent: radar, threat line, matchup bar, the pull-ahead line and the moments. */
 export function TonightShape({ t, stadium, buzzOn, reel }: { t: Tonight; stadium: boolean; buzzOn: boolean; reel: (axes: Axis[]) => void }) {
   const opp = t.oppTonight;
-  const oppVals = useMemo(() => (opp ? oppShape(opp) : undefined), [opp]);
+  const chance = useChance(t.date);
+  const oppVals = useMemo(() => oppDrawing(opp, t.liveValues, chance), [opp, t.liveValues, chance]);
   const logged = Object.fromEntries(AXES.map((a) => [a, !t.flags[a]])) as Record<Axis, boolean>;
   // Fog of war: an axis with no data, or not logged yet, is hatched with "?" (q-pg-fog A); unlogged ones play low.
   const fog = AXES.filter((a) => t.flags[a]);
@@ -162,7 +164,6 @@ export function TonightShape({ t, stadium, buzzOn, reel }: { t: Tonight; stadium
   const f = t.fixture;
   if (!f || t.morning.intl) return null;
   const oppId = f.opp;
-  const share = opp && oppVals ? matchupShare(t.liveValues, opp) : undefined;
   const threat = oppVals ? threatLine(oppId ? name(oppId) : 'They', oppVals, t.liveValues, logged) : undefined;
   const lead = ahead && oppVals && t.liveValues[ahead] > oppVals[ahead] ? ahead : undefined;
   const oppInk = oppId ? inkOf(oppId) : '#ff8fa8';
@@ -173,17 +174,7 @@ export function TonightShape({ t, stadium, buzzOn, reel }: { t: Tonight; stadium
       {oppId && t.oppTier && t.braboTier && (f.comp !== 'league' || t.oppTier !== t.braboTier) && <p className="tm-ln">{f.round ?? 'A cup tie'}: {name(oppId)} play in {t.oppTier === t.braboTier ? 'your division' : tierName(t.oppTier)}{t.oppTier < t.braboTier ? `, ${t.braboTier - t.oppTier === 1 ? 'one division' : `${t.braboTier - t.oppTier} divisions`} above you` : ''}.</p>}
       <Radar values={t.liveValues} flags={t.flags} opp={oppVals} oppInk={oppInk} oppName={oppId ? name(oppId) : undefined} fog={fog} inked pulse={pulse} size={300} label="Tonight’s shape so far" />
       {threat && oppId && <p className="tm-ln"><b style={{ color: oppInk }}>{name(oppId)}</b> {threat.kind === 'strong' ? 'are strong on' : 'lead you on'} <b style={{ color: AXIS_INK[threat.axis] }}>{threat.axis}</b>. {threat.answer}</p>}
-      {share !== undefined && oppId && nothingLoggedYet(t.flags) && (
-        <div className="tm-bar tm-bar-empty" role="img" aria-label="Matchup: nothing logged yet">
-          <b>Nothing logged yet</b>
-        </div>
-      )}
-      {share !== undefined && oppId && !nothingLoggedYet(t.flags) && (
-        <div className="tm-bar" role="img" aria-label={`Matchup as it stands: you ${share}, ${name(oppId)} ${100 - share}`} style={{ '--t1': BRABO_INK, '--t2': oppInk } as React.CSSProperties}>
-          <span className="tm-me" style={{ width: `${share}%` }}><b>You {share}</b></span>
-          <span className="tm-op"><b>{100 - share} {short(oppId)}</b></span>
-        </div>
-      )}
+      {chance && oppId && <ChanceBar c={chance} oppName={short(oppId)} />}
       {lead && oppVals && oppId && (
         <div className="tm-ahead">
           <p className="tm-at"><b style={{ color: AXIS_INK[lead] }}>{lead}</b><span>takes you ahead</span></p>

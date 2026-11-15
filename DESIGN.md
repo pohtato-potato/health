@@ -85,6 +85,19 @@ Every icon is drawn in one line weight (`Icon`, stroke 1.6 on a 24 px grid). Nev
 
 Four words across the top: Tonight, Club, League, Story, underlined where you are (`FootballNav`). Everything else is a door on that section's page, showing one live value. Inside a page there is one way back and the page's name (`PageHead`, or `FootballHome inner=…`). There is no second row of pills.
 
+Football's doors come in six families, by the kind of place they open, always in this order and each under its own heading with its own drawn icon (`FamilyDoors`, `ui/kit/families.ts`):
+
+| Family | Colour | Doors |
+|---|---|---|
+| People | pink `#f4aedb` | Team sheet, Squad, Staff, the cast, Academy, Trials, Duty |
+| The place | coral `#ff9a76` | The ground, Projects, Kits |
+| Money and deals | gold `#f2c46d` | Money, Deals, the loan market, Loans, Packs |
+| Plans and study | lavender `#c2b2ff` | The tree, the board, the desk, How it adds up |
+| The world | blue `#93c3dc` | Every division, the atlas, the cups, the calendar, the congress |
+| The record | green `#8fdcb6` | Seasons, Moments, Rivals, Old selves, Bounties, the album |
+
+A family door is filled with its colour and its name is written in it. Anything waiting gets a count chip with words ("2 to open"), never a different colour. A locked or empty door is dimmed with a dashed edge and says why in words. Inside a page, the header's small line names its family in its colour. Orange stays for the one action. Every word keeps 4.5:1 or more with high contrast on or off (`tests/football/door-families.test.ts`).
+
 ### 9. The rings
 
 The app's own rings, made brighter. Each band glows in its colour; a closed ring burns at full strength with a bright edge; the count sits in the heading, not the middle; when a goal is met its number turns radiant with a soft glow. All four closed turns them gold. The existing ring moments stay.

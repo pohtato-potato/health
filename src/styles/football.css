@@ -480,7 +480,8 @@ button.fb-todaycard { cursor: pointer; }
 .fb-wdots .on i { background: var(--fb-or); border-color: var(--fb-or); width: 28px; border-radius: 6px; }
 
 /* The thin football line on other tabs (Task 5.4): an orange outline, a "Football" label, never colour alone. */
-.fb-hline { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; row-gap: 2px; align-items: center; width: 100%; min-height: 44px; padding: 8px 14px; border-radius: 14px; border: 1.5px solid #ff7a1a; background: rgba(20,13,26,.55); color: #f3eee6; font: 500 15px/1.3 var(--sans); text-align: left; cursor: pointer; }
+/* Tidy: a filled wash with a hairline edge (kit rule 2), not an orange outline. */
+.fb-hline { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; row-gap: 2px; align-items: center; width: 100%; min-height: 44px; padding: 8px 14px; border-radius: 14px; border: 1px solid rgba(255,122,26,.35); background: linear-gradient(180deg, rgba(255,122,26,.20), rgba(255,122,26,.07)); color: #f3eee6; font: 500 15px/1.3 var(--sans); text-align: left; cursor: pointer; }
 .fb-hline-k { font: 700 14px var(--sans); letter-spacing: .04em; text-transform: uppercase; color: #ffa25c; }
 .fb-hline-t { font-variant-numeric: tabular-nums; }
 .fb-hline-s { grid-column: 2; font-size: 14px; color: rgba(243,238,230,.8); }
@@ -633,3 +634,16 @@ button.md-chip { min-height: 44px; cursor: pointer; }
 .fb-redrawn-gifts { margin: 0; padding-left: 18px; display: grid; gap: 6px; font: 400 15px/1.4 var(--sans); }
 .fb-top4 .fb-trows { border: 0; box-shadow: none; animation: none; padding: 0; }
 .fb-top4 { padding-right: 34px; }
+
+/* The chance (ledger O40): win, draw and loss as three labelled parts; the number and the word carry it, not the colour. */
+.fb-chance { display: flex; flex-direction: column; gap: 8px; }
+.fb-chance-h { margin: 0; font-size: 15px; color: var(--k-quiet, #c4c1cf); }
+.fb-chance-bar { display: flex; gap: 3px; height: 16px; border-radius: 8px; overflow: hidden; background: rgba(237, 230, 218, 0.1); }
+.fb-chance-bar i { display: block; height: 100%; min-width: 4px; }
+.fb-chance-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.fb-chance-part { display: flex; align-items: center; gap: 6px; font-size: 15px; color: #ede6da; }
+.fb-chance-part.d { justify-content: center; }
+.fb-chance-part.l { justify-content: flex-end; }
+.fb-chance-part i { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+.fb-chance-part b { font: 600 20px var(--serif, Georgia, serif); }
+.fb-chance-note { margin: 0; font-size: 14px; line-height: 1.4; color: var(--k-quiet, #c4c1cf); }

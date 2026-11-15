@@ -7,13 +7,14 @@ export const kaaiStage = (tier: Tier): 1 | 2 | 3 => (tier >= 5 ? 1 : tier >= 3 ?
 const has = (done: string[], prefix: string) => done.some((d) => d === prefix || d.startsWith(`${prefix}-`));
 
 /** `stage` draws one stage on its own (the ground's "How the Kaai grows"); otherwise the division decides it. */
-export function Kaai({ tier, done, height = 104, stage: only }: { tier: Tier; done: string[]; height?: number; stage?: 1 | 2 | 3 }) {
+/** `site`: the Kaai Stand is not up yet, so the ground is drawn as plans on the quay (dashed, dim), not a finished home. */
+export function Kaai({ tier, done, height = 104, stage: only, site = false }: { tier: Tier; done: string[]; height?: number; stage?: 1 | 2 | 3; site?: boolean }) {
   const stage = only ?? kaaiStage(tier);
   const sides = ['river-end', 'crane-stand', 'dock-end'].filter((x) => done.includes(x)).length;
   const lit = done.includes('floodlights');
   const words = [`stage ${stage} of 3`, sides ? `${sides} ${sides === 1 ? 'side stand' : 'side stands'}` : '', done.includes('roof') ? 'a roof' : '', has(done, 'cafe') ? 'the café' : '', has(done, 'shop') ? 'the shop' : '', has(done, 'ferry') ? 'the ferry stop' : ''].filter(Boolean);
   return (
-    <svg className="kc-kaai" viewBox="0 0 336 110" preserveAspectRatio="xMidYMax meet" style={{ height }} role="img" aria-label={`The Kaai at dusk with its floodlights on: ${words.join(', ')}`}>
+    <svg className="kc-kaai" viewBox="0 0 336 110" preserveAspectRatio="xMidYMax meet" style={{ height }} role="img" aria-label={site ? `Kaai 42 on the quay, being built: ${words.join(', ')}` : `The Kaai at dusk with its floodlights on: ${words.join(', ')}`}>
       <defs>
         <radialGradient id={`kc-fl${only ?? ""}`}>
           <stop offset="0" stopColor="#ffd9a8" stopOpacity={lit ? 1 : 0.85} />
@@ -22,6 +23,7 @@ export function Kaai({ tier, done, height = 104, stage: only }: { tier: Tier; do
       </defs>
       <circle cx="62" cy="18" r={lit ? 40 : 34} fill={`url(#kc-fl${only ?? ""})`} />
       <circle cx="274" cy="18" r={lit ? 40 : 34} fill={`url(#kc-fl${only ?? ""})`} />
+      <g opacity={site ? 0.42 : 1}>
       {/* The ground itself: one stand at first. */}
       <path d="M0 110V78l40-14h256l40 14v32z" fill="#1a1d3d" />
       <path d="M40 64l20-22h216l20 22z" fill="#262a55" />
@@ -39,6 +41,8 @@ export function Kaai({ tier, done, height = 104, stage: only }: { tier: Tier; do
       {has(done, 'cafe') && <><path d="M36 110V92h22v18z" fill="#2a2450" /><rect x="41" y="96" width="12" height="6" fill="#ffb48a" /></>}
       {has(done, 'shop') && <><path d="M278 110V90h24v20z" fill="#2a2450" /><rect x="283" y="95" width="14" height="6" fill="#c2b2ff" /></>}
       {has(done, 'ferry') && <path d="M222 108h40M232 108v-8M252 108v-8" stroke="#93c3dc" strokeWidth="2.5" strokeLinecap="round" />}
+      </g>
+      {site && <path d="M0 110V78l40-14 20-22h216l20 22 40 14v32" fill="none" stroke="#ffd9a8" strokeWidth="2" strokeDasharray="7 6" />}
     </svg>
   );
 }

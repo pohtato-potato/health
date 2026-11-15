@@ -20,6 +20,7 @@ import { Skyline } from './Skyline';
 import { Crest, GlassCard, SimpleBack, Viewable, type CardView } from '../../../ui/CardViewer';
 import { Action, Door, Doors, Hero, Panel, Sect, Title } from '../../../ui/kit/Kit';
 import { Icon, type IconName } from '../../../ui/Icon';
+import { techReach } from '../../../football/tree/reach';
 import { Bar, MarkRow, Note, PanelTop, Stat } from '../club/Bits';
 
 const eraOf = (id: EraId) => ERAS.find((e) => e.id === id)!;
@@ -78,10 +79,10 @@ export function TreeHome() {
       <Note>Every tech has its own small picture. Filled is done, gold is within reach. Tap any to read it.</Note>
       <Sect>Around the tree</Sect>
       <Doors two label="The tree's rooms">
-        <Door icon="ground" name="Projects" value={m.projectsOpen.length ? `${m.projectsOpen.length} building` : 'Kaai quarter'} ink="#ffd56a" onClick={() => go('/football/projects')} />
-        <Door icon="people" name="Staff room" value={`${m.staff.filter((x) => x.hired).length} hired`} ink="#8fdcb6" onClick={() => go('/football/staff')} />
-        <Door icon="sheet" name="The board" value="Two goals" ink="#93c3dc" onClick={() => go('/football/board')} />
-        <Door icon="pack" name="Packs" value={m.packsWaiting.length ? `${m.packsWaiting.length} to open` : 'The album'} ink="#ff9a76" onClick={() => go('/football/packs')} />
+        <Door icon="ground" name="Projects" value={m.projectsOpen.length ? `${m.projectsOpen.length} open` : 'Kaai quarter'} family="place" onClick={() => go('/football/projects')} />
+        <Door icon="people" name="Staff room" value={`${m.staff.filter((x) => x.hired).length} hired`} family="people" onClick={() => go('/football/staff')} />
+        <Door icon="sheet" name="The board" value="Two goals" family="plans" onClick={() => go('/football/board')} />
+        <Door icon="pack" name="Packs" value={m.packsWaiting.length ? `${m.packsWaiting.length} to open` : 'The album'} family="money" onClick={() => go('/football/packs')} />
       </Doors>
     </div>
   );
@@ -321,6 +322,12 @@ export function TechPage({ id }: { id: string }) {
           </div>
         </>
       )}
+      <Sect>{st === 'done' ? 'What it changed' : 'What it will change'}</Sect>
+      <Doors two label={st === 'done' ? 'What it changed' : 'What it will change'}>
+        {techReach(t).map((r) => r.waiting
+          ? <Door key={r.line} line icon="lock" name={r.line} value="" locked="Not running in the game yet" onClick={() => go(r.place.to, r.place.params)} />
+          : <Door key={r.line} line icon="arrow" name={r.line} value={st === 'done' ? `Open ${r.place.name}` : `Will show on ${r.place.name}`} onClick={() => go(r.place.to, r.place.params)} />)}
+      </Doors>
       <TechAction m={m} t={t} st={st} cost={cost} />
     </div>
   );
@@ -403,7 +410,7 @@ export function ProjectsPage() {
   return (
     <div className="k-page">
       <div className="kb-lead">
-        <Hero value={building} ink="#ffd56a" label="being built" />
+        <Hero value={building} ink="#ffd56a" label="open to build" />
         <span className="k-r"><b>{m.t.built.filter((id) => PROJECTS.some((p) => p.id === id)).length}</b><span className="k-q">built so far</span></span>
       </div>
       <Skyline places={m.places} progress={m.progress} />
@@ -416,11 +423,20 @@ export function ProjectList({ m }: { m: Model }) {
   const open = m.projectsOpen.filter((p) => !m.states.get(p.id)?.done);
   const next = m.places.flatMap((p) => p.stages.filter((s) => s.look === 'next').map((s) => s.p));
   const journeys = PROJECTS.filter((p) => p.source === 'journey' && !m.projectsOpen.includes(p) && !m.t.built.includes(p.id));
+  // Ledger O40: buildings (they cost money once their days are in) apart from journeys (days only), cheapest first.
+  const buildings = open.filter((p) => p.source !== 'journey').sort((a, b) => a.money - b.money);
+  const trips = open.filter((p) => p.source === 'journey');
+  const cost = buildings.reduce((t, p) => t + p.money, 0);
   return (
     <>
-      {open.length > 0 && <Sect>Building now</Sect>}
+      {buildings.length > 0 && <Sect>Buildings open · {euros(cost)} in all</Sect>}
+      {buildings.length > 0 && <p className="k-q">Each starts on its own days and is paid for, from the budget, the day its last day is in. {m.t.save.budget >= cost ? `The budget (${euros(m.t.save.budget)}) covers them all.` : `The budget is ${euros(m.t.save.budget)}: the cheapest come first.`}</p>}
       <div className="kb-rows">
-        {open.map((p) => <Project key={p.id} m={m} id={p.id} />)}
+        {buildings.map((p) => <Project key={p.id} m={m} id={p.id} />)}
+      </div>
+      {trips.length > 0 && <Sect>Journeys · days only, no money</Sect>}
+      <div className="kb-rows">
+        {trips.map((p) => <Project key={p.id} m={m} id={p.id} />)}
       </div>
       {next.length + journeys.length > 0 && <Sect>Next</Sect>}
       <div className="kb-rows">
@@ -454,7 +470,7 @@ function Project({ m, id }: { m: Model; id: string }) {
           </div>
         );
       })}
-      {p.money > 0 && <span className="k-q">Money {euros(Math.min(m.t.save.budget, p.money))} of {euros(p.money)}</span>}
+      {p.money > 0 && <span className="k-q">Costs {euros(p.money)} when its days are in · {m.t.save.budget >= p.money ? 'the budget covers it' : `${euros(p.money - m.t.save.budget)} short`}</span>}
       <span>{p.reward}</span>
     </Panel>
   );

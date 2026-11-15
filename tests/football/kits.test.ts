@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { kitSvg } from '../../src/football/art/kit';
+import { openOffers } from '../../src/football/money';
+import { rng } from '../../src/football/rng';
 import { anniversaryKit, CATALOGUE, crestStepFor, dataKit, launchOptions, levelUpOptions, patchFor, slotsOpen, type Week } from '../../src/football/kits';
 import { kitWall } from '../../src/football/store/kitWall';
 import type { FbSave, StoredMatch } from '../../src/football/store/tables';
@@ -44,6 +46,14 @@ describe('Other kits', () => {
   it('the third kit opens in Division Four', () => {
     expect(slotsOpen(5)).toEqual(['home', 'away']);
     expect(slotsOpen(4)).toContain('third');
+  });
+  it('the kit man opens the third kit before Division Four (O40: the tech said so and nothing read it)', () => {
+    expect(slotsOpen(5, true)).toContain('third');
+  });
+  it('the kit maker’s sponsor slot takes offers only with the Kit sponsor tech (O40)', () => {
+    const r = rng(1);
+    expect(openOffers([], 3, false, r).some((o) => o.slot === 'kit')).toBe(false);
+    expect(openOffers([], 3, true, rng(1)).some((o) => o.slot === 'kit')).toBe(true);
   });
 });
 

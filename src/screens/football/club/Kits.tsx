@@ -1,8 +1,8 @@
 // Kits: launch day, the kit wall by season, and the crest history.
 import { useState } from 'react';
 import { kitSvg } from '../../../football/art/kit';
-import { crestSvg, type CrestStep } from '../../../football/art/crest';
-import { CREST_LINES, launchOptions, slotsOpen, SPONSOR_STYLES, type KitSlot } from '../../../football/kits';
+import { crestSvg, type CrestOptKey, type CrestStep } from '../../../football/art/crest';
+import { CREST_LINES, KIT_MAN_TECH, launchOptions, slotsOpen, SPONSOR_STYLES, type KitSlot } from '../../../football/kits';
 import type { Club } from '../../../football/store/club';
 import { kitFor, kitWall, type WallKit } from '../../../football/store/kitWall';
 import { Art } from '../Tonight';
@@ -18,9 +18,19 @@ export interface KitActions { pick?: (season: number, slot: KitSlot, id: string)
 export function KitsView({ c, act = {} }: { c: Club; act?: KitActions }) {
   const s = c.save;
   const wall = kitWall(s, c.matches);
-  const launch = s.phase === 'event';
-  const next = s.season + 1;
+  // Launch day is between seasons; a season started with no kit picked (a club just placed in the new league, O40)
+  // opens the kit maker for the season under way.
+  const unpicked = s.phase === 'season' && !(s.kits ?? []).some((k) => k.season === s.season);
+  const launch = s.phase === 'event' || unpicked;
+  const next = unpicked ? s.season : s.season + 1;
+  const kitMan = (s.treeUser?.researched ?? []).some((r) => r.id === KIT_MAN_TECH);
+  const open = slotsOpen(c.stage ?? c.tier, kitMan);
   const sp = s.sponsorStyle ?? 'A';
+  // Finding 9: a shirt wears the crest the club had that season (it was always the step-two crest).
+  const crestAt = (season: number): [CrestStep, CrestOptKey] => {
+    const h = [...(s.crestHistory ?? [])].reverse().find((x) => x.season <= season);
+    return season >= s.season || !h || h.opt === 'keep' ? [s.crest.step, s.crest.opt] : [h.step, h.opt];
+  };
   const sponsor = s.sponsors?.find((x) => x.slot === 'shirt')?.brand ?? (s.ownSponsor?.slot === 'shirt' ? s.ownSponsor.name : undefined);
   return (
     <div className="k-page">
@@ -30,9 +40,9 @@ export function KitsView({ c, act = {} }: { c: Club; act?: KitActions }) {
       </div>
       {launch && (
         <Panel ink={GOLD}>
-          <PanelTop name={`Launch day · season ${next}`} c={GOLD} />
+          <PanelTop name={unpicked ? `The kit maker · season ${next}` : `Launch day · season ${next}`} c={GOLD} />
           <span>The kit maker has designs for each slot. Pick one; the rest go back in the drawer.</span>
-          {slotsOpen(c.stage ?? c.tier).map((slot) => {
+          {open.map((slot) => {
             const picked = s.kits?.find((k) => k.season === next && k.slot === slot)?.id;
             return (
               <fieldset key={slot} className="k-col" style={{ border: 0, padding: 0, margin: 0, gap: 6 }}>
@@ -43,7 +53,7 @@ export function KitsView({ c, act = {} }: { c: Club; act?: KitActions }) {
                     if (!k) return null;
                     return (
                       <button key={id} type="button" className="kn-kitopt kn-kit" aria-pressed={picked === id} onClick={() => act.pick?.(next, slot, id)}>
-                        <Art svg={kitSvg({ ...k.kit, sp }, 'front', 84, { sponsor })} />
+                        <Art svg={kitSvg({ ...k.kit, sp, crest: crestAt(next) }, 'front', 84, { sponsor })} />
                         <span>{k.name}</span>
                       </button>
                     );
@@ -52,7 +62,7 @@ export function KitsView({ c, act = {} }: { c: Club; act?: KitActions }) {
               </fieldset>
             );
           })}
-          {!slotsOpen(c.stage ?? c.tier).includes('third') && <span className="k-q">The third kit opens in Division Four.</span>}
+          {!open.includes('third') && <span className="k-q">The third kit opens with the kit man, in the tree, or at a bigger stage.</span>}
         </Panel>
       )}
       <Panel ink={LAV}>
@@ -61,13 +71,13 @@ export function KitsView({ c, act = {} }: { c: Club; act?: KitActions }) {
           {SPONSOR_STYLES.map((x) => <button key={x.id} type="button" className="kb-chipbtn" style={{ ['--ink' as string]: LAV }} aria-pressed={sp === x.id} onClick={() => act.style?.(x.id)}>{x.name}</button>)}
         </div>
       </Panel>
-      <KitWall wall={wall} sp={sp} />
+      <KitWall wall={wall} sp={sp} crestAt={crestAt} />
       <CrestHistory c={c} />
     </div>
   );
 }
 
-function KitWall({ wall, sp }: { wall: WallKit[]; sp: 'A' | 'B' | 'C' | 'R' }) {
+function KitWall({ wall, sp, crestAt }: { wall: WallKit[]; sp: 'A' | 'B' | 'C' | 'R'; crestAt: (season: number) => [CrestStep, CrestOptKey] }) {
   const [open, setOpen] = useState<string | null>(null);
   const seasons = [...new Set(wall.map((k) => k.season))].sort((a, b) => b - a);
   return (
@@ -81,7 +91,7 @@ function KitWall({ wall, sp }: { wall: WallKit[]; sp: 'A' | 'B' | 'C' | 'R' }) {
               const key = `${k.season}-${k.slot}`;
               return (
                 <button key={key} type="button" className="kn-kitopt kn-kit" aria-pressed={open === key} aria-expanded={open === key} onClick={() => setOpen(open === key ? null : key)}>
-                  <Art svg={kitSvg({ ...k.kit, sp }, 'front', 84, { patch: k.patches[0] })} />
+                  <Art svg={kitSvg({ ...k.kit, sp, crest: crestAt(k.season) }, 'front', 84, { patch: k.patches[0] })} />
                   <span>{SLOT[k.slot]}</span>
                 </button>
               );

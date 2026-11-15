@@ -1,5 +1,6 @@
 import { createContext, useContext, type ReactNode } from 'react';
-import { go } from '../../router';
+import { go, useRoute } from '../../router';
+import type { Family } from '../../ui/kit/families';
 import { HelpButton, PageHead, type HowThisWorks } from '../../ui/kit/Kit';
 
 export type FbSection = 'tonight' | 'club' | 'league' | 'story';
@@ -30,6 +31,28 @@ export interface FbInner {
   to: string;
   params?: Record<string, string>;
   help?: HowThisWorks;
+  /** The kind of place (ledger O40); left out, it is worked out from the route. */
+  family?: Family;
+}
+
+/** Ledger O40: every page inside Football belongs to one family of doors, shown on its header's small line. */
+const PATH_FAMILY: Record<string, Family> = {
+  '/football/sheet': 'people', '/football/staff': 'people', '/football/academy': 'people', '/football/trials': 'people', '/football/tie': 'people',
+  '/football/duty': 'people', '/football/cast': 'people', '/football/player': 'people', '/football/unit': 'people', '/football/card': 'people', '/football/limit': 'people',
+  '/football/projects': 'place',
+  '/football/market': 'money', '/football/loans': 'money', '/football/loan': 'money', '/football/packs': 'money', '/football/album': 'record',
+  '/football/tech': 'plans', '/football/era': 'plans', '/football/eureka': 'plans', '/football/board': 'plans', '/football/boon': 'plans', '/football/desk': 'plans', '/football/blend': 'plans',
+  '/football/atlas': 'world', '/football/cup': 'world', '/football/congress': 'world', '/football/club-page': 'world', '/football/redrawn': 'world',
+  '/football/rival': 'record', '/football/track': 'record', '/football/bounties': 'record', '/football/wrapped': 'record',
+};
+const VIEW_FAMILY: Record<string, Family> = {
+  squad: 'people', ground: 'place', kits: 'place', money: 'money', deals: 'money', tree: 'plans',
+  divisions: 'world', full: 'world', pyramid: 'world', calendar: 'world', cups: 'world', table: 'world',
+  news: 'record', seasons: 'record', moments: 'record', olds: 'record', rivals: 'record',
+};
+export function familyOf(path: string, view: string | null): Family | undefined {
+  if (view && VIEW_FAMILY[view]) return VIEW_FAMILY[view];
+  return PATH_FAMILY[path] ?? PATH_FAMILY[path.split('/').slice(0, 3).join('/')];
 }
 
 /** True inside a page that already has its header, so older screens leave out their own back buttons. */
@@ -60,11 +83,12 @@ export function FootballNav({ section, help }: { section: FbSection; help?: HowT
  * name (pass `inner`).
  */
 export function FootballHome({ section, children, night, inner, help }: { section: FbSection; children?: ReactNode; night?: boolean; inner?: FbInner; help?: HowThisWorks }) {
+  const route = useRoute();
   return (
     <Aurora className={night ? 'md-night' : undefined}>
       <main className={`fb-page${inner ? ' k-headed' : ''}`}>
         {inner ? (
-          <PageHead back={inner.back} title={inner.title} help={inner.help} onBack={() => go(inner.to, inner.params, { replace: true })} />
+          <PageHead back={inner.back} title={inner.title} help={inner.help} family={inner.family ?? familyOf(route.path, route.params.get('view'))} onBack={() => go(inner.to, inner.params, { replace: true })} />
         ) : (
           <FootballNav section={section} help={help} />
         )}

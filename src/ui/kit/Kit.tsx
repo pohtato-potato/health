@@ -3,6 +3,7 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Icon, type IconName } from '../Icon';
 import { Sheet } from '../Sheet';
+import { FAMILIES, FAMILY_ORDER, type Family } from './families';
 
 const inkStyle = (ink?: string, style?: CSSProperties) => ({ ...(ink ? { ['--ink' as string]: ink } : {}), ...style }) as CSSProperties;
 
@@ -42,18 +43,46 @@ export function Panel({ ink, onClick, label, flat, children, style, className }:
 /**
  * A door into another page: its mark, one live value, its name. It takes the light of the page it sits on.
  * `line`: board one's doors on You's pages, the name in its ink over a quiet line (the value) instead of a big number.
+ * `family` (ledger O40): Football's doors are coloured by the kind of place they open (families.ts); `count` is a chip
+ * with words for anything waiting ("2 new"); `locked` dims the door with a dashed edge and says why in place of a value.
  */
-export function Door({ icon, name, value, ink, onClick, line }: { icon: IconName; name: string; value: ReactNode; ink?: string; onClick: () => void; line?: boolean }) {
+export function Door({ icon, name, value, ink, onClick, line, family, count, locked }: { icon: IconName; name: string; value: ReactNode; ink?: string; onClick: () => void; line?: boolean; family?: Family; count?: string; locked?: string }) {
+  const col = family ? FAMILIES[family].ink : ink;
+  const shown = locked ?? value;
+  const said = typeof shown === 'string' || typeof shown === 'number' ? `${name}: ${shown}` : name;
   return (
-    <button type="button" className={`k-door${line ? ' line' : ''}`} style={inkStyle(ink)} onClick={onClick} aria-label={typeof value === 'string' || typeof value === 'number' ? `${name}: ${value}` : name}>
-      <Icon name={icon} size={line ? 30 : 22} color={ink ?? 'currentColor'} stroke={1.6} />
-      {line ? <><span className="nm">{name}</span><span className="ln">{value}</span></> : <><b className="v">{value}</b><span className="nm">{name}</span></>}
+    <button type="button" className={`k-door${line ? ' line' : ''}${family ? ' fam' : ''}${locked ? ' locked' : ''}`} style={inkStyle(col)} onClick={onClick} aria-label={count ? `${said}. ${count}` : said}>
+      <Icon name={icon} size={line ? 30 : 22} color={col ?? 'currentColor'} stroke={1.6} />
+      {line ? <><span className="nm">{name}</span><span className="ln">{shown}</span></> : <>{locked ? <span className="lk">{locked}</span> : <b className="v">{value}</b>}<span className="nm">{name}</span></>}
+      {count && <span className="k-count">{count}</span>}
       <Icon name="right" size={14} stroke={2.4} className="k-arrow" />
     </button>
   );
 }
 
 export const Doors = ({ two, children, label }: { two?: boolean; children: ReactNode; label?: string }) => <nav className={`k-doors${two ? ' two' : ''}`} aria-label={label}>{children}</nav>;
+
+/**
+ * Doors grouped by family (ledger O40), always in the same order (people, the place, money and deals, plans and study,
+ * the world, the record), each under its own heading with its icon and colour. Families with no door are left out.
+ */
+export function FamilyDoors({ groups, two, label }: { groups: Partial<Record<Family, (ReactNode | false | null | undefined)[]>>; two?: boolean; label: string }) {
+  return (
+    <div className="k-fams" aria-label={label}>
+      {FAMILY_ORDER.map((f) => {
+        const doors = (groups[f] ?? []).filter(Boolean);
+        if (!doors.length) return null;
+        const fam = FAMILIES[f];
+        return (
+          <section key={f} className="k-fam" style={inkStyle(fam.ink)} aria-label={fam.name}>
+            <h2 className="k-sect fam"><Icon name={fam.icon} size={18} color={fam.ink} stroke={1.8} /><span>{fam.name}</span></h2>
+            <Doors two={two} label={fam.name}>{doors}</Doors>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
 
 /** The one glowing thing to do next. One a page. */
 export function Action({ children, onClick, wide, sm, quiet, disabled }: { children: ReactNode; onClick: () => void; wide?: boolean; sm?: boolean; quiet?: boolean; disabled?: boolean }) {
@@ -68,11 +97,11 @@ export function BackLink({ label, onClick }: { label: string; onClick: () => voi
 }
 
 /** The header inside a page: one way back, the page's name, and the "?" when the page has rules. */
-export function PageHead({ back, onBack, title, help }: { back: string; onBack: () => void; title: ReactNode; help?: HowThisWorks }) {
+export function PageHead({ back, onBack, title, help, family }: { back: string; onBack: () => void; title: ReactNode; help?: HowThisWorks; family?: Family }) {
   return (
     <header className="k-head">
       <BackLink label={back} onClick={onBack} />
-      <h1 className="k-title">{title}</h1>
+      <h1 className="k-title">{title}{family && <small className="k-head-fam" style={inkStyle(FAMILIES[family].ink)}>{FAMILIES[family].name}</small>}</h1>
       {help ? <HelpButton how={help} /> : <span aria-hidden="true" />}
     </header>
   );

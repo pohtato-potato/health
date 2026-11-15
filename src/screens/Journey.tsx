@@ -161,7 +161,7 @@ function JourneyClock({ start, end, today }: { start: DayKey; end: DayKey; today
         ].map(([t, f]) => {
           const p = pt(f as number, R - 24);
           return (
-            <text key={t as string} x={p.x} y={p.y + 4} textAnchor="middle" fill="var(--dim)" fontSize="13" fontFamily="var(--sans)">
+            <text key={t as string} x={p.x} y={p.y + 4} textAnchor="middle" fill="var(--dim)" fontSize="14" fontFamily="var(--sans)">
               {t}
             </text>
           );
@@ -171,7 +171,7 @@ function JourneyClock({ start, end, today }: { start: DayKey; end: DayKey; today
         <text x={C} y={C + 28} textAnchor="middle" fill="var(--text)" fontSize="15" fontFamily="var(--serif)">
           {c.label}
         </text>
-        <text x={C} y={C + 46} textAnchor="middle" fill="var(--quiet)" fontSize="13" fontFamily="var(--sans)">
+        <text x={C} y={C + 46} textAnchor="middle" fill="var(--quiet)" fontSize="14" fontFamily="var(--sans)">
           day {fmtInt(c.day)} of {fmtInt(c.total)}
         </text>
       </svg>
@@ -237,7 +237,7 @@ function Reports({ today, settings }: { today: DayKey; settings: Settings }) {
         <span className="t15">{title}</span>
         <span className="t12 q">{sub}</span>
       </span>
-      <span className={`t12 ${tag === 'New' ? 'gold' : 'q'}`}>{tag ?? '›'}</span>
+      <span className={`t12 ${tag === 'New' ? 'gold' : 'q'}`}>{tag ?? <Icon name="right" size={18} />}</span>
     </button>
   );
   return (

@@ -237,7 +237,7 @@ export function SourcesCard({ entries, range, kind }: { entries: FoodEntry[]; ra
       {[...s.rows, ...(s.rest ? [{ name: 'Everything else', value: s.rest.value, share: s.rest.share }] : [])].map((r) => (
         <div key={r.name} className="col gap4">
           <div className="row base t14">
-            <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</span>
+            <span style={{ minWidth: 0, overflowWrap: 'anywhere' }}>{r.name}</span>
             <span className="tn q" style={{ flexShrink: 0 }}>
               {fmtV(r.value)} · {Math.round(r.share * 100)}%
             </span>
@@ -286,7 +286,8 @@ export function DrinksExtras({ entries, days, today }: { entries: FoodEntry[]; d
           </span>
         }
       >
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0,1fr))', gap: 4 }}>
+        {/* Tidy: the month runs to the card's edges, so each day is a 44 px target at 360 px. */}
+        <div className="dk-cal">
           {WEEKDAYS.map((w) => (
             <span key={w} className="t11 d center">
               {w.slice(0, 1)}
@@ -400,7 +401,7 @@ export function StrengthCard({ sets, today }: { sets: SetEntry[]; today: DayKey 
         return (
           <div key={s.exerciseId} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 54px auto', gap: 10, alignItems: 'center', padding: '10px 0', borderTop: '1px solid var(--divider)' }}>
             <div className="col gap2" style={{ minWidth: 0 }}>
-              <span className="t15" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span className="t15" style={{ overflowWrap: 'anywhere' }}>
                 {s.name}
               </span>
               <span className="t12 q">{s.kind === 'kg' ? 'Estimated best single, per dumbbell' : s.kind === 'seconds' ? 'Longest hold' : 'Best set'}</span>

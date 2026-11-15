@@ -35,6 +35,7 @@ export function useRoute(): Route {
       return () => listeners.delete(l);
     },
     () => snapshot,
+    () => snapshot, // server rendering (tests): the same route
   );
 }
 

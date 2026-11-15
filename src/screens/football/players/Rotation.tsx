@@ -18,6 +18,7 @@ import { go } from '../../../router';
 import { PlayerCard } from './Card';
 import { Action, Sect } from '../../../ui/kit/Kit';
 import { Bar, Note, PanelTop, Tabs } from '../club/Bits';
+import { Icon } from '../../../ui/Icon';
 
 const uc = (u: Unit) => ({ ['--uc' as string]: UNIT_COLOUR[u] });
 const fmtDate = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
@@ -160,11 +161,11 @@ export function LimitBreakRoute({ id }: { id: string }) {
       <span className="pl-kick">Limit break</span>
       <h2 className="fb-t">{p.name}</h2>
       <div className="rt-lbc"><PlayerCard card={p.card} art={p.art} seed={p.id} player={p} label={`${p.name}, ${stepName(p.card)} card, cracked with light`} />{CRACKS}</div>
-      {l.from != null && <div className="rt-lbn" aria-label={`Rating ${l.from} to ${l.to}`}><span className="pl-num">{l.from}</span><i aria-hidden="true">→</i><b className="pl-num">{l.to}</b></div>}
+      {l.from != null && <div className="rt-lbn" aria-label={`Rating ${l.from} to ${l.to}`}><span className="pl-num">{l.from}</span><i aria-hidden="true"><Icon name="arrow" size={16} /></i><b className="pl-num">{l.to}</b></div>}
       <p className="pl-sub">{l.what ? `${l.what[0].toUpperCase()}${l.what.slice(1)}.` : ''} The scale resets: the next stretch of progress counts again.</p>
       <div className="rt-rw">
         {lead && <span>{ATTR_NAME[lead] ?? lead} now leads</span>}
-        {l.shift?.map(([a, from, to]) => <span key={a} className="rt-mv"><b>{ATTR_NAME[a] ?? a}</b> {from.toFixed(2)} → {to.toFixed(2)}</span>)}
+        {l.shift?.map(([a, from, to]) => <span key={a} className="rt-mv"><b>{ATTR_NAME[a] ?? a}</b> {from.toFixed(2)} to {to.toFixed(2)}</span>)}
         {trait ? <span className="rt-tr">New trait · {trait.name}</span> : <span>No new trait: three is the most a player holds.</span>}
         {trait && <span className="rt-small">{trait.text}</span>}
       </div>
@@ -188,7 +189,7 @@ export function TacticPicker({ date, pick, by }: { date: string; pick: Tactic; b
         ))}
       </div>
       <p className="fb-s">{by === 'assistant' ? 'Left to the assistant, who leans on what you did best today. Tap one to choose it yourself.' : 'Tap it again to leave it to the assistant.'}</p>
-      <button type="button" className="fb-btn sm" onClick={() => go('/football/blend')}>How tonight adds up ›</button>
+      <button type="button" className="fb-btn sm" onClick={() => go('/football/blend')}>How tonight adds up <Icon name="right" size={16} stroke={2.2} /></button>
     </section>
   );
 }
@@ -317,7 +318,7 @@ export function RotationLinks({ players }: { players: FbPlayer[] }) {
           <span><b>{lb.name}</b> has broken its limit. Tap to see what changed.</span>
         </button>
       )}
-      <button type="button" className="fb-btn wide" onClick={() => go('/football/sheet')}>Team sheet ›</button>
+      <button type="button" className="fb-btn wide" onClick={() => go('/football/sheet')}>Team sheet <Icon name="right" size={16} stroke={2.2} /></button>
     </>
   );
 }

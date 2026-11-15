@@ -25,10 +25,10 @@ import { readOf, TEMPO_NAME, WIDTH_NAME } from '../../football/matchday';
 import { MorningCards } from './world/WorldScreens';
 import { TacticPicker } from './players/Rotation';
 import { breakBeforeFor, matchdayList, paceNight, paceOn } from '../../football/pace';
-import { matchupShare, oppShape } from '../../football/matchup';
+import { ChanceBar, oppDrawing, useChance } from './Chance';
 import { TACTIC_NAME } from '../../football/rotation/night';
 import { AXIS_INK } from '../../ui/inks';
-import { Action, Door, Doors, Panel, Sect } from '../../ui/kit/Kit';
+import { Action, Door, FamilyDoors, Panel, Sect } from '../../ui/kit/Kit';
 import { Sheet } from '../../ui/Sheet';
 import { loadDesk } from '../../football/store/desk';
 import { loadBook, loadRun } from '../../football/cup/store';
@@ -75,6 +75,7 @@ function momentOf(t: TonightData): ReactNode {
 
 export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: string) => void }) {
   const [plan, setPlan] = useState(false);
+  const chance = useChance(t.date);
   const watch = onWatch ?? ((id: string) => go('/football/match', { id }));
   const moment = momentOf(t);
   if (moment) return <div className="lt-moment">{moment}</div>;
@@ -92,8 +93,7 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
   const f = t.fixture;
   const own = crestSvg(t.save.crest.step, t.save.crest.opt, 54);
   const oppName = t.opp ? (t.opp.short && t.opp.name.length > 12 ? t.opp.name.split(' ')[0] : t.opp.name) : '';
-  const share = t.oppTonight && !t.morning.intl ? matchupShare(t.liveValues, t.oppTonight) : undefined;
-  const oppVals = t.oppTonight ? oppShape(t.oppTonight) : undefined;
+  const oppVals = oppDrawing(t.oppTonight, t.liveValues, chance);
   const unlogged = AXES.filter((a) => t.flags[a] === 'not-logged');
   const noData = AXES.filter((a) => t.flags[a] === 'no-data');
   const league = Boolean(t.tactic && f?.comp === 'league' && t.opp);
@@ -122,12 +122,7 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
       <div className="lt-radar">
         <Radar values={t.liveValues} flags={t.flags} fog={AXES.filter((a) => t.flags[a])} captain={t.save.slots.includes('armband') ? t.save.captain : undefined} opp={oppVals} oppInk="#93c3dc" oppName={t.opp?.name} inked size={300} label="Tonight’s shape so far" />
       </div>
-      {share !== undefined && t.opp && (
-        <div className="lt-stake" role="img" aria-label={`As it stands: you ${share}, ${t.opp.name} ${100 - share}`}>
-          <div className="k-row"><span className="k-q">You <b>{share}</b></span><span className="k-q"><b>{100 - share}</b> {oppName}</span></div>
-          <span className="lt-bar"><i style={{ width: `${share}%` }} /></span>
-        </div>
-      )}
+      {chance && t.opp && !t.morning.intl && <div className="lt-stake"><ChanceBar c={chance} oppName={oppName} /></div>}
       {unlogged.map((a) => (
         <Panel key={a} ink={AXIS_INK[a]}><span><b style={{ color: AXIS_INK[a] }}>{a} isn’t logged yet.</b> It plays low and wild until {LOG_FOR[a]} {a === 'Routine' ? 'is ticked' : 'is in'}.</span></Panel>
       ))}
@@ -207,11 +202,13 @@ function TonightDoors({ t }: { t: TonightData }) {
     <>
       <Sect>Around tonight</Sect>
       <div className="lt-doors">
-        <Doors two label="Around tonight">
-          <Door icon="trend" name="How it adds up" value={t.nudges.length ? `${t.nudges.length} nudge${t.nudges.length === 1 ? '' : 's'}` : 'Your shape'} ink="#8fdcb6" onClick={() => go('/football/blend')} />
-          {dice && <Door icon="desk" name="The desk" value={dice.shut ? 'Closed' : dice.left.length ? `${WORDS[dice.left.length] ?? dice.left.length} dice` : 'All spent'} ink="#93c3dc" onClick={() => go('/football/desk')} />}
-          {cup && <Door icon="win" name={cup.live ? 'A cup run' : 'Cups'} value={cup.name.replace(/^The /, '')} ink="#f2c46d" onClick={() => go(cup.live ? '/football/cup/run' : '/football/cup')} />}
-        </Doors>
+        <FamilyDoors two label="Around tonight" groups={{
+          plans: [
+            <Door key="blend" icon="trend" name="How it adds up" value="Your shape" count={t.nudges.length ? `${t.nudges.length} ${t.nudges.length === 1 ? 'nudge' : 'nudges'} in it` : undefined} family="plans" onClick={() => go('/football/blend')} />,
+            dice && <Door key="desk" icon="desk" name="The desk" value={dice.shut ? 'Closed' : dice.left.length ? `${WORDS[dice.left.length] ?? dice.left.length} dice` : 'All spent'} family="plans" onClick={() => go('/football/desk')} />,
+          ],
+          world: [cup && <Door key="cup" icon="win" name={cup.live ? 'A cup run' : 'Cups'} value={cup.name.replace(/^The /, '')} family="world" onClick={() => go(cup.live ? '/football/cup/run' : '/football/cup')} />],
+        }} />
       </div>
     </>
   );

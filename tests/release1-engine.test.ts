@@ -6,7 +6,7 @@ import { addDays } from '../src/domain/dates';
 import { chipFor, rangeWords, statusWindows } from '../src/domain/statusChip';
 import type { Day } from '../src/domain/types';
 import { comebackDue, comebackLift, isFullyLogged, isGap } from '../src/football/comeback';
-import { levelForRating, matchupShare, movedAxes, oppShape, threatLine, wentAhead } from '../src/football/matchup';
+import { chanceShape, levelForRating, movedAxes, oppShape, threatLine, wentAhead } from '../src/football/matchup';
 import { sealedNight } from '../src/football/seal';
 import { liveNightFor, loadHealth, nightFor } from '../src/football/store/gather';
 import { allAxes, type AxisValues } from '../src/football/types';
@@ -58,10 +58,13 @@ describe('matchup on Today', () => {
     expect(threatLine('FC Kermis', s, mine, { Rest: true })?.axis).toBe('Rest');
     expect(threatLine('FC Kermis', s, allAxes(20), { Rest: true })).toBeUndefined();
   });
-  it('the bar is 50 at an even match and moves with the shape', () => {
-    const even = allAxes(Math.round(levelForRating(56)));
-    expect(Math.abs(matchupShare(even, opp) - 50)).toBeLessThan(8);
-    expect(matchupShare(allAxes(18), opp)).toBeGreaterThan(matchupShare(allAxes(8), opp));
+  it('the opponent is drawn to agree with the chance (O40): even is the same size, a likely loss is larger', () => {
+    const mean = (v: Record<string, number>) => Object.values(v).reduce((t, x) => t + x, 0) / 6;
+    const mine = allAxes(12);
+    expect(Math.abs(mean(chanceShape(opp, mine, { w: 0.35, l: 0.35 })) - 12)).toBeLessThan(1);
+    expect(mean(chanceShape(opp, mine, { w: 0.1, l: 0.8 }))).toBeGreaterThan(mean(mine) + 4);
+    expect(mean(chanceShape(opp, mine, { w: 0.6, l: 0.2 }))).toBeLessThan(mean(mine));
+    expect(levelForRating(56)).toBeGreaterThan(1);
   });
   it('moment C fires only when a log takes an axis ahead, not level, not a band', () => {
     const o = allAxes(12);

@@ -37,7 +37,7 @@ describe('the football lines on other tabs', () => {
     await foundClub('2026-10-10', { shirt: 'H1', crest: 'a' });
     await kickOff('2026-10-10');
     const d = await habitLineFor('Pace', '2026-10-13');
-    expect(d?.text).toMatch(/^Pace \d+ → 9 for tonight$/);
+    expect(d?.text).toMatch(/^Pace \d+ to 9 for tonight$/);
     expect(d?.sub).toBe('500 more steps makes it 10');
     const out = html(<HabitLineView {...d!} />);
     expect(out).toContain('Football');

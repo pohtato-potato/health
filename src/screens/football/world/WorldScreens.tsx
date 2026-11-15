@@ -20,6 +20,7 @@ import type { LoanStay } from '../../../football/globe/types';
 import { GlassCard, SimpleBack, Viewable, type CardView } from '../../../ui/CardViewer';
 import { Back, TreePage } from '../tree/TreeScreens';
 import type { IconName } from '../../../ui/Icon';
+import type { Family } from '../../../ui/kit/families';
 import { Action, Empty, Hero, Panel, Sect } from '../../../ui/kit/Kit';
 import { Bar, Note, PanelTop } from '../club/Bits';
 import '../../../styles/club.css';
@@ -43,16 +44,15 @@ export function LoanArt({ loan, size = 120 }: { loan: LoanDef; size?: number }) 
   return <span className="fbg-art" dangerouslySetInnerHTML={{ __html: loanSvg(loan, size) }} />;
 }
 
-/** The doors to the world, on the Club's squad page. */
-/** The world's four pages as doors (Club's "The wider world"), each with one live line. */
-export function useWorldDoors(): { to: string; label: string; sub: string; icon: IconName }[] | undefined {
+/** The world's four pages as doors on Club, each with its family (ledger O40) and one live line. */
+export function useWorldDoors(): { to: string; label: string; sub: string; icon: IconName; family: Family; count?: string }[] | undefined {
   const w = useWorld();
   if (!w) return undefined;
   return [
-    { to: '/football/loans', label: 'Loans', sub: w.here.length ? `${plural(w.here.length, 'player')} here` : 'From packs', icon: 'deal' },
-    { to: '/football/trials', label: 'Trials', sub: w.trials.length ? `${w.trials.length} waiting` : STYLE_WORDS[w.week.style].name, icon: 'scope' },
-    { to: '/football/academy', label: 'Academy', sub: `${w.academy.filter((y) => y.link).length} of ${w.rules.academy}`, icon: 'book' },
-    { to: '/football/duty', label: 'Duty', sub: w.intl ? `Day ${w.intl.day} of ${BREAK_DAYS}` : 'Two a season', icon: 'map' },
+    { to: '/football/loans', label: 'Loans', sub: w.here.length ? `${plural(w.here.length, 'player')} here` : 'From packs', icon: 'deal', family: 'money' },
+    { to: '/football/trials', label: 'Trials', sub: STYLE_WORDS[w.week.style].name, icon: 'scope', family: 'people', count: w.trials.length ? `${w.trials.length} on trial` : undefined },
+    { to: '/football/academy', label: 'Academy', sub: `${w.academy.filter((y) => y.link).length} of ${w.rules.academy}`, icon: 'book', family: 'people' },
+    { to: '/football/duty', label: 'Duty', sub: w.intl ? `Day ${w.intl.day} of ${BREAK_DAYS}` : 'Two a season', icon: 'map', family: 'people' },
   ];
 }
 

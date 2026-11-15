@@ -37,8 +37,8 @@ export function DealsView({ c, act = {} }: { c: Club; act?: DealsActions }) {
         <span className="k-r k-q">{due ? <b style={{ color: GOLD }}>{due} to renew</b> : '4 weeks each'}</span>
       </div>
       <Doors two label="Deals">
-        <Door icon="deal" name="Loan market" ink={GOLD} value={leads ? `${leads} scouted` : 'scouts find players'} onClick={() => go('/football/market')} />
-        <Door icon="people" name="Loans" ink={LAV} value="from packs" onClick={() => go('/football/loans')} />
+        <Door icon="deal" name="Loan market" family="money" value={leads ? `${leads} scouted` : 'scouts find players'} onClick={() => go('/football/market')} />
+        <Door icon="people" name="Loans" family="money" value="from packs" onClick={() => go('/football/loans')} />
       </Doors>
       <Sect>Contracts</Sect>
       <div className="kb-rows">
