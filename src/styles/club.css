@@ -187,3 +187,9 @@
 /* Trials and the academy keep their moon, inside the lead, clear of the header's "?". */
 .kw-night { position: relative; min-height: 88px; }
 .kw-night .fbg-moon { right: 6px; top: 0; }
+/* the tree's lead: aim for a tech; waiting items as chips under the first era */
+.kt-aim { display: flex; align-items: center; gap: 12px; }
+.kt-aim > .k-act { flex: none; padding: 0 18px; }
+.kt-wait { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.kt-wait > .k-q { width: 100%; }
+.kt-aim-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }

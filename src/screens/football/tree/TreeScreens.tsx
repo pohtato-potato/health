@@ -2,7 +2,7 @@
 // projects on the Kaai skyline, the staff room and the board. Words in Atkinson Hyperlegible Next, numbers and titles
 // in Fraunces. Every state has a word beside its colour or line.
 import { seasonMoneyScale } from '../../../football/pyramid/shape';
-import type { CSSProperties, ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { ERAS, TECHS } from '../../../football/content/tree';
 import { BOARD } from '../../../football/content/season';
 import { PROJECTS } from '../../../football/content/projects';
@@ -73,16 +73,8 @@ export function TreeHome() {
         <span className="k-r"><b>{now.name}</b><span className="k-q">{doneNow} of 8{nextEra ? ` · then ${nextEra.name}` : ''}</span></span>
       </div>
       <Bar pct={(doneNow / 8) * 100} c={TREE_INK} label={`${doneNow} of 8 researched in ${now.name}`} />
-      <Waiting m={m} />
-      {target && (
-        <Panel ink="#f2c46d">
-          <PanelTop name={`Saving for ${target.name}`} c="#f2c46d" right={`${fmtCount(m.bank)} of ${m.cost(target.id)}`} />
-          <Bar pct={(m.bank / Math.max(1, m.cost(target.id))) * 100} c="#f2c46d" />
-          <span className="k-q">It is researched by itself once the bank covers it.</span>
-          <Action quiet sm onClick={() => void clearTarget()}>Stop saving for it</Action>
-        </Panel>
-      )}
-      {ERAS.map((e, i) => <Era key={e.id} m={m} id={e.id} n={i} />)}
+      <Aim m={m} target={target} />
+      <Eras m={m} skip={aimFor(m, target) ? undefined : 0} />
       <Note>Every tech has its own small picture. Filled is done, gold is within reach. Tap any to read it.</Note>
       <Sect>Around the tree</Sect>
       <Doors two label="The tree's rooms">
@@ -95,20 +87,106 @@ export function TreeHome() {
   );
 }
 
-/** What's waiting: a new era, eurekas, a boon pick, packs. Each a tappable panel. */
-function Waiting({ m }: { m: Model }) {
-  const items: ReactNode[] = [];
-  for (const e of m.erasUnseen) items.push(<Banner key={e} c={eraOf(e).colour} title={`Era ${ROMAN[ERAS.indexOf(eraOf(e))]} · ${eraOf(e).name}`} line="A new era is open." onClick={() => go('/football/era', { e })} />);
+/** The eras, in order. A leading run of eras already fully researched (a world-2 save arrives with several) folds
+ *  into one panel under the first era with work left, so that era comes straight after the lead; the panel opens
+ *  them in place. Waiting chips sit under the first era drawn. */
+function Eras({ m, skip }: { m: Model; skip?: number }) {
+  const [showDone, setShowDone] = useState(false);
+  const full = (id: EraId) => TECHS.filter((t) => t.era === id).every((t) => m.researched.includes(t.id));
+  let folded = 0;
+  while (folded < ERAS.length - 1 && full(ERAS[folded].id)) folded++;
+  const era = (i: number) => <Era key={ERAS[i].id} m={m} id={ERAS[i].id} n={i} />;
+  return (
+    <>
+      {era(folded)}
+      <Waiting m={m} skip={skip} />
+      {folded > 0 && (
+        <Panel ink={TREE_INK}>
+          <div className="kt-aim">
+            <span className="kt-aim-t">
+              <b style={{ color: TREE_INK }}>{folded === 1 ? `Era ${ROMAN[0]}` : `Eras ${ROMAN[0]}–${ROMAN[folded - 1]}`} · all researched</b>
+              <span className="k-q">{ERAS.slice(0, folded).map((e) => e.name).join(', ')}</span>
+            </span>
+            <button type="button" className="k-act sm quiet" aria-expanded={showDone} onClick={() => setShowDone((v) => !v)}>{showDone ? 'Hide' : 'Show'}</button>
+          </div>
+        </Panel>
+      )}
+      {showDone && ERAS.slice(0, folded).map((_, i) => era(i))}
+      {ERAS.slice(folded + 1).map((_, k) => era(folded + 1 + k))}
+    </>
+  );
+}
+
+/** The tech worth aiming for: the one being saved for, else the cheapest open one. */
+function aimFor(m: Model, target: TechDef | undefined): TechDef | undefined {
+  if (target) return target;
+  const open = TECHS.filter((t) => techState(t, m.researched) === 'open');
+  return open.sort((a, b) => m.cost(a.id) - m.cost(b.id))[0];
+}
+
+/** The lead's one glowing action (board three): aim for a tech, or keep saving for the one picked. When nothing
+ *  can be aimed for, the most pressing waiting item takes the slot. */
+function Aim({ m, target }: { m: Model; target: TechDef | undefined }) {
+  const t = aimFor(m, target);
+  if (!t) {
+    const first = waitingItems(m)[0];
+    if (!first) return null;
+    return (
+      <Panel ink={first.c}>
+        <b style={{ color: first.c }}>{first.title}</b>
+        <span className="k-q">{first.line}</span>
+        <button type="button" className="k-act wide kb-gold" onClick={first.go}>{first.verb}</button>
+      </Panel>
+    );
+  }
+  const cost = m.cost(t.id);
+  const saving = target?.id === t.id;
+  const covered = m.bank >= cost;
+  return (
+    <Panel ink="#f2c46d">
+      <div className="kt-aim">
+        <span className="kt-aim-t">
+          <b style={{ color: '#f2c46d' }}>{saving ? `Saving for ${t.name}` : t.name}</b>
+          <span className="k-q">{t.text}</span>
+        </span>
+        {!saving && <button type="button" className="k-act kb-gold" onClick={() => void researchTech(t.id)}>{covered ? 'Research it' : 'Aim for it'}</button>}
+      </div>
+      <span className="k-q">Costs {cost}, you have {fmtCount(m.bank)}.{saving ? ' It is researched by itself once the bank covers it.' : ''}</span>
+      <Bar pct={(m.bank / Math.max(1, cost)) * 100} c="#f2c46d" label={`${fmtCount(m.bank)} of ${cost} research`} />
+      {saving && <Action quiet sm onClick={() => void clearTarget()}>Stop saving for it</Action>}
+    </Panel>
+  );
+}
+
+type WaitItem = { key: string; c: string; title: string; chip: string; line: string; verb: string; go: () => void };
+/** What's waiting: a new era, eurekas, a boon pick, packs. */
+function waitingItems(m: Model): WaitItem[] {
+  const items: WaitItem[] = [];
+  for (const e of m.erasUnseen) {
+    const era = eraOf(e);
+    items.push({ key: e, c: era.colour, title: `Era ${ROMAN[ERAS.indexOf(era)]} · ${era.name}`, chip: `Era ${ROMAN[ERAS.indexOf(era)]} open`, line: 'A new era is open.', verb: 'See the new era', go: () => go('/football/era', { e }) });
+  }
   for (const id of m.eurekasUnseen.slice(0, 2)) {
     const t = TECHS.find((x) => x.id === id)!;
-    items.push(<Banner key={id} c="#ffe27a" title={`Eureka · ${t.name}`} line="It costs half now." onClick={() => go('/football/eureka', { id })} />);
+    items.push({ key: id, c: '#ffe27a', title: `Eureka · ${t.name}`, chip: `Eureka · ${t.name}`, line: 'It costs half now.', verb: 'See the eureka', go: () => go('/football/eureka', { id }) });
   }
-  if (m.boonPick) items.push(<Banner key="boon" c="#8fdcb6" title="Pick a boon for this season" line={`Boon ${m.boonPick > 3 ? 'extra' : `${m.boonPick} of 3`}`} onClick={() => go('/football/boon')} />);
-  if (m.packsWaiting.length) items.push(<Banner key="packs" c="#ff9a76" title={m.packsWaiting.length === 1 ? 'A pack to open' : `${m.packsWaiting.length} packs to open`} line="Five things inside each." onClick={() => go('/football/packs')} />);
-  return items.length ? <div className="kb-rows">{items}</div> : null;
+  if (m.boonPick) items.push({ key: 'boon', c: '#8fdcb6', title: 'Pick a boon for this season', chip: 'Pick a boon', line: `Boon ${m.boonPick > 3 ? 'extra' : `${m.boonPick} of 3`}`, verb: 'Pick a boon', go: () => go('/football/boon') });
+  if (m.packsWaiting.length) {
+    const n = m.packsWaiting.length;
+    items.push({ key: 'packs', c: '#ff9a76', title: n === 1 ? 'A pack to open' : `${n} packs to open`, chip: n === 1 ? '1 pack' : `${n} packs`, line: 'Five things inside each.', verb: 'Open packs', go: () => go('/football/packs') });
+  }
+  return items;
 }
-function Banner({ c, title, line, onClick }: { c: string; title: string; line: string; onClick: () => void }) {
-  return <Panel ink={c} onClick={onClick}><b style={{ color: c }}>{title}</b><span className="k-q">{line}</span></Panel>;
+/** Waiting items as one compact row of chips under the first era; `skip` drops the one already in the lead. */
+function Waiting({ m, skip }: { m: Model; skip?: number }) {
+  const items = waitingItems(m).filter((_, i) => i !== skip);
+  if (!items.length) return null;
+  return (
+    <div className="kt-wait" role="group" aria-label={`${items.length} waiting`}>
+      <span className="k-q">Waiting</span>
+      {items.map((x) => <button key={x.key} type="button" className="kb-chipbtn" style={{ ['--ink' as string]: x.c, color: x.c }} onClick={x.go}>{x.chip}</button>)}
+    </div>
+  );
 }
 
 /** Rows of three, two, three (the drawing's shape), ordered by how deep each tech sits inside its era. */
