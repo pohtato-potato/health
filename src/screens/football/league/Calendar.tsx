@@ -1,6 +1,7 @@
-// The season calendar (board 10): 42 days. Circle league, diamond Big Cup, square trophy, hexagon event, gold finals.
+// The season calendar (board 10): 42 days in world 1; 28 in world 2 (22 league matchdays, the Pair Cup; LG-4). Circle league, diamond Big Cup, square trophy, hexagon event, gold finals.
 // Played days show your result letter; the shape and the word say the rest, so colour is never alone.
-import { seasonDays, type DayPlan } from '../../../football/calendar';
+import { daysOf, leagueMatchdays, type DayPlan } from '../../../football/calendar';
+import { seasonName } from '../../../football/pyramid/redraw';
 import type { StoredMatch } from '../../../football/store/tables';
 import type { Result } from '../../../football/types';
 
@@ -16,19 +17,22 @@ export function resultsByDay(matches: StoredMatch[], season: number): Map<number
   return out;
 }
 
-export function Calendar({ season, today, matches, events = [], cont = false }: { season: number; today: number; matches: StoredMatch[]; events?: { day: number; label: string; result?: Result }[]; cont?: boolean }) {
+export function Calendar({ season, today, matches, events = [], cont = false, world = 1 }: { season: number; today: number; matches: StoredMatch[]; events?: { day: number; label: string; result?: Result }[]; cont?: boolean; world?: 1 | 2 }) {
+  const kind = (k: DayPlan['kind']) => (world === 2 && k === 'tiercup' ? 'Pair Cup' : KIND[k]);
+  const days = daysOf(world);
   const res = resultsByDay(matches, season);
   const counts = { W: 0, D: 0, L: 0 };
   for (const r of res.values()) counts[r]++;
   return (
-    <section className="fb-cal" aria-label={`Season ${season} calendar`}>
-      <div className="fb-row"><span className="fb-t">Season {season}</span><span className="fb-s">{counts.W} W · {counts.D} D · {counts.L} L</span></div>
+    <section className="fb-cal" aria-label={`${seasonName(season)} calendar`}>
+      <div className="fb-row"><span className="fb-t">{seasonName(season)}</span><span className="fb-s">{counts.W} W · {counts.D} D · {counts.L} L</span></div>
+      {world === 2 && <p className="fb-s">{days.length} days · {leagueMatchdays(2)} league matchdays</p>}
       <ol className="fb-calgrid">
-        {seasonDays().map((p) => {
+        {days.map((p) => {
           const r = res.get(p.day);
           const fin = p.kind === 'finals1' || p.kind === 'finals2';
           const ct = cont && p.cont;
-          const label = `Day ${p.day}, ${KIND[p.kind]}${ct ? ' and the Continental Cup' : ''}${p.round ? `: ${p.round}` : ''}${r ? `, ${WORD[r]}` : p.day === today ? ', today' : ''}`;
+          const label = `Day ${p.day}, ${kind(p.kind)}${ct ? ' and the Continental Cup' : ''}${p.round ? `: ${p.round}` : ''}${r ? `, ${WORD[r]}` : p.day === today ? ', today' : ''}`;
           return (
             <li key={p.day} className={`fb-calday${p.day === today ? ' now' : ''}${r ? ' played' : ''}`} aria-label={label}>
               <span className={`fb-res ${shapeOf(p)}${r ? ` r-${r}` : ' todo'}${fin ? ' fin' : ''}${ct ? ' ct' : ''}`} aria-hidden="true"><b>{r ?? p.day}</b></span>
@@ -54,7 +58,7 @@ export function Calendar({ season, today, matches, events = [], cont = false }: 
         <span><span className="fb-res c r-W"><b>W</b></span>Won</span><span><span className="fb-res c r-D"><b>D</b></span>Drew</span><span><span className="fb-res c r-L"><b>L</b></span>Lost</span>
       </div>
       <div className="fb-calkey">
-        <span><i className="fb-sh c" />League</span><span><i className="fb-sh d" />Big Cup</span><span><i className="fb-sh s" />Trophy</span><span><i className="fb-sh h" />Event</span><span><i className="fb-sh c fin" />Finals</span>{cont && <span><i className="fb-sh c ct" />Continental night (two matches)</span>}
+        <span><i className="fb-sh c" />League</span><span><i className="fb-sh d" />Big Cup</span><span><i className="fb-sh s" />{world === 2 ? 'Pair Cup' : 'Trophy'}</span><span><i className="fb-sh h" />Event</span><span><i className="fb-sh c fin" />Finals</span>{cont && <span><i className="fb-sh c ct" />Continental night (two matches)</span>}
       </div>
     </section>
   );

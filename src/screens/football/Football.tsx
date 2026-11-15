@@ -28,9 +28,14 @@ import { NightGround, ParcelView } from './Parcel';
 import { DeskDoor, DeskRoute } from './desk/Desk';
 import { MarketRoute } from './desk/Market';
 import { Atlas } from './world/Atlas';
+import { Redrawn, RedrawnDoor } from './world/Redrawn';
 import type { StoredMatch } from '../../football/store/tables';
 import { techDoor } from '../../football/tree/research';
 import { Moved } from '../reports/Moved';
+
+// Dev only: test-save helpers from the console (`await fbDev.devWorld2(6)`). The condition is false in a production
+// build, so the import and the helpers are left out of it.
+if (import.meta.env.DEV) void import('../../football/store/dev').then((m) => { (window as unknown as { fbDev: typeof m }).fbDev = m; });
 
 const SECTION: Record<string, FbSection> = { '/football': 'tonight', '/football/club': 'club', '/football/league': 'league', '/football/story': 'story' };
 
@@ -38,7 +43,7 @@ function TonightSection() {
   const t = useTonight();
   if (t === undefined) return null;
   if (t === null) return <p className="fb-s">Football starts once you found the club.</p>;
-  return <><TonightView t={t} /><DeskDoor t={t} /><CupsDoor /></>;
+  return <><RedrawnDoor /><TonightView t={t} /><DeskDoor t={t} /><CupsDoor /></>;
 }
 
 /** Matchday §4 (Fork B): the morning parcel on the first open after 4 am; the ground at night after Close the day. */
@@ -131,6 +136,7 @@ export function Football() {
   if (path === '/football/desk' || path.startsWith('/football/desk/')) return <DeskRoute />;
   if (path === '/football/cup' || path === '/football/cup/run' || path === '/football/cup/match') return <CupRoute path={path} />;
   if (path === '/football/market') return <MarketRoute />;
+  if (path === '/football/redrawn') return <FootballHome section="tonight" inner={{ title: 'The world redrawn', back: 'Tonight', to: '/football' }}><Redrawn /></FootballHome>;
   if (path === '/football/atlas') return <FootballHome section="league" inner={{ title: 'The atlas', back: 'League', to: '/football/league' }}><Atlas /></FootballHome>;
   if (path === '/football/club-page') return <FootballHome section="league" inner={{ title: 'A club', back: 'League', to: '/football/league' }}><ClubPage id={params.get('id') ?? ''} wiki={params.get('wiki') === '1'} /></FootballHome>;
   if (path === '/football/wrapped') return <WrappedRoute season={Number(params.get('season') ?? 1)} />;

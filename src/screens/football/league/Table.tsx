@@ -2,6 +2,8 @@
 import { clubById } from '../../../football/data/load';
 import { TIER_BANDS, tierName } from '../../../football/data/load';
 import { clubColour } from '../../../football/store/league';
+import { LEVEL_DOWN, LEVEL_UP } from '../../../football/pyramid/movement';
+import { shapeOf, type WorldVersion } from '../../../football/pyramid/shape';
 import { OWN } from '../../../football/store/season';
 import type { Row } from '../../../football/table';
 import type { Result, Tier } from '../../../football/types';
@@ -18,22 +20,26 @@ function Cut({ kind, text }: { kind: 'up' | 'po' | 'down'; text: string }) {
 
 /** `form` is Brabo's 28-day form rating, for the double-promotion line (Division Three and below). */
 /** `kitKnown`: whether a club's kit and crest are out of the fog (desk spec §4); an unknown club shows a hatched "?". */
-export function Table({ tier, rows, day, form, waiting = false, kitKnown }: { tier: Tier; rows: Row[]; day?: string; form?: number; waiting?: boolean; kitKnown?: (id: string) => boolean }) {
+/** `world`: the old six tiers of 18 (absent or 1), or world 2's eight divisions of 12 (LG-4). */
+export function Table({ tier, rows, day, form, waiting = false, kitKnown, world = 1, limit, onAll }: { tier: Tier; rows: Row[]; day?: string; form?: number; waiting?: boolean; kitKnown?: (id: string) => boolean; world?: WorldVersion; limit?: number; onAll?: () => void }) {
+  const shape = shapeOf({ world });
+  const last = shape.divisions.length;
+  const name = (t: number) => (world === 2 ? shape.name(t) : tierName(t as Tier));
   const out: React.ReactNode[] = [];
-  rows.forEach((r, i) => {
+  (limit ? rows.slice(0, limit) : rows).forEach((r, i) => {
     const pos = i + 1;
     if (pos === 3 && tier > 1) out.push(<Cut key="up" kind="up" text="Top two go up" />);
     if (pos === 7 && tier > 1) out.push(<Cut key="po" kind="po" text="3rd to 6th: playoffs" />);
-    if (pos === 16 && tier < 6) out.push(<Cut key="down" kind="down" text="Bottom three go down" />);
+    if (pos === rows.length - 2 && rows.length > 6 && (tier < last || world === 2)) out.push(<Cut key="down" kind="down" text={tier < last ? 'Bottom three go down' : world === 2 ? 'Bottom three make way for clubs from abroad' : 'Bottom three go down'} />);
     const me = r.id === OWN;
-    const name = me ? 'Brabo United' : clubById(r.id).name;
+    const club = me ? 'Brabo United' : clubById(r.id).name;
     out.push(
       <li key={r.id} className={`fb-trow${me ? ' me' : ''}`} style={{ '--k': clubColour(r.id) } as React.CSSProperties}>
-        <a href={`#/football/club-page?id=${encodeURIComponent(r.id)}`} aria-label={`${pos}, ${name}, ${r.pts} points${r.form.length ? `, form ${r.form.map((x) => WORD[x]).join(' ')}` : ''}`}>
+        <a href={`#/football/club-page?id=${encodeURIComponent(r.id)}`} aria-label={`${pos}, ${club}, ${r.pts} points${r.form.length ? `, form ${r.form.map((x) => WORD[x]).join(' ')}` : ''}`}>
           <span className="fb-tpos">{pos}</span>
           {me || !kitKnown || kitKnown(r.id) ? <span className="fb-tring" aria-hidden="true" /> : <Unknown size={20} />}
           <span className="fb-tname">
-            <b>{name}{me && <em>You</em>}</b>
+            <b>{club}{me && <em>You</em>}</b>
             {me && waiting && <span className="fb-s md-tbp">Last night: to be played</span>}
             <span className="fb-form" aria-hidden="true">{r.form.length ? r.form.map((x, k) => <ResultMark key={k} r={x} />) : <span className="fb-s">No games yet</span>}</span>
           </span>
@@ -43,12 +49,29 @@ export function Table({ tier, rows, day, form, waiting = false, kitKnown }: { ti
     );
   });
   return (
-    <section className="fb-table" style={{ '--t': `var(--fb-t${tier})` } as React.CSSProperties} aria-label={`${tierName(tier)} table`}>
-      <div className="fb-row"><span className="fb-t fb-tiername">{tierName(tier)}</span>{day && <span className="fb-s">{day}</span>}</div>
+    <section className="fb-table" style={{ '--t': `var(--fb-t${tier})` } as React.CSSProperties} aria-label={`${name(tier)} table`}>
+      <div className="fb-row"><span className="fb-t fb-tiername">{name(tier)}</span>{day && <span className="fb-s">{day}</span>}</div>
       <ol className="fb-trows">{out}</ol>
+      {onAll && limit && rows.length > limit && <button type="button" className="fb-btn sm fb-seeall" onClick={onAll}>See all {rows.length}</button>}
+      {!limit && world === 1 && <Notes1 tier={tier} rows={rows} form={form} />}
+      {!limit && world === 2 && (
+        <>
+          {tier > 2 && <p className="fb-s">The level check: win the title, and if your last four weeks would win more than {Math.round(LEVEL_UP * 100)}% of nights in {name(tier - 1)}, you go straight past it to {name(tier - 2)}.</p>}
+          {tier < last - 1 && <p className="fb-s">Go down, and if those weeks would win under {Math.round(LEVEL_DOWN * 100)}% of nights in {name(tier + 1)}, you drop past it to {name(tier + 2)}.</p>}
+          {tier === last && <p className="fb-s">The bottom of the pyramid. The bottom three swap with the clubs abroad nearest this level; you never leave it that way, the club above you goes instead.</p>}
+          {tier === 1 && <p className="fb-s">The top of the pyramid: no promotion, only the title.</p>}
+        </>
+      )}
+    </section>
+  );
+}
+
+function Notes1({ tier, rows, form }: { tier: Tier; rows: Row[]; form?: number }) {
+  return (
+    <>
       {tier >= 3 && <p className="fb-s">Double promotion: champions whose form over the last four weeks is above {tierName((tier - 1) as Tier)}’s top rating ({TIER_BANDS[String(tier - 1)][1]}) go straight up to {tierName((tier - 2) as Tier)}.{rows[0]?.id === OWN && form != null && rows[0].p > 0 ? ` You top the table with form ${Math.round(form)}: ${form > TIER_BANDS[String(tier - 1)][1] ? 'on course for it.' : 'not enough yet.'}` : ''}</p>}
       {tier === 6 && <p className="fb-s">No relegation from here. The bottom club may fold, and a new one is founded.</p>}
       {tier === 1 && <p className="fb-s">The top of the pyramid: no promotion, only the title.</p>}
-    </section>
+    </>
   );
 }
