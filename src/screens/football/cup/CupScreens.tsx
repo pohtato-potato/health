@@ -2,6 +2,7 @@
 // tactics-board world: the run in progress, "How your deck was dealt" before a new run, the twelve cups with their
 // silverware, and the record book (spec §2, §3.5, §9, §11).
 import { useEffect, useState, type CSSProperties } from 'react';
+import type { CupDef } from '../../../football/cup/ladder';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { cupsOpen, type CupBook } from '../../../football/cup/book';
 import { titleOf } from '../../../football/cup/cards';
@@ -10,19 +11,23 @@ import { cupByN, CUPS } from '../../../football/cup/ladder';
 import { dealToday, loadBook, loadRun, startCupRun } from '../../../football/cup/store';
 import type { Card } from '../../../football/cup/types';
 import { clubById } from '../../../football/data/load';
-import { go } from '../../../router';
+import { go, useRoute } from '../../../router';
 import { AXIS_INK } from '../../../ui/inks';
+import { Panel, Sect } from '../../../ui/kit/Kit';
 import { Aurora } from '../FootballHome';
-import { Crest, inkOf, Slab, Trophy } from './CupArt';
+import { Crest, inkOf, Trophy } from './CupArt';
+import { CupAct, CupHead, CUPS_HOW } from './CupKit';
 import { RunRoute, whereNow } from './CupRun';
 
 /** "One-two ×2, Overlap run". */
 const cardList = (cs: Card[]) => [...new Set(cs.map((c) => titleOf(c.kind)))].map((t) => { const k = cs.filter((c) => titleOf(c.kind) === t).length; return k > 1 ? `${t} ×${k}` : t; }).join(', ');
 const LEVEL: Record<string, string> = { basic: 'Basic', good: 'Good', great: 'Great', punt: 'Punts' };
 const twistLine = (t: string, more = false) => (t === 'None' ? 'No twist: the first cup.' : `Twist: ${t}${more ? ', and every earlier cup\'s' : ''}.`);
+/** The value-scale colour of a seven-day number: great green, good blue, basic orange (cv-deal). */
+const levelInk = (avg: number | null) => (avg == null ? '#c4c1cf' : avg >= 15 ? '#8fdcb6' : avg >= 11 ? '#93b8f0' : '#ff9a4d');
 const wonCups = (b: CupBook | undefined) => CUPS.filter((c) => (b?.cups[c.n]?.won ?? 0) > 0);
 
-/** The Cups door on Football: the cup you are on, a run in progress, the cups won. */
+/** The Cups door on Tonight: a filled panel in the cup's colour with its trophy and one live line. */
 export function CupsDoor() {
   const run = useLiveQuery(async () => (await loadRun()) ?? null, []);
   const book = useLiveQuery(loadBook, []);
@@ -31,146 +36,109 @@ export function CupsDoor() {
   const on = cupByN(live ? live.cup : cupsOpen(book));
   const won = wonCups(book);
   return (
-    <section className="fb-card cup-door" style={{ '--cup': on.colour } as CSSProperties} aria-labelledby="cup-door-h">
-      <div className="cup-door-top">
-        <Trophy kind={on.silver} colour={on.colour} size={52} />
-        <div>
-          <h2 id="cup-door-h" className="cup-h">Cups</h2>
-          <p className="fb-s">{live ? `A run of ${on.name} in progress.` : `The cup you are on: ${on.name}.`}</p>
-        </div>
-      </div>
-      {live ? (
-        <p className="fb-s">{whereNow(live)} · fitness {live.fitness} · {live.coins} coins · {live.path.length} of {live.map.rows} stops cleared.</p>
-      ) : (
-        <p className="fb-s">A run is a path of matches, rests and stops with a deck dealt from your last seven days. It never touches the league.</p>
-      )}
-      {won.length > 0 && (
-        <div className="cup-door-won" aria-label={`Cups won: ${won.map((c) => c.name).join(', ')}`}>
-          <span className="fb-s">Won</span>
-          {won.map((c) => <Trophy key={c.n} kind={c.silver} colour={c.colour} size={32} />)}
-        </div>
-      )}
-      <div className="cup-row">
-        <button type="button" className="fb-btn pri" onClick={() => go(live || (run && run.run.over) ? '/football/cup/run' : '/football/cup')}>
-          {live ? 'Carry on the run' : run?.run.over ? 'See how the run ended' : 'Start a run'}
-        </button>
-        <button type="button" className="fb-btn" onClick={() => go('/football/cup')}>{book.runs ? 'Cups and record book' : 'The twelve cups'}</button>
-      </div>
-    </section>
+    <Panel ink={on.colour} onClick={() => go(live ? '/football/cup/run' : '/football/cup')} label={live ? `Cups: a run of ${on.name} in progress` : `Cups: ${on.name}`} className="cup-door">
+      <span className="cup-opt-l">
+        <Trophy kind={on.silver} colour={on.colour} size={44} />
+        <span className="cup-grow">
+          <b className="k-lb">Cups</b><br />
+          <span className="cup-door-v">{live ? `${on.name}: ${whereNow(live).toLowerCase()}, fitness ${live.fitness}` : on.name}</span><br />
+          <span className="k-q">{live ? `${live.path.length} of ${live.map.rows} stops cleared` : won.length ? `${won.length} won · a card-and-map side game` : 'A card-and-map side game'}</span>
+        </span>
+      </span>
+    </Panel>
   );
 }
 
-/** "How your deck was dealt" (spec §3.5). */
-export function DealView({ deal, title }: { deal: Deal; title: string }) {
+/** "How your deck was dealt" (spec §3.5): one filled row per axis in its ink, the seven-day number in the value-scale colour. */
+export function DealView({ deal, title = "How your deck was dealt" }: { deal: Deal; title?: string }) {
   return (
     <section className="cup-deal" aria-label={title}>
-      <h2 className="cup-h">{title}</h2>
-      <p className="cup-q">Your last seven nights, as the league match scored them. Fifteen or more is great, 11 to 14 good, under 11 basic.</p>
       <ul className="cup-dl">
         {deal.rows.map((r) => (
-          <li key={r.axis} className="cup-dr" style={{ '--ink': AXIS_INK[r.axis] } as CSSProperties}>
-            <span><b className="cup-ax">{r.axis}</b><br /><span className="cup-q">{LEVEL[r.level]} · {cardList(r.cards)}</span></span>
-            <span className="cup-q">7-day</span>
-            <b className={`cup-n lv-${r.level}`}>{r.avg != null ? Math.floor(r.avg) : '–'}</b>
-            <span className="cup-why">{r.why}</span>
+          <li key={r.axis}>
+            <Panel ink={AXIS_INK[r.axis]} className="cup-dr">
+              <span className="cup-grow"><b className="k-lb">{r.axis}</b><br /><span className="k-q">{LEVEL[r.level]} · {cardList(r.cards)}</span></span>
+              <span className="k-q cup-nw">7-day</span>
+              <b className="cup-n" style={{ color: levelInk(r.avg) }}>{r.avg != null ? Math.floor(r.avg) : '–'}</b>
+            </Panel>
           </li>
         ))}
         {deal.extras.map((e) => (
-          <li key={e.card.id} className="cup-dr extra" style={{ '--ink': inkOf(e.card) } as CSSProperties}>
-            <span><b className="cup-ax">{e.kind === 'empty' ? 'An empty day' : e.kind === 'record' ? 'A record' : e.kind === 'loan' ? 'On loan' : 'Every ring closed'}</b><br /><span className="cup-q">{e.why}</span></span>
-            <span />
-            <b className="cup-n">+1</b>
+          <li key={e.card.id}>
+            <Panel ink={inkOf(e.card)} className="cup-dr extra">
+              <span className="cup-grow"><b className="k-lb">{e.kind === 'empty' ? 'An empty day' : e.kind === 'record' ? 'A record' : e.kind === 'loan' ? 'On loan' : 'Every ring closed'}</b><br /><span className="k-q">{e.why}</span></span>
+              <b className="cup-n">+1</b>
+            </Panel>
           </li>
         ))}
       </ul>
-      <p className="cup-q">{deal.cards.length} cards in all.</p>
+      <p className="cup-q">{deal.cards.length} cards in all. {deal.rows.filter((r) => r.why && !/^7 days logged/.test(r.why)).map((r) => `${r.axis}: ${r.why}`).join(' ')}</p>
     </section>
   );
 }
 
-/** /football/cup: the run in progress, or a new run; the twelve cups; the record book. */
+const recLine = (c: CupDef, b: CupBook) => {
+  const rec = b.cups[c.n];
+  if (!rec) return '';
+  return `${rec.won ? `Won ${rec.won}×` : `Furthest: ${rec.furthest} stops`}${rec.fastest != null ? ` · fastest win ${rec.fastest} cards` : ''} · ${rec.runs} run${rec.runs === 1 ? '' : 's'}`;
+};
+
+/** /football/cup: the cabinet. The cup you are on leads; then the twelve cups, then the record book. */
 export function CupsPage() {
   const run = useLiveQuery(async () => (await loadRun()) ?? null, []);
   const book = useLiveQuery(loadBook, []);
-  const [deal, setDeal] = useState<Deal | null>(null);
-  const [cup, setCup] = useState<number | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState('');
-  useEffect(() => { void dealToday().then(setDeal).catch(() => setErr('Could not read your last seven days.')); }, []);
   if (run === undefined || !book) return null;
   const open = cupsOpen(book);
-  const chosen = cup ?? open;
   const live = run && !run.run.over ? run.run : null;
-  const start = async () => {
-    setBusy(true);
-    try { await startCupRun(chosen); go('/football/cup/run'); } catch { setErr('Could not start a run.'); setBusy(false); }
-  };
+  const lead = cupByN(live ? live.cup : open);
   const combos = Object.entries(book.combos).sort((a, b) => b[1] - a[1]);
+  const won = wonCups(book);
   return (
-    <div className="cup-board cup-cups">
-      <div className="cup-top">
-        <button type="button" className="cup-btn ghost sm" onClick={() => go('/football')}><span>Back</span></button>
-        <Slab>THE CUPS</Slab>
+    <div className="cup-board cup-cups" style={{ '--cup': lead.colour } as CSSProperties}>
+      <CupHead back="Football" onBack={() => go('/football')} title="THE CUPS" help={CUPS_HOW} />
+      <div className="cup-lead">
+        <Trophy kind={lead.silver} colour={lead.colour} size={132} label={lead.name} />
+        <h2 className="cup-h1" style={{ color: lead.colour }}>{lead.name}</h2>
+        <p className="cup-under">{live ? `A run in progress: ${whereNow(live).toLowerCase()} · fitness ${live.fitness} · ${live.coins} coins` : run?.run.over ? 'Your last run has ended.' : `The cup you are on. ${twistLine(lead.twist, lead.n > 1)}`}</p>
       </div>
-      {live ? (
-        <section className="cup-sig" style={{ '--cup': cupByN(live.cup).colour } as CSSProperties}>
-          <p className="cup-cap">A run in progress</p>
-          <p className="cup-h">{cupByN(live.cup).name}</p>
-          <p className="cup-q">{whereNow(live)} · fitness {live.fitness} · {live.coins} coins · {live.path.length} of {live.map.rows} stops cleared. One run at a time.</p>
-          <button type="button" className="cup-btn" onClick={() => go('/football/cup/run')}><span>Carry on</span></button>
-        </section>
-      ) : run?.run.over ? (
-        <section className="cup-sig">
-          <p className="cup-cap">Your last run has ended</p>
-          <button type="button" className="cup-btn" onClick={() => go('/football/cup/run')}><span>See how it ended</span></button>
-        </section>
-      ) : (
-        <>
-          {deal && <DealView deal={deal} title="How your deck was dealt" />}
-          <div className="cup-sig" style={{ '--cup': cupByN(chosen).colour } as CSSProperties}>
-            <p className="cup-cap">Your run</p>
-            <p className="cup-h">{cupByN(chosen).name}</p>
-            <p className="cup-q">{twistLine(cupByN(chosen).twist, chosen > 1)}</p>
-            <button type="button" className="cup-btn" disabled={busy || !deal} onClick={() => void start()}><span>Start the run</span></button>
-          </div>
-        </>
-      )}
-      {err && <p role="alert">{err}</p>}
+      {live ? <CupAct onClick={() => go('/football/cup/run')}>Carry on the run</CupAct>
+        : run?.run.over ? <CupAct onClick={() => go('/football/cup/run')}>See how it ended</CupAct>
+          : <CupAct onClick={() => go('/football/cup', { n: String(open) })}>Start a run</CupAct>}
 
-      <h2 className="cup-h">The twelve cups</h2>
-      <p className="cup-q">Win a cup to open the next. Each adds a twist and keeps the earlier ones.</p>
+      <Sect>The twelve cups</Sect>
       <ol className="cup-ladder">
         {CUPS.map((c) => {
-          const rec = book.cups[c.n];
           const isOpen = c.n <= open;
-          const pickable = isOpen && !live && !run?.run.over;
+          const r = recLine(c, book);
+          const inner = (
+            <span className="cup-opt-l">
+              <Trophy kind={c.silver} colour={c.colour} size={36} />
+              <span className="cup-grow">
+                <b className="k-lb">{c.name}</b><br />
+                <span className="k-q">{isOpen ? (r || (c.n === open ? 'Playing now' : 'Open')) : 'Locked: win the cup before it'}</span>
+              </span>
+            </span>
+          );
           return (
-            <li key={c.n} className={`cup-lad ${isOpen ? '' : 'shut'} ${chosen === c.n && pickable ? 'sel' : ''}`} style={{ '--cup': c.colour } as CSSProperties}>
-              <button type="button" disabled={!pickable} aria-pressed={chosen === c.n} onClick={() => setCup(c.n)}>
-                <Trophy kind={c.silver} colour={isOpen ? c.colour : '#5d6170'} size={40} />
-                <span>
-                  <b>{c.n}. {c.name}</b><br />
-                  <span className="cup-q">{isOpen ? twistLine(c.twist) : 'Opens when you win the cup before it.'}</span>
-                  {rec && <><br /><span className="cup-q">{rec.won ? `Won ${rec.won}×` : `Furthest: ${rec.furthest} stops`}{rec.fastest != null ? ` · fastest win ${rec.fastest} cards` : ''} · {rec.runs} run{rec.runs === 1 ? '' : 's'}</span></>}
-                  {isOpen && c.note && <><br /><span className="cup-q">{c.note}</span></>}
-                </span>
-              </button>
+            <li key={c.n}>
+              {isOpen ? <Panel ink={c.colour} onClick={() => go('/football/cup', { n: String(c.n) })} label={`${c.name}: ${r || 'open'}`}>{inner}</Panel>
+                : <Panel ink={c.colour} className="cup-shut">{inner}</Panel>}
             </li>
           );
         })}
       </ol>
 
-      <h2 className="cup-h">The record book</h2>
-      {book.runs === 0 ? <p className="cup-q">Every run counts here, paid or not: furthest stop in each cup, fastest win, biggest scoreline, clubs beaten and combinations landed.</p> : (
+      <Sect>The record book</Sect>
+      {book.runs === 0 ? <p className="cup-q">Every run counts here, paid or not.</p> : (
         <>
-          <ul className="cup-rows">
-            <li><span>Runs</span><b>{book.runs}</b></li>
-            <li><span>Cups won</span><b>{wonCups(book).length}</b></li>
-            <li><span>Biggest scoreline</span><b>{book.biggest ? `${book.biggest.for}–${book.biggest.against} v ${book.biggest.club}` : '–'}</b></li>
-            <li><span>Clubs beaten</span><b>{book.beaten.length}</b></li>
-          </ul>
+          <div className="cup-recs">
+            <Panel ink="#ede6da"><b className="cup-n">{book.runs}</b><span className="k-q">runs</span></Panel>
+            <Panel ink="#f2c46d"><b className="cup-n">{won.length}</b><span className="k-q">cups won</span></Panel>
+            <Panel ink={AXIS_INK.Power}><b className="cup-n">{book.biggest ? `${book.biggest.for}–${book.biggest.against}` : '–'}</b><span className="k-q">{book.biggest ? `biggest, v ${book.biggest.club}` : 'biggest scoreline'}</span></Panel>
+            <Panel ink={AXIS_INK.Pace}><b className="cup-n">{book.beaten.length}</b><span className="k-q">clubs beaten</span></Panel>
+          </div>
           {book.beaten.length > 0 && <div className="cup-beaten" aria-label="Clubs beaten">{book.beaten.slice(-24).map((id) => <span key={id} title={safeName(id)}><Crest id={id} size={30} /></span>)}</div>}
-          {combos.length > 0 && <><p className="cup-cap">Combinations landed</p><ul className="cup-rows">{combos.map(([k, v]) => <li key={k}><span>{k}</span><b>{v}</b></li>)}</ul></>}
+          {combos.length > 0 && <Panel ink={AXIS_INK.Routine}><b className="k-lb">Combinations landed</b><ul className="cup-rows">{combos.map(([k, v]) => <li key={k}><span>{k}</span><b>{v}</b></li>)}</ul></Panel>}
         </>
       )}
     </div>
@@ -178,11 +146,63 @@ export function CupsPage() {
 }
 const safeName = (id: string) => { try { return clubById(id).name; } catch { return id; } };
 
+/** /football/cup?n=…: one cup's page. Its trophy leads; its twist, your record there, and the deck your week deals. */
+export function CupPage({ n }: { n: number }) {
+  const run = useLiveQuery(async () => (await loadRun()) ?? null, []);
+  const book = useLiveQuery(loadBook, []);
+  const [deal, setDeal] = useState<Deal | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  useEffect(() => { void dealToday().then(setDeal).catch(() => setErr('Could not read your last seven days.')); }, []);
+  if (run === undefined || !book) return null;
+  const c = cupByN(n);
+  const open = cupsOpen(book);
+  const live = run && !run.run.over ? run.run : null;
+  const ended = !!run?.run.over;
+  const back = () => go('/football/cup', undefined, { replace: true });
+  if (n > open) { back(); return null; }
+  const start = async () => {
+    setBusy(true);
+    try { await startCupRun(n); go('/football/cup/run'); } catch { setErr('Could not start a run.'); setBusy(false); }
+  };
+  const r = recLine(c, book);
+  return (
+    <div className="cup-board cup-one" style={{ '--cup': c.colour } as CSSProperties}>
+      <CupHead back="Cups" onBack={back} title={c.name.toUpperCase()} help={CUPS_HOW} />
+      <div className="cup-lead">
+        <Trophy kind={c.silver} colour={c.colour} size={120} label={c.name} />
+        <p className="cup-under cup-centre">{c.n} of {CUPS.length} · {twistLine(c.twist, c.n > 1)}</p>
+      </div>
+      {(r || c.note) && (
+        <Panel ink={c.colour}>
+          {r && <><b className="k-lb">Your record here</b><span>{r}</span></>}
+          {c.note && <span className="k-q">{c.note}</span>}
+        </Panel>
+      )}
+      {live || ended ? (
+        <>
+          <p className="cup-q">One run at a time. {live ? `${cupByN(live.cup).name} is in progress.` : 'Your last run has ended; see it first.'}</p>
+          <CupAct onClick={() => go('/football/cup/run')}>{live ? 'Carry on the run' : 'See how it ended'}</CupAct>
+        </>
+      ) : (
+        <>
+          <Sect>How your deck was dealt</Sect>
+          {deal ? <DealView deal={deal} /> : <p className="cup-q">Dealing from your last seven days…</p>}
+          {err && <p role="alert">{err}</p>}
+          <CupAct disabled={busy || !deal} onClick={() => void start()}>Start the run</CupAct>
+        </>
+      )}
+    </div>
+  );
+}
+
 /** The route shell: the tactics board behind every cup screen. */
 export function CupRoute({ path }: { path: string }) {
+  const { params } = useRoute();
+  const n = Number(params.get('n') ?? 0);
   return (
     <Aurora className="cup-world">
-      <main className="fb-page cup-page">{path === '/football/cup' ? <CupsPage /> : <RunRoute />}</main>
+      <main className="fb-page cup-page">{path === '/football/cup' ? (n ? <CupPage key={n} n={n} /> : <CupsPage />) : <RunRoute />}</main>
     </Aurora>
   );
 }

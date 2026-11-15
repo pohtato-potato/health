@@ -109,7 +109,16 @@ function valueOf(c: Card): [string, string] {
     default: return ['', ''];
   }
 }
-const ARROWS = { basic: '▲', good: '▲▲', great: '▲▲▲' };
+const LEVEL_N = { basic: 1, good: 2, great: 3 } as const;
+/** The level as drawn marks (one to three small peaks), never typed characters. */
+export function LevelMarks({ level, size = 9 }: { level: Card['level']; size?: number }) {
+  const n = LEVEL_N[level];
+  return (
+    <svg className="cup-lv" width={n * (size + 3)} height={size} viewBox={`0 0 ${n * (size + 3)} ${size}`} aria-hidden="true">
+      {Array.from({ length: n }, (_, i) => <path key={i} d={`M${i * (size + 3)} ${size}L${i * (size + 3) + size / 2} 0L${i * (size + 3) + size} ${size}z`} fill="currentColor" />)}
+    </svg>
+  );
+}
 
 /** A move card. `cost` overrides the printed cost (a free pass); `note` is a line under the card (a preview, a price). */
 export function MoveCard({ c, cost, off, note, noteKind, className, small }: { c: Card; cost?: number; off?: boolean; note?: string; noteKind?: string; className?: string; small?: boolean }) {
@@ -123,13 +132,59 @@ export function MoveCard({ c, cost, off, note, noteKind, className, small }: { c
       </span>
       <span className="cup-cd-nm"><span>{cardName(c)}</span></span>
       <span className="cup-cd-ft">
-        <span className="cup-cd-lv" aria-hidden="true">{c.kind === 'punt' ? '' : ARROWS[c.level]}</span>
+        <span className="cup-cd-lv" aria-hidden="true">{c.kind === 'punt' ? null : <LevelMarks level={c.level} />}</span>
         <span className="cup-cd-val">{val}<small>{lab}</small></span>
       </span>
     </span>
   );
   return note ? <span className="cup-cdw">{card}<span className={`cup-cd-note k-${noteKind ?? ''}`}>{note}</span></span> : card;
 }
+
+/** What the compact card says under its number, in words that fit a fifth of the screen. */
+const SHORT_LAB: Record<string, string> = { SHOT: 'Shot', COVER: 'Cover', PASS: 'Pass', CARRY: 'Carry', RECYCLE: 'Recycle', STAMINA: 'Stamina', NEXT: 'Next', STAYS: 'Stays', ANY: 'Any', FIT: 'Fit', BUILD: 'Build', ATTACK: 'Attack' };
+
+/**
+ * The compact move card for the hand: five fit across a 340 px screen. Its frame, ink, cost, drawing, level and value
+ * tell the card at a glance; a tap opens it in full above the hand (the name, what it does, what it would do now).
+ */
+export function CompactCard({ c, cost, off, sel }: { c: Card; cost?: number; off?: boolean; sel?: boolean }) {
+  const ink = inkOf(c);
+  const [val, lab] = valueOf(c);
+  return (
+    <span className={`cup-cc ${frameOf(c)} ${c.level === 'great' ? 'great' : ''} ${off ? 'off' : ''} ${sel ? 'sel' : ''}`} style={{ '--ink': ink, color: ink } as CSSProperties}>
+      <span className="cup-cc-cost" aria-hidden="true">{cost ?? baseCost(c.kind)}</span>
+      {c.kind !== 'punt' && <span className="cup-cc-lv" aria-hidden="true"><LevelMarks level={c.level} size={7} /></span>}
+      <span className="cup-cc-art" aria-hidden="true">
+        <svg viewBox="0 0 100 70" fill="none" stroke="currentColor" strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round">{ART[artFor(c)]}</svg>
+      </span>
+      <span className="cup-cc-val" aria-hidden="true">{val && <b>{val}</b>}<small>{SHORT_LAB[lab] ?? lab}</small></span>
+    </span>
+  );
+}
+
+// --- the map's marks, drawn ---------------------------------------------------------------------------------------
+export type MarkKind = 'match' | 'elite' | 'rest' | 'market' | 'event' | 'final';
+const MARK_D: Record<MarkKind, string> = {
+  // a ball
+  match: 'M0 -7a7 7 0 1 0 0.01 0zM0 -3.2l3 2.2-1.1 3.5h-3.8L-3 -1z',
+  // a star
+  elite: 'M0 -8l2.3 5 5.4.6-4 3.7 1.1 5.4L0 4l-4.8 2.7 1.1-5.4-4-3.7 5.4-.6z',
+  // a cross: the physio
+  rest: 'M-2.2 -7h4.4v4.8H7v4.4H2.2V7h-4.4V2.2H-7v-4.4h4.8z',
+  // a question mark, drawn
+  market: 'M-4 -3.5a4 4 0 1 1 6 3.4c-1.4.8-2 1.6-2 3.1M0 6.2v.4',
+  event: 'M-4 -3.5a4 4 0 1 1 6 3.4c-1.4.8-2 1.6-2 3.1M0 6.2v.4',
+  // a crown
+  final: 'M-7.5 5h15M-7.5 5l-1-9 4.5 4 4-6 4 6 4.5-4-1 9z',
+};
+const MARK_FILL: Record<MarkKind, boolean> = { match: false, elite: true, rest: true, market: false, event: false, final: false };
+/** A stop's mark at (x, y), drawn in one line weight. */
+export function StopMark({ kind, x = 0, y = 0, ink, scale = 1 }: { kind: MarkKind; x?: number; y?: number; ink: string; scale?: number }) {
+  return <path d={MARK_D[kind]} transform={`translate(${x} ${y}) scale(${scale})`} fill={MARK_FILL[kind] ? ink : 'none'} stroke={ink} strokeWidth={MARK_FILL[kind] ? 0.8 : 1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" />;
+}
+export const MarkIcon = ({ kind, ink, size = 20 }: { kind: MarkKind; ink: string; size?: number }) => (
+  <svg viewBox="-10 -10 20 20" width={size} height={size} aria-hidden="true" style={{ flex: 'none', verticalAlign: 'middle' }}><StopMark kind={kind} ink={ink} /></svg>
+);
 
 // --- silverware --------------------------------------------------------------------------------------------------
 const SILVER: Record<Silverware, string> = {
