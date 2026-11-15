@@ -207,14 +207,16 @@ function FullTime({ r, st, onPick }: { r: RunState; st: MatchStop; onPick: (i: n
       <CupHead back="Cups" onBack={toCups} title={`FULL TIME · ${labelOf(r, st.node).toUpperCase()}`} />
       <ScoreRow s={s} />
       {p && <p className="cup-q">{p.us.filter(Boolean).length}–{p.them.filter(Boolean).length} on penalties.</p>}
+      {/* Tidy: the match in five numbers, three across, so the cards and the action fit one screen at 340 × 700. */}
       <Panel ink="#d9e8f3">
-        <ul className="cup-rows">
+        <ul className="cup-stats">
           <li><span>Moves built</span><b>{finishes.length}</b></li>
-          <li><span>Combinations</span><b>{combos.length ? `${combos.length} · ${[...new Set(combos)].slice(0, 2).join(', ')}` : '0'}</b></li>
+          <li><span>Combinations</span><b>{combos.length}</b></li>
           <li><span>Best chance</span><b>{best || '–'}</b></li>
           <li><span>Fitness</span><b>{s.fit0 ?? r.fitness} to {r.fitness}</b></li>
           <li><span>Coins</span><b>+{st.offer!.coins}</b></li>
         </ul>
+        {combos.length > 0 && <p className="k-q cup-stats-more">{[...new Set(combos)].slice(0, 2).join(', ')}</p>}
       </Panel>
       <Sect>Pick one for the run</Sect>
       <div className="cup-offer" role="radiogroup" aria-label="Pick one card for the run">
@@ -226,8 +228,12 @@ function FullTime({ r, st, onPick }: { r: RunState; st: MatchStop; onPick: (i: n
       </div>
       {sel != null ? <p><b>{cardName(st.offer!.cards[sel])}.</b> <span className="cup-q">{longText(st.offer!.cards[sel])}</span></p> : <p className="cup-q">Tap a card to read it.</p>}
       <span className="cup-grow" />
-      {sel != null && <CupAct onClick={() => onPick(sel)}>Take {cardName(st.offer!.cards[sel])}</CupAct>}
-      <CupAct quiet={sel != null} onClick={() => onPick(null)}>Skip the card</CupAct>
+      {sel != null ? (
+        <div className="cup-pair">
+          <CupAct onClick={() => onPick(sel)}>Take {cardName(st.offer!.cards[sel])}</CupAct>
+          <CupAct quiet onClick={() => onPick(null)}>Skip</CupAct>
+        </div>
+      ) : <CupAct onClick={() => onPick(null)}>Skip the card</CupAct>}
     </div>
   );
 }
@@ -337,11 +343,13 @@ function Stall({ r, st, onBuy, onLeave }: { r: RunState; st: Extract<Stop, { kin
           </button>
         ))}
       </div>
-      {item ? (
+      {/* Tidy: a chosen card's words and its buy sit right under the cards, so the action is in view at 340 × 700. */}
+      {item && (
         <Panel ink="#f2c46d">
           <p><b>{cardName(item.card)}.</b> <span className="cup-q">{longText(item.card)}</span></p>
+          <CupAct disabled={r.coins < item.price} onClick={() => { onBuy({ card: read! }); setRead(null); }}>{r.coins < item.price ? 'Not enough coins' : `Buy for ${item.price}`}</CupAct>
         </Panel>
-      ) : <p className="cup-q">Tap a card to read it.</p>}
+      )}
       {h && hd && (
         <Panel ink="#f2c46d" onClick={h.sold || r.coins < h.price ? undefined : () => onBuy({ heirloom: true })} label={`Buy ${hd.name} for ${h.price} coins`} className={h.sold || r.coins < h.price ? 'cup-dim' : undefined}>
           <span className="cup-opt-l"><HeirloomDrawing art={hd.art} colour="#f2c46d" size={40} /><span className="cup-grow"><b className="k-lb">{hd.name}</b><br /><span className="k-q">{hd.rule}</span></span><b className="cup-price">{h.sold ? 'Yours' : h.price}</b></span>
@@ -351,7 +359,6 @@ function Stall({ r, st, onBuy, onLeave }: { r: RunState; st: Extract<Stop, { kin
         <span className="cup-opt-l"><span className="cup-grow"><b className="k-lb">Leave a card behind</b><br /><span className="k-q">{st.stock.remove.used ? 'Done' : r.deck.length <= 8 ? 'Your deck is as small as it goes' : 'Take one card out of your deck'}</span></span><b className="cup-price">{st.stock.remove.price}</b></span>
       </Panel>
       <span className="cup-grow" />
-      {item && <CupAct disabled={r.coins < item.price} onClick={() => { onBuy({ card: read! }); setRead(null); }}>{r.coins < item.price ? 'Not enough coins' : `Buy for ${item.price}`}</CupAct>}
       <CupAct quiet={!!item} onClick={onLeave}>Walk on</CupAct>
       {drop && (
         <Sheet title="Which card stays behind?" onClose={() => setDrop(false)}>
@@ -466,15 +473,18 @@ function CupWon({ r, keep, onLeave }: { r: RunState; keep: ReactNode; onLeave: (
         {Array.from({ length: 28 }, (_, i) => <i key={i} style={{ '--x': `${(i * 37) % 100}%`, '--d': `${(i % 7) * 0.18}s`, '--c': CONFETTI[i % 4], '--r': `${(i * 53) % 360}deg` } as CSSProperties} />)}
       </div>
       <CupHead back="Cups" onBack={toCups} title="WINNERS" />
-      <div className="cup-won-trophy"><Trophy kind={cup.silver} colour={cup.colour} size={170} label={cup.name} /></div>
-      <div className="cup-centre">
-        <h2 className="cup-h1" style={{ color: cup.colour }}>{cup.name}</h2>
-        <p className="cup-sc sm"><Crest id={OWN} size={30} own={save?.crest} />Brabo United · {wins <= 1 ? 'first win' : `won ${wins} times`}</p>
-        {last && <p className="cup-under">Final: Brabo {last.score[0]}–{last.score[1]} {last.club.name}{last.pens ? `, ${last.pens.us.filter(Boolean).length}–${last.pens.them.filter(Boolean).length} on penalties` : ''}.</p>}
+      {/* Tidy: on a phone the trophy sits beside its name, so the page and its action fit one screen. */}
+      <div className="cup-won-lead">
+        <div className="cup-won-trophy"><Trophy kind={cup.silver} colour={cup.colour} size={170} label={cup.name} /></div>
+        <div className="cup-centre">
+          <h2 className="cup-h1" style={{ color: cup.colour }}>{cup.name}</h2>
+          <p className="cup-sc sm"><Crest id={OWN} size={30} own={save?.crest} />Brabo United · {wins <= 1 ? 'first win' : `won ${wins} times`}</p>
+          {last && <p className="cup-under">Final: Brabo {last.score[0]}–{last.score[1]} {last.club.name}{last.pens ? `, ${last.pens.us.filter(Boolean).length}–${last.pens.them.filter(Boolean).length} on penalties` : ''}.</p>}
+        </div>
       </div>
       {nextCup && (
         <Panel ink={nextCup.colour}>
-          <span className="cup-opt-l"><Trophy kind={nextCup.silver} colour={nextCup.colour} size={40} /><span className="cup-grow"><b className="k-lb">{nextCup.name} is open</b><br /><span className="k-q">Its twist: {nextCup.twist}.</span></span><b className="cup-price">{nextCup.n} of {CUPS.length}</b></span>
+          <span className="cup-opt-l"><Trophy kind={nextCup.silver} colour={nextCup.colour} size={40} /><span className="cup-grow"><b className="k-lb">{nextCup.name} is open</b><br /><span className="k-q">Cup {nextCup.n} of {CUPS.length}. Its twist: {nextCup.twist}.</span></span></span>
         </Panel>
       )}
       {keep}

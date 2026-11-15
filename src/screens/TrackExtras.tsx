@@ -286,7 +286,8 @@ export function DrinksExtras({ entries, days, today }: { entries: FoodEntry[]; d
           </span>
         }
       >
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0,1fr))', gap: 4 }}>
+        {/* Tidy: the month runs to the card's edges, so each day is a 44 px target at 360 px. */}
+        <div className="dk-cal">
           {WEEKDAYS.map((w) => (
             <span key={w} className="t11 d center">
               {w.slice(0, 1)}
