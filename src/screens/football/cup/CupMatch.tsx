@@ -17,7 +17,9 @@ import { SIDES, type Card, type Side } from '../../../football/cup/types';
 import { OWN } from '../../../football/store/season';
 import { useSave } from '../../../football/store/hooks';
 import { AXIS_INK } from '../../../ui/inks';
-import { ArtDefs, Crest, MoveCard, Silhouette, Slab, WILD_INK } from './CupArt';
+import { ArtDefs, CompactCard, Crest, inkOf, MoveCard, Silhouette, WILD_INK } from './CupArt';
+import { CupAct, CupHead, MATCH_HOW } from './CupKit';
+import type { HowThisWorks } from '../../../ui/kit/Kit';
 
 const OPP = '#93c3dc';
 const CHALK = '#f3efe4';
@@ -53,53 +55,66 @@ function Momentum({ s }: { s: MatchState }) {
   );
 }
 
-const BALL_Y = [234, 172, 110];
-/** The pitch, their goal at the top: their defence a row in front of it, their attack coming down the right. */
+// Zones run up the pitch: your third (bottom), midfield, the final third; their goal at the top. The drawing is wide
+// and short so its words stay 14 px or more when the screen is short.
+const ZONE_T = [162, 114, 66];
+const BALL_Y = ZONE_T.map((t) => t + 32);
+/** The pitch, their goal at the top: their defence a row in front of it, their attack coming down the right. Every
+ *  number that changes re-lands with a pulse, and the ball rises to its zone, so what a card did shows on the board. */
 function Pitch({ s }: { s: MatchState }) {
   const line = lineNow(s);
   const threat = threatNow(s);
+  const cover = coverNow(s);
   const by = BALL_Y[s.zone];
   const passes = Math.min(3, s.move.passes + (s.move.carries ?? 0));
   // the move so far: a zigzag of players up to the ball
-  const pts = Array.from({ length: passes }, (_, i) => [i % 2 ? 200 : 158, Math.min(256, by + 28 * (passes - i))] as [number, number]);
+  const pts = Array.from({ length: passes }, (_, i) => [i % 2 ? 200 : 160, Math.min(200, by + 22 * (passes - i))] as [number, number]);
   const trail = [...pts, [154, by] as [number, number]];
+  const ahead = seesAhead(s) ? shownIntents(s).slice(1).map((x) => x.threat || 0) : [];
   return (
-    <svg className="cup-pt" viewBox="0 0 336 270" role="img"
-      aria-label={`The pitch. The ball is in ${['your third', 'midfield', 'the final third'][s.zone]}. Build-up times ${s.build}. Their defence ${line}. ${threat ? `Their attack coming: ${threat}.` : 'No attack this spell.'} Your cover ${coverNow(s)}.`}>
+    <svg className="cup-pt" viewBox="0 0 336 210" preserveAspectRatio="xMidYMid meet" role="img"
+      aria-label={`The pitch. The ball is in ${['your third', 'midfield', 'the final third'][s.zone]}. Build-up times ${s.build}. Their defence ${line}. ${threat ? `Their attack coming: ${threat}.` : 'No attack this spell.'} Your cover ${cover}.`}>
       <defs><marker id="cup-ah2" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="context-stroke" /></marker></defs>
       <g fill="none" stroke={CHALK} strokeWidth="1.6" strokeDasharray="6 6" opacity=".8">
-        <rect x="4" y="4" width="328" height="262" rx="10" /><path d="M4 80h328M4 142h328M4 204h328" /><path d="M120 4v22h96V4M120 266v-22h96v22" />
+        <rect x="3" y="3" width="330" height="204" rx="10" /><path d="M3 66h330M3 114h330M3 162h330" /><path d="M120 3v16h96V3" />
       </g>
       <g fontSize="16" fill="#c4c1cf">
-        <text x="12" y="136">Final third</text><text x="12" y="198">Midfield</text><text x="12" y="260">Your third</text>
+        <text x="12" y="83">Final third</text><text x="12" y="131">Midfield</text><text x="12" y="179">Your third</text>
       </g>
       <g className="cup-def">
-        <path d="M40 38h256" stroke={OPP} strokeWidth="4" />
-        {[64, 120, 176, 232].map((x) => <path key={x} d={`M${x} 30l12 16M${x + 12} 30l-12 16`} stroke={OPP} strokeWidth="3" />)}
+        <path d="M40 24h256" stroke={OPP} strokeWidth="4" />
+        {[64, 120, 176, 232].map((x) => <path key={x} d={`M${x} 17l11 14M${x + 11} 17l-11 14`} stroke={OPP} strokeWidth="3" />)}
       </g>
-      <rect x="170" y="47" width="158" height="28" rx="14" fill="#0a1712" stroke={OPP} strokeWidth="1.6" />
-      <text x="249" y="67" fontSize="16" fontWeight="700" fill={OPP} textAnchor="middle">Their defence {line}</text>
+      <g key={`l${line}`} className="cup-pulse">
+        <rect x="166" y="34" width="164" height="28" rx="14" fill="#0a1712" stroke={OPP} strokeWidth="1.6" />
+        <text x="248" y="54" fontSize="17" fontWeight="700" fill={OPP} textAnchor="middle">Their defence {line}</text>
+      </g>
       {threat > 0 && (
-        <g className="cup-coming">
-          <path d="M306 80 Q316 160 262 222" stroke={OPP} strokeWidth="2.4" strokeDasharray="3 7" fill="none" markerEnd="url(#cup-ah2)" />
-          <rect x="212" y="89" width="116" height="28" rx="14" fill="#0a1712" stroke={OPP} strokeWidth="1.6" />
-          <text x="270" y="109" fontSize="16" fontWeight="700" fill={OPP} textAnchor="middle">Coming: {threat}</text>
+        <g key={`t${threat}-${s.spell}`} className="cup-coming cup-pulse">
+          <path d="M310 98 Q320 146 264 170" stroke={OPP} strokeWidth="2.4" strokeDasharray="3 7" fill="none" markerEnd="url(#cup-ah2)" />
+          <rect x="208" y="70" width="122" height="28" rx="14" fill="#0a1712" stroke={OPP} strokeWidth="1.6" />
+          <text x="269" y="90" fontSize="17" fontWeight="700" fill={OPP} textAnchor="middle">Coming: {threat}</text>
         </g>
       )}
+      {ahead.length > 0 && <text x="300" y="112" fontSize="16" fill={OPP} textAnchor="end">Then {ahead.map((t) => t || 'none').join(', ')}</text>}
       <g stroke={ACC} fill="none" strokeWidth="2.6">
-        {trail.slice(1).map(([x, y], i) => <path key={i} d={`M${trail[i][0]} ${trail[i][1]} L${x} ${y}`} strokeDasharray="5 6" markerEnd={i === trail.length - 2 ? 'url(#cup-ah2)' : undefined} />)}
-        {pts.map(([x, y], i) => <circle key={i} cx={x} cy={y} r="8" />)}
+        {trail.slice(1).map(([x, y], i) => <path key={`${s.feed.length}-${i}`} d={`M${trail[i][0]} ${trail[i][1]} L${x} ${y}`} strokeDasharray="5 6" markerEnd={i === trail.length - 2 ? 'url(#cup-ah2)' : undefined} />)}
+        {pts.map(([x, y], i) => <circle key={i} cx={x} cy={y} r="7" />)}
       </g>
       <circle key={`${s.zone}-${s.spell}`} className="cup-ball" cx="154" cy={by} r="7" fill="#fff" />
-      <rect x="8" y={by - 14} width="128" height="28" rx="14" fill={ACC} />
-      <text x="72" y={by + 6} fontSize="16" fontWeight="700" fill="#0a1712" textAnchor="middle">Build-up ×{s.build.toFixed(1)}</text>
-      <rect x="196" y="236" width="132" height="28" rx="14" fill="#0a1712" stroke={CHALK} strokeWidth="1.6" />
-      <text x="262" y="256" fontSize="16" fontWeight="700" fill={CHALK} textAnchor="middle">Your cover {coverNow(s)}</text>
+      <g key={`b${s.build}`} className="cup-pulse">
+        <rect x="6" y={by - 13} width="132" height="26" rx="13" fill={ACC} />
+        <text x="72" y={by + 6} fontSize="17" fontWeight="700" fill="#0a1712" textAnchor="middle">Build-up ×{s.build.toFixed(1)}</text>
+      </g>
+      <g key={`c${cover}`} className="cup-pulse">
+        <rect x="190" y="174" width="140" height="28" rx="14" fill="#0a1712" stroke={CHALK} strokeWidth="1.6" />
+        <text x="260" y="194" fontSize="17" fontWeight="700" fill={CHALK} textAnchor="middle">Your cover {cover}</text>
+      </g>
     </svg>
   );
 }
 
-/** The finish preview in words, or what their attack will do. */
+/** The best finish in hand, in words, or what their attack will do: the advice under what just happened. */
 function sayLine(s: MatchState): ReactNode {
   const fins = s.hand
     .map((c) => ({ c, p: c.kind === 'total' ? null : preview(s, c.id) }))
@@ -109,59 +124,75 @@ function sayLine(s: MatchState): ReactNode {
   if (best?.p) {
     const p = best.p;
     const verdict = p.chance >= p.line ? 'That beats them.' : p.chance * 2 >= p.line ? 'A near miss: it would lower their defence.' : 'Not enough yet: build up first.';
-    return <span>{cardName(best.c)} now: {p.shot} × {p.build.toFixed(1)} = <b>{p.chance} against {p.line}. {verdict}</b></span>;
+    return <>{cardName(best.c)} now: {p.shot} × {p.build.toFixed(1)} = <b>{p.chance} against {p.line}. {verdict}</b></>;
   }
+  return attackLine(s);
+}
+function attackLine(s: MatchState): ReactNode {
   const t = threatNow(s);
   const cov = coverNow(s);
-  if (!t) return <span>No attack this spell. Build a move.</span>;
+  if (!t) return <>No attack this spell. <b>Build a move.</b></>;
   const short = t - cov;
-  return <span>Their attack of {t} meets your cover of {cov}: <b>{short <= 0 ? 'you hold.' : short <= TUNE.shortMax ? `you lose fitness.` : 'they score.'}</b></span>;
+  return <>Their attack of {t} meets your cover of {cov}: <b>{short <= 0 ? 'you hold.' : short <= TUNE.shortMax ? 'you lose fitness.' : 'they score.'}</b></>;
+}
+
+/** What a card would do if played now, in one line. */
+function nowLine(s: MatchState, c: Card): ReactNode {
+  if (c.kind === 'total') return s.basics.some((k) => !blocked(s, c.id, k)) ? 'Pick which basic card it plays as.' : 'Nothing to play it as right now.';
+  const why = blocked(s, c.id);
+  if (why) return <b className="cup-no">{why}</b>;
+  const p = preview(s, c.id);
+  if (p) {
+    const verdict = p.chance >= p.line ? 'a goal' : p.chance * 2 >= p.line ? 'a near miss' : 'not enough';
+    return <>Now: {p.shot} × {p.build.toFixed(1)} = <b>{p.chance} against {p.line}, {verdict}.</b></>;
+  }
+  return <>Costs {costOf(s, c)} of your {s.stamina} stamina.</>;
+}
+
+/** What one play changed, in words, when the rules' own feed says nothing (a pass, a carry, cover laid). */
+function didLine(a: MatchState, n: MatchState, c?: Card): string {
+  const said = n.last.filter((f) => f.kind !== 'goal' && f.kind !== 'spell' && f.kind !== 'combo').map((f) => f.text);
+  if (n.spell !== a.spell) {
+    const sp = n.last.find((f) => f.kind === 'spell');
+    return [...said, sp?.text ?? `Spell ${n.spell}.`].map((t) => (/[.!?:]$/.test(t) ? t : `${t}.`)).join(' ');
+  }
+  if (said.length) return said.join(' ');
+  const name = c ? cardName(c) : 'That';
+  const bits: string[] = [];
+  if (n.zone > a.zone) bits.push(`the ball is in ${['your third', 'midfield', 'the final third'][n.zone]}`);
+  if (n.build > a.build) bits.push(`build-up ×${n.build.toFixed(1)}`);
+  if (coverNow(n) > coverNow(a)) bits.push(`your cover is ${coverNow(n)}`);
+  if (n.stamina > a.stamina) bits.push(`stamina ${n.stamina}`);
+  if (n.hand.length > a.hand.length - 1 && !bits.length) bits.push(`you drew ${n.hand.length - a.hand.length + 1}`);
+  return bits.length ? `${name}: ${bits.join(', ')}.` : `${name} played.`;
 }
 
 const HOLD_MS = 450;
-function Hand({ s, recycling, onTap, onRead }: { s: MatchState; recycling: boolean; onTap: (c: Card) => void; onRead: (c: Card) => void }) {
+/** The hand: every card at once, five across, compact. Tap one to open it above the hand; tap it again to play. */
+function Hand({ s, recycling, sel, onTap, onRead }: { s: MatchState; recycling: boolean; sel: string | null; onTap: (c: Card) => void; onRead: (c: Card) => void }) {
   const timer = useRef<number | undefined>(undefined);
   const held = useRef(false);
   const down = (c: Card) => { held.current = false; timer.current = window.setTimeout(() => { held.current = true; onRead(c); }, HOLD_MS); };
   const cancel = () => window.clearTimeout(timer.current);
-  // The row shows three cards and the edge of a fourth; a tag at each end counts the cards waiting off it (+2).
-  const row = useRef<HTMLDivElement>(null);
-  const [more, setMore] = useState({ l: 0, r: 0 });
-  const count = () => {
-    const el = row.current;
-    if (!el) return;
-    const b = el.getBoundingClientRect();
-    let l = 0, r = 0;
-    for (const k of Array.from(el.children)) {
-      const q = k.getBoundingClientRect(), mid = (q.left + q.right) / 2;
-      if (mid < b.left) l++; else if (mid > b.right) r++;
-    }
-    setMore((p) => (p.l === l && p.r === r ? p : { l, r }));
-  };
-  useEffect(count, [s.hand.length]);
-  if (!s.hand.length) return <p className="cup-q">No cards left this spell. End the spell.</p>;
+  if (!s.hand.length) return <p className="cup-q cup-hand-empty">No cards left this spell. End the spell.</p>;
   return (
-    <div className="cup-handwrap">
-    {more.l > 0 && <span className="cup-more l" aria-hidden="true">+{more.l}</span>}
-    {more.r > 0 && <span className="cup-more r" aria-hidden="true">+{more.r}</span>}
-    <div ref={row} className="cup-hand" onScroll={count} aria-label={`Your hand: ${s.hand.length} ${s.hand.length === 1 ? 'card' : 'cards'}. Swipe sideways for the rest. Tap to play, press and hold to read.`}>
+    <div className={`cup-hand5${s.hand.length > 5 ? ' fan' : ''}`} style={{ '--n': s.hand.length } as CSSProperties} role="group" aria-label={`Your hand: ${s.hand.length} ${s.hand.length === 1 ? 'card' : 'cards'}. Tap to open a card, tap it again to play, press and hold to read it in full.`}>
       {s.hand.map((c) => {
         const why = c.kind === 'total' ? (s.basics.some((k) => !blocked(s, c.id, k)) ? null : 'Nothing to play as') : blocked(s, c.id);
         const off = recycling ? false : !!why;
         const act = actsAs(c);
         return (
           <button
-            key={c.id} type="button" className="cup-hc"
-            aria-label={`${cardName(c)}, ${c.level}, costs ${costOf(s, c)}. ${shortText(act.kind, act.level)}.${off && why ? ` ${why}` : ''}`}
+            key={c.id} type="button" className={`cup-hc5${recycling ? ' drop' : ''}`} aria-pressed={sel === c.id}
+            aria-label={`${cardName(c)}, ${c.level}, costs ${costOf(s, c)}. ${shortText(act.kind, act.level)}.${off && why ? ` ${why}` : ''}${recycling ? ' Tap to drop it.' : ''}`}
             onPointerDown={() => down(c)} onPointerUp={cancel} onPointerLeave={cancel} onPointerCancel={cancel}
             onContextMenu={(e) => e.preventDefault()}
-            onClick={() => { cancel(); if (held.current) { held.current = false; return; } if (!off) onTap(c); }}
+            onClick={() => { cancel(); if (held.current) { held.current = false; return; } onTap(c); }}
           >
-            <MoveCard c={c} cost={costOf(s, c)} off={off} note={recycling ? 'Drop' : undefined} noteKind="drop" />
+            <CompactCard c={c} cost={costOf(s, c)} off={off} sel={sel === c.id} />
           </button>
         );
       })}
-    </div>
     </div>
   );
 }
@@ -206,55 +237,50 @@ function GoalMoment({ f, after, onDone }: { f: Feed; after: number; onDone: () =
       </ul>
       {shown >= rows.length && <p className={`cup-goal-tot ${done ? 'shake' : ''}`}><b>{total}</b> against their {f.line}</p>}
       {done && <p className="cup-goal-after">Their defence re-forms at {after}.</p>}
-      <button type="button" className="cup-btn" onClick={onDone}><span>Carry on</span></button>
+      <CupAct onClick={onDone}>Carry on</CupAct>
     </div>,
     document.body,
   );
 }
 
 /** The elite club's signature move, on a banner before kick-off. */
-function Banner({ s, onGo }: { s: MatchState; onGo: () => void }) {
+function Banner({ s, onGo, onLeave }: { s: MatchState; onGo: () => void; onLeave: () => void }) {
   const sig = SIGNATURE[s.club.elite!];
   return (
     <div className="cup-board cup-banner">
-      <Slab>AN ELITE CLUB</Slab>
+      <CupHead back="Cups" onBack={onLeave} title="AN ELITE CLUB" help={MATCH_HOW} />
       <div className="cup-banner-crest"><Crest id={s.club.id} size={120} /></div>
       <h1 className="cup-h1">{s.club.name}</h1>
-      <div className="cup-sig">
-        <p className="cup-cap">Their signature move</p>
+      <div className="cup-fill" style={{ '--ink': '#f2c46d' } as CSSProperties}>
         <p className="cup-h">{sig.name}</p>
+        <p className="cup-q">Their signature move</p>
         <p>{sig.text}</p>
       </div>
       <p className="cup-q">{STYLE_NAME[s.club.style]}. {STYLE_TEXT[s.club.style]}</p>
       <span className="cup-grow" />
-      <button type="button" className="cup-btn" onClick={onGo}><span>Kick off</span></button>
+      <CupAct onClick={onGo}>Kick off</CupAct>
     </div>
   );
 }
 
-/** One cup match. `label` is the round; `commit` saves after every card. */
-export function MatchScreen({ s, label, commit }: { s: MatchState; label: string; commit: (n: MatchState) => void }) {
+/** One cup match. `label` is the round; `commit` saves after every card; `onLeave` goes back to the cups (saved). */
+export function MatchScreen({ s, label, commit, onLeave }: { s: MatchState; label: string; commit: (n: MatchState) => void; onLeave: () => void }) {
   const save = useSave();
   const feel = save?.buzz !== false;
   const [recycling, setRecycling] = useState(false);
+  const [sel, setSel] = useState<string | null>(null);
+  const [did, setDid] = useState<string>('');
   const [read, setRead] = useState<Card | null>(null);
   const [wild, setWild] = useState<Card | null>(null);
   const [about, setAbout] = useState(false);
   const [goal, setGoal] = useState<{ f: Feed; after: number } | null>(null);
   const [burst, setBurst] = useState<string[]>([]);
   const [kicked, setKicked] = useState(!s.club.elite || (s.played ?? 0) > 0 || s.spell > 1);
-  // Recycle and End the spell never start behind the tab bar: on a short screen each spell opens scrolled just far
-  // enough for them to clear it. Nothing is pinned, so nothing covers the hand or the pitch.
-  const acts = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = acts.current;
-    if (!el) return;
-    const bar = document.querySelector('.tabbar')?.getBoundingClientRect().top ?? window.innerHeight;
-    const under = el.getBoundingClientRect().bottom + 6 - bar;
-    if (under > 0) window.scrollBy(0, under);
-  }, [s.spell, s.phase, kicked]);
-  const step = (n: MatchState) => {
+  useEffect(() => { window.scrollTo(0, 0); }, [kicked]);
+  const step = (n: MatchState, c?: Card) => {
     if (n === s) return;
+    setDid(didLine(s, n, c));
+    setSel(null);
     commit(n);
     const g = n.last.find((f) => f.kind === 'goal');
     if (g) setGoal({ f: g, after: lineNow(n) });
@@ -266,49 +292,74 @@ export function MatchScreen({ s, label, commit }: { s: MatchState; label: string
     else if (combos.length) buzz([30, 30, 30]);
     else if (n.zone > s.zone || n.build > s.build) buzz(18);
   };
+  const playCard = (c: Card) => {
+    if (c.kind === 'total') { setWild(c); return; }
+    if (blocked(s, c.id)) return;
+    step(play(s, c.id), c);
+  };
   const tap = (c: Card) => {
     if (recycling) {
       const n = recycle(s, c.id);
       step(n);
+      setDid(`${cardName(c)} dropped; you drew ${n.hand.length >= s.hand.length ? 'another' : 'nothing'}.`);
       if (!canRecycle(n)) setRecycling(false);
       return;
     }
-    if (c.kind === 'total') { setWild(c); return; }
-    step(play(s, c.id));
+    if (sel === c.id) { playCard(c); return; }
+    setSel(c.id);
+    if (feel) buzz(8);
   };
-  if (!kicked && s.club.elite) return <Banner s={s} onGo={() => setKicked(true)} />;
-  if (s.phase === 'pens') return <Pens s={s} label={label} commit={commit} feel={feel} />;
-  const toasts = s.last.filter((f) => f.kind !== 'spell' && f.kind !== 'goal' && f.kind !== 'combo');
+  if (!kicked && s.club.elite) return <Banner s={s} onGo={() => setKicked(true)} onLeave={onLeave} />;
+  if (s.phase === 'pens') return <Pens s={s} label={label} commit={commit} feel={feel} onLeave={onLeave} />;
   const pips = Math.max(s.stamina, TUNE.stamina);
+  const card = sel ? s.hand.find((c) => c.id === sel) ?? null : null;
+  const playable = card ? (card.kind === 'total' ? s.basics.some((k) => !blocked(s, card.id, k)) : !blocked(s, card.id)) : false;
+  const round = label.split(' · ').pop()!;
+  const first = s.spell === 1 && !(s.played ?? 0) && !did;
   return (
     <div className="cup-board cup-match">
       <ArtDefs />
-      <div className="cup-top"><Slab>{label.split(' · ').pop()!.toUpperCase()}</Slab><span className="cup-q cup-nw">Spell {s.spell} of {TUNE.spells}</span></div>
+      <CupHead back="Cups" onBack={onLeave} title={round.toUpperCase()} help={MATCH_HOW} />
       <ScoreRow s={s} onThem={() => setAbout(true)} />
-      <Momentum s={s} />
+      <div className="cup-spellrow">
+        <span className="cup-q cup-nw">Spell {s.spell} of {TUNE.spells}</span><Momentum s={s} />
+        {s.inPlay.length > 0 && <span className="cup-inplay" aria-label={`In play: ${s.inPlay.map((c) => cardName(c)).join(', ')}`}>{s.inPlay.map((c) => cardName(c)).join(', ')}</span>}
+      </div>
       <div className="cup-pwrap">
         <Pitch s={s} />
-        <div className="cup-toasts" aria-live="polite">
+        <div className="cup-toasts" aria-hidden="true">
           {burst.map((b, i) => <p key={`${s.feed.length}-b${i}`} className="cup-burst">{b}</p>)}
-          {toasts.map((f, i) => <p key={`${s.feed.length}-${i}`} className={`cup-toast k-${f.kind}`}>{f.text}</p>)}
         </div>
       </div>
-      <p className="cup-say" aria-live="polite">{sayLine(s)}</p>
-      {seesAhead(s) && shownIntents(s).length > 1 && (
-        <p className="cup-q">Their next: {shownIntents(s).slice(1).map((x) => (x.threat ? x.threat : 'none')).join(', ')}.</p>
-      )}
+      <div className={`cup-say${card ? ' open' : ''}`} aria-live="polite" style={card ? ({ '--ink': inkOf(card) } as CSSProperties) : undefined}>
+        {card ? (
+          <>
+            <p className="cup-say-txt">
+              <b className="cup-say-nm">{cardName(card)}</b> <span className="cup-q">· {shortText(actsAs(card).kind, actsAs(card).level)}</span><br />
+              <span>{nowLine(s, card)}</span>
+            </p>
+            <button type="button" className="cup-play" disabled={!playable} onClick={() => playCard(card)}>Play</button>
+          </>
+        ) : recycling ? (
+          <p className="cup-say-txt"><b>Tap a card to drop it and draw another.</b><br /><span className="cup-q">{s.freeRecycles ? `${s.freeRecycles} free.` : `Each costs ${TUNE.recycleCost} stamina.`}</span></p>
+        ) : (
+          <p className="cup-say-txt">
+            {did ? <b className="cup-did" key={did}>{did}</b> : first ? <b className="cup-did">Tap a card to open it; tap it again to play.</b> : null}
+            {(did || first) && <br />}
+            <span>{sayLine(s)}</span>
+          </p>
+        )}
+      </div>
       <div className="cup-st">
         <span aria-label={`Stamina ${s.stamina}`}>{Array.from({ length: pips }, (_, i) => <i key={i} className={`cup-pip ${i < s.stamina ? 'f' : ''}`} />)} stamina</span>
         <span className="cup-q">Fitness {s.fitness} · Draw {s.draw.length}</span>
       </div>
-      {s.inPlay.length > 0 && <p className="cup-q">In play: {s.inPlay.map((c) => cardName(c)).join(', ')}</p>}
-      {recycling && <p className="cup-q">Tap a card to drop it and draw another. {s.freeRecycles ? 'Free.' : `Costs ${TUNE.recycleCost} stamina.`}</p>}
-      <Hand s={s} recycling={recycling} onTap={tap} onRead={setRead} />
-      <div className="cup-acts" ref={acts}>
-        <button type="button" className={`cup-btn ghost ${recycling ? 'on' : ''}`} disabled={!recycling && !canRecycle(s)} aria-pressed={recycling} onClick={() => setRecycling(!recycling)}>
-          <span>{recycling ? 'Done' : `Recycle${s.freeRecycles ? ` (${s.freeRecycles} free)` : ''}`}</span>
-        </button>
-        <button type="button" className="cup-btn" onClick={() => { setRecycling(false); setBurst([]); step(endSpell(s)); }}><span>End the spell</span></button>
+      <Hand s={s} recycling={recycling} sel={sel} onTap={tap} onRead={setRead} />
+      <div className="cup-acts">
+        <CupAct quiet on={recycling} disabled={!recycling && !canRecycle(s)} onClick={() => { setSel(null); setRecycling(!recycling); }} className="cup-recy">
+          {recycling ? 'Done' : `Recycle${s.freeRecycles ? ` · ${s.freeRecycles} free` : ''}`}
+        </CupAct>
+        <CupAct quiet={!!card} onClick={() => { setRecycling(false); setSel(null); setBurst([]); step(endSpell(s)); }}>End the spell</CupAct>
       </div>
       {goal && <GoalMoment f={goal.f} after={goal.after} onDone={() => setGoal(null)} />}
       {read && (
@@ -323,14 +374,13 @@ export function MatchScreen({ s, label, commit }: { s: MatchState; label: string
           <p><b>{STYLE_NAME[s.club.style]}.</b> {STYLE_TEXT[s.club.style]}</p>
           {s.club.elite && <p><b>{SIGNATURE[s.club.elite].name}.</b> {SIGNATURE[s.club.elite].text}</p>}
           <p className="cup-q">{s.club.scouted ? 'Scouted: you have met them in the league, so you see their attacks two spells ahead and their penalty habits.' : 'Not scouted: meet them in the league to see their attacks two spells ahead.'}</p>
-          <p className="cup-q">A chance at or above their defence is a goal; at half of it or more, a near miss that lowers it. Their attack beating your cover by 1 to {TUNE.shortMax} costs fitness; by more, they score.</p>
         </Sheet>
       )}
       {wild && (
         <Sheet onClose={() => setWild(null)} title="Total football plays as…">
           <div className="cup-wild">
             {s.basics.map((k) => (
-              <button key={k} type="button" className="cup-opt" disabled={!!blocked(s, wild.id, k)} onClick={() => { step(play(s, wild.id, k)); setWild(null); }}>
+              <button key={k} type="button" className="cup-opt" disabled={!!blocked(s, wild.id, k)} onClick={() => { step(play(s, wild.id, k), wild); setWild(null); }}>
                 <span>{titleOf(k)}</span><span className="cup-q">{shortText(k, 'basic')}</span>
               </button>
             ))}
@@ -341,11 +391,22 @@ export function MatchScreen({ s, label, commit }: { s: MatchState; label: string
   );
 }
 
+const PENS_HOW: HowThisWorks = {
+  title: 'How penalties work',
+  steps: [
+    { icon: 'bolt', ink: '#ff9a76', head: 'Your kick', line: 'Pick left, centre or right, then take it. The keeper has a habit.' },
+    { icon: 'shield', ink: '#93c3dc', head: 'Their kick', line: 'Pick where to dive.' },
+    { icon: 'scope', ink: '#f2c46d', head: 'Scouting shows habits', line: 'A club you have met in the league gives away its keeper\'s side and its takers\' favourite.' },
+    { icon: 'swap', ink: '#ede6da', head: 'Five each, then sudden death', line: 'The side with more after five goes through; level, it goes on kick by kick.' },
+  ],
+  chips: [{ ink: '#8fdcb6', text: '5 kicks each' }, { ink: '#ede6da', text: '3 sides' }],
+};
+
 // --- penalties ---------------------------------------------------------------------------------------------------
 const aimWord = (x: Side) => (x === 'centre' ? 'down the middle' : x);
 const diveWord = (x: Side) => (x === 'centre' ? 'stayed in the middle' : `dived ${x}`);
 const SIDE_LABEL: Record<Side, string> = { left: 'Left', centre: 'Centre', right: 'Right' };
-function Pens({ s, label, commit, feel }: { s: MatchState; label: string; commit: (n: MatchState) => void; feel: boolean }) {
+function Pens({ s, label, commit, feel, onLeave }: { s: MatchState; label: string; commit: (n: MatchState) => void; feel: boolean; onLeave: () => void }) {
   const p = s.pens!;
   const mine = p.turn === 'us';
   const [side, setSide] = useState<Side | null>(null);
@@ -364,7 +425,7 @@ function Pens({ s, label, commit, feel }: { s: MatchState; label: string; commit
   };
   return (
     <div className="cup-board cup-match cup-pens">
-      <div className="cup-top"><Slab>{label.replace(/^The /, '').toUpperCase()} · PENS</Slab></div>
+      <CupHead back="Cups" onBack={onLeave} title={`${label.split(' · ').pop()!.toUpperCase()} · PENS`} help={PENS_HOW} />
       <ScoreRow s={s} />
       <div className="cup-tally" aria-label={`Penalties: Brabo ${p.us.filter(Boolean).length}, ${s.club.short} ${p.them.filter(Boolean).length}`}>
         <p><span>Brabo</span><span className="cup-dots">{dots(p.us)}</span></p>
@@ -384,7 +445,7 @@ function Pens({ s, label, commit, feel }: { s: MatchState; label: string; commit
           <button key={x} type="button" role="radio" aria-checked={side === x} className={side === x ? 'on' : ''} onClick={() => setSide(x)}>{SIDE_LABEL[x]}</button>
         ))}
       </div>
-      <button type="button" className="cup-btn" disabled={!side} onClick={go}><span>{mine ? 'Take it' : 'Dive'}</span></button>
+      <CupAct disabled={!side} onClick={go}>{mine ? 'Take it' : 'Dive'}</CupAct>
     </div>
   );
 }
