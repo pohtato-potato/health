@@ -74,6 +74,9 @@ export function PlayerCard(props: CardProps) {
   return <Viewable view={view}>{face}</Viewable>;
 }
 
+/** The card full screen, for a button that opens it without tapping the card (a player's page). */
+export const playerCardView = (props: CardProps): CardView => ({ face: <CardFace {...props} />, back: props.back ?? playerBack(props.card, props.label, props.player), label: props.player ? `${props.player.name}, ${stepName(props.card)} card` : (props.label ?? `${stepName(props.card)} card`) });
+
 function CardFace({ card, art, seed, label, className = '', artNode }: CardProps) {
   const svg = useMemo(() => glass(card.tier, seed), [card.tier, seed]);
   const r = card.tier === 'icon' || card.tier === 'legend';

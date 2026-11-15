@@ -12,14 +12,16 @@ import { useTonight, type Tonight } from '../../../football/store/hooks';
 import { go, useRoute } from '../../../router';
 import { AXIS_INK } from '../../../ui/inks';
 import { FootballHome } from '../FootballHome';
-import { BackLink } from '../../../ui/kit/Kit';
+import { Action, Empty, Hero, Panel, Sect } from '../../../ui/kit/Kit';
+import type { HowThisWorks } from '../../../ui/kit/Kit';
+import { CORAL, DESK_HOW, GREEN, Note, PanelTop } from '../club/Bits';
 import { liveTalk } from '../../../football/desk/jobs/negotiate';
 import { TalkPage } from './Market';
 import '../../../styles/matchday.css';
 import '../../../styles/desk.css';
+import '../../../styles/club.css';
 
 const WEEKDAY = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const weekday = (d: string) => WEEKDAY[new Date(`${d}T12:00:00`).getDay()];
 const WORDS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
 const SECTION: Record<string, string> = { quant: 'Quant', verbal: 'Verbal', lr: 'Logical reasoning', di: 'Data interpretation' };
 const sec = (x?: string) => (x ? SECTION[x] ?? x : '');
@@ -50,14 +52,15 @@ function JobArt({ id, ring, colour }: { id: JobId; ring?: { filled: number; size
   );
 }
 
+/** The dice in their tray (board two, "The desk"): six across, a spent die greyed, the held one lifted and filled. */
 function Tray({ tray, held, onPick }: { tray: ReturnType<typeof trayOf>; held?: Die; onPick: (d: Die) => void }) {
-  if (!tray.dice.length) return <div className="dk-tray empty">No dice today: nothing was logged yesterday.</div>;
+  if (!tray.dice.length) return <Note>No dice today: nothing was logged yesterday.</Note>;
   return (
-    <div className="dk-tray" role="group" aria-label="Your dice">
+    <div className="kd-tray" role="group" aria-label="Your dice">
       {tray.dice.map(({ die: d, spent }) => {
         const free = !spent;
         return (
-          <button key={d.axis} type="button" className={`dk-die${free ? '' : ' spent'}`} style={ink(d.axis)} disabled={!free}
+          <button key={d.axis} type="button" className={`kd-die${free ? '' : ' spent'}`} style={ink(d.axis)} disabled={!free}
             aria-pressed={held?.axis === d.axis} aria-label={`${d.axis} ${d.value}${free ? '' : ', spent'}: ${d.reason}`} onClick={() => onPick(d)}>{d.value}</button>
         );
       })}
@@ -99,9 +102,10 @@ export function DiceTile({ dice, date, onNext, last }: { dice: Die[]; date: stri
   );
 }
 
-const Page = ({ children }: { children: React.ReactNode }) => <main className="md-page desk"><div className="md-in">{children}</div></main>;
-/** One way back (navigation A): drawn, on the left of the page's name. */
-const Back = ({ to = '/football', label = 'Back' }: { to?: string; label?: string }) => <BackLink label={label} onClick={() => go(to)} />;
+/** Every desk page: one way back and the page's name in the header, the "?" where the page has rules. */
+function Page({ title, back = 'The desk', to = '/football/desk', help, children }: { title: string; back?: string; to?: string; help?: HowThisWorks; children: React.ReactNode }) {
+  return <FootballHome section="club" inner={{ title, back, to, help }}><div className="k-page">{children}</div></FootballHome>;
+}
 
 /** /football/desk, /football/desk/job?id=, /football/desk/course?spend=, /football/desk/questions */
 export function DeskRoute() {
@@ -109,7 +113,7 @@ export function DeskRoute() {
   const { path, params } = useRoute();
   const m = useLiveQuery(async () => (t ? loadDesk(t) : null), [t]);
   if (t === undefined || m === undefined) return null;
-  if (!t || !m) return <FootballHome section="tonight"><p className="fb-s">Football starts once you found the club.</p></FootballHome>;
+  if (!t || !m) return <Page title="The desk" back="Club" to="/football/club"><Empty icon="desk" ink="#93c3dc" title="No desk yet" line="Football starts once you found the club." /></Page>;
   if (path === '/football/desk/questions') return <QuestionsPage />;
   if (path === '/football/desk/talk') return <TalkPage m={m} talk={params.get('talk') ?? ''} />;
   if (path === '/football/desk/course') return <CoursePage m={m} spend={params.get('spend') ?? m.courseOpen ?? ''} />;
@@ -120,7 +124,8 @@ export function DeskRoute() {
   return <DeskHome m={m} />;
 }
 
-/** d3-home: the jobs on top, then the dice in their tray. The tray follows the list; it is never pinned over it. */
+/** d3-home, on board two's "The desk": the dice lead, in their tray, then the jobs. Everything is in the page's flow: the
+ * fifth job never sits under the tray, and nothing is pinned over the list. */
 function DeskHome({ m }: { m: DeskModel }) {
   const [held, setHeld] = useState<Die | undefined>();
   const jobs = jobsForDesk(m.view);
@@ -131,32 +136,38 @@ function DeskHome({ m }: { m: DeskModel }) {
     if (j.id === 'negotiate') { const live = liveTalk(m.view); go(live ? '/football/desk/talk' : '/football/market', live ? { talk: live.talk } : undefined); return; }
     go('/football/desk/job', { id: j.id, ...(held ? { die: held.axis } : {}) });
   };
+  const yesterday = WEEKDAY[(new Date(`${m.date}T12:00:00`).getDay() + 6) % 7];
+  const left = tray.left.length;
   return (
-    <Page>
-      <div className="md-top"><Back to="/football/club" label="Club" /><span className="md-q dk-count">{tray.label}</span></div>
-      <span className="md-cap">The desk · {weekday(m.date)}</span>
-      <h1 className="dk-h">{m.shut ? 'The desk is closed for the night' : `${WORDS[jobs.length] ?? jobs.length} ${jobs.length === 1 ? 'thing' : 'things'} on your desk`}</h1>
-      {m.shut && <p className="md-q" style={{ margin: 0 }}>{m.left.length ? `${WORDS[m.left.length]} ${m.left.length === 1 ? 'die' : 'dice'} left over: ${unspentResearch(m.left.length) ? `+${unspentResearch(m.left.length)} research when the night plays` : 'it takes two for a point of research'}.` : 'Every die was spent.'} New dice come with the morning.</p>}
-      {m.courseOpen && <button type="button" className="md-btn" onClick={() => go('/football/desk/course', { spend: m.courseOpen! })}>Finish today’s course</button>}
-      <div className="dk-jobs">
+    <Page title="The desk" back="Club" to="/football/club" help={DESK_HOW}>
+      <div className="kb-lead">
+        <Hero value={m.shut ? 'Shut' : left} ink="#93c3dc" label={m.shut ? 'for the night' : left === 1 ? 'die left' : 'dice left'} />
+        <span className="k-r k-q">from {yesterday}</span>
+      </div>
+      {m.shut ? (
+        <Note>{m.left.length ? `${WORDS[m.left.length]} ${m.left.length === 1 ? 'die' : 'dice'} left over: ${unspentResearch(m.left.length) ? `+${unspentResearch(m.left.length)} research when the night plays` : 'it takes two for a point of research'}.` : 'Every die was spent.'} New dice come with the morning.</Note>
+      ) : (
+        <>
+          <Tray tray={tray} held={held} onPick={(d) => setHeld(held?.axis === d.axis ? undefined : d)} />
+          <Note>{held ? `Holding ${held.axis} · ${held.value}. Now pick a job.` : left ? 'Pick up a die, then a job. Greyed dice are spent.' : 'Every die is spent. New dice come with the morning.'}</Note>
+        </>
+      )}
+      {m.courseOpen && <Action wide onClick={() => go('/football/desk/course', { spend: m.courseOpen! })}>Finish today’s course</Action>}
+      <Sect>On your desk</Sect>
+      <div className="kb-rows">
         {jobs.map((j) => {
           const c = j.card(m.view), blocked = j.blocked?.(m.view);
           return (
-            <button key={j.id} type="button" className="dk-job" style={{ '--ink': j.ink } as CSSProperties} aria-disabled={Boolean(blocked) || m.shut} onClick={() => open(j)}>
-              <JobArt id={j.id} ring={c.ring} colour={j.ink} />
-              <span><b>{c.title}</b><br /><span className="md-q">{blocked ?? c.line}</span></span>
-              <span className="dk-chip">{c.chip}</span>
-            </button>
+            <Panel key={j.id} ink={j.ink} className="kd-job" onClick={() => open(j)} label={`${c.title}: ${blocked ?? c.line}. ${c.chip}`}>
+              <span className="kb-mrow">
+                <JobArt id={j.id} ring={c.ring} colour={j.ink} />
+                <span style={{ flex: 1, minWidth: 0 }}><b style={{ color: j.ink }}>{c.title}</b><br /><span className="k-q">{blocked ?? c.line}</span></span>
+                <b className="kb-right" style={{ color: j.ink }}>{c.chip}</b>
+              </span>
+            </Panel>
           );
         })}
       </div>
-      <div className="md-fill" />
-      {!m.shut && (
-        <div className="dk-foot">
-          <span className="md-cap">{held ? `Holding ${held.axis} · ${held.value}. Pick a job.` : tray.left.length ? 'Your dice. Pick one up.' : 'Every die is spent.'}</span>
-          <Tray tray={tray} held={held} onPick={(d) => setHeld(held?.axis === d.axis ? undefined : d)} />
-        </div>
-      )}
     </Page>
   );
 }
@@ -186,55 +197,52 @@ function SpendPage({ m, def, first, pick }: { m: DeskModel; def: JobDef; first?:
       setSaid(`${p?.head ?? ''} ${p?.line ?? ''}`.trim());
     } finally { setBusy(false); }
   };
+  const tray = trayOf(m.dice, spendsOn(m.desk, m.date));
   if (said) {
     return (
-      <Page>
-        <div className="md-top"><span className="md-cap">{card.title}</span><Back to="/football/desk" label="The desk" /></div>
-        <div className="dk-opt dk-done" style={held ? ink(held.axis) : undefined}>
-          {held && <span className="dk-die" aria-hidden="true" style={{ background: AXIS_INK[held.axis], color: '#0d0f20' }}>{held.value}</span>}
-          <span style={{ flex: 1 }}>{said}</span>
-        </div>
-        {def.id !== 'watch' && <p className="md-q" style={{ margin: 0 }}>{def.id === 'column' ? 'It runs in tomorrow’s paper.' : def.id === 'scout' ? 'A scout’s report comes with the morning parcel.' : def.id === 'study' ? 'It shows in the loan market now.' : 'It counts when the day plays, at 4 am. The desk shows it now.'}</p>}
-        <button type="button" className="md-btn" onClick={() => go('/football/desk', undefined, { replace: true })}>Back to the desk</button>
+      <Page title={card.title}>
+        <Panel ink={held ? AXIS_INK[held.axis] : GREEN}>
+          <span className="kb-mrow">
+            {held && <span className="kd-die" aria-hidden="true" style={{ ...ink(held.axis), background: AXIS_INK[held.axis], color: '#0d0f20', width: 48, flex: 'none' }}>{held.value}</span>}
+            <span style={{ flex: 1 }}>{said}</span>
+          </span>
+        </Panel>
+        {def.id !== 'watch' && <Note>{def.id === 'column' ? 'It runs in tomorrow’s paper.' : def.id === 'scout' ? 'A scout’s report comes with the morning parcel.' : def.id === 'study' ? 'It shows in the loan market now.' : 'It counts when the day plays, at 4 am. The desk shows it now.'}</Note>}
+        <Action wide onClick={() => go('/football/desk', undefined, { replace: true })}>Back to the desk</Action>
       </Page>
     );
   }
   return (
-    <Page>
-      <div className="md-top"><span className="md-cap">{card.title}</span><Back to="/football/desk" label="The desk" /></div>
-      <h1 className="dk-h">{card.ask ?? `${card.title}?`}</h1>
-      {voices.map(({ d, line }) => line && <p key={d.axis} className="dk-say"><b style={{ color: AXIS_INK[d.axis] }}>{d.axis.toUpperCase()}</b> — {line}</p>)}
+    <Page title={card.title} help={DESK_HOW}>
+      <h2 className="kd-q">{card.ask ?? `${card.title}?`}</h2>
+      {voices.map(({ d, line }) => line && <p key={d.axis} className="kd-say"><b style={{ color: AXIS_INK[d.axis] }}>{d.axis.toUpperCase()}</b> — {line}</p>)}
+      <Sect>Your dice</Sect>
+      <Tray tray={tray} held={held} onPick={setHeld} />
+      {targets.length > 0 && <Sect>Pick one</Sect>}
       {targets.length > 0 && (
-        <div className="dk-targets" role="group" aria-label="Pick one">
+        <div className="kb-rows" role="group" aria-label="Pick one">
           {shown.map((x) => (
-            <button key={x.id} type="button" className="dk-target" style={{ '--ink': def.ink } as CSSProperties} aria-pressed={target === x.id} onClick={() => setTarget(x.id)}>
-              <span>{x.name}</span>{x.line && <span className="md-q">{x.line}</span>}
+            <button key={x.id} type="button" className="k-panel k-tap kd-target" style={{ '--ink': def.ink } as CSSProperties} aria-pressed={target === x.id} onClick={() => setTarget(x.id)}>
+              <b>{x.name}</b>{x.line && <span className="k-q">{x.line}</span>}
             </button>
           ))}
-          {shown.length < targets.length && <button type="button" className="md-btn ghost" onClick={() => setAll(true)}>Show all {targets.length}</button>}
+          {shown.length < targets.length && <Action quiet onClick={() => setAll(true)}>Show all {targets.length}</Action>}
         </div>
       )}
       {held && p ? (
-        <>
-          <span className="md-cap">With the die you are holding</span>
-          <div className="dk-opt" style={ink(held.axis)}>
-            <span><b style={{ color: AXIS_INK[held.axis] }}>{held.axis} · {held.value}</b><br /><span className="md-q">{p.head} {p.line}</span></span>
-            <b className="n">{p.gain}</b>
-          </div>
-          <p className="md-q" style={{ margin: 0 }}>{p.others}{p.risk ? ` Chance: ${p.risk.pct}%, ${p.risk.line}` : ''}</p>
-        </>
+        <Panel ink={AXIS_INK[held.axis]}>
+          <PanelTop name={`${held.axis} · ${held.value}`} c={AXIS_INK[held.axis]} right={<span className="k-num" style={{ fontSize: 22 }}>{p.gain}</span>} />
+          <span>{p.head} {p.line}</span>
+          {(p.others || p.risk) && <span className="k-q">{p.others}{p.risk ? ` Chance: ${p.risk.pct}%, ${p.risk.line}` : ''}</span>}
+        </Panel>
       ) : (
-        <p className="md-q" style={{ margin: 0 }}>{m.left.length ? 'Pick up a die to see what it would do.' : 'Every die is spent today.'}</p>
+        <Note>{m.left.length ? 'Pick up a die to see what it would do.' : 'Every die is spent today.'}</Note>
       )}
-      {blocked && <p className="md-q" style={{ margin: 0 }}>{blocked}.</p>}
+      {blocked && <Panel ink={CORAL} flat><span>{blocked}.</span></Panel>}
       {def.id === 'course' && <EyeNote passes={coursePasses(m.desk)} />}
-      <div className="md-fill" />
-      <div className="dk-foot flow">
-      <Tray tray={trayOf(m.dice, spendsOn(m.desk, m.date))} held={held} onPick={setHeld} />
-      <button type="button" className="md-btn" disabled={!held || busy || Boolean(blocked) || (targets.length > 0 && !target)} onClick={() => void spend()}>
+      <Action wide disabled={!held || busy || Boolean(blocked) || (targets.length > 0 && !target)} onClick={() => void spend()}>
         {held ? `Spend the ${held.value}` : 'Pick up a die'}
-      </button>
-      </div>
+      </Action>
     </Page>
   );
 }
@@ -245,8 +253,8 @@ function EyeNote({ passes }: { passes: number }) {
   const more = eyeChoices(passes), next = toNextEye(passes);
   return (
     <>
-      <p className="md-q" style={{ margin: 0 }}>Your eye for a player: level {eyeLevel(passes)}{more ? `, ${more} more card ${more === 1 ? 'choice' : 'choices'} after a cup win` : ''}.{next !== undefined ? ` ${next} more ${next === 1 ? 'pass' : 'passes'} to the next level.` : ''}</p>
-      <button type="button" className="md-btn ghost" onClick={() => go('/football/desk/questions')}>Your own questions{mine ? ` (${mine})` : ''}</button>
+      <Note>Your eye for a player: level {eyeLevel(passes)}{more ? `, ${more} more card ${more === 1 ? 'choice' : 'choices'} after a cup win` : ''}.{next !== undefined ? ` ${next} more ${next === 1 ? 'pass' : 'passes'} to the next level.` : ''}</Note>
+      <Action quiet onClick={() => go('/football/desk/questions')}>Your own questions{mine ? ` (${mine})` : ''}</Action>
     </>
   );
 }
@@ -255,7 +263,7 @@ function EyeNote({ passes }: { passes: number }) {
 function CoursePage({ m, spend }: { m: DeskModel; spend: string }) {
   const sheet = useLiveQuery(() => courseSheet(m.desk, spend), [m.desk, spend]);
   if (sheet === undefined) return null;
-  if (!sheet) return <Page><div className="md-top"><span className="md-cap">Coaching course</span><Back to="/football/desk" label="The desk" /></div><p>No course here.</p></Page>;
+  if (!sheet) return <Page title="Coaching course"><Empty icon="book" ink="#c2b2ff" title="No course here" line="Spend a die on the coaching course to start one." /></Page>;
   return <Course key={spend} sheet={sheet} date={m.date} passes={coursePasses(m.desk)} />;
 }
 
@@ -267,18 +275,22 @@ function Course({ sheet, date, passes }: { sheet: CourseSheet; date: string; pas
   const n = sheet.questions.length;
   if (done) {
     return (
-      <Page>
-        <div className="md-top"><span className="md-cap">Coaching course</span><Back to="/football/desk" label="The desk" /></div>
-        <h1 className="dk-h">{done.right} of {n} right{done.passed ? '. Passed.' : '.'}</h1>
-        <p className="md-q" style={{ margin: 0 }}>{done.passed ? `Your eye for a player is at level ${eyeLevel(passes)}.` : `${PASS_AT} right passes. The questions stay in the pool for another day.`}</p>
-        {sheet.questions.map((q, i) => (
-          <div key={q.id} className="dk-opt" style={{ '--ink': isRight(q, done.answers[i] ?? null) ? '#8fdcb6' : '#ff9a76', flexDirection: 'column', alignItems: 'stretch' } as CSSProperties}>
-            <span className={`dk-mark ${isRight(q, done.answers[i] ?? null) ? 'right' : 'wrong'}`}>{i + 1}. {isRight(q, done.answers[i] ?? null) ? 'Right' : `Answer: ${q.answer}`}{q.year || q.section ? ` · ${[sec(q.section), q.year].filter(Boolean).join(' ')}` : ''}</span>
-            <span>{q.prompt}</span>
-            <span className="md-q">{q.explanation}</span>
-          </div>
-        ))}
-        <button type="button" className="md-btn" onClick={() => go('/football/desk', undefined, { replace: true })}>Back to the desk</button>
+      <Page title="Coaching course">
+        <Hero value={`${done.right} of ${n}`} ink={done.passed ? GREEN : CORAL} label={done.passed ? 'right · passed' : 'right'} />
+        <Note>{done.passed ? `Your eye for a player is at level ${eyeLevel(passes)}.` : `${PASS_AT} right passes. The questions stay in the pool for another day.`}</Note>
+        <div className="kb-rows">
+          {sheet.questions.map((q, i) => {
+            const ok = isRight(q, done.answers[i] ?? null);
+            return (
+              <Panel key={q.id} ink={ok ? GREEN : CORAL}>
+                <PanelTop name={`${i + 1}. ${ok ? 'Right' : `Answer: ${q.answer}`}`} c={ok ? GREEN : CORAL} right={q.year || q.section ? [sec(q.section), q.year].filter(Boolean).join(' ') : undefined} />
+                <span>{q.prompt}</span>
+                <span className="k-q">{q.explanation}</span>
+              </Panel>
+            );
+          })}
+        </div>
+        <Action wide onClick={() => go('/football/desk', undefined, { replace: true })}>Back to the desk</Action>
       </Page>
     );
   }
@@ -289,28 +301,27 @@ function Course({ sheet, date, passes }: { sheet: CourseSheet; date: string; pas
   const strikes = helped === q.id ? sheet.strikes[q.id] ?? [] : [];
   const hand = async () => { const r = await finishCourse(sheet.spend, answers, date); if (r) setDone(r); };
   return (
-    <Page>
-      <div className="md-top"><span className="md-cap">Question {at + 1} of {n}{q.section ? ` · ${sec(q.section)}` : ''}{q.year ? ` · ${q.year}` : ''}</span><Back to="/football/desk" label="Later" /></div>
-      <div className="dk-pips" aria-hidden="true">{sheet.questions.map((x, i) => <i key={x.id} className={answers[i] != null ? 'on' : ''} />)}</div>
+    <Page title={`Question ${at + 1} of ${n}`} back="Later">
+      <span className="k-q">Coaching course{q.section ? ` · ${sec(q.section)}` : ''}{q.year ? ` · ${q.year}` : ''}</span>
+      <div className="kd-pips" aria-hidden="true">{sheet.questions.map((x, i) => <i key={x.id} className={answers[i] != null ? 'on' : ''} />)}</div>
       {q.passage && <Passage title={q.passageTitle} text={q.passage} />}
-      <p className="dk-q">{q.prompt}</p>
+      <p className="kd-q">{q.prompt}</p>
       {q.options ? (
-        <div className="dk-targets" role="group" aria-label="Options">
-          {q.options.map((o) => <button key={o} type="button" className="dk-choice" aria-pressed={a === o} disabled={strikes.includes(o)} onClick={() => set(o)}>{o}</button>)}
+        <div className="kb-rows" role="group" aria-label="Options">
+          {q.options.map((o) => <button key={o} type="button" className="k-panel k-tap kd-target kd-choice" style={{ '--ink': '#c2b2ff' } as CSSProperties} aria-pressed={a === o} disabled={strikes.includes(o)} onClick={() => set(o)}>{o}</button>)}
         </div>
       ) : (
-        <label className="md-q">Type your answer
-          <input className="dk-input" inputMode="decimal" value={a ?? ''} onChange={(e) => set(e.target.value || null)} />
+        <label className="k-col" style={{ gap: 6 }}><span className="k-q">Type your answer</span>
+          <input className="kb-input" inputMode="decimal" value={a ?? ''} onChange={(e) => set(e.target.value || null)} />
         </label>
       )}
-      {sheet.lifeline && q.options && !helped && <button type="button" className="md-btn ghost" onClick={help}>Lifeline: strike out two wrong options</button>}
-      <div className="md-fill" />
-      <div className="md-btns">
-        {at > 0 && <button type="button" className="md-btn ghost" onClick={() => setAt(at - 1)}>Back</button>}
-        {at < n - 1 ? <button type="button" className="md-btn" onClick={() => setAt(at + 1)}>Next</button>
-          : <button type="button" className="md-btn" disabled={answers.filter((x) => x != null).length === 0} onClick={() => void hand()}>Hand it in</button>}
+      {sheet.lifeline && q.options && !helped && <Action quiet onClick={help}>Lifeline: strike out two wrong options</Action>}
+      <div className="kb-btns">
+        {at > 0 ? <Action quiet onClick={() => setAt(at - 1)}>Back</Action> : <span />}
+        {at < n - 1 ? <Action onClick={() => setAt(at + 1)}>Next</Action>
+          : <Action disabled={answers.filter((x) => x != null).length === 0} onClick={() => void hand()}>Hand it in</Action>}
       </div>
-      <p className="md-q" style={{ margin: 0 }}>{COURSE_SIZE} questions, {PASS_AT} right to pass. A blank counts as wrong.</p>
+      <Note>{COURSE_SIZE} questions, {PASS_AT} right to pass. A blank counts as wrong.</Note>
     </Page>
   );
 }
@@ -332,25 +343,27 @@ function QuestionsPage() {
     return [...by.entries()].sort();
   }, []);
   return (
-    <Page>
-      <div className="md-top"><span className="md-cap">Your own questions</span><Back to="/football/desk" label="The desk" /></div>
-      <h1 className="dk-h">{count ? `${count} of your own in the course` : 'Add your own questions'}</h1>
-      <p style={{ margin: 0 }}>A JSON or CSV file you prepared. Each question needs the question, the options (or none, for a typed answer), the answer and an explanation; year and section are optional. They mix into the coaching course.</p>
-      <p className="md-q" style={{ margin: 0 }}>Kept only on this phone, in your own backups, never in the app’s code.</p>
-      <label className="md-btn dk-file">Choose a file
+    <Page title="Your own questions" back="The desk">
+      <Hero value={count ?? 0} ink="#c2b2ff" label={count === 1 ? 'of your own in the course' : 'of your own in the course'} />
+      <span>A JSON or CSV file you prepared. Each question needs the question, the options (or none, for a typed answer), the answer and an explanation; year and section are optional. They mix into the coaching course.</span>
+      <Note>Kept only on this phone, in your own backups, never in the app’s code.</Note>
+      <label className="k-act wide kd-file">Choose a file
         <input type="file" accept=".json,.csv,application/json,text/csv" style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }} onChange={(e) => void read(e.target.files?.[0])} />
       </label>
       {msg && (
-        <div className="dk-opt" style={{ '--ink': msg.added ? '#8fdcb6' : '#ff9a76', flexDirection: 'column', alignItems: 'stretch' } as CSSProperties}>
+        <Panel ink={msg.added ? GREEN : CORAL}>
           <b>{msg.added ? `${msg.added} added.` : 'Nothing new added.'}</b>
           {msg.errors.length > 0 && <ul className="dk-errs">{msg.errors.slice(0, 12).map((e) => <li key={e}>{e}</li>)}{msg.errors.length > 12 && <li>and {msg.errors.length - 12} more.</li>}</ul>}
-        </div>
+        </Panel>
       )}
-      {tops && tops.length > 0 && <div className="dk-jobs">{tops.map(([k, n]) => <div key={k} className="md-row"><span>{k}</span><b>{n}</b></div>)}</div>}
-      <div className="md-fill" />
+      {tops && tops.length > 0 && (
+        <Panel ink="#c2b2ff">
+          {tops.map(([k, n]) => <div key={k} className="k-row" style={{ minHeight: 32 }}><span>{k}</span><b>{n}</b></div>)}
+        </Panel>
+      )}
       {count ? (sure
-        ? <div className="md-btns"><button type="button" className="md-btn" onClick={() => { void clearMine(); setSure(false); setMsg(undefined); }}>Remove all {count}</button><button type="button" className="md-btn ghost" onClick={() => setSure(false)}>Keep them</button></div>
-        : <button type="button" className="md-btn ghost" onClick={() => setSure(true)}>Remove my questions</button>) : null}
+        ? <div className="kb-btns"><Action onClick={() => { void clearMine(); setSure(false); setMsg(undefined); }}>Remove all {count}</Action><Action quiet onClick={() => setSure(false)}>Keep them</Action></div>
+        : <Action quiet onClick={() => setSure(true)}>Remove my questions</Action>) : null}
     </Page>
   );
 }

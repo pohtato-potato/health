@@ -31,6 +31,11 @@ import { Atlas } from './world/Atlas';
 import type { StoredMatch } from '../../football/store/tables';
 import { techDoor } from '../../football/tree/research';
 import { Moved } from '../reports/Moved';
+import type { HowThisWorks } from '../../ui/kit/Kit';
+import { ACADEMY_HOW, ALBUM_HOW, BOARD_HOW, BOON_HOW, DEALS_HOW, DUTY_HOW, GROUND_HOW, KITS_HOW, LOANS_HOW, MEMBER_HOW, MONEY_HOW, PACKS_HOW, PLAYER_HOW, PROJECTS_HOW, SHEET_HOW, SQUAD_HOW, TECH_HOW, TREE_HOW, TRIALS_HOW, UNIT_HOW } from './club/Bits';
+import { ALBUM, ALBUM_CARDS } from '../../football/content/album';
+import { CHEM_MAX } from '../../football/rotation/night';
+import { BREAK_DAYS, DUTY_ATTR, DUTY_NEEDS } from '../../football/globe/duty';
 
 const SECTION: Record<string, FbSection> = { '/football': 'tonight', '/football/club': 'club', '/football/league': 'league', '/football/story': 'story' };
 
@@ -76,24 +81,25 @@ function ReelRoute() {
 
 
 const TREE_BACK = { back: 'The tree', to: '/football/club', params: { view: 'tree' } };
+// Look pass L1: each Club page's rules live behind its "?" (club/Bits.tsx).
 const CLUB_BACK = { back: 'Club', to: '/football/club' };
 /** Navigation A: each page inside Club, with its name and its one way back. */
 const INNER: Record<string, FbInner> = {
-  '/football/tech': { title: 'A tech', ...TREE_BACK },
+  '/football/tech': { title: 'A tech', ...TREE_BACK, help: TECH_HOW },
   '/football/era': { title: 'A new era', ...TREE_BACK },
   '/football/eureka': { title: 'Eureka', ...TREE_BACK },
-  '/football/projects': { title: 'Projects', ...TREE_BACK },
+  '/football/projects': { title: 'Projects', ...TREE_BACK, help: PROJECTS_HOW },
   '/football/staff': { title: 'Staff room', ...TREE_BACK },
-  '/football/board': { title: 'The board', ...TREE_BACK },
-  '/football/boon': { title: 'Boons', ...TREE_BACK },
-  '/football/packs': { title: 'Packs', ...CLUB_BACK },
-  '/football/album': { title: 'The album', back: 'Packs', to: '/football/packs' },
+  '/football/board': { title: 'The board', ...TREE_BACK, help: BOARD_HOW },
+  '/football/boon': { title: 'Boons', ...TREE_BACK, help: BOON_HOW },
+  '/football/packs': { title: 'Packs', ...CLUB_BACK, help: PACKS_HOW },
+  '/football/album': { title: 'The album', back: 'Packs', to: '/football/packs', help: ALBUM_HOW(ALBUM.length, ALBUM_CARDS.length) },
   '/football/loan': { title: 'A loan', back: 'Loans', to: '/football/loans' },
-  '/football/loans': { title: 'Loans', ...CLUB_BACK },
-  '/football/trials': { title: 'Trials', ...CLUB_BACK },
+  '/football/loans': { title: 'Loans', ...CLUB_BACK, help: LOANS_HOW },
+  '/football/trials': { title: 'Trials', ...CLUB_BACK, help: TRIALS_HOW },
   '/football/tie': { title: 'Tie to a habit', back: 'Trials', to: '/football/trials' },
-  '/football/academy': { title: 'Academy', ...CLUB_BACK },
-  '/football/duty': { title: 'International duty', ...CLUB_BACK },
+  '/football/academy': { title: 'Academy', ...CLUB_BACK, help: ACADEMY_HOW },
+  '/football/duty': { title: 'International duty', ...CLUB_BACK, help: DUTY_HOW(BREAK_DAYS, DUTY_NEEDS, DUTY_ATTR) },
 };
 
 /** A section's other views (?view=) are pages inside it now, reached by doors on the section's page. */
@@ -102,15 +108,17 @@ function viewInner(section: FbSection, view: string | null): FbInner | undefined
   const label = (section === 'club' ? CLUB_VIEWS : section === 'league' ? LEAGUE_VIEWS : section === 'story' ? STORY_VIEWS : []).find((v) => v.id === view)?.label;
   if (!label || (section === 'story' && view === 'rivals') || (section === 'league' && view === 'table')) return undefined;
   const sec = SECTIONS.find((x) => x.id === section)!;
-  return { title: PAGE_NAME[label] ?? label, back: sec.label, to: sec.path };
+  return { title: PAGE_NAME[label] ?? label, back: sec.label, to: sec.path, help: section === 'club' ? CLUB_PAGE_HOW[view] : undefined };
 }
+/** The "?" on each of Club's own pages (look pass L1). */
+const CLUB_PAGE_HOW: Record<string, HowThisWorks | undefined> = { squad: SQUAD_HOW, tree: TREE_HOW, deals: DEALS_HOW, money: MONEY_HOW, kits: KITS_HOW, ground: GROUND_HOW };
 const PAGE_NAME: Record<string, string> = { Squad: 'The squad', Tree: 'The tree', Ground: 'The ground', Deals: 'Deals', Money: 'Money', Kits: 'Kits', Pyramid: 'The pyramid', Calendar: 'Calendar', Cups: 'The cups', Seasons: 'Seasons', Moments: 'Moments', 'Old Selves': 'Old Selves', Settings: 'Football settings' };
 
 /** A player's page goes back to their unit. */
 function PlayerFrame({ id }: { id: string }) {
   const p = useLiveQuery(() => db.fbPlayers.get(id), [id]);
   if (p === undefined) return null;
-  return <FootballHome section="club" inner={p ? { title: 'A player', back: p.unit, to: '/football/unit', params: { u: p.unit } } : { title: 'A player', ...CLUB_BACK }}><PlayerPage id={id} /></FootballHome>;
+  return <FootballHome section="club" inner={p ? { title: p.name, back: p.unit, to: '/football/unit', params: { u: p.unit }, help: PLAYER_HOW } : { title: 'A player', ...CLUB_BACK }}><PlayerPage id={id} /></FootballHome>;
 }
 
 export function Football() {
@@ -136,8 +144,8 @@ export function Football() {
   if (path === '/football/wrapped') return <WrappedRoute season={Number(params.get('season') ?? 1)} />;
   if (path === '/football/rival') return <FootballHome section="story" inner={{ title: 'A rival', back: 'Story', to: '/football/story' }}><RivalRoute id={params.get('id') ?? ''} /></FootballHome>;
   if (path === '/football/player' && params.get('id')) return <PlayerFrame id={params.get('id')!} />;
-  if (path === '/football/player') return <FootballHome section="club" inner={{ title: 'Squad member', back: 'Squad', to: '/football/club', params: { view: 'squad' } }}><PlayerRoute axis={params.get('axis') ?? ''} /></FootballHome>;
-  if (path === '/football/unit') return <FootballHome section="club" inner={{ title: params.get('u') ?? 'A unit', back: 'Club', to: '/football/club' }}><UnitRoute unit={params.get('u') ?? ''} /></FootballHome>;
+  if (path === '/football/player') return <FootballHome section="club" inner={{ title: 'Squad member', back: 'Squad', to: '/football/club', params: { view: 'squad' }, help: MEMBER_HOW }}><PlayerRoute axis={params.get('axis') ?? ''} /></FootballHome>;
+  if (path === '/football/unit') return <FootballHome section="club" inner={{ title: params.get('u') ?? 'A unit', back: 'Squad', to: '/football/club', params: { view: 'squad' }, help: UNIT_HOW }}><UnitRoute unit={params.get('u') ?? ''} /></FootballHome>;
   if (path === '/football/card') return <FootballHome section="club" inner={{ title: 'A new card', back: 'Club', to: '/football/club' }}><CardMomentRoute id={params.get('id') ?? ''} /></FootballHome>;
   // Engine 2, layer 3: the tree.
   const tree: Record<string, () => ReactNode> = {
@@ -163,7 +171,7 @@ export function Football() {
   if (path === '/football/track') return <FootballHome section="story" inner={{ title: 'Season track', back: 'Story', to: '/football/story' }}><TrackPage /></FootballHome>;
   if (path === '/football/bounties') return <FootballHome section="story" inner={{ title: 'Bounties', back: 'Story', to: '/football/story' }}><BountiesPage /></FootballHome>;
   if (path === '/football/limit') return <FootballHome section="club" inner={{ title: 'Limit break', back: 'Club', to: '/football/club' }}><LimitBreakRoute id={params.get('id') ?? ''} /></FootballHome>;
-  if (path === '/football/sheet') return <FootballHome section="club" inner={{ title: 'Team sheet', back: 'Club', to: '/football/club' }}><TeamSheetRoute /></FootballHome>;
+  if (path === '/football/sheet') return <FootballHome section="club" inner={{ title: 'Team sheet', back: 'Club', to: '/football/club', help: SHEET_HOW(CHEM_MAX) }}><TeamSheetRoute /></FootballHome>;
   if (path === '/football/blend') return <FootballHome section="tonight" inner={{ title: 'How tonight adds up', back: 'Tonight', to: '/football' }}><BlendRoute /></FootballHome>;
   const section = SECTION[path] ?? 'tonight';
   if (section === 'tonight') return <TonightRoute />;

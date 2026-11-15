@@ -1,0 +1,177 @@
+/*
+ * The pages behind Club's doors (look pass L1): board two (team sheet, a player, the desk, the loan market, packs,
+ * the album, the ground, the Kaai growing, the "how this works" sheet), board three (the tree with small pictures) and
+ * board one (an empty page). Built on the kit (kit.css); only what the kit lacks is here.
+ */
+
+/* ---- shared small parts ---- */
+.kb-bar { display: block; height: 10px; border-radius: 5px; background: rgba(237, 230, 218, 0.16); overflow: hidden; flex: none; }
+.kb-bar > i { display: block; height: 100%; border-radius: 5px; background: var(--ink, var(--act)); box-shadow: 0 0 8px var(--ink, var(--act)); }
+.kb-stat { gap: 0; min-height: 76px; }
+.kb-stat .k-num { font-size: 28px; }
+.kb-small { font-size: 14px; }
+.kb-top { align-items: baseline; }
+.kb-top .k-r { font-size: 15px; }
+.kb-note { margin: 0; font-size: 15px; line-height: 1.35; }
+.kb-g2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.kb-g3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.kb-mrow { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.kb-mrow > svg { flex: none; }
+.kb-right { font-weight: 700; white-space: nowrap; }
+.kb-lead { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.kb-lead .k-hero-row { gap: 8px; }
+.kb-lead .k-r { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
+.kb-lead .k-r b { font-weight: 700; }
+.kb-rows { display: flex; flex-direction: column; gap: 8px; }
+.kb-line { display: flex; align-items: center; gap: 10px; min-height: 44px; min-width: 0; }
+.kb-line > :nth-child(2) { flex: 1; min-width: 0; }
+.kb-btns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 6px; }
+.kb-btns .k-act { width: 100%; padding: 0 12px; }
+.kb-quiet { align-self: flex-start; }
+.k-act.kb-gold { background: var(--k-gold); box-shadow: 0 10px 24px -8px var(--k-gold); }
+.k-act:disabled { opacity: 0.55; cursor: default; }
+.k-panel select.kb-select, .kb-select { min-height: 44px; border-radius: 12px; border: 1.5px solid color-mix(in srgb, var(--ink, #ede6da) 50%, transparent); background: rgba(13, 15, 32, 0.6); color: var(--k-cream); font: 15px var(--sans); padding: 0 10px; max-width: 100%; }
+.kb-input { min-height: 44px; border-radius: 12px; border: 1.5px solid rgba(237, 230, 218, 0.4); background: rgba(13, 15, 32, 0.6); color: var(--k-cream); font: 15px var(--sans); padding: 0 12px; width: 100%; }
+.kb-chiprow { display: flex; flex-wrap: wrap; gap: 6px; }
+.kb-chipbtn { min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1.5px solid color-mix(in srgb, var(--ink, #ede6da) 60%, transparent); background: transparent; color: var(--k-cream); font: 700 15px var(--sans); cursor: pointer; }
+.kb-chipbtn[aria-pressed='true'] { background: var(--ink, var(--k-cream)); color: #0d0f20; border-color: transparent; }
+.kb-stars { color: var(--k-gold); display: inline-flex; gap: 1px; vertical-align: -3px; }
+
+/* Filled tabs (the team sheet's formations): the one in use bold with the action underline. */
+.kb-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; }
+.kb-tabs > * { min-height: 44px; display: inline-flex; align-items: center; position: relative; font: 400 16px var(--sans); color: #a9a7b8; background: none; border: 0; padding: 0; cursor: default; white-space: nowrap; }
+.kb-tabs > button { cursor: pointer; color: var(--k-cream); text-decoration: underline; text-decoration-color: rgba(237, 230, 218, 0.35); text-underline-offset: 4px; }
+.kb-tabs > button small { font-size: 15px; color: var(--k-quiet); }
+.kb-tabs > .on { color: #fff; font-weight: 700; font-size: 17px; }
+.kb-tabs > .on::after { content: ''; position: absolute; left: 0; right: 0; bottom: 4px; height: 3px; border-radius: 2px; background: var(--act); box-shadow: 0 4px 10px -2px var(--act); }
+
+/* ---- the team sheet: one panel per unit, filled rings start, ringed ones wait ---- */
+.ks-toks { display: flex; flex-wrap: wrap; gap: 6px 4px; margin-top: 6px; }
+.ks-tok { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 66px; min-height: 64px; padding: 0; border: 0; background: none; color: var(--k-cream); font: inherit; cursor: pointer; }
+.ks-tok i { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; font: 700 18px/1 var(--serif); font-style: normal; background: var(--ink); color: #0d0f20; box-shadow: 0 0 14px -4px var(--ink); }
+.ks-tok.off i { background: transparent; color: var(--ink); border: 2px solid var(--ink); box-shadow: none; }
+.ks-tok span { font-size: 14px; line-height: 1.12; text-align: center; overflow-wrap: anywhere; }
+.ks-chem { display: flex; align-items: center; gap: 8px; margin-top: 4px; font-size: 14px; }
+.ks-chem i { width: 14px; height: 6px; border-radius: 3px; background: rgba(237, 230, 218, 0.18); display: inline-block; }
+.ks-chem i.on { background: var(--ink); box-shadow: 0 0 6px var(--ink); }
+.ks-cap { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px; align-items: center; }
+.ks-cap b { color: var(--ink); }
+
+/* ---- a player: the card and the rating lead ---- */
+.kp-top { display: flex; gap: 14px; align-items: flex-start; }
+.kp-card { width: 128px; flex: none; }
+.kp-card .k6 { width: 128px; }
+.kp-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.kp-info .k-hero { font-size: 72px; }
+.kp-up { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; }
+.kp-attr { display: grid; grid-template-columns: minmax(84px, 34%) minmax(0, 1fr) 34px; gap: 8px; align-items: center; min-height: 28px; }
+.kp-attr b:last-child { text-align: right; font: 600 18px var(--serif); }
+.kp-attr + .k-q { margin: -2px 0 6px; font-size: 14px; }
+.kp-vs { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+.kp-vs > div { display: flex; flex-direction: column; gap: 2px; width: 84px; flex: none; font-size: 14px; }
+.kp-vs > div .k6 { width: 84px; }
+.kp-vs > div.now b { color: var(--k-gold); }
+.kp-trait { display: flex; flex-direction: column; }
+.kp-trait b { color: var(--ink); }
+.kp-spark { width: 100%; height: 28px; display: block; }
+.kp-spark polyline { fill: none; stroke: var(--ink); stroke-width: 2.2; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 4px var(--ink)); }
+
+/* ---- a unit: its players, best first ---- */
+.ku-row { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.ku-row .k6 { width: 46px; }
+.ku-row .k-num { color: var(--ink); text-align: right; }
+.ku-row .kb-bar { height: 6px; margin-top: 4px; }
+.ku-row.st b.nm::after { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 8px; background: var(--ink); box-shadow: 0 0 6px var(--ink); vertical-align: 2px; }
+
+/* ---- the tree, with small pictures ---- */
+.kt-era { display: flex; flex-direction: column; gap: 4px; }
+.kt-erah { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.kt-erah b { font: 400 21px/1.15 var(--serif); color: var(--ink); }
+.kt-tree { position: relative; }
+.kt-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.kt-lines path { fill: none; stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+.kt-node { position: absolute; transform: translate(-50%, 0); width: 33%; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 0; border: 0; background: none; color: var(--k-cream); font: inherit; cursor: pointer; }
+.kt-node i { width: 56px; height: 56px; border-radius: 14px; display: grid; place-items: center; border: 2.5px solid rgba(237, 230, 218, 0.35); background: #10122a; color: rgba(237, 230, 218, 0.45); font-style: normal; position: relative; }
+.kt-node span { font-size: 14px; line-height: 1.15; text-align: center; color: #a9a7b8; max-width: 100%; overflow-wrap: anywhere; }
+.kt-node.dn i { background: var(--k-tree, #c2b2ff); border-color: var(--k-tree, #c2b2ff); color: #0d0f20; }
+.kt-node.dn span, .kt-node.op span { color: var(--k-cream); }
+.kt-node.op i { border-color: var(--k-gold); color: var(--k-gold); box-shadow: 0 0 14px -2px var(--k-gold); }
+.kt-node.rs i { background: color-mix(in srgb, var(--k-gold) 30%, #10122a); }
+.kt-node em { position: absolute; top: -9px; right: -12px; font: 700 14px/1 var(--sans); font-style: normal; color: #0d0f20; background: #ffe27a; border-radius: 999px; padding: 3px 6px; box-shadow: 0 0 10px -2px #ffe27a; }
+.kt-sealed { opacity: 0.75; }
+
+/* ---- the desk: the dice lead, the jobs sit underneath, nothing fixed to the bottom ---- */
+.kd-tray { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.kd-die { aspect-ratio: 1; min-height: 44px; border-radius: 12px; display: grid; place-items: center; border: 2.5px solid var(--ink); background: color-mix(in srgb, var(--ink) 10%, #0d0f20); color: var(--ink); font: 600 24px/1 var(--serif); cursor: pointer; padding: 0; box-shadow: 0 0 12px -4px var(--ink); }
+.kd-die[aria-pressed='true'] { background: var(--ink); color: #0d0f20; box-shadow: 0 8px 18px -6px var(--ink); transform: translateY(-2px); }
+.kd-die.spent, .kd-die:disabled { border-color: rgba(237, 230, 218, 0.22); color: rgba(237, 230, 218, 0.35); background: rgba(237, 230, 218, 0.05); box-shadow: none; cursor: default; }
+.kd-job .dk-art { width: 40px; height: 40px; flex: none; }
+.kd-job .kb-mrow { gap: 12px; }
+.kd-job[aria-disabled='true'] { opacity: 0.7; }
+.kd-say { margin: 0; font-size: 15px; }
+.kd-say b { letter-spacing: 0.06em; }
+.kd-target { min-height: 52px; }
+.kd-target[aria-pressed='true'] { border-width: 2px; border-color: var(--ink); background: linear-gradient(180deg, color-mix(in srgb, var(--ink) 40%, #10122a), color-mix(in srgb, var(--ink) 16%, #10122a) 90%); }
+.kd-q { font: 400 19px/1.35 var(--serif); margin: 4px 0; }
+.kd-pips { display: flex; gap: 6px; }
+.kd-pips i { flex: 1; height: 8px; border-radius: 4px; background: rgba(237, 230, 218, 0.16); }
+.kd-pips i.on { background: var(--k-gold); box-shadow: 0 0 6px var(--k-gold); }
+.kd-choice { min-height: 52px; }
+.kd-choice:disabled { opacity: 0.4; text-decoration: line-through; }
+.kd-file { position: relative; overflow: hidden; }
+
+/* ---- the loan market and talks ---- */
+.km-who { display: flex; align-items: center; gap: 12px; }
+.km-who b.nm { font: 400 24px/1.1 var(--serif); }
+.km-club { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.km-club > :nth-child(2) { flex: 1; }
+.km-mood { display: grid; grid-template-columns: repeat(var(--n, 5), minmax(0, 1fr)); gap: 4px; }
+.km-mood i { height: 10px; border-radius: 5px; background: rgba(237, 230, 218, 0.16); }
+.km-mood i.on { background: var(--ink); box-shadow: 0 0 6px var(--ink); }
+.km-say { font: 400 19px/1.35 var(--serif); margin: 0; }
+.km-opt .k-num { font-size: 22px; }
+
+/* ---- packs and the album ---- */
+.kk-pack { width: 150px; height: 200px; border-radius: 16px; align-self: center; margin-top: 10px; position: relative; display: grid; place-items: center; background: linear-gradient(135deg, #f2c46d, #ff9a4d 45%, #9a74ec); box-shadow: 0 0 44px -4px #f2c46d; border: 0; padding: 0; cursor: pointer; animation: kk-breathe 3.2s ease-in-out infinite; }
+.kk-pack::after { content: ''; position: absolute; left: 0; right: 0; top: 22px; border-top: 3px dashed rgba(13, 15, 32, 0.6); }
+.kk-pack.big { background: linear-gradient(135deg, #ffe27a, #f2c46d 40%, #ff7a76 75%, #9a74ec); }
+.kk-pack.single { width: 120px; height: 168px; background: linear-gradient(135deg, #d9e8f3, #93c3dc 50%, #9a74ec); }
+.kk-pack:disabled { cursor: default; animation: none; filter: saturate(0.7); }
+.kk-pack .fb-art svg { display: block; }
+@keyframes kk-breathe { 50% { box-shadow: 0 0 60px 0 #f2c46d; transform: translateY(-3px); } }
+.kk-title { text-align: center; font: 400 26px/1.15 var(--serif); margin: 6px 0 0; }
+.kk-sub { text-align: center; margin: 0; }
+.kk-more { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 4px; }
+.kk-more button { flex: none; }
+.kk-items { display: flex; flex-direction: column; gap: 8px; }
+.kk-item { display: flex; flex-direction: column; gap: 2px; }
+.kk-item b.t { font: 400 20px/1.2 var(--serif); }
+.ka-set { min-height: 118px; gap: 6px; }
+.ka-set b.nm { color: var(--ink); line-height: 1.2; }
+.ka-set.dn { border-color: var(--k-gold); }
+.ka-open { grid-column: 1 / -1; }
+.ka-cards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ka-cards li { border-radius: 14px; padding: 10px 12px; background: color-mix(in srgb, var(--r) 16%, #10122a); border-left: 4px solid var(--r); display: flex; flex-direction: column; gap: 2px; }
+.ka-cards li.miss { background: rgba(237, 230, 218, 0.05); border-left-color: rgba(237, 230, 218, 0.25); color: #a9a7b8; }
+.ka-cards li > div, .ka-cards li > button { display: flex; flex-direction: column; gap: 2px; text-align: left; }
+
+/* ---- the ground, and the Kaai growing ---- */
+.kg-kaai { margin: 0 -16px; }
+.kg-stage { display: flex; flex-direction: column; gap: 4px; }
+.kg-sh { margin: 6px 0 0; }
+.kg-big { color: var(--k-cream, #f6efe2); }
+.kg-stage.now .kg-sh { margin: 6px 0 0; }
+.kg-big { color: var(--k-cream, #f6efe2); }
+
+/* ---- the world: loans, trials, the academy, duty ---- */
+.kw-loan { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; align-items: center; }
+.kw-loan .fbg-art svg { width: 72px; height: auto; display: block; }
+.kw-young .kb-bar { margin-top: 4px; }
+.kw-key { display: flex; gap: 14px; flex-wrap: wrap; font-size: 14px; }
+.kw-key i { display: inline-block; width: 18px; height: 8px; border-radius: 4px; margin-right: 6px; vertical-align: 1px; }
+
+/* ---- money and kits ---- */
+.kn-kits { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.kn-kit { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; font-size: 14px; }
+.kn-kitopt { border-radius: 16px; border: 2px solid rgba(237, 230, 218, 0.25); background: rgba(13, 15, 32, 0.4); padding: 8px 4px; cursor: pointer; color: var(--k-cream); font: inherit; min-height: 44px; }
+.kn-kitopt[aria-pressed='true'] { border-color: var(--k-gold); box-shadow: 0 0 16px -4px var(--k-gold); }
