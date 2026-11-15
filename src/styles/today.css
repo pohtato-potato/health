@@ -122,8 +122,6 @@
 /* Today on the region's aurora, as every Walk page sits. At the top, the place as the arrival's welcome draws it. */
 .td-page.lv-tab { flex-direction: column; }
 .td-page.lv-tab > .sr-only { position: absolute; }
-.td-walk > .band { display: block; height: calc(240px + var(--safe-top)); border-radius: 0; -webkit-mask-image: linear-gradient(#000 76%, transparent); mask-image: linear-gradient(#000 76%, transparent); }
-.td-walk > .band svg { display: block; width: 100%; height: 100%; }
 /* The arrival day's passport stamp, pressed onto the scene at a tilt. */
 .td-walk-stamp { position: absolute; left: 18px; top: calc(14px + var(--safe-top)); width: 72px; line-height: 0; transform: rotate(-7deg); filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35)); }
 .td-walk-stamp svg { display: block; width: 100%; height: auto; }
@@ -295,9 +293,8 @@
 .td-walkwrap { display: flex; flex-direction: column; gap: 8px; margin: calc(-18px - var(--safe-top)) -22px 0; }
 .td-walkwrap > .td-status { padding: 0 22px; }
 .td-walk { position: relative; display: flex; flex-direction: column; gap: 6px; width: 100%; margin: 0; padding: 0; border: 0; background: none; color: var(--k-cream); text-align: left; cursor: pointer; }
+.td-walk-scene .ls { height: 100%; }
 .td-walk-scene { display: block; height: calc(92px + var(--safe-top)); overflow: hidden; -webkit-mask-image: linear-gradient(#000 70%, transparent); mask-image: linear-gradient(#000 70%, transparent); }
-.td-walk-scene .band { display: block; height: 100%; margin: 0; border-radius: 0; }
-.td-walk-scene .band svg { display: block; width: 100%; height: 100%; }
 .td-walk-cap { position: static; display: flex; flex-direction: column; gap: 2px; margin: -6px 0 0; padding: 0 22px; }
 .td-walk-line { font-size: 15px; line-height: 1.3; color: var(--k-cream); }
 .td-walk-line b { font-weight: 700; }

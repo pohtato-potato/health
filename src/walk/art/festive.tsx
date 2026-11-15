@@ -1,4 +1,4 @@
-import { mix } from '../../ui/light';
+import { mixVivid } from './oklch';
 
 /** The theme days that dress the Today scene. Data colours never change; only sky and decoration. */
 export type Festive = 'diwali' | 'holi' | 'birthday';
@@ -19,7 +19,8 @@ export function wearSky(sky: [string, string, string] | undefined) {
 export function festiveSky(f: Festive | undefined, sky: [string, string, string]): [string, string, string] {
   const to = f ? SKIES[f] : worn;
   if (!to) return sky;
-  return sky.map((c, i) => mix(c, to[i], 0.5)) as [string, string, string];
+  // Halfway in OKLCH, never through a dark olive or brown: where it would, the theme's own hue wins.
+  return sky.map((c, i) => mixVivid(c, to[i], 0.5, false, 'b')) as [string, string, string];
 }
 
 /** Decorations over the scene: lanterns and sparks for Diwali, drifting colour for Holi, paper bunting for a birthday. */

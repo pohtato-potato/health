@@ -1,6 +1,6 @@
 import { regionAt } from '../domain/regions';
 import { ALL_STATES, ALL_STOPS, chapterAt } from '../domain/walk';
-import { inksFor } from '../ui/light';
+import { LANDS } from './art/land';
 import { STRETCHES } from './content';
 import { CITY_POINTS, REGIONS } from './geo';
 import { stretchAt } from './road';
@@ -98,10 +98,10 @@ export function levelBox(level: MapLevel, km: number, aspect: number): Box {
   return frame(pts, aspect);
 }
 
-/** A state's ink once reached: the first ink of the land the walk enters it through. */
+/** A state's ink once reached: the far ink of the land the walk enters it through, as the scenes draw it. */
 export function stateInk(state: string): string {
   const km = ALL_STATES.find((s) => s.name === state)?.km ?? 0;
-  return inksFor(regionAt(km))[0];
+  return LANDS[regionAt(km)].inks[0];
 }
 
 /** Where a state's name sits: the middle of its outline's bounding box. */

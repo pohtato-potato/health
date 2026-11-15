@@ -37,8 +37,9 @@
 .walk2-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .walk-top2 { margin: calc(-18px - var(--safe-top)) -22px 0; display: flex; flex-direction: column; }
 .walk-top2-scene { position: relative; }
-.walk-top2-scene .vista { display: block; width: 100%; height: auto; aspect-ratio: 360 / 216; -webkit-mask-image: linear-gradient(#000 82%, transparent); mask-image: linear-gradient(#000 82%, transparent); }
-.walk-stone-at { position: absolute; left: 12.8%; bottom: 6.5%; line-height: 0; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35)); }
+.walk-top2-scene .ls { width: 100%; height: auto; aspect-ratio: 360 / 230; }
+/* The lettered milestone stands where the drawing put the stone, on the road's left (land.ts STONE_AT). */
+.walk-stone-at { position: absolute; left: calc(64 / 360 * 100% - 22px); top: calc(196 / 230 * 100% - 50px); line-height: 0; }
 
 .walk-head { display: flex; flex-direction: column; gap: 4px; }
 .walk-title { font-family: var(--serif); font-weight: 400; font-size: 28px; line-height: 1.1; margin: 0; text-wrap: balance; overflow-wrap: anywhere; }
@@ -77,11 +78,13 @@
 .walk-doors button { min-height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 0 16px; border-radius: 16px; background: var(--walk-glass); border: 1px solid var(--walk-edge); color: var(--text); font-size: 15px; text-align: left; }
 
 .walk-place-status { display: flex; flex-direction: column; gap: 8px; }
-.walk-ps-toggle { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 48px; padding: 0 16px; border-radius: 999px; background: var(--walk-glass); border: 1px solid var(--walk-edge); color: var(--text); font-size: 15px; text-align: left; }
-.walk-ps-change { font-size: 14px; color: color-mix(in srgb, var(--text) 75%, transparent); text-decoration: underline; text-underline-offset: 3px; }
+/* Kit (look pass): a filled cream panel you can tap, its edge a hairline, "Change" in words with a drawn arrow. */
+.walk-ps-toggle { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 52px; padding: 0 14px; border-radius: 20px; background: linear-gradient(180deg, color-mix(in srgb, var(--k-cream) 16%, #10122a), color-mix(in srgb, var(--k-cream) 6%, #10122a) 90%); border: 1px solid color-mix(in srgb, var(--k-cream) 30%, transparent); color: var(--k-cream); font: 600 15px var(--sans); text-align: left; }
+.walk-ps-change { display: inline-flex; align-items: center; gap: 2px; font-size: 15px; font-weight: 700; color: var(--k-quiet); }
 
 /* Part 3: the stretch title, the stop line, a stop's card of facts, a stretch's page and its end. */
-.walk-title-btn { padding: 0; min-height: 44px; font: inherit; color: inherit; text-align: left; text-decoration: underline; text-decoration-thickness: 1px; text-decoration-color: color-mix(in srgb, var(--text) 35%, transparent); text-underline-offset: 6px; }
+.walk-title-btn { padding: 0; min-height: 44px; font: inherit; color: inherit; text-align: left; display: inline-flex; align-items: center; gap: 6px; }
+.walk-title-btn .k-arrow { flex: none; color: var(--k-quiet); }
 .walk-linkline { padding: 6px 0; min-height: 44px; font: inherit; color: inherit; text-align: left; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--text) 40%, transparent); text-underline-offset: 3px; }
 .walk3 { gap: 18px; }
 .walk-kind { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; letter-spacing: 0.04em; text-transform: uppercase; color: color-mix(in srgb, var(--text) 80%, transparent); }
@@ -329,7 +332,9 @@
 .walk-chron li { display: flex; flex-direction: column; gap: 2px; padding: 10px 0; border-bottom: 1px solid color-mix(in srgb, var(--text) 12%, transparent); }
 .walk-map-key i.out, .walk-map-key i.home { display: inline-block; width: 28px; height: 0; border-top: 3px dashed color-mix(in srgb, var(--text) 60%, transparent); vertical-align: middle; }
 .walk-map-key i.home { border-top: 3px dotted var(--route-ink); }
-.walk-news { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 18px; color: var(--text); --route-ink: var(--sage); border: 1.5px solid color-mix(in srgb, var(--route-ink) 55%, transparent); background: radial-gradient(120% 120% at 0% 0%, color-mix(in srgb, var(--route-ink) 24%, #11132a), #0b0c1c 80%); }
+/* Kit: a filled panel in the route's own ink; its button is quiet, as the page's one glowing action is Choose a walk. */
+.walk-news { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 20px; color: var(--k-cream); --route-ink: var(--sage); background: linear-gradient(180deg, color-mix(in srgb, var(--route-ink) 26%, #10122a), color-mix(in srgb, var(--route-ink) 8%, #10122a) 90%); }
+.walk-news .walk-primary.small { background: transparent; color: var(--k-cream); border: 2px solid var(--k-cream); }
 .walk-news-row { display: flex; gap: 12px; align-items: center; }
 .walk-news-art { position: relative; flex: 0 0 72px; height: 56px; border-radius: 12px; overflow: hidden; display: grid; place-items: center; background: rgba(5, 6, 14, 0.5); }
 .walk-news-art .walk-art { width: 100%; height: 100%; }
@@ -388,11 +393,81 @@
 .walk-road-chapter { color: var(--gold); font-weight: 600; }
 .walk-road-chapter .walk-road-mark { fill: var(--gold); }
 
+/* ---- Walk's scene in layered dusk (src/walk/art/Layered.tsx): gentle motion, transform and opacity only ---- */
+.ls { display: block; width: 100%; height: 100%; }
+.walk-scene-card { height: 210px; border-radius: 20px; overflow: hidden; }
+.ls-far { animation: ls-drift 26s ease-in-out infinite alternate; }
+.ls-mid { animation: ls-drift 21s ease-in-out infinite alternate-reverse; --ls-d: 4px; }
+.ls-far { --ls-d: 8px; }
+@keyframes ls-drift { from { transform: translateX(calc(-1 * var(--ls-d))); } to { transform: translateX(var(--ls-d)); } }
+.ls-clouds { animation: ls-cloud 60s ease-in-out infinite alternate; }
+@keyframes ls-cloud { from { transform: translateX(-24px); } to { transform: translateX(36px); } }
+.ls-birds { animation: ls-birds 30s linear infinite; }
+@keyframes ls-birds { from { transform: translate(-160px, 10px); } to { transform: translate(260px, -12px); } }
+.ls-mist { animation: ls-mist 34s ease-in-out infinite alternate; }
+@keyframes ls-mist { from { transform: translateX(-20px); opacity: 0.18; } to { transform: translateX(20px); } }
+.ls-glow { transform-box: fill-box; transform-origin: center; animation: ls-breathe 7s ease-in-out infinite; }
+.ls-light, .ls-roadglow { animation: ls-pulse 4.5s ease-in-out infinite; }
+@keyframes ls-breathe { 50% { transform: scale(1.08); } }
+@keyframes ls-pulse { 50% { opacity: 0.45; } }
+.ls-tw { animation: ls-twinkle 3.6s ease-in-out infinite; }
+@keyframes ls-twinkle { 50% { opacity: 0.2; } }
+.ls-glints { animation: ls-glint 5s ease-in-out infinite; }
+@keyframes ls-glint { 50% { opacity: 0.2; transform: translateX(6px); } }
+/* The walker walks on the spot: legs and arms swing from the hip and shoulder, the body bobs. */
+.ls-walker { animation: ls-bob 1.1s ease-in-out infinite; }
+.ls-leg, .ls-arm { transform-box: view-box; }
+.ls-leg { transform-origin: 0 -4px; animation: ls-swing 1.1s ease-in-out infinite alternate; }
+.ls-arm { transform-origin: 0 -12px; animation: ls-swing 1.1s ease-in-out infinite alternate-reverse; }
+.ls-leg.b, .ls-arm.b { animation-direction: alternate-reverse; }
+.ls-arm.b { animation-direction: alternate; }
+@keyframes ls-swing { from { transform: rotate(-16deg); } to { transform: rotate(16deg); } }
+@keyframes ls-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-0.8px); } }
+
 /* A meteor shower's night: a streak now and then. */
-.vista-meteor { opacity: 0; animation: vista-meteor 7s linear infinite; }
-@keyframes vista-meteor {
+.ls-meteor { opacity: 0; animation: ls-meteor 7s linear infinite; }
+@keyframes ls-meteor {
   0%, 88% { opacity: 0; transform: translate(0, 0); }
   90% { opacity: 0.9; }
   96% { opacity: 0; transform: translate(-30px, 16px); }
   100% { opacity: 0; }
 }
+
+/* ---- Walk's pages on the kit (look pass, fork L6) ----
+   The older Walk blocks are drawn as the kit draws: filled panels in their own ink (no outlines), Fraunces titles,
+   the one glowing action from --act, quiet outlined buttons for everything else. */
+.walk3.k-light { --walk-glow: rgba(143, 220, 182, 0.3); --k-bg: radial-gradient(90% 40% at 0% 0%, color-mix(in srgb, var(--walk-glow) 85%, transparent), transparent 72%), radial-gradient(90% 50% at 100% 100%, rgba(143, 220, 182, 0.18), transparent 70%), #0b1024; --w1: color-mix(in srgb, var(--walk-glow) 70%, transparent); --w2: rgba(70, 60, 150, 0.26); gap: 12px; }
+:root[data-themed] .walk3.k-light { --k-bg: var(--th-light); --w1: var(--th-w1); --w2: var(--th-w2); }
+.walk3 .walk-years, .walk3 .walk-then, .walk3 .walk-then2, .walk3 .walk-dispatch, .walk3 .walk-collection, .walk3 .walk-deeper, .walk3 .walk-fact, .walk3 .walk-stretch, .walk3 .walk-end {
+  --ink: var(--route-ink, var(--steps));
+  border: 0; border-radius: 20px; padding: 12px 14px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ink) 24%, #10122a), color-mix(in srgb, var(--ink) 7%, #10122a) 90%);
+}
+.walk3 .walk-dispatch.quiet, .walk3 .walk-dispatch.bookmark { --ink: var(--k-pearl); border: 0; }
+.walk3 .walk-deeper { --ink: var(--k-cream); }
+.walk3 .walk-kind { font-weight: 700; letter-spacing: 0.06em; color: color-mix(in srgb, var(--ink, var(--k-cream)) 40%, #e4e0ee); }
+.walk3 .walk-route-kind { color: var(--route-ink); }
+.walk3 .walk-voice { font: 400 22px/1.2 var(--serif); }
+.walk3 .walk-para { font-size: 15px; line-height: 1.45; }
+.walk3 .walk-title { font: 400 30px/1.12 var(--serif); }
+.walk3 .walk-h2 { font: 400 24px/1.15 var(--serif); }
+.walk3 .walk-sub { font-size: 15px; color: var(--k-quiet); }
+.walk3 .walk-halts, .walk3 .walk-chron { --ink: var(--route-ink, var(--k-cream)); padding: 2px 14px; gap: 0; }
+.walk3 .walk-halts li, .walk3 .walk-chron li { border-bottom-color: rgba(237, 230, 218, 0.12); font-size: 15px; }
+.walk3 .walk-halts li:last-child, .walk3 .walk-chron li:last-child { border-bottom: 0; }
+.walk3 .walk-target { --ink: var(--k-sleep, #93c3dc); }
+.walk3 .walk-target input { border-radius: 14px; border-color: rgba(237, 230, 218, 0.35); color-scheme: dark; }
+.walk3 .walk-route-map .walk-map { border-radius: 20px; }
+.walk3 .walk-primary, .walk-moment .walk-primary { background: var(--act); color: var(--act-ink); font: 700 16px var(--sans); box-shadow: 0 10px 24px -8px var(--act); }
+.walk3 .walk-ghost, .walk-moment .walk-ghost { border: 2px solid var(--k-cream); color: var(--k-cream); font-weight: 700; min-height: 48px; }
+.walk3 .walk-sources { display: flex; flex-direction: column; gap: 4px; }
+.walk3 .walk-sources .walk-h3 { font: 700 14px var(--sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--k-quiet); }
+/* The shelf's map cards: filled in the route's ink, a hairline edge and a small arrow (they open), no glow. */
+.walk3 .walk-rc { border: 1px solid color-mix(in srgb, var(--route-ink) 46%, transparent); border-radius: 20px; box-shadow: none; background: linear-gradient(180deg, color-mix(in srgb, var(--route-ink) 24%, #10122a), color-mix(in srgb, var(--route-ink) 7%, #10122a) 90%); }
+.walk3 .walk-rc > .k-arrow { position: absolute; right: 12px; bottom: 16px; color: color-mix(in srgb, var(--route-ink) 80%, #fff); }
+.walk3 .walk-rc-panel { background: none; border-top: 0; padding-right: 36px; }
+.walk3 .walk-rc-state { border: 1.5px solid var(--route-ink); color: var(--route-ink); font-weight: 700; }
+.walk3 .walk-rc-nums { color: var(--k-quiet); font-size: 15px; }
+.walk3 .walk-section { gap: 10px; }
+.walk-sheet-route .walk-primary { background: var(--act); color: var(--act-ink); font: 700 16px var(--sans); box-shadow: 0 10px 24px -8px var(--act); }
+.walk-sheet-route .walk-ghost { border: 2px solid var(--k-cream); color: var(--k-cream); font-weight: 700; }

@@ -1,6 +1,7 @@
 import { CardViewerHost } from './ui/CardViewer';
 import { TrainProto } from './screens/proto/TrainLiving';
 import { SessionProto } from './screens/proto/SessionLiving';
+import { ScenesCheck } from './screens/proto/ScenesCheck';
 import { Suspense, lazy, useEffect, useRef, type ComponentType, type ReactNode } from 'react';
 import { RegionRoot } from './ui/live/RegionFrame';
 import { findSession } from './domain/plan';
@@ -222,6 +223,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/dawn': { el: () => <DawnPage /> },
   '/proto/session': { el: () => <SessionProto /> },
   '/proto/train': { el: () => <TrainProto /> },
+  '/proto/scenes': { el: () => <ScenesCheck /> },
 };
 
 export function App() {

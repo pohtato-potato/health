@@ -22,7 +22,8 @@ describe('the route page', () => {
     expect(html).toContain('Expedition · 629–645');
     expect(html).toContain('Xuanzang&#x27;s road');
     expect(html).toContain('Chang&#x27;an to Nalanda and home · Recorded place by place');
-    expect(html).toContain('of about 17,000 km · 7%');
+    expect(html).toContain('of about 17,000 km');
+    expect(html).toContain('7%');
     expect(html).toContain('The road out');
     expect(html).toContain('The road home');
   });
@@ -91,7 +92,7 @@ describe('the route map’s names', async () => {
 describe('the places list', () => {
   it('shows the places around you, with the rest a tap away', () => {
     const html = view(byId('xuanzang'), run('xuanzang'), 5200);
-    const shown = html.match(/<ol class="walk-halts">([\s\S]*?)<\/ol>/)![1].match(/<li/g)!.length;
+    const shown = html.match(/<ol class="walk-halts k-panel">([\s\S]*?)<\/ol>/)![1].match(/<li/g)!.length;
     expect(shown).toBeLessThanOrEqual(9);
     expect(html).toContain(`>Show all ${byId('xuanzang').places.length} places<`);
     expect(html).toContain('>Samarkand<');

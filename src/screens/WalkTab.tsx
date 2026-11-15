@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState } from 'react';
 import { addDays, daysBetween } from '../domain/dates';
 import { fmtDayMonth, fmtInt } from '../domain/format';
 import { seasonalThemeOn } from '../domain/themes';
@@ -8,13 +8,11 @@ import { kmFromSteps } from '../domain/walk';
 import { changePlace } from '../db/actions';
 import { db } from '../db/db';
 import { useAllDays, useDay, useSettings, useToday } from '../db/hooks';
-import { regionAt } from '../domain/regions';
 import { go } from '../router';
-import { Aurora } from '../ui/live/Aurora';
 import type { Festive } from '../walk/art/festive';
 import { kindOf, routeById } from '../walk/catalogue';
 import { STOPS, STRETCHES } from '../walk/content';
-import { arrivedToday, auroraFor, nearestPlace, statusLines, stoneFor, stopLine, timeAtPace, tomorrowLine, usualAndBig, whereLine, whereNow } from '../walk/page';
+import { arrivedToday, nearestPlace, statusLines, stoneFor, stopLine, timeAtPace, tomorrowLine, usualAndBig, whereLine, whereNow } from '../walk/page';
 import { stopToday, stretchAt, stretchDay, stretchEndToShow } from '../walk/road';
 import type { Stretch } from '../walk/content/types';
 import { Sheet } from '../ui/Sheet';
@@ -94,11 +92,10 @@ export function WalkTab() {
 
   // Look pass (board four, "Walk, in layered dusk"): the scene leads and runs larger, the stretch's name under it,
   // kilometres from Delhi as the big number, tomorrow as one panel, routes as doors, one glowing action. The scene
-  // art stays as it is until the layered-dusk redraw (fork L6).
+  // is drawn in layered dusk (fork L6) on the Walk light.
   const routes = [...challenges, ...expeditions];
   return (
-    <div className="page lv lv-tab walk2 k-walk" style={auroraFor(regionAt(km)) as CSSProperties}>
-      <Aurora />
+    <div className="page walk2 k-light walk">
       <div className="walk2-col k-page">
         <WalkTop km={km} todayKm={todayKm} stone={stoneFor(km)} festive={festive} />
         {stretch ? (
