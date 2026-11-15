@@ -8,7 +8,8 @@ import { back, go, useRoute } from '../router';
 import { forecastData } from '../state/forecastData';
 import { Icon } from '../ui/Icon';
 import { Ambient } from '../ui/you/Ambient';
-import { DrawnLine } from '../ui/you/DrawnLine';
+import { PageHead } from '../ui/kit/Kit';
+import { Spark } from './you/MomentumChart';
 import { CompareTrack } from './tracks/Compare';
 import { foodByDay, headInput, spanDays, useTrackData } from './tracks/data';
 import { DrinksTrack } from './tracks/Drinks';
@@ -34,10 +35,15 @@ export function jointsTitle(settings: Settings): string {
   return lower.length === 1 ? lower[0] : `${lower.slice(0, -1).join(', ')} and ${lower[lower.length - 1]}`;
 }
 
+/** The tracks on the list: readiness and custom tracks are retired (their data stays); joints only with a plan's flags. */
+export function shownTracks(settings: Settings): TrackKey[] {
+  return TRACK_KEYS.filter((k) => k !== 'readiness' && k !== 'own' && (k !== 'joints' || !!settings.plan?.flags.length));
+}
+
 /** You › Tracks: a tile per track on its own colour, with its sentence, a small line and its animation at low strength. */
 export function Tracks() {
   const data = useTrackData();
-  if (!data) return <div className="page" />;
+  if (!data) return <div className="page bare k-page k-light you" />;
   const { settings, today } = data;
   const all = [...data.days.values()];
   const head = headInput(data);
@@ -52,25 +58,24 @@ export function Tracks() {
   };
   // Readiness is retired (R3 x-ready): the body log on Today replaces it. Its stored data stays.
   // Custom tracks are retired too (R3 x-custom); their stored entries stay in backups.
-  const keys = TRACK_KEYS.filter((k) => k !== 'readiness' && k !== 'own' && (k !== 'joints' || settings.plan?.flags.length));
+  const keys = shownTracks(settings);
+  // Look pass: a filled panel per track in its own ink, its sentence and its line; the tile's animation stays, faint.
   return (
-    <div className="page bare yu-page">
-      <button type="button" className="backlink" onClick={() => back('/you')}>
-        <Icon name="left" size={20} stroke={1.8} />
-        You
-      </button>
-      <h1>Tracks</h1>
-      <div className="yu-tiles">
+    <div className="page bare k-page k-light you">
+      <PageHead back="You" onBack={() => back('/you')} title="Tracks" />
+      <div className="k-doors two k-track-tiles">
         {keys.map((k) => {
           const look = TRACK_LOOK[k];
           const say = headlineFor(k, { ...head, readiness, ownCount: 0 }).say;
           const line = series[k];
+          const name = k === 'joints' ? jointsTitle(settings) : look.name;
           return (
-            <button key={k} type="button" style={{ '--c': look.accent, '--g': look.ground } as CSSProperties} onClick={() => (k === 'meds' ? go('/medicines') : go('/track', { k }))}>
+            <button key={k} type="button" className="k-panel k-tap k-tt" style={{ '--ink': look.accent } as CSSProperties} onClick={() => (k === 'meds' ? go('/medicines') : go('/track', { k }))} aria-label={`${name}: ${say}`}>
               <Ambient t={k} />
-              <b>{k === 'joints' ? jointsTitle(settings) : look.name}</b>
-              <span>{say}</span>
-              {line && line.length > 1 && <DrawnLine vals={line} c={look.accent} h={28} area={false} width={2.2} />}
+              <span className="k-lb">{name}</span>
+              <span className="k-tt-say">{say}</span>
+              {line && line.length > 1 && <Spark vals={line} ink={look.accent} />}
+              <Icon name="right" size={18} stroke={2.2} className="k-arrow" />
             </button>
           );
         })}

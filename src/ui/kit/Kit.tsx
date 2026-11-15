@@ -39,13 +39,15 @@ export function Panel({ ink, onClick, label, flat, children, style, className }:
   );
 }
 
-/** A door into another page: its mark, one live value, its name. It takes the light of the page it sits on. */
-export function Door({ icon, name, value, ink, onClick }: { icon: IconName; name: string; value: ReactNode; ink?: string; onClick: () => void }) {
+/**
+ * A door into another page: its mark, one live value, its name. It takes the light of the page it sits on.
+ * `line`: board one's doors on You's pages, the name in its ink over a quiet line (the value) instead of a big number.
+ */
+export function Door({ icon, name, value, ink, onClick, line }: { icon: IconName; name: string; value: ReactNode; ink?: string; onClick: () => void; line?: boolean }) {
   return (
-    <button type="button" className="k-door" style={inkStyle(ink)} onClick={onClick} aria-label={typeof value === 'string' || typeof value === 'number' ? `${name}: ${value}` : name}>
-      <Icon name={icon} size={22} color={ink ?? 'currentColor'} stroke={1.6} />
-      <b className="v">{value}</b>
-      <span className="nm">{name}</span>
+    <button type="button" className={`k-door${line ? ' line' : ''}`} style={inkStyle(ink)} onClick={onClick} aria-label={typeof value === 'string' || typeof value === 'number' ? `${name}: ${value}` : name}>
+      <Icon name={icon} size={line ? 30 : 22} color={ink ?? 'currentColor'} stroke={1.6} />
+      {line ? <><span className="nm">{name}</span><span className="ln">{value}</span></> : <><b className="v">{value}</b><span className="nm">{name}</span></>}
       <Icon name="right" size={14} stroke={2.4} className="k-arrow" />
     </button>
   );

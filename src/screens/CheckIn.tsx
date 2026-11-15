@@ -65,7 +65,7 @@ export function CheckInScreen() {
   const [saved, setSaved] = useState<CheckIn | null>(null);
   const started = useRef(Date.now());
 
-  if (!settings || !days || !last) return <RegionFrame className="bare" />;
+  if (!settings || !days || !last) return <RegionFrame className="bare ci-k" />;
   const std = standing ?? last.lastWaist?.waistStanding ?? 36;
   const rel = relaxed ?? last.lastRelaxed?.waistRelaxed ?? std + 1;
   const sl = slouched ?? last.lastSlouch?.waistSlouched ?? std + 1.5;
@@ -112,7 +112,7 @@ export function CheckInScreen() {
   if (step === 'photos') {
     const done = POSES.filter((p) => shots[p]).length;
     return (
-      <RegionFrame className="bare" style={{ gap: 14, paddingTop: 'calc(12px + var(--safe-top))' }}>
+      <RegionFrame className="bare ci-k" style={{ gap: 14, paddingTop: 'calc(12px + var(--safe-top))' }}>
         {header}
         <h1 className="h1">Photos</h1>
         <div className="seg" role="tablist">
@@ -150,7 +150,7 @@ export function CheckInScreen() {
 
   if (step === 'tape') {
     return (
-      <RegionFrame className="bare" style={{ gap: 16, paddingTop: 'calc(12px + var(--safe-top))' }}>
+      <RegionFrame className="bare ci-k" style={{ gap: 16, paddingTop: 'calc(12px + var(--safe-top))' }}>
         {header}
         <h1 className="h1">Tape measure</h1>
         <div className="card" style={{ gap: 6 }}>
@@ -181,7 +181,7 @@ export function CheckInScreen() {
   if (step === 'tshirt') {
     const lastTee = last.last?.tshirt;
     return (
-      <RegionFrame className="bare" style={{ gap: 16, paddingTop: 'calc(12px + var(--safe-top))' }}>
+      <RegionFrame className="bare ci-k" style={{ gap: 16, paddingTop: 'calc(12px + var(--safe-top))' }}>
         {header}
         <h1 className="h1">T-shirt test and your line</h1>
         <Capture
@@ -241,7 +241,7 @@ export function CheckInScreen() {
   const next = addDays(dayKey(), 30);
 
   return (
-    <RegionFrame className="bare" style={{ gap: 16, paddingTop: 'calc(12px + var(--safe-top))' }}>
+    <RegionFrame className="bare ci-k" style={{ gap: 16, paddingTop: 'calc(12px + var(--safe-top))' }}>
       {header}
       <div className="col gap6">
         <h1 className="h1" style={{ fontSize: 32 }}>

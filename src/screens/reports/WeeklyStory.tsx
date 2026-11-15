@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { saveBackup } from '../../db/backup';
 import { db } from '../../db/db';
 import { saveMeasurement } from '../../db/actions';
@@ -15,86 +15,87 @@ import { back, go, useRoute } from '../../router';
 import { Story, type StoryCard } from '../../ui/Story';
 import { RegionFrame } from '../../ui/live/RegionFrame';
 import { useToast } from '../../ui/Toasts';
-import { HUE, GOLD } from '../../ui/you/palette';
-import { Reveal } from '../../ui/you/Reveal';
+import { Sect } from '../../ui/kit/Kit';
 import { WalkVista } from '../../walk/WalkVista';
 import { STORY_SEEN_KEY } from '../you/DueLines';
 import { CorrectionNotes } from './CorrectionNotes';
 import { WeekLine } from '../football/HabitLine';
 
 const km = (n: number) => `${fmtInt(n)} km`;
+const GOLD = '#f2c46d';
+const Tile = ({ ink, n, w }: { ink: string; n: string; w: string }) => <div className="k-panel" style={{ '--ink': ink } as CSSProperties}><b className="k-num ink">{n}</b><span className="k-q">{w}</span></div>;
 
 function Chapter({ c }: { c: StoryChapter }) {
   switch (c.id) {
     case 'road':
       return (
-        <section className="yu-sec"><h2>On the road</h2>
+        <section className="k-col k-story-sec"><Sect>On the road</Sect>
           <div className="yu-story">
             <WalkVista km={c.toKm} todayKm={0} />
             <div className="yu-story-b">
-              <div className="yu-h2">{c.km >= 1 ? `${km(c.km)} this week` : 'A short week on the road'}</div>
-              <span className="yu-q">Around {c.reached}.{c.ahead && c.aheadKm !== undefined ? ` ${c.ahead} is ${km(c.aheadKm)} ahead.` : ''}</span>
+              <div className="k-title">{c.km >= 1 ? `${km(c.km)} this week` : 'A short week on the road'}</div>
+              <span className="k-q">Around {c.reached}.{c.ahead && c.aheadKm !== undefined ? ` ${c.ahead} is ${km(c.aheadKm)} ahead.` : ''}</span>
             </div>
           </div>
         </section>
       );
     case 'tally':
       return (
-        <section className="yu-sec"><h2>The tally</h2>
-          <Reveal className="yu-spread">
-            {c.steps !== undefined && <div><b style={{ color: HUE.steps }}>{fmtInt(c.steps)}</b><span>steps</span></div>}
-            {c.sessions > 0 && <div><b style={{ color: HUE.train }}>{c.sessions}</b><span>session{c.sessions === 1 ? '' : 's'}</span></div>}
-            {c.records > 0 && <div><b style={{ color: GOLD }}>{c.records}</b><span>record{c.records === 1 ? '' : 's'}</span></div>}
-            {c.perfect > 0 && <div><b style={{ color: GOLD }}>{c.perfect}</b><span>perfect day{c.perfect === 1 ? '' : 's'}</span></div>}
-          </Reveal>
+        <section className="k-col k-story-sec"><Sect>The tally</Sect>
+          <div className="k-tiles two">
+            {c.steps !== undefined && <Tile ink="#8fdcb6" n={fmtInt(c.steps)} w="steps" />}
+            {c.sessions > 0 && <Tile ink="#ff9a76" n={String(c.sessions)} w={`session${c.sessions === 1 ? '' : 's'}`} />}
+            {c.records > 0 && <Tile ink={GOLD} n={String(c.records)} w={`record${c.records === 1 ? '' : 's'}`} />}
+            {c.perfect > 0 && <Tile ink={GOLD} n={String(c.perfect)} w={`perfect day${c.perfect === 1 ? '' : 's'}`} />}
+          </div>
         </section>
       );
     case 'swing':
       return (
-        <section className="yu-sec"><h2>The swing</h2>
-          <div className="yu-card"><b>{c.what}: {c.now}</b><span className="yu-q">{c.up ? 'Up' : 'Down'} from {c.was} the week before.</span></div>
+        <section className="k-col k-story-sec"><Sect>The swing</Sect>
+          <div className="k-panel" style={{ '--ink': '#93c3dc' } as CSSProperties}><span className="k-lb">{c.what}</span><b className="k-num ink">{c.now}</b><span className="k-q">{c.up ? 'Up' : 'Down'} from {c.was} the week before.</span></div>
         </section>
       );
     case 'food':
       return (
-        <section className="yu-sec"><h2>Food</h2>
-          <div className="yu-card yu-tint" style={{ '--c': HUE.food } as React.CSSProperties}>
+        <section className="k-col k-story-sec"><Sect>Food</Sect>
+          <div className="k-panel" style={{ '--ink': '#c2b2ff' } as CSSProperties}>
             <b>{c.proteinAvg !== undefined ? `${fmtInt(c.proteinAvg)} g protein a day` : `${c.foodDays} days logged`}</b>
-            <span className="yu-q">{c.foodDays} day{c.foodDays === 1 ? '' : 's'} logged, {c.inRange} in range.</span>
+            <span className="k-q">{c.foodDays} day{c.foodDays === 1 ? '' : 's'} logged, {c.inRange} in range.</span>
           </div>
         </section>
       );
     case 'sleep':
       return (
-        <section className="yu-sec"><h2>Sleep</h2>
-          <div className="yu-card yu-tint" style={{ '--c': HUE.sleep } as React.CSSProperties}>
-            <b>{c.avg} a night</b><span className="yu-q">Over {c.nights} logged night{c.nights === 1 ? '' : 's'}.</span>
+        <section className="k-col k-story-sec"><Sect>Sleep</Sect>
+          <div className="k-panel" style={{ '--ink': '#93c3dc' } as CSSProperties}>
+            <b>{c.avg} a night</b><span className="k-q">Over {c.nights} logged night{c.nights === 1 ? '' : 's'}.</span>
           </div>
         </section>
       );
     case 'training': {
       const names = [...new Set(c.records.map((r) => r.exercise).filter(Boolean))];
       return (
-        <section className="yu-sec"><h2>Training</h2>
-          <div className="yu-card yu-tint" style={{ '--c': HUE.train } as React.CSSProperties}>
+        <section className="k-col k-story-sec"><Sect>Training</Sect>
+          <div className="k-panel" style={{ '--ink': '#ff9a76' } as CSSProperties}>
             <b>{c.sessions} of {c.perWeek} sessions</b>
-            <span className="yu-q">{fmtInt(c.sets)} sets, {c.restDays} rest day{c.restDays === 1 ? '' : 's'}.{names.length ? ` Records: ${names.join(', ')}.` : ''}</span>
+            <span className="k-q">{fmtInt(c.sets)} sets, {c.restDays} rest day{c.restDays === 1 ? '' : 's'}.{names.length ? ` Records: ${names.join(', ')}.` : ''}</span>
           </div>
         </section>
       );
     }
     case 'finding':
       return (
-        <section className="yu-sec"><h2>One finding</h2>
-          <div className="yu-card"><span>{c.finding.text}</span><span className="yu-q">{c.finding.working}</span></div>
+        <section className="k-col k-story-sec"><Sect>One finding</Sect>
+          <div className="k-panel" style={{ '--ink': '#93c3dc' } as CSSProperties}><span>{c.finding.text}</span><span className="k-q">{c.finding.working}</span></div>
         </section>
       );
     case 'next':
       return (
-        <section className="yu-sec"><h2>Next week</h2>
-          <div className="yu-card yu-tint" style={{ '--c': HUE.walk } as React.CSSProperties}>
+        <section className="k-col k-story-sec"><Sect>Next week</Sect>
+          <div className="k-panel" style={{ '--ink': '#8fdcb6' } as CSSProperties}>
             {c.stop && c.stepsPerDay !== undefined && c.by
-              ? <><b>{c.stop} is next</b><span className="yu-q">{fmtInt(c.stepsPerDay)} steps a day gets you there by {fmtDayMonth(c.by)}.</span></>
+              ? <><b>{c.stop} is next</b><span className="k-q">{fmtInt(c.stepsPerDay)} steps a day gets you there by {fmtDayMonth(c.by)}.</span></>
               : <b>The road is walked. Carry on as you like.</b>}
           </div>
         </section>
@@ -119,15 +120,15 @@ function WaistCard({ today, week, measurements }: { today: DayKey; week: DayKey;
     toast({ text: `Waist saved · ${n} in`, tone: 'sage' });
   };
   return (
-    <section className="yu-sec"><h2>Sunday waist</h2>
-      <div className="yu-card ws-live">
+    <section className="k-col k-story-sec"><Sect>Sunday waist</Sect>
+      <div className="k-panel ws-live">
         <label className="ws-waist">
           <span>Standing, stomach tucked in, at the navel</span>
           <span className="ws-in"><input type="number" inputMode="decimal" step="0.25" min="20" max="70" value={val} placeholder="—" aria-label="Waist in inches" onChange={(e) => setVal(e.target.value)} /><em>in</em></span>
         </label>
-        <button type="button" className="btn lg block" disabled={!ok} onClick={() => void save()}>{thisWeek && Number(val) === thisWeek.waistStanding ? 'Saved' : 'Save the waist'}</button>
-        {before?.waistStanding !== undefined && <span className="yu-q">Last time: {before.waistStanding} in on {fmtDayMonth(before.date)}. Waist moves slowly; the trend over weeks is what counts.</span>}
-        <span className="yu-q">For week {weekNumber(week)}’s story.</span>
+        <button type="button" className="k-act wide" disabled={!ok} onClick={() => void save()}>{thisWeek && Number(val) === thisWeek.waistStanding ? 'Saved' : 'Save the waist'}</button>
+        {before?.waistStanding !== undefined && <span className="k-q">Last time: {before.waistStanding} in on {fmtDayMonth(before.date)}. Waist moves slowly; the trend over weeks is what counts.</span>}
+        <span className="k-q">For week {weekNumber(week)}’s story.</span>
       </div>
     </section>
   );
@@ -193,7 +194,7 @@ export function WeeklyStory() {
     <>
       <p className="ws-kicker">{fmtDayMonth(week)} to {fmtDayMonth(end)}</p>
       <h1 className="ws-title">Week {weekNumber(week)}, the story</h1>
-      {!chapters.length ? <div className="yu-card"><b>Nothing was logged that week</b><span className="yu-q">A story needs at least one day.</span></div> : show(byId('road'))}
+      {!chapters.length ? <div className="k-panel"><b>Nothing was logged that week</b><span className="k-q">A story needs at least one day.</span></div> : show(byId('road'))}
       <p className="ws-hint">Tap the right side to go on, the left to go back.</p>
     </>
   ), 'linear-gradient(170deg, #2a2350, #0f1022)');
@@ -205,24 +206,24 @@ export function WeeklyStory() {
     <>
       {show(byId('next'))}
       {note?.oneThing && (
-        <section className="yu-sec"><h2>The one thing you picked</h2>
-          <div className="yu-card ws-live">
+        <section className="k-col k-story-sec"><Sect>The one thing you picked</Sect>
+          <div className="k-panel ws-live">
             <span>{note.oneThing}</span>
             {current ? (
-              <div className="yu-choices" role="group" aria-label="Did it happen?">
+              <div className="k-pills" role="group" aria-label="Did it happen?">
                 {[true, false].map((v) => (
-                  <button key={String(v)} type="button" aria-pressed={note.done === v} className={note.done === v ? 'on' : undefined} onClick={() => db.weeks.put({ ...note, done: v })}>{v ? 'It happened' : 'Not this time'}</button>
+                  <button key={String(v)} type="button" aria-pressed={note.done === v} className="k-pill" onClick={() => db.weeks.put({ ...note, done: v })}>{v ? 'It happened' : 'Not this time'}</button>
                 ))}
               </div>
-            ) : note.done !== undefined && <span className="yu-q">{note.done ? 'It happened.' : 'Not that time.'}</span>}
+            ) : note.done !== undefined && <span className="k-q">{note.done ? 'It happened.' : 'Not that time.'}</span>}
           </div>
         </section>
       )}
       {current && chapters.length > 0 && (
-        <section className="yu-sec"><h2>One thing for this week</h2>
-          <div className="yu-card ws-live">
+        <section className="k-col k-story-sec"><Sect>One thing for this week</Sect>
+          <div className="k-panel ws-live">
             <textarea className="yu-note" rows={4} aria-label="One thing for this week" value={text} onChange={(e) => setDraft(e.target.value)} />
-            <button type="button" className="btn sm" onClick={async () => {
+            <button type="button" className="k-act sm" onClick={async () => {
               await db.weeks.put({ ...(nextNote ?? { id: nextWeek }), oneThing: text });
               toast({ text: 'Saved for this week', sub: "Next week's story asks how it went." });
             }}>{nextNote?.oneThing === text ? 'Saved' : 'Keep this'}</button>
@@ -233,11 +234,11 @@ export function WeeklyStory() {
     </>
   ), 'linear-gradient(170deg, #1f3a2a, #0b140f)');
   add('backup', (
-    <section className="yu-sec"><h2>{current ? 'Backup, then done' : 'That was the week'}</h2>
-      <div className="yu-card ws-live">
+    <section className="k-col k-story-sec"><Sect>{current ? 'Backup, then done' : 'That was the week'}</Sect>
+      <div className="k-panel ws-live">
         <span>{backup?.id === 'backup' ? backup.text : 'Your data stays on this phone. A backup keeps a copy safe.'}</span>
-        {current && <button type="button" className="btn lg block" onClick={() => void backUp()}>Backup</button>}
-        <button type="button" className="link" onClick={() => go('/reports/archive')}>Every past week and month</button>
+        {current && <button type="button" className="k-act wide" onClick={() => void backUp()}>Backup</button>}
+        <button type="button" className="k-more" style={{ color: '#ede6da' }} onClick={() => go('/reports/archive')}>Every past week and month</button>
       </div>
     </section>
   ), 'linear-gradient(170deg, #2a2440, #0e0d18)');

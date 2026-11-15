@@ -7,21 +7,20 @@ import { weekNumber } from '../../domain/weekly';
 import { weeksWithData } from '../../domain/weeklyStory';
 import { back, go } from '../../router';
 import { Icon } from '../../ui/Icon';
-import { RegionFrameView } from '../../ui/live/RegionFrame';
+import { PageHead } from '../../ui/kit/Kit';
 
 /** Every past week and month, opening as it was. */
 export function Archive() {
   const today = useToday();
   const days = useAllDays();
   const sessions = useSessions();
-  if (!days || !sessions) return <div className="page" />;
+  if (!days || !sessions) return <div className="page bare k-page k-light you" />;
   const weeks = weeksWithData(days, sessions, today);
   const months = monthsWithData(days, today);
   return (
-    <RegionFrameView km={0} className="yu-page">
-      <div className="yu-stack">
-        <button type="button" className="backlink" onClick={() => back('/reports')}><Icon name="left" size={20} stroke={1.8} />Reports</button>
-        <h1>The archive</h1>
+    <div className="page bare k-page k-light you yu-page">
+      <div className="k-page">
+        <PageHead back="Reports" onBack={() => back('/reports')} title="The archive" />
         {!weeks.length && !months.length && <div className="yu-card"><b>Nothing here yet</b><span className="yu-q">Finished weeks and months collect here.</span></div>}
         {months.length > 0 && (
           <section className="yu-sec"><h2>Months</h2>
@@ -34,6 +33,6 @@ export function Archive() {
           </section>
         )}
       </div>
-    </RegionFrameView>
+    </div>
   );
 }

@@ -6,8 +6,7 @@ import { useSettings, useToday } from '../../db/hooks';
 import { spokenLine } from '../../domain/voice';
 import { fmtDayMonth } from '../../domain/format';
 import { back } from '../../router';
-import { Icon } from '../../ui/Icon';
-import { RegionFrameView } from '../../ui/live/RegionFrame';
+import { PageHead } from '../../ui/kit/Kit';
 
 /** The ledger of numbers put right, each with why. */
 export function Corrections() {
@@ -20,7 +19,7 @@ export function Corrections() {
   const [was, setWas] = useState('');
   const [now, setNow] = useState('');
   const [note, setNote] = useState('');
-  if (!list) return <div className="page" />;
+  if (!list) return <div className="page bare k-page k-light you" />;
   const ready = what.trim() && now.trim() && note.trim() && date <= today;
   const save = async () => {
     await addCorrection({ date, what: what.trim(), was: was.trim() || 'not logged', now: now.trim(), note: note.trim() });
@@ -29,10 +28,9 @@ export function Corrections() {
   };
   const rows = [...list].sort((a, b) => b.date.localeCompare(a.date));
   return (
-    <RegionFrameView km={0} className="yu-page">
-      <div className="yu-stack">
-        <button type="button" className="backlink" onClick={() => back('/reports')}><Icon name="left" size={20} stroke={1.8} />Reports</button>
-        <h1>Corrections</h1>
+    <div className="page bare k-page k-light you yu-page">
+      <div className="k-page">
+        <PageHead back="Reports" onBack={() => back('/reports')} title="Corrections" />
         {saved > 0 && settings && <div className="voice" role="status">{spokenLine(settings, today, 'correction', String(saved))}</div>}
         <span className="yu-q">A number put right shows this note wherever that week or month is read.</span>
         <section className="yu-sec"><h2>Add one</h2>
@@ -56,6 +54,6 @@ export function Corrections() {
           ))}
         </section>
       </div>
-    </RegionFrameView>
+    </div>
   );
 }

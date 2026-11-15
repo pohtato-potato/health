@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode, createContext, useContext } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode, createContext, useContext } from 'react';
 import { fmtDayMonth, fmtDuration, fmtInt } from '../domain/format';
 import { dayKey } from '../domain/dates';
 import { DEFAULT_MEAL_TIMES, MEAL_NAMES, MEALS, prefOn, type ChecklistItem, type Place, type PlaceKind, type Settings, type Targets } from '../domain/types';
@@ -14,7 +14,8 @@ import { useSettings, useToday } from '../db/hooks';
 import { askPersist, usePwa } from '../pwa';
 import { back, go, openSheet, useRoute } from '../router';
 import { DecField, IntField, LinkRow, Seg, SwitchRow, TimeTile } from '../ui/controls';
-import { Icon } from '../ui/Icon';
+import { Icon, type IconName } from '../ui/Icon';
+import { PageHead, Sect } from '../ui/kit/Kit';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
 import { targetsFor } from '../state/derived';
@@ -97,25 +98,21 @@ export function SettingsScreen() {
   };
 
   return (
-    <div className="page bare yu-set-page" style={{ gap: 10 }}>
-      <button type="button" className="backlink" onClick={() => back('/you')}>
-        <Icon name="left" size={20} stroke={1.8} />
-        You
-      </button>
-      <h1 className="h1" style={{ fontSize: 32, marginBottom: 6 }}>
-        Settings
-      </h1>
+    <div className="page bare k-page k-light you yu-set-page set-k">
+      <PageHead back="You" onBack={() => back('/you')} title="Settings" />
       <SetupCard settings={settings} />
 
       <OpenGroup.Provider value={{ open, toggle: (id) => setOpen(open === id ? null : id), summary }}>
-      <Group id="you" title="About you">
+      <Sect>You</Sect>
+      <div className="k-panel k-set">
+      <Group id="you" title="About you" icon="sheet" ink="#ede6da">
         <LinkRow title="Name" value={settings.name || 'Not set'} onClick={() => setEditor('you')} />
         <LinkRow title="Height" value={settings.heightCm ? `${settings.heightCm} cm` : 'Not set'} onClick={() => setEditor('you')} />
         <LinkRow title="Goal date" value={settings.goalDate ? fmtDayMonth(settings.goalDate) + ` ${settings.goalDate.slice(0, 4)}` : 'Not set'} onClick={() => setEditor('you')} />
         <LinkRow title="Birthday" sub="For a theme on the day" value={settings.birthday ? fmtDayMonth(`2000-${settings.birthday}`) : 'Not set'} onClick={() => setEditor('you')} />
       </Group>
 
-      <Group id="targets" title="Targets">
+      <Group id="targets" title="Targets" icon="tree" ink="#8fdcb6">
         <LinkRow title="Calories" value={`${fmtInt(t.kcalMin)}–${fmtInt(t.kcalMax)} kcal`} onClick={() => setEditor('targets')} />
         <LinkRow title="Protein" value={`${t.proteinG} g`} onClick={() => setEditor('targets')} />
         <LinkRow title="Steps" value={fmtInt(t.steps)} onClick={() => setEditor('targets')} />
@@ -130,7 +127,7 @@ export function SettingsScreen() {
         <SwitchRow title="Suggest target changes" sub="Only ever more food or more steps, and only when you tap to accept" checked={prefOn(p, 'suggestTargets')} onChange={(v) => setPref('suggestTargets', v)} />
       </Group>
 
-      <Group id="walking" title="Places and the walk">
+      <Group id="walking" title="Places and the walk" icon="route" ink="#8fdcb6">
         <div className="li" style={{ minHeight: 64 }}>
           <span className="s">
             <span>Your loop at home</span>
@@ -153,7 +150,7 @@ export function SettingsScreen() {
         <LinkRow title="Places and the walk" sub="Each brings its meal times, step goal and the foods shown first" value={(settings.places?.length ? settings.places : settings.homes).map((h) => h.name).join(', ')} onClick={() => setEditor('homes')} />
       </Group>
 
-      <Group id="checklist" title="Checklist">
+      <Group id="checklist" title="Checklist" icon="pack" ink="#f4aedb">
         <LinkRow title="Medicines" sub="Courses, stock, appointments and rewards" onClick={() => go('/medicines')} />
         {settings.checklist.map((i) => (
           <div key={i.id} className="li">
@@ -178,7 +175,7 @@ export function SettingsScreen() {
         </div>
       </Group>
 
-      <Group id="food-categories" title="Food categories">
+      <Group id="food-categories" title="Food categories" icon="food" ink="#e98a5b">
         {(settings.foodCategories ?? []).map((c) => (
           <div key={c.id} className="li">
             <input
@@ -208,11 +205,11 @@ export function SettingsScreen() {
         </div>
       </Group>
 
-      <div className="list">
-        <LinkRow title="Session settings" sub="Plan, plates, rest ding and buzz. Also on Train." onClick={() => openSheet('session-settings')} />
       </div>
 
-      <Group id="moments" title="Moments and themes">
+      <Sect>The app</Sect>
+      <div className="k-panel k-set">
+      <Group id="moments" title="Moments and themes" icon="kit" ink="#c2b2ff">
         <SwitchRow title="The Gremlin" sub="Its lines around the app. Off, the app just gives you the facts." checked={prefOn(p, 'gremlin')} onChange={(v) => { setPref('gremlin', v); void bump('voices', { value: v ? 'on' : 'off' }); }} />
         <LinkRow title="Theme" value={themeById(settings.theme)?.name ?? 'Dusk'} onClick={() => setEditor('theme')} />
         <SwitchRow title="Moments" sub="Full-screen celebrations for records, firsts and perfect days" checked={prefOn(p, 'moments')} onChange={(v) => setPref('moments', v)} />
@@ -220,7 +217,13 @@ export function SettingsScreen() {
         <SwitchRow title="Quiet in public" sub="No confetti or buzz from 10 pm to 7 am, or while a session runs in the background" checked={prefOn(p, 'quietPublic')} onChange={(v) => setPref('quietPublic', v)} />
       </Group>
 
-      <Group id="privacy" title="Privacy">
+      <NavRow icon="ground" ink="#ff9a76" title="Football" sub="Sound, bedtime and the club's own settings" onClick={() => go('/football/settings')} />
+      <NavRow icon="desk" ink="#93c3dc" title="Session" sub="Plan, plates, rest ding and buzz. Also on Train." onClick={() => openSheet('session-settings')} />
+      </div>
+
+      <Sect>Your data</Sect>
+      <div className="k-panel k-set">
+      <Group id="privacy" title="Privacy" icon="deal" ink="#ede6da">
         <SwitchRow title="Blur photos until tapped" checked={prefOn(p, 'blurPhotos')} onChange={(v) => setPref('blurPhotos', v)} />
         {canUseFingerprint() && (
           <SwitchRow
@@ -240,7 +243,7 @@ export function SettingsScreen() {
         )}
       </Group>
 
-      <Group id="backups" title="Data and backups" plain>
+      <Group id="backups" title="Backups and data" icon="save" ink="#f2c46d" plain>
         <div className="col gap12" style={{ padding: '18px 18px 6px', background: 'var(--surface)', border: '1px solid var(--hairline)', borderRadius: 20 }}>
           <div className="row" style={{ justifyContent: 'flex-start', alignItems: 'flex-start' }}>
             <div style={{ width: 10, height: 10, borderRadius: 5, marginTop: 5, flexShrink: 0, background: last && Date.now() - last < 3 * 86_400_000 ? 'var(--sage)' : 'var(--gold)' }} />
@@ -447,12 +450,13 @@ export function SettingsScreen() {
         </div>
       </Group>
 
-      <Group id="lastfm" title="Connections">
+      <Group id="lastfm" title="Connections" icon="link" ink="#93c3dc">
         <LastfmFields settings={settings} />
       </Group>
+      </div>
       </OpenGroup.Provider>
 
-      <div className="t12 d center" style={{ paddingTop: 18 }}>
+      <div className="k-q" style={{ paddingTop: 18, textAlign: 'center', fontSize: 14 }}>
         Health {__APP_VERSION__} · everything stays on this phone
       </div>
 
@@ -497,21 +501,33 @@ export function SettingsScreen() {
 
 const OpenGroup = createContext<{ open: string | null; toggle: (id: string) => void; summary: Record<string, string> }>({ open: null, toggle: () => {}, summary: {} });
 
-/** A Settings group as one summary row (s43); tapping it opens the group's detail beneath. */
-function Group({ id, title, children, plain }: { id: string; title: string; children: ReactNode; plain?: boolean }) {
+/** A Settings group as one row (board three): its drawn mark, name and summary; tapping it opens the group beneath. */
+function Group({ id, title, icon, ink, children, plain }: { id: string; title: string; icon: IconName; ink: string; children: ReactNode; plain?: boolean }) {
   const { open, toggle, summary } = useContext(OpenGroup);
   const isOpen = open === id;
   return (
-    <section id={`s-${id}`} className="col gap8" style={{ scrollMarginTop: 16 }}>
-      <button type="button" className="set-row" aria-expanded={isOpen} onClick={() => toggle(id)}>
-        <span className="col gap2" style={{ minWidth: 0, textAlign: 'left' }}>
-          <span className="t15">{title}</span>
-          {summary[id] && !isOpen && <span className="t12 q">{summary[id]}</span>}
+    <section id={`s-${id}`} className="k-set-g" style={{ scrollMarginTop: 16 }}>
+      <button type="button" className="k-set-row" aria-expanded={isOpen} onClick={() => toggle(id)}>
+        <Icon name={icon} size={26} color={ink} stroke={1.6} />
+        <span className="k-col" style={{ flex: 1 }}>
+          <b>{title}</b>
+          {summary[id] && <span className="k-q">{summary[id]}</span>}
         </span>
-        <Icon name={isOpen ? 'up' : 'down'} size={16} stroke={1.8} color="var(--dim)" />
+        <Icon name={isOpen ? 'up' : 'right'} size={18} stroke={2.2} />
       </button>
-      {isOpen && (plain ? children : <div className="list">{children}</div>)}
+      {isOpen && <div className="k-set-open">{plain ? children : <div className="list">{children}</div>}</div>}
     </section>
+  );
+}
+
+/** A Settings row that opens somewhere else. */
+function NavRow({ icon, ink, title, sub, onClick }: { icon: IconName; ink: string; title: string; sub: string; onClick: () => void }) {
+  return (
+    <button type="button" className="k-set-row" onClick={onClick}>
+      <Icon name={icon} size={26} color={ink} stroke={1.6} />
+      <span className="k-col" style={{ flex: 1 }}><b>{title}</b><span className="k-q">{sub}</span></span>
+      <Icon name="right" size={18} stroke={2.2} />
+    </button>
   );
 }
 
@@ -769,11 +785,9 @@ function SetupCard({ settings }: { settings: Settings }) {
   const gaps = setupGaps(settings);
   if (!gaps.length) return null;
   return (
-    <div className="notice" role="status">
-      <span className="t15">
-        Setup: {gaps.length} thing{gaps.length === 1 ? '' : 's'} missing
-      </span>
-      <span className="t13 q">{gaps.map((g) => g.label).join(', ')}</span>
+    <div className="k-panel" role="status" style={{ '--ink': '#f2c46d' } as CSSProperties}>
+      <span className="k-lb">Setup: {gaps.length} thing{gaps.length === 1 ? '' : 's'} missing</span>
+      <span className="k-q">{gaps.map((g) => g.label).join(', ')}</span>
     </div>
   );
 }

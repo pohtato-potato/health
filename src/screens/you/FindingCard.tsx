@@ -1,18 +1,21 @@
 import { useState } from 'react';
 import type { Finding } from '../../domain/dailyFinding';
-import { Reveal } from '../../ui/you/Reveal';
-import { useHold } from '../../ui/you/useHold';
+import { Panel } from '../../ui/kit/Kit';
+import { Icon } from '../../ui/Icon';
 
+/** One finding today (look pass): a filled blue panel, the working one tap away. */
 export function FindingCard({ finding }: { finding: Finding | undefined }) {
   const [open, setOpen] = useState(false);
-  const hold = useHold(open, setOpen);
   if (!finding) return null;
   return (
-    <Reveal className="yu-card yu-find">
-      <b>One finding today</b>
+    <Panel ink="#93c3dc">
+      <span className="k-lb">One finding today</span>
       <span>{finding.text}</span>
-      {open && <span className="yu-q yu-card-in">{finding.working}</span>}
-      <button type="button" className="yu-why" aria-expanded={open} {...hold}>{open ? 'Hide the working' : 'Why did this change?'}</button>
-    </Reveal>
+      {open && <span className="k-q">{finding.working}</span>}
+      <button type="button" className="k-more" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <span>{open ? 'Hide the working' : 'Why did this change?'}</span>
+        <Icon name={open ? 'up' : 'down'} size={16} stroke={2.2} />
+      </button>
+    </Panel>
   );
 }

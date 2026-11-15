@@ -1,10 +1,8 @@
-import { HUE } from '../../ui/you/palette';
-
-/** The five doors, in their fixed order. Later parts re-point Reports, Earned and Body at their new homes. */
+/** The doors, in their fixed order, in board one's inks: Tracks green, Earned gold, Insights blue, Reports lavender. */
 export const DOORS: { label: 'Reports' | 'Earned' | 'Body' | 'Tracks' | 'Insights'; path: string; hue: string }[] = [
-  { label: 'Reports', path: '/reports', hue: '#ff9a6b' },
-  { label: 'Earned', path: '/earned', hue: HUE.gold },
-  { label: 'Body', path: '/checkin', hue: HUE.shape },
-  { label: 'Tracks', path: '/tracks', hue: HUE.steps },
-  { label: 'Insights', path: '/insights', hue: HUE.train },
+  { label: 'Tracks', path: '/tracks', hue: '#8fdcb6' },
+  { label: 'Earned', path: '/earned', hue: '#f2c46d' },
+  { label: 'Insights', path: '/insights', hue: '#93c3dc' },
+  { label: 'Reports', path: '/reports', hue: '#c2b2ff' },
+  { label: 'Body', path: '/checkin', hue: '#f4aedb' },
 ];
