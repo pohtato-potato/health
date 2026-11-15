@@ -1,7 +1,10 @@
 // The loan market (desk spec §5, w-loan A) and loan talks (w3-haggle). Scouted targets sit beside packs; a market
 // loan has a slot of its own. Talks are three rounds, a die each, with their mood, what your scout knows and your
 // replies with the odds in colour. Every tap is a desk spend (store/desk.ts); deals land at 4 am.
-import { BackLink } from '../../../ui/kit/Kit';
+import { Action, Empty, Panel, Sect, type HowThisWorks } from '../../../ui/kit/Kit';
+import { FootballHome } from '../FootballHome';
+import { Bar, CORAL, GOLD, GREEN, MARKET_HOW, Note, PanelTop, Stat, TALK_HOW } from '../club/Bits';
+import { opinionWord, OPINION_INK } from '../../../football/market/relations';
 import { useMemo, useState, type CSSProperties } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../../db/db';
@@ -28,6 +31,7 @@ import { AXIS_INK } from '../../../ui/inks';
 import { CrestOrFog } from '../world/Fog';
 import '../../../styles/matchday.css';
 import '../../../styles/desk.css';
+import '../../../styles/club.css';
 
 const fill = (t: string, x: Record<string, string | number | undefined>) => t.replace(/\{(\w+)\}/g, (_, k) => String(x[k] ?? ''));
 const pickOf = <T,>(xs: T[], ...seed: (string | number)[]) => xs[hashSeed('talk-line', ...seed.map(String)) % xs.length];
@@ -35,9 +39,13 @@ const MOOD_INK = ['#ff7a76', '#ffad6b', '#f2c46d', '#8fb3f0', '#8fdcb6'];
 /** Odds in colour (w3-haggle): sure in gold, better than even in blue, long odds in grey. */
 const oddsInk = (pct: number) => (pct >= 100 ? '#f2c46d' : pct >= 50 ? '#8fb3f0' : '#a9b0c4');
 
-const Page = ({ children }: { children: React.ReactNode }) => <main className="md-page desk"><div className="md-in">{children}</div></main>;
-/** One way back (navigation A): drawn, on the left of the page's name. */
-const Back = ({ to, label, params }: { to: string; label: string; params?: Record<string, string> }) => <BackLink label={label} onClick={() => go(to, params)} />;
+/** Every market page: one way back and the page's name in the header, the "?" with its rules. */
+function Page({ title, back, to, params, help, children }: { title: string; back: string; to: string; params?: Record<string, string>; help?: HowThisWorks; children: React.ReactNode }) {
+  return <FootballHome section="club" inner={{ title, back, to, params, help }}><div className="k-page">{children}</div></FootballHome>;
+}
+/** A market loan has one slot of its own. */
+const MARKET_SLOTS = 1;
+const MARKET = { title: 'The loan market', back: 'Deals', to: '/football/club', params: { view: 'deals' }, help: MARKET_HOW(MARKET_SLOTS, OPEN_DAYS, ROUNDS) };
 
 /** A target's crest: its club's, once its kit is known. */
 const kitKnown = (m: DeskModel, club?: string) => Boolean(club && m.view.world?.clubs.find((c) => c.id === club)?.facts.includes('kit'));
@@ -47,7 +55,7 @@ export function MarketRoute() {
   const t = useTonight();
   const m = useLiveQuery(async () => (t ? loadDesk(t) : null), [t]);
   if (t === undefined || m === undefined) return null;
-  if (!t || !m) return <Page><p className="fb-s">Football starts once you found the club.</p></Page>;
+  if (!t || !m) return <Page {...MARKET}><Empty icon="deal" ink={GOLD} title="No market yet" line="Football starts once you found the club." /></Page>;
   return <MarketPage m={m} stays={globeOf(t.save).loans} />;
 }
 
@@ -57,64 +65,97 @@ function MarketPage({ m, stays }: { m: DeskModel; stays: Stay[] }) {
   const leads = mk?.leads ?? [];
   const here = stays.filter((s) => s.market && s.until >= m.date);
   const live = liveTalk(v);
+  const tiles = (
+    <div className="kb-g2">
+      <Stat label="Market slot" value={mk?.slot ? mk.slot.name : 'Free'} c={GREEN} under={mk?.slot ? `till ${untilWords(mk.slot.until)}` : undefined} />
+      <Stat label="Club money" value={euros(mk?.budget ?? 0)} c={GOLD} />
+    </div>
+  );
+  // How clubs feel about you: each club on the list once, warmest first.
+  const clubs = [...new Map(leads.map((l) => [l.club, l])).values()].sort((a, b) => b.opinion - a.opinion);
+  if (!leads.length && !live && !(mk?.offers.length)) {
+    return (
+      <Page {...MARKET}>
+        <Empty icon="scope" ink={GREEN} title="Nobody on the list yet" line="A scout who rolls a 6 can bring a name back by morning.">
+          <Action wide onClick={() => go('/football/desk/job', { id: 'scout' })}>Send a scout</Action>
+        </Empty>
+        {tiles}
+      </Page>
+    );
+  }
   return (
-    <Page>
-      <div className="md-top"><span className="md-cap">The loan market</span><Back to="/football/packs" label="Packs" /></div>
-      <h1 className="dk-h">{leads.length ? `${leads.length} ${leads.length === 1 ? 'player' : 'players'} your scouts found` : 'Nobody on the list yet'}</h1>
-      <p className="md-q" style={{ margin: 0 }}>A market loan has a slot of its own: packs keep theirs, and their Icon loans. Your own players are your habits, never bought or sold.</p>
-      <div className="md-row"><span>Market slot</span><b>{mk?.slot ? `${mk.slot.name}, till ${untilWords(mk.slot.until)}` : 'Free'}</b></div>
-      <div className="md-row"><span>Club money</span><b className="num">{euros(mk?.budget ?? 0)}</b></div>
-      {live && <button type="button" className="md-btn" onClick={() => go('/football/desk/talk', { talk: live.talk })}>Back to talks with {live.who}: round {live.state.round} of {ROUNDS}</button>}
-      {!leads.length && (
-        <>
-          <p style={{ margin: 0 }}>A scout’s 6 can turn up a player worth a loan. They show here the morning after.</p>
-          <button type="button" className="md-btn ghost" onClick={() => go('/football/desk/job', { id: 'scout' })}>Send a scout</button>
-        </>
-      )}
-      <div className="mk-list">
-        {leads.map((l) => {
+    <Page {...MARKET}>
+      {live && <Action wide onClick={() => go('/football/desk/talk', { talk: live.talk })}>Back to talks with {live.who}: round {live.state.round} of {ROUNDS}</Action>}
+      <div className="kb-rows">
+        {leads.map((l, i) => {
           const def = loanById(l.loan)!;
           const st = studiedIn(v, l.key);
           const r = ratingShown(l.key, def.tier, st);
           const c = talkCtx(v, l.key);
           const mine = stays.find((s) => s.key.startsWith(`market:${l.key}:`));
-          const status = leadTaken(v, l.key)
+          const taken = leadTaken(v, l.key);
+          const status = taken
             ? (mine ? (mine.from > m.date ? `Arrives ${untilWords(mine.from)}` : mine.until >= m.date ? `Here till ${untilWords(mine.until)}` : 'Gone home') : 'Signed: arrives after tonight')
             : c?.state.live ? `Talks: round ${c.state.round} of ${ROUNDS}`
             : c && coolingUntil(c.state) && m.date < coolingUntil(c.state)! ? `No calls till ${untilWords(coolingUntil(c.state)!)}`
-            : `Known ${targetKnown(st)}%`;
+            : undefined;
           const block = c ? talkBlocked(v, c) : 'Gone';
+          const u = AXIS_INK[def.unit];
+          const fee = c?.state.terms.kind === 'loan' ? c.state.terms.fee : undefined;
           return (
-            <section key={l.key} className="mk-card" style={{ '--ink': AXIS_INK[def.unit] } as CSSProperties}>
-              <div className="mk-head">
-                <CrestOrFog id={l.club} known={kitKnown(m, l.club)} size={40} />
-                <span style={{ flex: 1 }}><b>{def.name}</b><br /><span className="md-q">{def.unit} · {LOAN_TIER_NAME[def.tier]} · {l.clubName}</span></span>
+            <Panel key={l.key} ink={u}>
+              <div className="km-who">
+                <CrestOrFog id={l.club} known={kitKnown(m, l.club)} size={44} />
+                <span style={{ flex: 1, minWidth: 0 }}><b className="nm">{def.name}</b><br /><span className="k-q">{def.unit} · from {l.clubName}{c?.state.terms.kind === 'loan' ? ` · ${c.state.terms.days} days` : ''}</span></span>
               </div>
-              <div className="md-row"><span>Now</span><b style={{ color: AXIS_INK[def.unit] }}>{status}</b></div>
-              <div className="md-row"><span>Rated</span><b className="num">{r.lo === r.hi ? r.lo : `${r.lo} to ${r.hi}`}</b></div>
-              <div className="md-row"><span>Signature move</span><b>{st >= 1 ? `${def.trait.name}: ${def.trait.text}` : '?'}</b></div>
-              <p className="md-q" style={{ margin: 0 }}>{def.style}.</p>
-              {!leadTaken(v, l.key) && (
-                <div className="md-btns">
-                  {st < STUDY_CLOCK && <button type="button" className="md-btn ghost" onClick={() => go('/football/desk/job', { id: 'study', target: l.key })}>Study: {st} of {STUDY_CLOCK}</button>}
-                  <button type="button" className="md-btn" aria-disabled={Boolean(block)} onClick={() => go('/football/desk/talk', { talk: l.key })}>{c?.state.live ? 'Back to talks' : 'Open talks'}</button>
+              <div className="k-row"><span className="k-q">Rated</span><b className="k-num" style={{ fontSize: 18 }}>{r.lo === r.hi ? r.lo : `${r.lo} to ${r.hi}`}</b></div>
+              <Bar pct={targetKnown(st)} c={u} label={`You know ${targetKnown(st)}% of him`} />
+              <div className="k-row"><span className="k-q">You know {targetKnown(st)}% of him</span>{fee !== undefined && <span className="k-q">Fee about {euros(fee)}</span>}</div>
+              {status && <b style={{ color: u }}>{status}</b>}
+              <span className="k-q">{st >= 1 ? `${def.trait.name}: ${def.trait.text} ` : ''}{LOAN_TIER_NAME[def.tier]}. {def.style}.</span>
+              {!taken && (
+                <div className="kb-btns">
+                  {st < STUDY_CLOCK ? <Action quiet onClick={() => go('/football/desk/job', { id: 'study', target: l.key })}>Study him</Action> : <span />}
+                  <Action quiet={Boolean(live) || i !== leads.findIndex((x) => !leadTaken(v, x.key))} disabled={Boolean(block) && !c?.state.live} onClick={() => go('/football/desk/talk', { talk: l.key })}>{c?.state.live ? 'Back to talks' : 'Open talks'}</Action>
                 </div>
               )}
-            </section>
+            </Panel>
           );
         })}
       </div>
-      {(mk?.offers.length ?? 0) > 0 && (
+      {tiles}
+      {clubs.length > 0 && (
         <>
-          <span className="md-cap">Sponsors waiting</span>
-          {mk!.offers.map((o) => (
-            <button key={`${o.slot}:${o.brand}`} type="button" className="dk-target" onClick={() => go('/football/desk/talk', { talk: `sp:${o.slot}:${o.brand}` })}>
-              <span><b>{o.brand}</b> · {o.slot}</span><span className="md-q">{euros(o.perSeason)} a season for {o.seasons} · talk it up, a die a round</span>
-            </button>
-          ))}
+          <Sect>How clubs feel about you</Sect>
+          <div className="kb-rows" style={{ gap: 0 }}>
+            {clubs.map((l) => {
+              const w = opinionWord(l.opinion);
+              return (
+                <div key={l.club} className="km-club">
+                  <CrestOrFog id={l.club} known={kitKnown(m, l.club)} size={32} />
+                  <span>{l.clubName}</span>
+                  <b style={{ color: OPINION_INK[w] }}>{w}</b>
+                </div>
+              );
+            })}
+          </div>
         </>
       )}
-      {here.length > 0 && <p className="md-q" style={{ margin: 0 }}>A market loan plays on days its unit’s habit is logged, taking the lowest starter’s place, and the unit’s youngsters grow half as fast again.</p>}
+      {(mk?.offers.length ?? 0) > 0 && (
+        <>
+          <Sect>Sponsors waiting</Sect>
+          <div className="kb-rows">
+            {mk!.offers.map((o) => (
+              <Panel key={`${o.slot}:${o.brand}`} ink={GOLD} onClick={() => go('/football/desk/talk', { talk: `sp:${o.slot}:${o.brand}` })}>
+                <PanelTop name={o.brand} c={GOLD} right={o.slot} />
+                <span className="k-q">{euros(o.perSeason)} a season for {o.seasons} · talk it up, a die a round</span>
+              </Panel>
+            ))}
+          </div>
+        </>
+      )}
+      <Note>A market loan has a slot of its own: packs keep theirs, and their Icon loans. Your own players are your habits, never bought or sold.</Note>
+      {here.length > 0 && <Note>A market loan plays on days its unit’s habit is logged, taking the lowest starter’s place, and the unit’s youngsters grow half as fast again.</Note>}
     </Page>
   );
 }
@@ -124,18 +165,26 @@ const untilWords = (d: string) => untilFor(d, 0);
 export function TalkPage({ m, talk }: { m: DeskModel; talk: string }) {
   const c = talk ? talkCtx(m.view, talk) : liveTalk(m.view);
   if (!c) {
+    const list = talkList(m.view);
     return (
-      <Page>
-        <div className="md-top"><span className="md-cap">Talks</span><Back to="/football/desk" label="The desk" /></div>
-        <h1 className="dk-h">Who do you talk to?</h1>
-        <div className="dk-targets">
-          {talkList(m.view).map((x) => (
-            <button key={x.talk} type="button" className="dk-target" onClick={() => go('/football/desk/talk', { talk: x.talk }, { replace: true })}>
-              <span>{x.name}, {x.who}</span><span className="md-q">{talkBlocked(m.view, x) ?? (x.state.live ? `Round ${x.state.round} of ${ROUNDS}` : 'Open talks')}</span>
-            </button>
-          ))}
-        </div>
-        {!talkList(m.view).length && <p className="md-q">No one yet. A scout’s 6 can turn up a loan target.</p>}
+      <Page title="Talks" back="The desk" to="/football/desk" help={TALK_HOW(ROUNDS)}>
+        {list.length ? (
+          <>
+            <h2 className="kd-q">Who do you talk to?</h2>
+            <div className="kb-rows">
+              {list.map((x) => (
+                <Panel key={x.talk} ink={GOLD} onClick={() => go('/football/desk/talk', { talk: x.talk }, { replace: true })}>
+                  <b>{x.name}, {x.who}</b>
+                  <span className="k-q">{talkBlocked(m.view, x) ?? (x.state.live ? `Round ${x.state.round} of ${ROUNDS}` : 'Open talks')}</span>
+                </Panel>
+              ))}
+            </div>
+          </>
+        ) : (
+          <Empty icon="deal" ink={GOLD} title="No one to talk to yet" line="A scout’s 6 can turn up a loan target.">
+            <Action wide onClick={() => go('/football/desk/job', { id: 'scout' })}>Send a scout</Action>
+          </Empty>
+        )}
       </Page>
     );
   }
@@ -178,43 +227,45 @@ function Talk({ m, c }: { m: DeskModel; c: TalkCtx }) {
   const reaction = said ? lineAfter(said.round, c, words) : c.kind === 'sponsor' ? fill(SPONSOR_OPEN, words) : fill(pickOf(TALK_OPEN, c.talk, s.n), words);
   if (said?.round.end) return <TalkEnd m={m} c={c} round={said.round} line={reaction} />;
   const facts = c.kind === 'loan' && loan ? [`${loan.unit}`, (() => { const r = ratingShown(c.talk, loan.tier, c.studied); return r.lo === r.hi ? `rated ${r.lo}` : `rated ${r.lo} to ${r.hi}`; })(), `known ${targetKnown(c.studied)}%`] : [`a ${v.market?.offers.find((o) => `sp:${o.slot}:${o.brand}` === c.talk)?.slot ?? ''} deal`];
+  const mood = MOOD_INK[s.mood];
   return (
-    <Page>
-      <div className="md-top"><span className="md-cap">{c.kind === 'loan' ? 'Loan talks' : 'Sponsor talks'} · round {s.round} of {ROUNDS}</span><Back to="/football/market" label="Market" /></div>
-      <div className="mk-head">
+    <Page title={`Round ${s.round} of ${ROUNDS}`} back="Market" to="/football/market" help={TALK_HOW(ROUNDS)}>
+      <div className="km-who">
         {c.kind === 'loan' ? <CrestOrFog id={c.club!} known={kitKnown(m, c.club)} size={44} /> : <span className="mk-sil" aria-hidden="true" />}
-        <span><b className="mk-name">{c.name}{c.kind === 'loan' ? `, from ${c.who}` : ''}</b><br /><span className="md-q">{facts.join(' · ')}</span></span>
+        <span style={{ flex: 1, minWidth: 0 }}><b className="nm">{c.name}</b><br /><span className="k-q">{c.kind === 'loan' ? `from ${c.who} · ` : 'Sponsor talks · '}{facts.join(' · ')}</span></span>
       </div>
-      {said && <p className="mk-out" style={{ '--ink': said.round.hit ? '#8fdcb6' : '#ffad6b' } as CSSProperties}>{said.round.hit ? 'It came off' : 'No luck'} ({said.round.pct}%).</p>}
-      <div className="mk-say"><span className="mk-sil" aria-hidden="true" /><span>{reaction}</span></div>
-      <div className="md-row" style={{ borderBottom: 0 }}><span>Their mood</span><b style={{ color: MOOD_INK[s.mood] }}>{MOOD_NAME[s.mood]}</b></div>
-      <div className="mk-seg" role="img" aria-label={`Mood ${s.mood} of ${MOOD_MAX}`}>{Array.from({ length: MOOD_MAX }, (_, i) => <i key={i} className={i < s.mood ? 'on' : ''} style={{ '--ink': MOOD_INK[s.mood] } as CSSProperties} />)}</div>
-      <p className="mk-table"><span className="md-q">On the table:</span> {termsText(s.terms, c.name)}</p>
-      {blocked && <p className="mk-out" style={{ '--ink': '#ffad6b' } as CSSProperties}>{blocked}.</p>}
-      <span className="md-cap">Your reply{s.round === ROUNDS ? ' · last round' : ''}</span>
-      {!held && <p className="md-q" style={{ margin: 0 }}>{m.left.length ? 'Pick up a die: each round takes one.' : 'Every die is spent today. Talks wait; they never expire.'}</p>}
-      <div className="dk-targets" role="group" aria-label="Your reply">
+      {said && <Panel ink={said.round.hit ? GREEN : CORAL} flat><b style={{ color: said.round.hit ? GREEN : CORAL }}>{said.round.hit ? 'It came off' : 'No luck'} ({said.round.pct}%).</b></Panel>}
+      <Panel ink={mood}>
+        <p className="km-say">{reaction}</p>
+        <div className="k-row"><span className="k-q">Their mood</span><b style={{ color: mood }}>{MOOD_NAME[s.mood]}</b></div>
+        <div className="km-mood" style={{ ['--n' as string]: MOOD_MAX }} role="img" aria-label={`Mood ${s.mood} of ${MOOD_MAX}`}>{Array.from({ length: MOOD_MAX }, (_, i) => <i key={i} className={i < s.mood ? 'on' : ''} style={{ '--ink': mood } as CSSProperties} />)}</div>
+        <span><span className="k-q">On the table:</span> {termsText(s.terms, c.name)}</span>
+      </Panel>
+      {blocked && <Panel ink={CORAL} flat><span>{blocked}.</span></Panel>}
+      <Sect>Your dice</Sect>
+      <TalkTray dice={m.dice} left={m.left} held={held} onPick={setHeld} />
+      {voices.map(({ d, line }) => line && <p key={d.axis} className="kd-say"><b style={{ color: AXIS_INK[d.axis] }}>{d.axis.toUpperCase()}</b> — {line}</p>)}
+      <Sect>{s.round === ROUNDS ? 'Your reply · last round' : 'Your reply'}</Sect>
+      {!held && <Note>{m.left.length ? 'Pick up a die: each round takes one.' : 'Every die is spent today. Talks wait; they never expire.'}</Note>}
+      <div className="kb-rows" role="group" aria-label="Your reply">
         {opts.map((o) => (
-          <button key={o.reply} type="button" className="mk-opt" disabled={!o.ok || Boolean(blocked)} aria-pressed={reply === o.reply} onClick={() => setReply(o.reply)} style={{ '--ink': oddsInk(o.pct) } as CSSProperties}>
-            <span><b>{label(o.reply, c, words, o)}</b><br /><span className="md-q">{optionLine(o, c, unit)}{scoutHint(o.reply, c, words)}</span></span>
-            <b className="n" style={{ color: oddsInk(o.pct) }}>{o.reply === 'agree' ? 'Sure' : `${o.pct}%`}</b>
+          <button key={o.reply} type="button" className="k-panel k-tap kd-target km-opt" disabled={!o.ok || Boolean(blocked)} aria-pressed={reply === o.reply} onClick={() => setReply(o.reply)} style={{ '--ink': oddsInk(o.pct) } as CSSProperties}>
+            <span className="k-row" style={{ alignItems: 'flex-start', gap: 10 }}>
+              <span style={{ flex: 1, minWidth: 0 }}><b>{label(o.reply, c, words, o)}</b><br /><span className="k-q">{optionLine(o, c, unit)}{scoutHint(o.reply, c, words)}</span></span>
+              <b className="k-num" style={{ color: oddsInk(o.pct) }}>{o.reply === 'agree' ? 'Sure' : `${o.pct}%`}</b>
+            </span>
           </button>
         ))}
       </div>
-      {s.round === ROUNDS && <p className="md-q" style={{ margin: 0 }}>Last round: whatever happens, the deal is done on what’s agreed (if the club’s money covers it).</p>}
+      {s.round === ROUNDS && <Note>Last round: whatever happens, the deal is done on what’s agreed (if the club’s money covers it).</Note>}
+      {chosen && chosen.edges.length > 0 && <Note>{chosen.edges.map((e) => `${e.why} ${e.d > 0 ? '+' : '−'}${Math.abs(e.d)}`).join(' · ')}. The odds shown are the odds used.</Note>}
+      {err && <Note>{err}</Note>}
+      <Action wide disabled={!held || !reply || busy || Boolean(blocked)} onClick={() => void spend()}>
+        {held ? (reply ? `Spend the ${held.value}: ${reply === 'agree' ? 'shake on it' : 'push'}` : 'Pick a reply') : 'Pick up a die'}
+      </Action>
       {c.kind === 'loan' && c.studied < STUDY_CLOCK && (
-        <button type="button" className="md-btn ghost" onClick={() => go('/football/desk/job', { id: 'study', target: c.talk })}>{c.studied ? 'Finish studying them: where they’ll give' : 'Study them first: better odds'} · {c.studied} of {STUDY_CLOCK}</button>
+        <Action quiet onClick={() => go('/football/desk/job', { id: 'study', target: c.talk })}>{c.studied ? 'Finish studying them: where they’ll give' : 'Study them first: better odds'} · {c.studied} of {STUDY_CLOCK}</Action>
       )}
-      {chosen && chosen.edges.length > 0 && <p className="md-q" style={{ margin: 0 }}>{chosen.edges.map((e) => `${e.why} ${e.d > 0 ? '+' : '−'}${Math.abs(e.d)}`).join(' · ')}. The odds shown are the odds used.</p>}
-      {voices.map(({ d, line }) => line && <p key={d.axis} className="dk-say"><b style={{ color: AXIS_INK[d.axis] }}>{d.axis.toUpperCase()}</b> — {line}</p>)}
-      {err && <p className="md-q" style={{ margin: 0 }}>{err}</p>}
-      <div className="md-fill" />
-      <div className="dk-foot flow">
-        <TalkTray dice={m.dice} left={m.left} held={held} onPick={setHeld} />
-        <button type="button" className="md-btn" disabled={!held || !reply || busy || Boolean(blocked)} onClick={() => void spend()}>
-          {held ? (reply ? `Spend the ${held.value}: ${reply === 'agree' ? 'shake on it' : 'push'}` : 'Pick a reply') : 'Pick up a die'}
-        </button>
-      </div>
     </Page>
   );
 }
@@ -228,12 +279,12 @@ function scoutHint(r: Reply, c: TalkCtx, words: Record<string, string | number>)
 }
 
 function TalkTray({ dice, left, held, onPick }: { dice: Die[]; left: Die[]; held?: Die; onPick: (d: Die) => void }) {
-  if (!dice.length) return <div className="dk-tray empty">No dice today.</div>;
+  if (!dice.length) return <Note>No dice today.</Note>;
   return (
-    <div className="dk-tray" role="group" aria-label="Your dice">
+    <div className="kd-tray" role="group" aria-label="Your dice">
       {dice.map((d) => {
         const free = left.some((x) => x.axis === d.axis);
-        return <button key={d.axis} type="button" className={`dk-die${free ? '' : ' spent'}`} style={{ '--ink': AXIS_INK[d.axis] } as CSSProperties} disabled={!free} aria-pressed={held?.axis === d.axis} aria-label={`${d.axis} ${d.value}${free ? '' : ', spent'}: ${d.reason}`} onClick={() => onPick(d)}>{d.value}</button>;
+        return <button key={d.axis} type="button" className={`kd-die${free ? '' : ' spent'}`} style={{ '--ink': AXIS_INK[d.axis] } as CSSProperties} disabled={!free} aria-pressed={held?.axis === d.axis} aria-label={`${d.axis} ${d.value}${free ? '' : ', spent'}: ${d.reason}`} onClick={() => onPick(d)}>{d.value}</button>;
       })}
     </div>
   );
@@ -242,18 +293,18 @@ function TalkTray({ dice, left, held, onPick }: { dice: Die[]; left: Die[]; held
 function TalkEnd({ m, c, round, line }: { m: DeskModel; c: TalkCtx; round: TalkRound; line: string }) {
   const t = round.terms;
   const head = round.end === 'deal' ? (c.kind === 'loan' ? `${c.name} signs` : `${c.who} signs`) : round.end === 'walked' ? 'They walked out' : 'No deal';
+  const ok = round.end === 'deal';
   return (
-    <Page>
-      <div className="md-top"><span className="md-cap">{c.kind === 'loan' ? 'Loan talks' : 'Sponsor talks'} · over</span><Back to="/football/desk" label="The desk" /></div>
-      <h1 className="dk-h">{head}</h1>
-      <div className="mk-say"><span className="mk-sil" aria-hidden="true" /><span>{line}</span></div>
-      {round.end === 'deal' && <div className="md-row"><span>Agreed</span><b>{termsText(t, c.name)}</b></div>}
-      <p className="md-q" style={{ margin: 0 }}>
-        {round.end === 'deal' ? (c.kind === 'loan' ? 'The fee leaves the club’s money when tonight plays; the loan arrives the next morning.' : 'Signed when tonight plays.')
+    <Page title="Talks over" back="Market" to="/football/market" help={TALK_HOW(ROUNDS)}>
+      <h2 className="k-title" style={{ color: ok ? GREEN : CORAL }}>{head}</h2>
+      {line && <Panel ink={ok ? GREEN : CORAL}><p className="km-say">{line}</p></Panel>}
+      {ok && <Panel ink={GOLD}><PanelTop name="Agreed" c={GOLD} /><span>{termsText(t, c.name)}</span></Panel>}
+      <Note>
+        {ok ? (c.kind === 'loan' ? 'The fee leaves the club’s money when tonight plays; the loan arrives the next morning.' : 'Signed when tonight plays.')
           : round.end === 'walked' ? `They won’t take a call for a week. ${c.kind === 'loan' ? 'Their opinion of Brabo dips a little.' : ''}` : TALK_SHORT}
-      </p>
-      <button type="button" className="md-btn" onClick={() => go('/football/market', undefined, { replace: true })}>The market</button>
-      <button type="button" className="md-btn ghost" onClick={() => go('/football/desk', undefined, { replace: true })}>Back to the desk{m.left.length ? ` · ${m.left.length} left` : ''}</button>
+      </Note>
+      <Action wide onClick={() => go('/football/market', undefined, { replace: true })}>The market</Action>
+      <Action quiet onClick={() => go('/football/desk', undefined, { replace: true })}>Back to the desk{m.left.length ? ` · ${m.left.length} left` : ''}</Action>
     </Page>
   );
 }

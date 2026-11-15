@@ -17,6 +17,9 @@ import { useHeaded } from '../FootballHome';
 import { useModel, type Model } from './model';
 import { Skyline } from './Skyline';
 import { Crest, GlassCard, SimpleBack, Viewable, type CardView } from '../../../ui/CardViewer';
+import { Action, Door, Doors, Hero, Panel, Sect, Title } from '../../../ui/kit/Kit';
+import { Icon, type IconName } from '../../../ui/Icon';
+import { Bar, MarkRow, Note, PanelTop, Stat } from '../club/Bits';
 
 const eraOf = (id: EraId) => ERAS.find((e) => e.id === id)!;
 const col = (c: string) => ({ ['--c' as string]: c }) as CSSProperties;
@@ -37,71 +40,126 @@ export function Back({ to, label, params }: { to: string; label: string; params?
   if (headed) return null;
   return <button type="button" className="fbt-back" onClick={() => go(to, params, { replace: true })}>‹ {label}</button>;
 }
-function Head({ title, cap }: { title: string; cap?: ReactNode }) {
-  const headed = useHeaded();
-  if (headed && cap == null) return null;
-  return <div className="fbt-head">{!headed && <h1 className="fbt-t1">{title}</h1>}{cap != null && <span className="fbt-cap">{cap}</span>}</div>;
-}
 export function TreePage({ children }: { children: ReactNode }) {
   return <div className="fbt-page">{children}</div>;
 }
 
-/** The tree, inside the Club page: what's waiting, the doors, and six eras of eight techs. */
+/** Each tech's small picture (board three, "The tree, with small pictures"). */
+const TECH_ICON: Record<string, IconName> = {
+  's-442': 'sheet', 's-captains': 'shield', 's-portakabin': 'office', 's-kitsponsor': 'money', 's-kitman': 'kit', 's-teahut': 'food', 's-fiveaside': 'people', 's-programme': 'book',
+  'p-4231': 'sheet', 'p-physio': 'joint', 'p-sleepcoach': 'sleep', 'p-weeklytrials': 'calendar', 'p-meals': 'food', 'p-physioroom': 'body', 'p-minibus': 'route', 'p-scarf': 'kit',
+  'r-352': 'sheet', 'r-sportsscience': 'stopwatch', 'r-commercial': 'money', 'r-kaai42': 'ground', 'r-videoroom': 'camera', 'r-academy': 'people', 'r-setpieces': 'bolt', 'r-pressoffice': 'phone',
+  't-433': 'sheet', 't-datateam': 'trend', 't-mediadeals': 'money', 't-secondtiers': 'ground', 't-rotation': 'swap', 't-pool': 'water', 't-band': 'shield', 't-bignights': 'night',
+  'n-gegenpress': 'sheet', 'n-tour': 'map', 'n-globalscouting': 'scope', 'n-museum': 'book', 'n-testimonials': 'win', 'n-fanclubs': 'people', 'n-classickit': 'kit', 'n-sponsorabroad': 'money',
+  'c-falsenine': 'sheet', 'c-foreignscouts': 'scope', 'c-abroadloans': 'deal', 'c-twofronts': 'swap', 'c-charter': 'route', 'c-loanmanager': 'deal', 'c-europeannights': 'night', 'c-squaddepth': 'list',
+};
+const techIcon = (t: TechDef): IconName => TECH_ICON[t.id] ?? (t.effects.some((e) => e.kind === 'staff') ? 'people' : t.effects.some((e) => e.kind === 'project') ? 'ground' : 'tree');
+const TREE_INK = '#c2b2ff';
+
+/** The tree, inside the Club page (board three): research and the era lead, then each era drawn as techs with lines between. */
 export function TreeHome() {
   const m = useModel();
   if (!m) return null;
+  const now = eraOf(m.era);
+  const k = ERAS.indexOf(now);
+  const nextEra = ERAS[k + 1];
+  const doneNow = TECHS.filter((t) => t.era === now.id && m.researched.includes(t.id)).length;
+  const target = m.user.target ? TECHS.find((x) => x.id === m.user.target) : undefined;
   return (
-    <div className="fbt-page">
-      <Head title="The tree" cap={<><b className="fbt-n">{fmtCount(m.bank)}</b> research</>} />
-      <Waiting m={m} />
-      <nav className="fbt-doors" aria-label="The tree's rooms">
-        <Door to="/football/projects" label="Projects" sub={m.projectsOpen.length ? `${m.projectsOpen.length} building` : 'Kaai quarter'} c="#ffd56a" />
-        <Door to="/football/staff" label="Staff room" sub={`${m.staff.filter((s) => s.hired).length} hired`} c="#8fdcb6" />
-        <Door to="/football/board" label="The board" sub="Two goals" c="#93c3dc" />
-        <Door to="/football/packs" label="Packs" sub={m.packsWaiting.length ? `${m.packsWaiting.length} to open` : 'The album'} c="#ff9a76" />
-      </nav>
-      {m.user.target && (
-        <section className="fbt-card on" style={col('#ffd56a')}>
-          <span className="fbt-lb">Saving for</span>
-          <b className="fbt-t2">{TECHS.find((x) => x.id === m.user.target)?.name}</b>
-          <span>{fmtCount(m.bank)} of {m.cost(m.user.target)} research. It's researched by itself once the bank covers it.</span>
-          <button type="button" className="fbt-btn sm" onClick={() => void clearTarget()}>Stop saving for it</button>
-        </section>
-      )}
-      <p className="fbt-line">Six eras, eight techs each. An era opens once six techs of the one before are researched.</p>
-      <div className="fbt-tree">
-        {ERAS.map((e, i) => <Era key={e.id} m={m} id={e.id} n={i} />)}
+    <div className="k-page">
+      <div className="kb-lead">
+        <Hero value={fmtCount(m.bank)} ink={TREE_INK} label="research" />
+        <span className="k-r"><b>{now.name}</b><span className="k-q">{doneNow} of 8{nextEra ? ` · then ${nextEra.name}` : ''}</span></span>
       </div>
-      <p className="fbt-line">Research comes from lesson points in every match (losses teach most), one a day for logging anything, ten for each board goal met, and duplicate album cards. Nothing in the tree is ever lost.</p>
-      <p className="fbt-legend">
-        <span><i className="k dn" />Done</span><span><i className="k rs" />Saving for</span><span><i className="k eu" />Eureka: half price</span><span><i className="k lk" />Not yet</span>
-      </p>
+      <Bar pct={(doneNow / 8) * 100} c={TREE_INK} label={`${doneNow} of 8 researched in ${now.name}`} />
+      <Waiting m={m} />
+      {target && (
+        <Panel ink="#f2c46d">
+          <PanelTop name={`Saving for ${target.name}`} c="#f2c46d" right={`${fmtCount(m.bank)} of ${m.cost(target.id)}`} />
+          <Bar pct={(m.bank / Math.max(1, m.cost(target.id))) * 100} c="#f2c46d" />
+          <span className="k-q">It is researched by itself once the bank covers it.</span>
+          <Action quiet sm onClick={() => void clearTarget()}>Stop saving for it</Action>
+        </Panel>
+      )}
+      {ERAS.map((e, i) => <Era key={e.id} m={m} id={e.id} n={i} />)}
+      <Note>Every tech has its own small picture. Filled is done, gold is within reach. Tap any to read it.</Note>
+      <Sect>Around the tree</Sect>
+      <Doors two label="The tree's rooms">
+        <Door icon="ground" name="Projects" value={m.projectsOpen.length ? `${m.projectsOpen.length} building` : 'Kaai quarter'} ink="#ffd56a" onClick={() => go('/football/projects')} />
+        <Door icon="people" name="Staff room" value={`${m.staff.filter((x) => x.hired).length} hired`} ink="#8fdcb6" onClick={() => go('/football/staff')} />
+        <Door icon="sheet" name="The board" value="Two goals" ink="#93c3dc" onClick={() => go('/football/board')} />
+        <Door icon="pack" name="Packs" value={m.packsWaiting.length ? `${m.packsWaiting.length} to open` : 'The album'} ink="#ff9a76" onClick={() => go('/football/packs')} />
+      </Doors>
     </div>
   );
 }
 
-function Door({ to, label, sub, c }: { to: string; label: string; sub: string; c: string }) {
-  return <button type="button" className="fbt-door" style={col(c)} onClick={() => go(to)}><b>{label}</b><small>{sub}</small></button>;
-}
-
-/** What's waiting: a new era, eurekas, a boon pick, packs. */
+/** What's waiting: a new era, eurekas, a boon pick, packs. Each a tappable panel. */
 function Waiting({ m }: { m: Model }) {
   const items: ReactNode[] = [];
-  for (const e of m.erasUnseen) items.push(<Banner key={e} c={eraOf(e).colour} label={`Era ${ROMAN[ERAS.indexOf(eraOf(e))]}`} title={eraOf(e).name} line="A new era is open." onClick={() => go('/football/era', { e })} />);
+  for (const e of m.erasUnseen) items.push(<Banner key={e} c={eraOf(e).colour} title={`Era ${ROMAN[ERAS.indexOf(eraOf(e))]} · ${eraOf(e).name}`} line="A new era is open." onClick={() => go('/football/era', { e })} />);
   for (const id of m.eurekasUnseen.slice(0, 2)) {
     const t = TECHS.find((x) => x.id === id)!;
-    items.push(<Banner key={id} c="#ffe27a" label="Eureka" title={t.name} line="Costs half." onClick={() => go('/football/eureka', { id })} />);
+    items.push(<Banner key={id} c="#ffe27a" title={`Eureka · ${t.name}`} line="It costs half now." onClick={() => go('/football/eureka', { id })} />);
   }
-  if (m.boonPick) items.push(<Banner key="boon" c="#8fdcb6" label="Boon" title="Pick one for this season" line={`Boon ${m.boonPick > 3 ? 'extra' : `${m.boonPick} of 3`}`} onClick={() => go('/football/boon')} />);
-  if (m.packsWaiting.length) items.push(<Banner key="packs" c="#ff9a76" label="Packs" title={`${m.packsWaiting.length} to open`} line="Five items each." onClick={() => go('/football/packs')} />);
-  return items.length ? <div className="fbt-waiting">{items}</div> : null;
+  if (m.boonPick) items.push(<Banner key="boon" c="#8fdcb6" title="Pick a boon for this season" line={`Boon ${m.boonPick > 3 ? 'extra' : `${m.boonPick} of 3`}`} onClick={() => go('/football/boon')} />);
+  if (m.packsWaiting.length) items.push(<Banner key="packs" c="#ff9a76" title={m.packsWaiting.length === 1 ? 'A pack to open' : `${m.packsWaiting.length} packs to open`} line="Five things inside each." onClick={() => go('/football/packs')} />);
+  return items.length ? <div className="kb-rows">{items}</div> : null;
 }
-function Banner({ c, label, title, line, onClick }: { c: string; label: string; title: string; line: string; onClick: () => void }) {
-  return (
-    <button type="button" className="fbt-banner" style={col(c)} onClick={onClick}>
-      <span className="fbt-lb">{label}</span><b className="fbt-t2">{title}</b><span>{line}</span>
-    </button>
-  );
+function Banner({ c, title, line, onClick }: { c: string; title: string; line: string; onClick: () => void }) {
+  return <Panel ink={c} onClick={onClick}><b style={{ color: c }}>{title}</b><span className="k-q">{line}</span></Panel>;
+}
+
+/** Rows of three, two, three (the drawing's shape), ordered by how deep each tech sits inside its era. */
+function layout(techs: TechDef[]): { t: TechDef; x: number; row: number }[] {
+  const ids = new Set(techs.map((t) => t.id));
+  const depth = new Map<string, number>();
+  const d = (t: TechDef): number => {
+    if (depth.has(t.id)) return depth.get(t.id)!;
+    const ins = t.prereqs.filter((p) => ids.has(p)).map((p) => techs.find((x) => x.id === p)!);
+    const v = ins.length ? 1 + Math.max(...ins.map(d)) : 0;
+    depth.set(t.id, v);
+    return v;
+  };
+  const order = [...techs].sort((a, b) => d(a) - d(b));
+  const shape = [3, 2, 3, 3, 3];
+  const out: { t: TechDef; x: number; row: number }[] = [];
+  const xOf = new Map<string, number>();
+  const left = [...order];
+  for (let row = 0; left.length; row++) {
+    // A row takes only techs whose prerequisites sit in rows above it, so every line runs downwards.
+    const ready = left.filter((t) => t.prereqs.every((p) => !ids.has(p) || xOf.has(p)));
+    const take = (ready.length ? ready : left).slice(0, shape[row] ?? 3);
+    const n = take.length;
+    // Within a row, each tech sits under the parents it comes from, so the lines cross as little as they can.
+    const here = take.map((t, k) => {
+      const px = t.prereqs.map((p) => xOf.get(p)).filter((v): v is number => v !== undefined);
+      return { t, k: px.length ? px.reduce((a, b) => a + b, 0) / px.length : 50 + k };
+    }).sort((a, b) => a.k - b.k);
+    here.forEach(({ t }, j) => {
+      const x = n === 1 ? 50 : n === 2 ? 33.3 + j * 33.4 : 16.7 + j * 33.3;
+      xOf.set(t.id, x);
+      out.push({ t, row, x });
+      left.splice(left.indexOf(t), 1);
+    });
+  }
+  return out;
+}
+const ROW_H = 116;
+/** Lines leave from under a tech's name and arrive at the top of the next one's box. */
+const LINE_FROM = 84;
+
+type Spot = { t: TechDef; x: number; row: number };
+/** A line from a tech to one that needs it. One that skips rows first drops straight down through the gap between
+ * the techs in the rows it passes (rows alternate three and two across, so the parent's own column is a gap), and only
+ * curves across in the last stretch, so it never runs through another tech or its name. */
+function linkPath(a: Spot, b: Spot, spots: Spot[]): string {
+  const y1 = a.row * ROW_H + LINE_FROM, y2 = b.row * ROW_H - 2;
+  const between = spots.filter((s) => s.row > a.row && s.row < b.row);
+  const clear = between.every((s) => Math.abs(s.x - a.x) > 10);
+  const yc = clear && b.row - a.row > 1 ? (b.row - 1) * ROW_H + LINE_FROM : y1;
+  const my = (yc + y2) / 2;
+  return `M${a.x} ${y1}${yc > y1 ? ` L${a.x} ${yc}` : ''} C${a.x} ${my} ${b.x} ${my} ${b.x} ${y2}`;
 }
 
 function Era({ m, id, n }: { m: Model; id: EraId; n: number }) {
@@ -109,19 +167,31 @@ function Era({ m, id, n }: { m: Model; id: EraId; n: number }) {
   const open = m.eras.includes(id);
   const techs = TECHS.filter((t) => t.era === id);
   const done = techs.filter((t) => m.researched.includes(t.id)).length;
-  const now = m.era === id;
+  const spots = layout(techs);
+  const rows = Math.max(...spots.map((s) => s.row)) + 1;
+  const h = rows * ROW_H - 16;
+  const at = new Map(spots.map((s) => [s.t.id, s]));
+  const links = spots.flatMap((s) => s.t.prereqs.filter((p) => at.has(p)).map((p) => ({ a: at.get(p)!, b: s })));
   return (
-    <section className={`fbt-era${open ? '' : ' lk'}${now ? ' now' : ''}`} style={col(e.colour)} aria-label={`Era ${ROMAN[n]}: ${e.name}, ${done} of 8 researched${open ? '' : ', not open yet'}`}>
-      <div className="fbt-erah"><b>{ROMAN[n]} · {e.name}</b><small>{open ? `${done} of 8 · ${e.cost} each` : 'Not open yet'}</small></div>
-      <div className="fbt-nodes">
-        {techs.map((t) => {
+    <section className={`kt-era${open ? '' : ' kt-sealed'}`} style={{ ['--ink' as string]: e.colour }} aria-label={`Era ${ROMAN[n]}: ${e.name}, ${done} of 8 researched${open ? '' : ', not open yet'}`}>
+      <Sect>Era {ROMAN[n]}</Sect>
+      <div className="kt-erah"><b>{e.name}</b><span className="k-q">{open ? `${done} of 8 · ${e.cost} each` : 'Opens after six of the era before'}</span></div>
+      <div className="kt-tree" style={{ height: h }}>
+        <svg className="kt-lines" viewBox={`0 0 100 ${h}`} preserveAspectRatio="none" aria-hidden="true">
+          {links.map(({ a, b }) => {
+            const lit = m.researched.includes(a.t.id) && techState(b.t, m.researched) !== 'locked' && techState(b.t, m.researched) !== 'sealed';
+            return <path key={`${a.t.id}-${b.t.id}`} d={linkPath(a, b, spots)} stroke={lit ? TREE_INK : 'rgba(237,230,218,.2)'} />;
+          })}
+        </svg>
+        {spots.map(({ t, x, row }) => {
           const st = techState(t, m.researched);
           const eu = m.eurekas.includes(t.id) && st !== 'done';
           const rs = m.user.target === t.id;
           const word = st === 'done' ? 'done' : rs ? 'saving for it' : eu ? 'eureka, half price' : st === 'open' ? 'open' : 'not yet';
           return (
-            <button key={t.id} type="button" className={`fbt-node ${st === 'done' ? 'dn' : st === 'open' ? 'op' : 'lk'}${rs ? ' rs' : ''}${eu ? ' eu' : ''}`} onClick={() => go('/football/tech', { id: t.id })} aria-label={`${t.name}: ${word}`}>
-              <span>{t.name}</span>{eu && <em>Eureka</em>}{st === 'done' && <i aria-hidden="true">✓</i>}
+            <button key={t.id} type="button" className={`kt-node ${st === 'done' ? 'dn' : st === 'open' ? 'op' : 'lk'}${rs ? ' rs' : ''}`} style={{ left: `${x}%`, top: row * ROW_H }} onClick={() => go('/football/tech', { id: t.id })} aria-label={`${t.name}: ${word}`}>
+              <i><Icon name={techIcon(t)} size={30} stroke={1.9} />{eu && <em>½</em>}</i>
+              <span>{t.name}</span>
             </button>
           );
         })}
@@ -130,7 +200,7 @@ function Era({ m, id, n }: { m: Model; id: EraId; n: number }) {
   );
 }
 
-/** One tech: what it does, its cost, its eureka, and research it or save for it. */
+/** One tech (no drawing; on the kit): its picture and era lead, what it does, its cost, and research it or save for it. */
 export function TechPage({ id }: { id: string }) {
   const m = useModel();
   if (!m) return null;
@@ -141,31 +211,48 @@ export function TechPage({ id }: { id: string }) {
   const cost = m.cost(t.id);
   const eu = m.eurekas.includes(t.id);
   const pre = t.prereqs.map((p) => TECHS.find((x) => x.id === p)!);
+  const c = st === 'done' ? TREE_INK : st === 'open' ? '#f2c46d' : '#a9a7b8';
   return (
-    <TreePage>
-      <Back to="/football/club" params={{ view: 'tree' }} label="The tree" />
-      <section className="fbt-tech" style={col(e.colour)}>
-        <span className="fbt-lb">Era {ROMAN[ERAS.indexOf(e)]} · {e.name}</span>
-        <h1 className="fbt-t1">{t.name}</h1>
-        <p>{t.text}</p>
-        <div className="fbt-kv">
-          <p><span>Cost</span><b className="fbt-n">{cost}{eu && <small> (was {t.cost})</small>}</b></p>
-          <p><span>In the bank</span><b className="fbt-n">{fmtCount(m.bank)}</b></p>
-        </div>
-        <p className="fbt-eu"><b>{eu ? 'Eureka happened.' : 'Eureka:'}</b> {t.eureka.text} {eu ? 'It costs half.' : 'When it happens, it costs half.'}</p>
-        {pre.length > 0 && <p className="fbt-line">Needs {pre.map((p) => `${p.name}${m.researched.includes(p.id) ? ' ✓' : ''}`).join(' and ')}.</p>}
-        <TechAction m={m} t={t} st={st} cost={cost} />
-      </section>
-    </TreePage>
+    <div className="k-page">
+      <div className="km-who">
+        <span className={`kt-node ${st === 'done' ? 'dn' : st === 'open' ? 'op' : 'lk'}`} style={{ position: 'static', transform: 'none', width: 'auto' }} aria-hidden="true"><i><Icon name={techIcon(t)} size={30} stroke={1.9} /></i></span>
+        <Title under={`Era ${ROMAN[ERAS.indexOf(e)]} · ${e.name}`}>{t.name}</Title>
+      </div>
+      <Panel ink={e.colour}><span>{t.text}</span></Panel>
+      <div className="kb-g2">
+        <Stat label="Cost" value={cost} c={c} under={eu ? `was ${t.cost}` : undefined} />
+        <Stat label="In the bank" value={fmtCount(m.bank)} c={TREE_INK} />
+      </div>
+      <Panel ink="#ffe27a">
+        <PanelTop name={eu ? 'Eureka happened' : 'Eureka'} c="#ffe27a" right={eu ? 'half price' : undefined} />
+        <span className="k-q">{t.eureka.text} {eu ? 'It costs half.' : 'When it happens, it costs half.'}</span>
+      </Panel>
+      {pre.length > 0 && (
+        <>
+          <Sect>It needs</Sect>
+          <div className="kb-rows">
+            {pre.map((p) => {
+              const ok = m.researched.includes(p.id);
+              return (
+                <Panel key={p.id} ink={ok ? TREE_INK : '#a9a7b8'} onClick={() => go('/football/tech', { id: p.id })} label={`${p.name}: ${ok ? 'done' : 'not yet'}`}>
+                  <MarkRow icon={ok ? 'check' : techIcon(p)} c={ok ? TREE_INK : '#c4c1cf'} name={p.name} line={ok ? 'Done' : 'Not yet'} />
+                </Panel>
+              );
+            })}
+          </div>
+        </>
+      )}
+      <TechAction m={m} t={t} st={st} cost={cost} />
+    </div>
   );
 }
 function TechAction({ m, t, st, cost }: { m: Model; t: TechDef; st: ReturnType<typeof techState>; cost: number }) {
-  if (st === 'done') return <p className="fbt-done">✓ Researched</p>;
-  if (st === 'sealed') return <p className="fbt-line">Its era opens after six techs of the era before.</p>;
-  if (st === 'locked') return <p className="fbt-line">Research what it needs first.</p>;
-  if (m.user.target === t.id) return <p className="fbt-done">Saving for it: {fmtCount(m.bank)} of {cost}</p>;
+  if (st === 'done') return <Panel ink={TREE_INK} flat><Icon name="check" size={24} color={TREE_INK} /><b>Researched</b></Panel>;
+  if (st === 'sealed') return <Note>Its era opens after six techs of the era before.</Note>;
+  if (st === 'locked') return <Note>Research what it needs first.</Note>;
+  if (m.user.target === t.id) return <Panel ink="#f2c46d"><b>Saving for it</b><Bar pct={(m.bank / Math.max(1, cost)) * 100} c="#f2c46d" /><span className="k-q">{fmtCount(m.bank)} of {cost}</span></Panel>;
   return (
-    <button type="button" className="fbt-btn gold" onClick={() => void researchTech(t.id)}>
+    <button type="button" className="k-act wide kb-gold" onClick={() => void researchTech(t.id)}>
       {m.bank >= cost ? `Research it · ${cost}` : `Save for it · ${fmtCount(m.bank)} of ${cost}`}
     </button>
   );
@@ -229,71 +316,72 @@ export function EraMoment({ e }: { e: string }) {
   );
 }
 
-/** Projects (round seven, pinned) on the one skyline (round eight): every building stage and journey, one list. */
+/** Projects (no drawing of its own; on the kit): how many are being built leads, the one skyline, then the list. */
 export function ProjectsPage() {
   const m = useModel();
   if (!m) return null;
+  const building = m.projectsOpen.filter((p) => !m.states.get(p.id)?.done).length;
   return (
-    <TreePage>
-      <Back to="/football/club" params={{ view: 'tree' }} label="The tree" />
-      <Head title="Projects" />
-      <p className="fbt-line">Every building on the quay grows stage by stage, and the journeys sit beside them. One list, drawn on the Kaai quarter as it grows.</p>
+    <div className="k-page">
+      <div className="kb-lead">
+        <Hero value={building} ink="#ffd56a" label="being built" />
+        <span className="k-r"><b>{m.t.built.filter((id) => PROJECTS.some((p) => p.id === id)).length}</b><span className="k-q">built so far</span></span>
+      </div>
       <Skyline places={m.places} progress={m.progress} />
       <ProjectList m={m} />
-    </TreePage>
-  );
-}
-export function ProjectList({ m }: { m: Model }) {
-  const open = m.projectsOpen;
-  const next = m.places.flatMap((p) => p.stages.filter((s) => s.look === 'next').map((s) => s.p));
-  const journeys = PROJECTS.filter((p) => p.source === 'journey' && !open.includes(p) && !m.t.built.includes(p.id));
-  return (
-    <>
-      {open.length > 0 && <h2 className="fbt-sh">Building now</h2>}
-      <div className="fbt-projects">
-        {open.map((p) => <Project key={p.id} m={m} id={p.id} on />)}
-      </div>
-      {next.length > 0 && <h2 className="fbt-sh">Next</h2>}
-      <div className="fbt-projects">
-        {next.map((p) => (
-          <div key={p.id} className="fbt-proj next">
-            <b>{p.name}</b>
-            <small>{p.tech && !m.researched.includes(p.tech) ? `Research ${TECHS.find((t) => t.id === p.tech)?.name} to start it.` : `“${p.tease}”`}</small>
-          </div>
-        ))}
-        {journeys.map((p) => (
-          <div key={p.id} className="fbt-proj next">
-            <b>{p.name}</b><small>Research {TECHS.find((t) => t.id === p.tech)?.name} to start it. {p.reward}</small>
-          </div>
-        ))}
-      </div>
-      <p className="fbt-line">Projects count day totals only, never when you logged. None of it is required, and nothing is ever lost.</p>
-    </>
-  );
-}
-function Project({ m, id, on }: { m: Model; id: string; on?: boolean }) {
-  const p = PROJECTS.find((x) => x.id === id)!;
-  const s = m.states.get(id);
-  const c = p.source === 'journey' ? '#93c3dc' : p.place === 'academy' || p.place === 'training' ? '#8fdcb6' : '#ffd56a';
-  return (
-    <div className={`fbt-proj${on ? ' on' : ''}`} style={col(c)}>
-      <b>{p.name}</b>
-      {p.needs.map((n) => {
-        const have = Math.min(n.count, s?.progress[n.what] ?? 0);
-        return (
-          <div key={n.what} className="fbt-need">
-            <small>{fmtCount(n.count)} {METRIC_WORDS[n.what]} · <b className="fbt-n">{fmtCount(have)}</b></small>
-            <span className="fbt-bar" role="img" aria-label={`${fmtCount(have)} of ${fmtCount(n.count)}`}><i style={{ width: `${Math.round((have / n.count) * 100)}%` }} /></span>
-          </div>
-        );
-      })}
-      {p.money > 0 && <small>Money {euros(Math.min(m.t.save.budget, p.money))} of {euros(p.money)}</small>}
-      <em>{p.reward}</em>
     </div>
   );
 }
+const PROJECT_INK = (p: (typeof PROJECTS)[number]) => (p.source === 'journey' ? '#93c3dc' : p.place === 'academy' || p.place === 'training' ? '#8fdcb6' : '#ffd56a');
+export function ProjectList({ m }: { m: Model }) {
+  const open = m.projectsOpen.filter((p) => !m.states.get(p.id)?.done);
+  const next = m.places.flatMap((p) => p.stages.filter((s) => s.look === 'next').map((s) => s.p));
+  const journeys = PROJECTS.filter((p) => p.source === 'journey' && !m.projectsOpen.includes(p) && !m.t.built.includes(p.id));
+  return (
+    <>
+      {open.length > 0 && <Sect>Building now</Sect>}
+      <div className="kb-rows">
+        {open.map((p) => <Project key={p.id} m={m} id={p.id} />)}
+      </div>
+      {next.length + journeys.length > 0 && <Sect>Next</Sect>}
+      <div className="kb-rows">
+        {next.map((p) => (
+          <Panel key={p.id} ink="#a9a7b8">
+            <b>{p.name}</b>
+            <span className="k-q">{p.tech && !m.researched.includes(p.tech) ? `Research ${TECHS.find((t) => t.id === p.tech)?.name} to start it.` : `“${p.tease}”`}</span>
+          </Panel>
+        ))}
+        {journeys.map((p) => (
+          <Panel key={p.id} ink="#a9a7b8"><b>{p.name}</b><span className="k-q">Research {TECHS.find((t) => t.id === p.tech)?.name} to start it. {p.reward}</span></Panel>
+        ))}
+      </div>
+    </>
+  );
+}
+/** One project being built: its name and the least-finished need on top, a bar per need, and what it gives. */
+function Project({ m, id }: { m: Model; id: string }) {
+  const p = PROJECTS.find((x) => x.id === id)!;
+  const s = m.states.get(id);
+  const c = PROJECT_INK(p);
+  return (
+    <Panel ink={c}>
+      <PanelTop name={p.name} c={c} right={m.progress(id)} />
+      {p.needs.map((n) => {
+        const have = Math.min(n.count, s?.progress[n.what] ?? 0);
+        return (
+          <div key={n.what} className="k-col" style={{ gap: 3 }}>
+            <Bar pct={(have / n.count) * 100} c={c} label={`${fmtCount(have)} of ${fmtCount(n.count)}`} />
+            <span className="k-q">Grows on {METRIC_WORDS[n.what]} · {fmtCount(have)} of {fmtCount(n.count)}</span>
+          </div>
+        );
+      })}
+      {p.money > 0 && <span className="k-q">Money {euros(Math.min(m.t.save.budget, p.money))} of {euros(p.money)}</span>}
+      <span>{p.reward}</span>
+    </Panel>
+  );
+}
 
-/** The staff room (round seven, pinned): hired, researching, further up the tree. Wages, leave, the doctor. */
+/** The staff room (no drawing; on the kit): who is hired leads, then each as a filled panel in its era's colour. */
 export function StaffPage() {
   const m = useModel();
   if (!m) return null;
@@ -304,29 +392,30 @@ export function StaffPage() {
     const era = eraOf(x.tech.era);
     const doc = x.s.id === 'club-doctor' && x.hired;
     return (
-      <Viewable key={x.s.id} className={`fbt-staff${x.leave ? ' leave' : ''}`} style={col(era.colour)} view={() => staffView(x.s.name, x.s.text, era, `${era.name} · ${x.tech.name}`)}>
-        <b>{x.s.name}{doc ? ` · level ${m.doctor.level}` : ''}{x.leave ? ' · on leave' : ''}</b>
-        <small>{x.s.text}</small>
-        {doc && <small>{m.doctor.xp} days with every medicine kept{m.doctor.next ? ` · next level at ${m.doctor.next}` : ' · top level'}</small>}
-        <small className="fbt-from">{era.name} · {x.tech.name}{x.hired ? ` · ${euros(wage(x.s.wageUnits, m.t.tier))} a season` : ''}</small>
+      <Viewable key={x.s.id} className="k-panel" style={{ ['--ink' as string]: x.hired ? era.colour : '#a9a7b8' } as CSSProperties} view={() => staffView(x.s.name, x.s.text, era, `${era.name} · ${x.tech.name}`)}>
+        <PanelTop name={`${x.s.name}${doc ? ` · level ${m.doctor.level}` : ''}`} c={x.hired ? era.colour : '#c4c1cf'} right={x.leave ? 'on leave' : x.hired ? euros(wage(x.s.wageUnits, m.t.tier)) : undefined} />
+        <span className="k-q">{x.s.text}</span>
+        {doc && <span className="k-q">{m.doctor.xp} days with every medicine kept{m.doctor.next ? ` · next level at ${m.doctor.next}` : ' · top level'}</span>}
+        <span className="k-q kb-small">{era.name} · {x.tech.name}</span>
       </Viewable>
     );
   };
   return (
-    <TreePage>
-      <Back to="/football/club" params={{ view: 'tree' }} label="The tree" />
-      <Head title="Staff room" cap={`${hired.length} of ${m.staff.length}`} />
-      <p className="fbt-line">No staff limit. Wages are paid at the season's end: {euros(m.wages)} this season. Anyone the budget can't cover goes on leave until it can. There's no debt.</p>
-      {hired.length > 0 && <><h2 className="fbt-sh">Hired</h2><div className="fbt-staffs">{hired.map(row)}</div></>}
-      {saving.length > 0 && <><h2 className="fbt-sh">Saving for</h2><div className="fbt-staffs">{saving.map(row)}</div></>}
-      <h2 className="fbt-sh">Further up the tree</h2>
-      <div className="fbt-staffs lk">{later.map(row)}</div>
-      <p className="fbt-line">One wage unit is {euros(WAGE_UNIT[m.t.tier])} a season in this division.</p>
-    </TreePage>
+    <div className="k-page">
+      <div className="kb-lead">
+        <Hero value={hired.length} ink="#8fdcb6" label="hired" under={`of ${m.staff.length}`} />
+        <span className="k-r"><b className="k-num" style={{ color: '#f2c46d' }}>{euros(m.wages)}</b><span className="k-q">wages this season</span></span>
+      </div>
+      {hired.length > 0 && <><Sect>Hired</Sect><div className="kb-rows">{hired.map(row)}</div></>}
+      {saving.length > 0 && <><Sect>Saving for</Sect><div className="kb-rows">{saving.map(row)}</div></>}
+      <Sect>Further up the tree</Sect>
+      <div className="kb-rows">{later.map(row)}</div>
+      <Note>One wage unit is {euros(WAGE_UNIT[m.t.tier])} a season in this division.</Note>
+    </div>
   );
 }
 
-/** The Money tab's wages card: this season's bill, last season's payout and anyone on leave. */
+/** The Money page's wages panel: this season's bill, last season's payout and anyone on leave. */
 export function WagesCard() {
   const m = useModel();
   if (!m) return null;
@@ -335,43 +424,46 @@ export function WagesCard() {
   const last = m.eng.wages;
   const away = m.staff.filter((s) => s.leave);
   return (
-    <section className="fb-card" aria-label="Wages">
-      <span className="fb-lb">Staff wages</span>
-      <div className="fb-row"><span className="fb-s">{hired.length} hired · paid at the season's end</span><b className="fb-num">{euros(m.wages)}</b></div>
-      {last && <div className="fb-row"><span className="fb-s">Paid, season {last.season}</span><b className="fb-num">{euros(last.paid)}</b></div>}
-      {away.length > 0 && <span className="fb-s">On leave until the budget covers them: {away.map((x) => x.s.name).join(', ')}. No debt is ever run up.</span>}
-      <button type="button" className="fbt-btn sm" onClick={() => go('/football/staff')}>Staff room</button>
-    </section>
+    <Panel ink="#8fdcb6" onClick={() => go('/football/staff')} label="Staff wages: the staff room">
+      <PanelTop name="Staff wages" c="#8fdcb6" right={euros(m.wages)} />
+      <span className="k-q">{hired.length} hired · paid at the season's end</span>
+      {last && <span className="k-q">Paid, season {last.season}: {euros(last.paid)}</span>}
+      {away.length > 0 && <span className="k-q">On leave until the budget covers them: {away.map((x) => x.s.name).join(', ')}. No debt is ever run up.</span>}
+    </Panel>
   );
 }
 
-/** The board (round six, pinned): two goals, ten research each met, a dry note otherwise. */
+/** The board (no drawing; on the kit): the two goals as panels, green when on track, then the chairman's note. */
 export function BoardPage() {
   const m = useModel();
   if (!m) return null;
   const set = m.eng.board.find((b) => b.season === m.t.save.season);
   const last = [...m.eng.board].reverse().find((b) => b.verdicts);
   const facts = m.t.facts;
+  const goals = set?.ids.map((id) => {
+    const o = BOARD.find((x) => x.id === id)!;
+    const v = set.verdicts?.find((x) => x.id === id);
+    const line = v ? (v.met ? 'Met · 10 research' : 'Missed') : facts ? objectiveLine(o, facts) : '';
+    const ok = v ? v.met : line.includes('on track') || line === 'Done' || line.startsWith('Above');
+    return { id, o, line, ok };
+  }) ?? [];
   return (
-    <TreePage>
-      <Back to="/football/club" params={{ view: 'tree' }} label="The tree" />
-      <Head title="The board" />
-      <p className="fbt-line">Two goals a season. Each one met: ten research. Missed: a dry note, nothing more.</p>
-      {!set && <p className="fbt-line">The board sets its goals on the season's first day.</p>}
-      <div className="fbt-goals">
-        {set?.ids.map((id) => {
-          const o = BOARD.find((x) => x.id === id)!;
-          const v = set.verdicts?.find((x) => x.id === id);
-          const line = v ? (v.met ? 'Met · 10 research' : 'Missed') : facts ? objectiveLine(o, facts) : '';
-          const ok = v ? v.met : line.includes('on track') || line === 'Done' || line.startsWith('Above');
-          return <p key={id} className={ok ? 'on' : ''} style={col(ok ? '#8fdcb6' : '#ff9a76')}><b>{o.text}</b><span>{ok ? '✓ ' : ''}{line}</span></p>;
-        })}
+    <div className="k-page">
+      <div className="kb-lead"><Hero value={goals.filter((g) => g.ok).length} ink="#8fdcb6" label={`of ${goals.length || 2} goals`} under="on track or met" /></div>
+      {!set && <Note>The board sets its goals on the season's first day.</Note>}
+      <div className="kb-rows">
+        {goals.map((g) => (
+          <Panel key={g.id} ink={g.ok ? '#8fdcb6' : '#ff9a76'}>
+            <MarkRow icon={g.ok ? 'check' : 'clock'} c={g.ok ? '#8fdcb6' : '#ff9a76'} name={g.o.text} line={g.line} />
+          </Panel>
+        ))}
       </div>
       {last?.verdicts && (
-        <div className="fbt-chair"><span className="fbt-lb">From the chairman</span>
-          {last.verdicts.map((v) => { const o = BOARD.find((x) => x.id === v.id)!; return <b key={v.id}>{v.met ? o.met : o.missed}</b>; })}
-        </div>
+        <>
+          <Sect>From the chairman</Sect>
+          <Panel ink="#93c3dc">{last.verdicts.map((v) => { const o = BOARD.find((x) => x.id === v.id)!; return <b key={v.id} className="kd-q" style={{ margin: 0 }}>{v.met ? o.met : o.missed}</b>; })}</Panel>
+        </>
       )}
-    </TreePage>
+    </div>
   );
 }

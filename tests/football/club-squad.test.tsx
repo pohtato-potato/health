@@ -32,14 +32,14 @@ async function club(knock?: 'knock'): Promise<Club> {
 describe('The squad', () => {
   it('renders six members, each labelled with its habit and its axis', async () => {
     const out = html(<SquadView c={await club()} />);
-    expect(out.match(/class="fb-member /g)).toHaveLength(6);
+    expect(out.match(/class="kq-ring[ "]/g)).toHaveLength(6);
     for (const h of HABITS) expect(out).toContain(`aria-label="${h.label}, ${h.axis},`);
     expect(out).toContain('captain');
   });
 
   it('a knock is a dashed ring plus the word "knock"', async () => {
     const out = html(<SquadView c={await club('knock')} />);
-    expect(out).toMatch(/class="fb-member [^"]*knock"/);
+    expect(out).toMatch(/class="kq-ring knock"/);
     expect(out).toContain('Rest · knock');
   });
 

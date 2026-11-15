@@ -1,6 +1,6 @@
 // Engine 2's player screens: the eleven on the pitch, a unit, a player, and the card moment (tap to break, reissue).
 import { useState } from 'react';
-import { rankOf, stepName, stepOf, stepRange, TIER_NAME } from '../../../football/players/cards';
+import { rankOf, stepName, stepOf, stepRange, TIER_FLOOR, TIER_NAME } from '../../../football/players/cards';
 import { elevenOf, PLACES_433, UNIT_COLOUR, UNIT_WHERE } from '../../../football/players/eleven';
 import type { FbPlayer, Unit, XiPlace } from '../../../football/players/types';
 import { LEGEND_APPS, LEGEND_RECORD_DAYS, LEGEND_SEASONS, membersOf } from '../../../football/store/players';
@@ -9,12 +9,16 @@ import { seeMoment } from '../../../football/store/save';
 import { AXES } from '../../../football/types';
 import { daysBetween, dayOfLogging } from '../../../domain/dates';
 import { go } from '../../../router';
-import { PlayerCard, TiltCard } from './Card';
-import { Freshness, PlayerRotation, RotationLinks, rowWords } from './Rotation';
+import { PlayerCard, playerCardView, TiltCard } from './Card';
+import { Action, Hero, Panel, Sect } from '../../../ui/kit/Kit';
+import { Bar, Note, PanelTop, Stat } from '../club/Bits';
+import { Icon } from '../../../ui/Icon';
+import { openCard } from '../../../ui/CardViewer';
+import { VALUE_INK, valueTier } from '../../../ui/inks';
+import { CARD_TIERS, type CardTier } from '../../../football/players/types';
+import { PlayerRotation, RotationLinks, rowWords } from './Rotation';
 import { matchRating } from '../../../football/rotation/condition';
 
-/** Attribute colours from round 7: each bar also carries its name and number. */
-const ATTR_COLOUR = ['#ff9a76', '#ffd56a', '#c2b2ff', '#8fdcb6'];
 const uc = (u: Unit) => ({ ['--uc' as string]: UNIT_COLOUR[u] });
 const fmtDate = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 const openPlayer = (id: string) => go('/football/player', { id });
@@ -85,30 +89,40 @@ export function ElevenView({ xi, players, formation = '4-3-3' }: { xi: XiPlace[]
 }
 
 function Row({ p, starts }: { p: FbPlayer; starts?: boolean }) {
+  const r = p.status === 'squad' ? matchRating(p) : p.overall;
   return (
-    <button type="button" className={`pl-row${starts ? ' st' : ''}`} style={uc(p.unit)} onClick={() => openPlayer(p.id)}>
-      <PlayerCard card={p.card} art={p.art} seed={p.id} player={p} />
-      <span className="pl-col"><b>{p.name}</b><span>{rowWords(p, Boolean(starts))} · {stepName(p.card)}</span></span>
-      <b className="pl-num">{p.status === 'squad' ? matchRating(p) : p.overall}</b>
-      <Freshness p={p} />
-    </button>
+    <Panel ink={UNIT_COLOUR[p.unit]} onClick={() => openPlayer(p.id)} label={`${p.name}, ${rowWords(p, Boolean(starts))}, rated ${r}`}>
+      <span className={`ku-row${starts ? ' st' : ''}`}>
+        <PlayerCard card={p.card} art={p.art} seed={p.id} player={p} noView />
+        <span className="k-col"><b className="nm">{p.name}</b><span className="k-q">{rowWords(p, Boolean(starts))} · {stepName(p.card)}</span>{p.kind === 'exercise' && p.status === 'squad' && <Bar pct={p.fresh ?? 100} c="#8fdcb6" label={`Freshness ${p.fresh ?? 100}%`} />}</span>
+        <b className="k-num">{r}</b>
+      </span>
+    </Panel>
   );
 }
 
-/** One unit: its players, best first. */
+/** One unit (no drawing; on the kit): its colour, how many start, then its players best first. */
 export function UnitRoute({ unit }: { unit: string }) {
   const players = usePlayers();
   const sheet = useSheet();
   if (!players) return null;
   const u = AXES.find((a) => a === unit);
-  if (!u) return <p className="fb-s">No such unit.</p>;
-  const xi = new Set((sheet?.xi ?? elevenOf(membersOf(new Map(players.map((p) => [p.id, p]))))).map((x) => x.player));
+  if (!u) return <p className="k-q">No such unit.</p>;
+  const xiList = sheet?.xi ?? elevenOf(membersOf(new Map(players.map((p) => [p.id, p]))));
+  const xi = new Set(xiList.map((x) => x.player));
   const list = players.filter((p) => p.unit === u).sort((a, b) => (a.status === 'left' ? 1 : 0) - (b.status === 'left' ? 1 : 0) || b.overall - a.overall);
+  const squad = list.filter((p) => p.status === 'squad');
+  const best = squad.length ? Math.max(...squad.map((p) => matchRating(p))) : 0;
+  const c = UNIT_COLOUR[u];
   return (
-    <div className="pl-page">
-      <h2 className="fb-t">{u}</h2>
-      <p className="pl-sub">Plays in {UNIT_WHERE[u]}. Starts: the highest match ratings, or your pick on the team sheet. The number is tonight’s match rating; the bar is freshness.</p>
-      <div className="pl-list">{list.length ? list.map((p) => <Row key={p.id} p={p} starts={xi.has(p.id)} />) : <p className="fb-s">No players yet.</p>}</div>
+    <div className="k-page" style={uc(u)}>
+      <div className="kb-lead">
+        <Hero value={squad.length} ink={c} label={squad.length === 1 ? 'player' : 'players'} under={`plays in ${UNIT_WHERE[u]}`} />
+        <span className="k-r"><b className="k-num" style={{ color: c }}>{best || '–'}</b><span className="k-q">best tonight</span></span>
+      </div>
+      <Note>{xiList.filter((x) => x.unit === u).length} start tonight. The number is tonight’s match rating; the bar is freshness.</Note>
+      <div className="kb-rows">{list.length ? list.map((p) => <Row key={p.id} p={p} starts={xi.has(p.id)} />) : <p className="k-q">No players yet.</p>}</div>
+      <Action wide onClick={() => go('/football/sheet')}>Pick who starts</Action>
     </div>
   );
 }
@@ -133,57 +147,77 @@ function waitNote(p: FbPlayer): string | null {
   return null;
 }
 
-/** One player: the card, its number, the attributes that make it, and its story so far. */
+/** "▲ 4 in four weeks": how far the overall moved over the last four weeks of its trail. */
+function moved(p: FbPlayer): number | null {
+  const t = p.trail ?? [];
+  if (t.length < 2) return null;
+  const last = t[t.length - 1];
+  const back = t.find(([d]) => daysBetween(d, last[0]) <= 28) ?? t[0];
+  return last[1] - back[1];
+}
+const nextTier = (o: number): CardTier | undefined => CARD_TIERS.find((t) => TIER_FLOOR[t] > o);
+
+/** One player (board two, "A player"): the card and the rating lead; then the next tier, what it is made of, its season. */
 export function PlayerPage({ id }: { id: string }) {
   const p = usePlayer(id);
   const r = usePlayerRating(id);
   if (p === undefined) return null;
-  if (!p) return <p className="fb-s">No such player.</p>;
-  const legend = p.card.tier === 'legend';
+  if (!p) return <p className="k-q">No such player.</p>;
+  const c = UNIT_COLOUR[p.unit];
+  const mv = moved(p);
+  const nt = nextTier(p.overall);
+  const floor = TIER_FLOOR[CARD_TIERS.filter((t) => TIER_FLOOR[t] <= p.overall).pop() ?? 'bronze'];
+  const since = p.versions[p.versions.length - 1]?.on ?? p.signed;
+  const held = Math.max(0, daysBetween(since, dayOfLogging(Date.now())));
+  const cardProps = { card: p.card, art: p.art, seed: p.id, player: p, label: `${p.name}, ${stepName(p.card)} card` };
   return (
-    <div className="pl-page" style={uc(p.unit)}>
-      <div className={`pl-hero${legend ? ' lg' : ''}`}>
-        <TiltCard card={p.card} art={p.art} seed={p.id} player={p} label={`${p.name}, ${stepName(p.card)} card`} />
-        <div className="pl-heroinfo">
-          <span className="pl-sub">{p.unit} · {UNIT_WHERE[p.unit]}</span>
-          <h2 className="fb-t">{p.name}</h2>
-          <div className="pl-overall"><b className="pl-num">{p.overall}</b><span>overall</span></div>
-          <span className={`pl-stepname${legend ? ' pl-legendtext' : ''}`}>{stepName(p.card)}</span>
+    <div className="k-page" style={uc(p.unit)}>
+      <div className="kp-top">
+        <div className={`kp-card${p.card.tier === 'legend' ? ' pl-hero lg' : ''}`}><TiltCard {...cardProps} /></div>
+        <div className="kp-info">
+          <span className="k-q">{p.unit} · {UNIT_WHERE[p.unit]}</span>
+          <span className="k-hero" style={{ color: VALUE_INK[valueTier(p.overall, 100)] }}>{p.overall}</span>
+          {mv != null && mv !== 0 && <span className="kp-up" style={{ color: mv > 0 ? '#8fc9b0' : '#ff9a76' }}><Icon name={mv > 0 ? 'up' : 'down'} size={16} stroke={2.6} />{Math.abs(mv)} in four weeks</span>}
+          <span className={`k-q${p.card.tier === 'legend' ? ' pl-legendtext' : ''}`}>{stepName(p.card)} · {p.apps} {p.apps === 1 ? 'appearance' : 'appearances'}</span>
         </div>
       </div>
-      {waitNote(p) && <p className="pl-sub">{waitNote(p)}</p>}
-      <p className="pl-sub">Best {p.best} on {fmtDate(p.bestOn)}. The card keeps its best; only the number can drop.{p.status === 'academy' ? ' Waiting in the academy for its youngster.' : p.status === 'left' ? ' No longer logged.' : ''}</p>
-      <section className="fb-card" aria-label="Attributes">
-        <span className="fb-lb">Attributes · last 28 days</span>
-        {r?.rating ? r.rating.attrs.map((a, i) => (
-          <div key={a.id} className="pl-attr" style={{ ['--ac' as string]: ATTR_COLOUR[i % ATTR_COLOUR.length] }}>
-            <b>{a.label}</b><b className="pl-num">{a.value}</b>
-            <span className="pl-bar" aria-hidden="true"><i style={{ width: `${a.value}%` }} /></span>
-            <p>{a.note}</p>
-          </div>
-        )) : <p className="fb-s">Nothing in the last 28 days. It keeps its last number until it is logged again.</p>}
-      </section>
-      <section className="pl-stats" aria-label="Career">
-        <div><b className="pl-num">{p.apps}</b><span>appearances</span></div>
-        <div><b className="pl-num">{p.goals}</b><span>goals</span></div>
-        <div><b className="pl-num">{p.saves}</b><span>saves</span></div>
-      </section>
-      <section className="fb-card" aria-label="Club legend">
-        <span className="fb-lb">Club legend</span>
-        <p className="pl-prog">{legendProgress(p)}</p>
-      </section>
-      <PlayerRotation p={p} />
-      <section className="fb-card" aria-label="Card history">
-        <span className="fb-lb">Card history</span>
-        <div className="pl-vs">
-          {p.versions.map((v, i) => (
-            <div key={`${v.on}${i}`} className={i === p.versions.length - 1 ? 'now' : undefined}>
-              <PlayerCard card={v} art={p.art} seed={p.id} player={p} />
-              <b>{stepName(v)}</b><small>{fmtDate(v.on)}</small><small>{stepRange(v)}</small>
-            </div>
-          ))}
+      {nt ? (
+        <Panel ink="#f2c46d">
+          <div className="k-row"><b>{TIER_FLOOR[nt] - p.overall} more to {TIER_NAME[nt]}</b><span className="k-q">held {held} {held === 1 ? 'day' : 'days'}</span></div>
+          <Bar pct={((p.overall - floor) / (TIER_FLOOR[nt] - floor)) * 100} c="#f2c46d" label={`${p.overall} of ${TIER_FLOOR[nt]}`} />
+          {waitNote(p) && <span className="k-q">{waitNote(p)}</span>}
+        </Panel>
+      ) : (
+        <Panel ink="#f2c46d"><b>At the top: {stepName(p.card)}</b><span className="k-q">held {held} {held === 1 ? 'day' : 'days'}</span></Panel>
+      )}
+      <Sect>What {p.name} is made of</Sect>
+      {r?.rating ? r.rating.attrs.map((a) => (
+        <div key={a.id}>
+          <div className="kp-attr"><span>{a.label}</span><Bar pct={a.value} c={c} label={`${a.label} ${a.value}`} /><b>{a.value}</b></div>
+          <p className="k-q kb-small" style={{ margin: '0 0 4px' }}>{a.note}</p>
         </div>
-      </section>
+      )) : <Note>Nothing in the last 28 days. It keeps its last number until it is logged again.</Note>}
+      <Sect>This season</Sect>
+      <div className="kb-g3">
+        <Stat label="Goals" value={p.goals} c={c} />
+        <Stat label="Saves" value={p.saves} c={c} />
+        <Stat label={p.kind === 'exercise' ? 'Freshness' : 'Best'} value={p.kind === 'exercise' ? p.fresh ?? 100 : p.best} c="#8fdcb6" />
+      </div>
+      <Panel ink="#f2c46d">
+        <PanelTop name="Club legend" c="#f2c46d" right={`best ${p.best} on ${fmtDate(p.bestOn)}`} />
+        <span className="k-q">{legendProgress(p)}{p.status === 'academy' ? ' Waiting in the academy for its youngster.' : p.status === 'left' ? ' No longer logged.' : ''}</span>
+      </Panel>
+      <PlayerRotation p={p} />
+      <Sect>Card history</Sect>
+      <div className="kp-vs">
+        {p.versions.map((v, i) => (
+          <div key={`${v.on}${i}`} className={i === p.versions.length - 1 ? 'now' : undefined}>
+            <PlayerCard card={v} art={p.art} seed={p.id} player={p} />
+            <b>{stepName(v)}</b><span className="k-q">{fmtDate(v.on)}</span><span className="k-q">{stepRange(v)}</span>
+          </div>
+        ))}
+      </div>
+      <Action quiet wide onClick={() => openCard(playerCardView(cardProps))}>See the card full screen</Action>
     </div>
   );
 }

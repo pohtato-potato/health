@@ -6,21 +6,22 @@ import type { Tier } from '../../../football/types';
 export const kaaiStage = (tier: Tier): 1 | 2 | 3 => (tier >= 5 ? 1 : tier >= 3 ? 2 : 3);
 const has = (done: string[], prefix: string) => done.some((d) => d === prefix || d.startsWith(`${prefix}-`));
 
-export function Kaai({ tier, done, height = 104 }: { tier: Tier; done: string[]; height?: number }) {
-  const stage = kaaiStage(tier);
+/** `stage` draws one stage on its own (the ground's "How the Kaai grows"); otherwise the division decides it. */
+export function Kaai({ tier, done, height = 104, stage: only }: { tier: Tier; done: string[]; height?: number; stage?: 1 | 2 | 3 }) {
+  const stage = only ?? kaaiStage(tier);
   const sides = ['river-end', 'crane-stand', 'dock-end'].filter((x) => done.includes(x)).length;
   const lit = done.includes('floodlights');
   const words = [`stage ${stage} of 3`, sides ? `${sides} ${sides === 1 ? 'side stand' : 'side stands'}` : '', done.includes('roof') ? 'a roof' : '', has(done, 'cafe') ? 'the café' : '', has(done, 'shop') ? 'the shop' : '', has(done, 'ferry') ? 'the ferry stop' : ''].filter(Boolean);
   return (
     <svg className="kc-kaai" viewBox="0 0 336 110" preserveAspectRatio="xMidYMax meet" style={{ height }} role="img" aria-label={`The Kaai at dusk with its floodlights on: ${words.join(', ')}`}>
       <defs>
-        <radialGradient id="kc-fl">
+        <radialGradient id={`kc-fl${only ?? ""}`}>
           <stop offset="0" stopColor="#ffd9a8" stopOpacity={lit ? 1 : 0.85} />
           <stop offset="1" stopColor="#ff7a1a" stopOpacity="0" />
         </radialGradient>
       </defs>
-      <circle cx="62" cy="18" r={lit ? 40 : 34} fill="url(#kc-fl)" />
-      <circle cx="274" cy="18" r={lit ? 40 : 34} fill="url(#kc-fl)" />
+      <circle cx="62" cy="18" r={lit ? 40 : 34} fill={`url(#kc-fl${only ?? ""})`} />
+      <circle cx="274" cy="18" r={lit ? 40 : 34} fill={`url(#kc-fl${only ?? ""})`} />
       {/* The ground itself: one stand at first. */}
       <path d="M0 110V78l40-14h256l40 14v32z" fill="#1a1d3d" />
       <path d="M40 64l20-22h216l20 22z" fill="#262a55" />
