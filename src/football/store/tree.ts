@@ -6,20 +6,22 @@
 //   treeSeasonEnd at the season's end: the board's verdicts, the tree's money, wages and leave, a promotion pack
 // Taps (research, boons, bounties, packs, moments seen) write save.treeUser only, in store/treeActions.ts.
 import { treeRotation } from '../tree/rotation';
-import { addDays, weekStart, type DayKey } from '../../domain/dates';
-import { BOARD, BOUNTIES, BOARD_RESEARCH, TRACK_KIT_PIECES, TRACK_THEMES } from '../content/season';
+import { addDays, daysBetween, weekStart, type DayKey } from '../../domain/dates';
+import { paceOn, paceWeekDone } from '../pace';
+import { BOUNTIES, BOARD_RESEARCH, TRACK_KIT_PIECES, TRACK_THEMES } from '../content/season';
 import { BOOSTS } from '../content/packs';
 import { ERAS } from '../content/tree';
 import type { Reward } from '../content/types';
 import { reachOf } from '../continental';
-import { ANTIGOON } from '../rivals';
+import { legendId } from '../rivals';
 import type { MatchCtx } from '../engine';
 import type { Row } from '../table';
 import type { BraboAbility, Tier } from '../types';
 import { addMetrics, dayMetrics } from '../tree/metrics';
+import { stageIn, worldOf, seasonMoneyScale } from '../pyramid/shape';
 import { projectDay, projectOpen, TREE_PROJECTS } from '../tree/projects';
 import { activeEffects, erasOpen, eurekasDue, lessonFor, LOGGED_DAY, settle, techById, type Active } from '../tree/research';
-import { boardFor, boonsThisSeason, bountiesPicked, bountyProgress, objectiveMet, strengthOf, trackDue, type SeasonFacts } from '../tree/season';
+import { boardDef, boardFor, boonsThisSeason, bountiesPicked, bountyProgress, objectiveMet, strengthOf, trackDue, type SeasonFacts } from '../tree/season';
 import { boostsWaiting } from '../tree/packs';
 import { doctorLevel, healDays, payWages, treeIncome } from '../tree/staff';
 import { emptyEngine, emptyUser, type PackSource, type ResearchWhy, type TreeEngine, type TreeUser } from '../tree/types';
@@ -97,7 +99,8 @@ export function treeDay(c: TreeCtx, date: DayKey, youthDays: number) {
   if (s.phase === 'season') {
     if (eng.track.season !== s.season) eng.track = { season: s.season, steps: [], catchups: 0 };
     if (m.logged && !eng.track.steps.includes(date)) eng.track = { ...eng.track, steps: [...eng.track.steps, date] };
-    if (s.day % 7 === 0 && !(s.globe?.breaks ?? []).some((b) => b.days.includes(date)) && eng.days.some((d) => d.date > addDays(date, -7) && d.m.logged)) earnPack(eng, date, 'week-finished', s.season);
+    // League pace (O36): the week's pack counts real weeks of the pace, not season days that now pass three at a time.
+    if ((paceOn(s, date) ? paceWeekDone(s.pace!, date, daysBetween) : s.day % 7 === 0) && !(s.globe?.breaks ?? []).some((b) => b.days.includes(date)) && eng.days.some((d) => d.date > addDays(date, -7) && d.m.logged)) earnPack(eng, date, 'week-finished', s.season);
   }
 
   // 3. Bounties picked this week.
@@ -113,7 +116,7 @@ export function treeDay(c: TreeCtx, date: DayKey, youthDays: number) {
     }
   }
   // Track rewards (after bounties, so a catch-up step pays the same day).
-  if (s.phase === 'season') for (const step of trackDue(eng, s.season)) {
+  if (s.phase === 'season') for (const step of trackDue(eng, s.season, worldOf(s))) {
     eng.trackPaid = [...eng.trackPaid, `${s.season}:${step.step}`];
     pay(eng, step.reward!, date, s.season, 'track', `Track day ${step.step}`);
   }
@@ -127,7 +130,8 @@ export function treeDay(c: TreeCtx, date: DayKey, youthDays: number) {
 
   // 5. Projects from the tree: new stages and journeys.
   const tier = c.season.tierOf[OWN];
-  const g = { tier, moved: Boolean(s.moved), done: builtOf(c.bundles.values()), researched: researched() };
+  // Projects open by stage (spec §9); the board below reads the division itself.
+  const g = { tier: stageIn(c.season, tier), moved: Boolean(s.moved), done: builtOf(c.bundles.values()), researched: researched() };
   for (const p of TREE_PROJECTS) {
     if (!projectOpen(p, g)) continue;
     const cur = c.bundles.get(p.id) ?? { id: p.id, progress: {} };
@@ -158,8 +162,8 @@ export function treeDay(c: TreeCtx, date: DayKey, youthDays: number) {
     const ids = Object.keys(c.season.tierOf).filter((id) => c.season.tierOf[id] === tier && id !== OWN);
     const own = c.clubs.get(OWN)?.rating ?? 50;
     const strength = strengthOf(own, ids.map((id) => c.clubs.get(id)?.rating ?? 50));
-    const derbyOn = c.season.tierOf[ANTIGOON] === tier;
-    const objs = boardFor(s.season, strength, { inContinental: Boolean(c.season.continental?.field.includes(OWN)), derbyOn, divisionSize: ids.length + 1, topTier: tier === 1 });
+    const derbyOn = c.season.tierOf[legendId()] === tier;
+    const objs = boardFor(s.season, strength, { inContinental: Boolean(c.season.continental?.field.includes(OWN)), derbyOn, divisionSize: ids.length + 1, topTier: tier === 1 }, worldOf(s));
     eng.board = [...eng.board, { season: s.season, strength, ids: objs.map((o) => o.id) }];
   }
   s.tree = eng;
@@ -216,8 +220,8 @@ export function seasonFacts(c: Pick<TreeCtx, 'season' | 'save'> & { matches: Sto
   const reached = (b?: { rounds: { name: string; ties: { home: string; away: string | null }[] }[]; winner?: string }) =>
     b ? [...b.rounds.filter((r) => r.ties.some((t) => t.home === OWN || t.away === OWN)).map((r) => r.name), ...(b.winner === OWN ? ['win'] : [])] : [];
   const tc = Object.values(c.season.tiercups).find((b) => b.rounds.some((r) => r.ties.some((t) => t.home === OWN || t.away === OWN)));
-  const ant = c.season.tierOf[ANTIGOON];
-  const antPos = rows.findIndex((r) => r.id === ANTIGOON) + 1;
+  const ant = c.season.tierOf[legendId()];
+  const antPos = rows.findIndex((r) => r.id === legendId()) + 1;
   const reach = reachOf(c.season.continental, OWN);
   const contMap = { phase: 'group', qf: 'r16', sf: 'sf', final: 'final', winner: 'final' } as const;
   return {
@@ -225,7 +229,7 @@ export function seasonFacts(c: Pick<TreeCtx, 'season' | 'save'> & { matches: Sto
     playoffs: Boolean(c.season.playoffs[tier]?.semis?.some(([h, aw]) => h === OWN || aw === OWN)),
     goals: rows.find((r) => r.id === OWN)?.gf ?? 0,
     cleanSheets: mine.filter((m) => m.score[1] === 0).length,
-    derbyWins: mine.filter((m) => m.opp === ANTIGOON && m.result === 'W').length,
+    derbyWins: mine.filter((m) => m.opp === legendId() && m.result === 'W').length,
     homeUnbeaten: best,
     aboveRival: ant === undefined ? undefined : ant > tier ? true : ant < tier ? false : antPos ? pos < antPos : undefined,
     bigcup: reached(c.season.bigcup), tiercup: reached(tc),
@@ -245,15 +249,15 @@ export function treeSeasonEnd(c: TreeCtx, date: DayKey, tables: Record<Tier, Row
   const facts = seasonFacts({ season: c.season, save: s, matches: c.matches() }, tables, promoted);
   const set = eng.board.find((b) => b.season === s.season);
   if (set && !set.verdicts) {
-    set.verdicts = set.ids.map((id) => ({ id, met: objectiveMet(BOARD.find((o) => o.id === id)!, facts) }));
+    set.verdicts = set.ids.map((id) => ({ id, met: objectiveMet(boardDef(id, worldOf(s)), facts) }));
     for (const v of set.verdicts) {
-      const o = BOARD.find((x) => x.id === v.id)!;
+      const o = boardDef(v.id, worldOf(s));
       if (v.met) gain(eng, date, BOARD_RESEARCH, 'board', o.text);
       c.news.push({ id: `${date}:board:${o.id}`, date, kind: 'club', text: `From the chairman: ${v.met ? o.met : o.missed}` });
     }
   }
   if (promoted) earnPack(eng, date, 'promotion', s.season);
-  const tier = c.season.tierOf[OWN];
+  const tier = stageIn(c.season, c.season.tierOf[OWN]);
   const a = activeFor(s, c.bundles.values());
   const lines = treeIncome(a, tier, base);
   if (lines.length) {
@@ -261,7 +265,7 @@ export function treeSeasonEnd(c: TreeCtx, date: DayKey, tables: Record<Tier, Row
     s.budget = Math.round((s.budget + sum) * 1000) / 1000;
     s.income = s.income ? { ...s.income, lines: [...s.income.lines, ...lines] } : { season: s.season, lines };
   }
-  const bill = payWages(researchedOf(s), tier, s.budget);
+  const bill = payWages(researchedOf(s), tier, s.budget, seasonMoneyScale(c.season));
   s.budget = bill.budget;
   const back = eng.leave.filter((id) => !bill.leave.includes(id));
   const off = bill.leave.filter((id) => !eng.leave.includes(id));

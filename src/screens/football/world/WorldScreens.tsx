@@ -19,6 +19,10 @@ import type { FbSquadRow } from '../../../football/store/tables';
 import type { LoanStay } from '../../../football/globe/types';
 import { GlassCard, SimpleBack, Viewable, type CardView } from '../../../ui/CardViewer';
 import { Back, TreePage } from '../tree/TreeScreens';
+import type { IconName } from '../../../ui/Icon';
+import { Action, Empty, Hero, Panel, Sect } from '../../../ui/kit/Kit';
+import { Bar, Note, PanelTop } from '../club/Bits';
+import '../../../styles/club.css';
 
 const col = (c: string) => ({ ['--c' as string]: c }) as CSSProperties;
 const fmtDate = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
@@ -40,22 +44,16 @@ export function LoanArt({ loan, size = 120 }: { loan: LoanDef; size?: number }) 
 }
 
 /** The doors to the world, on the Club's squad page. */
-export function WorldDoors() {
+/** The world's four pages as doors (Club's "The wider world"), each with one live line. */
+export function useWorldDoors(): { to: string; label: string; sub: string; icon: IconName }[] | undefined {
   const w = useWorld();
-  if (!w) return null;
-  const doors: { to: string; label: string; sub: string; c: string }[] = [
-    { to: '/football/loans', label: 'Loans', sub: w.here.length ? `${plural(w.here.length, 'player')} here` : 'From packs', c: '#ffa25c' },
-    { to: '/football/trials', label: 'Trials', sub: w.trials.length ? `${w.trials.length} waiting` : `Your sleep: ${STYLE_WORDS[w.week.style].name}`, c: '#ffe27a' },
-    { to: '/football/academy', label: 'Academy', sub: `${w.academy.filter((y) => y.link).length} of ${w.rules.academy} places`, c: '#8fdcb6' },
-    { to: '/football/duty', label: 'International duty', sub: w.intl ? `Break on: day ${w.intl.day} of ${BREAK_DAYS}` : 'Two breaks a season', c: '#ff7d9c' },
+  if (!w) return undefined;
+  return [
+    { to: '/football/loans', label: 'Loans', sub: w.here.length ? `${plural(w.here.length, 'player')} here` : 'From packs', icon: 'deal' },
+    { to: '/football/trials', label: 'Trials', sub: w.trials.length ? `${w.trials.length} waiting` : STYLE_WORDS[w.week.style].name, icon: 'scope' },
+    { to: '/football/academy', label: 'Academy', sub: `${w.academy.filter((y) => y.link).length} of ${w.rules.academy}`, icon: 'book' },
+    { to: '/football/duty', label: 'Duty', sub: w.intl ? `Day ${w.intl.day} of ${BREAK_DAYS}` : 'Two a season', icon: 'map' },
   ];
-  return (
-    <nav className="fbg-doors" aria-label="The world">
-      {doors.map((d) => (
-        <button key={d.to} type="button" className="fbg-door" style={col(d.c)} onClick={() => go(d.to)}><b>{d.label}</b><small>{d.sub}</small></button>
-      ))}
-    </nav>
-  );
 }
 
 /** A loan's arrival (round seven): "On loan · 7 days", the drawing, the line, the chips. */
@@ -94,17 +92,18 @@ export function LoanMoment({ k }: { k: string }) {
 function StayCard({ st, left, past }: { st: LoanStay; left?: number; past?: boolean }) {
   const def = loanById(st.loan);
   if (!def) return null;
+  const c = TIER_COLOUR[def.tier];
   return (
-    <section className="fbg-stay" style={col(TIER_COLOUR[def.tier])}>
+    <div className="kw-loan">
       <Viewable view={() => loanView(def, past ? `“${def.farewell}”` : undefined)}><LoanArt loan={def} size={72} /></Viewable>
-      <span className="fbg-st">
-        <span className="fbt-lb">{LOAN_TIER_NAME[def.tier]} · {def.unit}</span>
-        <b className="fbt-t2">{def.name}</b>
+      <span className="k-col" style={{ gap: 2, minWidth: 0 }}>
+        <span className="k-q">{LOAN_TIER_NAME[def.tier]} · {def.unit}</span>
+        <b style={{ color: c, fontSize: 17 }}>{def.name}</b>
         <span>{plural(st.apps.length, 'game')}{st.goals ? ` · ${plural(st.goals, 'goal')}` : ''}{past ? ` · left ${fmtDate(st.until)}` : left != null ? ` · ${left === 1 ? 'last day today' : `${left} days left`}` : ''}</span>
-        <small className="fbg-q">{def.trait.name}: {def.trait.text}</small>
-        {past && <small className="fbg-q">“{def.farewell}”</small>}
+        <span className="k-q">{def.trait.name}: {def.trait.text}</span>
+        {past && <span className="k-q">“{def.farewell}”</span>}
       </span>
-    </section>
+    </div>
   );
 }
 
@@ -112,33 +111,42 @@ export function LoansPage() {
   const w = useWorld();
   if (!w) return null;
   return (
-    <TreePage>
-      <Back to="/football/club" label="Club" />
-      <div className="fbt-head"><h1 className="fbt-t1">Loans</h1><span className="fbt-cap"><b className="fbt-n">{w.here.length}</b> of {w.rules.loan.slots} at the club</span></div>
-      <p className="fbt-line">Loans come from packs. Each stays {w.rules.loan.days} days in its unit and takes the lowest starter's place on days you log that unit's habit; that player sits and rests. One at a time{w.rules.loan.slots > 1 ? ` per slot (${w.rules.loan.slots} slots)` : ''}.</p>
-      {w.here.length === 0 && <p className="fbt-line">Nobody on loan right now.</p>}
-      {w.here.map((s) => (
-        <button key={s.key} type="button" className="fbg-btnwrap" onClick={() => go('/football/loan', { key: s.key })} aria-label={`${loanById(s.loan)?.name}: open the arrival`}>
-          <StayCard st={s} left={s.left} />
-        </button>
-      ))}
+    <div className="k-page">
+      <div className="kb-lead">
+        <Hero value={w.here.length} ink="#c4abff" label={`of ${w.rules.loan.slots} at the club`} />
+        <span className="k-r k-q">{w.rules.loan.days} days each</span>
+      </div>
+      {w.here.length === 0 && <Empty icon="deal" ink="#c4abff" title="Nobody on loan right now" line="Loans come from packs. The next one arrives when a pack brings one." />}
+      <div className="kb-rows">
+        {w.here.map((st) => {
+          const d = loanById(st.loan);
+          return (
+            <Panel key={st.key} ink={d ? TIER_COLOUR[d.tier] : undefined} onClick={() => go('/football/loan', { key: st.key })} label={`${d?.name}: open the arrival`}>
+              <StayCard st={st} left={st.left} />
+            </Panel>
+          );
+        })}
+      </div>
+      <Note>Each loan stays {w.rules.loan.days} days in its unit and takes the lowest starter's place on days you log that unit's habit; that player sits and rests. One at a time{w.rules.loan.slots > 1 ? ` per slot (${w.rules.loan.slots} slots)` : ''}.</Note>
       {w.waiting.length > 0 && (
         <>
-          <h2 className="fbt-sh">Waiting to come</h2>
-          <p className="fbt-line">They come as soon as a slot is free, in the order you opened them.</p>
-          <ul className="fbg-list">
-            {w.waiting.map((q) => { const d = loanById(q.loan); return d ? <li key={q.key} style={col(TIER_COLOUR[d.tier])}><b>{d.name}</b><small>{LOAN_TIER_NAME[d.tier]} · {d.unit} · opened {fmtDate(q.on)}</small></li> : null; })}
-          </ul>
+          <Sect>Waiting to come</Sect>
+          <div className="kb-rows">
+            {w.waiting.map((q) => { const d = loanById(q.loan); return d ? <Panel key={q.key} ink={TIER_COLOUR[d.tier]}><PanelTop name={d.name} c={TIER_COLOUR[d.tier]} right={fmtDate(q.on)} /><span className="k-q">{LOAN_TIER_NAME[d.tier]} · {d.unit} · opened {fmtDate(q.on)}</span></Panel> : null; })}
+          </div>
+          <Note>They come as soon as a slot is free, in the order you opened them.</Note>
         </>
       )}
       {w.past.length > 0 && (
         <>
-          <h2 className="fbt-sh">Been and gone</h2>
-          {w.past.slice(0, 12).map((s) => <StayCard key={s.key} st={s} past />)}
+          <Sect>Been and gone</Sect>
+          <div className="kb-rows">
+            {w.past.slice(0, 12).map((st) => { const d = loanById(st.loan); return <Panel key={st.key} ink={d ? TIER_COLOUR[d.tier] : undefined}><StayCard st={st} past /></Panel>; })}
+          </div>
         </>
       )}
-      <p className="fbt-line">Real footballers, for this club only: no club badges, and nothing said about them beyond how they play. Icon loans are retired greats.</p>
-    </TreePage>
+      <Note>Real footballers, for this club only: no club badges, and nothing said about them beyond how they play. Icon loans are retired greats.</Note>
+    </div>
   );
 }
 
@@ -152,7 +160,7 @@ function Moon({ stars = 16 }: { stars?: number }) {
   );
 }
 
-const STARS = (n: number) => <span className="fbg-pot" aria-label={`${n} stars`}>{'★'.repeat(n)}</span>;
+const STARS = (n: number) => <span className="kb-stars" aria-label={`${n} stars`}>{'★'.repeat(n)}</span>;
 
 /** Trials (round seven): the week's sleep style, who came, and a tie for each. */
 export function TrialsPage() {
@@ -163,35 +171,33 @@ export function TrialsPage() {
   const s = STYLE_WORDS[w.week.style];
   const hrs = Math.floor(w.week.hours), mins = Math.round((w.week.hours - hrs) * 60);
   return (
-    <div className="fbg-night">
-      <Moon />
-      <TreePage>
-        <Back to="/football/club" label="Club" />
-        <p className="fbt-lb" style={col('#ffe27a')}>{last ? `${new Date(`${last.on}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'long' })} morning · academy trials` : 'Academy trials'}</p>
-        <h1 className="fbt-t1">{w.trials.length ? `${w.trials.length === 1 ? 'One' : w.trials.length === 2 ? 'Two' : w.trials.length} came to the trials` : 'Trials'}</h1>
-        <section className="fbg-sleep">
-          <b>Your week's sleep: {s.name}</b>
-          <span>{w.week.nights >= 3 ? <><b className="fbt-n">{w.week.kept}</b> of {w.week.nights} bedtimes kept · <b className="fbt-n">{hrs}</b> h <b className="fbt-n">{String(mins).padStart(2, '0')}</b> average</> : 'Fewer than three nights logged this week: anyone might come.'}</span>
-        </section>
-        <p className="fbt-line">Trials are held on Sunday mornings{w.rules.trials.extraDay ? ' and Wednesdays' : ''}. Early, regular sleep draws steady defenders. Long nights draw prospects. Short but rested nights draw quick wingers.</p>
-        {w.trials.length === 0 && <p className="fbt-line">Nobody waiting. The next trial day brings {w.rules.trials.size === 1 ? 'one' : w.rules.trials.size} new {w.rules.trials.size === 1 ? 'face' : 'faces'}, drawn by this week's sleep.</p>}
-        <div className="fbg-trials">
-          {w.trials.map((y) => <Trialist key={y.id} y={y} />)}
-        </div>
-        <p className="fbt-line">A trialist waits {w.rules.trials.hold} days to be tied to a habit; then they go home, no harm done. The academy holds {w.rules.academy}.</p>
-      </TreePage>
+    <div className="k-page">
+      <div className="kb-lead kw-night">
+        <Moon />
+        <Hero value={w.trials.length} ink="#ffe27a" label={w.trials.length === 1 ? 'came to the trials' : 'came to the trials'} />
+        <span className="k-r k-q">{last ? `${new Date(`${last.on}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'long' })} morning` : 'Sunday mornings'}</span>
+      </div>
+      <Panel ink="#93c3dc">
+        <PanelTop name={`Your week's sleep: ${s.name}`} c="#93c3dc" />
+        <span>{w.week.nights >= 3 ? `${w.week.kept} of ${w.week.nights} bedtimes kept · ${hrs} h ${String(mins).padStart(2, '0')} average` : 'Fewer than three nights logged this week: anyone might come.'}</span>
+      </Panel>
+      {w.trials.length === 0 && <Note>Nobody waiting. The next trial day brings {w.rules.trials.size === 1 ? 'one' : w.rules.trials.size} new {w.rules.trials.size === 1 ? 'face' : 'faces'}, drawn by this week's sleep.</Note>}
+      <div className="kb-rows">
+        {w.trials.map((y, i) => <Trialist key={y.id} y={y} lead={i === 0} />)}
+      </div>
+      <Note>Trials are held on Sunday mornings{w.rules.trials.extraDay ? ' and Wednesdays' : ''}. Early, regular sleep draws steady defenders. Long nights draw prospects. Short but rested nights draw quick wingers.</Note>
+      <Note>A trialist waits {w.rules.trials.hold} days to be tied to a habit; then they go home, no harm done. The academy holds {w.rules.academy}.</Note>
     </div>
   );
 }
-function Trialist({ y }: { y: FbSquadRow }) {
+function Trialist({ y, lead }: { y: FbSquadRow; lead: boolean }) {
+  const c = UNIT_COLOUR[y.axis as Unit];
   return (
-    <section className="fbg-trial" style={col(UNIT_COLOUR[y.axis as Unit])}>
-      {STARS(y.potential)}
-      <b className="fbt-t2">{y.name}</b>
-      <small>{y.axis} · {y.what}{y.nation ? ` · from ${nationName(y.nation)}` : ''}</small>
-      {y.trialUntil && <small>Waits until {fmtDate(y.trialUntil)}</small>}
-      <button type="button" className="fbt-btn sm" onClick={() => go('/football/tie', { id: y.id })}>Tie to a habit</button>
-    </section>
+    <Panel ink={c}>
+      <PanelTop name={y.name} c={c} right={STARS(y.potential)} />
+      <span className="k-q">{y.axis} · {y.what}{y.nation ? ` · from ${nationName(y.nation)}` : ''}{y.trialUntil ? ` · waits until ${fmtDate(y.trialUntil)}` : ''}</span>
+      <Action quiet={!lead} onClick={() => go('/football/tie', { id: y.id })}>Tie to a habit</Action>
+    </Panel>
   );
 }
 
@@ -207,29 +213,35 @@ export function TiePage({ id }: { id: string }) {
   if (!w) return null;
   const y = w.squad.find((x) => x.id === id);
   if (!y || y.status !== 'trial') {
-    return <TreePage><Back to="/football/trials" label="Trials" /><p className="fbt-line">{y?.status === 'growing' ? `${y.name} is at the academy now.` : 'That trialist has gone home.'}</p><button type="button" className="fbt-btn wide" onClick={() => go('/football/academy')}>The academy</button></TreePage>;
+    return (
+      <div className="k-page">
+        <Empty icon="scope" ink="#ffe27a" title={y?.status === 'growing' ? `${y.name} is at the academy now` : 'That trialist has gone home'} line="Nothing to tie here.">
+          <Action wide onClick={() => go('/football/academy')}>The academy</Action>
+        </Empty>
+      </div>
+    );
   }
   const full = w.academy.filter((x) => x.link).length >= w.rules.academy;
   const tie = (l: YouthLink) => { void tieTrialist(y.id, l).then((ok) => ok && go('/football/academy', undefined, { replace: true })); };
   return (
-    <TreePage>
-      <Back to="/football/trials" label="Trials" />
-      <h1 className="fbt-t1">Tie {y.name} to a habit</h1>
-      <p className="fbt-line">It only counts on days you really log it. Only habits you haven't been logging already: a youngster stands for something new.</p>
-      {full && <section className="fbt-card" style={col('#ffe27a')}><b>The academy is full</b><span>{w.rules.academy} of {w.rules.academy} places taken. A place frees up when a youngster is promoted or leaves.</span></section>}
-      <div className="fbg-opts">
-        {(opts ?? []).map((o) => (
-          <button key={`${o.link.kind}:${o.link.id}`} type="button" className="fbg-opt" style={col(o.link.kind === 'exercise' ? '#ff9a76' : '#f4aedb')} disabled={full} onClick={() => tie(o.link)}>
-            <b>{o.name}</b><span>{o.link.kind === 'exercise' ? 'An exercise in the coach’s plan' : 'A checklist habit · ticks on Today'}</span>
-          </button>
-        ))}
-        <button type="button" className="fbg-opt" style={col('#93c3dc')} onClick={() => { void letTrialistGo(y.id, w.today).then(() => go('/football/trials', undefined, { replace: true })); }}>
-          <b>Let {y.name} go</b><span>No penalty</span>
-        </button>
+    <div className="k-page">
+      <h2 className="kd-q">Tie {y.name} to a habit</h2>
+      <Note>It only counts on days you really log it. Only habits you haven't been logging already: a youngster stands for something new.</Note>
+      {full && <Panel ink="#ffe27a"><PanelTop name="The academy is full" c="#ffe27a" /><span>{w.rules.academy} of {w.rules.academy} places taken. A place frees up when a youngster is promoted or leaves.</span></Panel>}
+      <div className="kb-rows">
+        {(opts ?? []).map((o) => {
+          const c = o.link.kind === 'exercise' ? '#ff9a76' : '#f4aedb';
+          return (
+            <button key={`${o.link.kind}:${o.link.id}`} type="button" className="k-panel k-tap kd-target" style={{ ['--ink' as string]: c }} disabled={full} onClick={() => tie(o.link)}>
+              <b style={{ color: c }}>{o.name}</b><span className="k-q">{o.link.kind === 'exercise' ? 'An exercise in the coach’s plan' : 'A checklist habit · ticks on Today'}</span>
+            </button>
+          );
+        })}
       </div>
-      {opts && opts.length === 0 && <p className="fbt-line">No new habit to tie to yet. Add one to the checklist in Settings, or an exercise to the coach's plan, and it shows up here.</p>}
-      {opts && opts.length > 0 && <p className="fbt-line">Want something else? Add it to the checklist in Settings, or to the coach's plan, and come back.</p>}
-    </TreePage>
+      {opts && opts.length === 0 && <Note>No new habit to tie to yet. Add one to the checklist in Settings, or an exercise to the coach's plan, and it shows up here.</Note>}
+      {opts && opts.length > 0 && <Note>Want something else? Add it to the checklist in Settings, or to the coach's plan, and come back.</Note>}
+      <Action quiet onClick={() => { void letTrialistGo(y.id, w.today).then(() => go('/football/trials', undefined, { replace: true })); }}>Let {y.name} go · no penalty</Action>
+    </div>
   );
 }
 
@@ -239,34 +251,36 @@ export function AcademyPage() {
   if (!w) return null;
   const need = w.rules.promoteSessions;
   return (
-    <div className="fbg-night">
-      <Moon stars={10} />
-      <TreePage>
-        <Back to="/football/club" label="Club" />
-        <div className="fbt-head"><h1 className="fbt-t1">Academy</h1><span className="fbt-cap"><b className="fbt-n">{w.academy.filter((y) => y.link).length}</b> of {w.rules.academy} places</span></div>
-        <p className="fbt-line">They grow overnight on nights you keep your bedtime. Rest days double it. Growth pauses, never goes back. A loan in the same unit makes them grow half as fast again. Only youngsters tied to a habit take a place.</p>
-        {w.academy.length === 0 && <p className="fbt-line">Nobody at the academy yet. Trialists come on trial days; tie one to a habit and they start here.</p>}
-        <div className="fbg-acad">
-          {w.academy.map((y) => {
-            const s = y.sessions?.length ?? 0, g = y.growth ?? 0;
-            const tonight = y.lastGrow && y.lastGrow.on === w.save.lastPlayed ? y.lastGrow.n : 0;
-            return (
-              <section key={y.id} className="fbg-young" style={col(UNIT_COLOUR[y.axis as Unit])}>
-                <b className="fbt-t2">{y.name}</b>
-                <small>{y.axis} · {'★'.repeat(y.potential)}<span className="fb-sr"> {y.potential} stars</span>{y.link ? '' : ' · not tied to a habit: nothing counts'}</small>
-                <span className="fbg-bars">
-                  <span className="fbg-bar" role="img" aria-label={`${s} of ${need} sessions`}><i style={{ width: `${Math.min(100, (s / need) * 100)}%` }} /></span>
-                  <span className="fbg-bar gr" role="img" aria-label={`${g} of ${PROMOTE_GROWTH} growth`}><i style={{ width: `${Math.min(100, (g / PROMOTE_GROWTH) * 100)}%` }} /></span>
-                </span>
-                {!y.link && <button type="button" className="fbt-btn sm" onClick={() => go('/football/club', { view: 'deals' })}>Tie to a habit</button>}
-                <em><b className="fbt-n">{s}</b> of {need} sessions · <b className="fbt-n">{g}</b> of {PROMOTE_GROWTH} growth{tonight ? <> · <b className="fbt-n">+{tonight}</b> last night</> : ''}</em>
-              </section>
-            );
-          })}
-        </div>
-        <p className="fbg-key"><span><i className="s" />Sessions (the habit)</span><span><i className="g" />Growth (sleep)</span></p>
-        <button type="button" className="fbt-btn wide" onClick={() => go('/football/trials')}>Trials</button>
-      </TreePage>
+    <div className="k-page">
+      <div className="kb-lead kw-night">
+        <Moon stars={10} />
+        <Hero value={w.academy.filter((y) => y.link).length} ink="#ffe27a" label={`of ${w.rules.academy} places`} />
+      </div>
+      {w.academy.length === 0 && (
+        <Empty icon="book" ink="#ffe27a" title="Nobody at the academy yet" line="Trialists come on trial days; tie one to a habit and they start here.">
+          <Action wide onClick={() => go('/football/trials')}>Trials</Action>
+        </Empty>
+      )}
+      <div className="kb-rows">
+        {w.academy.map((y) => {
+          const n = y.sessions?.length ?? 0, g = y.growth ?? 0;
+          const tonight = y.lastGrow && y.lastGrow.on === w.save.lastPlayed ? y.lastGrow.n : 0;
+          const c = UNIT_COLOUR[y.axis as Unit];
+          return (
+            <Panel key={y.id} ink={c} className="kw-young">
+              <PanelTop name={y.name} c={c} right={STARS(y.potential)} />
+              <span className="k-q">{y.axis}{y.link ? '' : ' · not tied to a habit: nothing counts'}</span>
+              <Bar pct={(n / need) * 100} c={c} label={`${n} of ${need} sessions`} />
+              <Bar pct={(g / PROMOTE_GROWTH) * 100} c="#ffe27a" label={`${g} of ${PROMOTE_GROWTH} growth`} />
+              <span className="k-q">{n} of {need} sessions · {g} of {PROMOTE_GROWTH} growth{tonight ? ` · +${tonight} last night` : ''}</span>
+              {!y.link && <Action quiet={y.id !== w.academy.find((x) => !x.link)?.id} onClick={() => go('/football/club', { view: 'deals' })}>Tie to a habit</Action>}
+            </Panel>
+          );
+        })}
+      </div>
+      {w.academy.length > 0 && <p className="kw-key"><span><i style={{ background: '#8fdcb6' }} />Sessions (the habit, in the unit's colour)</span><span><i style={{ background: '#ffe27a' }} />Growth (sleep)</span></p>}
+      <Note>They grow overnight on nights you keep your bedtime. Rest days double it. Growth pauses, never goes back. A loan in the same unit makes them grow half as fast again. Only youngsters tied to a habit take a place.</Note>
+      {w.academy.length > 0 && <Action quiet onClick={() => go('/football/trials')}>Trials</Action>}
     </div>
   );
 }
@@ -281,40 +295,65 @@ export function DutyPage() {
   const byId = new Map(w.players.map((p) => [p.id, p]));
   const nations = Object.entries(w.g.nations).filter(([id]) => byId.get(id)?.status === 'squad');
   return (
-    <TreePage>
-      <Back to="/football/club" label="Club" />
+    <div className="k-page">
       {view ? <BreakPanel b={view} full /> : (
         <>
-          <h1 className="fbt-t1">International duty</h1>
-          <p className="fbt-line">Two breaks a season, before days 14 and 30: three days with no league games. Players called up play for their nation; log their habit on {DUTY_NEEDS} of the {BREAK_DAYS} days and they come back with a trait or +{DUTY_ATTR} to an attribute.</p>
+          <div className="kb-lead">
+            <Hero value={nations.length} ink="#ff7d9c" label={nations.length === 1 ? 'nation in the squad' : 'nations in the squad'} />
+            <span className="k-r k-q">no break on now</span>
+          </div>
+          <Note>Two breaks a season, before days 14 and 30: three days with no league games. Players called up play for their nation; log their habit on {DUTY_NEEDS} of the {BREAK_DAYS} days and they come back with a trait or +{DUTY_ATTR} to an attribute.</Note>
         </>
       )}
-      <h2 className="fbt-sh">Nations</h2>
-      <p className="fbt-line">A name that carries a nation plays for it. Everyone else was given one at random, for good.</p>
-      <ul className="fbg-list">
-        {nations.map(([id, code], i) => { const p = byId.get(id)!; return <li key={id} style={col(NATION_HUES[i % NATION_HUES.length])}><b>{nationName(code)}</b><small>{p.name}</small></li>; })}
-      </ul>
+      <Sect>Nations</Sect>
+      <Panel ink="#ff7d9c">
+        {nations.map(([id, code], i) => { const p = byId.get(id)!; return <div key={id} className="k-row" style={{ minHeight: 36 }}><b style={{ color: NATION_HUES[i % NATION_HUES.length] }}>{nationName(code)}</b><span>{p.name}</span></div>; })}
+      </Panel>
+      <Note>A name that carries a nation plays for it. Everyone else was given one at random, for good.</Note>
       {past.length > 0 && (
         <>
-          <h2 className="fbt-sh">Back from duty</h2>
-          <ul className="fbg-list">
+          <Sect>Back from duty</Sect>
+          <div className="kb-rows">
             {past.map((d) => {
               const got = byId.get(d.player)?.duty?.find((x) => x.nation === d.nation && d.days.includes(x.on));
-              return <li key={`${d.season}:${d.n}:${d.player}`} style={col('#ff7d9c')}><b>{d.name} · {nationName(d.nation)}</b><small>Season {d.season}, break {d.n} · {d.days.length} of {BREAK_DAYS} days{d.settled === 'trait' ? ` · trait: ${got?.trait ?? 'new'}` : d.settled === 'attr' ? ` · +${got?.d ?? DUTY_ATTR} ${got?.attr ?? ''}` : ' · quiet trip'}</small></li>;
+              return <Panel key={`${d.season}:${d.n}:${d.player}`} ink="#ff7d9c"><PanelTop name={`${d.name} · ${nationName(d.nation)}`} c="#ff7d9c" /><span className="k-q">Season {d.season}, break {d.n} · {d.days.length} of {BREAK_DAYS} days{d.settled === 'trait' ? ` · trait: ${got?.trait ?? 'new'}` : d.settled === 'attr' ? ` · +${got?.d ?? DUTY_ATTR} ${got?.attr ?? ''}` : ' · quiet trip'}</span></Panel>;
             })}
-          </ul>
+          </div>
         </>
       )}
-    </TreePage>
+    </div>
   );
 }
 /** The break on Tonight and on the duty page: "International break · 3 days", "On duty", the list. */
 export function BreakPanel({ b, full }: { b: BreakView; full?: boolean }) {
-  const Title = full ? 'h1' : 'b';
+  if (full) {
+    return (
+      <>
+        <div className="kb-lead">
+          <Hero value={b.rows.length} ink="#ff7d9c" label="on duty" />
+          <span className="k-r k-q">day {b.day} of {BREAK_DAYS}</span>
+        </div>
+        <Note>No league games for {BREAK_DAYS} days. Log a player's habit on {DUTY_NEEDS} of the {BREAK_DAYS} days and they come back with a trait or +{DUTY_ATTR} to an attribute.</Note>
+        <div className="kb-rows">
+          {b.rows.map((r, i) => {
+            const c = NATION_HUES[i % NATION_HUES.length];
+            return (
+              <Panel key={r.player} ink={c}>
+                <PanelTop name={nationName(r.nation)} c={c} right={`${r.days.length} of ${BREAK_DAYS} days`} />
+                <Bar pct={(r.days.length / DUTY_NEEDS) * 100} c={c} label={`${r.days.length} of ${DUTY_NEEDS} days needed`} />
+                <span className="k-q">{r.name}{fromName(r.name, r.nation) ? '' : ' · drawn for good'}{r.today ? ' · logged today' : ''}</span>
+              </Panel>
+            );
+          })}
+        </div>
+      </>
+    );
+  }
+  const Title = 'b';
   return (
-    <section className={full ? 'fbg-break full' : 'fbt-card fbg-break'} style={col('#ff7d9c')}>
+    <section className="fbt-card fbg-break" style={col('#ff7d9c')}>
       <span className="fbt-lb">International break · day {b.day} of {BREAK_DAYS}</span>
-      <Title className={full ? 'fbt-t1' : 'fbt-t2'}>On duty</Title>
+      <Title className="fbt-t2">On duty</Title>
       <span>No league games for {BREAK_DAYS} days. Log a player's habit on {DUTY_NEEDS} of the {BREAK_DAYS} days and they come back with a trait or +{DUTY_ATTR} to an attribute.</span>
       <div className="fbg-duty">
         {b.rows.map((r, i) => (
@@ -324,7 +363,7 @@ export function BreakPanel({ b, full }: { b: BreakView; full?: boolean }) {
           </p>
         ))}
       </div>
-      {!full && <button type="button" className="fbt-btn sm" onClick={() => go('/football/duty')}>Who's away</button>}
+      <button type="button" className="fbt-btn sm" onClick={() => go('/football/duty')}>Who's away</button>
     </section>
   );
 }

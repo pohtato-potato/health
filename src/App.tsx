@@ -1,6 +1,7 @@
 import { CardViewerHost } from './ui/CardViewer';
 import { TrainProto } from './screens/proto/TrainLiving';
 import { SessionProto } from './screens/proto/SessionLiving';
+import { ScenesCheck } from './screens/proto/ScenesCheck';
 import { Suspense, lazy, useEffect, useRef, type ComponentType, type ReactNode } from 'react';
 import { RegionRoot } from './ui/live/RegionFrame';
 import { findSession } from './domain/plan';
@@ -127,6 +128,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/football/card': { el: () => <Football />, tab: 'football' },
   '/football/club-page': { el: () => <Football />, tab: 'football' },
   '/football/atlas': { el: () => <Football />, tab: 'football' },
+  '/football/redrawn': { el: () => <Football />, tab: 'football' },
   '/football/market': { el: () => <Football />, tab: 'football' },
   '/football/rival': { el: () => <Football />, tab: 'football' },
   '/football/wrapped': { el: () => <Football />, tab: 'football' },
@@ -224,6 +226,7 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/dawn': { el: () => <DawnPage /> },
   '/proto/session': { el: () => <SessionProto /> },
   '/proto/train': { el: () => <TrainProto /> },
+  '/proto/scenes': { el: () => <ScenesCheck /> },
 };
 
 export function App() {
@@ -250,7 +253,8 @@ export function App() {
       <RegionRoot />
       <Suspense fallback={<div className="page" />}>{page.el()}</Suspense>
       {page.tab && <TabBar active={page.tab} />}
-      {page.tab && <ResumePill />}
+      {/* Train shows its own "Back to the session" panel, so the floating pill would only cover it. */}
+      {page.tab && route.path !== '/train' && <ResumePill />}
       {sheet && SHEETS[sheet]?.()}
       <CelebrationWatcher />
       <AchievementWatcher />

@@ -7,7 +7,7 @@ import { lateShare, placeSplit, proteinByMeal, todayAndChange, usualRange } from
 import { targetsFor } from '../../state/derived';
 import { MaintenanceCard, modelFor, WeekGapCard } from '../MaintenanceCards';
 import { SourcesCard } from '../TrackExtras';
-import { headInput, dayLabel, foodByDay, kindOn, placeMarkOn, spanDays, type Span, type TrackData } from './data';
+import { headInput, dayLabel, foodByDay, kindOn, placeMarkOn, spanDays, type Span, type TrackData, trendFor } from './data';
 import { changeText, HeroChart, TrackShell } from './Template';
 import { weekBudget } from '../../domain/budgets';
 import { weekStart } from '../../domain/dates';
@@ -38,19 +38,10 @@ export function FoodTrack({ data }: { data: TrackData }) {
     <TrackShell
       track="food"
       head={headlineFor('food', headInput(data))}
-      value={
-        avgK !== undefined ? (
-          <>
-            {fmtInt(avgK)}
-            <small className="t16 q"> kcal · </small>
-            <span style={{ color: 'var(--lavender)' }}>{Math.round(avgP!)}</span>
-            <small className="t16 q"> g</small>
-          </>
-        ) : (
-          '—'
-        )
-      }
-      sub={`${logged.length} of ${range.length} days logged`}
+      value={avgK !== undefined ? fmtInt(avgK) : '—'}
+      sub={avgK !== undefined ? <>kcal · <span style={{ color: 'var(--protein)' }}>{Math.round(avgP!)} g</span></> : undefined}
+      trend={trendFor(data, 'protein')}
+      chartLabel={`Calories and protein, ${logged.length} of ${range.length} days logged`}
       change={changeText(ch.delta, (n) => `${fmtInt(n)} kcal`)}
       span={span}
       onSpan={(s) => setSpan(s as Span)}

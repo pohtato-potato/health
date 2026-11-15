@@ -24,7 +24,7 @@ export function Events({ event, matches }: { event?: { id: EventId; days: number
             <li key={r.id} className="fb-evrow"><b className="fb-evlabel">{r.label}</b><span className="fb-evtext">{r.text}</span><ResultMark r={r.result} /></li>
           ))}
         </ol>
-      ) : <p className="fb-s">The first event night is the night after day 42.</p>}
+      ) : <p className="fb-s">The first event night is the night after the season’s last day.</p>}
     </section>
   );
 }

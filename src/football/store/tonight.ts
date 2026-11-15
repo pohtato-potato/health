@@ -1,6 +1,7 @@
 // What Brabo plays next, read from the save and the season (no writes).
 import { addDays, type DayKey } from '../../domain/dates';
-import { seasonDays, SEASON_DAYS } from '../calendar';
+import { daysOf, seasonLength } from '../calendar';
+import { worldOf } from '../pyramid/shape';
 import { contNight } from '../continental';
 import { EVENTS } from '../events';
 import { physio, cards } from '../discipline';
@@ -12,7 +13,7 @@ import type { FbSave, FbSeason } from './tables';
 export interface Fixture {
   day: number;
   comp: Comp;
-  /** "Matchday 19 of 42", or the event's day. */
+  /** "Day 19 of 42", the day of the season (league and cup nights both count), or the event's day. */
   label: string;
   round?: string;
   /** Empty when the opponent is drawn on the night (friendlies, events, playoffs). */
@@ -25,7 +26,7 @@ export interface Fixture {
 /** The continental match on a double-header night, when Brabo are in the field: "The Continental Cup, league phase 3 of 8, away at Benfica". */
 export function contTonight(save: FbSave, season: FbSeason, name: (id: string) => string): string | undefined {
   if (save.phase !== 'season') return undefined;
-  const night = contNight(save.day), c = season.continental;
+  const night = contNight(save.day, worldOf(season)), c = season.continental;
   if (!night || !c?.field.includes(OWN)) return undefined;
   let pair: [string, string] | undefined, label = '';
   if (night.stage === 'phase') { pair = c.rounds[night.round - 1]?.find(([h, a]) => h === OWN || a === OWN); label = `league phase ${night.round} of 8`; }
@@ -45,9 +46,10 @@ export function fixtureFor(save: FbSave, season: FbSeason): Fixture | undefined 
     const ev = save.event ? EVENTS[save.event.id] : undefined;
     return { day: save.day, comp: 'event', label: `${ev?.name ?? 'Event'}, day ${save.day} of ${save.event?.days ?? 1}`, home: '', away: '', opp: '', braboHome: true };
   }
-  if (save.day > SEASON_DAYS) return undefined;
-  const plan = seasonDays()[save.day - 1];
-  const label = `Matchday ${save.day} of ${SEASON_DAYS}`;
+  const wv = worldOf(season);
+  if (save.day > seasonLength(wv)) return undefined;
+  const plan = daysOf(wv)[save.day - 1];
+  const label = `Day ${save.day} of ${seasonLength(wv)}`;
   const tier = season.tierOf[OWN] as Tier;
   if (plan.kind === 'league') {
     const pair = season.fixtures[tier]?.[plan.matchday! - 1]?.find(([h, a]) => h === OWN || a === OWN);

@@ -22,6 +22,10 @@ import { tierName } from '../../football/data/load';
 import type { Tier } from '../../football/types';
 import { leadLine, type ScoutReport } from '../../football/fog/report';
 import { CrestOrFog, FactRow, Known, factLabel, factText } from './world/Fog';
+import { Action, HelpButton } from '../../ui/kit/Kit';
+import { Icon } from '../../ui/Icon';
+import { PARCEL_HOW } from './howDaily';
+import '../../styles/look-tonight.css';
 
 function Art({ svg }: { svg: string }) {
   return <span className="fb-art" aria-hidden="true" dangerouslySetInnerHTML={{ __html: svg }} />;
@@ -45,8 +49,8 @@ function Sealed({ tiles, small, from = 0 }: { tiles: TileKind[]; small?: boolean
   return (
     <>
       {tiles.map((k, i) => (
-        <div key={k} className={`md-tile${small ? ' small' : ''}`} style={{ '--ink': TILE[k].ink } as React.CSSProperties}>
-          <span className="seal">{from + i + 1}</span><b>{TILE[k].title}</b>{!small && <span className="md-q">sealed</span>}
+        <div key={k} className={`md-tile lt-sealed${small ? ' small' : ''}`} style={{ '--ink': TILE[k].ink, '--i': i } as React.CSSProperties}>
+          <span className="seal">{from + i + 1}</span><b>{TILE[k].title}</b>{!small && <span className="md-q lt-lock"><Icon name="lock" size={16} stroke={2} />sealed</span>}
         </div>
       ))}
     </>
@@ -69,11 +73,11 @@ export function ParcelView({ t, p: live }: { t: Tonight; p: Parcel }) {
     return (
       <main className="md-page dawn">
         <div className="md-in">
-          <div className="md-top"><span className="md-cap">{weekday(t.date)} morning</span><span className="md-q">{cameIn(n)}</span></div>
-          <h1 className="md-h">The morning parcel</h1>
+          <div className="md-top lt-ptop"><span className="md-cap">{weekday(t.date)} morning</span><span className="md-q">{cameIn(n)}</span><HelpButton how={PARCEL_HOW} /></div>
+          <h1 className="md-h lt-ph">The morning parcel</h1>
           <Sealed tiles={p.tiles} />
           <div className="md-fill" />
-          <button type="button" className="md-btn" onClick={() => setAt(0)}>Open the first</button>
+          <Action wide onClick={() => setAt(0)}>Open the first</Action>
         </div>
       </main>
     );
@@ -83,11 +87,13 @@ export function ParcelView({ t, p: live }: { t: Tonight; p: Parcel }) {
   return (
     <main className="md-page dawn">
       <div className="md-in">
-        <div className="md-top">
-          <span className="md-cap">{at + 1} of {n} · {TILE[k].title.toLowerCase()}</span>
+        <div className="md-top lt-ptop">
+          <span className="md-cap" style={{ color: TILE[k].ink }}>{at + 1} of {n} · {TILE[k].title.toLowerCase()}</span>
           <button type="button" className="md-nav-go md-q" onClick={next} style={{ minHeight: 44, minWidth: 64, textAlign: 'right', background: 'none', border: 0, color: 'inherit', font: 'inherit', cursor: 'pointer' }}>{last ? 'Done' : 'Tap to go on'}</button>
         </div>
+        <div key={at} className="lt-unseal" style={{ '--ink': TILE[k].ink } as React.CSSProperties}>
         {k === 'result' && (p.waiting || p.result) && <ResultTile waiting={p.waiting} m={p.result} save={t.save} onNext={next} last={last} />}
+        {k === 'result' && live.others.length > 0 && <NightResults ms={live.others} />}
         {k === 'table' && <TableTile date={t.date} onNext={next} last={last} />}
         {k === 'talks' && <TalksTile offers={p.talks} date={t.date} onNext={next} last={last} />}
         {k === 'scout' && <ScoutTile t={t} scouts={p.scouts} onNext={next} last={last} />}
@@ -95,6 +101,7 @@ export function ParcelView({ t, p: live }: { t: Tonight; p: Parcel }) {
         {k === 'cast' && p.cast && <CastTile note={p.cast} onNext={next} last={last} />}
         {k === 'dice' && <DiceTile dice={p.dice} date={t.date} onNext={next} last={last} />}
         {k === 'pack' && <PackTile n={p.packs} date={t.date} onNext={next} last={last} />}
+        </div>
         <div className="md-fill" />
         <Sealed tiles={p.tiles.slice(at + 1, at + 4)} small from={at + 1} />
       </div>
@@ -102,8 +109,9 @@ export function ParcelView({ t, p: live }: { t: Tonight; p: Parcel }) {
   );
 }
 
-const Next = ({ onNext, last, label }: { onNext: () => void; last: boolean; label?: string }) => (
-  <button type="button" className="md-btn ghost" onClick={onNext}>{label ?? (last ? 'Done' : 'Next')}</button>
+/** The tile's way on: the one glowing action unless the tile has its own (then it is quiet). */
+const Next = ({ onNext, last, label, quiet }: { onNext: () => void; last: boolean; label?: string; quiet?: boolean }) => (
+  <Action wide quiet={quiet} onClick={onNext}>{label ?? (last ? 'Done' : 'Next')}</Action>
 );
 
 const WORD = { W: 'won', D: 'drew', L: 'lost' } as const;
@@ -127,8 +135,8 @@ export function ResultTile({ waiting, m, save, onNext, last }: { waiting?: Pause
           <p className="md-q" style={{ margin: 0, textAlign: 'center' }}>{f.round ?? 'League'}. {waiting ? 'Watch it with your calls, or skip and your assistant makes them.' : 'The line-up was set last night; the score waits for you.'}</p>
         </div>
         <div className="md-btns">
-          <button type="button" className="md-btn" disabled={busy} onClick={watch}>Watch</button>
-          <button type="button" className="md-btn ghost" disabled={busy} onClick={() => void skip()}>Skip</button>
+          <Action wide disabled={busy} onClick={watch}>Watch</Action>
+          <Action wide quiet disabled={busy} onClick={() => void skip()}>Skip</Action>
         </div>
       </>
     );
@@ -146,12 +154,44 @@ export function ResultTile({ waiting, m, save, onNext, last }: { waiting?: Pause
       <h2 className="md-h">You {WORD[m.result]} against {nameOf(opp)}.</h2>
       <p style={{ margin: 0 }}>{m.round ?? 'League'}{m.pens ? `, ${m.pens[0]}–${m.pens[1]} on penalties` : ''}{scorer ? `. ${scorer.name} scored.` : '.'}</p>
       <div className="md-btns">
-        <button type="button" className="md-btn ghost" onClick={() => go('/football/match', { id: m.id })}>Watch it</button>
+        <Action wide quiet onClick={() => go('/football/match', { id: m.id })}>Watch it</Action>
         <Next onNext={onNext} last={last} />
       </div>
     </>
   );
 }
+
+/**
+ * League pace (O36): the night's other matches under the lead one. Each keeps Watch or Skip before its score, as the
+ * lead does; the assistant made their calls.
+ */
+export function NightResults({ ms }: { ms: StoredMatch[] }) {
+  return (
+    <section className="md-tile col" style={{ '--ink': TILE.result.ink } as React.CSSProperties} aria-label="Also last night">
+      <b>Also last night: {ms.length === 1 ? 'one more match' : `${ms.length} more matches`}</b>
+      <p className="md-q" style={{ margin: 0 }}>Your assistant made the calls in these.</p>
+      <ul className="md-night">
+        {ms.map((m) => {
+          const h = m.home === OWN ? m.score : [m.score[1], m.score[0]];
+          return (
+            <li key={m.id}>
+              <span className="md-night-what">{m.round ?? 'League'}: {shortName(m.home)} v {shortName(m.away)}</span>
+              {storedGate.waiting(m) ? (
+                <span className="md-night-btns">
+                  <button type="button" className="md-btn sm" onClick={() => storedGate.watch(m)}>Watch</button>
+                  <button type="button" className="md-btn ghost sm" onClick={() => void storedGate.skip(m)}>Skip</button>
+                </span>
+              ) : (
+                <span className="md-night-score"><span><b>{h[0]}–{h[1]}</b> {RESULT_WORD[m.result]}{m.pens ? `, ${m.pens[0]}–${m.pens[1]} on penalties` : ''}</span> <button type="button" className="md-btn ghost sm" onClick={() => go('/football/match', { id: m.id })}>Watch it</button></span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+const RESULT_WORD = { W: 'won', D: 'drew', L: 'lost' } as const;
 
 function TableTile({ date, onNext, last }: { date: string; onNext: () => void; last: boolean }) {
   const [said, setSaid] = useState<{ a: PhysioAnswer; back?: string } | null>(null);
@@ -202,7 +242,7 @@ function TalksTile({ offers, date, onNext, last }: { offers: TalkOffer[]; date: 
         );
       })}
       <p className="md-q">Targets only ever rise here, and only when you say so.</p>
-      <Next onNext={onNext} last={last} />
+      <Next quiet={Object.keys(done).length < offers.length} onNext={onNext} last={last} />
     </>
   );
 }
@@ -280,7 +320,7 @@ function AcademyTile({ t, onNext, last }: { t: Tonight; onNext: () => void; last
       ))}
       <p className="md-q">Kept bedtimes and kept lights-out pledges grow them.</p>
       <div className="md-btns">
-        <button type="button" className="md-btn ghost" onClick={() => go('/football/academy')}>The academy</button>
+        <Action wide quiet onClick={() => go('/football/academy')}>The academy</Action>
         <Next onNext={onNext} last={last} />
       </div>
     </>
@@ -313,8 +353,8 @@ function PackTile({ n, date, onNext, last }: { n: number; date: string; onNext: 
         <b style={{ flex: 'none' }}>{n === 1 ? 'pack is waiting' : 'packs are waiting'}</b>
       </div>
       <div className="md-btns">
-        <button type="button" className="md-btn" onClick={() => { void openParcel(date).then(() => go('/football/packs')); }}>Open {n === 1 ? 'it' : 'them'}</button>
-        <Next onNext={onNext} last={last} />
+        <Action wide onClick={() => { void openParcel(date).then(() => go('/football/packs')); }}>Open {n === 1 ? 'it' : 'them'}</Action>
+        <Next quiet onNext={onNext} last={last} />
       </div>
     </>
   );
@@ -340,7 +380,7 @@ export function NightGround({ t, packs, sealAt }: { t: Tonight; packs: number; s
         <button type="button" onClick={() => go('/football/league')}>The table</button>
         <button type="button" onClick={() => go('/football/club')}>Your squad</button>
       </div>
-      <button type="button" className="md-btn" onClick={() => go('/football/cup')}>Play a cup run</button>
+      <Action wide onClick={() => go('/football/cup')}>Play a cup run</Action>
     </section>
   );
 }

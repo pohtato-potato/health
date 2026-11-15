@@ -1,6 +1,7 @@
 // A club's page (spec §5.5, board 10; desk spec §4 and w3-club, Fork 2): what the table tells you (name, division,
 // place, founded, ground, form) is always open; everything else is fogged, hatched with "?", until met or scouted.
 // Known % and its bar on top; the head-to-head, a short news feed and the wiki below.
+import { stageIn } from '../../../football/pyramid/shape';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { clubCrest } from '../../../football/art/crest';
 import { clubById, STYLES, tierName } from '../../../football/data/load';
@@ -11,7 +12,7 @@ import { position } from '../../../football/table';
 import { go } from '../../../router';
 import { Art, scoreLine } from '../Tonight';
 import { CLUB_CLOCK } from '../../../football/fog/fog';
-import { CLUB_LORE } from '../../../football/fog/words';
+import { loreOf } from '../../../football/fog/words';
 import { clubFog } from '../../../football/store/fog';
 import { deskOf } from '../../../football/store/desk';
 import { clockFilled } from '../../../football/desk/rules';
@@ -34,12 +35,13 @@ export function ClubPageView({ d, wiki = false }: { d: ClubPageData; wiki?: bool
   const fog = clubFog(l.save, id);
   const k = fog.facts;
   const rivals = l.save.rivals.map((r) => r.clubId);
-  const ground = groundFor(c, tier, rivals);
+  // A drawn ground's shape is the club's stage (league spec §9): world 2's divisions map to the six old tiers.
+  const ground = groundFor(c, stageIn(l.season, tier), rivals);
   const h = headToHead(d.all, id);
   const own = { step: l.save.crest.step, opt: l.save.crest.opt };
   const live = l.clubs.get(id);
   const style = live?.style ?? c.style;
-  const lore = CLUB_LORE[id];
+  const lore = loreOf(id);
   const hidden = c.hidden ?? lore?.hiddenNew;
   const desk = deskOf(l.save);
   const road = desk.clocks.find((x) => x.job === 'scout' && x.target === id && clockFilled(desk, x) < x.size);

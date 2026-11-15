@@ -9,17 +9,20 @@ const gauss = (r: () => number) => Math.sqrt(-2 * Math.log(1 - r())) * Math.cos(
 
 /** One season's turn of the world: drift, then the named events, then club abilities that move ratings. */
 /**
- * `trouble` (the congress's `spending-rule`): how much likelier financial trouble is for a club rated above its
- * division's band (`bands`). At 1, every club is as likely, as before.
+ * `form: false`: world 2 drifts by finish instead (pyramid/drift.ts). `trouble` (the congress's `spending-rule`): how
+ * much likelier financial trouble is for a club rated above its division's band (`bands`). At 1, every club is as
+ * likely, as before.
  */
-export function worldTurn(clubs: WorldClub[], r: () => number, o: { trouble?: number; bands?: Record<string, [number, number]> } = {}): { changes: RatingChange[]; headlines: Headline[]; deductions: Record<string, number>; styles: Record<string, string> } {
+export function worldTurn(clubs: WorldClub[], r: () => number, o: { form?: boolean; trouble?: number; bands?: Record<string, [number, number]> } = {}): { changes: RatingChange[]; headlines: Headline[]; deductions: Record<string, number>; styles: Record<string, string> } {
   const others = clubs.filter((c) => c.kind !== 'own' && c.kind !== 'old');
   const changes: RatingChange[] = [], headlines: Headline[] = [];
   const deductions: Record<string, number> = {}, styles: Record<string, string> = {};
   const say = (c: WorldClub, text: string) => headlines.push({ kind: 'world', text, clubId: c.id });
   for (const c of others) {
-    const d = Math.round(gauss(r) * 1.5);
-    if (d) changes.push({ id: c.id, d, why: 'form' });
+    if (o.form !== false) {
+      const d = Math.round(gauss(r) * 1.5);
+      if (d) changes.push({ id: c.id, d, why: 'form' });
+    }
     if (r() < 1 / 6) { styles[c.id] = pick(r, ['press', 'possession', 'low-block', 'direct', 'counter', 'grit']); say(c, `${c.name} sack the manager. The new one wants a different game.`); }
   }
   const signings = 2 + Math.floor(r() * 3);

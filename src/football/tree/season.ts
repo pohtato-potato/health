@@ -1,6 +1,6 @@
 // The season run (spec §12, §16): boons, bounties, the season track and the board's objectives. Pure.
 import { addDays, weekStart, type DayKey } from '../../domain/dates';
-import { BOARD, BOARD_PER_SEASON, BOON_CHOICES, BOON_DAYS, BOONS, BOUNTIES, BOUNTIES_OFFERED, BOUNTIES_PICKED, TRACK } from '../content/season';
+import { BOARD, BOARD_2, BOARD_PER_SEASON, BOON_CHOICES, BOON_DAYS, BOON_DAYS_2, BOONS, BOUNTIES, BOUNTIES_OFFERED, BOUNTIES_PICKED, TRACK, TRACK_2 } from '../content/season';
 import type { BoardObjective, BoonDef, BountyDef, Strength, TrackStep } from '../content/types';
 import { hashSeed, rng, shuffle } from '../rng';
 import { countIn } from './metrics';
@@ -9,14 +9,15 @@ import type { TreeEngine, TreeUser } from './types';
 // ---------------- boons ----------------
 
 /** The picks due this season by `day` (1–42): the day-1, 15 and 29 picks, plus any extra picks the track gave. */
-export function boonPicksDue(day: number, extra: number): number[] {
-  const base = BOON_DAYS.map((d, i) => (day >= d ? i + 1 : 0)).filter(Boolean);
-  return [...base, ...Array.from({ length: extra }, (_, i) => BOON_DAYS.length + 1 + i)];
+export function boonPicksDue(day: number, extra: number, world: 1 | 2 = 1): number[] {
+  const days = world === 2 ? BOON_DAYS_2 : BOON_DAYS;
+  const base = days.map((d, i) => (day >= d ? i + 1 : 0)).filter(Boolean);
+  return [...base, ...Array.from({ length: extra }, (_, i) => days.length + 1 + i)];
 }
 /** The next pick not yet made this season, if any. */
-export function boonPickOpen(user: TreeUser, season: number, day: number, extra: number): number | undefined {
+export function boonPickOpen(user: TreeUser, season: number, day: number, extra: number, world: 1 | 2 = 1): number | undefined {
   const made = new Set(user.boons.filter((b) => b.season === season).map((b) => b.pick));
-  return boonPicksDue(day, extra).find((p) => !made.has(p));
+  return boonPicksDue(day, extra, world).find((p) => !made.has(p));
 }
 /** The boons offered at a pick: seeded, never one already held this season. */
 export function boonOffer(user: TreeUser, season: number, pick: number, choices = BOON_CHOICES): BoonDef[] {
@@ -49,12 +50,14 @@ export const weekOf = weekStart;
 // ---------------- the season track ----------------
 
 /** Steps reached this season: one a day with anything logged, plus catch-ups, at most 42. */
-export const trackSteps = (eng: TreeEngine, season: number) =>
-  eng.track.season === season ? Math.min(TRACK.length, eng.track.steps.length + eng.track.catchups) : 0;
+/** The season track for a world: 42 steps, or world 2's 28 (ledger O38). */
+export const trackOf = (world: 1 | 2 = 1) => (world === 2 ? TRACK_2 : TRACK);
+export const trackSteps = (eng: TreeEngine, season: number, world: 1 | 2 = 1) =>
+  eng.track.season === season ? Math.min(trackOf(world).length, eng.track.steps.length + eng.track.catchups) : 0;
 /** Rewards on the track reached but not yet paid. */
-export function trackDue(eng: TreeEngine, season: number): TrackStep[] {
-  const n = trackSteps(eng, season);
-  return TRACK.filter((s) => s.step <= n && s.reward && !eng.trackPaid.includes(`${season}:${s.step}`));
+export function trackDue(eng: TreeEngine, season: number, world: 1 | 2 = 1): TrackStep[] {
+  const n = trackSteps(eng, season, world);
+  return trackOf(world).filter((s) => s.step <= n && s.reward && !eng.trackPaid.includes(`${season}:${s.step}`));
 }
 
 // ---------------- the board ----------------
@@ -70,14 +73,14 @@ export interface SeasonFacts {
   derbyWins: number;
   /** Longest run of home league matches without a loss. */
   homeUnbeaten: number;
-  /** Antigoon in the same division and below us, or in a lower division. */
+  /** The legend rival (Antigoon, or Royal Antwerp in world 2) in the same division and below us, or in a lower division. */
   aboveRival: boolean | undefined;
   /** Rounds reached in each cup, by name ('Last 32', 'Quarter-final', … and 'win'). */
   bigcup: string[];
   tiercup: string[];
   continental?: 'group' | 'r16' | 'qf' | 'sf' | 'final';
   inContinental: boolean;
-  /** Antigoon in the same division (the derby is possible). */
+  /** The legend rival in the same division (the derby is possible). */
   derbyOn: boolean;
 }
 const ROUND: Record<string, string[]> = { r3: ['Last 32'], qf: ['Quarter-final'], sf: ['Semi-final'], final: ['Final'], win: ['win'] };
@@ -89,9 +92,14 @@ export function strengthOf(own: number, division: number[]): Strength {
   const below = sorted.filter((x) => x < own).length / Math.max(1, sorted.length);
   return below >= 0.7 ? 'high' : below >= 0.35 ? 'mid' : 'low';
 }
+/** A board objective as a world counts it: world 2's are rescaled to 12 clubs and 22 matchdays (ledger O38). */
+export function boardDef(id: string, world: 1 | 2 = 1): BoardObjective {
+  const o = BOARD.find((x) => x.id === id)!;
+  return world === 2 && BOARD_2[id] ? { ...o, ...BOARD_2[id] } as BoardObjective : o;
+}
 /** Two objectives for the season, seeded, from those set for this strength that can be met this season. */
-export function boardFor(season: number, strength: Strength, f: Pick<SeasonFacts, 'inContinental' | 'derbyOn' | 'divisionSize'> & { topTier: boolean }): BoardObjective[] {
-  const fits = BOARD.filter((o) => o.for.includes(strength)).filter((o) => {
+export function boardFor(season: number, strength: Strength, f: Pick<SeasonFacts, 'inContinental' | 'derbyOn' | 'divisionSize'> & { topTier: boolean }, world: 1 | 2 = 1): BoardObjective[] {
+  const fits = BOARD.map((o) => boardDef(o.id, world)).filter((o) => o.for.includes(strength)).filter((o) => {
     const g = o.goal;
     if (g.kind === 'continental') return f.inContinental;
     if (g.kind === 'derby' || g.kind === 'above-rival') return f.derbyOn;

@@ -5,7 +5,7 @@ import { bracketFrom16, type Bracket, type Round, type Tie } from '../../../foot
 import { clubColour } from '../../../football/store/league';
 import { OWN } from '../../../football/store/season';
 import type { Tier } from '../../../football/types';
-import { CONT, CONT_NAME, phaseTable, type Continental } from '../../../football/continental';
+import { CONT, CONT2, CONT_NAME, phaseTable, type Continental } from '../../../football/continental';
 import { ordinal } from '../../../football/habitLines';
 
 const short = (id: string) => (id === OWN ? 'BRA' : clubById(id).short);
@@ -120,7 +120,8 @@ export function Cup({ b, tierOf }: { b: Bracket; tierOf: Record<string, Tier> })
 }
 
 /** The Continental Cup: Brabo's eight phase nights and the phase table while it runs, then the knockout bracket. */
-export function ContinentalView({ c, tierOf }: { c: Continental; tierOf: Record<string, Tier> }) {
+export function ContinentalView({ c, tierOf, world = 1 }: { c: Continental; tierOf: Record<string, Tier>; world?: 1 | 2 }) {
+  const phase = world === 2 ? CONT2.phase : CONT.phase;
   const mine = c.field.includes(OWN);
   const table = phaseTable(c);
   const played = c.results.length;
@@ -144,7 +145,7 @@ export function ContinentalView({ c, tierOf }: { c: Continental; tierOf: Record<
               return (
                 <li key={i} className={`fb-rd ${s ? (s[0] > s[1] ? 'w' : s[0] < s[1] ? 'l' : '') : i === played ? 'n' : ''}`}>
                   <i aria-hidden="true" />
-                  <span className="fb-col"><b>Night {i + 1} · day {CONT.phase[i]}</b><span className="fb-s">{s ? `${word} ${s[0]}–${s[1]} v ${nm(opp)}` : `${p[0] === OWN ? 'Home to' : 'Away at'} ${nm(opp)}`}</span></span>
+                  <span className="fb-col"><b>Night {i + 1} · day {phase[i]}</b><span className="fb-s">{s ? `${word} ${s[0]}–${s[1]} v ${nm(opp)}` : `${p[0] === OWN ? 'Home to' : 'Away at'} ${nm(opp)}`}</span></span>
                 </li>
               );
             })}

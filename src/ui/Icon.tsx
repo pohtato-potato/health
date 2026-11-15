@@ -34,6 +34,10 @@ const PATHS: Record<string, ReactNode> = {
     </>
   ),
   plus: <path d="M12 5v14M5 12h14" />,
+  minus: <path d="M5 12h14" />,
+  /** A gym machine: the frame, the weight stack and its pin. */
+  gym: <path d="M5 20V5h14v15M3 20h18M9 8h6v8H9zM9 10.7h6M9 13.3h6M15 12h2.5" />,
+  // `body` (a figure, front) is defined once, further down: the later definition was the one in use.
   close: <path d="M6 6l12 12M18 6L6 18" />,
   right: <path d="M9 5l7 7-7 7" />,
   left: <path d="M15 5l-7 7 7 7" />,
@@ -52,6 +56,12 @@ const PATHS: Record<string, ReactNode> = {
       <ellipse cx="9" cy="8" rx="2.6" ry="3.8" />
       <ellipse cx="15.5" cy="14.5" rx="2.6" ry="3.8" />
       <path d="M8 14h2.2M14.4 20.3h2.2" />
+    </>
+  ),
+  body: (
+    <>
+      <circle cx="12" cy="4.5" r="2.5" />
+      <path d="M12 7.5V15M7 10h10M12 15l-3.5 6.5M12 15l3.5 6.5" />
     </>
   ),
   weight: (
@@ -172,6 +182,26 @@ const PATHS: Record<string, ReactNode> = {
   ),
   play: <path d="M8 5.5v13l10.5-6.5z" />,
   pause: <path d="M8.5 5.5v13M15.5 5.5v13" />,
+  // Kit icons (look pass, 14 Nov): drawn on a 36 px grid at 2.4 and scaled to 24, so the line weight matches the rest.
+  sheet: <g transform="scale(.6667)"><path d="M8 6h20v24H8zM13 13h10M13 19h10M13 25h6" /></g>,
+  tree: <g transform="scale(.6667)"><path d="M18 30V18M18 18l-8-8M18 18l8-8M18 6v6" /><circle cx="10" cy="9" r="3" /><circle cx="26" cy="9" r="3" /><circle cx="18" cy="5" r="3" /></g>,
+  deal: <g transform="scale(.6667)"><path d="M5 20l7-7 6 5 6-5 7 7M12 13v-5M24 13v-5" /></g>,
+  money: <g transform="scale(.6667)"><circle cx="18" cy="18" r="12" /><path d="M22 13c-6-3-10 1-7 4s8 2 7 6-8 3-9 0M18 9v18" /></g>,
+  kit: <g transform="scale(.6667)"><path d="M12 6l-8 5 3 6 4-2v15h14V15l4 2 3-6-8-5c-2 4-10 4-12 0z" /></g>,
+  ground: <g transform="scale(.6667)"><path d="M4 28h28M6 28V18l12-6 12 6v10M8 14V6M28 14V6M6 6h4M26 6h4" /></g>,
+  desk: <g transform="scale(.6667)"><rect x="6" y="8" width="24" height="16" rx="3" /><path d="M12 30h12M18 24v6" /></g>,
+  pack: <g transform="scale(.6667)"><rect x="9" y="5" width="18" height="26" rx="3" /><path d="M9 12h18M15 19l3 3 4-5" /></g>,
+  scope: <g transform="scale(.6667)"><circle cx="11" cy="22" r="7" /><circle cx="25" cy="22" r="7" /><path d="M11 15l3-8h8l3 8M15 22h6" /></g>,
+  moon: <g transform="scale(.6667)"><path d="M27 22A12 12 0 1 1 14 8a10 10 0 0 0 13 14z" /></g>,
+  arrow: <g transform="scale(.6667)"><path d="M6 18h22M20 10l8 8-8 8" /></g>,
+  list: <g transform="scale(.6667)"><path d="M12 10h18M12 18h18M12 26h18M6 10h0M6 18h0M6 26h0" /></g>,
+  link: <g transform="scale(.6667)"><path d="M14 22l8-8M12 16l-3 3a5 5 0 0 0 7 7l3-3M24 20l3-3a5 5 0 0 0-7-7l-3 3" /></g>,
+  wind: <g transform="scale(.6667)"><path d="M4 14h16a4 4 0 1 0-4-4M4 22h22a4 4 0 1 1-4 4" /></g>,
+  people: <g transform="scale(.6667)"><circle cx="13" cy="12" r="4" /><circle cx="25" cy="13" r="3" /><path d="M5 29c1-5 4-8 8-8s7 3 8 8M21 21c4-1 9 1 10 7" /></g>,
+  book: <g transform="scale(.6667)"><path d="M18 9c-3-2-8-3-12-2v20c4-1 9 0 12 2 3-2 8-3 12-2V7c-4-1-9 0-12 2zM18 9v20" /></g>,
+  route: <g transform="scale(.6667)"><circle cx="9" cy="27" r="3" /><circle cx="27" cy="9" r="3" /><path d="M12 27h9a4 4 0 0 0 0-8h-6a4 4 0 0 1 0-8h9" /></g>,
+  map: <g transform="scale(.6667)"><path d="M5 9l8-3 10 3 8-3v21l-8 3-10-3-8 3zM13 6v21M23 9v21" /></g>,
+  help: <g transform="scale(.6667)"><path d="M13 13a5 5 0 1 1 7 4.6c-1.3.6-2 1.6-2 3V22" /><circle cx="18" cy="27.5" r=".6" /></g>,
   more: (
     <>
       <circle cx="5.5" cy="12" r="1" />
@@ -190,6 +220,7 @@ export function Icon({
   stroke = 1.6,
   style,
   label,
+  className,
 }: {
   name: IconName;
   size?: number;
@@ -197,6 +228,7 @@ export function Icon({
   stroke?: number;
   style?: CSSProperties;
   label?: string;
+  className?: string;
 }) {
   return (
     <svg
@@ -212,6 +244,7 @@ export function Icon({
       aria-label={label}
       role={label ? 'img' : undefined}
       style={{ flexShrink: 0, ...style }}
+      className={className}
     >
       {PATHS[name]}
     </svg>

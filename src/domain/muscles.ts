@@ -46,6 +46,12 @@ export const EXERCISE_MUSCLES: Record<string, Muscles> = {
 
 /** Name keywords for exercises not in the table, most specific first. */
 const BY_NAME: [RegExp, Muscles][] = [
+  [/leg curl|hamstring curl/i, m(['hamstrings'])],
+  [/leg extension/i, m(['quads'])],
+  [/leg press|hack squat/i, m(['quads', 'glutes'])],
+  [/reverse pec|rear fly|rear-delt fly/i, m(['rear-delts'], ['upper-back'])],
+  [/pec deck|chest fly/i, m(['chest'])],
+  [/push-?down/i, m(['triceps'])],
   [/lateral|side raise/i, m(['side-delts'])],
   [/rear delt|face pull|y-raise|reverse fly/i, m(['rear-delts', 'upper-back'])],
   [/overhead|shoulder press|\bohp\b/i, m(['front-delts', 'triceps'])],

@@ -1,0 +1,329 @@
+/*
+ * The kit (look pass, 14 Nov 2026). Every page is built from these parts; DESIGN.md says why.
+ * One thing leads (a picture, or one number where the number is the answer), then panels, then one glowing action.
+ * Loaded after the older sheets so its shared tokens win.
+ */
+:root {
+  /* Type: Fraunces for numbers and titles, Atkinson Hyperlegible for everything else. */
+  --sans: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, sans-serif;
+
+  /* Metric inks, made vivid. One meaning each, on every page and every theme. */
+  --kcal: #e98a5b;
+  --protein: #c2b2ff;
+  --steps: #8fdcb6;
+  --sleep: #93c3dc;
+  --apricot: #e98a5b;
+  --lavender: #c2b2ff;
+
+  /* The six Football axes keep their inks (src/ui/inks.ts). */
+  --ax-pace: #8fdcb6;
+  --ax-power: #ff9a76;
+  --ax-fuel: #c2b2ff;
+  --ax-rest: #93c3dc;
+  --ax-routine: #f4aedb;
+  --ax-shape: #d9e8f3;
+
+  --k-cream: #ede6da;
+  --k-quiet: #c4c1cf;
+  --k-gold: #f2c46d;
+  --k-pearl: #d9e8f3;
+  --k-coral: #ff9a76;
+  --k-good: #8fc9b0;
+
+  /* The one action colour. A theme may change it; the page's own light decides what it sits on. */
+  --act: #ff7a1a;
+  --act-ink: #0d0f20;
+
+  /* Each page's light, used by doors and the page background. Defaults are the You light. */
+  --w1: rgba(233, 138, 91, 0.18);
+  --w2: rgba(108, 63, 196, 0.24);
+}
+
+/* ---- the page's light: a warm glow in one corner, a cool one in the opposite corner, never on top of each other ---- */
+.k-light { position: relative; isolation: isolate; color: var(--k-cream); }
+.k-light::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: var(--k-bg); }
+.k-light.you { --w1: rgba(233, 138, 91, 0.18); --w2: rgba(108, 63, 196, 0.24); --k-bg: radial-gradient(90% 40% at 0% 0%, rgba(233, 138, 91, 0.30), transparent 70%), radial-gradient(90% 50% at 100% 100%, rgba(108, 63, 196, 0.45), transparent 70%), #100c1e; }
+.k-light.walk { --w1: rgba(143, 220, 182, 0.16); --w2: rgba(70, 60, 150, 0.26); --k-bg: radial-gradient(90% 45% at 100% 100%, rgba(143, 220, 182, 0.22), transparent 70%), #0b1024; }
+/* Themes (rule 10): any theme but Dusk lays its own light behind every page and lights the doors with it.
+   The custom properties come from the theme's look (src/domain/themes.ts), set on the root by useThemeClass. */
+:root[data-themed] .k-light { --k-bg: var(--th-light); --w1: var(--th-w1); --w2: var(--th-w2); }
+:root[data-themed] body { background: var(--th-light) fixed, var(--th-ground); }
+
+/* ---- the page skeleton ---- */
+.k-page { display: flex; flex-direction: column; gap: 10px; font-family: var(--sans); font-size: 15px; line-height: 1.3; font-variant-numeric: lining-nums; }
+.k-q { color: var(--k-quiet); }
+.k-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-width: 0; }
+.k-row.end { align-items: flex-end; }
+.k-col { display: flex; flex-direction: column; min-width: 0; }
+.k-r { text-align: right; }
+
+/* Titles in Fraunces; the small line sits under the title, never above it. */
+.k-title { font: 400 24px/1.15 var(--serif); margin: 0; text-wrap: balance; }
+.k-title.lg { font-size: 30px; }
+.k-under { display: block; margin-top: 2px; color: var(--k-quiet); font-size: 15px; }
+
+/* The hero number: Fraunces at 600, large, in the thing's own ink. */
+.k-hero { font: 600 72px/0.85 var(--serif); letter-spacing: -0.02em; color: var(--ink, var(--k-cream)); font-variant-numeric: lining-nums; }
+.k-hero.md { font-size: 54px; }
+.k-hero.sm { font-size: 44px; }
+.k-hero-row { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.k-hero-row b { font-weight: 700; }
+.k-num { font: 600 26px/1.05 var(--serif); font-variant-numeric: lining-nums; }
+
+/* A section label: small capitals with a hairline running to the edge. */
+.k-sect { font: 700 14px var(--sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--k-quiet); display: flex; align-items: center; gap: 10px; margin: 14px 0 0; }
+.k-sect::after { content: ''; flex: 1; height: 1px; background: rgba(237, 230, 218, 0.2); }
+
+/* ---- panels: filled in the thing's own colour. Tappable ones carry a hairline edge and a small drawn arrow. ---- */
+.k-panel {
+  --ink: var(--k-cream);
+  position: relative; min-width: 0; border-radius: 20px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ink) 24%, #10122a), color-mix(in srgb, var(--ink) 7%, #10122a) 90%);
+  border: 1px solid transparent; color: var(--k-cream); font: inherit; text-align: left;
+}
+.k-panel .k-q { color: color-mix(in srgb, var(--ink) 26%, #e4e0ee); }
+.k-panel .k-lb { font-weight: 700; color: var(--ink); }
+.k-panel.flat { flex-direction: row; align-items: center; gap: 12px; }
+button.k-panel, a.k-panel { cursor: pointer; text-decoration: none; min-height: 44px; }
+.k-tap { border-color: color-mix(in srgb, var(--ink) 46%, transparent); padding-right: 32px; }
+.k-tap > .k-arrow { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: color-mix(in srgb, var(--ink) 80%, #fff); }
+.k-tap:focus-visible, .k-door:focus-visible, .k-act:focus-visible, .k-back:focus-visible, .k-help:focus-visible, .k-nav a:focus-visible { outline: 3px solid var(--k-cream); outline-offset: 2px; }
+
+/* ---- doors: a way into another page, showing one live value, lit by the page they sit on ---- */
+.k-doors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.k-doors.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.k-door {
+  --ink: var(--k-cream);
+  position: relative; min-width: 0; min-height: 76px; border-radius: 18px; padding: 10px 12px; display: flex; flex-direction: column; gap: 1px; align-items: flex-start;
+  background: linear-gradient(150deg, var(--w1), var(--w2)); border: 1px solid color-mix(in srgb, var(--ink) 46%, transparent);
+  color: var(--k-cream); font: inherit; text-align: left; cursor: pointer; text-decoration: none;
+}
+.k-door .k-arrow { position: absolute; right: 9px; top: 12px; color: color-mix(in srgb, var(--ink) 80%, #fff); }
+.k-door b.v { font: 600 20px/1.15 var(--serif); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--k-cream); }
+.k-door .nm { font-weight: 700; font-size: 15px; line-height: 1.15; overflow-wrap: anywhere; }
+
+/* ---- the one glowing action a page: its glow falls below it, like a real light ---- */
+.k-act {
+  min-height: 52px; padding: 0 20px; border-radius: 999px; border: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--act); color: var(--act-ink); font: 700 16px var(--sans); cursor: pointer; text-decoration: none;
+  box-shadow: 0 10px 24px -8px var(--act);
+}
+.k-act.wide { width: 100%; }
+.k-act.sm { min-height: 44px; padding: 0 18px; font-size: 15px; }
+.k-act.quiet { background: transparent; color: var(--k-cream); border: 2px solid var(--k-cream); box-shadow: none; }
+
+/* ---- chips: the key numbers ---- */
+.k-chip { --ink: var(--k-cream); display: inline-flex; align-items: center; min-height: 32px; padding: 3px 12px; border-radius: 999px; border: 1.5px solid var(--ink); color: var(--ink); font-weight: 700; font-size: 15px; white-space: nowrap; }
+.k-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ---- the page header inside a page: one way back, the page's name, maybe a "?" ---- */
+.k-head { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; min-height: 48px; }
+.k-head .k-title { text-align: center; font-size: 22px; }
+.k-head > :last-child { justify-self: end; }
+.k-back { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; min-width: 44px; padding: 0 6px 0 0; border: 0; background: none; color: var(--k-cream); font: 700 15px var(--sans); cursor: pointer; justify-self: start; max-width: 100%; }
+.k-back span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---- the "?" and the "how this works" sheet ---- */
+.k-help { width: 44px; height: 44px; flex: none; border-radius: 50%; display: grid; place-items: center; border: 0; background: none; color: var(--k-cream); cursor: pointer; padding: 0; }
+.k-help i { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid rgba(237, 230, 218, 0.6); display: grid; place-items: center; }
+.k-how { display: flex; flex-direction: column; gap: 14px; font-family: var(--sans); padding-bottom: 8px; }
+.k-how-step { display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: center; }
+.k-how-step > span:first-child { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: color-mix(in srgb, var(--ink) 25%, #171a36); }
+.k-how-step b { display: block; }
+
+/* ---- Football: four words across the top, underlined where you are ---- */
+.k-nav { display: flex; align-items: center; gap: 4px 18px; flex-wrap: nowrap; min-height: 48px; }
+.k-nav a { min-height: 44px; min-width: 44px; justify-content: center; display: inline-flex; align-items: center; color: #a9a7b8; font: 400 16px var(--sans); text-decoration: none; position: relative; white-space: nowrap; }
+.k-nav a[aria-current='page'] { color: #fff; font-weight: 700; }
+.k-nav a[aria-current='page']::after { content: ''; position: absolute; left: 0; right: 0; bottom: 6px; height: 3px; border-radius: 2px; background: var(--act); }
+.k-nav .k-help { margin-left: auto; }
+@media (max-width: 350px) { .k-nav { gap: 4px 13px; } }
+
+/* ---- an empty page: one picture, one line, one thing to do ---- */
+.k-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 18px 0 8px; }
+.k-empty .k-pic { width: 140px; height: 140px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle, color-mix(in srgb, var(--ink) 35%, transparent), transparent 70%); }
+
+/* Inside a headed Football page the header carries the page's name, so older screens' own big title steps aside. */
+.k-headed .fbt-head > .fbt-t1 { display: none; }
+.k-headed .fbt-head { justify-content: flex-start; }
+.fb-au { --w1: rgba(255, 122, 26, 0.20); --w2: rgba(108, 63, 196, 0.24); }
+
+/* Club (board four): the Kaai runs edge to edge under the four words. */
+.kc-kaai-wrap { margin: -4px -16px 0; }
+.kc-kaai { width: 100%; display: block; }
+/* The eleven on a pitch that looks like one: mown stripes, each player filled in their unit's ink. */
+.kc-club .pl-pitch { aspect-ratio: 336 / 300; border: 0; box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.45); background: repeating-linear-gradient(180deg, #11402f 0 33px, #0e3628 33px 66px); border-radius: 22px; }
+.kc-club .pl-pitch .pl-lines * { stroke: rgba(255, 255, 255, 0.35); stroke-width: 0.6; }
+.kc-club .pl-tk b { background: var(--uc); color: #0d0f20; border: 0; box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35); }
+.kc-club .pl-tk span { font-weight: 700; text-shadow: 0 1px 3px #000; }
+
+/* You (board one, "You: proposed"): momentum's chart runs edge to edge; four trend tiles; five doors. */
+.k-mom { display: flex; flex-direction: column; gap: 8px; background: none !important; border: 0 !important; padding: 0 !important; box-shadow: none !important; }
+.k-mom-chart { position: relative; margin: -20px -22px 2px; }
+.k-mom-chart svg { display: block; width: 100%; height: 100%; animation: k-wipe 1.1s cubic-bezier(.3, .7, .2, 1) both; }
+.k-mom-dot { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.55); animation: k-fade 0.4s 1s ease-out both; }
+.k-spark { display: block; height: 28px; margin: 4px 0; }
+.k-spark svg { display: block; width: 100%; height: 100%; overflow: visible; animation: k-wipe 1s 0.2s cubic-bezier(.3, .7, .2, 1) both; }
+@keyframes k-wipe { from { clip-path: inset(-10% 100% -10% 0); } to { clip-path: inset(-10% -2% -10% 0); } }
+@keyframes k-fade { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: none; } }
+.k-trend { gap: 2px; }
+.k-you-doors > :last-child:nth-child(odd) { grid-column: span 2; }
+.k-clock { display: flex; flex-direction: column; align-items: flex-end; text-align: right; min-height: 44px; padding: 4px 4px 0 0; border: 0; background: none; color: var(--k-cream); font: inherit; cursor: pointer; max-width: 150px; }
+.k-clock b { font: 600 22px/1.1 var(--serif); }
+.k-clock .k-q { font-size: 14px; }
+
+/* The desk and the market keep their own frame for now (fork L1); their way back sits first, on the left. */
+.md-top > .k-back { order: -1; }
+.md-top:has(> .k-back) { justify-content: flex-start; gap: 6px; }
+.md-top:has(> .k-back) > .dk-count { margin-left: auto; }
+
+/* Sweep fix (look pass): a "bare" page still sits above the tab bar when the bar is showing, so its last line must clear it. */
+body:has(.tabbar) .page.bare { padding-bottom: calc(var(--tab-h) + 36px + var(--safe-bottom)); }
+.k-hero-row b, .k-r .k-q { white-space: nowrap; }
+
+/* The theme picker (board five, "Themes with their own rings"): two across, each in its own light with its rings. */
+.th-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.th-tile { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-height: 132px; padding: 12px; border-radius: 18px; border: 1.5px solid rgba(237, 230, 218, 0.22); color: var(--k-cream); font: inherit; font-family: var(--sans); text-align: left; cursor: pointer; overflow: hidden; }
+.th-tile.on { border: 2.5px solid #fff; }
+.th-top { display: flex; align-items: center; gap: 8px; max-width: 100%; }
+.th-top > svg, .th-top > .gr { flex: none; }
+.th-nums { display: flex; flex-direction: column; }
+.th-nums { min-width: 0; }
+.th-nums b { font: 600 clamp(16px, 5.4vw, 20px)/1.05 var(--serif); }
+.th-name { font-weight: 700; font-size: 15px; margin-top: 4px; }
+.th-why { font-size: 14px; color: #d8d3e6; line-height: 1.25; }
+.th-on { position: absolute; top: 8px; right: 8px; color: #fff; }
+.th-tile.locked { border-style: dashed; cursor: default; }
+.th-tile:disabled { opacity: 1; filter: none; }
+
+/* ---- L5, You and its pages (board one, board three, board five) ---- */
+/* The drawings' panels carry a faint top light. */
+.k-panel { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14); }
+.k-num.ink, .k-panel .k-num.ink { color: var(--ink); }
+/* A door with a line (board one): its mark, the name in its ink, a quiet line under. */
+.k-door.line { min-height: 86px; gap: 2px; }
+.k-door.line > svg:first-child { margin-bottom: 4px; }
+.k-door.line .nm { color: var(--ink); }
+.k-door.line .ln { color: color-mix(in srgb, var(--ink) 22%, #e4e0ee); font-size: 15px; line-height: 1.2; max-width: 100%; overflow-wrap: anywhere; }
+.k-door.line .k-arrow { top: 14px; }
+.k-mom > .k-hero-row { position: relative; z-index: 1; }
+/* Three tiles across (Earned's counts, the trophy case); two across under 350 px when a value is long. */
+.k-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.k-tiles .k-panel { padding: 10px 12px; }
+.k-tiles .k-num { font-size: clamp(19px, 6.4vw, 24px); white-space: nowrap; }
+.k-tiles .k-q { font-size: 14px; line-height: 1.2; }
+.k-tiles.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* A plain line on the page (board one's "Did you know"). */
+.k-line { margin: 0; }
+/* A quiet "more" inside a panel: the working, the why. */
+.k-more { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0; border: 0; background: none; color: var(--ink); font: 700 15px var(--sans); cursor: pointer; align-self: flex-start; }
+/* What is due: its words, and the glowing action beside them (under them when narrow). */
+.k-due .k-row { flex-wrap: wrap; }
+.k-due .k-row > b { flex: 1 1 150px; }
+/* Pills: a choice among a few words. */
+.k-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.k-pill { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 0; background: rgba(237, 230, 218, 0.10); color: var(--k-cream); font: 400 15px var(--sans); cursor: pointer; }
+.k-pill[aria-pressed='true'] { background: var(--k-cream); color: #0d0f20; font-weight: 700; }
+.k-in { animation: k-rise 0.35s ease-out both; }
+@keyframes k-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+/* A meter inside a panel. */
+.k-meter { display: block; height: 12px; border-radius: 6px; background: rgba(237, 230, 218, 0.16); overflow: hidden; margin-top: 6px; }
+.k-meter i { display: block; height: 100%; width: var(--w); background: var(--ink); box-shadow: 0 0 8px var(--ink); border-radius: 6px; }
+/* The poster (board three's week): sunset orange into plum, white words, a tap opens it. */
+.k-poster { display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; min-height: 170px; padding: 14px 16px; border-radius: 20px; border: 0; color: #fff; font: inherit; text-align: left; cursor: pointer; background: linear-gradient(160deg, #ff7a1a 0%, #7a3f6e 60%, #231a44 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2); }
+.k-poster.sm { min-height: 120px; }
+.k-poster > span:first-child { font-weight: 700; }
+.k-poster-t { font: 400 30px/1.1 var(--serif); text-wrap: balance; }
+.k-poster.sm .k-poster-t { font-size: 26px; }
+.k-play { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; white-space: nowrap; }
+
+/* ---- a track's page (board five, "Sleep: the counts, tidied") ---- */
+.yu-tbg.k-tbg { background: radial-gradient(90% 40% at 100% 0%, color-mix(in srgb, var(--c) 34%, transparent), transparent 70%), linear-gradient(180deg, color-mix(in srgb, var(--g) 50%, #0a0c24), #0a0c24 75%); }
+.yu-tbg.k-tbg .a-art, .yu-tbg.k-tbg .yu-amb { opacity: 0.35; }
+.k-track { gap: 12px; }
+.k-track .k-hero-row { flex-wrap: nowrap; gap: 8px; }
+.k-hero-sub { font-weight: 700; padding-bottom: 4px; white-space: nowrap; }
+.k-say { color: color-mix(in srgb, var(--c) 30%, #ede6da); }
+.k-chart { display: flex; flex-direction: column; gap: 6px; }
+.k-chart > b, .k-track .k-chart-b { font-weight: 700; }
+.k-pill.sm { min-height: 44px; padding: 0 14px; font-size: 15px; }
+.k-pill[role='radio'][aria-checked='true'] { background: var(--k-cream); color: #0d0f20; font-weight: 700; }
+/* Rows inside a filled panel: a hairline between, the value on the right. */
+.k-rows { gap: 0; padding-top: 4px; padding-bottom: 4px; }
+.k-rowl { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 44px; border: 0; border-bottom: 1px solid rgba(237, 230, 218, 0.12); background: none; color: var(--k-cream); font: inherit; text-align: left; width: 100%; padding: 0; cursor: default; }
+button.k-rowl { cursor: pointer; }
+.k-rowl:last-child { border-bottom: 0; }
+.k-rowl > span:first-child { flex: 1; min-width: 0; }
+.k-rowl > b { font-variant-numeric: tabular-nums; text-align: right; }
+/* A strip of fourteen squares, one a night, oldest on the left (board five). */
+.k-strip { display: flex; flex-direction: column; gap: 6px; }
+.k-sq { display: grid; grid-template-columns: repeat(var(--n, 14), minmax(0, 1fr)); gap: 4px; }
+.k-sq i { aspect-ratio: 1; border-radius: 5px; background: rgba(237, 230, 218, 0.12); }
+.k-sq i.on { background: var(--ink); box-shadow: 0 0 8px -1px var(--ink); }
+.k-sq i.none { background: none; outline: 1.5px dashed rgba(237, 230, 218, 0.25); outline-offset: -2px; }
+.k-strip .k-row b:last-child { font: 600 20px/1 var(--serif); color: var(--ink); }
+/* A scale with a marker (board five's "Rested, on waking"). */
+.k-scale { position: relative; height: 18px; border-radius: 9px; background: linear-gradient(90deg, #e98a5b, #e8d27a, #5ff0b0); }
+.k-scale i { position: absolute; top: -4px; width: 6px; height: 26px; margin-left: -3px; border-radius: 3px; background: #fff; box-shadow: 0 0 8px rgba(255, 255, 255, 0.7); }
+/* The older blocks inside a track's views, brought onto the kit: filled panels in the track's ink, not outlined cards. */
+.k-track .card { --ink: var(--c); border: 0; border-radius: 20px; background: linear-gradient(180deg, color-mix(in srgb, var(--ink) 24%, #10122a), color-mix(in srgb, var(--ink) 7%, #10122a) 90%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14); }
+.k-track .card .lbl, .k-track .lbl { color: var(--cl); font-weight: 700; letter-spacing: 0; text-transform: none; font-size: 15px; }
+.k-track .t12, .k-track .t13 { font-size: 14px; }
+.k-track .btn:not(.ghost) { min-height: 52px; border-radius: 999px; border: 0; background: var(--act); color: var(--act-ink); font: 700 16px var(--sans); box-shadow: 0 10px 24px -8px var(--act); }
+.k-track .btn.ghost { border-radius: 999px; border: 2px solid var(--k-cream); background: transparent; color: var(--k-cream); font-weight: 700; }
+.k-track .yu-cwn { padding: 12px 14px; border-radius: 20px; background: linear-gradient(180deg, color-mix(in srgb, var(--c) 18%, #10122a), color-mix(in srgb, var(--c) 6%, #10122a)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14); font-size: 15px; }
+.k-track .yu-cwn div { grid-template-columns: 76px 1fr; }
+.k-track .k-hero-row { flex-wrap: wrap; row-gap: 2px; }
+.k-track .k-hero-sub { white-space: normal; }
+/* Tracks: a filled tile per track, its animation faint behind its words. */
+.k-tt { min-height: 132px; overflow: hidden; justify-content: flex-start; }
+.k-tt > :not(.yu-amb):not(.k-arrow) { position: relative; }
+.k-tt .yu-amb { opacity: 0.4; }
+.k-tt .k-arrow { top: 18px; transform: none; }
+.k-tt-say { font-size: 15px; line-height: 1.25; flex: 1; }
+/* Earned (board three): the new title's gold "Wear it", titles as rows, rewards in a gold panel. */
+.k-gold .k-act { --act: #f2c46d; }
+.k-offer { flex-wrap: wrap; align-items: center; }
+.k-title-row { gap: 2px; }
+.k-title-row.off { opacity: 0.7; }
+.k-title-row.worn { border-color: #f2c46d; box-shadow: 0 0 18px -6px #f2c46d, inset 0 1px 0 rgba(255, 255, 255, 0.14); }
+.k-reward .chip, .k-reward .k-q { font-size: 14px; }
+.k-reward > button.row { background: none; border: 0; color: var(--k-cream); font: inherit; }
+/* Insights (board three): the search field, the trend tiles, the heatmap on the ground. */
+.k-search { display: flex; align-items: center; min-height: 52px; border-radius: 16px; background: rgba(237, 230, 218, 0.10); padding: 0 4px 0 14px; }
+.k-search input { flex: 1; min-width: 0; min-height: 48px; border: 0; background: none; color: var(--k-cream); font: 400 16px var(--sans); outline: none; }
+.k-search input::placeholder { color: #a9a7b8; }
+.k-search:focus-within { outline: 2px solid var(--k-cream); outline-offset: 1px; }
+.k-search button { width: 44px; height: 44px; display: grid; place-items: center; border: 0; background: none; color: var(--k-cream); cursor: pointer; }
+.k-trend-tile { cursor: pointer; min-height: 96px; }
+.k-heat { border-radius: 20px; padding: 12px; background: linear-gradient(180deg, rgba(237, 230, 218, 0.10), rgba(237, 230, 218, 0.03)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14); }
+.k-story-sec { gap: 8px; }
+.ws .k-panel { color: var(--k-cream); }
+/* Settings (board three): grouped under small capitals, a drawn mark per row, rows inside a filled panel. */
+.k-set { padding: 2px 14px; gap: 0; }
+.k-set-g + .k-set-g, .k-set > .k-set-row + .k-set-row, .k-set-g + .k-set-row, .k-set-row + .k-set-g { border-top: 1px solid rgba(237, 230, 218, 0.12); }
+.k-set-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 8px 0; border: 0; background: none; color: var(--k-cream); font: inherit; text-align: left; cursor: pointer; }
+.k-set-row .k-q { font-size: 15px; }
+.k-set-open { padding: 0 0 10px; display: flex; flex-direction: column; gap: 10px; }
+.set-k .list { background: rgba(10, 12, 30, 0.35); border: 0; border-radius: 16px; }
+.set-k .li small, .set-k .t12, .set-k .t13, .set-k .t11 { font-size: 14px; }
+.set-k .k-set-open .col.gap12, .set-k .k-set-open .card { background: rgba(10, 12, 30, 0.35) !important; border: 0 !important; border-radius: 16px !important; }
+.set-k .btn:not(.ghost) { border-radius: 999px; background: var(--act); color: var(--act-ink); border: 0; font-weight: 700; box-shadow: 0 10px 24px -8px var(--act); }
+.set-k .btn.ghost { border-radius: 999px; border: 2px solid var(--k-cream); color: var(--k-cream); background: transparent; font-weight: 700; }
+.k-close { display: inline-flex; align-items: center; gap: 4px; }
+.yu-film-prev { display: inline-flex; align-items: center; gap: 2px; }
+/* Older blocks on You's inner pages (archive, month, year, corrections, achievements), brought onto the kit:
+   filled panels, not outlined glass, and nothing under 14 px. */
+.k-light.you .yu-card, .k-light.you .card { border: 0; border-radius: 20px; background: linear-gradient(180deg, color-mix(in srgb, var(--c, #ede6da) 18%, #10122a), color-mix(in srgb, var(--c, #ede6da) 6%, #10122a) 90%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14); }
+.k-light.you .yu-card.yu-tint { background: linear-gradient(180deg, color-mix(in srgb, var(--c) 26%, #10122a), color-mix(in srgb, var(--c) 8%, #10122a) 90%); }
+.k-light.you .yu-sec > h2, .k-light.you.yu-page h2:not(.k-title):not(.k-sect) { font: 700 14px var(--sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--k-quiet); }
+.k-light.you .t11, .k-light.you .t12, .k-light.you .t13 { font-size: 14px; }
+.k-light.you .yu-rows { border-radius: 20px; background: linear-gradient(180deg, rgba(237, 230, 218, 0.12), rgba(237, 230, 218, 0.04)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14); border: 0; padding: 0 14px; }
+.k-light.you .btn:not(.ghost) { border-radius: 999px; background: var(--act); color: var(--act-ink); border: 0; font-weight: 700; box-shadow: 0 10px 24px -8px var(--act); }
+/* The check-in (behind You's Body door): its cards and buttons on the kit; it keeps its step-by-step frame. */
+.ci-k .card { border: 0; border-radius: 20px; background: linear-gradient(180deg, color-mix(in srgb, #f4aedb 18%, #10122a), color-mix(in srgb, #f4aedb 6%, #10122a) 90%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14); }
+.ci-k .h1 { font: 400 26px/1.15 var(--serif); }
+.ci-k .t11, .ci-k .t12, .ci-k .t13 { font-size: 14px; }
+.ci-k .btn:not(.ghost) { border-radius: 999px; background: var(--act); color: var(--act-ink); border: 0; font-weight: 700; box-shadow: 0 10px 24px -8px var(--act); }
+.ci-k .btn:not(.ghost):disabled { box-shadow: none; opacity: 0.5; }
+.ci-k .btn.ghost { border-radius: 999px; border: 2px solid var(--k-cream); background: transparent; color: var(--k-cream); font-weight: 700; }

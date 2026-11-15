@@ -3,7 +3,10 @@ import { db } from '../../db/db';
 import { addDays, dayOfLogging, weekStart } from '../../domain/dates';
 import { pressHeadline } from '../news';
 import type { DayKey } from '../../domain/dates';
-import { CLUBS, rememberClubs } from '../data/load';
+import { clubById, CLUBS, rememberClubs, RIVAL_2 } from '../data/load';
+import { giftedBundles, redrawSave } from '../pyramid/redraw';
+import { stageOf } from '../pyramid/shape';
+import { placeBrabo } from './redraw';
 import { fillSlots, SLOTS } from '../oldSelves';
 import { ANTIGOON } from '../rivals';
 import { BUILT_INS } from '../data/abilities';
@@ -14,7 +17,7 @@ import type { Axis } from '../types';
 import { loadHealth } from './gather';
 import { factsFor } from './lines';
 import { contractsFor, monthsFromHealth, youthIntake } from './play';
-import { newSeason } from './season';
+import { newSeason, newSeason2, OWN } from './season';
 import { rebuildPlayers } from './players';
 import type { CrestOpt, FbClub, FbSave } from './tables';
 import type { YouthLink } from '../players/youth';
@@ -23,7 +26,12 @@ export const FB_TABLES = ['fbSave', 'fbClubs', 'fbMatches', 'fbSeasons', 'fbSqua
 export const getSave = () => db.fbSave.get('save');
 
 /** Seeds the pyramid, builds the Old Selves from Health's past months, and starts Season 1 on `date`. */
-export async function foundClub(date: DayKey, choices: { shirt: string; crest: CrestOpt; captain?: Axis }): Promise<void> {
+/**
+ * A new club. `world: 2` (owner, 15 Nov: what the app's founding uses) founds it straight into the real world, placed
+ * by its nights like the move, with its stage's unlocks; without it, the old world (kept for tests and old fixtures).
+ */
+export async function foundClub(date: DayKey, choices: { shirt: string; crest: CrestOpt; captain?: Axis; world?: 2 }): Promise<void> {
+  if (choices.world === 2) return foundClub2(date, choices);
   const h = await loadHealth();
   const olds = fillSlots(monthsFromHealth(h, date), SLOTS);
   const clubs: FbClub[] = CLUBS.map((c) => {
@@ -50,6 +58,38 @@ export async function foundClub(date: DayKey, choices: { shirt: string; crest: C
     if (players.length) await db.fbPlayers.bulkPut(players);
   });
 }
+async function foundClub2(date: DayKey, choices: { shirt: string; crest: CrestOpt; captain?: Axis }): Promise<void> {
+  const h = await loadHealth();
+  const base = clubById(OWN);
+  const { division, clubs, placing } = await placeBrabo(date, { id: OWN, style: base.style, rating: base.rating ?? 40 });
+  const vs = clubs.filter((c) => c.tier === division && !c.pool && !c.folded && c.id !== OWN).map((c) => c.id);
+  const fresh: FbSave = {
+    id: 'save', founded: date, season: 1, phase: 'season', day: 1, eventState: { used: [], clubWorldDue: false },
+    captain: choices.captain, captains: choices.captain ? [choices.captain] : [], slots: ['armband', 'second-wind', 'stack'], earned: [],
+    budget: 0.05, buzz: true, crest: { step: 1, opt: choices.crest }, shirt: choices.shirt,
+    rivals: [], met: [], physioRoom: false, awakenings: {}, firstRunDone: true,
+    contracts: contractsFor(date), sold: [], sponsors: [], offers: [], staff: [],
+    crestHistory: [{ step: 1, opt: choices.crest, season: 1 }], engine: 2, fog: { since: date, old: [] },
+  };
+  const { save: placed, gifts } = redrawSave(fresh, {
+    on: date, season: 1, stage: stageOf(division), exists: () => true, rival: RIVAL_2, done: [],
+    record: { division, rate: placing.rates[division] ?? { w: 0, d: 0, l: 0, n: 0 }, nights: placing.nights, short: placing.short, vs, founding: { p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0 } },
+  });
+  // A founding plays from its first day, as the old world's did: nothing played yet.
+  const save: FbSave = { ...placed, lastPlayed: undefined };
+  const { players } = rebuildPlayers(h, save, [], [], addDays(date, -1), () => '');
+  await db.transaction('rw', FB_TABLES.map((t) => db.table(t)), async () => {
+    for (const t of FB_TABLES) await db.table(t).clear();
+    await db.fbClubs.bulkPut(clubs);
+    await db.fbSeasons.put(newSeason2(1, date, clubs));
+    await db.fbBundles.bulkPut(giftedBundles(gifts.buildings, date));
+    await db.fbSave.put(save);
+    await db.fbSquad.bulkPut(youthIntake(1, date));
+    if (players.length) await db.fbPlayers.bulkPut(players);
+  });
+  rememberClubs(clubs);
+}
+
 export async function setFbSetting<K extends 'buzz' | 'wcCountry' | 'ownSponsor' | 'captain' | 'slots' | 'lowLog'>(k: K, v: FbSave[K]) {
   await db.transaction('rw', db.fbSave, async () => {
     const s = await db.fbSave.get('save');
@@ -189,5 +229,23 @@ export async function linkYouth(id: string, link: YouthLink | undefined) {
   await db.transaction('rw', db.fbSquad, async () => {
     const y = await db.fbSquad.get(id);
     if (y && y.status === 'growing') await db.fbSquad.put({ ...y, link, sessions: [], growth: y.growth ?? 0, grown: y.grown ?? [], logged: [] });
+  });
+}
+
+/**
+ * League pace (O36): the settings switch. On plays three league matchdays for each day from today's logging day, for
+ * this season only. Off before any of them were played forgets it; off afterwards stops it after the last day played.
+ */
+export async function setLeaguePace(on: boolean, today: DayKey = dayOfLogging(Date.now())): Promise<void> {
+  await db.transaction('rw', db.fbSave, async () => {
+    const s = await db.fbSave.get('save');
+    if (!s || s.phase !== 'season') return;
+    const next = { ...s };
+    // A day already played keeps its pace: the switch counts from the first day not yet played.
+    const first = s.lastPlayed && s.lastPlayed >= today ? addDays(s.lastPlayed, 1) : today;
+    if (on) next.pace = { season: s.season, from: first };
+    else if (!s.pace || s.pace.season !== s.season || !s.lastPlayed || s.lastPlayed < s.pace.from) delete next.pace;
+    else next.pace = { ...s.pace, to: s.lastPlayed };
+    await db.fbSave.put(next);
   });
 }

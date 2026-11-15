@@ -1,14 +1,13 @@
 // Engine 2, layer 2 screens: the team sheet, how tonight adds up, the morning tactic, the limit-break moment, and the
 // rotation facts on a player (form, freshness, past his best, traits, free agency and the buy-back).
 import { useState } from 'react';
-import { dayOfLogging } from '../../../domain/dates';
 import { traitById } from '../../../football/content/traits';
 import { clubById } from '../../../football/data/load';
 import { euros } from '../../../football/money';
 import { stepName, TIER_NAME } from '../../../football/players/cards';
 import { FORMATIONS, UNIT_COLOUR, type Formation } from '../../../football/players/eleven';
 import type { FbPlayer, LimitBreak, Unit } from '../../../football/players/types';
-import { AGE_FLOOR, AGES } from '../../../football/rotation/condition';
+import { AGE_FLOOR } from '../../../football/rotation/condition';
 import { canBuyBack } from '../../../football/rotation/freeAgents';
 import { CHEM_MAX, MORALE_NAME, TACTIC_NAME, TACTICS, tacticWords, toggleStarter, type Tactic } from '../../../football/rotation/night';
 import { traitsOf } from '../../../football/rotation/traits';
@@ -17,7 +16,8 @@ import { buyBackPlayer, resetStarters, seeLimitBreak, setFormation, setSetPiece,
 import { AXES } from '../../../football/types';
 import { go } from '../../../router';
 import { PlayerCard } from './Card';
-import { Pitch } from './Screens';
+import { Action, Sect } from '../../../ui/kit/Kit';
+import { Bar, Note, PanelTop, Tabs } from '../club/Bits';
 
 const uc = (u: Unit) => ({ ['--uc' as string]: UNIT_COLOUR[u] });
 const fmtDate = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
@@ -70,54 +70,73 @@ function nextBreak(p: FbPlayer): string {
 }
 const breakName = (l: LimitBreak) => (l.why === 'awakening' ? 'carried over from an Awakening' : l.what ?? l.why);
 
-// ---------- the player page additions ----------
+// ---------- the player page additions, on the kit ----------
+/** The form line as a glowing spark in the player's ink. */
+function Spark({ p }: { p: FbPlayer }) {
+  const xs = (p.trail ?? []).map(([, v]) => v);
+  if (xs.length < 2) return <span className="k-q">too new for a line</span>;
+  const lo = Math.min(...xs) - 1, hi = Math.max(...xs) + 1;
+  const pts = xs.map((v, i) => `${((i / (xs.length - 1)) * 100).toFixed(1)},${(26 - ((v - lo) / (hi - lo)) * 24).toFixed(1)}`).join(' ');
+  return <svg className="kp-spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"><polyline points={pts} /></svg>;
+}
 export function PlayerRotation({ p }: { p: FbPlayer }) {
   const tier = useBraboTier();
   const save = useSave();
   const [msg, setMsg] = useState<string | null>(null);
   const traits = traitsOf(p).map((id) => traitById(id)).filter((t): t is NonNullable<ReturnType<typeof traitById>> => Boolean(t));
+  const c = UNIT_COLOUR[p.unit];
   return (
     <>
       {p.freeAgent && save && tier !== undefined && (() => {
         const can = canBuyBack(p, save.budget, tier);
         return (
-          <section className="rt-news" aria-label="Free agent">
-            <span className="rt-kick">Transfer news</span>
-            <b>{p.name} plays for {clubById(p.freeAgent.club).name}</b>
-            <span>Since {fmtDate(p.freeAgent.on)}. Their {p.unit} is +1 against us while the player is there.</span>
-            <div className="rt-kv"><span>Buy-back clause</span><b className="pl-num">{euros(can.fee)}</b><span>Never expires</span></div>
-            <p className="rt-small">{p.freeAgent.readded ? 'It’s back in your logs.' : p.kind === 'exercise' ? 'To bring the player home, re-add the exercise to the plan, then pay the clause.' : 'To bring the player home, turn the habit back on, then pay the clause.'}</p>
-            <button type="button" className="fb-btn pri" disabled={!can.ok} onClick={async () => setMsg(await buyBackPlayer(p.id))}>Pay {euros(can.fee)} and bring {p.name} home</button>
-            {!can.ok && <p className="rt-small">{can.why}</p>}
-            {msg && <p className="rt-small" role="status">{msg}</p>}
+          <section className="k-panel" style={{ ['--ink' as string]: '#ff9a76' }} aria-label="Free agent">
+            <PanelTop name="Transfer news" c="#ff9a76" right={`since ${fmtDate(p.freeAgent.on)}`} />
+            <b className="kd-q" style={{ margin: 0 }}>{p.name} plays for {clubById(p.freeAgent.club).name}</b>
+            <span className="k-q">Their {p.unit} is +1 against us while the player is there. {p.freeAgent.readded ? 'It’s back in your logs.' : p.kind === 'exercise' ? 'To bring the player home, re-add the exercise to the plan, then pay the clause.' : 'To bring the player home, turn the habit back on, then pay the clause.'}</span>
+            <div className="k-row"><span className="k-q">Buy-back clause · never expires</span><b className="k-num">{euros(can.fee)}</b></div>
+            <Action sm disabled={!can.ok} onClick={async () => setMsg(await buyBackPlayer(p.id))}>Pay {euros(can.fee)} and bring {p.name} home</Action>
+            {!can.ok && <span className="k-q">{can.why}</span>}
+            {msg && <span className="k-q" role="status">{msg}</span>}
           </section>
         );
       })()}
       {p.pastBest && (
-        <section className="rt-age" aria-label="Past his best">
-          <b>Past his best</b>
-          <span>No better growth for six weeks (sick days don’t count). The rating slips 1 every 2 weeks toward {p.best - AGE_FLOOR}; the {TIER_NAME[p.card.tier]} card stays {TIER_NAME[p.card.tier]}.</span>
-          <span>A limit break, new kit or a new best ends it.</span>
+        <section className="k-panel" style={{ ['--ink' as string]: '#93c3dc' }} aria-label="Past his best">
+          <PanelTop name="Past his best" c="#93c3dc" />
+          <span className="k-q">No better growth for six weeks (sick days don’t count). The rating slips 1 every 2 weeks toward {p.best - AGE_FLOOR}; the {TIER_NAME[p.card.tier]} card stays {TIER_NAME[p.card.tier]}. A limit break, new kit or a new best ends it.</span>
         </section>
       )}
       {p.status === 'squad' && (
-        <section className="fb-card" aria-label="Form and freshness">
-          <div className="rt-kv"><span>Form</span><FormLine p={p} /><b className="pl-num">{signed(p.form ?? 0)}</b></div>
-          <div className="rt-kv"><span>Freshness</span>{p.kind === 'exercise' ? <><Freshness p={p} /><b className="pl-num">{p.fresh ?? 100}%</b></> : <b className="rt-flat">doesn’t tire</b>}</div>
-          <p className="rt-small">Match rating = overall × freshness + form. Back-to-back training days cost 15%; each day off gives 20% back.{AGES.includes(p.kind) ? ' Exercises and walks age after six weeks without a better growth attribute.' : ''}</p>
-        </section>
+        <>
+          <Sect>Form and freshness</Sect>
+          <div className="kb-g2">
+            <div className="k-panel" style={{ ['--ink' as string]: c }}>
+              <div className="k-row"><span className="k-q">Form</span><b className="k-num" style={{ color: c }}>{signed(p.form ?? 0)}</b></div>
+              <Spark p={p} />
+            </div>
+            <div className="k-panel" style={{ ['--ink' as string]: '#8fdcb6' }}>
+              <div className="k-row"><span className="k-q">Freshness</span><b className="k-num" style={{ color: '#8fdcb6' }}>{p.kind === 'exercise' ? `${p.fresh ?? 100}%` : '–'}</b></div>
+              {p.kind === 'exercise' ? <Bar pct={p.fresh ?? 100} c="#8fdcb6" label={`Freshness ${p.fresh ?? 100}%`} /> : <span className="k-q">doesn’t tire</span>}
+            </div>
+          </div>
+        </>
       )}
       {traits.length > 0 && (
-        <div className="rt-chips" aria-label="Traits">
-          {traits.map((t) => <span key={t.id} className="rt-chip" title={t.text}><b>{t.name}</b><small>{t.text}</small></span>)}
-        </div>
+        <>
+          <Sect>Traits</Sect>
+          <div className="kb-rows">
+            {traits.map((t) => <div key={t.id} className="k-panel kp-trait" style={{ ['--ink' as string]: '#c2b2ff' }}><b>{t.name}</b><span className="k-q">{t.text}</span></div>)}
+          </div>
+        </>
       )}
-      <section className="fb-card gold" aria-label="Limit breaks">
-        <span className="fb-lb">Limit breaks</span>
+      <Sect>Limit breaks</Sect>
+      <section className="k-panel" style={{ ['--ink' as string]: '#f2c46d' }} aria-label="Limit breaks">
+        {p.limitBreaks.length === 0 && <span className="k-q">None yet.</span>}
         {p.limitBreaks.map((l) => (
-          <p key={`${l.on}${l.why}`} className="pl-prog">{fmtDate(l.on)} · {TIER_NAME[l.tier]} · {breakName(l)}{l.from != null ? ` · ${l.from} → ${l.to}` : ''}{l.trait ? ` · ${traitById(l.trait)?.name ?? l.trait}` : ''}</p>
+          <span key={`${l.on}${l.why}`}><b style={{ color: '#f2c46d' }}>{fmtDate(l.on)} · {TIER_NAME[l.tier]}</b> <span className="k-q">{breakName(l)}{l.from != null ? ` · ${l.from} to ${l.to}` : ''}{l.trait ? ` · ${traitById(l.trait)?.name ?? l.trait}` : ''}</span></span>
         ))}
-        {p.status === 'squad' && <p className="rt-small"><b>Next:</b> {nextBreak(p)}</p>}
+        {p.status === 'squad' && <span className="k-q"><b style={{ color: 'var(--k-cream)' }}>Next:</b> {nextBreak(p)}</span>}
       </section>
     </>
   );
@@ -182,7 +201,6 @@ export function BlendRoute() {
   const morale = t.save.morale ?? 0;
   return (
     <div className="pl-page">
-      <button type="button" className="fb-btn sm" onClick={() => go('/football', undefined, { replace: true })}>← Tonight</button>
       <h2 className="fb-t">How tonight adds up</h2>
       <p className="pl-sub rt-left">Today decides 70%, the squad 30%. Everything else together moves an axis by 3 at most.</p>
       <div className="rt-bl">
@@ -209,95 +227,81 @@ export function BlendRoute() {
   );
 }
 
-// ---------- the team sheet (round 7, pinned) ----------
-function Bond({ level }: { level: number }) {
+// ---------- the team sheet (board two, "Team sheet"): one panel per unit; filled rings start, ringed ones wait ----------
+function Chem({ level }: { level: number }) {
   return (
-    <span className="rt-bond" role="img" aria-label={`Chemistry ${level} of ${CHEM_MAX}`}>
-      {Array.from({ length: CHEM_MAX }, (_, i) => <i key={i} className={i < level ? 'on' : undefined} />)}
-      <small>{level} of {CHEM_MAX}</small>
+    <span className="ks-chem k-q" role="img" aria-label={`Chemistry ${level} of ${CHEM_MAX}`}>
+      <span>Chemistry</span>
+      <span style={{ display: 'inline-flex', gap: 3 }}>{Array.from({ length: CHEM_MAX }, (_, i) => <i key={i} className={i < level ? 'on' : undefined} />)}</span>
+      <span>{level} of {CHEM_MAX}</span>
     </span>
   );
 }
 export function TeamSheetRoute() {
   const s = useSheet();
   if (s === undefined) return null;
-  if (!s) return <p className="fb-s">The team sheet opens once the club is founded.</p>;
+  if (!s) return <p className="k-q">The team sheet opens once the club is founded.</p>;
   const formation: Formation = s.formation;
-  const byId = new Map(s.players.map((p) => [p.id, p]));
   const starting = new Set(s.xi.map((x) => x.player));
   const picked = Object.keys(s.save.sheet?.picks ?? {}).length > 0;
-  const date = dayOfLogging(Date.now());
+  const forms = (Object.keys(FORMATIONS) as Formation[]).map((f) => ({ id: f, label: f, open: s.rot.formations.includes(f), sub: s.rot.formations.includes(f) ? undefined : 'locked' }));
   return (
-    <div className="pl-page">
-      <button type="button" className="fb-btn sm" onClick={() => go('/football/club', undefined, { replace: true })}>← The eleven</button>
-      <span className="pl-sub rt-left">{new Date(`${date}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'long' })} · change it any day</span>
-      <h2 className="fb-t">Team sheet</h2>
-      <div className="rt-fm" aria-label="Formations">
-        {(Object.keys(FORMATIONS) as Formation[]).map((f) => {
-          const open = s.rot.formations.includes(f);
-          const cls = f === formation ? 'on' : open ? undefined : 'lk';
-          const words = <><b>{f}</b><small>{f === formation ? 'on' : open ? 'open' : 'in the tree'}</small></>;
-          return open && f !== formation
-            ? <button key={f} type="button" className={cls} onClick={() => void setFormation(f)} aria-label={`Play ${f}`}>{words}</button>
-            : <span key={f} className={cls} aria-current={f === formation ? 'true' : undefined}>{words}</span>;
-        })}
-      </div>
-      <Pitch xi={s.xi} />
-      <p className="pl-sub rt-left">Untouched, the best match ratings start; Power picks from your latest session. Tap a player to start or bench them.</p>
-      {picked && <button type="button" className="fb-btn sm" onClick={() => void resetStarters()}>Let the best ratings start</button>}
+    <div className="k-page">
+      <Tabs items={forms} on={formation} onPick={(f) => void setFormation(f)} />
       {AXES.map((u) => {
         const unit = s.members.filter((m) => m.unit === u).sort((a, b) => b.rating - a.rating || a.name.localeCompare(b.name));
         const places = FORMATIONS[formation][u];
         const starters = s.xi.filter((x) => x.unit === u).map((x) => x.player);
         const chem = s.save.chem?.[u]?.level ?? 0;
+        const own = Boolean(s.save.sheet?.picks?.[u]);
         return (
-          <section key={u} className="rt-unit" style={uc(u)} aria-label={`${u} starters`}>
-            <div className="fb-row"><h3 className="rt-uh">{u}</h3><span className="fb-s">{places} {places === 1 ? 'starts' : 'start'}</span></div>
-            <div className="rt-chem"><span>Chemistry</span><Bond level={chem} /></div>
-            {unit.length === 0 && <p className="fb-s">No players yet.</p>}
-            {unit.map((m) => {
-              const p = byId.get(m.id)!;
-              const on = starting.has(m.id);
-              return (
-                <button key={m.id} type="button" className={`rt-pick${on ? ' st' : ''}`} aria-pressed={on} onClick={() => void setStarters(u, toggleStarter(unit, starters, m.id, places))}>
-                  <PlayerCard card={p.card} art={p.art} seed={p.id} player={p} />
-                  <span className="pl-col"><b>{m.name}</b><span>{rowWords(p, on)}</span></span>
-                  <b className="pl-num">{m.rating}</b>
-                  <span className="rt-tag">{on ? 'Starts' : 'Bench'}</span>
-                  <Freshness p={p} />
-                </button>
-              );
-            })}
+          <section key={u} className="k-panel" style={{ ['--ink' as string]: UNIT_COLOUR[u] }} aria-label={`${u} starters`}>
+            <PanelTop name={u} c={UNIT_COLOUR[u]} right={`${places} ${places === 1 ? 'starts' : 'start'}${u === 'Power' && !own ? ' · latest session' : ''}`} />
+            {unit.length === 0 ? <span className="k-q">No players yet.</span> : (
+              <div className="ks-toks">
+                {unit.map((m) => {
+                  const on = starting.has(m.id);
+                  return (
+                    <button key={m.id} type="button" className={`ks-tok${on ? '' : ' off'}`} aria-pressed={on} aria-label={`${m.name}, match rating ${m.rating}, ${on ? 'starts' : 'on the bench'}`} onClick={() => void setStarters(u, toggleStarter(unit, starters, m.id, places))}>
+                      <i>{m.rating}</i><span>{m.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <Chem level={chem} />
           </section>
         );
       })}
-      <section className="fb-card" aria-label="Captains">
-        <div className="fb-row"><span className="fb-lb">Captains</span><span className="fb-s">{s.rot.captains ? 'one per unit' : 'not yet'}</span></div>
-        {!s.rot.captains && <p className="fb-s">Units get their own captains once Unit captains is researched in the tree.</p>}
-        {s.rot.captains && <div className="rt-cpt">
-          {AXES.map((u) => {
-            const unit = s.members.filter((m) => m.unit === u);
-            return (
-              <label key={u} style={uc(u)}>
-                <b>{u}</b>
-                <select className="fb-select" value={s.captains[u] ?? ''} onChange={(e) => void setUnitCaptain(u, e.target.value)} disabled={!unit.length} aria-label={`${u} captain`}>
-                  {!s.captains[u] && <option value="">None yet</option>}
-                  {unit.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-                </select>
-              </label>
-            );
-          })}
-        </div>}
-        <label className="rt-sp">
-          <span className="fb-lb">Set pieces</span>
-          <select className="fb-select" value={s.setPiece ?? ''} onChange={(e) => void setSetPiece(e.target.value)} aria-label="Set-piece taker">
+      <Note>Filled plays tonight. Tap a ring to swap them in.</Note>
+      {picked && <Action quiet sm onClick={() => void resetStarters()}>Let the best ratings start</Action>}
+      <Sect>Captains</Sect>
+      <section className="k-panel" style={{ ['--ink' as string]: '#f2c46d' }} aria-label="Captains">
+        {!s.rot.captains ? <span className="k-q">Units get their own captains once Unit captains is researched in the tree.</span> : (
+          <div className="kb-rows">
+            {AXES.map((u) => {
+              const unit = s.members.filter((m) => m.unit === u);
+              return (
+                <label key={u} className="ks-cap" style={{ ['--ink' as string]: UNIT_COLOUR[u] }}>
+                  <b>{u}</b>
+                  <select className="kb-select" value={s.captains[u] ?? ''} onChange={(e) => void setUnitCaptain(u, e.target.value)} disabled={!unit.length} aria-label={`${u} captain`}>
+                    {!s.captains[u] && <option value="">None yet</option>}
+                    {unit.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                </label>
+              );
+            })}
+          </div>
+        )}
+        <label className="ks-cap" style={{ ['--ink' as string]: UNIT_COLOUR.Power, marginTop: 8 }}>
+          <b>Set pieces</b>
+          <select className="kb-select" value={s.setPiece ?? ''} onChange={(e) => void setSetPiece(e.target.value)} aria-label="Set-piece taker">
             {!s.setPiece && <option value="">None yet</option>}
             {s.members.filter((m) => m.unit === 'Power').map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
           </select>
         </label>
-        <p className="fb-s">A captain holding Captain’s armband lifts its unit’s chemistry by 1. Set-piece goals go to the taker when it starts.</p>
       </section>
-      <p className="fb-s">Chemistry rises by 1 for each week of match days the same starters play together, and drops by 1 when two or more change. At 4 or more, its unit gets +1. Sick days pause it.</p>
+      <Action wide onClick={() => go('/football/club', undefined, { replace: true })}>Done</Action>
     </div>
   );
 }

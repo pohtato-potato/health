@@ -10,7 +10,8 @@ const listeners = new Set<() => void>();
 let snapshot = read();
 
 function read(): Route & { key: string } {
-  const raw = window.location.hash.replace(/^#/, '') || '/today';
+  // Server-side rendering (the tests) has no window: read as Today.
+  const raw = (typeof window === 'undefined' ? '' : window.location.hash.replace(/^#/, '')) || '/today';
   const [path, query = ''] = raw.split('?');
   return { path: path || '/today', params: new URLSearchParams(query), key: raw };
 }
@@ -22,8 +23,10 @@ function notify() {
   listeners.forEach((l) => l());
 }
 
-window.addEventListener('hashchange', notify);
-window.addEventListener('popstate', notify);
+if (typeof window !== 'undefined') {
+  window.addEventListener('hashchange', notify);
+  window.addEventListener('popstate', notify);
+}
 
 export function useRoute(): Route {
   return useSyncExternalStore(

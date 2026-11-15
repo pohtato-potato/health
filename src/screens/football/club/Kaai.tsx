@@ -1,0 +1,44 @@
+// The Kaai at dusk, the picture that leads the Club page (look pass, boards two and four). It grows with the club:
+// each step up the divisions redraws it larger, and each building finished on the quay is added to it.
+import type { Tier } from '../../../football/types';
+
+/** Works team in the bottom two divisions, town club in the middle two, city club at the top. */
+export const kaaiStage = (tier: Tier): 1 | 2 | 3 => (tier >= 5 ? 1 : tier >= 3 ? 2 : 3);
+const has = (done: string[], prefix: string) => done.some((d) => d === prefix || d.startsWith(`${prefix}-`));
+
+/** `stage` draws one stage on its own (the ground's "How the Kaai grows"); otherwise the division decides it. */
+export function Kaai({ tier, done, height = 104, stage: only }: { tier: Tier; done: string[]; height?: number; stage?: 1 | 2 | 3 }) {
+  const stage = only ?? kaaiStage(tier);
+  const sides = ['river-end', 'crane-stand', 'dock-end'].filter((x) => done.includes(x)).length;
+  const lit = done.includes('floodlights');
+  const words = [`stage ${stage} of 3`, sides ? `${sides} ${sides === 1 ? 'side stand' : 'side stands'}` : '', done.includes('roof') ? 'a roof' : '', has(done, 'cafe') ? 'the café' : '', has(done, 'shop') ? 'the shop' : '', has(done, 'ferry') ? 'the ferry stop' : ''].filter(Boolean);
+  return (
+    <svg className="kc-kaai" viewBox="0 0 336 110" preserveAspectRatio="xMidYMax meet" style={{ height }} role="img" aria-label={`The Kaai at dusk with its floodlights on: ${words.join(', ')}`}>
+      <defs>
+        <radialGradient id={`kc-fl${only ?? ""}`}>
+          <stop offset="0" stopColor="#ffd9a8" stopOpacity={lit ? 1 : 0.85} />
+          <stop offset="1" stopColor="#ff7a1a" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <circle cx="62" cy="18" r={lit ? 40 : 34} fill={`url(#kc-fl${only ?? ""})`} />
+      <circle cx="274" cy="18" r={lit ? 40 : 34} fill={`url(#kc-fl${only ?? ""})`} />
+      {/* The ground itself: one stand at first. */}
+      <path d="M0 110V78l40-14h256l40 14v32z" fill="#1a1d3d" />
+      <path d="M40 64l20-22h216l20 22z" fill="#262a55" />
+      <path d="M60 42h216" stroke="#ff9a4d" strokeWidth="2.5" />
+      <path d="M62 64V16M274 64V16M52 16h20M264 16h20" stroke="#c4c1cf" strokeWidth="3" strokeLinecap="round" />
+      {Array.from({ length: 9 }, (_, i) => <rect key={i} x={56 + i * 26} y="74" width="10" height="8" fill="#f2c46d" opacity=".85" />)}
+      {/* Town club: a second tier, and the buildings either side. */}
+      {(stage >= 2 || sides >= 2) && <path d="M40 64l20-30h216l20 30z" fill="#2c3162" opacity=".95" />}
+      {sides >= 1 && <><path d="M8 110V70h26v40z" fill="#232750" /><rect x="14" y="78" width="6" height="6" fill="#f2c46d" /></>}
+      {sides >= 3 && <><path d="M302 110V60h26v50z" fill="#232750" /><rect x="310" y="70" width="6" height="6" fill="#f2c46d" /></>}
+      {/* City club: a roof, the lit entrance, the quay wall in club purple. */}
+      {(stage >= 3 || done.includes('roof')) && <><path d="M60 34l16-18h184l16 18z" fill="#343a72" /><path d="M76 16h184" stroke="#ffd9a8" strokeWidth="3" /></>}
+      {stage >= 3 && <><path d="M150 110V84h36v26z" fill="#ff7a1a" opacity=".85" /><path d="M0 110h336" stroke="#9a74ec" strokeWidth="4" /></>}
+      {done.includes('scoreboard') && <rect x="150" y="22" width="36" height="12" rx="2" fill="#10122a" stroke="#ff9a4d" strokeWidth="1.5" />}
+      {has(done, 'cafe') && <><path d="M36 110V92h22v18z" fill="#2a2450" /><rect x="41" y="96" width="12" height="6" fill="#ffb48a" /></>}
+      {has(done, 'shop') && <><path d="M278 110V90h24v20z" fill="#2a2450" /><rect x="283" y="95" width="14" height="6" fill="#c2b2ff" /></>}
+      {has(done, 'ferry') && <path d="M222 108h40M232 108v-8M252 108v-8" stroke="#93c3dc" strokeWidth="2.5" strokeLinecap="round" />}
+    </svg>
+  );
+}

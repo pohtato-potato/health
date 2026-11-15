@@ -1,5 +1,6 @@
 // The loan market and relations, read from the save (desk spec §5, Fork 3). Nothing here writes: talks and studies
 // are desk spends (store/desk.ts `spendAt`), deals are folded at 4 am (desk/fold.ts).
+import { stageIn } from '../pyramid/shape';
 import { db } from '../../db/db';
 import type { DayKey } from '../../domain/dates';
 import { clubById } from '../data/load';
@@ -22,7 +23,14 @@ export const cupTies = (matches: Pick<StoredMatch, 'opp' | 'date' | 'result' | '
 
 /** What relations are worked out from. `matches`: Brabo's stored matches (only cup ties count). */
 export function relationSourceOf(save: FbSave, matches: Pick<StoredMatch, 'opp' | 'date' | 'result' | 'comp'>[]): RelationSource {
-  return { rivals: save.rivals.map((r) => r.clubId), desk: deskOf(save), ties: cupTies(matches), stays: globeOf(save).loans, votes: voteMoves(save.congress) };
+  // World 2 (LG-4): relations start again at the move; only the desk's log and cup ties from then on count.
+  const on = save.redrawn?.on;
+  const desk = deskOf(save);
+  return {
+    rivals: save.rivals.map((r) => r.clubId), desk: on && desk ? { ...desk, spends: desk.spends.filter((s) => s.day >= on) } : desk,
+    ties: cupTies(on ? matches.filter((m) => m.date >= on) : matches), stays: on ? globeOf(save).loans.filter((l) => l.from >= on) : globeOf(save).loans,
+    votes: voteMoves(on ? save.congress?.filter((c) => c.on >= on) : save.congress),
+  };
 }
 export async function loadRelations(save: FbSave): Promise<RelationSource> {
   return relationSourceOf(save, await db.fbMatches.where('comp').anyOf(CUP_COMPS).toArray());
@@ -45,11 +53,11 @@ export function pendingDeals(save: FbSave): { loan: string; days: number; day: D
  */
 export function marketViewOf(save: FbSave, date: DayKey, tierOf: Record<string, number> | undefined, rel: RelationSource): MarketView {
   const ownTier = tierOf?.[OWN] ?? 6;
-  const leads = leadsFrom(loanLeads(save.desk).filter((l) => l.day < date)).map((l) => ({
+  const leads = leadsFrom(loanLeads(save.desk, save.redrawn?.on).filter((l) => l.day < date)).map((l) => ({
     ...l, clubName: nameOf(l.club), opinion: opinionOf(rel, l.club), poach: (tierOf?.[l.club] ?? -1) === ownTier,
   }));
   return {
-    ownTier, budget: save.budget, leads, talks: talkRows(save.desk), feeShare: seasonRules(save.congress, save.season).loanFee,
+    ownTier, ownStage: stageIn(save, ownTier), budget: save.budget, leads, talks: talkRows(save.desk), feeShare: seasonRules(save.congress, save.season).loanFee,
     slot: marketSlot(globeOf(save).loans, pendingDeals(save), date),
     offers: (save.offers ?? []).map((o) => ({ slot: o.slot, brand: o.brand, what: o.what, risk: o.risk, perSeason: o.perSeason, seasons: o.seasons })),
   };

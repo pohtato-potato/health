@@ -1,4 +1,5 @@
 // The Story section: rivals, seasons, moments, the Old Selves and settings, one tap apart.
+import { legendId } from '../../../football/rivals';
 import { useEffect, type ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../../db/db';
@@ -15,9 +16,10 @@ import { OldSelves } from './OldSelves';
 import { RivalsView } from './Rivals';
 import { RivalryView } from './Rivalry';
 import { SettingsView } from './Settings';
-import { SeasonDoors } from '../tree/SeasonScreens';
+import { StoryLead } from './StoryLead';
 
 export const STORY_VIEWS = [
+  { id: 'home', label: 'Story' },
   { id: 'rivals', label: 'Rivals' },
   { id: 'seasons', label: 'Seasons' },
   { id: 'moments', label: 'Moments' },
@@ -36,17 +38,12 @@ export const useStory = () => useLiveQuery(loadStory, []);
 export function StoryView({ s, view, extra }: { s: Story; view: StoryViewId; extra?: Partial<Record<StoryViewId, ReactNode>> }) {
   return (
     <>
-      <nav className="fb-subseg five" aria-label="Story">
-        {STORY_VIEWS.map((v) => (
-          <button key={v.id} type="button" aria-pressed={view === v.id} className={view === v.id ? 'on' : undefined} onClick={() => go('/football/story', v.id === 'rivals' ? undefined : { view: v.id }, { replace: true })}>{v.label}</button>
-        ))}
-      </nav>
-      <SeasonDoors />
+      {view === 'home' && <StoryLead s={s} />}
       {view === 'rivals' && <RivalsView rivals={s.l.save.rivals} matches={s.all} />}
       {view === 'seasons' && <SeasonsView list={s.seasons.map((x) => summarise(x, s.all, s.seasons))} kitOf={(n) => kitName(s, n)} crestOf={(n) => crestName(s, n)} />}
       {view === 'moments' && <MomentsView upsets={upsets(s.all, s.seasons)} seasons={s.seasons.map((x) => summarise(x, s.all, s.seasons))} />}
       {view === 'olds' && <OldSelves clubs={[...s.l.clubs.values()]} tierOf={s.l.season.tierOf} retired={s.l.save.retired} />}
-      {view === 'settings' && <SettingsView s={s.l.save} />}
+      {view === 'settings' && <div className="lt-set"><SettingsView s={s.l.save} /></div>}
       {extra?.[view] ?? null}
     </>
   );
@@ -56,18 +53,17 @@ export function StoryHome({ extra }: { extra?: (s: Story) => Partial<Record<Stor
   const { params } = useRoute();
   const s = useStory();
   if (s === undefined) return null;
-  if (s === null) return <p className="fb-s">The story starts once you found the club.</p>;
-  const v = (params.get('view') ?? 'rivals') as StoryViewId;
-  return <StoryView s={s} view={STORY_VIEWS.some((x) => x.id === v) ? v : 'rivals'} extra={extra?.(s)} />;
+  if (s === null) return <p className="k-q">The story starts once you found the club.</p>;
+  const v = (params.get('view') ?? 'home') as StoryViewId;
+  return <StoryView s={s} view={STORY_VIEWS.some((x) => x.id === v) ? v : 'home'} extra={extra?.(s)} />;
 }
 
 export function RivalRoute({ id }: { id: string }) {
   const s = useStory();
   if (!s) return null;
-  const r = s.l.save.rivals.find((x) => x.clubId === id) ?? (id === 'ant' ? { clubId: 'ant', how: 'legend' as const, since: '' } : undefined);
+  const r = s.l.save.rivals.find((x) => x.clubId === id) ?? (id === legendId() ? { clubId: id, how: 'legend' as const, since: '' } : undefined);
   return (
     <>
-      <button type="button" className="fb-btn sm" onClick={() => go('/football/story', undefined, { replace: true })}>← Rivals</button>
       {r ? <RivalryView r={r} matches={s.all} /> : <p className="fb-s">Not a rival any more.</p>}
     </>
   );

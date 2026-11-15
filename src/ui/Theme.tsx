@@ -3,7 +3,9 @@ import { useEffect } from 'react';
 import { ACHIEVEMENTS } from '../domain/achievements';
 import type { DayKey } from '../domain/dates';
 import { festivalOn } from '../domain/festivals';
-import { THEMES, availableThemes, seasonalThemeOn, themeById, themeFor, unlockFor, type ThemeId } from '../domain/themes';
+import { THEMES, availableThemes, lookOf, seasonalThemeOn, themeById, themeFor, unlockFor, type ThemeDef, type ThemeId, type ThemeLook } from '../domain/themes';
+import { GlowRings } from './rings/GlowRings';
+import { wearSky } from '../walk/art/festive';
 import { prefOn, type Settings } from '../domain/types';
 import { patchSettings } from '../db/actions';
 import { db } from '../db/db';
@@ -20,13 +22,37 @@ export function useUnlockedIds(): Set<string> | undefined {
 export function useThemeClass(settings: Settings | undefined, today: DayKey) {
   const unlocked = useUnlockedIds();
   const theme: ThemeId = settings && unlocked ? themeFor(settings, today, unlocked) : 'dusk';
+  const look = lookOf(theme);
+  // Walk's sky follows the theme; set while rendering so the scene drawn in this same pass already wears it.
+  wearSky(look.sky);
   useEffect(() => {
     const root = document.documentElement;
     for (const t of THEMES) root.classList.toggle(`theme-${t.id}`, t.id === theme && t.id !== 'dusk');
+    if (theme === 'dusk') delete root.dataset.themed;
+    else root.dataset.themed = theme;
+    // The page light and the action colour, as custom properties the kit reads (src/styles/kit.css).
+    const vars = themeVars(look);
+    for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, v);
     const bar = themeById(theme)?.bar ?? '#0d0f14';
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bar);
-  }, [theme]);
+  }, [theme, look]);
   return theme;
+}
+
+/** A theme's look as the custom properties the kit reads. */
+export function themeVars(look: ThemeLook): Record<string, string> {
+  const l = look.light;
+  return {
+    '--act': look.act,
+    '--th-light': `radial-gradient(90% 46% at ${l.warmAt}, ${l.warm}, transparent 70%), radial-gradient(90% 50% at ${l.coolAt}, ${l.cool}, transparent 70%), ${l.ground}`,
+    '--th-ground': l.ground,
+    '--th-w1': l.warm.replace(/,\s*\.?\d*\)$/, ', .18)'),
+    '--th-w2': l.cool.replace(/,\s*\.?\d*\)$/, ', .24)'),
+    '--ring-1': look.ring.inks[0],
+    '--ring-2': look.ring.inks[1],
+    '--ring-3': look.ring.inks[2],
+    '--ring-4': look.ring.inks[3],
+  };
 }
 
 function Diya({ x }: { x: number }) {
@@ -95,42 +121,52 @@ export function SeasonStrip({ settings, today }: { settings: Settings; today: Da
   );
 }
 
-/** Pick a theme: Dusk plus every one you've earned. */
+/** A theme as the picker shows it (board five): its light, its own rings, two numbers in their metric colours. */
+export function ThemeTile({ t, open, on, note, onPick }: { t: ThemeDef; open: boolean; on: boolean; note: string; onPick: () => void }) {
+  const l = t.look.light;
+  const bg = `radial-gradient(90% 60% at ${l.warmAt}, ${l.warm}, transparent 70%), radial-gradient(90% 60% at ${l.coolAt}, ${l.cool}, transparent 70%), ${l.ground}`;
+  return (
+    <button type="button" className={`th-tile${on ? ' on' : ''}${open ? '' : ' locked'}`} style={{ background: bg }} disabled={!open} aria-pressed={on} onClick={onPick}
+      aria-label={`${t.name}: ${t.look.ring.name}. ${note}`}>
+      <span className="th-top">
+        <GlowRings design={t.look.ring.design} inks={t.look.ring.inks} shown={[0.72, 0.5, 1, 0.88]} closed={[false, false, true, false]} size={62} small />
+        <span className="th-nums" aria-hidden="true">
+          <b style={{ color: '#ff8a4d' }}>1,511</b>
+          <b style={{ color: '#5ff0b0' }}>12,740</b>
+        </span>
+      </span>
+      <b className="th-name">{t.name}</b>
+      <span className="th-why">{note}</span>
+      {on && <span className="th-on" aria-hidden="true"><Icon name="check" size={18} stroke={2.6} /></span>}
+      {!open && <span className="th-on" aria-hidden="true"><Icon name="lock" size={16} /></span>}
+    </button>
+  );
+}
+
+/** Pick a theme: Dusk, the free ones, plus every one you've earned. Each shows its rings and its light. */
 export function ThemeSheet({ settings, unlocked, today, onClose }: { settings: Settings; unlocked: Set<string>; today: DayKey; onClose: () => void }) {
   const available = availableThemes(unlocked);
   const current = themeFor(settings, today, unlocked);
   const picked = settings.theme ?? 'dusk';
   const seasonalNow = prefOn(settings.prefs, 'seasonal') ? seasonalThemeOn(today, settings.birthday) : undefined;
   return (
-    <Sheet title="Theme" sub="Earn more from achievements" onClose={onClose} tall>
+    <Sheet title="Themes" sub="Each with its own light, rings and sky" onClose={onClose} tall>
       {seasonalNow && (
         <div className="t14 gold lh">
           {themeById(seasonalNow)?.name} is on today, so it takes over. Your pick comes back tomorrow.
         </div>
       )}
-      <div className="list">
+      <div className="th-grid">
         {THEMES.filter((t) => !t.seasonalOnly).map((t) => {
           const open = available.includes(t);
           const ach = unlockFor(t);
           const secret = ach?.cat === 'secret';
-          return (
-            <button key={t.id} type="button" className="li" style={{ minHeight: 68, gap: 14, opacity: open ? 1 : 0.55 }} disabled={!open} onClick={() => patchSettings({ theme: t.id })}>
-              <span className="theme-swatch" aria-hidden="true">
-                {t.swatch.map((c, i) => (
-                  <i key={i} style={{ background: c }} />
-                ))}
-              </span>
-              <span className="s" style={{ flex: 1, textAlign: 'left' }}>
-                <span>{t.name}</span>
-                <small>{open ? t.blurb : ach ? (secret ? 'Unlocked by a secret achievement' : `Unlock: ${ach.name}`) : t.blurb}</small>
-              </span>
-              {open ? picked === t.id ? <Icon name="check" size={20} color="var(--gold)" /> : null : <Icon name="lock" size={18} color="var(--dim)" />}
-            </button>
-          );
+          const note = open ? `${t.look.ring.name}${picked === t.id ? ' · wearing now' : ''}` : ach ? (secret ? 'Unlocked by a secret achievement' : `Unlock: ${ach.name}`) : t.blurb;
+          return <ThemeTile key={t.id} t={t} open={open} on={picked === t.id} note={note} onPick={() => void patchSettings({ theme: t.id })} />;
         })}
       </div>
-      <div className="t12 q lh">
-        Showing now: {themeById(current)?.name}. Diwali, Holi and your birthday bring their own look for the day when seasonal themes are on. {ACHIEVEMENTS.filter((a) => a.reward?.endsWith('theme')).length} themes to earn in all.
+      <div className="t14 q lh">
+        Showing now: {themeById(current)?.name}. A theme changes the light behind each page, the action colour, the rings and Walk's sky; each number keeps its own colour. Diwali, Holi and your birthday bring their own look for the day when seasonal themes are on. {ACHIEVEMENTS.filter((a) => a.reward?.endsWith('theme')).length} themes to earn.
       </div>
     </Sheet>
   );

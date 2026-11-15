@@ -1,18 +1,14 @@
 import { useEffect } from 'react';
 
 /**
- * The dock above the tab bar (Today AM, pinned): the protein still to go opens the drawer; the moon-coloured
- * Close the day button with its moon goes straight to Close the day. No + button: logging lives on the page.
+ * The moon Close the day above the tab bar (boards three and five): one wide button on the night-blue, with its
+ * moon. It turns gold on a perfect day. Today in detail opens from the line under the heading.
  */
-export function DrawerHandle({ protein, closeLabel, onOpen, onCloseDay }: { protein: string; closeLabel: 'Close the day' | 'Day closed'; onOpen: () => void; onCloseDay: () => void }) {
+export function DrawerHandle({ closeLabel, gold, onCloseDay }: { closeLabel: 'Close the day' | 'Day closed'; gold?: boolean; onCloseDay: () => void }) {
   return (
     <div className="td-handle" data-section="handle">
-      <button type="button" className="td-handle-open" aria-label={`${protein}. Open today in detail`} onClick={onOpen}>
-        <i aria-hidden="true" />
-        <span>{protein}</span>
-      </button>
-      <button type="button" className="td-moonbtn" onClick={onCloseDay}>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 15.5 A7.5 7.5 0 1 1 9.5 4.5 A6 6 0 0 0 17.5 15.5 Z" /><circle cx="18" cy="6" r="1" /><circle cx="20.5" cy="10" r=".7" /></svg>
+      <button type="button" className={`td-moonbtn${gold ? ' gold' : ''}`} onClick={onCloseDay}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 15.5 A7.5 7.5 0 1 1 9.5 4.5 A6 6 0 0 0 17.5 15.5 Z" /></svg>
         {closeLabel}
       </button>
     </div>
@@ -46,7 +42,7 @@ export function TodayDrawer({ voice, body, protein, dayClosed, onBody, onAddGap,
             <small>{protein.foods ? `${protein.foods} · tap to add` : 'Nothing to add right now.'}</small>
           </button>
         </div>
-        <button type="button" className="btn block lg" onClick={onCloseDay}>
+        <button type="button" className="k-act wide" onClick={onCloseDay}>
           {dayClosed ? 'Change the closed day' : 'Close the day'}
         </button>
       </div>

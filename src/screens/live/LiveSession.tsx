@@ -4,9 +4,9 @@ import { RINGS } from '../../domain/liveLook';
 import { burnNudge, counter, justTags, restoreCounter, seconds, setState } from '../../domain/liveSet';
 import { newLoad, recordBar, recordHolder, recordValue } from '../../domain/marks';
 import { bottomOfRange, measureOf, sidesFor, valueOfSet, type ExerciseDef, type PlanDef } from '../../domain/plan';
-import { addSetup, afterSave, lastLoad, loadBlocks, plateChange, plateChanges, setupOn, usualLength } from '../../domain/sessionEdges';
+import { adaptiveRest, addSetup, afterSave, lastLoad, loadBlocks, plateChange, plateChanges, setupOn, usualLength } from '../../domain/sessionEdges';
 import { movementKind } from '../../domain/trainingChecks';
-import { gymLoadLabel, isDumbbellKind, isGymKind, isOverheadPress, lightWarmup, loadText, lowerIsHarder, safetyFor, unitFor, unitLabel } from '../../domain/gym';
+import { GYM_SAFETY, gymLoadLabel, isDumbbellKind, isGymExercise, isGymKind, isOverheadPress, lightWarmup, loadText, lowerIsHarder, safetyFor, unitFor, unitLabel } from '../../domain/gym';
 import { HALF_RULES, HALF_TEXT } from '../../domain/deload';
 import { loadOptions } from '../../domain/loads';
 import { useSessions } from '../../db/hooks';
@@ -19,7 +19,8 @@ import { useLiveTheme } from '../../ui/live/useLiveTheme';
 import { clock } from '../NextUpCard';
 import { HeavierMoment } from '../session/HeavierMoment';
 import { findLogged, type Row } from '../session/SetTable';
-import { nextGroupIndex } from '../session/rows';
+import { nextGroupIndex, restAfter } from '../session/rows';
+import { challengeRest } from '../../domain/setChallenges';
 import type { useRunner } from '../session/useRunner';
 import { BeforeScreen } from './BeforeScreen';
 import { CheckScreen } from './CheckScreen';
@@ -31,6 +32,7 @@ import { GuideScreen } from './GuideScreen';
 import { PlatesScreen } from './PlatesScreen';
 import { LiveFrame, LiveStage, Primary } from './Frame';
 import { RestLive } from './RestLive';
+import { effortOf, effortTitle, stepWeight, weightCanChange } from '../../domain/trainWeek';
 import { SetScreen } from './SetScreen';
 
 type Runner = ReturnType<typeof useRunner>;
@@ -39,6 +41,9 @@ const span = ([lo, hi]: [number, number]) => (lo === hi ? `${lo}` : `${lo}–${h
 /** The plan's range as text: "10–15", "45–60 s". */
 const aimOf = (ex: ExerciseDef) => (ex.seconds ? `${span(ex.seconds)} s` : ex.reps && !ex.open ? span(ex.reps) : undefined);
 const sideWord = (s: Row['side']) => (s === 'L' ? ' · left' : s === 'R' ? ' · right' : '');
+
+/** The gym's breathing line: the plan's first safety line, its first two sentences. */
+const breatheLine = (plan: PlanDef) => (plan.gymSafety?.[0] ?? GYM_SAFETY[0]).text.split(/(?<=\.)\s/).slice(0, 2).join(' ');
 
 type LiveProps = { r: Runner; session: TrainingSession; settings: Settings; plan: PlanDef };
 
@@ -106,6 +111,27 @@ function LiveScreens({ r, session, settings, plan }: LiveProps) {
   const sore = (session.legSoreness ?? 0) >= 4;
   const blockItems = blocks.map((b) => ({ kg: b.kg, items: b.exs.map((ex) => ({ name: nameOf(ex), light: sore && movementKind(ex) === 'legs', load: gymLoadLabel(ex.load, r.defaults(firstRow(ex)).kg, unitFor(ex, settings)) })) }));
   const lookEx = row?.ex ?? r.group[0];
+
+  const [scope, setScope] = useState<'good' | 'once'>('good');
+  /** Minus and plus work for dumbbells and gym kit, not drops or bodyweight. */
+  const kgStepOf = (x: Row) => !x.drop && weightCanChange(x.ex);
+  /** "stack · seat 4": what the number is, and the machine's setup when one is saved. */
+  const loadNoteOf = (x: Row) => {
+    const setup = setupOn(settings, x.ex, session.date);
+    const kind = x.ex.load === 'stack' ? 'stack' : x.ex.load === 'assist' ? 'assist' : x.ex.load === 'plates' ? 'plates added' : x.ex.load === 'barbell' ? 'bar total' : x.ex.load === 'pair' ? 'each hand' : undefined;
+    return [kind, setup].filter(Boolean).join(' · ') || undefined;
+  };
+  /** One step lighter or heavier: for the rest of tonight and next time, or for this set only. */
+  const stepLoad = async (x: Row, dir: -1 | 1) => {
+    const kg = stepWeight(x.ex, r.defaults(x).kg, dir, settings);
+    if (kg === null) return;
+    if (scope === 'once') {
+      await patchSession(session.id, { loadOnce: { key: x.key, kg } });
+      return;
+    }
+    await patchSession(session.id, { loadSet: { ...session.loadSet, [x.ex.id]: kg }, ...(session.loadOnce?.key === x.key ? { loadOnce: undefined } : {}) });
+    await patchSettings((s) => ({ loadNext: { ...s.loadNext, [x.ex.id]: { kg, at: Date.now() } } }));
+  };
 
   const top = (
     <>
@@ -201,25 +227,41 @@ function LiveScreens({ r, session, settings, plan }: LiveProps) {
   if (pending) {
     const x = pending.row;
     const timed = measureOf(x.ex) === 'seconds';
-    const val = timed ? seconds(pending.c, pending.endedAt) : pending.c.taps.length;
+    const counted = timed ? seconds(pending.c, pending.endedAt) : pending.c.taps.length;
+    const d = r.defaults(x);
+    // Timed with one tap and no reps counted: start from last time's count, then minus and plus.
+    const start = counted > 0 ? counted : d.val ?? bottomOfRange(x.ex) ?? 10;
     const bar = barOf(x);
     const prev = prevOf(x);
+    const lastVal = d.last && !d.last.skipped ? valueOfSet(d.last) : undefined;
+    const took = pending.c.startedAt !== undefined ? mmss(Math.max(0, Math.round((pending.endedAt - pending.c.startedAt) / 1000))) : undefined;
+    // What Save leads to: the partner in a back-to-back pair, else the rest.
+    const after = restAfter(r.rows, (y) => !!findLogged(r.mine, y), x);
+    const nextRow = r.rows[r.rows.findIndex((y) => y.key === x.key) + 1];
+    const g = r.groups.find((gr) => gr.some((e) => e.id === x.ex.id)) ?? [x.ex];
+    const restSec = Math.max(...g.map((e) => adaptiveRest(challengeRest(e, {}), r.statuses.get(e.id)?.last?.sets.filter((s) => s.exerciseId === e.id) ?? []).sec));
+    const restText = after === 'rest' ? `rest ${mmss(restSec)}` : after === 'glide' && nextRow && nextRow.ex.id !== x.ex.id ? `then ${nameOf(nextRow.ex)}` : undefined;
     return (
       <CheckScreen
         key={x.key}
-        reps={val}
+        reps={start}
         unit={timed ? 'seconds' : 'reps'}
-        state={setState({ reps: val, burnAt: pending.c.burnAt, bottom: bottomOfRange(x.ex), bar })}
-        unrecord={setState({ reps: val, burnAt: pending.c.burnAt, bottom: bottomOfRange(x.ex) })}
+        stateFor={(v, recordOk) => setState({ reps: v, burnAt: pending.c.burnAt, bottom: bottomOfRange(x.ex), bar: recordOk ? bar : undefined })}
+        state={setState({ reps: start, burnAt: pending.c.burnAt, bottom: bottomOfRange(x.ex), bar })}
+        unrecord={setState({ reps: start, burnAt: pending.c.burnAt, bottom: bottomOfRange(x.ex) })}
         bar={bar}
         clean={settings.formRecordsClean !== false}
         checks={checksFor(x.ex)}
         prev={prev ? { checks: prev.checks, rir: prev.rir } : undefined}
+        last={lastVal}
+        title={[nameOf(x.ex), kgTextOf(x), took].filter(Boolean).join(' · ') + sideWord(x.side)}
+        rest={restText}
+        onBody={() => void r.logBody(x)}
         detail={`${timed ? 'held' : 'reps'}${kgTextOf(x) ? ` at ${kgTextOf(x)}` : ''}${sideWord(x.side)}`}
         top={top}
         saving={saving}
         firstAtLoad={firstAt(x)}
-        onSave={async ({ checks, rir }) => {
+        onSave={async ({ checks, rir, val }) => {
           // One save per set: a second tap while this one is writing does nothing.
           if (saving) return;
           setSaving(true);
@@ -361,6 +403,12 @@ function LiveScreens({ r, session, settings, plan }: LiveProps) {
     );
   }
   const offer = r.offerFor?.ex.id === row.ex.id ? r.offerFor.offer : undefined;
+  /** The other half of a back-to-back pair, when this exercise is in one. */
+  function pairOf(ex: ExerciseDef): string | undefined {
+    const g = r.groups.find((x) => x.some((e) => e.id === ex.id));
+    const other = g && g.length > 1 ? g.find((e) => e.id !== ex.id) : undefined;
+    return other ? nameOf(other) : undefined;
+  }
   return (
     <>
       <SetScreen
@@ -378,7 +426,21 @@ function LiveScreens({ r, session, settings, plan }: LiveProps) {
         unit={isGymKind(row.ex.load) ? unitLabel(row.ex.load, unitFor(row.ex, settings)) : undefined}
         onLoad={isGymKind(row.ex.load) ? () => void r.pickLoad(row.ex, r.defaults(row).kg) : undefined}
         onBody={() => void r.logBody(row)}
-        half={session.half ? `${HALF_TEXT[session.half]} · stop 3 reps short` : undefined}
+        half={session.half ? `${HALF_TEXT[session.half]} · stop 3 reps short` : session.easy ? 'First gym week' : undefined}
+        effort={effortTitle(effortOf(row.ex, plan, session.half ? { rir: 3 } : session.easy))}
+        pair={pairOf(row.ex)}
+        breathe={isGymExercise(row.ex) ? breatheLine(plan) : undefined}
+        loadNote={loadNoteOf(row)}
+        step={
+          kgStepOf(row)
+            ? {
+                scope,
+                onScope: setScope,
+                changed: session.loadOnce?.key === row.key || session.loadSet?.[row.ex.id] !== undefined,
+                onStep: (dir) => void stepLoad(row, dir),
+              }
+            : undefined
+        }
         leadSide={lead}
         c={c.key === row.key ? c : restoreCounter(null, row.key)}
         onCounter={(n) => {

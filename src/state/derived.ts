@@ -102,7 +102,8 @@ export interface NextUp {
   exercises: { id: string; status: ExerciseStatus }[];
 }
 
-export function nextUp(settings: Settings, sessions: TrainingSession[], sets: SetEntry[], days: Day[], short = false, place: Place = 'home', body: MidSetPain[] = []): NextUp | undefined {
+/** What is up next in a place's loop, or, given `pick`, that session (the week runs in any order). */
+export function nextUp(settings: Settings, sessions: TrainingSession[], sets: SetEntry[], days: Day[], short = false, place: Place = 'home', body: MidSetPain[] = [], pick?: string): NextUp | undefined {
   const plan = settings.plan;
   if (!plan) return undefined;
   const done = doneSessions(sessions);
@@ -110,7 +111,7 @@ export function nextUp(settings: Settings, sessions: TrainingSession[], sets: Se
   const rot = hasGym(plan) ? rotationOf(plan, place) : undefined;
   const mine = rot ? done.filter((s) => rot.includes(s.session)) : done;
   const lastDone = mine[mine.length - 1];
-  const sessionId = nextInLoop(plan, done, settings.rotationStart, place);
+  const sessionId = pick && findSession(plan, pick) ? pick : nextInLoop(plan, done, settings.rotationStart, place);
   const swaps = pendingSwaps(plan, sessions, days, body).filter((s) => plan.flags.find((f) => f.id === s.flag.id)?.swap?.session === sessionId);
   const exs = buildSession(plan, sessionId, { short, swaps, equipment: settings.equipment });
   return {

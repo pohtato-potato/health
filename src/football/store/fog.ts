@@ -2,8 +2,9 @@
 // (fog/fog.ts), and the scout job writes only the desk's own log.
 import { addDays, dayOfLogging, type DayKey } from '../../domain/dates';
 import { LOANS } from '../content/loans';
-import { ABROAD } from '../data/continental';
-import { clubById, tierName } from '../data/load';
+import { ABROAD, WORLD_CHAMPS_2 } from '../data/continental';
+import { WORLD_CLUBS } from '../data/world';
+import { clubById, clubWorld, tierName } from '../data/load';
 import type { WorldView } from '../desk/types';
 import { factsOf, fogged, knownPct, loanLeads, scopeOf, type Fact, type FogSource } from '../fog/fog';
 import { reportOf, type ScoutReport } from '../fog/report';
@@ -18,7 +19,9 @@ export const fogToday = (now = Date.now()) => dayOfLogging(now);
 export function fogClubs(tierOf: Record<string, Tier> | undefined): { id: string; tier: number }[] {
   const league = Object.entries(tierOf ?? {}).filter(([id]) => id !== OWN && fogged(id)).map(([id, tier]) => ({ id, tier }));
   const have = new Set(league.map((c) => c.id));
-  return [...league, ...ABROAD.filter((c) => !have.has(c.id)).map((c) => ({ id: c.id, tier: 0 }))];
+  // World 2: abroad is every real club not in the league this season (the outside pool) and the world's champions.
+  const abroad = clubWorld() === 2 ? [...WORLD_CLUBS.filter((c) => c.place !== 'neighbour').map((c) => c.id), ...WORLD_CHAMPS_2.map((c) => c.id)] : ABROAD.map((c) => c.id);
+  return [...league, ...abroad.filter((id) => !have.has(id)).map((id) => ({ id, tier: 0 }))];
 }
 
 /** What the scout job sees: every club with all it will know (a report still on its way counts: the desk plans with it). */

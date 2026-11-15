@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
+import { Action, Sect } from '../../ui/kit/Kit';
 import type { Dated, Shelf } from '../../domain/earned';
 import { fmtDayMonth } from '../../domain/format';
 
@@ -12,27 +13,27 @@ export function Shelves({ shelves }: { shelves: Shelf[] }) {
   if (!shelves.length) return null;
   const shown = more ? shelves : shelves.slice(0, 1);
   return (
-    <section className="yu-sec">
+    <>
       {shown.map((s) => (
-        <div key={s.month} className="yu-sec">
-          <h2>{name(s.month)}'s shelf</h2>
-          <div className="yu-rows">
+        <div key={s.month} className="k-col" style={{ gap: 8 }}>
+          <Sect>{name(s.month)}'s shelf</Sect>
+          <div className="k-panel k-rows" style={{ '--ink': '#f4aedb' } as CSSProperties}>
             {(more ? s.items : s.items.slice(0, LATEST)).map((x) => (
-              <div key={x.id} className="yu-shelf-row"><span>{x.text}</span><button type="button" onClick={() => setReplay(x)}>Replay</button></div>
+              <button key={x.id} type="button" className="k-rowl" onClick={() => setReplay(x)}><span>{x.text}</span><b style={{ color: '#f4aedb' }}>Replay</b></button>
             ))}
           </div>
         </div>
       ))}
       {(shelves.length > 1 || shelves[0].items.length > LATEST) && (
-        <button type="button" className="yu-link" onClick={() => setMore(!more)}>{more ? 'Just the latest' : 'Earlier shelves'}</button>
+        <button type="button" className="k-more" style={{ color: '#f4aedb' }} onClick={() => setMore(!more)}>{more ? 'Just the latest' : 'Earlier shelves'}</button>
       )}
       {replay && (
         <div className="yu-replay" role="dialog" aria-label={replay.text}>
           <span>{fmtDayMonth(replay.date)}</span>
           <p>{replay.text}</p>
-          <button type="button" onClick={() => setReplay(undefined)}>Back to Earned</button>
+          <Action onClick={() => setReplay(undefined)}>Back to Earned</Action>
         </div>
       )}
-    </section>
+    </>
   );
 }

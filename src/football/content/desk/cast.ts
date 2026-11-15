@@ -3,6 +3,7 @@
 // and a small lasting perk at some. A low opinion only cools the tone (`cool` lines); nothing here
 // costs points, shames or scolds. Written with no gendered pronouns.
 import type { CastMember } from './types';
+import { neighbourWords } from '../../data/load';
 
 export const CAST: CastMember[] = [
   {
@@ -40,11 +41,11 @@ export const CAST: CastMember[] = [
       { text: '"Every day logged for ten days, and I will stop asking how things are going. I will simply know."', trigger: { what: 'logged', count: 10, withinDays: 10, text: 'Log something 10 days running' }, thanks: 'Marcel stops asking how things are going, and starts telling you instead. It is somehow worse, and lovely.' },
     ],
     ranks: [
-      { rank: 1, title: 'The rent cheque', scene: 'Marcel shows you the first rent cheque to Zurenborg, photocopied and laminated. "We are tenants," Marcel says, "but we are punctual tenants."' },
+      { rank: 1, title: 'The rent cheque', get scene() { return neighbourWords('Marcel shows you the first rent cheque to Zurenborg, photocopied and laminated. "We are tenants," Marcel says, "but we are punctual tenants."'); } },
       { rank: 2, title: 'Minutes of the meeting', scene: 'You discover Marcel takes minutes of your chats. Item four from Thursday reads: "Manager laughed at the kit room door. Door to be fixed or kept as a joke (vote pending)."' },
       { rank: 3, title: 'The crane story', scene: 'Marcel tells you about the night a crane stuck over a ship for nine hours and the whole port waited. "Nobody panicked. We made a list." Marcel hands you the list. It is from 1997.', perk: { key: 'research-close', value: 1, text: 'A day closed with every checklist slot ticked brings 1 research. Marcel files it.' } },
       { rank: 4, title: 'A second chair', scene: 'There is a second chair in Marcel\'s office now, the good one. Marcel sits in the bad one and claims it is better for the back.' },
-      { rank: 5, title: 'The Zurenborg letter', scene: 'Zurenborg Athletic send a letter about the kit room. Marcel reads it aloud in four different voices, then replies with a letter that is mostly headings and one word: "Noted."' },
+      { rank: 5, get title() { return neighbourWords('The Zurenborg letter'); }, get scene() { return neighbourWords('Zurenborg Athletic send a letter about the kit room. Marcel reads it aloud in four different voices, then replies with a letter that is mostly headings and one word: "Noted."'); } },
       { rank: 6, title: 'The binder\'s new section', scene: 'Marcel adds a section to the constitution called "Ambitions". It has one page so far. At the top: "A ground of our own." Below that, in pencil: "a museum?"', perk: { key: 'clock-head-start', value: 1, job: 'build', text: 'Every new building project starts with 1 segment filled.' } },
       { rank: 7, title: 'The port at dawn', scene: 'Marcel drives you to the old terminal before sunrise to watch the cranes start. "Everything here is late, then suddenly early," Marcel says. "Like a promoted club."' },
       { rank: 8, title: 'The vote', scene: 'Before the congress Marcel rehearses Brabo\'s speech to an empty boardroom, pausing for applause that does not come. "They will clap at the real one. Probably."', perk: { key: 'lobby-risk', value: 5, text: 'Lobbying before the congress carries 5 points less risk of annoying another club.' } },
@@ -292,7 +293,7 @@ export const CAST: CastMember[] = [
     name: 'Gust Lambrechts',
     role: 'Night watchman',
     existing: false,
-    who: 'Gust locks Stadion aan de Stroom at night and hosts a two-hour show on Radio Stroom, a community station broadcast from the old ticket office. Plays whole albums in order and talks between them about floodlights, foxes and the river. Feeds the fox that lives under the away end.',
+    get who() { return neighbourWords('Gust locks Stadion aan de Stroom at night and hosts a two-hour show on Radio Stroom, a community station broadcast from the old ticket office. Plays whole albums in order and talks between them about floodlights, foxes and the river. Feeds the fox that lives under the away end.'); },
     modelledOn: 'Late-night radio hosts in the John Peel tradition; the night watchmen and groundsmen who know a stadium after dark.',
     cares: { metrics: ['bedtime', 'sleep'], text: 'Bedtime kept and a full night. Gust keeps the night so you don\'t have to.' },
     greet: {

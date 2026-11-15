@@ -31,11 +31,13 @@ describe('odds calibration (10,000 matches a case)', { timeout: 60_000 }, () => 
     expect(r.w).toBeGreaterThanOrEqual(0.01);
     expect(r.w).toBeLessThanOrEqual(0.03);
   });
-  it('an elite club loses 9–16% in its own tier', () => {
+  // 9–16% was set when an all-18 night rated 72, below an all-16 night (the fault fixed 14 Nov, ledger O38). It now
+  // rates 82, so the Crown's typical night beats an elite club about 1 time in 5.
+  it('an elite club loses 18–28% in its own tier', () => {
     const r = winRate(TIER_TYPICAL[1], clubById('bay'));
     console.log('crown v elite', r);
-    expect(r.w).toBeGreaterThanOrEqual(0.09);
-    expect(r.w).toBeLessThanOrEqual(0.16);
+    expect(r.w).toBeGreaterThanOrEqual(0.18);
+    expect(r.w).toBeLessThanOrEqual(0.28);
   });
   it('an even match is a contest at every tier, with real goals', () => {
     const mids: Record<Tier, number> = { 6: 37, 5: 48, 4: 56, 3: 66, 2: 76, 1: 86 };

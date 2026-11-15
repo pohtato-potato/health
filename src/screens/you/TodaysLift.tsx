@@ -1,26 +1,27 @@
 import type { CSSProperties } from 'react';
 import type { Lift } from '../../domain/slowDay';
-import { GOLD, HUE } from '../../ui/you/palette';
+import { Panel } from '../../ui/kit/Kit';
 
-function Body({ lift }: { lift: Lift }) {
-  if (lift.kind === 'ago') return <><b>A month ago today</b><span className="yu-q">{lift.text}</span></>;
-  if (lift.kind === 'rank') {
-    return (
-      <>
-        <b>Better than {lift.beat} of your {lift.of} weeks</b>
-        <span className="yu-meter"><i style={{ '--w': `${Math.round((lift.beat / lift.of) * 100)}%`, '--c': HUE.steps } as CSSProperties} /></span>
-      </>
-    );
-  }
-  return <><b>Your best, from the record book</b><span className="yu-q"><b style={{ color: GOLD }}>{lift.value}</b>. {lift.note}.</span></>;
-}
+const STEPS = '#8fdcb6';
+const GOLD = '#f2c46d';
 
+/** Today's lift (look pass): one filled panel in the colour of what it is about. */
 export function TodaysLift({ lift }: { lift: Lift | undefined }) {
   if (!lift) return null;
+  if (lift.kind === 'ago') return <Panel ink={STEPS}><span className="k-lb">A month ago today</span><span>{lift.text}</span></Panel>;
+  if (lift.kind === 'rank') {
+    return (
+      <Panel ink={STEPS}>
+        <span className="k-lb">Better than {lift.beat} of your {lift.of} weeks</span>
+        <span className="k-meter" style={{ '--w': `${Math.round((lift.beat / lift.of) * 100)}%` } as CSSProperties}><i /></span>
+      </Panel>
+    );
+  }
   return (
-    <section className="yu-sec">
-      <h2>Today's lift</h2>
-      <div className="yu-card yu-tint" style={{ '--c': HUE.shape } as CSSProperties}><Body lift={lift} /></div>
-    </section>
+    <Panel ink={GOLD}>
+      <span className="k-lb">Your best, from the record book</span>
+      <span><b className="k-num ink">{lift.value}</b></span>
+      <span className="k-q">{lift.note}.</span>
+    </Panel>
   );
 }

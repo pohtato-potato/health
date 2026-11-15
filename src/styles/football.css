@@ -30,15 +30,16 @@
 .fb-au > :not(.fb-field) { position: relative; z-index: 1; }
 .fb-field { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .fb-field .bl { position: absolute; width: 340px; height: 340px; border-radius: 50%; background: var(--a); filter: blur(56px); opacity: .7; }
-.fb-field .b1 { left: -150px; top: -90px; animation: fb-ad1 9s ease-in-out infinite alternate; }
-.fb-field .b2 { right: -170px; top: 200px; background: var(--c); opacity: .6; animation: fb-ad2 11s ease-in-out infinite alternate; }
-.fb-field .b3 { left: -60px; bottom: -220px; opacity: .55; animation: fb-ad3 13s ease-in-out infinite alternate; }
-.fb-field .b4 { width: 180px; height: 180px; right: -40px; top: -60px; background: #fff; opacity: .08; animation: fb-ad4 7s ease-in-out infinite alternate; }
+/* The orange stays in the top-right corner and the purple low on the left, so they never mix into brown (look pass). */
+.fb-field .b1 { left: -170px; bottom: -120px; animation: fb-ad1 11s ease-in-out infinite alternate; }
+.fb-field .b2 { right: -190px; top: -150px; background: var(--c); opacity: .5; animation: fb-ad2 9s ease-in-out infinite alternate; }
+.fb-field .b3 { left: -120px; bottom: 30%; width: 240px; height: 240px; opacity: .35; animation: fb-ad3 13s ease-in-out infinite alternate; }
+.fb-field .b4 { width: 180px; height: 180px; right: 10%; bottom: -80px; background: #fff; opacity: .05; animation: fb-ad4 7s ease-in-out infinite alternate; }
 .fb-field .dim { position: absolute; inset: 0; background: radial-gradient(120% 90% at 50% 40%, rgba(5,7,18,.1), rgba(5,7,18,.42)); }
-@keyframes fb-ad1 { 50% { transform: translate(70px,90px) scale(1.2); } 100% { transform: translate(120px,20px) scale(1.05); } }
-@keyframes fb-ad2 { 50% { transform: translate(-90px,-30px) scale(.85); } 100% { transform: translate(-40px,-110px) scale(1.1); } }
-@keyframes fb-ad3 { 100% { transform: translate(90px,-120px) scale(1.25); } }
-@keyframes fb-ad4 { 100% { transform: translate(-150px,220px) scale(1.4); } }
+@keyframes fb-ad1 { 50% { transform: translate(50px,-40px) scale(1.15); } 100% { transform: translate(20px,-10px) scale(1.05); } }
+@keyframes fb-ad2 { 50% { transform: translate(-30px,30px) scale(.9); } 100% { transform: translate(-10px,10px) scale(1.1); } }
+@keyframes fb-ad3 { 100% { transform: translate(30px,40px) scale(1.15); } }
+@keyframes fb-ad4 { 100% { transform: translate(-60px,-30px) scale(1.3); } }
 
 .fb-page { display: flex; flex-direction: column; gap: 14px; padding: calc(14px + var(--safe-top)) 16px calc(var(--tab-h) + 102px + var(--safe-bottom)); max-width: 520px; margin: 0 auto; }
 .fb-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
@@ -284,10 +285,10 @@ button.fb-todaycard { cursor: pointer; }
 .fb-tiername { color: var(--t); text-shadow: 0 0 14px var(--t); }
 .fb-trows { margin: 0; padding: 0; list-style: none; border: 2px solid var(--t); border-radius: 18px; box-shadow: 0 0 18px -6px var(--t); padding: 4px 6px; animation: fb-tierpulse 3.2s ease-in-out infinite; }
 @keyframes fb-tierpulse { 50% { box-shadow: 0 0 26px -4px var(--t); } }
-.fb-trow a { display: grid; grid-template-columns: 28px 16px minmax(0,1fr) auto; gap: 10px; align-items: center; min-height: 56px; padding: 6px 8px; color: var(--fb-ink); text-decoration: none; border-top: 1px solid rgba(255,255,255,.14); }
-.fb-trow:first-child a { border-top: 0; }
-.fb-trow.me a { border: 2px solid var(--k); border-radius: 16px; box-shadow: 0 0 16px -4px var(--k), inset 0 0 12px -6px var(--k); }
-.fb-trow.me + .fb-trow a { border-top-color: transparent; }
+.fb-trow a, .fb-trow-in { display: grid; grid-template-columns: 28px 16px minmax(0,1fr) auto; gap: 10px; align-items: center; min-height: 56px; padding: 6px 8px; color: var(--fb-ink); text-decoration: none; border-top: 1px solid rgba(255,255,255,.14); }
+.fb-trow:first-child a, .fb-trow:first-child .fb-trow-in { border-top: 0; }
+.fb-trow.me a, .fb-trow.me .fb-trow-in { border: 2px solid var(--k); border-radius: 16px; box-shadow: 0 0 16px -4px var(--k), inset 0 0 12px -6px var(--k); }
+.fb-trow.me + .fb-trow a, .fb-trow.me + .fb-trow .fb-trow-in { border-top-color: transparent; }
 .fb-tpos { font: 300 22px var(--serif); text-align: center; font-variant-numeric: lining-nums tabular-nums; }
 .fb-tring { width: 16px; height: 16px; border-radius: 50%; border: 3px solid var(--k); box-shadow: 0 0 8px var(--k); }
 .fb-tname { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
@@ -509,19 +510,25 @@ button.fb-todaycard { cursor: pointer; }
 :root[data-ft='L'] .fb-au { background: linear-gradient(175deg, #3a1628, #1c0b14 70%); --a: #7a3a55; --c: #5a2a48; }
 
 /* ---------- Matchday depth (spec 2026-11-12 §3): before kick-off, live, a call, a goal, half-time, full time ---------- */
-.md-page .fb-page { display: flex; flex-direction: column; gap: 12px; }
-.md-score { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+/* The match's own names (mt-): the parcel, the pledge and the desk use md-page, md-score, md-strip, md-opts, md-opt,
+   md-card and md-tile for different things in matchday.css, and two rules under one name bent both. */
+/* The match pages have sat inside the parcel's page box since the two were merged; its margins, type and ink are kept
+   here. Its flex column is not: it shrank a page to the width of its widest child. */
+.mt-page { min-height: 100dvh; color: #ede6da; font: 16px/1.4 'Atkinson Hyperlegible Next', var(--sans);
+  padding: calc(var(--safe-top, 0px) + 18px) 16px calc(var(--safe-bottom, 0px) + 110px); overflow-x: hidden; }
+.mt-page .fb-page { display: flex; flex-direction: column; gap: 12px; }
+.mt-score { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .md-side { display: inline-flex; align-items: center; gap: 8px; min-width: 0; font: 400 22px/1.1 var(--serif); }
 .md-side b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .md-side .fb-num { font-size: 26px; }
-.md-score.big .md-side { font-size: 24px; }
-.md-score.big .md-side .fb-num { font-size: 36px; font-style: italic; }
-.md-strip { display: grid; grid-template-columns: repeat(15, 1fr); gap: 4px; align-items: center; height: 14px; }
-.md-strip i { height: 4px; border-radius: 3px; background: rgba(243,238,230,.18); }
-.md-strip i.atk { background: var(--fb-or); box-shadow: 0 0 8px var(--fb-or); }
-.md-strip i.def { background: #8fc0ff; box-shadow: 0 0 8px #8fc0ff; }
-.md-strip i.goal { height: 9px; }
-.md-strip i.future { opacity: .35; }
+.mt-score.big .md-side { font-size: 24px; }
+.mt-score.big .md-side .fb-num { font-size: 36px; font-style: italic; }
+.mt-strip { display: grid; grid-template-columns: repeat(15, 1fr); gap: 4px; align-items: center; height: 14px; }
+.mt-strip i { height: 4px; border-radius: 3px; background: rgba(243,238,230,.18); }
+.mt-strip i.atk { background: var(--fb-or); box-shadow: 0 0 8px var(--fb-or); }
+.mt-strip i.def { background: #8fc0ff; box-shadow: 0 0 8px #8fc0ff; }
+.mt-strip i.goal { height: 9px; }
+.mt-strip i.future { opacity: .35; }
 .md-shots { display: block; width: 100%; height: auto; }
 .md-shots .pl { fill: none; stroke: rgba(243,238,230,.4); stroke-width: 1.2; }
 .md-shots circle { fill: none; stroke-width: 2.4; }
@@ -573,18 +580,18 @@ button.md-chip { min-height: 44px; cursor: pointer; }
 .md-res { font: 700 18px var(--sans); }
 .md-whistle { font: italic 400 36px/1 var(--serif); text-align: center; margin: 12px 0; }
 .md-ask { font: 400 26px/1.2 var(--serif); margin: 4px 0; }
-.md-opts { display: flex; flex-direction: column; gap: 10px; }
-.md-opt { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 64px; padding: 10px 14px; border-radius: 16px; border: 2px solid; background: rgba(11,16,34,.35); color: var(--fb-ink); text-align: left; cursor: pointer; box-shadow: 0 0 16px -6px currentColor; }
-.md-opt > span { display: flex; flex-direction: column; gap: 2px; }
-.md-opt b { font: 700 16px var(--sans); }
-.md-opt small { font: 400 15px/1.35 var(--sans); }
+.mt-opts { display: flex; flex-direction: column; gap: 10px; }
+.mt-opt { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 64px; padding: 10px 14px; border-radius: 16px; border: 2px solid; background: rgba(11,16,34,.35); color: var(--fb-ink); text-align: left; cursor: pointer; box-shadow: 0 0 16px -6px currentColor; }
+.mt-opt > span { display: flex; flex-direction: column; gap: 2px; }
+.mt-opt b { font: 700 16px var(--sans); }
+.mt-opt small { font: 400 15px/1.35 var(--sans); }
 .md-odds { font: italic 400 30px/1 var(--serif) !important; flex: none; }
 .md-goal .fb-page { align-items: stretch; }
 .md-gword { font: italic 800 72px/0.95 var(--serif); letter-spacing: -.01em; text-shadow: 0 0 30px var(--a); }
 .md-tag { align-self: flex-start; padding: 6px 12px; border-radius: 999px; border: 1.5px solid #ffd56a; color: #ffd56a; font: 700 14px var(--sans); }
 .md-scorer { display: flex; align-items: center; gap: 14px; }
 .md-scorer > span { display: flex; flex-direction: column; }
-.md-card { width: 108px; flex: none; }
+.mt-card { width: 108px; flex: none; }
 .md-gcrest { align-self: center; }
 .md-studio { margin: 0; display: flex; flex-direction: column; gap: 2px; font: 400 15px/1.4 var(--sans); }
 .md-studio b { font: 700 15px var(--sans); }
@@ -593,14 +600,36 @@ button.md-chip { min-height: 44px; cursor: pointer; }
 .md-ft { display: flex; flex-direction: column; gap: 10px; }
 .md-potm { color: var(--fb-or-soft); }
 .md-pick { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
-.md-tile { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 64px; padding: 10px 14px; border-radius: 16px; border: 2px solid; background: transparent; color: var(--fb-ink); text-align: left; cursor: pointer; box-shadow: 0 0 16px -6px currentColor; }
-.md-tile > span { display: flex; flex-direction: column; gap: 2px; }
-.md-tile b { font: 700 16px var(--sans); }
-.md-tile small { font: 400 15px var(--sans); }
-.md-tile:disabled { cursor: default; opacity: .55; }
-.md-tile.on { opacity: 1; background: rgba(243,238,230,.08); }
+.mt-tile { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 64px; padding: 10px 14px; border-radius: 16px; border: 2px solid; background: transparent; color: var(--fb-ink); text-align: left; cursor: pointer; box-shadow: 0 0 16px -6px currentColor; }
+.mt-tile > span { display: flex; flex-direction: column; gap: 2px; }
+.mt-tile b { font: 700 16px var(--sans); }
+.mt-tile small { font: 400 15px var(--sans); }
+.mt-tile:disabled { cursor: default; opacity: .55; }
+.mt-tile.on { opacity: 1; background: rgba(243,238,230,.08); }
 .md-plus { font: italic 400 28px var(--serif) !important; }
 .md-took { font: 700 14px var(--sans); color: #3fd98a; }
 .md-wait .md-wduel { display: flex; align-items: center; justify-content: center; gap: 10px; font: 400 22px var(--serif); flex-wrap: wrap; }
 .md-tbp { display: block; color: var(--fb-or-text); }
 .md-cards { display: flex; flex-direction: column; gap: 6px; }
+
+/* LG-4: world 2's Divisions Seven and Eight, and the table's "See all". */
+:root { --fb-t7: #ff9ec7; --fb-t8: #d9b38c; } /* never gold, as above */
+.fb-seeall { margin-top: 8px; min-height: 44px; width: 100%; }
+/* World 2's League home: the top four in a tappable panel (kit-visual-4). */
+.fb-top4 { display: block; width: 100%; text-align: left; }
+.fb-top4 .fb-table { margin: 0; }
+.fb-seeall-line { display: block; margin-top: 6px; font-weight: 700; color: var(--fb-ink); }
+/* Every division (kit-visual-5): a stepped pyramid of eight, the chosen one cream, yours outlined orange. */
+.fb-steps { margin: 0 0 12px; padding: 0; list-style: none; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.fb-steps li { width: var(--w); min-width: 0; max-width: 100%; }
+.fb-step { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 12px; border: 2px solid var(--t); border-radius: 12px; background: transparent; color: var(--fb-ink); font: 600 14px var(--sans); cursor: pointer; box-shadow: 0 0 12px -6px var(--t); }
+.fb-step b { font: 600 15px var(--sans); text-align: left; min-width: 0; overflow-wrap: anywhere; }
+.fb-step span { font: 600 16px var(--serif); font-variant-numeric: lining-nums; }
+.fb-step.on { background: #f3e9d2; color: #1a1426; border-color: #f3e9d2; }
+.fb-step.you { outline: 3px solid var(--fb-or); outline-offset: 2px; }
+/* The world redrawn (LG-4). */
+.fb-redrawn-vs { margin: 0 0 8px; padding: 0; list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; font: 600 15px var(--sans); }
+.fb-redrawn-vs li { min-width: 0; overflow-wrap: anywhere; }
+.fb-redrawn-gifts { margin: 0; padding-left: 18px; display: grid; gap: 6px; font: 400 15px/1.4 var(--sans); }
+.fb-top4 .fb-trows { border: 0; box-shadow: none; animation: none; padding: 0; }
+.fb-top4 { padding-right: 34px; }

@@ -1,7 +1,7 @@
 // Grounds (spec §5.5, board 10). Most clubs share their tier's shape; rivals, the elite and a seeded twelve get their
 // own; finals are at a neutral bowl; Brabo play at the borrowed Kaai ground.
 import { CLUBS, type ClubDef } from './data/load';
-import { ANTIGOON } from './rivals';
+import { legendId } from './rivals';
 import { hashSeed, rng, shuffle } from './rng';
 import type { Tier } from './types';
 
@@ -34,12 +34,12 @@ export function ownShape(id: string): string {
 }
 
 /** The seeded handful of ordinary clubs that get a ground of their own: always the same twelve. */
-export const LUCKY_TWELVE: string[] = shuffle(rng(hashSeed('grounds', 'twelve')), CLUBS.filter((c) => c.kind !== 'own' && !c.elite && c.id !== ANTIGOON).map((c) => c.id)).slice(0, 12);
+export const LUCKY_TWELVE: string[] = shuffle(rng(hashSeed('grounds', 'twelve')), CLUBS.filter((c) => c.kind !== 'own' && !c.elite && c.id !== legendId()).map((c) => c.id)).slice(0, 12);
 
 export function groundFor(club: ClubDef, tier: Tier = club.tier, rivals: string[] = [], neutral = false): GroundShape {
   if (neutral) return { kind: 'neutral', key: 'bowl', name: 'A neutral ground', svg: BOWL };
   if (club.kind === 'own') return { kind: 'kaai', key: 'kaai', name: 'The Kaai (borrowed)', svg: KAAI };
-  const own = club.elite || club.id === ANTIGOON || rivals.includes(club.id) || LUCKY_TWELVE.includes(club.id);
+  const own = club.elite || club.id === legendId() || rivals.includes(club.id) || LUCKY_TWELVE.includes(club.id);
   if (own) return { kind: 'own', key: `own:${club.id}`, name: club.ground || `${club.name}'s ground`, svg: ownShape(club.id) };
   return { kind: 'tier', key: `tier:${tier}`, name: club.ground || 'Their ground', svg: TIER_SHAPE[tier] };
 }

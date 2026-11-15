@@ -24,6 +24,7 @@ import { exerciseStatus, heavierOffer, historyFor, loadSoFar, loadTonight } from
 import type { BodyKind, LiveCounter, SetEntry, Settings, SkipReason, TrainingSession } from '../../domain/types';
 import { addBodyEntry, deleteSet, discardSession, logSet, patchSession, patchSettings } from '../../db/actions';
 import { halfSets } from '../../domain/deload';
+import { easySets } from '../../domain/trainWeek';
 import { BODY_PARTS, coachTags, heavyFirstOffer, isDumbbellKind, isGymKind, lowerIsHarder, machineKey, machineUnit, protectedLeft, SKIP_REASONS, unitFor, unitLabel } from '../../domain/gym';
 import { askChoice } from '../../ui/Confirm';
 import { setLastSetAt, setRestRunning } from '../../state/restState';
@@ -53,8 +54,8 @@ export function useRunner(session: TrainingSession, settings: Settings, plan: Pl
         .filter((e): e is ExerciseDef => !!e)
         // Half sets (a lighter week, the first session back, a sick day); sessions from before keep the old one-fewer lighter week.
         .map((e) => (session.half ? { ...e, sets: halfSets(e.sets) } : session.lighter ? { ...e, sets: Math.max(1, e.sets - 1) } : e))
-        .map((e) => ({ ...e, sets: Math.min(e.sets, legSets(e, session.legSoreness)) })),
-    [session.exercises, plan, session.lighter, session.half, session.legSoreness],
+        .map((e) => ({ ...e, sets: Math.min(e.sets, legSets(e, session.legSoreness), easySets(e.sets, session.easy)) })),
+    [session.exercises, plan, session.lighter, session.half, session.legSoreness, session.easy],
   );
   const groups = useMemo(() => groupExercises(exs), [exs]);
   const mine = useMemo(() => allSets.filter((s) => s.sessionId === session.id), [allSets, session.id]);
@@ -167,7 +168,8 @@ export function useRunner(session: TrainingSession, settings: Settings, plan: Pl
 
   const defaults = (r: Row) => {
     const st = statuses.get(r.ex.id)!;
-    const picked = session.loadSet?.[r.ex.id];
+    const once = session.loadOnce?.key === r.key ? session.loadOnce.kg : undefined;
+    const picked = once ?? session.loadSet?.[r.ex.id];
     const kg = r.drop ? r.ex.drop?.kg ?? null : picked ?? loadSoFar(mine, r.ex.id, loadTonight(st, session.heavier?.[r.ex.id]));
     const last = st.last?.sets.find((s) => s.setNo === r.setNo && s.side === r.side && !!s.drop === r.drop);
     // A "1 rep, no weight" from last time (old band rows) is no target: aim from the range instead.

@@ -18,6 +18,19 @@ export function diceLeft(dice: Die[], spent: Spend[]): Die[] {
   return dice.filter((d) => !used.has(d.axis));
 }
 
+/**
+ * The tray as the desk shows it: every die of the day marked left or spent, and the count in words. Both come from
+ * the same list, so a dimmed die and the number beside "Dice left" cannot disagree.
+ */
+export function trayOf(dice: Die[], spent: Spend[]): { dice: { die: Die; spent: boolean }[]; left: Die[]; label: string } {
+  const left = diceLeft(dice, spent);
+  return {
+    dice: dice.map((die) => ({ die, spent: !left.includes(die) })),
+    left,
+    label: dice.length ? `Dice left: ${left.length} of ${dice.length}` : 'No dice today',
+  };
+}
+
 /** A clock's filled segments: everything the spend log has put in, capped at its size. Never backwards. */
 export function clockFilled(d: DeskState, c: Clock): number {
   const n = d.spends.reduce((t, s) => t + s.effects.reduce((u, e) => u + (e.kind === 'clock' && e.clock === c.id ? e.n : 0), 0), 0);

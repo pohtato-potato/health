@@ -4,7 +4,7 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { clubCrest } from '../../../football/art/crest';
 import { clubById, STYLES } from '../../../football/data/load';
 import { FACT_NAME, type Fact } from '../../../football/fog/fog';
-import { CLUB_LORE } from '../../../football/fog/words';
+import { loreOf } from '../../../football/fog/words';
 import { weakSide } from '../../../football/matchday';
 import '../../../styles/fog.css';
 
@@ -46,7 +46,7 @@ export function Known({ pct, from, label = 'Known' }: { pct: number; from?: numb
 const WEAK: Record<string, string> = { left: 'Their left', middle: 'Through the middle', right: 'Their right' };
 /** A known fact about a club, in words (the club page and the scout's report). `live`: this season's rating and style. */
 export function factText(id: string, f: Fact, live?: { rating?: number; style?: string }): string {
-  const c = clubById(id), lore = CLUB_LORE[id];
+  const c = clubById(id), lore = loreOf(id);
   const style = live?.style ?? c.style;
   switch (f) {
     case 'kit': return c.colours.length ? 'Seen up close' : 'Plain';

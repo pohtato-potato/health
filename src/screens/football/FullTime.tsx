@@ -15,6 +15,8 @@ import { Studio } from './Studio';
 import { MomentumStrip, PickOfThree, playerOfMatch, ShotMap } from './match/MatchBits';
 import { TACTIC_NAME } from '../../football/rotation/night';
 import type { CallRecord } from '../../football/types';
+import { Action, Panel } from '../../ui/kit/Kit';
+import '../../styles/look-tonight.css';
 
 const CALL_WORD = { take: 'took it on', shoot: 'shot on sight', keep: 'kept the ball' } as const;
 /** "71′ · you took it on (48%): in." */
@@ -37,8 +39,8 @@ export function FullTimeView({ m, save, studio, press, tier = 6, onWatch }: { m:
     return () => { if (root.dataset.ft === m.result) delete root.dataset.ft; };
   }, [m.result]);
   return (
-    <>
-      <div className="fb-row"><span className="fb-lb">Full time</span><span className="fb-s">{m.round ?? ''}</span></div>
+    <div className="lt-ft">
+      <div className="k-row"><span className="lt-cap">Full time</span><span className="k-q">{m.round ?? ''}</span></div>
       <article className={`fb-card hot fb-result r-${m.result}`}>
         <div className="fb-duel">
           <Art svg={crest(m.home)} />
@@ -49,39 +51,39 @@ export function FullTimeView({ m, save, studio, press, tier = 6, onWatch }: { m:
         <span className={`fb-tag ${m.result === 'W' ? 'or' : 'pu'} fb-ctrself`}>{RESULT[m.result]}</span>
         <p className="fb-s fb-ctr">xG {xg[0].toFixed(1)} – {xg[1].toFixed(1)}</p>
         {rangedFuel(m) && <p className="fb-s fb-ctr">Fuel played on wider dice tonight: the night out was logged as a range, so each chance rolled it a little either side of the middle.</p>}
-        {onWatch && <div className="fb-btns"><button type="button" className="fb-btn pri" onClick={onWatch}>{m.watched ? 'Watch again' : 'Watch the match'}</button></div>}
+        {onWatch && <Action quiet sm onClick={onWatch}>{m.watched ? 'Watch again' : 'Watch the match'}</Action>}
       </article>
       {m.comp === 'league' && m.events.calls && (
-        <section className="fb-card md-ft" aria-label="The match">
+        <Panel className="md-ft">
           <MomentumStrip chances={m.events.chances} />
           <ShotMap chances={m.events.chances} />
           {playerOfMatch(m.credits) && <div className="fb-row"><span>Player of the match</span><b className="md-potm">{playerOfMatch(m.credits)}</b></div>}
           {m.events.calls.length > 0 && <ul className="fb-moments">{m.events.calls.map((c) => <li key={c.slot}>{callLine(c, m)}</li>)}</ul>}
-          {m.plan && <p className="fb-s">Plan: {TACTIC_NAME[m.plan.tactic ?? m.tactic?.pick ?? 'hold']}{m.plan.half2 ? `, ${TACTIC_NAME[m.plan.half2]} after half-time` : ''} · tempo {m.plan.tempo ?? 'normal'}{m.plan.card ? ` · tactic card +1 ${m.plan.card}` : ''}{m.plan.read && m.plan.read !== 'Not scouted yet' ? `. ${m.plan.read}` : ''}</p>}
-        </section>
+          {m.plan && <p className="k-q">Plan: {TACTIC_NAME[m.plan.tactic ?? m.tactic?.pick ?? 'hold']}{m.plan.half2 ? `, ${TACTIC_NAME[m.plan.half2]} after half-time` : ''} · tempo {m.plan.tempo ?? 'normal'}{m.plan.card ? ` · tactic card +1 ${m.plan.card}` : ''}{m.plan.read && m.plan.read !== 'Not scouted yet' ? `. ${m.plan.read}` : ''}</p>}
+        </Panel>
       )}
       {m.pick && <PickOfThree matchId={m.id} pick={m.pick} name={(id) => clubById(id).name} />}
       {(m.credits?.length ?? 0) > 0 && (
-        <section className="fb-card" aria-label="Goals and saves">
-          <span className="fb-lb">Goals and saves</span>
-          <ul className="fb-moments">{m.credits!.map((c) => <li key={c.i}><b>{c.kind === 'goal' ? 'Goal' : 'Save'} · {m.events.chances[c.i]?.minute ?? ''}′</b> {c.line}</li>)}</ul>
-        </section>
+        <Panel ink="#f2c46d">
+          <b className="k-lb">Goals and saves</b>
+          <ul className="lt-list">{m.credits!.map((c) => <li key={c.i}><b>{c.kind === 'goal' ? 'Goal' : 'Save'} · {m.events.chances[c.i]?.minute ?? ''}′</b> <span className="k-q">{c.line}</span></li>)}</ul>
+        </Panel>
       )}
       {m.events.moments.length > 0 && (
-        <section className="fb-card" aria-label="Moments">
-          <span className="fb-lb">Moments</span>
-          <ul className="fb-moments">{m.events.moments.map((x, i) => <li key={i}>{x}</li>)}</ul>
-        </section>
+        <Panel ink="#ff9a76">
+          <b className="k-lb">Moments</b>
+          <ul className="lt-list">{m.events.moments.map((x, i) => <li key={i}>{x}</li>)}</ul>
+        </Panel>
       )}
       {m.events.revealed && (
-        <section className="fb-card pu" aria-label="Found out">
-          <span className="fb-lb">Found out</span>
-          <p className="fb-s"><b>{m.events.revealed}</b>: their hidden ability, now on their club page.</p>
-        </section>
+        <Panel ink="#c2b2ff">
+          <b className="k-lb">Found out</b>
+          <span className="k-q"><b style={{ color: '#ede6da' }}>{m.events.revealed}</b>: their hidden ability, now on their club page.</span>
+        </Panel>
       )}
       {studio && <Studio lines={studio.text.split('\n')} />}
       {press?.lineId && <Press matchId={m.id} lineId={press.lineId} facts={facts} answered={press.answered} onAnswer={(i) => answerPress(m.id, i)} />}
-    </>
+    </div>
   );
 }
 

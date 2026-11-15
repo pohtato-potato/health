@@ -7,6 +7,7 @@ import { finishWithAssistant } from '../../../football/store/play';
 import type { FbSave } from '../../../football/store/tables';
 import { go } from '../../../router';
 import { Art } from '../Tonight';
+import { Action, Panel } from '../../../ui/kit/Kit';
 
 /** Opens the waiting match to watch live (before kick-off first). */
 export const watchWaiting = () => go('/football/match', { live: '1' });
@@ -25,14 +26,14 @@ export function WaitingMatch({ save }: { save: FbSave }) {
     else setBusy(false);
   };
   return (
-    <article className="fb-card hot md-wait" aria-label="Last night's match is waiting">
-      <span className="fb-lb">Last night</span>
-      <div className="md-wduel">{l[1]}<b>{l[0]}</b><span className="fb-s">v</span><b>{r[0]}</b>{r[1]}</div>
-      <p className="fb-s fb-ctr">Watch it with your calls, or skip to the result. Left alone, your assistant finishes it at 4 am.</p>
-      <div className="fb-btns">
-        <button type="button" className="fb-btn pri" onClick={watchWaiting} disabled={busy}>Watch</button>
-        <button type="button" className="fb-btn" onClick={() => void skip()} disabled={busy}>Skip</button>
+    <Panel ink="#ff7a1a" className="md-wait">
+      <b className="k-lb">Last night’s match is waiting</b>
+      <div className="md-wduel">{l[1]}<b>{l[0]}</b><span className="k-q">v</span><b>{r[0]}</b>{r[1]}</div>
+      <span className="k-q">Watch it with your calls, or skip to the result. Left alone, your assistant finishes it at 4 am.</span>
+      <div className="lt-two">
+        <Action quiet sm onClick={watchWaiting} disabled={busy}>Watch</Action>
+        <Action quiet sm onClick={() => void skip()} disabled={busy}>Skip</Action>
       </div>
-    </article>
+    </Panel>
   );
 }

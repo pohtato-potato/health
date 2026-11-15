@@ -55,11 +55,10 @@ describe('Rivals', () => {
   it('the rivalry page shows the record and the meetings', () => {
     const ms = [match('2026-10-01', 'zur', 'W', [2, 0]), match('2026-10-08', 'zur', 'L', [0, 1]), match('2026-10-15', 'zur', 'W', [3, 1]), match('2026-10-20', 'ant', 'D', [1, 1])];
     const out = html(<RivalryView r={{ clubId: 'zur', how: 'cup', since: '2026-10-08' }} matches={ms} />);
-    expect(out).toContain('The record');
-    expect(out).toMatch(/>2<\/b><span class="fb-s">won/);
-    expect(out).toMatch(/>0<\/b><span class="fb-s">drawn/);
-    expect(out).toMatch(/>1<\/b><span class="fb-s">lost/);
-    expect(out.match(/fb-meet/g)).toHaveLength(3);
+    expect(out).toMatch(/>2<\/b><span class="k-q">won/);
+    expect(out).toMatch(/>0<\/b><span class="k-q">drawn/);
+    expect(out).toMatch(/>1<\/b><span class="k-q">lost/);
+    expect(out.match(/lt-meet/g)).toHaveLength(3);
     expect(out).toContain('Bad blood');
   });
 });

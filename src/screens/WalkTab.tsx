@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState } from 'react';
 import { addDays, daysBetween } from '../domain/dates';
 import { fmtDayMonth, fmtInt } from '../domain/format';
 import { seasonalThemeOn } from '../domain/themes';
@@ -8,13 +8,11 @@ import { kmFromSteps } from '../domain/walk';
 import { changePlace } from '../db/actions';
 import { db } from '../db/db';
 import { useAllDays, useDay, useSettings, useToday } from '../db/hooks';
-import { regionAt } from '../domain/regions';
 import { go } from '../router';
-import { Aurora } from '../ui/live/Aurora';
 import type { Festive } from '../walk/art/festive';
 import { kindOf, routeById } from '../walk/catalogue';
 import { STOPS, STRETCHES } from '../walk/content';
-import { arrivedToday, auroraFor, nearestPlace, statusLines, stoneFor, stopLine, timeAtPace, tomorrowLine, usualAndBig, whereLine, whereNow } from '../walk/page';
+import { arrivedToday, nearestPlace, statusLines, stoneFor, stopLine, timeAtPace, tomorrowLine, usualAndBig, whereLine, whereNow } from '../walk/page';
 import { stopToday, stretchAt, stretchDay, stretchEndToShow } from '../walk/road';
 import type { Stretch } from '../walk/content/types';
 import { Sheet } from '../ui/Sheet';
@@ -23,9 +21,8 @@ import { peopleMet } from '../walk/people';
 import { placesFree, routeKm, runState, stepsByDay } from '../walk/runs';
 import { journeyStart } from './Journey';
 import { PlaceStatusRow } from './walk/PlaceStatusRow';
-import { ChallengeCard, ExpeditionLine } from './walk/RouteCards';
 import { StatusLines } from './walk/StatusLines';
-import { WalkDoors } from './walk/WalkDoors';
+import { Action, Door, Doors, Hero, Panel, Sect } from '../ui/kit/Kit';
 import { WalkTitle } from './walk/WalkTitle';
 import { WalkTop } from './walk/WalkTop';
 import { WalkStrip } from './walk/WalkStrip';
@@ -93,48 +90,52 @@ export function WalkTab() {
   const challenges = walking.filter((w) => kindOf(w.def) === 'challenge');
   const expeditions = walking.filter((w) => kindOf(w.def) === 'expedition');
 
+  // Look pass (board four, "Walk, in layered dusk"): the scene leads and runs larger, the stretch's name under it,
+  // kilometres from Delhi as the big number, tomorrow as one panel, routes as doors, one glowing action. The scene
+  // is drawn in layered dusk (fork L6) on the Walk light.
+  const routes = [...challenges, ...expeditions];
   return (
-    <div className="page lv lv-tab walk2" style={auroraFor(regionAt(km)) as CSSProperties}>
-      <Aurora />
-      <div className="walk2-col">
+    <div className="page walk2 k-light walk">
+      <div className="walk2-col k-page">
         <WalkTop km={km} todayKm={todayKm} stone={stoneFor(km)} festive={festive} />
         {stretch ? (
           <WalkTitle where={stretch.name} sub={`${stretch.plain} · day ${stretchDay(steps, today, stretch)} of ${timeAtPace(stretch.toKm - stretch.fromKm, usualKm)}`} onWhere={() => go('/stretch', { id: stretch.id })} />
         ) : (
-          <WalkTitle where={whereLine(where)} sub={`${fmtInt(Math.round(km))} km from Delhi · day ${fmtInt(Math.max(1, dayN))}`} />
+          <WalkTitle where={whereLine(where)} sub={`Day ${fmtInt(Math.max(1, dayN))} on the road`} />
         )}
+        <div className="k-row end">
+          <Hero value={fmtInt(Math.round(km))} ink="var(--steps)" size="md" label="km from Delhi" />
+          <span className="k-col k-r"><b className="k-num">{steps.has(today) ? todayKm.toFixed(1) : '0'}</b><span className="k-q">km today</span></span>
+        </div>
         <WalkStrip strip={stripFor(km, todayKm, stretch, STOPS)} onOpen={() => go('/map')} />
         <PlaceStatusRow settings={settings} today={today} day={day} onPlace={(id) => void changePlace(today, id)} />
-        <StatusLines
-          today={`${steps.has(today) ? `Today ${todayKm.toFixed(1)} km` : 'Today: no steps logged yet'}${stretch ? ` · ${fmtInt(Math.round(km))} km from Delhi` : ''}`}
-          lines={lines} onOpen={(path) => go(path.split('?')[0], Object.fromEntries(new URLSearchParams(path.split('?')[1] ?? '')))} tomorrow={days.some((d) => d.steps !== undefined) ? tomorrow : "Log today's steps and you'll set off from Delhi."} />
+        <Panel ink="#8fdcb6">
+          <StatusLines
+            today={steps.has(today) ? undefined : 'Today: no steps logged yet'}
+            lines={lines} onOpen={(path) => go(path.split('?')[0], Object.fromEntries(new URLSearchParams(path.split('?')[1] ?? '')))} tomorrow={days.some((d) => d.steps !== undefined) ? tomorrow : "Log today's steps and you'll set off from Delhi."} />
+        </Panel>
         <HabitLine axis="Pace" />
 
         {news?.banner && <NewsBannerView banner={news.banner} kmById={news.kmById} onOpen={news.open} onDismiss={news.dismiss} />}
 
-        {challenges.length > 0 && (
-          <section className="walk-section" aria-label="Challenges">
-            <h2 className="walk-h2">Challenges</h2>
-            {challenges.map((c) => (
-              <ChallengeCard key={c.run.id} id={c.run.id} km={c.km} state={c.state as 'walking' | 'set down'} line={c.line} target={c.target} onOpen={() => go('/route', { id: c.run.id })} />
-            ))}
-          </section>
-        )}
-        {expeditions.length > 0 && (
-          <section className="walk-section" aria-label="Expeditions">
-            <h2 className="walk-h2">Expeditions</h2>
-            {expeditions.map((e) => (
-              <ExpeditionLine key={e.run.id} id={e.run.id} km={e.km} state={e.state as 'walking' | 'set down'} onOpen={() => go('/route', { id: e.run.id })} />
-            ))}
-          </section>
+        {routes.length > 0 && (
+          <>
+            <Sect>Your routes</Sect>
+            <Doors two label="Your routes">
+              {routes.map((r) => (
+                <Door key={r.run.id} icon={kindOf(r.def) === 'challenge' ? 'route' : 'map'} name={r.state === 'set down' ? `${r.def.name} · set down` : r.def.name} value={`${fmtInt(Math.round(r.km))} km`} ink={r.def.ink ?? '#c9dcea'} onClick={() => go('/route', { id: r.run.id })} />
+              ))}
+            </Doors>
+          </>
         )}
 
-        <button type="button" className="walk-primary walk-find" onClick={() => go('/routes')}>
-          Choose a walk
-          <small>{freeLine(placesFree(runs ?? [], new Map(walking.map((w) => [w.run.id, w.km]))))}</small>
-        </button>
+        <Action wide onClick={() => go('/routes')}>Choose a walk</Action>
+        <span className="k-q" style={{ textAlign: 'center', marginTop: -4 }}>{freeLine(placesFree(runs ?? [], new Map(walking.map((w) => [w.run.id, w.km]))))}</span>
 
-        <WalkDoors onGo={(path) => go(path)} />
+        <Doors two label="More of the walk">
+          <Door icon="map" name="Map" value={`${fmtInt(Math.round(km))} km`} onClick={() => go('/map')} />
+          <Door icon="book" name="Wrapped" value="The road" onClick={() => go('/road')} />
+        </Doors>
       </div>
       {showing && (
         <Sheet onClose={() => setShowing(undefined)}>

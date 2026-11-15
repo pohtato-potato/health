@@ -3,6 +3,7 @@
 import { addDays, type DayKey } from '../domain/dates';
 import type { AxisInput } from './axes';
 import { keptOn } from './contracts';
+import { neighbourWords } from './data/load';
 import { AXES, type BraboAbility, type Tier } from './types';
 
 export type Need = 'steps' | 'training' | 'sleep' | 'protein' | 'bedtime' | 'meds' | 'kcal' | 'youth' | 'none';
@@ -125,4 +126,5 @@ export function groundAbilities(done: string[]): BraboAbility[] {
   if (!done.includes('river-end')) return [];
   return AXES.map((a) => ({ id: `river-end:${a}`, name: 'River End', axis: a, d: 1, when: 'home-late' as const }));
 }
-export const homeGround = (moved: boolean) => (moved ? 'Kaai 42' : 'Stadion aan de Stroom');
+/** Brabo's home: the landlords' ground (world 2: Het Rooi, Berchem Sport's) until the move to Kaai 42. */
+export const homeGround = (moved: boolean) => (moved ? 'Kaai 42' : neighbourWords('Stadion aan de Stroom'));

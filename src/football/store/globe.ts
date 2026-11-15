@@ -8,6 +8,7 @@
 // Taps (moments seen, tying a trialist) are in store/globeActions.ts.
 import { perkValue } from '../cast/bonds';
 import { perksOfSave } from './cast';
+import { worldOf } from '../pyramid/shape';
 import { daysBetween, type DayKey } from '../../domain/dates';
 import { DUTY_LINES, DUTY_QUIET, FAREWELLS } from '../content/words';
 import { nationByCode } from '../content/nations';
@@ -93,7 +94,7 @@ export function breakStarts(w: Pick<GlobeWorld, 'save' | 'news'>, date: DayKey):
   const s = w.save;
   const g = globeOf(s);
   if (g.breaks.some((b) => b.days.includes(date))) return true;
-  const due = breakDue(s.phase, s.season, s.day, g.breaks);
+  const due = breakDue(s.phase, s.season, s.day, g.breaks, worldOf(s));
   if (!due) return false;
   const have = g.breaks.find((b) => b.season === s.season && b.n === due.n);
   const breaks = have ? g.breaks.map((b) => (b === have ? { ...b, days: [...b.days, date] } : b)) : [...g.breaks, { season: s.season, n: due.n, days: [date] }];

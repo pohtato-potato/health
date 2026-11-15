@@ -55,7 +55,7 @@ export function talkCtx(v: DeskView, talk: string): TalkCtx | undefined {
   const lead = m.leads.find((l) => l.key === talk);
   const def = lead && loanById(lead.loan);
   if (!lead || !def) return undefined;
-  const opening = openingLoan(def.tier, m.ownTier as Tier, lead.opinion, m.feeShare ?? 1);
+  const opening = openingLoan(def.tier, (m.ownStage ?? m.ownTier) as Tier, lead.opinion, m.feeShare ?? 1);
   const studied = studiedIn(v, talk);
   return {
     talk, kind: 'loan', name: def.name, who: lead.clubName, club: lead.club, loan: lead.loan, opinion: lead.opinion, poach: lead.poach,

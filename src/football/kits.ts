@@ -50,9 +50,12 @@ export function dataKit(weeks: Week[]): { kit: KitDef; collar: string } {
   const stripes = six.map((w) => [TONE[w.result], (96 * Math.max(1, w.avg)) / total, w.result === 'L'] as [string, number, boolean]);
   return { kit: K(BK, 'weeks', { a: stripes, collarC: OR, cuff: OR }), collar: six.map((w) => w.numbers).join(' ') };
 }
-/** A season's six weeks from its matches: the average radar and the week's result. */
-export function weeksOf(matches: { day: number; values: Record<string, number>; result: Result; comp: string }[]): Week[] {
-  return Array.from({ length: 6 }, (_, w) => {
+/**
+ * A season's weeks from its matches: the average radar and the week's result. Six for a 42-day season, four for
+ * world 2's 28 days (ledger O38): a season whose matches never pass day 28 is a 28-day one.
+ */
+export function weeksOf(matches: { day: number; values: Record<string, number>; result: Result; comp: string }[], weeks = !matches.length || matches.some((m) => m.day > 28) ? 6 : 4): Week[] {
+  return Array.from({ length: weeks }, (_, w) => {
     const ms = matches.filter((m) => m.day > w * 7 && m.day <= (w + 1) * 7 && m.comp !== 'friendly');
     const vals = ms.map((m) => Object.values(m.values).reduce((a, b) => a + b, 0) / 6);
     const avg = vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10 : 0;

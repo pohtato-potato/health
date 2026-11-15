@@ -3,6 +3,8 @@ import { GROUP_NAMES, RECORD_NAMES, kindOf, type Group, type RouteDef } from '..
 import { timeAtPace } from '../../walk/page';
 import { runState } from '../../walk/runs';
 import { RouteArt, inkStyle } from '../../walk/ui/RouteArt';
+import { Icon } from '../../ui/Icon';
+import { Action, Sect } from '../../ui/kit/Kit';
 
 const fmt = (n: number) => Math.round(n).toLocaleString('en-IN');
 const GROUPS: Group[] = ['india', 'world', 'books', 'wild'];
@@ -37,6 +39,7 @@ function ShelfCard({ def, km, state, pinned, usualKm, onOpen }: { def: RouteDef;
         </span>
         <span className="walk-rc-line">{def.hook}</span>
       </span>
+      <Icon name="right" size={18} stroke={2.2} className="k-arrow" />
     </button>
   );
 }
@@ -48,15 +51,15 @@ export function ShelfView(p: { defs: RouteDef[]; runs: RouteRun[]; kmById: Map<s
   const drafts = p.drafts ? p.defs.filter((d) => !d.ready) : [];
   return (
     <>
-      <button type="button" className="walk-primary walk-choose" onClick={p.onChoose}>
+      <Action wide onClick={p.onChoose}>
         Choose for me
-      </button>
+      </Action>
       {GROUPS.map((g) => {
         const here = ready.filter((d) => d.group === g);
         return (
           here.length > 0 && (
             <section key={g} className="walk-section" aria-label={GROUP_NAMES[g]}>
-              <h2 className="walk-h2">{GROUP_NAMES[g]}</h2>
+              <Sect>{GROUP_NAMES[g]}</Sect>
               {here.map(card)}
             </section>
           )
@@ -65,7 +68,7 @@ export function ShelfView(p: { defs: RouteDef[]; runs: RouteRun[]; kmById: Map<s
       {ready.length === 0 && <p className="walk-sub">The first routes are still being written. They appear here once they're checked.</p>}
       {drafts.length > 0 && (
         <section className="walk-section" aria-label="Drafts">
-          <h2 className="walk-h2">Drafts (not on the shelf)</h2>
+          <Sect>Drafts (not on the shelf)</Sect>
           <p className="walk-sub">Shown in development only, to check them before they're ready.</p>
           {drafts.map(card)}
         </section>

@@ -8,19 +8,22 @@ import { factsOf, pctOf, SURFACE, worldSeen } from '../../../football/fog/fog';
 import { loadLeague, type League } from '../../../football/store/league';
 import { fogClubs, fogToday } from '../../../football/store/fog';
 import { OWN } from '../../../football/store/season';
-import { TIERS, type Tier } from '../../../football/types';
+import type { Tier } from '../../../football/types';
+import { shapeOf, worldOf, type WorldVersion } from '../../../football/pyramid/shape';
 import { go, useRoute } from '../../../router';
 import { Art, CrestOrFog } from './Fog';
 
 type Layer = Tier | 0;
-const LAYERS: Layer[] = [...TIERS, 0];
+/** The land's bands: the divisions top first, then abroad (world 1: seven; world 2: nine, LG-4). */
+const layersOf = (world: WorldVersion): Layer[] => [...shapeOf({ world }).divisions, 0];
 const SHORT = (t: Layer) => (t === 0 ? 'Abroad' : t === 1 ? 'Crown' : `Div ${t}`);
+const layerName = (t: Layer, world: WorldVersion) => (t === 0 ? 'Abroad' : world === 2 ? shapeOf({ world }).name(t) : tierName(t));
 const INK = (t: Layer) => (t === 0 ? '#f4aedb' : `var(--fb-t${t})`);
 
 export interface AtlasModel { l: League; today: string; seen: number; layers: { t: Layer; seen: number; fog: boolean }[] }
 export function atlasOf(l: League, today = fogToday()): AtlasModel {
   const all = fogClubs(l.season.tierOf);
-  const layers = LAYERS.map((t) => {
+  const layers = layersOf(worldOf(l.season)).map((t) => {
     const ids = all.filter((c) => c.tier === t).map((c) => c.id);
     return { t, seen: worldSeen(l.save, ids, today), fog: ids.some((id) => { const f = factsOf(l.save, id); return SURFACE.some((x) => !f.has(x)); }) };
   });
@@ -28,10 +31,10 @@ export function atlasOf(l: League, today = fogToday()): AtlasModel {
 }
 
 /** The land in layers: each band coloured as far as it is seen, parchment beyond. */
-function LayerMap({ layers, on, pick }: { layers: AtlasModel['layers']; on: Layer; pick: (t: Layer) => void }) {
+function LayerMap({ layers, on, pick, world }: { layers: AtlasModel['layers']; on: Layer; pick: (t: Layer) => void; world: WorldVersion }) {
   const W = 336, H = 26, G = 4;
   return (
-    <svg className="fg-map" viewBox={`0 0 ${W} ${layers.length * (H + G) - G}`} role="img" aria-label={`The world in layers: ${layers.map((x) => `${x.t === 0 ? 'abroad' : tierName(x.t)} ${x.seen}% seen`).join(', ')}`}>
+    <svg className="fg-map" viewBox={`0 0 ${W} ${layers.length * (H + G) - G}`} role="img" aria-label={`The world in layers: ${layers.map((x) => `${layerName(x.t, world)} ${x.seen}% seen`).join(', ')}`}>
       <defs>
         <pattern id="fg-parch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#d6c4a0" /><rect width="3" height="8" fill="#c7b38b" /></pattern>
       </defs>
@@ -42,7 +45,7 @@ function LayerMap({ layers, on, pick }: { layers: AtlasModel['layers']; on: Laye
             <rect x="0" y={y} width={W} height={H} rx="8" fill="url(#fg-parch)" opacity=".9" />
             <rect x="0" y={y} width={w} height={H} rx="8" style={{ fill: INK(x.t), transition: 'width .9s' }} />
             {x.t === on && <rect x="1" y={y + 1} width={W - 2} height={H - 2} rx="7" fill="none" stroke="#fff" strokeWidth="2" />}
-            <text x="10" y={y + 18} fontSize="16" fontWeight="700" fill="#1a1426">{x.t === 0 ? 'Abroad' : tierName(x.t)}</text>
+            <text x="10" y={y + 18} fontSize="16" fontWeight="700" fill="#1a1426">{layerName(x.t, world)}</text>
             <text x={W - 10} y={y + 18} fontSize="16" fontWeight="700" fill="#3a2f1c" textAnchor="end">{x.seen}%</text>
           </g>
         );
@@ -53,6 +56,7 @@ function LayerMap({ layers, on, pick }: { layers: AtlasModel['layers']; on: Laye
 
 export function AtlasView({ a, start }: { a: AtlasModel; start?: Layer }) {
   const { l, today } = a;
+  const world = worldOf(l.season);
   const mine = l.season.tierOf[OWN];
   const [on, setOn] = useState<Layer>(start ?? mine);
   const layer = a.layers.find((x) => x.t === on)!;
@@ -64,11 +68,11 @@ export function AtlasView({ a, start }: { a: AtlasModel; start?: Layer }) {
   return (
     <section className="fg fg-atlas" aria-label="The atlas">
       <div className="fg-door"><h2 className="fb-t" style={{ margin: 0 }}>The atlas</h2><span className="fb-s">World seen: <b className="fg-pct">{a.seen}%</b></span></div>
-      <LayerMap layers={a.layers} on={on} pick={setOn} />
+      <LayerMap layers={a.layers} on={on} pick={setOn} world={world} />
       <div className="fg-tabs" role="group" aria-label="Layer">
-        {LAYERS.map((t) => <button key={t} type="button" aria-pressed={on === t} onClick={() => setOn(t)}>{SHORT(t)}</button>)}
+        {layersOf(world).map((t) => <button key={t} type="button" aria-pressed={on === t} onClick={() => setOn(t)}>{SHORT(t)}</button>)}
       </div>
-      <ol className="fg-trows" aria-label={on === 0 ? 'Clubs abroad' : `${tierName(on)} table`}>
+      <ol className="fg-trows" aria-label={on === 0 ? 'Clubs abroad' : `${layerName(on, world)} table`}>
         {rows.map((r, i) => {
           const me = r.id === OWN;
           const f = me ? undefined : factsOf(l.save, r.id, today);
@@ -100,5 +104,6 @@ export function Atlas() {
   if (l === undefined) return null;
   if (l === null) return <p className="fb-s">The league starts once you found the club.</p>;
   const t = params.get('layer');
-  return <AtlasView a={atlasOf(l)} start={t === 'abroad' ? 0 : t && Number(t) >= 1 && Number(t) <= 6 ? (Number(t) as Tier) : undefined} />;
+  const last = shapeOf(l.season).divisions.length;
+  return <AtlasView a={atlasOf(l)} start={t === 'abroad' ? 0 : t && Number(t) >= 1 && Number(t) <= last ? (Number(t) as Tier) : undefined} />;
 }

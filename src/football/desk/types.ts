@@ -199,6 +199,8 @@ export interface CastView {
 /** Fork 3: what the study and negotiate jobs see. Opinions are worked out by the store (market/relations.ts). */
 export interface MarketView {
   ownTier: number;
+  /** The stage of Brabo's division (world 2: stageOf), for fees in wage units. Absent in older views: the tier. */
+  ownStage?: number;
   /** The club's money, in millions: a deal is only struck when it covers the fee. */
   budget: number;
   /** Loan targets the scouts found, with their club's opinion of Brabo and whether it is in Brabo's division. */

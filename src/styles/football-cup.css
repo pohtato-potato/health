@@ -30,7 +30,6 @@
 .cup-btn.sm { width: auto; min-height: 44px; padding: 0 14px; font-size: 15px; }
 .cup-btn:disabled { opacity: .45; cursor: default; }
 .cup-acts { display: flex; gap: 10px; } .cup-acts > * { flex: 1; }
-.cup-match .cup-acts .cup-btn.ghost { flex: 0 1 40%; }
 
 /* options: dashed chalk rows */
 .cup-opt { all: unset; box-sizing: border-box; border: 2px dashed var(--chalk, #f3efe4); border-radius: 4px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 52px; cursor: pointer; font: 16px/1.35 var(--ab); color: #ede6da; text-align: left; }
@@ -75,17 +74,10 @@
 @keyframes cup-pop { from { transform: scale(.85); opacity: 0; } }
 @keyframes cup-fade { to { opacity: 0; visibility: hidden; } }
 
-.cup-match { gap: 6px; }
-.cup-match .cup-btn { min-height: 48px; }
-.cup-say { min-height: 40px; display: flex; align-items: center; font-size: 16px; line-height: 1.35; }
-.cup-say b { color: #f2c46d; }
 .cup-st { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-size: 15px; }
 .cup-pip { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #c2b2ff; display: inline-block; margin-right: 4px; vertical-align: -2px; }
 .cup-pip.f { background: #c2b2ff; box-shadow: 0 0 8px #c2b2ff; }
 
-/* the hand: coaching-board cards in a row the thumb can scroll */
-.cup-hand { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; padding: 4px 2px 6px; margin: 0 -2px; scrollbar-width: none; }
-.cup-hand::-webkit-scrollbar { display: none; }
 .cup-hc { all: unset; box-sizing: border-box; display: block; flex: 0 0 31.5%; min-width: 0; cursor: pointer; scroll-snap-align: start; touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; transition: transform .15s; }
 .cup-hc:active { transform: translateY(-4px); }
 .cup-hc:disabled { cursor: default; }
@@ -174,18 +166,13 @@
 .cup-node.can circle:nth-child(2) { animation: cup-breathe 2.4s ease-in-out infinite; }
 @keyframes cup-breathe { 50% { stroke-width: 4.5; } }
 .cup-legend { font-size: 14px; }
-.cup-mapscr { padding-bottom: 190px; }
 .cup-node:focus { outline: none; }
-.cup-dock { position: fixed; z-index: 5; left: 50%; transform: translateX(-50%); width: min(488px, calc(100% - 32px)); bottom: calc(var(--tab-h) + var(--safe-bottom) + 8px); display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 4px; background: rgba(10,23,18,.94); border: 2px solid rgba(243,239,228,.4); }
 
 /* the rest room */
 .cup-room { width: 100%; display: block; font-family: var(--ab); }
 .cup-speaker { display: flex; align-items: center; gap: 12px; font-size: 16px; line-height: 1.4; }
 .cup-sil { display: block; flex: none; border-radius: 50%; border: 2px solid var(--chalk, #f3efe4);
   background: center 110% / 76% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='13' r='8' fill='%23f3efe4' fill-opacity='.85'/%3E%3Cpath d='M4 40c0-10 7-16 16-16s16 6 16 16z' fill='%23f3efe4' fill-opacity='.85'/%3E%3C/svg%3E"), #11251d; }
-.cup-tile { all: unset; box-sizing: border-box; border-radius: 4px; border: 2px solid var(--ink); box-shadow: 0 0 18px -6px var(--ink), inset 0 0 22px -12px var(--ink); background: #0d1d17; min-height: 74px; display: flex; align-items: center; gap: 12px; padding: 10px 14px; cursor: pointer; color: var(--ink); font: 17px/1.3 var(--ab); }
-.cup-tile .cup-q { color: #ede6da; }
-.cup-tile:disabled { opacity: .45; cursor: default; }
 
 /* story events: a reading column */
 .cup-read-col { font-size: 17px; line-height: 1.5; max-width: 60ch; }
@@ -202,26 +189,11 @@
 
 /* the cups page */
 .cup-dl { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.cup-dr { display: grid; grid-template-columns: 1fr auto 44px; gap: 4px 10px; align-items: center; padding: 8px 10px; border: 2px solid var(--ink); border-radius: 4px; box-shadow: 0 0 14px -8px var(--ink); }
-.cup-ax { color: var(--ink); font-size: 17px; }
 .cup-n { font: 600 28px/1 var(--fr); text-align: right; color: var(--ink); font-variant-numeric: tabular-nums; }
-.cup-why { grid-column: 1 / -1; font-size: 14px; color: var(--cq, #c4c1cf); line-height: 1.35; }
-.cup-dr.extra { border-style: dashed; }
 .cup-deal { display: flex; flex-direction: column; gap: 8px; }
 .cup-ladder { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.cup-lad button { all: unset; box-sizing: border-box; width: 100%; display: flex; gap: 12px; align-items: center; padding: 8px 10px; min-height: 56px; border: 2px dashed rgba(243,239,228,.4); border-radius: 4px; cursor: pointer; font-size: 16px; line-height: 1.35; }
-.cup-lad button:disabled { cursor: default; }
-.cup-lad.shut { opacity: .6; }
-.cup-lad.sel button { border: 2px solid var(--cup); box-shadow: 0 0 16px -6px var(--cup); }
-.cup-lad b { color: var(--cup); }
-.cup-lad.shut b { color: #ede6da; }
 .cup-beaten { display: flex; flex-wrap: wrap; gap: 8px; }
 
-/* the Cups door on Football (aurora) */
-.cup-door { --k: var(--cup, var(--fb-or)); }
-.cup-door-top { display: flex; align-items: center; gap: 12px; }
-.cup-door .cup-h { font: 700 22px/1.1 var(--fb-cond); }
-.cup-door-won { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .cup-trophy { flex: none; overflow: visible; }
 
 /* sheets: read a card, the deck, the wild card's choice */
@@ -231,3 +203,136 @@
 .cup-sheet .cup-h { font: 400 22px/1.15 var(--serif); }
 .cup-top { flex-wrap: wrap; }
 .cup-top > .cup-q { white-space: nowrap; }
+
+/* ---- on the kit (look pass, fork L7) --------------------------------------------------------------------------- */
+/* The head: one way back, the page's name on its slab, the "?". */
+.cup-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 6px; min-height: 48px; }
+.cup-head:not(:has(> .k-back)) { grid-template-columns: minmax(0, 1fr) auto; }
+.cup-head-t { margin: 0; min-width: 0; display: flex; }
+.cup-head-t .cup-slab { white-space: normal; overflow-wrap: anywhere; line-height: 1.25; }
+.cup-head-r { display: flex; align-items: center; gap: 4px; justify-self: end; }
+.cup-head .k-back { color: #ede6da; }
+.cup-under { color: var(--cq, #c4c1cf); font-size: 15px; line-height: 1.35; margin-top: -4px !important; }
+.cup-centre { text-align: center; }
+.cup-coins { font: 600 18px var(--fr); color: #f2c46d; white-space: nowrap; }
+
+/* The one glowing action: a slanted slab in the action colour, its glow falling below it. */
+.cup-btn.lit { background: var(--act); color: var(--act-ink); box-shadow: 0 12px 26px -10px var(--act); }
+.cup-btn.ghost.on { background: #e9a46a; border-color: #e9a46a; color: var(--board, #0a1712); }
+
+/* Filled panels on the board: a wash of the thing's own colour over the board's green, never navy. */
+.cup-world .k-panel, .cup-sheet .k-panel { border-radius: 10px; background: linear-gradient(180deg, color-mix(in srgb, var(--ink) 30%, #0a0d0c), color-mix(in srgb, var(--ink) 11%, #0a0d0c) 92%); font-family: var(--ab); }
+.cup-world .k-panel .k-lb { font-size: 16px; }
+.cup-world .k-panel .k-q { font-size: 15px; line-height: 1.35; }
+.cup-world .k-panel.cup-dim { opacity: .5; }
+.cup-world .k-panel.cup-shut { opacity: .7; filter: saturate(.75); }
+.cup-world .k-panel p { margin: 0; }
+.cup-opt-l { display: flex; align-items: center; gap: 12px; width: 100%; min-width: 0; }
+.cup-price { font: 600 22px/1 var(--fr); white-space: nowrap; color: var(--ink, #ede6da); }
+.cup-fill { --ink: #f2c46d; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; background: linear-gradient(180deg, color-mix(in srgb, var(--ink) 26%, #0b1a14), color-mix(in srgb, var(--ink) 9%, #0b1a14) 92%); }
+.cup-fill .cup-h { color: var(--ink); }
+.cup-world .k-sect { margin-top: 8px; }
+
+/* The cabinet and a cup's page: the trophy leads. */
+.cup-lead { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 0 4px; text-align: center; }
+.cup-lead .cup-trophy { animation: cup-land .7s cubic-bezier(.2,1.6,.4,1); }
+.cup-lead .cup-h1 { transform: none; text-align: center; }
+.cup-ladder li > .k-panel { width: 100%; min-height: 60px; }
+.cup-recs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.cup-recs .cup-n { text-align: left; color: var(--ink); }
+.cup-n { font: 600 28px/1 var(--fr); text-align: right; font-variant-numeric: tabular-nums; }
+.k-panel.cup-dr { flex-direction: row; align-items: center; gap: 10px; }
+.cup-dr .cup-n { min-width: 34px; }
+.cup-door-v { font: 600 18px/1.25 var(--serif); color: var(--k-cream); }
+
+/* The map's numbers as chips; the deck one opens the deck. */
+.cup-chiprow { display: flex; flex-wrap: wrap; gap: 8px; }
+.cup-stat { --ink: #ede6da; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 0; color: #ede6da; font: 15px var(--ab); background: color-mix(in srgb, var(--ink) 18%, #0b1a14); }
+.cup-stat b { font: 600 19px var(--fr); color: var(--ink); }
+.cup-stat.tap { min-height: 44px; cursor: pointer; border: 1px solid rgba(237,230,218,.45); }
+.cup-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 14px; color: #ede6da; margin: 0; }
+.cup-legend span { display: inline-flex; align-items: center; gap: 4px; }
+.cup-pickline { display: flex; align-items: center; gap: 12px; font-size: 17px; }
+
+/* The physio's room: three filled tiles across, as drawn. */
+.cup-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.cup-tile { all: unset; box-sizing: border-box; --ink: #ede6da; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-height: 160px; padding: 10px; border-radius: 10px; cursor: pointer; color: var(--ink);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ink) 28%, #0b1a14), color-mix(in srgb, var(--ink) 9%, #0b1a14) 92%); border: 1px solid color-mix(in srgb, var(--ink) 46%, transparent); font: 15px/1.3 var(--ab); }
+.cup-tile b { color: #ede6da; font-size: 15px; }
+.cup-tile .cup-q { color: color-mix(in srgb, var(--ink) 26%, #e4e0ee); font-size: 14px; }
+.cup-tile-v { margin-top: auto; font: 600 17px var(--fr); color: var(--ink); display: inline-flex; align-items: center; gap: 4px; }
+.cup-tile:disabled { opacity: .45; cursor: default; }
+.cup-tile:focus-visible { outline: 3px solid #e9a46a; outline-offset: 3px; }
+.cup-res { color: #c2b2ff; }
+.cup-sc.sm { font-size: 18px; justify-content: center; }
+.cup-lv { display: inline-block; vertical-align: middle; }
+
+/* ---- the match on one screen: no scroll at 340 × 700 ------------------------------------------------------------ */
+.cup-page:has(.cup-match) { padding: calc(4px + var(--safe-top)) 12px calc(var(--tab-h) + var(--safe-bottom) + 8px); }
+.cup-match { gap: 6px; min-height: 0; height: calc(100dvh - var(--tab-h) - var(--safe-bottom) - var(--safe-top) - 12px); }
+.cup-match .cup-btn { min-height: 48px; }
+.cup-spellrow { display: flex; align-items: center; gap: 10px; min-height: 22px; }
+.cup-spellrow .cup-mom { flex: 1; height: 22px; }
+.cup-spellrow .cup-mom i.u::after { bottom: 7px; max-height: 8px; } .cup-spellrow .cup-mom i.d::before { top: 7px; max-height: 8px; }
+.cup-match .cup-pwrap { flex: 1 1 0; min-height: 110px; display: flex; }
+.cup-match .cup-pt { width: 100%; height: 100%; }
+.cup-pulse { animation: cup-pulse .55s cubic-bezier(.2,1.5,.4,1); transform-box: fill-box; transform-origin: center; }
+@keyframes cup-pulse { from { transform: scale(1.22); opacity: .35; } }
+
+/* The state line: what just happened, then what to do; a tapped card opens here in full, with Play. */
+.cup-say { --ink: #ede6da; display: flex; align-items: center; gap: 10px; min-height: 66px; padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--ink) 9%, #0b1a14); font-size: 15px; line-height: 1.35; }
+.cup-say.open { background: linear-gradient(180deg, color-mix(in srgb, var(--ink) 30%, #0b1a14), color-mix(in srgb, var(--ink) 12%, #0b1a14)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ink) 60%, transparent); animation: cup-pop .25s ease-out; }
+.cup-say-txt { flex: 1; min-width: 0; margin: 0; }
+.cup-say-txt b { color: #f2c46d; }
+.cup-say-txt b.cup-did { color: #ede6da; display: inline; animation: cup-pop .3s ease-out; }
+.cup-say-nm { color: var(--ink) !important; font: 600 18px var(--fr); }
+.cup-no { color: #ff9270 !important; }
+.cup-play { flex: none; min-height: 48px; min-width: 76px; padding: 0 16px; border: 0; border-radius: 4px; transform: skew(-9deg); background: var(--act); color: var(--act-ink); font: 700 16px var(--ab); cursor: pointer; box-shadow: 0 12px 24px -10px var(--act); }
+.cup-play:disabled { opacity: .45; cursor: default; box-shadow: none; }
+.cup-st { min-height: 22px; flex-wrap: wrap; row-gap: 2px; }
+.cup-inplay { padding: 1px 8px; border-radius: 99px; border: 1.5px solid #d9e8f3; color: #d9e8f3; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40%; }
+
+/* The hand: every card at once, five across. More than five wraps to a second row; nothing scrolls sideways. */
+.cup-hand5 { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; padding-top: 6px; }
+.cup-hc5 { all: unset; box-sizing: border-box; display: block; min-width: 0; min-height: 44px; cursor: pointer; touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.cup-hc5:focus-visible { outline: 3px solid #e9a46a; outline-offset: 2px; border-radius: 10px; }
+.cup-hand-empty { min-height: 104px; display: flex; align-items: center; }
+.cup-cc { --ink: #ede6da; position: relative; display: flex; flex-direction: column; align-items: center; height: 104px; border: 2px solid var(--ink); border-radius: 10px; background: #0d1d17; color: var(--ink); overflow: hidden; padding: 0 2px 5px; transition: transform .16s ease-out, box-shadow .16s; }
+.cup-cc.finish { clip-path: polygon(0 0, 74% 0, 100% 16%, 100% 100%, 0 100%); border-radius: 10px 0 10px 10px; }
+.cup-cc.cover { border-radius: 10px 10px 22px 22px; }
+.cup-cc.system { clip-path: polygon(16% 0, 84% 0, 100% 12%, 100% 100%, 0 100%, 0 12%); border-radius: 0 0 10px 10px; }
+.cup-cc.fuel { border-radius: 24px 24px 10px 10px; }
+.cup-cc.great { box-shadow: 0 0 16px -3px var(--ink), inset 0 0 14px -7px var(--ink); }
+.cup-cc.off { opacity: .42; }
+.cup-cc.sel { transform: translateY(-6px); border-width: 3px; box-shadow: 0 0 0 2px #0a1712, 0 0 0 4px #ede6da, 0 10px 20px -6px var(--ink); clip-path: none; }
+.drop .cup-cc { border-style: dashed; }
+.cup-cc-cost { position: absolute; left: 3px; top: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: #0b0d1c; font: 700 15px/22px var(--fr); text-align: center; z-index: 2; }
+.cup-cc-lv { position: absolute; right: 5px; top: 6px; line-height: 0; }
+.cup-cc-art { flex: 1; min-height: 0; width: 100%; padding: 24px 0 2px; display: grid; place-items: center; }
+.cup-cc-art svg { width: 100%; height: 100%; overflow: visible; }
+.cup-cc-val { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+.cup-cc-val b { font: 600 20px/1 var(--fr); }
+.cup-cc-val small { font: 700 14px/1.1 var(--ab); color: color-mix(in srgb, var(--ink) 55%, #fff); }
+.cup-match .cup-acts .cup-recy { flex: 0 1 40%; }
+.cup-match .cup-acts .cup-btn { padding: 0 10px; }
+
+/* Every part of the match keeps its height; only the pitch gives way. */
+.cup-match > * { flex-shrink: 0; }
+.cup-match > .cup-pwrap { flex-shrink: 1; min-height: 150px; }
+.cup-spellrow .cup-mom { min-width: 90px; }
+.cup-spellrow .cup-inplay { max-width: 42%; min-height: 26px; display: inline-flex; align-items: center; }
+/* Six or more cards: one row, overlapping like a held hand. Each card shows its cost, ink and drawing; a tap opens it. */
+.cup-hand5.fan { grid-template-columns: repeat(calc(var(--n) - 1), minmax(0, 1fr)) 60px; gap: 0; }
+.cup-hand5.fan .cup-hc5 { position: relative; }
+.cup-hand5.fan .cup-hc5 .cup-cc { width: 60px; box-shadow: -4px 0 8px -2px rgba(0,0,0,.55); }
+.cup-hand5.fan .cup-hc5 .cup-cc.sel { z-index: 3; box-shadow: 0 0 0 2px #0a1712, 0 0 0 4px #ede6da, 0 10px 20px -6px var(--ink); }
+.cup-hand5.fan .cup-cc-lv { right: auto; left: 6px; top: 30px; }
+.cup-hand5.fan .cup-cc-val { align-self: flex-start; align-items: flex-start; padding-left: 4px; }
+/* A card you can't play yet is darkened, not see-through, so a card behind it never shows through. */
+.cup-cc.off { opacity: 1; filter: saturate(.4) brightness(.62); }
+.cup-rows li:last-child { border-bottom: 0; }
+
+/* A move card's foot: the level marks, then the value; a long label drops under the marks rather than off the card. */
+.cup-cd-ft { flex-wrap: wrap; row-gap: 1px; }
+.cup-cd-val { margin-left: auto; }
+.cup-ft .cup-rows li { min-height: 34px; padding: 4px 0; }

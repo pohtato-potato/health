@@ -1,364 +1,129 @@
 ---
 name: Health
-description: A one-person tracker for food, steps, sleep, training and body, lit like a walk at dusk.
+description: A one-person tracker for food, steps, sleep, training and body, with a football club that plays on the day's habits. Lit like a walk at dusk.
 colors:
-  ink: "#0e1020"
-  deep: "#080a17"
-  tabbar: "#0a0c19"
-  surface: "#171b36"
-  raised: "#1e2346"
-  hairline: "#232849"
-  divider: "#1d2140"
-  track: "#262243"
-  btn-border: "#2a2f55"
-  text: "#ede6da"
-  quiet: "#aeabbd"
-  dim: "#8e8ba6"
-  faint: "#6b6890"
-  voice: "#e8dfd1"
-  apricot: "#e98a5b"
-  lavender: "#b7a6f0"
-  sage: "#8fc9b0"
-  blue: "#8fb6c9"
+  ground: "#0e1020"
+  cream: "#ede6da"
+  quiet: "#c4c1cf"
+  kcal: "#e98a5b"
+  protein: "#c2b2ff"
+  steps: "#8fdcb6"
+  sleep: "#93c3dc"
   gold: "#f2c46d"
-  rose: "#e79a9a"
-  pearl: "#c9dcea"
-  gold-bg: "#221d14"
-  gold-border: "#6b5a33"
-  sage-bg: "#13201d"
-  sage-border: "#2f4a3f"
-  lav-bg: "#1a1730"
-  lav-border: "#3a3350"
-  paper: "#eee8dc"
-  paper-ink: "#2a2620"
-  danger: "#e38a7c"
+  pearl: "#d9e8f3"
+  coral: "#ff9a76"
+  action: "#ff7a1a"
+  axis-pace: "#8fdcb6"
+  axis-power: "#ff9a76"
+  axis-fuel: "#c2b2ff"
+  axis-rest: "#93c3dc"
+  axis-routine: "#f4aedb"
+  axis-shape: "#d9e8f3"
 typography:
-  display:
-    fontFamily: "Fraunces Variable, Georgia, serif"
-    fontSize: "40px"
-    fontWeight: 300
-    lineHeight: 1
-    fontFeature: "lnum"
-  headline:
-    fontFamily: "Fraunces Variable, Georgia, serif"
-    fontSize: "30px"
-    fontWeight: 400
-    lineHeight: 1.1
-  title:
-    fontFamily: "Fraunces Variable, Georgia, serif"
-    fontSize: "26px"
-    fontWeight: 400
-    lineHeight: 1.15
-  voice:
-    fontFamily: "Fraunces Variable, Georgia, serif"
-    fontSize: "17px"
-    fontWeight: 300
-    lineHeight: 1.4
-  body:
-    fontFamily: "DM Sans Variable, system-ui, sans-serif"
-    fontSize: "15px"
-    fontWeight: 400
-    lineHeight: 1.4
-  label:
-    fontFamily: "DM Sans Variable, system-ui, sans-serif"
-    fontSize: "12px"
-    fontWeight: 400
-    letterSpacing: "0.14em"
-  mono:
-    fontFamily: "DM Mono, ui-monospace, monospace"
-    fontSize: "12px"
-    fontWeight: 400
-    fontFeature: "tnum"
+  numbers-and-titles: "Fraunces Variable, Georgia, serif"
+  hero-number: "Fraunces 600, 44 to 72 px"
+  title: "Fraunces 400, 22 to 30 px"
+  everything-else: "Atkinson Hyperlegible Next, system-ui, sans-serif"
+  smallest-text: "14px"
 rounded:
-  hair: "3px"
-  box: "8px"
-  note: "14px"
-  tile: "16px"
-  card-sm: "18px"
-  list: "20px"
-  card: "22px"
-  sheet: "28px"
-  pill: "999px"
-spacing:
-  xxs: "2px"
-  xs: "4px"
-  sm: "8px"
-  md: "12px"
-  lg: "16px"
-  card-x: "20px"
-  page-x: "22px"
-components:
-  button-primary:
-    backgroundColor: "{colors.text}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.pill}"
-    padding: "0 20px"
-    height: "48px"
-  button-ghost:
-    backgroundColor: "transparent"
-    textColor: "{colors.text}"
-    rounded: "{rounded.pill}"
-    padding: "0 20px"
-    height: "48px"
-  button-danger:
-    backgroundColor: "transparent"
-    textColor: "{colors.danger}"
-    rounded: "{rounded.pill}"
-    padding: "0 20px"
-    height: "48px"
-  chip:
-    backgroundColor: "transparent"
-    textColor: "{colors.text}"
-    rounded: "{rounded.pill}"
-    padding: "0 16px"
-    height: "44px"
-  chip-on:
-    backgroundColor: "{colors.text}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.pill}"
-    padding: "0 16px"
-    height: "44px"
-  card:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.text}"
-    rounded: "{rounded.card}"
-    padding: "18px 20px"
-  card-gold:
-    backgroundColor: "{colors.gold-bg}"
-    textColor: "{colors.text}"
-    rounded: "{rounded.card}"
-    padding: "18px 20px"
-  field:
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.text}"
-    rounded: "{rounded.tile}"
-    padding: "0 16px"
-    height: "48px"
-  list:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.text}"
-    rounded: "{rounded.list}"
-    padding: "0 18px"
-  tabbar:
-    backgroundColor: "{colors.tabbar}"
-    textColor: "{colors.dim}"
-    height: "76px"
-  sheet:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.text}"
-    rounded: "{rounded.sheet}"
-    padding: "4px 20px 24px"
-  toast:
-    backgroundColor: "{colors.raised}"
-    textColor: "{colors.text}"
-    rounded: "{rounded.list}"
-    padding: "12px 14px 12px 16px"
+  panel: "20px"
+  door: "18px"
+  pitch: "22px"
+  action: "999px"
 ---
 
-# Design System: Health
+# Health: the rule book
 
-## Overview
+This is the rule book from the look pass of 13 and 14 November 2026. It replaces the old one. It was written from five boards of drawings the owner approved, and it describes what the app should look like, not what it used to look like. When a page and this file disagree, the page is out of date.
 
-**Creative North Star: "Dusk Strata"**
+The shared parts live in `src/styles/kit.css` and `src/ui/kit/Kit.tsx`. Use them before writing anything new.
 
-The app is lit by where you are on the walk and the hour. Everything sits on a deep indigo night ground built from three tonal layers (ink, surface, raised) separated by one-pixel hairlines, not by shadow. On that ground, colour appears only where it carries meaning: a small set of soft metric inks for the things being tracked, gold kept for records and moments, and a faint tint on whichever tab is open. The layout is one calm phone column, dense with numbers but never loud.
+## Who it is for
 
-Numbers and titles speak in a light, optical-size serif (Fraunces); everything you operate speaks in a quiet sans (DM Sans); clocks, wheels and receipts speak in a mono (DM Mono). The serif is the voice of the data, which is why counts are set at weight 300 with lining figures and line-height 1.
+One person, on a Samsung S23 in dark mode, with low vision. The phone gives an installed app about 745 px of height after the status bar. Every rule below serves legibility first.
 
-The world has a second register for celebration: full-screen moments, story cards, the monthly film, a paper receipt, postcards from the walk and a split-flap departures board. These step outside the card grammar on purpose, but they draw from the same inks and the same serif. Theme days (festivals, sky, nerdy and personal dates) repaint the ground and accents for one day.
+## The twelve rules
 
-**Key Characteristics:**
-- Deep indigo night ground with tonal layering and hairline borders; shadows only on things that float.
-- Fraunces for numbers and titles, DM Sans for UI, DM Mono for clocks and printed matter.
-- Metric inks with fixed meaning; gold reserved for records and moments.
-- Every tappable control is a full pill or a softly rounded tile, at least 44px tall.
-- One phone column, 480px wide at most, with safe-area padding top and bottom.
-- Motion that settles (expo-out). There are no reduced-motion or battery-saver variants, at the owner's request (25 Oct 2026).
+### 1. One thing leads each page
 
-## Colors
+A page opens on one thing: a picture, or one big number where the number is the answer (momentum, kilometres, calories, a rating, a league place). The desk leads with its dice, the tree with the tree, Club with the Kaai, Train with the week, Walk with its scene. Then come the panels, then the one action.
 
-Soft, dusty inks on deep indigo: nothing saturated, nothing pure white, every accent tied to a meaning.
+In code: a lead picture or `Hero`, then `Panel`s and `Doors`, then one `Action`. Wrap the page in `k-page`.
 
-### Primary
-- **Dusk Gold** (gold): records, personal bests, moments, the seasonal strip, the dial needle and the focus ring of custom instruments. Its washed pair, **Ember Cellar** (gold-bg) with **Old Brass** (gold-border), forms gold cards, cues, notices and the drop target in Close the day.
+### 2. Filled panels in each thing's own colour
 
-### Secondary
-- **Apricot Ember** (apricot): energy and calories; also the Today tab tint.
-- **Evening Lavender** (lavender): protein; also the You tab tint and the "secret found" family. Washed pair: lav-bg with lav-border.
-- **Pale Sage** (sage): steps and things going well (switches on, good form, positive deltas); also the Walk tab tint. Washed pair: sage-bg with sage-border.
-- **Mist Blue** (blue): sleep and rest (the rest pill fill); also the system focus outline.
+Panels are filled with a soft wash of their thing's colour (`Panel ink=…`). They replace outlined boxes. A panel you can tap has a hairline edge and a small drawn arrow; a panel that only tells you something has neither. Keep the edge and arrow quiet: the owner marked them "maybe".
 
-### Tertiary
-- **Dusty Rose** (rose): loss, strain and removal (remove links, negative deltas, sore regions on the body map, sloppy form).
-- **Pearl** (pearl): check-ins, photos and the walk's map outline; a cool light accent in moment confetti.
-- **Paper** (paper) with **Sepia Ink** (paper-ink): the only light surfaces in the app, used for the weekly receipt and walk postcards.
-- **Brick** (danger): the destructive button's text, on a dark rose border.
+### 3. One glowing action a page
 
-### Neutral
-- **Night Ink** (ink): page ground, field wells, the segmented-control trough.
-- **Deep Night** (deep): full-bleed overlays and the scanner well; **Tab Night** (tabbar) carries the tab bar.
-- **Indigo Surface** (surface): cards, lists, sheets.
-- **Raised Indigo** (raised): tiles in the log sheet, toasts, the rest pill, the resume pill.
-- **Hairline** (hairline) and **Divider** (divider): one-pixel card edges and list separators.
-- **Track** (track): empty bar tracks.
-- **Button Edge** (btn-border): ghost buttons, chips, round buttons, the grabber.
-- **Moon Text** (text): primary text, and the fill of the primary button and selected chips.
-- **Quiet** (quiet), **Dim** (dim), **Faint** (faint): secondary text, tertiary text, and empty checkbox borders or locked states.
-- **Voice** (voice): the italic serif lines that carry the app's personality.
+Only the one thing to do next glows (`Action`). Its glow falls below it, like a real light. Other buttons are quiet: an outline, or a door. If a page has nothing to do next, it has no glowing action.
 
-### Named Rules
-**The Fixed Ink Rule.** Apricot is energy, lavender is protein, sage is steps, blue is sleep and rest, rose is strain or removal, gold is a record. A metric keeps its ink on every screen and every theme; the metric tokens (kcal, protein, steps, sleep in tokens.css) are never overridden by a theme or by night mode, so bind metric colour to them.
+### 4. Rules live behind a "?"
 
-**The Earned Gold Rule.** Gold marks something the owner did: a record, a moment, a milestone, a seasonal day. It is never decoration on an ordinary card.
+Explanations do not sit on the page as paragraphs. They sit behind a "?" (`HelpButton`) that opens a "how this works" sheet: four short steps, each with its own drawn mark, and the key numbers as chips. A page with nothing on it yet shows one picture, one line and one thing to do (`Empty`), not a block of rules.
 
+### 5. Colour is vivid
 
-## Typography
+- Metric colours keep one meaning everywhere: calories apricot, protein lavender, steps green, sleep blue.
+- The six Football axes keep their inks (Pace green, Power coral, Fuel lavender, Rest blue, Routine pink, Shape pearl), from `src/ui/inks.ts`.
+- Doors take the light of the page they sit on (`--w1`, `--w2`); their icon may carry an ink.
+- Gold may be used freely.
+- The orange glow is kept away from the purple, in opposite corners, so the two never mix into brown.
 
-**Display Font:** Fraunces Variable (with Georgia, serif), optical sizing on
-**Body Font:** DM Sans Variable (with system-ui, sans-serif)
-**Label/Mono Font:** DM Mono (with ui-monospace, monospace), weights 400 and 500
+### 6. Type
 
-**Character:** A soft, light old-style serif for the numbers and names that matter, against a plain geometric sans that stays out of the way. The mono is the voice of machines and printed things.
+- Fraunces for numbers and titles; Atkinson Hyperlegible Next for everything else.
+- Hero numbers at weight 600.
+- A small line sits under its title, never above it (`Title under=…`).
+- Nothing smaller than 14 px. Body text is 15 px.
 
-### Hierarchy
-- **Display** (Fraunces 300, 40px and up, line-height 1, lining figures): hero numbers on Today and track screens, dial values. Moments go to 36 to 44px at 400; the monthly film and rest screen go larger (up to 96px).
-- **Headline** (Fraunces 400, 30px, 1.1): screen titles.
-- **Title** (Fraunces 400, 26px, 1.15; a smaller 20 to 22px step for card and settings-part titles): section and card titles, the walk band's place name (28px).
-- **Voice** (Fraunces italic 300, 17px, 1.4, voice colour): the personality line, one per surface at most.
-- **Body** (DM Sans 400, 15px, 1.4; 1.5 for longer prose): everything else. Steps of 11 to 17px are used for secondary lines, with 13 and 14px the most common small sizes.
-- **Label** (DM Sans 400, 12px, 0.14em tracking, uppercase, quiet): names the data or group directly beneath it: list group headers, field names, card titles like "Stats" or a meal name. An 11px small step exists.
-- **Mono** (DM Mono 400, 12 to 18px, tabular figures): wheel pickers, the receipt, boarding passes, the plan editor's order numbers, the rep ladder.
+### 7. Icons are drawn
 
-### Named Rules
-**The Serif Counts Rule.** Any number the owner reads as a result is set in Fraunces at weight 300 with lining figures. Numbers being entered or ticking by (fields, wheels, timers in the rest pill) use tabular figures.
+Every icon is drawn in one line weight (`Icon`, stroke 1.6 on a 24 px grid). Never a typed character: no typed arrows, ticks, stars or question marks as icons.
 
-**The Label Names Data Rule.** The tracked uppercase label sits on top of the thing it names. It never stands above a serif title as decoration.
+### 8. Finding your way in Football
 
-## Layout
+Four words across the top: Tonight, Club, League, Story, underlined where you are (`FootballNav`). Everything else is a door on that section's page, showing one live value. Inside a page there is one way back and the page's name (`PageHead`, or `FootballHome inner=…`). There is no second row of pills.
 
-A single phone column: the app is at most 480px wide and centred. Pages pad 22px at the sides, 18px plus the top safe area above, and clear the 76px tab bar plus 36px and the bottom safe area below. Page sections stack with a 16px gap; inside cards the gap is 10px (6px on small cards). Gaps step through 2, 4, 6, 8, 10, 12, 14 and 20px. Two- and three-column grids use a 10px gap. There are no breakpoints: wider screens get the same column. Fixed layers (tab bar, sheets, toasts, the resume pill, save bars) are centred and capped at the same 480px.
+### 9. The rings
 
-## Elevation & Depth
+The app's own rings, made brighter. Each band glows in its colour; a closed ring burns at full strength with a bright edge; the count sits in the heading, not the middle; when a goal is met its number turns radiant with a soft glow. All four closed turns them gold. The existing ring moments stay.
 
-Depth is tonal. Resting surfaces are flat: ink, then surface, then raised, each edged by a one-pixel hairline. Shadows appear only on things that float above the page: toasts, the resume pill, the rest pill, the plus button, the paper receipt and postcards, and full-screen overlays. Scrims darken the page to 72% before a sheet rises.
+### 10. Themes
 
-### Shadow Vocabulary
-- **Float** (`box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45)`): toasts and the resume pill (10px offset).
-- **Paper** (`box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45)`): the receipt and postcards.
-- **Dock** (`box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.8)`): the rest pill.
-- **Plus** (`box-shadow: 0 8px 18px -6px rgba(0, 0, 0, 0.7)`): the centre plus button in the tab bar.
-- **Needle glow** (`box-shadow: 0 2px 8px -2px rgba(242, 196, 109, 0.6)`): the dial's gold needle.
+A theme changes four things everywhere: the light behind each page, the action colour (`--act`), the ring design, and Walk's sky. Metric numbers keep their own colours on every theme.
 
-### Named Rules
-**The Flat Ground Rule.** Cards, lists, tiles and fields never carry a shadow. If something needs to read as above the page, it has to actually float.
+### 11. Walk's scenes
 
-## Shapes
+Drawn in layered dusk: flat layers of land, the lit road, the milestone and the walker, at dawn, day, dusk and night.
 
-Soft and round. Controls are full pills whose radius is half their height (48px buttons at 24px, 44px chips at 22px, 40px small buttons at 20px, 36px small chips at 18px, the 56px rest pill at 28px). Anything drawn smaller than 44px gets an invisible tap area that reaches 44px, so the look stays and the aim is easy. Containers step down as they nest: cards 22px, lists 20px, small cards and wheels 18px, tiles, fields and list rows 16px, notices 14px, checkboxes 8 to 9px, bars 3 to 4px. Sheets round only their top corners (28px). The walk band clips its scene with a 26px bottom curve, or 24px all round when it sits inside a page. Paper objects are nearly square (4 to 6px), and the receipt tears with a zigzag mask; the postcard tilts by -0.6 degrees. Status dots are circles.
+In code it is one system, `Layered` in `src/walk/art/Layered.tsx`, with its data in `land.ts`: the region gives the three layers' outlines, its own colours and what grows on it; the hour gives the sky, the sun or moon and how far the land is pulled toward that light; the worn theme tints the sky. Colours mix in OKLCH (`oklch.ts`) and steer round dark orange-yellow, so nothing turns brown or olive. The road is gold, green by night; the walker is cream by night. Motion is transform and opacity only. `WalkScene` draws it for where the walk is; `#/proto/scenes` (development) shows every region at every hour.
 
-## Components
+### 12. Checks before anything is called done
 
-### Buttons
-- **Shape:** full pill (24px on 48px height; 26px on the 52px large size; 20px on the 40px small size, whose tap area reaches 44px).
-- **Primary:** moon-text fill with night-ink label, 15px weight 600, 20px side padding.
-- **Ghost:** transparent with a button-edge border, text colour, weight 400.
-- **Danger:** transparent, brick text on a dark rose border, weight 400.
-- **Press:** scales to 0.98. Disabled drops to 45% opacity.
-- **Round:** 48px (or 40px) circle with a button-edge border; the selected state fills with moon text.
+- 360 × 745 px and 340 × 700 px, dark mode, with realistic data.
+- Nothing fixed to the bottom may cover content.
+- Every target at least 44 px.
+- No sideways scroll.
+- Each screen compared side by side with its approved drawing, and every difference listed.
 
-### Chips
-- **Style:** 44px pill (36px small, with a 44px tap area), button-edge border, 14px text.
-- **State:** selected fills with moon text and night-ink label at weight 600. Tool chips mark "on" with a blue border and soft blue text. Form chips take their form-scale ink when selected.
+## The parts
 
-### Cards / Containers
-- **Corner Style:** 22px (18px small).
-- **Background:** surface; gold cards use the gold wash and brass border.
-- **Shadow Strategy:** none (see Elevation).
-- **Border:** one-pixel hairline; tappable cards shift to the button edge on press.
-- **Internal Padding:** 18px by 20px (14px small).
+| Part | Where | Use |
+|---|---|---|
+| Page light | `.k-light.you`, `.k-light.walk`, Football's aurora | the light behind a page; sets `--w1` and `--w2` for its doors |
+| `Hero` | Kit.tsx | the big number, Fraunces 600, in its own ink |
+| `Title` | Kit.tsx | a Fraunces title with its small line under it |
+| `Sect` | Kit.tsx | a small-capitals section label with a hairline to the edge |
+| `Panel` | Kit.tsx | a filled panel; with `onClick` it gets the edge and arrow |
+| `Door`, `Doors` | Kit.tsx | a way into another page: mark, one live value, name; three or two across |
+| `Action` | Kit.tsx | the one glowing action; `quiet` for a second, outlined one |
+| `Chip` | Kit.tsx | a key number |
+| `PageHead`, `BackLink` | Kit.tsx | one way back, the page's name, maybe a "?" |
+| `HelpButton`, `HowSheet` | Kit.tsx | the "?" and its four-step sheet |
+| `Empty` | Kit.tsx | a page with nothing on it yet |
+| `FootballNav`, `FootballHome` | screens/football/FootballHome.tsx | the four words; `inner` gives a page its header |
 
-### Inputs / Fields
-- **Style:** 48px well in night ink, hairline border, 16px radius, 17px text with tabular figures. Search fields are pills with a leading icon.
-- **Focus:** border brightens to quiet; small numeric fields brighten to moon text.
-- **Error / Disabled:** form checks appear as an inline notice (gold wash, or a dark rose wash for warnings), never a pop-up.
-- **Switch:** 48 by 28 track, sage when on. **Checkbox:** 26 to 28px rounded box; the tick draws itself in.
+## What the app never does
 
-### Navigation
-- **Tab bar:** fixed, 76px plus safe area, five columns with a centre plus button (52px moon-text circle). Labels are 11px in dim; the active tab takes its own tint (Today apricot, Train gold, Walk sage, You lavender) with a 4px dot beneath.
-- **Back link:** quiet text with a chevron, 44px tall.
-
-### Sheets
-Bottom sheets rise from a 72% scrim, 28px top corners, a 40 by 4px grabber, and a scrolling body with 14px gaps. Tall sheets fill the screen less 56px.
-- **A solid tint of the land:** every sheet, on every tab, is the region's colour mixed into the night (34% of `--region-a` into `#0c0e1d`, set on the root by `RegionRoot` from where the walk is). Never see-through: the magnifier needs a steady ground.
-- **Glass inside:** cards, tiles, fields, segmented controls, food chips and the search are the Walk glass (`#0c0e1d` at 50%) with the 18% text hairline; row rules use the same edge, bar tracks and control edges the text's own colour. All of it lives in `src/styles/region.css`, by redefining the surface tokens inside `.sheet`.
-- **The + sheet** follows Today's order (`LogSheetLayout`): Log anything, "Your usual {meal}" chips (one tap adds the food at its usual portion, with an Undo toast, through the same `useAddUsual` as Today), the tiles, then More.
-
-### Toasts
-Raised pill-cornered panels (20px) at the top of the screen with the float shadow, an optional action, and gold, sage or lavender washes for celebratory kinds.
-
-### Wheel and Dial
-The app's pickers. The wheel is a snapping mono column with a lens of two button-edge rules; the selected row grows to 22px in moon text. The dial is a horizontal tick ruler with a gold needle under a 40px serif value. Both fade their edges with a mask and show a gold focus ring.
-
-### Rest Pill
-A 56px raised pill docked at the bottom during a session: a blue wash fills left to right as the rest runs, the time sits in 24px, and an end button sits inside.
-
-### Walk Band
-The older side-on scene (`WalkScene`): the current stop layered far to near in the region's four inks and lit by the part of the day. It is still used on the road pages. The Walk tab uses the painted vista below; Today and the arrivals use the place scene (`src/walk/art/scene.tsx`).
-
-### Walk Tab
-- **The scene:** the painted vista (`src/walk/art/vista.tsx`): one road running to the horizon with the walker at road scale and today's piece of road in sage. It is drawn for 9 regions × 4 hours, with the moon at its phase and meteor showers. It runs edge to edge at 360:216 and fades into the page.
-- **The milestone:** a cream stone on the road's left shoulder, the next stop in Hindi on its cap and the whole km left below.
-- **Colour:** every Walk page sits on the aurora tinted by its region (`auroraFor` in `src/walk/page.ts`: plum over the ravines, sea blue on the coast, green in the ghats). Route pages take the route's ink (`auroraForInk`). Never brown, never gold.
-- **Title:** the stretch's storybook name in serif (a button to its long page, underlined by a soft hairline), with the plain route and the day of the stretch under it. With no stretch: "Near X" within 20 km, else "Between X and Y".
-- **Glass surfaces:** cards, doors and the place and status pill are the Walk glass (`#0c0e1d` at 50%) with an 18% text hairline. The one primary action ("Choose a walk") is a cream pill.
-- **Status lines:** up to three short lines (an arrival, a small stop, a person met, a rest day, the sky), then tomorrow's line. The block keeps three lines' height so the page never jumps.
-
-### Today
-- **Varied blocks, not a stack of cards:** only the moment card is a card. The walk, the line, the rings and Next up sit straight on the page, each in its own form.
-- **Walk on Today:** the place itself, drawn as the arrival's welcome draws it (`Scene`: the fort at Gwalior, the Taj at Agra), every day and lit for the hour. The nearer of the place behind and the place ahead, preferring one that has its drawing. The caption sits under the picture, in the fade: date, place and status (14px), the Walk tab's title (28px serif), and one walk line (an arrival, a small stop, a rest day, the sky, tomorrow, else the milestone's km). On an arrival day the city's passport stamp sits tilted on the sky until midnight. Tapping opens the Walk tab.
-- **Colour:** Today sits on the aurora tinted by the walk's region, and its surfaces are the Walk glass with a hairline.
-- **The day's glow:** how the day went fills half the field (the `b2` blob at 0.8) with the session's own deep colour, its light low in the field: green (`#1a8f6a`, light `#bfe8d4`) after a session in range, gold (`#8a6420`, light `#f6cf72`) after a record night or on a perfect day, none on an ordinary day. `dayGlow` in `src/domain/dayGlow.ts` decides (perfect, then record, then in range); Today and the Train tab both use it. A quarter dim and a brighter quiet keep text on the glow at AA. The whole screen changes colour only in a live session (`st-*`) and in full-screen moments.
-
-- **Ring moments:** the rings draw in from empty on opening and again on a tap, after one spin together. A ring's closing flushes its ink behind the page's words, with a ripple, sparks and "*Ring* closed"; a perfect day spins them, turns each gold in turn, pours a bloom and draws a chain of Warli stars. Each plays once a day; rest days don't celebrate. Afterwards the page returns to the region's ground and the day's light.
-- **The morning reveal (`/dawn`):** tap through last night, each visitor, its growth card, the walk, yesterday's rings and the day ahead. Skip is always there. Stored once by date, so a reload never changes who came. A walk arrival waits until it's over.
-- **Creatures:** Warli star figures on a 240 × 200 field (`src/domain/creatureRoster.ts`), parts on their own hinges so a tap acts through limbs. Stages always show as dots and a word. Nothing religious-coded and no astrology. Unfound creatures never appear, not even as outlines.
-- **A creature's theme day:** its stars and its light on the region's ground, never a repainted page.
-
-### Region Frame
-The pages Today opens (Food, Close the day, Readiness, the weekly recap, Check-in) opt in with `RegionFrame` (`src/ui/live/RegionFrame.tsx`): the region's aurora as a fixed layer behind the page, the page's own layout unchanged on top. Inside, cards, panels, lists and fields are the Walk glass and every rule the glass edge. On the land, quiet and dim text are a step lighter (`#c4c1cf`, `#aeabbd`) to keep 4.5:1 on the plum of the ravines, the brightest ground. The weekly receipt stays paper.
-- **Banner slot:** one banner at a time, a line between two hairlines with a 44px action and a 44px dismiss that lasts the log day.
-- **The line:** the day's headline in 26px serif, the time trailing it in 14px; the voice in italic only at moments, gold on a perfect day.
-- **Rings:** the drawing, and beside it only the numbers (34px serif in each ring's ink) with a 14px unit. The target and its action appear on tap.
-- **Moment card:** the one lit card (22px radius, soft offset shadow); gold border and button on a perfect day.
-- **Next up strip:** between two hairlines like a departures row; a record night turns it into the gold records strip.
-- **Logging below the fold:** usual-food chips, Log anything, meal tiles (kcal on one line, protein on its own), press-and-hold checklist chips.
-- **Drawer handle:** a pill above the tab bar showing readiness, protein and Close the day; it opens the drawer.
-
-### Moments and Stories
-Full-screen celebrations on deep night with a centred serif title (36 to 44px), a quiet detail line, one voice line, and a large primary button. Backdrops (bloom, rays, bursts, rings, confetti) use the metric inks and gold. Stories and the monthly film use progress bars of 3px segments and tap zones to advance.
-
-### Paper Objects
-The weekly receipt (mono on paper with a torn edge) and walk postcards (tilted paper cards) are the only light surfaces, each with the paper shadow.
-
-### Named Rules
-**The Pill Rule.** Every tappable control is a pill or a rounded tile, and nothing tappable is shorter than 44px. A control drawn smaller grows its tap area with an invisible centred `::after` of at least 44 by 44px (`.tap44` for one-off buttons; `.chip.sm`, `.tool`, `.seg button` and `.grip` have it built in).
-
-**The Settle Rule.** Things arrive and settle: sheets rise in 0.24s on cubic-bezier(0.2, 0.8, 0.2, 1), toasts drop in 0.25s on the same curve, moments and stories ease in on cubic-bezier(0.16, 1, 0.3, 1), scrims fade in 0.18s.
-
-## Do's and Don'ts
-
-### Do:
-- **Do** separate layers with tone and a one-pixel hairline: ink ground, surface cards, raised tiles.
-- **Do** bind a metric's colour to its metric token so theme days and night mode cannot change its meaning.
-- **Do** set result numbers in Fraunces 300 with lining figures, and entered or running numbers with tabular figures.
-- **Do** keep every tappable target at least 44px tall and shape it as a pill or rounded tile.
-- **Do** use the blue 2px outline (offset 2px) as the system focus ring, and the gold ring on custom instruments (wheel, dial, check, body map).
-- **Do** keep text at WCAG AA: moon text, quiet and dim pass on every surface; faint is for borders, locked states and large text only.
-
-### Don't:
-- **Don't** put shadows on resting cards, lists, tiles or fields.
-- **Don't** use gold for anything the owner did not earn.
-- **Don't** use pure white text or light surfaces outside the paper objects (receipt, postcards).
-- **Don't** reuse a metric ink for a different meaning (for example, sage for something other than steps or going well).
-- **Don't** place a tracked uppercase label above a headline as an eyebrow; labels name the data beneath them.
-- **Don't** draw icons with text glyphs or emoji; icons are inline SVG from the icon set.
+No notifications, streaks, shaming, betting or alcohol mechanics, or religious framing. No battery-saver or reduced-motion mode. Nothing rewards eating less. No game trigger reads the time a log was made. The public repo holds no personal data: no names, body numbers, plans, loads or medical details.
