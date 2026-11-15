@@ -1,13 +1,15 @@
 // Look pass L4: Story's own page as drawn (kit-visual-3 "Story"): the season track as the lead, the legend rival in
 // a filled panel, and doors to everything else. The rules sit behind the "?" (storyHow).
 import { clubCrest } from '../../../football/art/crest';
-import { BOUNTIES_PICKED, TRACK } from '../../../football/content/season';
+import { BOUNTIES_PICKED } from '../../../football/content/season';
+import type { TrackStep } from '../../../football/content/types';
+import { worldOf } from '../../../football/pyramid/shape';
 import { clubById } from '../../../football/data/load';
 import { howText, MAX_EARNED, rivalList, twistOf, type Rival } from '../../../football/rivals';
 import { upsets } from '../../../football/seasonStory';
 import { headToHead } from '../../../football/store/league';
 import type { StoredMatch } from '../../../football/store/tables';
-import { bountiesPicked } from '../../../football/tree/season';
+import { bountiesPicked, trackOf } from '../../../football/tree/season';
 import { go } from '../../../router';
 import { Door, Doors, Panel } from '../../../ui/kit/Kit';
 import { useModel } from '../tree/model';
@@ -16,7 +18,7 @@ import type { Story } from './StoryHome';
 
 const GOLD = '#f2c46d', CORAL = '#ff9a76';
 /** A big reward on the track: anything but the small album-card marks. */
-export const bigStep = (s: (typeof TRACK)[number]) => !!s.reward && s.reward.kind !== 'album-card';
+export const bigStep = (s: TrackStep) => !!s.reward && s.reward.kind !== 'album-card';
 
 /** The legend's name, for the "?" sheet. */
 export const legendName = (rivals: Rival[]) => clubById(rivalList(rivals)[0].clubId).name;
@@ -43,7 +45,7 @@ export function RivalPanel({ r, matches, record }: { r: Rival; matches: StoredMa
 }
 
 /** The season track as the page's lead: the count, this stretch of steps, and the next reward. */
-function TrackLead({ n }: { n: number }) {
+function TrackLead({ n, track: TRACK }: { n: number; track: TrackStep[] }) {
   // Two weeks of steps at a time, the stretch you are in.
   const from = Math.max(0, Math.min(Math.floor(n / 14) * 14, TRACK.length - 14));
   const strip = TRACK.slice(from, from + 14);
@@ -71,7 +73,7 @@ export function StoryLead({ s }: { s: Story }) {
   const view = (v: string) => () => go('/football/story', { view: v });
   return (
     <div className="lt-story">
-      {m && <TrackLead n={m.track} />}
+      {m && <TrackLead n={m.track} track={trackOf(worldOf(s.l.save))} />}
       <RivalPanel r={list[0]} matches={s.all} />
       <Doors two label="More of the story">
         <Door line icon="list" ink="#8fdcb6" name="Bounties" value={picked < BOUNTIES_PICKED ? `Pick ${BOUNTIES_PICKED - picked} this week` : `${picked} picked`} onClick={() => go('/football/bounties')} />

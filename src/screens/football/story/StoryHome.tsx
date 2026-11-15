@@ -1,4 +1,5 @@
 // The Story section: rivals, seasons, moments, the Old Selves and settings, one tap apart.
+import { legendId } from '../../../football/rivals';
 import { useEffect, type ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../../db/db';
@@ -60,7 +61,7 @@ export function StoryHome({ extra }: { extra?: (s: Story) => Partial<Record<Stor
 export function RivalRoute({ id }: { id: string }) {
   const s = useStory();
   if (!s) return null;
-  const r = s.l.save.rivals.find((x) => x.clubId === id) ?? (id === 'ant' ? { clubId: 'ant', how: 'legend' as const, since: '' } : undefined);
+  const r = s.l.save.rivals.find((x) => x.clubId === id) ?? (id === legendId() ? { clubId: id, how: 'legend' as const, since: '' } : undefined);
   return (
     <>
       {r ? <RivalryView r={r} matches={s.all} /> : <p className="fb-s">Not a rival any more.</p>}

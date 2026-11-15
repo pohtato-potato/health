@@ -3,14 +3,13 @@
 import { KEEP_STOP } from '../../football/engine';
 import { CARD_MAX } from '../../football/matchday';
 import { PARCEL_MAX } from '../../football/parcel';
-import { BOUNTIES_PICKED, TRACK } from '../../football/content/season';
+import { BOUNTIES_OFFERED, BOUNTIES_PICKED } from '../../football/content/season';
+import type { TrackStep } from '../../football/content/types';
 import { AXIS_INK } from '../../ui/inks';
 import type { HowThisWorks } from '../../ui/kit/Kit';
 
 const OR = '#ff9a4d', GOLD = '#f2c46d', BLUE = '#93c3dc', LAV = '#c2b2ff', GREEN = '#8fdcb6', PINK = '#f4aedb', CORAL = '#ff9a76';
 const keep = Math.round(KEEP_STOP * 100);
-/** The season track's big rewards (anything but the small album-card marks), read from the track itself. */
-const bigs = TRACK.filter((s) => s.reward && s.reward.kind !== 'album-card').length;
 
 export const TONIGHT_HOW: HowThisWorks = {
   title: 'How tonight works',
@@ -56,13 +55,14 @@ export const CALL_HOW: HowThisWorks = {
   chips: [{ text: 'Shown odds are the odds used', ink: GOLD }, { text: `Keep: ${keep} points`, ink: AXIS_INK.Routine }, { text: 'Your assistant: the best odds', ink: BLUE }],
 };
 
-export const storyHow = (legend: string): HowThisWorks => ({
+/** Story's sheet for a save: its legend rival and its world's season track (42 steps, or 28 in world 2). */
+export const storyHow = (legend: string, track: TrackStep[]): HowThisWorks => ({
   title: 'How the story works',
   steps: [
-    { icon: 'calendar', ink: GOLD, head: 'The season track', line: `${TRACK.length} steps, one for each day you log anything; good days aren’t needed. ${bigs} big rewards along the way.` },
-    { icon: 'list', ink: GREEN, head: 'Bounties', line: `Six real-habit jobs a week. Pick ${BOUNTIES_PICKED}; each lasts until Sunday.` },
+    { icon: 'calendar', ink: GOLD, head: 'The season track', line: `${track.length} steps, one for each day you log anything; good days aren’t needed. ${track.filter((s) => s.reward && s.reward.kind !== 'album-card').length} big rewards along the way.` },
+    { icon: 'list', ink: GREEN, head: 'Bounties', line: `${BOUNTIES_OFFERED} real-habit jobs a week. Pick ${BOUNTIES_PICKED}; each lasts until Sunday.` },
     { icon: 'shield', ink: CORAL, head: 'Rivals', line: `A club becomes a rival by beating you on a big night, three times running, or by a single goal. Beat one five times in a row and it fades. ${legend} never fades.` },
     { icon: 'book', ink: LAV, head: 'Seasons and Old Selves', line: 'Every season keeps its finish, cups, kit, crest and Wrapped. Your finished months play on as Old Selves; each season the weakest retires to their cup.' },
   ],
-  chips: [{ text: `${TRACK.length} steps`, ink: GOLD }, { text: `Pick ${BOUNTIES_PICKED} bounties`, ink: GREEN }],
+  chips: [{ text: `${track.length} steps`, ink: GOLD }, { text: `Pick ${BOUNTIES_PICKED} bounties`, ink: GREEN }],
 });

@@ -7,7 +7,8 @@ import { addDays, dayOfLogging, type DayKey } from '../../domain/dates';
 import { targetsOn } from '../../domain/rings';
 import { physioDue } from '../../domain/treatment';
 import type { Day } from '../../domain/types';
-import { SEASON_DAYS } from '../calendar';
+import { seasonLength } from '../calendar';
+import { worldOf } from '../pyramid/shape';
 import { groundShut, parcelDue, parcelTiles, type TileKind } from '../parcel';
 import { talkAsk, talkDue, talkTarget, talkWindow, type TalkHabit, type TalkOutcome, type TalkPick } from '../talks';
 import { loadHealth, type Health } from './gather';
@@ -23,8 +24,8 @@ export const aroundOf = (s: Pick<FbSave, 'around'> | undefined | null): AroundUs
 export interface TalkOffer { habit: TalkHabit; current: number; ask: number; days: number }
 
 /** The logged values the agents count: real step counts, and protein on days with food logged, sick days left out. */
-export function talkValues(h: Health, habit: TalkHabit, today: DayKey): number[] {
-  const { from, to } = talkWindow(today);
+export function talkValues(h: Health, habit: TalkHabit, today: DayKey, world: 1 | 2 = 1): number[] {
+  const { from, to } = talkWindow(today, world);
   const sick = (d: DayKey) => h.days.get(d)?.status === 'sick';
   if (habit === 'steps') return [...h.days.values()].filter((d) => d.date >= from && d.date <= to && !sick(d.date) && d.steps != null && !d.stepsEstimated).map((d) => d.steps!);
   return [...h.kcal].filter(([d, k]) => d >= from && d <= to && !sick(d) && k.n > 0).map(([, k]) => k.protein);
@@ -38,7 +39,7 @@ export function talkOffers(h: Health, save: FbSave, today: DayKey): TalkOffer[] 
   for (const habit of ['steps', 'protein'] as const) {
     if (!talkDue(save, done, habit)) continue;
     const current = habit === 'steps' ? t.steps : t.proteinG;
-    const xs = talkValues(h, habit, today);
+    const xs = talkValues(h, habit, today, worldOf(save));
     const ask = talkAsk(habit, xs, current);
     if (ask !== undefined) out.push({ habit, current, ask, days: xs.length });
   }
@@ -50,7 +51,7 @@ export async function holdTalk(o: TalkOffer, pick: TalkPick, today: DayKey): Pro
   const save = await db.fbSave.get('save');
   if (!save) return o.current;
   const to = talkTarget(o.habit, pick, o.current, o.ask);
-  const rec: TalkOutcome = { season: save.season, habit: o.habit, pick, from: o.current, to, on: today, until: addDays(today, Math.max(0, SEASON_DAYS - save.day)) };
+  const rec: TalkOutcome = { season: save.season, habit: o.habit, pick, from: o.current, to, on: today, until: addDays(today, Math.max(0, seasonLength(worldOf(save)) - save.day)) };
   if (to > o.current) {
     const t = targetsOn((await getSettings()).targets, today);
     if (t) await setTargets(o.habit === 'steps' ? { ...t, steps: to } : { ...t, proteinG: to }, today);

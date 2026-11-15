@@ -52,7 +52,7 @@ describe('match engine', () => {
     const typical = allAxes(12);
     const mean = (v: AxisValues, t?: AxisValues) => { const xs = many((s) => input({ seed: s, values: v, typical: t }), 150).flatMap((e) => e.chances.filter((c) => c.side === 'atk').map((c) => c.pct)); return xs.reduce((a, b) => a + b, 0) / xs.length; };
     const better = { ...typical, Pace: 17, Power: 17, Fuel: 17 };
-    expect(mean(better, typical)).toBeGreaterThan(mean(better) + 5); // without history it is sized to itself
+    expect(mean(better, typical)).toBeGreaterThan(mean(better) + 2.5); // without history it is sized to itself; history counts half (14 Nov)
     expect(typicalFor(Array(TYPICAL_MIN - 1).fill(typical))).toBeUndefined();
     expect(typicalFor([allAxes(4), allAxes(9), allAxes(15), allAxes(10), allAxes(20), allAxes(1), allAxes(12)])).toEqual(allAxes(10));
   });

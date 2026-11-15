@@ -2,7 +2,7 @@
 // from abroad. A league phase of 8 nights, each a double-header with that night's league match, then the top 8
 // play a quarter-final, semi-final and final. Win it and the Club World Cup replaces the next event.
 import type { Bracket, Tie } from './cups';
-import { CONT_INVENTED, CONT_REAL, WORLD_CHAMPS } from './data/continental';
+import { CONT_INVENTED, CONT_REAL, worldChamps } from './data/continental';
 import { hashSeed, rng, shuffle } from './rng';
 import { standings, type Played, type Row } from './table';
 
@@ -10,15 +10,19 @@ export const CONT_NAME = 'The Continental Cup';
 export const CWC_NAME = 'The Club World Cup';
 /** The season days it plays on: all league days, so each is a double-header. */
 export const CONT = { phase: [2, 4, 7, 9, 12, 14, 18, 20], qf: 26, sf: 32, final: 39 } as const;
+/** World 2's 28-day season (league spec §6): the same eleven nights, re-spaced onto league days. */
+export const CONT2 = { phase: [2, 4, 6, 9, 11, 14, 16, 18], qf: 21, sf: 24, final: 26 } as const;
+export const contDays = (world: 1 | 2 = 1) => (world === 2 ? CONT2 : CONT);
 export type ContStage = 'phase' | 'qf' | 'sf' | 'final';
 export interface ContNight { stage: ContStage; round: number }
 /** Which continental night a season day is (round counts from 1 in the phase). */
-export function contNight(day: number): ContNight | undefined {
-  const i = (CONT.phase as readonly number[]).indexOf(day);
+export function contNight(day: number, world: 1 | 2 = 1): ContNight | undefined {
+  const c = contDays(world);
+  const i = (c.phase as readonly number[]).indexOf(day);
   if (i >= 0) return { stage: 'phase', round: i + 1 };
-  if (day === CONT.qf) return { stage: 'qf', round: 0 };
-  if (day === CONT.sf) return { stage: 'sf', round: 0 };
-  if (day === CONT.final) return { stage: 'final', round: 0 };
+  if (day === c.qf) return { stage: 'qf', round: 0 };
+  if (day === c.sf) return { stage: 'sf', round: 0 };
+  if (day === c.final) return { stage: 'final', round: 0 };
   return undefined;
 }
 
@@ -33,8 +37,10 @@ export interface Continental {
 }
 
 /** The top 4 plus 12 from abroad: 9 real clubs and 3 invented ones, drawn by season. */
-export function drawField(season: number, top4: string[]): string[] {
+export function drawField(season: number, top4: string[], abroad?: string[]): string[] {
   const r = rng(hashSeed('continental', String(season)));
+  // World 2 (league spec §6): the twelve come from the outside pool of real clubs.
+  if (abroad) return [...top4.slice(0, 4), ...shuffle(r, [...abroad].sort()).slice(0, 16 - Math.min(4, top4.length))];
   const real = shuffle(r, CONT_REAL.map((c) => c.id)).slice(0, 9);
   const made = shuffle(r, CONT_INVENTED.map((c) => c.id)).slice(0, 3);
   return [...top4.slice(0, 4), ...real, ...made];
@@ -55,8 +61,8 @@ function phaseRounds(ids: string[]): [string, string][][] {
   return out;
 }
 
-export function newContinental(season: number, top4: string[]): Continental {
-  const field = drawField(season, top4);
+export function newContinental(season: number, top4: string[], abroad?: string[]): Continental {
+  const field = drawField(season, top4, abroad);
   const order = shuffle(rng(hashSeed('continental-draw', String(season))), field);
   return { field, rounds: balance(phaseRounds(order)), results: [] };
 }
@@ -86,10 +92,11 @@ function balance(rounds: [string, string][][]): [string, string][][] {
 export const phaseTable = (c: Continental): Row[] => standings(c.results.flat(), c.field);
 
 /** The top 8 seeded 1v8, 4v5, 2v7, 3v6: the top two can only meet in the final. */
-export function koFromTable(c: Continental): Bracket {
+export function koFromTable(c: Continental, world: 1 | 2 = 1): Bracket {
   const t = phaseTable(c).slice(0, 8).map((r) => r.id);
   const qf: Tie[] = [[0, 7], [3, 4], [1, 6], [2, 5]].map(([a, b]) => ({ home: t[a], away: t[b] }));
-  return { id: 'continental', name: CONT_NAME, size: 8, rounds: [{ name: 'Quarter-final', day: CONT.qf, ties: qf }, { name: 'Semi-final', day: CONT.sf, ties: [] }, { name: 'Final', day: CONT.final, ties: [] }] };
+  const d = contDays(world);
+  return { id: 'continental', name: CONT_NAME, size: 8, rounds: [{ name: 'Quarter-final', day: d.qf, ties: qf }, { name: 'Semi-final', day: d.sf, ties: [] }, { name: 'Final', day: d.final, ties: [] }] };
 }
 
 /** How far a club got: knocked out in the phase, or the knockout round it reached, or the winner. */
@@ -109,8 +116,8 @@ export function reachOf(c: Continental | undefined, id: string): ContReach | und
 
 /** The Club World Cup: Brabo and the champions of the other continents, one round a night. */
 export const CWC_DAYS = { qf: 1, sf: 2, third: 3, final: 4 } as const;
-export function newClubWorld(season: number): Bracket {
-  const ids = shuffle(rng(hashSeed('clubworld', String(season))), ['bra', ...WORLD_CHAMPS.map((c) => c.id)]);
+export function newClubWorld(season: number, world: 1 | 2 = 1): Bracket {
+  const ids = shuffle(rng(hashSeed('clubworld', String(season))), ['bra', ...worldChamps(world).map((c) => c.id)]);
   const qf: Tie[] = [0, 2, 4, 6].map((i) => ({ home: ids[i], away: ids[i + 1] }));
   return { id: 'clubworld', name: CWC_NAME, size: 8, rounds: [{ name: 'Quarter-final', day: CWC_DAYS.qf, ties: qf }, { name: 'Semi-final', day: CWC_DAYS.sf, ties: [] }, { name: 'Final', day: CWC_DAYS.final, ties: [] }] };
 }

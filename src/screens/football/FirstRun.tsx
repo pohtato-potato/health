@@ -31,7 +31,7 @@ export function FirstRun({ now = Date.now(), start = 0, onDone }: { now?: number
   const finish = async () => {
     if (busy) return;
     setBusy(true);
-    await foundClub(dayOfLogging(now), { shirt: shirt ?? FIRST_SHIRTS[0].id, crest, captain });
+    await foundClub(dayOfLogging(now), { shirt: shirt ?? FIRST_SHIRTS[0].id, crest, captain, world: 2 });
     onDone?.();
   };
   // Skipping never jumps the shirt: before it, Skip lands on the shirt.

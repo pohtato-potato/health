@@ -24,12 +24,15 @@ import { keyChances } from './CatchUp';
 import { CupRoute } from './cup/CupScreens';
 import { storyHow, TONIGHT_HOW } from './howDaily';
 import { legendName } from './story/StoryLead';
+import { trackOf } from '../../football/tree/season';
+import { worldOf } from '../../football/pyramid/shape';
 import { go } from '../../router';
 import { loadParcel } from '../../football/store/around';
 import { NightGround, ParcelView } from './Parcel';
 import { DeskRoute } from './desk/Desk';
 import { MarketRoute } from './desk/Market';
 import { Atlas } from './world/Atlas';
+import { Redrawn, RedrawnDoor } from './world/Redrawn';
 import type { StoredMatch } from '../../football/store/tables';
 import { techDoor } from '../../football/tree/research';
 import { Moved } from '../reports/Moved';
@@ -39,13 +42,18 @@ import { ALBUM, ALBUM_CARDS } from '../../football/content/album';
 import { CHEM_MAX } from '../../football/rotation/night';
 import { BREAK_DAYS, DUTY_ATTR, DUTY_NEEDS } from '../../football/globe/duty';
 
+// Dev only: test-save helpers from the console (`await fbDev.devWorld2(6)`). The condition is false in a production
+// build, so the import and the helpers are left out of it.
+if (import.meta.env.DEV) void import('../../football/store/dev').then((m) => { (window as unknown as { fbDev: typeof m }).fbDev = m; });
+
 const SECTION: Record<string, FbSection> = { '/football': 'tonight', '/football/club': 'club', '/football/league': 'league', '/football/story': 'story' };
 
 function TonightSection() {
   const t = useTonight();
   if (t === undefined) return null;
   if (t === null) return <p className="fb-s">Football starts once you found the club.</p>;
-  return <TonightView t={t} />;
+  // The desk and cups doors live inside Tonight's "Around tonight" (look pass L4); the world-redrawn panel leads.
+  return <><RedrawnDoor /><TonightView t={t} /></>;
 }
 
 /** Matchday §4 (Fork B): the morning parcel on the first open after 4 am; the ground at night after Close the day. */
@@ -141,10 +149,11 @@ export function Football() {
   if (path === '/football/desk' || path.startsWith('/football/desk/')) return <DeskRoute />;
   if (path === '/football/cup' || path === '/football/cup/run' || path === '/football/cup/match') return <CupRoute path={path} />;
   if (path === '/football/market') return <MarketRoute />;
+  if (path === '/football/redrawn') return <FootballHome section="tonight" inner={{ title: 'New world', back: 'Tonight', to: '/football' }}><Redrawn /></FootballHome>;
   if (path === '/football/atlas') return <FootballHome section="league" inner={{ title: 'The atlas', back: 'League', to: '/football/league' }}><Atlas /></FootballHome>;
   if (path === '/football/club-page') return <FootballHome section="league" inner={{ title: 'A club', back: 'League', to: '/football/league' }}><ClubPage id={params.get('id') ?? ''} wiki={params.get('wiki') === '1'} /></FootballHome>;
   if (path === '/football/wrapped') return <WrappedRoute season={Number(params.get('season') ?? 1)} />;
-  if (path === '/football/rival') return <FootballHome section="story" inner={{ title: 'A rival', back: 'Rivals', to: '/football/story', params: { view: 'rivals' }, help: storyHow(legendName(save.rivals)) }}><RivalRoute id={params.get('id') ?? ''} /></FootballHome>;
+  if (path === '/football/rival') return <FootballHome section="story" inner={{ title: 'A rival', back: 'Rivals', to: '/football/story', params: { view: 'rivals' }, help: storyHow(legendName(save.rivals), trackOf(worldOf(save))) }}><RivalRoute id={params.get('id') ?? ''} /></FootballHome>;
   if (path === '/football/player' && params.get('id')) return <PlayerFrame id={params.get('id')!} />;
   if (path === '/football/player') return <FootballHome section="club" inner={{ title: 'Squad member', back: 'Squad', to: '/football/club', params: { view: 'squad' }, help: MEMBER_HOW }}><PlayerRoute axis={params.get('axis') ?? ''} /></FootballHome>;
   if (path === '/football/unit') return <FootballHome section="club" inner={{ title: params.get('u') ?? 'A unit', back: 'Squad', to: '/football/club', params: { view: 'squad' }, help: UNIT_HOW }}><UnitRoute unit={params.get('u') ?? ''} /></FootballHome>;
@@ -170,14 +179,14 @@ export function Football() {
     '/football/duty': () => <DutyPage />,
   };
   if (tree[path]) return <FootballHome section="club" inner={INNER[path]}>{tree[path]()}</FootballHome>;
-  if (path === '/football/track') return <FootballHome section="story" inner={{ title: 'Season track', back: 'Story', to: '/football/story', help: storyHow(legendName(save.rivals)) }}><TrackPage /></FootballHome>;
-  if (path === '/football/bounties') return <FootballHome section="story" inner={{ title: 'Bounties', back: 'Story', to: '/football/story', help: storyHow(legendName(save.rivals)) }}><BountiesPage /></FootballHome>;
+  if (path === '/football/track') return <FootballHome section="story" inner={{ title: 'Season track', back: 'Story', to: '/football/story', help: storyHow(legendName(save.rivals), trackOf(worldOf(save))) }}><TrackPage /></FootballHome>;
+  if (path === '/football/bounties') return <FootballHome section="story" inner={{ title: 'Bounties', back: 'Story', to: '/football/story', help: storyHow(legendName(save.rivals), trackOf(worldOf(save))) }}><BountiesPage /></FootballHome>;
   if (path === '/football/limit') return <FootballHome section="club" inner={{ title: 'Limit break', back: 'Club', to: '/football/club' }}><LimitBreakRoute id={params.get('id') ?? ''} /></FootballHome>;
   if (path === '/football/sheet') return <FootballHome section="club" inner={{ title: 'Team sheet', back: 'Club', to: '/football/club', help: SHEET_HOW(CHEM_MAX) }}><TeamSheetRoute /></FootballHome>;
   if (path === '/football/blend') return <FootballHome section="tonight" inner={{ title: 'How tonight adds up', back: 'Tonight', to: '/football' }}><BlendRoute /></FootballHome>;
   const section = SECTION[path] ?? 'tonight';
   if (section === 'tonight') return <TonightRoute />;
-  const story = storyHow(legendName(save.rivals));
+  const story = storyHow(legendName(save.rivals), trackOf(worldOf(save)));
   const inner = viewInner(section, params.get('view'), story);
   return <FootballHome section={section} inner={inner} help={inner ? undefined : section === 'club' ? CLUB_HELP : section === 'story' ? story : undefined}>{section === 'league' ? <LeagueHome /> : section === 'story' ? <StoryHome /> : <ClubHome />}</FootballHome>;
 }

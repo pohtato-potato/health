@@ -3,6 +3,7 @@
 // twist is one keyed knob; `plays` says exactly what it does. No twist touches a match's odds through
 // relations, and none rewards eating less or uses betting.
 import type { Motion } from './types';
+import { neighbourWords } from '../../data/load';
 
 export const MOTIONS: Motion[] = [
   {
@@ -130,7 +131,7 @@ export const MOTIONS: Motion[] = [
     plays: 'Tenant clubs promoted into Division Three or above pay a ground fee from their gate money. Brabo rent: this one is personal.',
     leans: { 'old-family': 2, municipal: 1, 'state-fund': 1, celebrity: -1 },
     regions: { flanders: -1 },
-    passed: 'Own your ground passes, and Zurenborg are delighted',
+    get passed() { return neighbourWords('Own your ground passes, and Zurenborg are delighted'); },
     fell: 'Own-your-ground falls; tenants everywhere breathe out',
   },
   {

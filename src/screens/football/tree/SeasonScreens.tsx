@@ -1,6 +1,9 @@
 // The season run (round six, pinned; track stars centred in round eight): pick a boon, the season track, bounties.
 import type { CSSProperties } from 'react';
-import { BOUNTIES, BOUNTIES_PICKED, TRACK } from '../../../football/content/season';
+import { BOUNTIES, BOUNTIES_PICKED, BOON_DAYS, BOON_DAYS_2 } from '../../../football/content/season';
+import { trackOf } from '../../../football/tree/season';
+import { seasonLength } from '../../../football/calendar';
+import { worldOf } from '../../../football/pyramid/shape';
 import { pickBoon, pickBounty } from '../../../football/store/treeActions';
 import { boonsThisSeason, bountiesPicked, bountyOffer, bountyProgress, isTrainingBounty } from '../../../football/tree/season';
 import { fmtCount } from '../../../football/tree/words';
@@ -23,7 +26,7 @@ export function BoonPage() {
   const held = boonsThisSeason(m.user, s.season).map((id) => BOONS.find((b) => b.id === id)!);
   return (
     <div className="k-page">
-      <Title under={`Season ${s.season} · day ${s.day}${m.boonPick ? ` · boon ${m.boonPick > 3 ? 'extra' : `${m.boonPick} of 3`}` : ''}`}>{m.boonPick ? 'Pick one for this season' : 'This season’s boons'}</Title>
+      <Title under={`Season ${s.season} · day ${Math.min(s.day, seasonLength(worldOf(s)))}${m.boonPick ? ` · boon ${m.boonPick > 3 ? 'extra' : `${m.boonPick} of 3`}` : ''}`}>{m.boonPick ? 'Pick one for this season' : 'This season’s boons'}</Title>
       {m.boonPick ? (
         <div className="kb-rows">
           {m.boonOffer.map((b, i) => (
@@ -32,7 +35,7 @@ export function BoonPage() {
             </Panel>
           ))}
         </div>
-      ) : <Note>The next pick comes on day {[1, 15, 29].find((d) => d > s.day) ?? 'one of next season'}.</Note>}
+      ) : <Note>The next pick comes on day {(worldOf(s) === 2 ? BOON_DAYS_2 : BOON_DAYS).find((d) => d > s.day) ?? 'one of next season'}.</Note>}
       {held.length > 0 && (
         <>
           <Sect>Held this season</Sect>
@@ -51,6 +54,8 @@ export function TrackPage() {
   const m = useModel();
   if (!m) return null;
   const n = m.track;
+  // The track for this save's world (42 steps, or 28 in world 2); big rewards are anything but the small album cards.
+  const TRACK = trackOf(worldOf(m.t.save));
   const big = TRACK.filter((s) => s.reward && s.reward.kind !== 'album-card');
   return (
     <div className="k-page lt-story">

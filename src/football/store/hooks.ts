@@ -1,4 +1,5 @@
 // Live reads for the Football screens. Football never writes from here.
+import { lastDivision, stageIn } from '../pyramid/shape';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { OWN } from './season';
 import { db } from '../../db/db';
@@ -186,4 +187,5 @@ export function useSheet(now = Date.now()) {
   return useLiveQuery(() => loadSheet(date), [date]);
 }
 /** The division we play in now, for the buy-back clause. */
-export const useBraboTier = () => useLiveQuery(async () => { const s = await db.fbSave.get('save'); const season = s ? await db.fbSeasons.get(s.season) : undefined; return season?.tierOf[OWN] ?? 6; }, []);
+/** The stage of Brabo's division (world 2 maps through stageOf): what the buy-back clause's wage units read. */
+export const useBraboTier = () => useLiveQuery(async () => { const s = await db.fbSave.get('save'); const season = s ? await db.fbSeasons.get(s.season) : undefined; return stageIn(season, season?.tierOf[OWN] ?? lastDivision(season)); }, []);

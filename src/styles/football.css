@@ -285,10 +285,10 @@ button.fb-todaycard { cursor: pointer; }
 .fb-tiername { color: var(--t); text-shadow: 0 0 14px var(--t); }
 .fb-trows { margin: 0; padding: 0; list-style: none; border: 2px solid var(--t); border-radius: 18px; box-shadow: 0 0 18px -6px var(--t); padding: 4px 6px; animation: fb-tierpulse 3.2s ease-in-out infinite; }
 @keyframes fb-tierpulse { 50% { box-shadow: 0 0 26px -4px var(--t); } }
-.fb-trow a { display: grid; grid-template-columns: 28px 16px minmax(0,1fr) auto; gap: 10px; align-items: center; min-height: 56px; padding: 6px 8px; color: var(--fb-ink); text-decoration: none; border-top: 1px solid rgba(255,255,255,.14); }
-.fb-trow:first-child a { border-top: 0; }
-.fb-trow.me a { border: 2px solid var(--k); border-radius: 16px; box-shadow: 0 0 16px -4px var(--k), inset 0 0 12px -6px var(--k); }
-.fb-trow.me + .fb-trow a { border-top-color: transparent; }
+.fb-trow a, .fb-trow-in { display: grid; grid-template-columns: 28px 16px minmax(0,1fr) auto; gap: 10px; align-items: center; min-height: 56px; padding: 6px 8px; color: var(--fb-ink); text-decoration: none; border-top: 1px solid rgba(255,255,255,.14); }
+.fb-trow:first-child a, .fb-trow:first-child .fb-trow-in { border-top: 0; }
+.fb-trow.me a, .fb-trow.me .fb-trow-in { border: 2px solid var(--k); border-radius: 16px; box-shadow: 0 0 16px -4px var(--k), inset 0 0 12px -6px var(--k); }
+.fb-trow.me + .fb-trow a, .fb-trow.me + .fb-trow .fb-trow-in { border-top-color: transparent; }
 .fb-tpos { font: 300 22px var(--serif); text-align: center; font-variant-numeric: lining-nums tabular-nums; }
 .fb-tring { width: 16px; height: 16px; border-radius: 50%; border: 3px solid var(--k); box-shadow: 0 0 8px var(--k); }
 .fb-tname { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
@@ -611,3 +611,25 @@ button.md-chip { min-height: 44px; cursor: pointer; }
 .md-wait .md-wduel { display: flex; align-items: center; justify-content: center; gap: 10px; font: 400 22px var(--serif); flex-wrap: wrap; }
 .md-tbp { display: block; color: var(--fb-or-text); }
 .md-cards { display: flex; flex-direction: column; gap: 6px; }
+
+/* LG-4: world 2's Divisions Seven and Eight, and the table's "See all". */
+:root { --fb-t7: #ff9ec7; --fb-t8: #d9b38c; } /* never gold, as above */
+.fb-seeall { margin-top: 8px; min-height: 44px; width: 100%; }
+/* World 2's League home: the top four in a tappable panel (kit-visual-4). */
+.fb-top4 { display: block; width: 100%; text-align: left; }
+.fb-top4 .fb-table { margin: 0; }
+.fb-seeall-line { display: block; margin-top: 6px; font-weight: 700; color: var(--fb-ink); }
+/* Every division (kit-visual-5): a stepped pyramid of eight, the chosen one cream, yours outlined orange. */
+.fb-steps { margin: 0 0 12px; padding: 0; list-style: none; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.fb-steps li { width: var(--w); min-width: 0; max-width: 100%; }
+.fb-step { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 12px; border: 2px solid var(--t); border-radius: 12px; background: transparent; color: var(--fb-ink); font: 600 14px var(--sans); cursor: pointer; box-shadow: 0 0 12px -6px var(--t); }
+.fb-step b { font: 600 15px var(--sans); text-align: left; min-width: 0; overflow-wrap: anywhere; }
+.fb-step span { font: 600 16px var(--serif); font-variant-numeric: lining-nums; }
+.fb-step.on { background: #f3e9d2; color: #1a1426; border-color: #f3e9d2; }
+.fb-step.you { outline: 3px solid var(--fb-or); outline-offset: 2px; }
+/* The world redrawn (LG-4). */
+.fb-redrawn-vs { margin: 0 0 8px; padding: 0; list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; font: 600 15px var(--sans); }
+.fb-redrawn-vs li { min-width: 0; overflow-wrap: anywhere; }
+.fb-redrawn-gifts { margin: 0; padding-left: 18px; display: grid; gap: 6px; font: 400 15px/1.4 var(--sans); }
+.fb-top4 .fb-trows { border: 0; box-shadow: none; animation: none; padding: 0; }
+.fb-top4 { padding-right: 34px; }

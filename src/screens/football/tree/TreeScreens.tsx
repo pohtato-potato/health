@@ -1,6 +1,7 @@
 // The tree's screens (rounds six to eight, as pinned): the tree in six eras, a tech, a eureka, entering a new era,
 // projects on the Kaai skyline, the staff room and the board. Words in Atkinson Hyperlegible Next, numbers and titles
 // in Fraunces. Every state has a word beside its colour or line.
+import { seasonMoneyScale } from '../../../football/pyramid/shape';
 import type { CSSProperties, ReactNode } from 'react';
 import { ERAS, TECHS } from '../../../football/content/tree';
 import { BOARD } from '../../../football/content/season';
@@ -393,7 +394,7 @@ export function StaffPage() {
     const doc = x.s.id === 'club-doctor' && x.hired;
     return (
       <Viewable key={x.s.id} className="k-panel" style={{ ['--ink' as string]: x.hired ? era.colour : '#a9a7b8' } as CSSProperties} view={() => staffView(x.s.name, x.s.text, era, `${era.name} · ${x.tech.name}`)}>
-        <PanelTop name={`${x.s.name}${doc ? ` · level ${m.doctor.level}` : ''}`} c={x.hired ? era.colour : '#c4c1cf'} right={x.leave ? 'on leave' : x.hired ? euros(wage(x.s.wageUnits, m.t.tier)) : undefined} />
+        <PanelTop name={`${x.s.name}${doc ? ` · level ${m.doctor.level}` : ''}`} c={x.hired ? era.colour : '#c4c1cf'} right={x.leave ? 'on leave' : x.hired ? euros(wage(x.s.wageUnits, m.t.stage) * seasonMoneyScale(m.t.save)) : undefined} />
         <span className="k-q">{x.s.text}</span>
         {doc && <span className="k-q">{m.doctor.xp} days with every medicine kept{m.doctor.next ? ` · next level at ${m.doctor.next}` : ' · top level'}</span>}
         <span className="k-q kb-small">{era.name} · {x.tech.name}</span>
@@ -410,7 +411,7 @@ export function StaffPage() {
       {saving.length > 0 && <><Sect>Saving for</Sect><div className="kb-rows">{saving.map(row)}</div></>}
       <Sect>Further up the tree</Sect>
       <div className="kb-rows">{later.map(row)}</div>
-      <Note>One wage unit is {euros(WAGE_UNIT[m.t.tier])} a season in this division.</Note>
+      <Note>One wage unit is {euros(WAGE_UNIT[m.t.stage] * seasonMoneyScale(m.t.save))} a season in this division.</Note>
     </div>
   );
 }

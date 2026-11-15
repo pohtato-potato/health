@@ -1,4 +1,4 @@
-// Rivals: Antigoon FC always, then up to three earned, each with how it started and its modifier.
+// Rivals: the legend rival always (from the world-aware list: Antigoon FC in world 1, Royal Antwerp in world 2), then up to three earned.
 import { clubById } from '../../../football/data/load';
 import { MAX_EARNED, rivalList, type Rival } from '../../../football/rivals';
 import type { StoredMatch } from '../../../football/store/tables';

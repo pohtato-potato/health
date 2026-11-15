@@ -1,7 +1,9 @@
 // Dev and test only: put Brabo in the Crown League and the Continental Cup field, to check the
-// continental screens without five promotions. Nothing in the app imports this.
+// continental screens without five promotions; and (LG-4) move a test save into world 2 at a chosen division.
+// The app only reaches this in development, through `window.fbDev` (Football.tsx); a production build leaves it out.
 import { db } from '../../db/db';
 import { OWN } from './season';
+import { redrawWorld } from './redraw';
 import type { FbClub, FbSeason } from './tables';
 
 /** Swap Brabo with `with` (a Crown League club) everywhere in the season; Brabo takes their continental place too. */
@@ -33,4 +35,13 @@ export async function devCrownLeague(withId = 'bay') {
     await db.fbSeasons.put(out.season);
     await db.fbClubs.bulkPut(out.clubs);
   });
+}
+
+/**
+ * Dev and tests only (LG-4 step 6): move a world-1 test save into world 2 with Brabo in `division` (1–8), the way the
+ * owner's move does it, but skipping the placing's choice. Returns the plan, or undefined for a save already moved.
+ */
+export async function devWorld2(division: number, now = Date.now()) {
+  if (!Number.isInteger(division) || division < 1 || division > 8) throw new Error('division must be 1 to 8');
+  return redrawWorld(now, { division });
 }

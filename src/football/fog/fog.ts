@@ -45,7 +45,8 @@ export const THIN_PCT = 33;
 /** Stamped once on a save: the clubs met before the fog came keep what they had (12.8 a). */
 export interface FogState { since: DayKey; old: string[] }
 /** What the fog is worked out from: pieces of the save. */
-export interface FogSource { met: string[]; scouted?: string[]; fog?: FogState; desk?: DeskState }
+/** `redrawn`: in world 2 the desk's log counts from the move on (LG-4: fog and scouting reset at the move). */
+export interface FogSource { met: string[]; scouted?: string[]; fog?: FogState; desk?: DeskState; redrawn?: { on: DayKey } }
 
 /** Brabo and the World Cup's nations are never in fog. */
 export const fogged = (id: string) => id !== 'bra' && !id.startsWith('nat:');
@@ -67,6 +68,7 @@ export function factsOf(src: FogSource, id: string, today?: DayKey): Set<Fact> {
   if (src.met.includes(id)) add(!src.fog || src.fog.old.includes(id) ? MET_BEFORE : BASICS);
   if (src.scouted?.includes(id)) add(LEAD_FACTS);
   for (const s of src.desk?.spends ?? []) {
+    if (src.redrawn && s.day < src.redrawn.on) continue;
     for (const e of s.effects) {
       if (e.kind === 'watch' && e.club === id) add(e.level === 'full' ? ['style', 'weak'] : ['style']);
       if (e.kind === 'scout' && (today === undefined || s.day < today)) add(e.reveal[id] ?? []);
@@ -102,7 +104,7 @@ export function worldSeen(src: FogSource, ids: string[], today?: DayKey): number
 export type ScoutScope = { kind: 'club'; id: string } | { kind: 'div'; tier: number } | { kind: 'abroad' };
 export function scopeOf(target: string): ScoutScope {
   if (target === 'abroad') return { kind: 'abroad' };
-  const m = /^div:([1-6])$/.exec(target);
+  const m = /^div:([1-8])$/.exec(target);
   return m ? { kind: 'div', tier: Number(m[1]) } : { kind: 'club', id: target };
 }
 export const clockSize = (target: string) => (scopeOf(target).kind === 'club' ? CLUB_CLOCK : WIDE_CLOCK);
@@ -142,6 +144,6 @@ export function factList(fs: Fact[]): string {
 }
 
 /** Loan targets the scouts turned up (a 6 can find one), for the loan market (Fork 3). Oldest first. */
-export function loanLeads(desk: DeskState | undefined): { day: DayKey; club: string; loan: string }[] {
-  return (desk?.spends ?? []).flatMap((s) => s.effects.flatMap((e) => (e.kind === 'lead' ? [{ day: s.day, club: e.club, loan: e.loan }] : [])));
+export function loanLeads(desk: DeskState | undefined, since?: DayKey): { day: DayKey; club: string; loan: string }[] {
+  return (desk?.spends ?? []).filter((s) => !since || s.day >= since).flatMap((s) => s.effects.flatMap((e) => (e.kind === 'lead' ? [{ day: s.day, club: e.club, loan: e.loan }] : [])));
 }
