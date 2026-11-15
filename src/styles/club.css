@@ -153,8 +153,8 @@
 .ka-set.dn { border-color: var(--k-gold); }
 .ka-open { grid-column: 1 / -1; }
 .ka-cards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.ka-cards li { border-radius: 14px; padding: 10px 12px; background: color-mix(in srgb, var(--r) 16%, #10122a); border-left: 4px solid var(--r); display: flex; flex-direction: column; gap: 2px; }
-.ka-cards li.miss { background: rgba(237, 230, 218, 0.05); border-left-color: rgba(237, 230, 218, 0.25); color: #a9a7b8; }
+.ka-cards li { border-radius: 14px; padding: 10px 12px; background: color-mix(in srgb, var(--r) 16%, #10122a); border: 1px solid color-mix(in srgb, var(--r) 45%, transparent); display: flex; flex-direction: column; gap: 2px; }
+.ka-cards li.miss { background: rgba(237, 230, 218, 0.05); border-color: rgba(237, 230, 218, 0.18); color: #a9a7b8; }
 .ka-cards li > div, .ka-cards li > button { display: flex; flex-direction: column; gap: 2px; text-align: left; }
 
 /* ---- the ground, and the Kaai growing ---- */
