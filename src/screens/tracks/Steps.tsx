@@ -11,7 +11,7 @@ import { stepTallyFor, targetsFor } from '../../state/derived';
 import { useSeasonStart } from '../../db/hooks';
 import { loadedSteps } from '../../walk/lines';
 import { StepsExtras } from '../TrackExtras';
-import { dayLabel, headInput, kindOn, placeMarkOn, spanDays, type Span, type TrackData } from './data';
+import { dayLabel, headInput, kindOn, placeMarkOn, spanDays, type Span, type TrackData, trendFor } from './data';
 import { changeText, HeroChart, TrackShell } from './Template';
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -42,8 +42,10 @@ export function StepsTrack({ data }: { data: TrackData }) {
       track="steps"
       head={headlineFor('steps', headInput(data))}
       value={avg !== undefined ? fmtInt(avg) : '—'}
-      sub={`daily average · ${logged.length} of ${range.length} days`}
+      sub="a day"
       change={changeText(ch.delta, fmtInt, true)}
+      trend={trendFor(data, 'steps')}
+      chartLabel={`Steps, ${logged.length} of ${range.length} days logged`}
       span={span}
       onSpan={(s) => setSpan(s as Span)}
       hero={

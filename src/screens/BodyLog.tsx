@@ -5,52 +5,57 @@ import { addDays } from '../domain/dates';
 import { fmtDayMonth } from '../domain/format';
 import { back } from '../router';
 import { BodyChart } from '../ui/BodyChart';
-import { Icon } from '../ui/Icon';
-import { RegionFrame } from '../ui/live/RegionFrame';
+import type { CSSProperties } from 'react';
+import { PageHead, Sect, Title, type HowThisWorks } from '../ui/kit/Kit';
+
+const HOW: HowThisWorks = {
+  title: 'The body log',
+  steps: [
+    { icon: 'body', ink: '#f4aedb', head: 'Tap where it hurts', line: 'Then pick what kind. Nothing tapped means all good.' },
+    { icon: 'joint', ink: '#93c3dc', head: 'The whole body', line: 'Tired, sore all over and the like, as switches.' },
+    { icon: 'train', ink: '#ff9a76', head: 'Train adds its notes', line: 'A mark made during a set shows here with its exercise.' },
+    { icon: 'shield', ink: '#8fdcb6', head: 'Never the match', line: 'For the coach and your own record. It never touches Football.' },
+  ],
+};
 
 /** The body log page (replaces Readiness): today's chart, then the last fortnight's marks, including Train's in-set notes. */
 export function BodyLogPage() {
   const today = useToday();
   const body = useBody();
-  if (!body) return <RegionFrame />;
+  if (!body) return <div className="page bare k-page k-light you" />;
   const words = bodyTileWords(body, today);
   const marked = words.startsWith('All good') ? '' : words;
   const recent = body.filter((e) => e.date < today && e.date >= addDays(today, -14)).sort((a, b) => b.at - a.at);
   return (
-    <RegionFrame className="bl-page">
-      <button type="button" className="backlink" onClick={() => back('/today')}><Icon name="left" size={20} stroke={1.8} />Today</button>
-      <h1 className="h1">How’s the body?</h1>
-      <p className="t15 lh">Tap where it hurts, then what kind. Nothing tapped means all good.</p>
-      {marked && <p className="t15 lh"><b>Today: {marked}</b></p>}
+    <div className="page bare k-page k-light you bl-page">
+      <PageHead back="Today" onBack={() => back('/today')} title="Body log" help={HOW} />
+      <Title under={marked ? <b style={{ color: '#f4aedb' }}>Today: {marked}</b> : 'Tap where it hurts, then what kind.'}>How’s the body?</Title>
       <BodyChart date={today} entries={body} />
-      <section className="col gap8" aria-label="Whole body">
-        <h2 className="h3">The whole body</h2>
-        <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
-          {WHOLE_BODY.map((w) => {
-            const on = body.find((e) => e.date === today && e.part === w.part && e.kind === 'felt');
-            return (
-              <button key={w.part} type="button" role="switch" aria-checked={!!on} className={`chip sm${on ? ' on' : ''}`} onClick={() => void (on ? deleteBodyEntry(on.id) : addBodyEntry({ part: w.part, kind: 'felt', date: today }))}>
-                {w.label}
-              </button>
-            );
-          })}
-        </div>
-        <p className="t14 q lh">For the coach and your own record. They never touch the match.</p>
-      </section>
+      <Sect>The whole body</Sect>
+      <div className="k-pills" role="group" aria-label="Whole body">
+        {WHOLE_BODY.map((w) => {
+          const on = body.find((e) => e.date === today && e.part === w.part && e.kind === 'felt');
+          return (
+            <button key={w.part} type="button" role="switch" aria-checked={!!on} aria-pressed={!!on} className="k-pill" onClick={() => void (on ? deleteBodyEntry(on.id) : addBodyEntry({ part: w.part, kind: 'felt', date: today }))}>
+              {w.label}
+            </button>
+          );
+        })}
+      </div>
       {recent.length > 0 && (
-        <section className="col gap8">
-          <h2 className="h3">The last two weeks</h2>
-          <ul className="bl-list">
+        <>
+          <Sect>The last two weeks</Sect>
+          <div className="k-panel k-rows" style={{ '--ink': '#f4aedb' } as CSSProperties}>
             {recent.map((e) => (
-              <li key={e.id}>
+              <div key={e.id} className="k-rowl" style={{ flexWrap: 'wrap', padding: '8px 0' }}>
                 <span>{fmtDayMonth(e.date)}</span>
                 <b style={{ color: kindOf(e.kind).ink }}>{labelFor(e.part)}{e.side && e.side !== 'both' ? ` (${e.side})` : ''}{e.kind === 'felt' ? '' : ` · ${kindOf(e.kind).label}`}</b>
-                {e.exercise && <small>During {e.exercise}{e.setNo ? `, set ${e.setNo}` : ''}</small>}
-              </li>
+                {e.exercise && <span className="k-q" style={{ flexBasis: '100%' }}>During {e.exercise}{e.setNo ? `, set ${e.setNo}` : ''}</span>}
+              </div>
             ))}
-          </ul>
-        </section>
+          </div>
+        </>
       )}
-    </RegionFrame>
+    </div>
   );
 }

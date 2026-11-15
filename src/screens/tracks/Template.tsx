@@ -3,7 +3,7 @@ import type { Headline, TrackKey } from '../../domain/trackRules';
 import { Ambient } from '../../ui/you/Ambient';
 import { TRACK_LOOK } from './look';
 import { back } from '../../router';
-import { Seg } from '../../ui/controls';
+import { Action, PageHead, Panel, Sect, type HowThisWorks } from '../../ui/kit/Kit';
 import { Icon } from '../../ui/Icon';
 import type { PlaceMark } from './data';
 import { PLACE_INKS, PLACE_LABELS, placePath } from '../../ui/PlaceIcon';
@@ -218,11 +218,12 @@ export function HeroChart({
 
 export interface TrackView { label: string; el: ReactNode; /** Shows the figure, the range and the main chart. */ hero?: boolean }
 
-/** A track's own ground, behind everything and outside any animated block. */
+/** A track's light (board five, "Sleep"): its accent glowing in from the top right over a deep ground, its animation faint. */
 export function TrackGround({ track }: { track: TrackKey }) {
-  return <div className="yu-tbg" style={{ '--g': TRACK_LOOK[track].ground } as CSSProperties}><Ambient t={track} /></div>;
+  return <div className="yu-tbg k-tbg" style={{ '--g': TRACK_LOOK[track].ground, '--c': TRACK_LOOK[track].accent } as CSSProperties}><Ambient t={track} /></div>;
 }
 
+/** Changed, why, next: the headline's reasons, as rows in a filled panel. */
 export function Changed({ head }: { head: Headline }) {
   const rows: [string, string | undefined][] = [['Changed', head.changed], ['Why', head.why], ['Next', head.next]];
   const shown = rows.filter((r): r is [string, string] => !!r[1]);
@@ -230,70 +231,122 @@ export function Changed({ head }: { head: Headline }) {
   return <div className="yu-cwn">{shown.map(([a, b]) => <div key={a}><span>{a}</span>{b}</div>)}</div>;
 }
 
+/** The trend word's colour: easing in apricot as drawn, improving and building in green, steady in cream. */
+const WORD_INK: Record<string, string> = { Easing: '#e98a5b', Improving: '#8fdcb6', Building: '#8fdcb6', Steady: '#ede6da' };
+
+/** Each track's "?": how its page reads, in four steps. */
+function trackHow(name: string, accent: string): HowThisWorks {
+  return {
+    title: name,
+    steps: [
+      { icon: 'trend', ink: accent, head: 'The big number', line: 'Your average over the range you pick, beside how it is trending.' },
+      { icon: 'calendar', ink: '#ede6da', head: 'A bar or a dot is a day', line: 'Oldest on the left. An empty outline is a day not logged, never a zero.' },
+      { icon: 'tape', ink: '#f2c46d', head: 'Dashed is your aim', line: 'The shaded band is your usual range.' },
+      { icon: 'scope', ink: '#93c3dc', head: 'Worth knowing', line: 'Findings come from your own days, and only once there are enough of them.' },
+    ],
+  };
+}
+
 /**
- * Every Tracks page's shape: the headline sentence; changed, why, next; the page's own views;
- * insights; history. The ground fills the screen behind it all.
+ * Every Tracks page's shape (look pass, board five "Sleep: the counts, tidied"): one way back, the name and a "?";
+ * the big number in the track's ink with its trend word on the right; the charts straight on the ground under a bold
+ * label; the counts as strips and tiles; findings in one filled panel; the day-by-day list last.
  */
-export function TrackShell({ track, head, title, value, sub, change, span, spans = ['7', '30', '90'], unit = 'd', onSpan, hero, views, insights, children, history }: {
+export function TrackShell({ track, head, title, value, sub, change, trend, chartLabel, span, spans = ['7', '30', '90'], unit = 'd', onSpan, hero, top, views, insights, children, history, action }: {
   track: TrackKey;
   head: Headline;
   title?: string;
   value?: ReactNode;
   sub?: ReactNode;
   change?: { text: string; good?: boolean };
+  /** The trend word from momentum's four areas, as on You's tiles. */
+  trend?: { word: string; was?: string };
+  /** The bold label over the main chart. */
+  chartLabel?: string;
   span?: string;
   spans?: string[];
   unit?: string;
   onSpan?: (s: string) => void;
   hero?: ReactNode;
+  /** Drawn right under the main chart: a track's own charts, strips and scales. */
+  top?: ReactNode;
   views?: TrackView[];
   insights?: (string | undefined | false)[];
   children?: ReactNode;
   history?: { title: string; rows: [string, string][]; onRow?: (i: number) => void };
+  /** The page's one glowing action. */
+  action?: { label: string; onClick: () => void };
 }) {
   const [on, setOn] = useState(0);
   const look = TRACK_LOOK[track];
+  const name = title ?? look.name;
   const lines = (insights ?? []).filter((x): x is string => !!x).slice(0, 3);
   const view = views?.[Math.min(on, views.length - 1)];
   const showHero = !views || view?.hero;
+  const spanWord = (s: string) => (s === 'all' ? 'All' : `${s} ${unit === 'n' ? 'nights' : unit === 'w' ? 'weeks' : 'days'}`);
   return (
     <>
       <TrackGround track={track} />
-      <div className="page bare yu-page yu-track" style={{ '--c': look.accent, '--g': look.ground } as CSSProperties}>
-        <button type="button" className="backlink yu-cl" onClick={() => back('/tracks')}>
-          <Icon name="left" size={20} stroke={1.8} />
-          Tracks
-        </button>
-        <div className="yu-track-name">{title ?? look.name}</div>
-        <h1>{head.say}</h1>
-        <Changed head={head} />
-        {views && views.length > 1 && (
-          <div className="yu-views" role="group" aria-label="Views">
-            {views.map((v, i) => <button key={v.label} type="button" aria-pressed={v === view} className={v === view ? 'on' : undefined} onClick={() => setOn(i)}>{v.label}</button>)}
-          </div>
-        )}
-        {showHero && (value !== undefined || (span && onSpan)) && (
-          <div className="yu-card yu-stat">
-            {value !== undefined && <div className="yu-stat-v">{value}</div>}
-            {(sub || change) && <span className="yu-q">{sub}{sub && change ? ' · ' : ''}{change?.text}</span>}
-            {span && onSpan && <Seg options={spans.map((s) => ({ id: s, label: s === 'all' ? 'All' : `${s} ${unit}` }))} value={span} onChange={onSpan} />}
-          </div>
-        )}
-        {showHero && hero && <div className="card">{hero}</div>}
-        {view?.el}
-        {children}
-        {lines.length > 0 && <div className="yu-sec"><h2>Worth knowing</h2><div className="yu-card">{lines.map((l) => <span key={l}>{l}</span>)}</div></div>}
-        {history && history.rows.length > 0 && (
-          <div className="card" style={{ gap: 0 }}>
-            <div className="lbl" style={{ paddingBottom: 6 }}>{history.title}</div>
-            {history.rows.map(([a, b], i) =>
-              history.onRow ? (
-                <button key={i} type="button" className="sess" style={{ minHeight: 44 }} onClick={() => history.onRow!(i)}><span className="t14">{a}</span><span className="t14 q tn">{b}</span></button>
-              ) : (
-                <div key={i} className="sess" style={{ minHeight: 44 }}><span className="t14">{a}</span><span className="t14 q tn">{b}</span></div>
-              ),
+      <div className="page bare k-page yu-page yu-track k-track" style={{ '--c': look.accent, '--g': look.ground, '--ink': look.accent } as CSSProperties}>
+        <PageHead back="Tracks" onBack={() => back('/tracks')} title={name} help={trackHow(name, look.accent)} />
+        {value !== undefined && (
+          <div className="k-row end">
+            <span className="k-hero-row" style={{ minWidth: 0 }}>
+              <span className={`k-hero ${typeof value === 'string' && value.length > 7 ? 'sm' : 'md'}`} style={{ color: look.accent }}>{value}</span>
+              {sub && <b className="k-hero-sub">{sub}</b>}
+            </span>
+            {(trend || change) && (
+              <span className="k-col k-r" style={{ flex: 'none' }}>
+                {trend ? <b style={{ color: WORD_INK[trend.word] ?? '#ede6da' }}>{trend.word}</b> : <b style={{ color: change?.good === false ? '#e98a5b' : change?.good ? '#8fdcb6' : '#ede6da' }}>{change?.text}</b>}
+                {trend?.was && <span className="k-q">was {trend.was}</span>}
+              </span>
             )}
           </div>
+        )}
+        {showHero && hero && (
+          <div className="k-chart">
+            <b>{chartLabel ?? (span ? `${name}, ${spanWord(span).toLowerCase()}` : name)}</b>
+            {hero}
+          </div>
+        )}
+        {showHero && span && onSpan && (
+          <div className="k-pills" role="radiogroup" aria-label="How far back">
+            {spans.map((s) => <button key={s} type="button" role="radio" aria-checked={s === span} aria-pressed={s === span} className="k-pill sm" onClick={() => onSpan(s)}>{spanWord(s)}</button>)}
+          </div>
+        )}
+        {showHero && top}
+        <p className="k-line k-say">{head.say}</p>
+        <Changed head={head} />
+        {views && views.length > 1 && (
+          <>
+            <Sect>Views</Sect>
+            <div className="k-pills" role="group" aria-label="Views">
+              {views.map((v, i) => <button key={v.label} type="button" className="k-pill" aria-pressed={v === view} onClick={() => setOn(i)}>{v.label}</button>)}
+            </div>
+          </>
+        )}
+        {view?.el}
+        {children}
+        {lines.length > 0 && (
+          <Panel ink={look.accent}>
+            <span className="k-lb">Worth knowing</span>
+            {lines.map((l) => <span key={l}>{l}</span>)}
+          </Panel>
+        )}
+        {action && <Action wide onClick={action.onClick}>{action.label}</Action>}
+        {history && history.rows.length > 0 && (
+          <>
+            <Sect>{history.title}</Sect>
+            <div className="k-panel k-rows" style={{ '--ink': look.accent } as CSSProperties}>
+              {history.rows.map(([a, b], i) =>
+                history.onRow ? (
+                  <button key={i} type="button" className="k-rowl" onClick={() => history.onRow!(i)}><span>{a}</span><b>{b}</b><Icon name="right" size={16} stroke={2.2} /></button>
+                ) : (
+                  <div key={i} className="k-rowl"><span>{a}</span><b>{b}</b></div>
+                ),
+              )}
+            </div>
+          </>
         )}
       </div>
     </>

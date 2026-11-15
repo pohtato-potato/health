@@ -3,8 +3,9 @@ import { buildStats } from '../domain/achStats';
 import { ACH_SETS, ACTIVE_ACHIEVEMENTS as ACHIEVEMENTS, CATEGORIES, fmtProgress, setProgress, text, type AchDef } from '../domain/achievements';
 import { fmtDayMonth } from '../domain/format';
 import { useToday } from '../db/hooks';
-import { back } from '../router';
+import { back, useRoute } from '../router';
 import { Icon } from '../ui/Icon';
+import { PageHead } from '../ui/kit/Kit';
 import { TIER_COLOR, TIER_NAME } from '../ui/Moments';
 import { useAchInput } from '../state/Achievements';
 
@@ -14,9 +15,10 @@ type Filter = 'all' | 'unlocked' | 'near' | 'secret';
 export function AchievementsPage() {
   const today = useToday();
   const input = useAchInput(today);
-  const [filter, setFilter] = useState<Filter>('all');
+  const { params } = useRoute();
+  const [filter, setFilter] = useState<Filter>(() => (['all', 'unlocked', 'near', 'secret'].includes(params.get('f') ?? '') ? (params.get('f') as Filter) : 'all'));
   const stats = useMemo(() => (input ? buildStats(input) : undefined), [input]);
-  if (!stats) return <div className="page bare" />;
+  if (!stats) return <div className="page bare k-page k-light you" />;
 
   const got = (a: AchDef) => stats.unlocked.get(a.id);
   const unlocked = ACHIEVEMENTS.filter(got);
@@ -86,15 +88,9 @@ export function AchievementsPage() {
     filter === 'all' ? true : filter === 'unlocked' ? !!got(a) : filter === 'secret' ? a.cat === 'secret' : false;
 
   return (
-    <div className="page bare">
-      <button type="button" className="backlink" onClick={() => back('/earned')}>
-        <Icon name="left" size={20} stroke={1.8} />
-        Earned
-      </button>
+    <div className="page bare k-page k-light you ach-k">
+      <PageHead back="Earned" onBack={() => back('/earned')} title="Achievements" />
       <div className="col gap6">
-        <h1 className="h1" style={{ fontSize: 32 }}>
-          Achievements
-        </h1>
         <div className="t15">
           <span className="sf" style={{ fontSize: 22 }}>
             {unlocked.length}

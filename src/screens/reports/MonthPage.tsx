@@ -6,8 +6,7 @@ import { fmtDayMonth, fmtDuration, fmtInt } from '../../domain/format';
 import { monthLabel } from '../../domain/goTo';
 import { assessment, monthSpread, sleepProfile, topFives, tryNext } from '../../domain/monthReport';
 import { back, go, useRoute } from '../../router';
-import { Icon } from '../../ui/Icon';
-import { RegionFrameView } from '../../ui/live/RegionFrame';
+import { PageHead } from '../../ui/kit/Kit';
 import { CountUp } from '../../ui/you/CountUp';
 import { DrawnLine } from '../../ui/you/DrawnLine';
 import { HUE } from '../../ui/you/palette';
@@ -33,7 +32,7 @@ export function MonthPage() {
   const { params } = useRoute();
   const input = useMonthInput();
   const corrections = useLiveQuery(() => db.corrections.toArray(), []);
-  if (!input || !corrections) return <div className="page" />;
+  if (!input || !corrections) return <div className="page bare k-page k-light you" />;
   const month = params.get('m') ?? lastMonth(input.today);
   const s = monthSpread(month, input);
   const grades = assessment(month, input);
@@ -43,10 +42,9 @@ export function MonthPage() {
   const peak = Math.max(1, ...s.perWeekday);
   const empty = !grades.length && !s.sets;
   return (
-    <RegionFrameView km={0} className="yu-page">
-      <div className="yu-stack">
-        <button type="button" className="backlink" onClick={() => back('/reports')}><Icon name="left" size={20} stroke={1.8} />Reports</button>
-        <h1>{monthLabel(month)}</h1>
+    <div className="page bare k-page k-light you yu-page">
+      <div className="k-page">
+        <PageHead back="Reports" onBack={() => back('/reports')} title={monthLabel(month)} />
         {empty && <div className="yu-card"><b>Nothing was logged this month</b><span className="yu-q">A report needs at least one day.</span></div>}
         {!empty && (
           <>
@@ -89,6 +87,6 @@ export function MonthPage() {
         )}
         <CorrectionNotes from={`${month}-01`} to={`${month}-31`} list={corrections} />
       </div>
-    </RegionFrameView>
+    </div>
   );
 }

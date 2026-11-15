@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 // Owner, 12 Nov: three things leave You; everything else on the page stays.
+// Look pass L5 (15 Nov): Browse split into DidYouKnow and Surprise; the club's line is FootballLine (same data).
 const src = (f: string) => readFileSync(new URL(`../src/${f}`, import.meta.url), 'utf8');
 
 describe('You page removals (12 Nov)', () => {
@@ -18,7 +19,7 @@ describe('You page removals (12 Nov)', () => {
     expect(b).toMatch(/Did you know/);
     expect(b).toMatch(/Surprise me/);
     const y = src('screens/You.tsx');
-    for (const c of ['<TodaysLift', '<HowsToday', '<MomentumPanel', '<Browse', '<TrophyCase', '<Doors', '<FindingCard', '<LeagueLine', '<FilmPoster', '<ClockChip', '<DueLines'])
+    for (const c of ['<TodaysLift', '<HowsToday', '<MomentumPanel', '<DidYouKnow', '<Surprise', '<TrophyCase', '<Doors', '<FindingCard', '<FootballLine', '<FilmPoster', '<ClockChip', '<DueLines'])
       expect(y).toContain(c);
   });
   it('stored questions stay in settings so old backups restore', () => {

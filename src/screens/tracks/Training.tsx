@@ -12,7 +12,7 @@ import { go } from '../../router';
 import { songAt } from '../../sources/lastfm';
 import { doneSessions } from '../../state/derived';
 import { StrengthCard } from '../TrackExtras';
-import { headInput, spanDays, type TrackData } from './data';
+import { headInput, spanDays, trendFor, type TrackData } from './data';
 import { TrackShell } from './Template';
 
 const formInk = (f: number) => (f >= 4 ? 'var(--sage)' : f >= 3 ? 'var(--gold)' : 'var(--rose)');
@@ -55,6 +55,9 @@ export function TrainingTrack({ data }: { data: TrackData }) {
     <TrackShell
       track="training"
       head={headlineFor('training', headInput(data))}
+      value={String(done.filter((x) => x.date > addDays(today, -14)).length)}
+      sub="in two weeks"
+      trend={trendFor(data, 'training')}
       insights={[
         form.now !== undefined && `${Math.round(form.now * 100)}% of reps clean${form.before !== undefined && form.before !== form.now ? `, ${form.now > form.before ? 'up' : 'down'} from ${Math.round(form.before * 100)}%` : ''}.`,
         fading && `Fading fault: ${FAULTS.find((f) => f.id === fading[0].split('|')[0])?.name.toLowerCase() ?? fading[0].split('|')[0]} on ${fading[0].split('|')[1].toLowerCase()}.`,
