@@ -480,7 +480,8 @@ button.fb-todaycard { cursor: pointer; }
 .fb-wdots .on i { background: var(--fb-or); border-color: var(--fb-or); width: 28px; border-radius: 6px; }
 
 /* The thin football line on other tabs (Task 5.4): an orange outline, a "Football" label, never colour alone. */
-.fb-hline { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; row-gap: 2px; align-items: center; width: 100%; min-height: 44px; padding: 8px 14px; border-radius: 14px; border: 1.5px solid #ff7a1a; background: rgba(20,13,26,.55); color: #f3eee6; font: 500 15px/1.3 var(--sans); text-align: left; cursor: pointer; }
+/* Tidy: a filled wash with a hairline edge (kit rule 2), not an orange outline. */
+.fb-hline { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; row-gap: 2px; align-items: center; width: 100%; min-height: 44px; padding: 8px 14px; border-radius: 14px; border: 1px solid rgba(255,122,26,.35); background: linear-gradient(180deg, rgba(255,122,26,.20), rgba(255,122,26,.07)); color: #f3eee6; font: 500 15px/1.3 var(--sans); text-align: left; cursor: pointer; }
 .fb-hline-k { font: 700 14px var(--sans); letter-spacing: .04em; text-transform: uppercase; color: #ffa25c; }
 .fb-hline-t { font-variant-numeric: tabular-nums; }
 .fb-hline-s { grid-column: 2; font-size: 14px; color: rgba(243,238,230,.8); }

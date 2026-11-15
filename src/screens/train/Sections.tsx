@@ -5,6 +5,7 @@ import { GROUPS } from '../../domain/muscles';
 import type { VolumeRow } from '../../domain/trainView';
 import type { MuscleId } from '../../domain/types';
 import { BodyHeat } from '../../ui/BodyMap';
+import { Icon } from '../../ui/Icon';
 
 /** The same session about four weeks ago against the latest. */
 export function FourWeeksCard({ name, then, rows }: { name: string; then: DayKey; rows: { name: string; then: string; now: string; up: boolean }[] }) {
@@ -13,7 +14,7 @@ export function FourWeeksCard({ name, then, rows }: { name: string; then: DayKey
       <div className="lv-tr-cardhead">
         <span className="lv-card-h">You, four weeks ago</span>
         <span className="lv-small">
-          {name} · {fmtDayMonth(then)} → last time
+          {name} · {fmtDayMonth(then)}, against last time
         </span>
       </div>
       {rows.map((r) => (
@@ -21,11 +22,11 @@ export function FourWeeksCard({ name, then, rows }: { name: string; then: DayKey
           <span className="grow">{r.name}</span>
           <span className="q num tn">{r.then}</span>
           <span className="lv-tr-arrow" aria-label="to">
-            →
+            <Icon name="arrow" size={16} />
           </span>
           <span className={`num tn${r.up ? ' lv-tr-up' : ''}`}>
             {r.now}
-            {r.up ? ' ↑' : ''}
+            {r.up && <Icon name="up" size={15} stroke={2.2} />}
           </span>
         </div>
       ))}
@@ -52,7 +53,7 @@ export function BodyCard({ rows, line, onOpen }: { rows: VolumeRow[]; line?: str
       <div className="lv-tr-cardhead">
         <span className="lv-card-h">This week on your body</span>
         <button type="button" className="lv-link" onClick={onOpen}>
-          Muscle map ›
+          Muscle map <Icon name="right" size={16} stroke={2.2} />
         </button>
       </div>
       <span className="lv-small">Hard sets against the plan's target for each group.</span>
@@ -88,7 +89,7 @@ export function RecordsCard({ total, rows, onAll }: { total: number; rows: { wha
       <div className="lv-tr-cardhead">
         <span className="lv-card-h">Records</span>
         <button type="button" className="lv-link" onClick={onAll}>
-          All {total} ›
+          All {total} <Icon name="right" size={16} stroke={2.2} />
         </button>
       </div>
       {rows.map((r) => {
@@ -139,7 +140,7 @@ export function MonthCard({ month, next, m, film, onFilm }: { month: string; nex
       )}
       {film && (
         <button type="button" className="lv-link" onClick={onFilm}>
-          Last month’s film ›
+          Last month’s film <Icon name="right" size={16} stroke={2.2} />
         </button>
       )}
     </div>
@@ -163,7 +164,7 @@ export function RecentCard({ rows, onOpen }: { rows: { id: string; title: string
               {r.records} record{r.records === 1 ? '' : 's'}
             </span>
           )}
-          <span className="q">›</span>
+          <span className="q"><Icon name="right" size={18} /></span>
         </button>
       ))}
     </div>
@@ -180,7 +181,7 @@ export function PlanCard({ name, version, sessions, since, warmup, rules, onOpen
         <span className="lv-tr-plan-name">{name}</span>
         <span className="lv-small">
           {sessions.join(' · ')}
-          {version ? ` · version ${version}` : ''} · since {fmtDayMonth(since)} ›
+          {version ? ` · version ${version}` : ''} · since {fmtDayMonth(since)} <Icon name="right" size={16} stroke={2.2} />
         </span>
       </button>
       {(warmup || rules.length > 0) && (

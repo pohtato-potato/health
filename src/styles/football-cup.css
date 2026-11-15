@@ -6,8 +6,9 @@
 .cup-world {
   background: repeating-linear-gradient(115deg, rgba(255,255,255,.022) 0 2px, transparent 2px 9px), radial-gradient(120% 60% at 50% 0%, color-mix(in srgb, var(--cup, #e9a46a) 20%, transparent), transparent 60%), var(--board); }
 .cup-world > .fb-field { display: none; }
-.cup-page { gap: 12px; font-family: var(--ab); color: #ede6da; padding-top: calc(10px + var(--safe-top)); padding-bottom: calc(var(--tab-h) + 28px + var(--safe-bottom)); }
-.cup-board { display: flex; flex-direction: column; gap: 10px; min-height: calc(100dvh - var(--tab-h) - var(--safe-top) - var(--safe-bottom) - 44px); font-family: var(--ab); }
+.cup-page { gap: 12px; font-family: var(--ab); color: #ede6da; padding-top: calc(10px + var(--safe-top)); padding-bottom: calc(var(--tab-h) + 12px + var(--safe-bottom)); }
+/* Tidy: the board fills exactly the screen above the tab bar (10 px above, 12 px below), so a page that fits never scrolls. */
+.cup-board { display: flex; flex-direction: column; gap: 10px; min-height: calc(100dvh - var(--tab-h) - var(--safe-top) - var(--safe-bottom) - 22px); font-family: var(--ab); }
 .cup-board p { margin: 0; }
 .cup-grow { flex: 1; }
 .cup-q { color: var(--cq, #c4c1cf); font-size: 15px; line-height: 1.4; }
@@ -90,7 +91,7 @@
 .cup-wild { display: flex; flex-direction: column; gap: 8px; }
 
 /* the move card */
-.cup-cd { --ink: #ede6da; position: relative; display: flex; flex-direction: column; width: 100%; aspect-ratio: 104 / 150; border: 2px solid var(--ink); border-radius: 12px; background: #0d1d17; color: var(--ink); overflow: hidden; }
+.cup-cd { --ink: #ede6da; position: relative; display: flex; flex-direction: column; width: 100%; height: 100%; border: 2px solid var(--ink); border-radius: 12px; background: #0d1d17; color: var(--ink); overflow: hidden; }
 .cup-cd.finish { clip-path: polygon(0 0, 78% 0, 100% 14%, 100% 100%, 0 100%); border-radius: 12px 0 12px 12px; }
 .cup-cd.cover { border-radius: 12px 12px 26px 26px; }
 .cup-cd.cover .cup-cd-ft { padding: 2px 13px 9px 10px; }
@@ -99,15 +100,17 @@
 .cup-cd.great { box-shadow: 0 0 22px -2px var(--ink), inset 0 0 18px -8px var(--ink); border-width: 2.5px; }
 .cup-cd.off { opacity: .42; }
 .cup-cd-cost { position: absolute; left: 6px; top: 6px; width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: #0b0d1c; font: 700 17px/26px var(--fr); text-align: center; z-index: 2; }
-.cup-cd-art { flex: 1; min-height: 0; display: grid; place-items: center; padding: 20px 2px 0; }
-.cup-cd-art svg { width: 100%; height: 100%; overflow: visible; }
-.cup-cd-nm { background: var(--ink); color: #0b0d1c; font: 700 14px/1.15 var(--ab); padding: 4px 4px 4px 8px; transform: skew(-8deg) translateX(-4px); width: 110%; }
+.cup-cd-art { flex: none; display: grid; place-items: center; padding: 20px 2px 2px; }
+.cup-cd-art svg { display: block; width: 100%; height: auto; max-height: 64px; overflow: visible; }
+/* Tidy: the name plate always holds two lines, so a long name never eats the drawing; the card grows instead. */
+.cup-cd-nm { background: var(--ink); color: #0b0d1c; font: 700 14px/1.15 var(--ab); padding: 4px 4px 4px 8px; transform: skew(-8deg) translateX(-4px); width: 110%; min-height: calc(2.3em + 8px); display: flex; align-items: center; hyphens: auto; }
 .cup-cd-nm span { display: block; transform: skew(8deg); }
 .cup-cd-ft { display: flex; justify-content: space-between; align-items: flex-end; padding: 2px 8px 6px 6px; min-height: 34px; }
 .cup-cd-lv { color: var(--ink); font-size: 14px; letter-spacing: 1px; }
 .cup-cd-val { text-align: right; font: 600 24px/0.9 var(--fr); color: var(--ink); }
 .cup-cd-val small { display: block; font: 700 14px/1 var(--ab); letter-spacing: .04em; }
-.cup-cdw { display: flex; flex-direction: column; gap: 4px; }
+.cup-cdw { display: flex; flex-direction: column; gap: 4px; height: 100%; }
+.cup-cdw .cup-cd { flex: 1; height: auto; }
 .cup-cd-note { text-align: center; font: 700 15px var(--ab); color: #ede6da; }
 .cup-cd-note.k-price { color: #f2c46d; }
 .cup-cd-note.k-drop { color: #ff9270; }
@@ -333,6 +336,30 @@
 .cup-rows li:last-child { border-bottom: 0; }
 
 /* A move card's foot: the level marks, then the value; a long label drops under the marks rather than off the card. */
-.cup-cd-ft { flex-wrap: wrap; row-gap: 1px; }
-.cup-cd-val { margin-left: auto; }
+.cup-cd-ft { display: grid; grid-template-columns: 1fr; margin-top: auto; }
+/* The level marks sit beside the number; the label runs under both, so it never drops off the card. */
+.cup-cd-lv, .cup-cd-val { grid-row: 1; grid-column: 1; }
+.cup-cd-lv { align-self: start; padding-top: 4px; }
+.cup-cd-val { justify-self: stretch; }
 .cup-ft .cup-rows li { min-height: 34px; padding: 4px 0; }
+
+/* Tidy (look pass leftovers): full time's numbers three across; a chosen card's action beside its quiet way out;
+   the cup won with its trophy beside the name on a phone. */
+.cup-stats { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 8px; }
+.cup-stats li { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 14px; color: var(--cq); }
+.cup-stats li b { font: 600 20px/1.1 var(--fr); color: #ede6da; white-space: nowrap; }
+.cup-stats-more { margin-top: 8px !important; }
+.cup-pair { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.cup-pair .cup-btn.ghost { width: auto; }
+.cup-won-lead { display: flex; flex-direction: column; gap: 10px; }
+@media (max-height: 820px) {
+  .cup-won-lead { flex-direction: row; align-items: center; gap: 12px; }
+  .cup-won-lead .cup-won-trophy { flex: none; padding: 0; }
+  .cup-won-lead .cup-trophy { width: 96px; height: 96px; }
+  .cup-won-lead .cup-centre { text-align: left; min-width: 0; }
+  .cup-won-lead .cup-centre .cup-sc { justify-content: flex-start; }
+  .cup-won-lead .cup-h1 { font-size: 30px; line-height: 1.05; }
+}
+.cup-stall { gap: 8px; }
+.cup-won-lead .cup-under { margin-top: 4px; }
+.cup-stall .k-panel .cup-btn { margin-top: 12px; }

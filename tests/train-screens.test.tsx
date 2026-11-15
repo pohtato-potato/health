@@ -104,7 +104,8 @@ describe('the sections', () => {
     const h = renderToStaticMarkup(<FourWeeksCard name="Session C" then="2026-09-23" rows={[{ name: 'Romanian deadlift', then: '10 × 14', now: '10 × 19', up: true }]} />);
     expect(h).toContain('You, four weeks ago');
     expect(h).toContain('Session C · 23 Sep');
-    expect(h).toMatch(/10 × 14[\s\S]*→[\s\S]*10 × 19/);
+    expect(h).toMatch(/10 × 14[\s\S]*aria-label="to"><svg[\s\S]*10 × 19/); // a drawn arrow, never a typed one
+    expect(h).not.toMatch(/[→↑›]/);
   });
   it('the body, in words as well as colour', () => {
     const h = renderToStaticMarkup(
@@ -118,7 +119,7 @@ describe('the sections', () => {
   });
   it('records, in gold', () => {
     const h = renderToStaticMarkup(<RecordsCard total={23} rows={[{ what: '10 kg × 19', name: 'Romanian deadlift', when: 'tonight' }]} onAll={noop} />);
-    expect(h).toContain('All 23 ›');
+    expect(h).toMatch(/All 23 <svg/);
     expect(h).toContain('lv-tag gold');
     expect(RecordsCard({ total: 0, rows: [], onAll: noop })).toBeNull();
   });
@@ -127,7 +128,7 @@ describe('the sections', () => {
     expect(h).toContain('October so far');
     expect(h).toContain('Most improved: reverse curl, up 40%.');
     expect(h).toContain('full report on 1 Nov');
-    expect(renderToStaticMarkup(<MonthCard month="November" next="1 Dec" m={{ sessions: 1, records: 0 }} film onFilm={noop} />)).toContain('Last month’s film ›');
+    expect(renderToStaticMarkup(<MonthCard month="November" next="1 Dec" m={{ sessions: 1, records: 0 }} film onFilm={noop} />)).toMatch(/Last month’s film <svg/);
     expect(MonthCard({ month: 'November', next: '1 Dec', m: { sessions: 0, records: 0 }, film: false, onFilm: noop })).toBeNull();
   });
   it('recent sessions, with record tags', () => {
@@ -150,7 +151,7 @@ describe('train review fixes', () => {
   it('the body card is a card with a link, not one big button', () => {
     const h = renderToStaticMarkup(<BodyCard rows={[{ name: 'Legs', sets: 5, lo: 10, hi: 16, state: 'low' }]} onOpen={noop} />);
     expect(h).toMatch(/^<div class="lv-card"/);
-    expect(h).toContain('Muscle map ›');
+    expect(h).toMatch(/Muscle map <svg/);
   });
   it('tonight says logged later instead of a length', () => {
     const h = renderToStaticMarkup(<TonightCard name="Session C" records={[]} mins={2} sets={20} later onReplay={noop} />);
