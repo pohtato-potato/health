@@ -12,7 +12,7 @@ export function Kaai({ tier, done, height = 104, stage: only, site = false }: { 
   const stage = only ?? kaaiStage(tier);
   const sides = ['river-end', 'crane-stand', 'dock-end'].filter((x) => done.includes(x)).length;
   const lit = done.includes('floodlights');
-  const words = [`stage ${stage} of 3`, sides ? `${sides} ${sides === 1 ? 'side stand' : 'side stands'}` : '', done.includes('roof') ? 'a roof' : '', has(done, 'cafe') ? 'the café' : '', has(done, 'shop') ? 'the shop' : '', has(done, 'ferry') ? 'the ferry stop' : ''].filter(Boolean);
+  const words = [`stage ${stage} of 3`, sides ? `${sides} ${sides === 1 ? 'side stand' : 'side stands'}` : '', done.includes('roof') ? 'a roof' : '', has(done, 'cafe') ? 'the café' : '', has(done, 'shop') ? 'the shop' : '', has(done, 'ferry') ? 'the ferry stop' : '', done.includes('kaai-pressbox') ? 'the press box' : ''].filter(Boolean);
   return (
     <svg className="kc-kaai" viewBox="0 0 336 110" preserveAspectRatio="xMidYMax meet" style={{ height }} role="img" aria-label={site ? `Kaai 42 on the quay, being built: ${words.join(', ')}` : `The Kaai at dusk with its floodlights on: ${words.join(', ')}`}>
       <defs>
@@ -37,6 +37,8 @@ export function Kaai({ tier, done, height = 104, stage: only, site = false }: { 
       {/* City club: a roof, the lit entrance, the quay wall in club purple. */}
       {(stage >= 3 || done.includes('roof')) && <><path d="M60 34l16-18h184l16 18z" fill="#343a72" /><path d="M76 16h184" stroke="#ffd9a8" strokeWidth="3" /></>}
       {stage >= 3 && <><path d="M150 110V84h36v26z" fill="#ff7a1a" opacity=".85" /><path d="M0 110h336" stroke="#9a74ec" strokeWidth="4" /></>}
+      {/* The press box (ledger O40): a row of lit desks under the main stand's roof. */}
+      {done.includes('kaai-pressbox') && <><rect x="128" y="64" width="80" height="9" rx="2" fill="#10122a" stroke="#93c3dc" strokeWidth="1.5" />{Array.from({ length: 5 }, (_, i) => <rect key={i} x={134 + i * 15} y="66.5" width="8" height="4" fill="#ffd9a8" />)}</>}
       {done.includes('scoreboard') && <rect x="150" y="22" width="36" height="12" rx="2" fill="#10122a" stroke="#ff9a4d" strokeWidth="1.5" />}
       {has(done, 'cafe') && <><path d="M36 110V92h22v18z" fill="#2a2450" /><rect x="41" y="96" width="12" height="6" fill="#ffb48a" /></>}
       {has(done, 'shop') && <><path d="M278 110V90h24v20z" fill="#2a2450" /><rect x="283" y="95" width="14" height="6" fill="#c2b2ff" /></>}

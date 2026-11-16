@@ -30,7 +30,7 @@ export const STAFF: StaffDef[] = [
     effects: [{ kind: 'axis', axis: 'Pace', d: 1, side: 'atk', when: 'home' }] },
   { id: 'commercial-manager', name: 'Commercial manager', tech: 'r-commercial', wageUnits: 1, text: 'Sponsor money +10%.',
     effects: [{ kind: 'money', what: 'sponsors', share: 0.1 }] },
-  { id: 'head-of-data', name: 'Head of data', tech: 't-datateam', wageUnits: 1.25, text: 'The habit line shows the nearest band step for every unit.',
+  { id: 'head-of-data', name: 'Head of data', tech: 't-datateam', wageUnits: 1.25, text: 'Tonight and the habit line show tonight’s expected points, from the same played-out chance.',
     effects: [{ kind: 'rule', rule: 'expected-points', value: 1 }] },
   { id: 'hydrotherapist', name: 'Hydrotherapist', tech: 't-pool', wageUnits: 1, text: 'Back-to-back training days cost 10% freshness, not 15%.',
     effects: [{ kind: 'rule', rule: 'freshness-cost', value: 10 }] },

@@ -91,7 +91,7 @@ export type RuleKey =
   | 'morale-captain-up' // the captain's unit gets its morale +1 at Up, not only High
   | 'scout-line' // the scout line the night before
   | 'scout-weak' // the morning also names the rival's weakest unit
-  | 'expected-points' // the habit line shows the nearest band step
+  | 'expected-points' // Tonight and the habit line show tonight's expected points
   | 'press-answers' // choose the press line after big nights
   | 'testimonial' // a Club legend's testimonial night (a pack)
   | 'trialist-wait' // a trialist can be held a week

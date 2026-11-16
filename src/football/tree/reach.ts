@@ -17,7 +17,6 @@ const LOANS: Place = { name: 'Loans', to: '/football/loans' };
 const DUTY: Place = { name: 'Duty', to: '/football/duty' };
 const TREE: Place = { name: 'The tree', to: '/football/club', params: { view: 'tree' } };
 const PACKS: Place = { name: 'Packs', to: '/football/packs' };
-const ALBUM: Place = { name: 'The album', to: '/football/album' };
 const MONEY: Place = { name: 'Money', to: '/football/club', params: { view: 'money' } };
 const KITS: Place = { name: 'Kits', to: '/football/club', params: { view: 'kits' } };
 const PROJECTS_PAGE: Place = { name: 'Projects', to: '/football/projects' };
@@ -32,9 +31,9 @@ const RULE: Record<RuleKey, Place> = {
   'knock-days': SHEET, 'morale-captain-up': SHEET, 'false-nine': SHEET, 'rotation-two-fronts': SHEET,
   'fuel-break-days': SQUAD,
   'loan-days': LOANS, 'loan-slots': LOANS, 'icon-odds': LOANS,
-  'lesson-loss': TREE, 'lesson-draw': TREE, 'boon-choices': TREE, 'research-tour': TREE, 'research-duty': DUTY,
+  'lesson-loss': TREE, 'lesson-draw': TREE, 'boon-choices': TREE, 'research-tour': TREE, 'research-duty': DUTY, 'museum-research': TREE,
   'scout-line': TONIGHT, 'scout-weak': TONIGHT, 'expected-points': TONIGHT, 'press-answers': TONIGHT,
-  testimonial: PACKS, 'packs-items': PACKS, 'museum-research': ALBUM,
+  testimonial: PACKS, 'packs-items': PACKS,
 };
 const UNLOCK: Record<UnlockKey, Place> = {
   'formation-442': SHEET, 'formation-4231': SHEET, 'formation-352': SHEET, 'formation-433-attack': SHEET, 'unit-captains': SHEET, philosophy: SHEET,
@@ -44,18 +43,27 @@ const UNLOCK: Record<UnlockKey, Place> = {
 const SLOT = (s: SlotKey): Place => (s.startsWith('sponsor-') ? MONEY : s === 'academy' ? ACADEMY : SQUAD);
 
 /**
- * The effects nothing in the game reads yet (audit 16 Nov). The tech still gives everything else it lists; these are
- * said plainly on its page and listed in the ledger for the owner to decide.
+ * The effects nothing in the game reads yet (audit 16 Nov; wired 16 Nov except the playing philosophy, which would change
+ * match odds and waits for the owner). The tech still gives everything else it lists; this is said plainly on its page.
  */
 export const NOT_RUN_YET = {
-  rule: ['research-tour', 'expected-points', 'press-answers', 'museum-research', 'testimonial'] as RuleKey[],
-  unlock: ['philosophy', 'kit-classic', 'press-office'] as UnlockKey[],
+  rule: [] as RuleKey[],
+  unlock: ['philosophy'] as UnlockKey[],
+};
+
+/** What a rule wired on 16 Nov does, in words, where the plain "A rule changes" would say too little. */
+const RULE_WORDS: Partial<Record<RuleKey, (v: number) => string>> = {
+  'research-tour': (v) => `Each logged day between seasons: +${v} research`,
+  'museum-research': (v) => `Each finished album set: +${v} research every Monday`,
+  'expected-points': () => 'Tonight’s expected points, on Tonight and the habit line',
+  'press-answers': () => 'After big nights: the line for the papers, at full time',
+  testimonial: () => 'A testimonial night and a pack for each new Club legend',
 };
 
 const UNLOCK_WORDS: Record<UnlockKey, string> = {
   'formation-442': 'The 4-4-2 shape', 'formation-4231': 'The 4-2-3-1 shape', 'formation-352': 'The 3-5-2 shape', 'formation-433-attack': 'The attacking 4-3-3',
   'unit-captains': 'A captain for each unit', philosophy: 'A playing philosophy', programme: 'The matchday programme', 'press-office': 'The press office',
-  tour: 'The pre-season tour', 'kit-third': 'A third kit', 'kit-classic': 'A classic kit', scarf: 'The club scarf',
+  tour: 'The pre-season tour', 'kit-third': 'A third kit', 'kit-classic': 'Classic designs in the kit maker', scarf: 'The club scarf',
 };
 
 /** One effect, where it shows. Projects and staff name themselves; match effects show in How it adds up. */
@@ -63,7 +71,7 @@ export function reachOf(e: Effect): Reach | undefined {
   switch (e.kind) {
     case 'axis': case 'retake': case 'extra-chance': case 'chemistry':
       return { line: 'Its match lift counts every night', place: BLEND };
-    case 'rule': return { line: `A rule changes on ${RULE[e.rule].name}`, place: RULE[e.rule], waiting: NOT_RUN_YET.rule.includes(e.rule) };
+    case 'rule': return { line: RULE_WORDS[e.rule]?.(e.value) ?? `A rule changes on ${RULE[e.rule].name}`, place: RULE[e.rule], waiting: NOT_RUN_YET.rule.includes(e.rule) };
     case 'unlock': return { line: `${UNLOCK_WORDS[e.what]}: now open`, place: UNLOCK[e.what], waiting: NOT_RUN_YET.unlock.includes(e.what) };
     case 'slot': return { line: e.slot.startsWith('sponsor-') ? 'A sponsor slot opens' : 'One more place', place: SLOT(e.slot) };
     case 'money': return { line: 'More money at the season’s end', place: MONEY };

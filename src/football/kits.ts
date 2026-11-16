@@ -31,6 +31,14 @@ export const CATALOGUE: KitEntry[] = [
   { id: 'T5', slot: 'third', name: 'Black, bold stripes', kit: K(BK, 'stripes', { a: PU, collarC: OR, cuff: OR }) },
   { id: 'T6', slot: 'third', name: 'Purple fade', kit: K(PU, 'fade', { a: BK, collar: 'v', collarC: OR, cuff: OR, numEdge: undefined }) },
 ];
+/** Classic designs (the tree's "A classic kit", ledger O40): one for each slot, in the kit maker once the tech is owned. */
+export const CLASSIC_TECH = 'n-classickit';
+export const CLASSICS: KitEntry[] = [
+  { id: 'C1', slot: 'home', name: 'Classic: white polo collar', kit: K(OR, 'plain', { collar: 'polo', collarC: WH, cuff: WH, side: undefined }) },
+  { id: 'C2', slot: 'away', name: 'Classic: white, orange sash', kit: K(WH, 'sash', { a: OR, b: PU, collar: 'polo', collarC: OR, cuff: OR, ink: BK, numEdge: undefined, backPattern: 'plain' }) },
+  { id: 'C3', slot: 'third', name: 'Classic: purple hoops', kit: K(PU, 'hoops', { a: OR, b: PU, collar: 'polo', collarC: WH, cuff: WH }) },
+];
+export const kitEntry = (id: string) => CATALOGUE.find((k) => k.id === id) ?? CLASSICS.find((k) => k.id === id);
 export const SPONSOR_STYLES: { id: SponsorStyle; name: string }[] = [
   { id: 'A', name: 'Wordmark' }, { id: 'B', name: 'Badge' }, { id: 'C', name: 'Script' }, { id: 'R', name: 'Block' },
 ];
@@ -71,8 +79,9 @@ export function anniversaryKit(season: number): KitDef | null {
 }
 /** Launch day: the designs the kit maker offers for a slot. The data kit joins the third slot from season 2. */
 /** `extra`: more designs for each slot (the cast's `kit-pick` perk), borrowed from the other slots' drawers. */
-export function launchOptions(slot: KitSlot, season: number, extra = 0): string[] {
-  const base = CATALOGUE.filter((k) => k.slot === slot).map((k) => k.id);
+/** `classic`: the classic kit tech is owned, so the slot's classic design joins the drawer. */
+export function launchOptions(slot: KitSlot, season: number, extra = 0, classic = false): string[] {
+  const base = [...CATALOGUE.filter((k) => k.slot === slot).map((k) => k.id), ...(classic ? CLASSICS.filter((k) => k.slot === slot).map((k) => k.id) : [])];
   const more = extra > 0 ? CATALOGUE.filter((k) => k.slot !== slot).map((k) => k.id).slice(0, extra) : [];
   if (slot !== 'third') return [...base, ...more];
   return [...base, ...more, ...(season >= 2 ? ['DATA'] : []), ...(isAnniversary(season) ? ['ANNIV'] : [])];

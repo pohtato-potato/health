@@ -4,9 +4,9 @@
 // The desk's dice and the cast's message are seams: their tiles have a place in the order, nothing fills them yet.
 import type { DayKey } from '../domain/dates';
 
-export type TileKind = 'result' | 'table' | 'talks' | 'scout' | 'academy' | 'cast' | 'dice' | 'pack';
+export type TileKind = 'result' | 'table' | 'talks' | 'scout' | 'academy' | 'cast' | 'dice' | 'research' | 'pack';
 /** The order tiles open in. The result always leads. */
-export const TILE_ORDER: TileKind[] = ['result', 'table', 'talks', 'scout', 'academy', 'cast', 'dice', 'pack'];
+export const TILE_ORDER: TileKind[] = ['result', 'table', 'talks', 'scout', 'academy', 'cast', 'dice', 'research', 'pack'];
 export const PARCEL_MAX = 6;
 
 /** Each tile's own edge colour (p3-shut) and its title. */
@@ -18,6 +18,7 @@ export const TILE: Record<TileKind, { ink: string; title: string }> = {
   academy: { ink: '#c2b2ff', title: 'The academy' },
   cast: { ink: '#f4aedb', title: 'A note for you' },
   dice: { ink: '#93c3dc', title: "Today's dice" },
+  research: { ink: '#8fdcb6', title: 'Research came in' },
   pack: { ink: '#f2c46d', title: 'A pack is due' },
 };
 
@@ -48,3 +49,9 @@ export function heldAtNight(what: string): boolean {
 const WORDS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six'];
 export const cameIn = (n: number) => `${WORDS[n] ?? n} ${n === 1 ? 'thing' : 'things'} came in`;
 export const forTheMorning = (n: number) => (n <= 0 ? 'Packs and results wait for the morning' : `${WORDS[n] ?? n} ${n === 1 ? 'thing' : 'things'} for the morning`);
+
+/** The research tile (ledger O40): the tour's and the museum's research paid on the day just played. */
+export const PARCEL_RESEARCH = ['tour', 'museum'] as const;
+export function parcelResearch<G extends { on: DayKey; why: string }>(gains: G[], yesterday: DayKey): G[] {
+  return gains.filter((g) => g.on === yesterday && (PARCEL_RESEARCH as readonly string[]).includes(g.why));
+}

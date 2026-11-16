@@ -7,7 +7,7 @@ import { loadLeague, type League } from '../../../football/store/league';
 import type { FbSeason, StoredMatch } from '../../../football/store/tables';
 import { summarise, upsets } from '../../../football/seasonStory';
 import { kitsBySeason } from '../../../football/store/kitWall';
-import { CATALOGUE, CREST_LINES } from '../../../football/kits';
+import { CREST_LINES, kitEntry } from '../../../football/kits';
 import { MomentsView } from './Moments';
 import { SeasonsView } from './Seasons';
 import { WrappedView } from '../moments/Wrapped';
@@ -71,7 +71,7 @@ export function RivalRoute({ id }: { id: string }) {
 
 const kitName = (s: Story, n: number) => {
   const id = kitsBySeason(s.l.save, n)[n]?.home ?? '';
-  return id.startsWith('FIRST:') ? 'The founding shirt' : `Home: ${CATALOGUE.find((k) => k.id === id)?.name ?? id}`;
+  return id.startsWith('FIRST:') ? 'The founding shirt' : `Home: ${kitEntry(id)?.name ?? id}`;
 };
 const crestName = (s: Story, n: number) => {
   const h = (s.l.save.crestHistory ?? []).filter((x) => x.season <= n && x.opt !== 'keep').pop();
