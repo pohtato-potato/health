@@ -1,4 +1,5 @@
 // Moments: upsets for and against you, and the moment of each season (look pass L4: filled panels, drawn arrows).
+import { seasonName } from '../../../football/pyramid/redraw';
 import type { SeasonSummary, Upset } from '../../../football/seasonStory';
 import { Icon } from '../../../ui/Icon';
 import { Hero, Panel, Sect } from '../../../ui/kit/Kit';
@@ -12,7 +13,7 @@ export function MomentsView({ upsets, seasons }: { upsets: Upset[]; seasons: Sea
       <Hero value={forUs.length} ink={GOLD} label={forUs.length === 1 ? 'upset for you' : 'upsets for you'} under={`${against.length} against`} />
       {seasons.filter((s) => s.moments.length).map((s) => (
         <Panel key={s.season} ink={GOLD}>
-          <span className="k-lb">Moment of season {s.season}</span>
+          <span className="k-lb">Moment of {seasonName(s.season).replace(/^./, (ch) => ch.toLowerCase())}</span>
           <b>{s.moments[0]}</b>
         </Panel>
       ))}

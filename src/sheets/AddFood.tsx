@@ -147,11 +147,11 @@ export function AddFood() {
         </div>
       }
     >
-      <div className="row base t13">
+      <div className="row base t14">
         <span className="q">
           eaten <span style={{ color: 'var(--kcal)' }}>{fmtTime(eaten !== undefined ? atOn(date, eaten) : eatenAtFor(date, meal, place, settings))}</span>
         </span>
-        <button type="button" className="link t13" style={{ minHeight: 32 }} aria-expanded={changeTime} onClick={() => setChangeTime(!changeTime)}>
+        <button type="button" className="link" style={{ minHeight: 44, padding: '0 6px' }} aria-expanded={changeTime} onClick={() => setChangeTime(!changeTime)}>
           change
         </button>
       </div>

@@ -62,7 +62,8 @@ export const RESULT = { W: 'Won', D: 'Drew', L: 'Lost' } as const;
 
 const BRABO = '#ff7a1a';
 /** What an unlogged axis waits on, in words (the same answers Today gives). */
-const LOG_FOR: Record<Axis, string> = { Pace: 'your steps', Power: 'a session', Fuel: 'your food', Rest: 'your sleep', Routine: 'the checklist', Shape: 'a weigh-in' };
+/** O42 slip 36: the whole phrase, so the verb agrees ("until your steps are in"). */
+const LOG_FOR: Record<Axis, string> = { Pace: 'your steps are in', Power: 'a session is in', Fuel: 'your food is in', Rest: 'your sleep is in', Routine: 'the checklist is ticked', Shape: 'a weigh-in is in' };
 
 /** A season moment waiting to be seen takes Tonight until it is: one thing leads. */
 function momentOf(t: TonightData): ReactNode {
@@ -135,7 +136,7 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
       {!many && chance && t.opp && !t.morning.intl && <div className="lt-stake"><ChanceBar c={chance} oppName={oppName} oppId={t.opp.id} date={t.date} /></div>}
       {xp && t.opp && !t.morning.intl && <p className="k-q lt-ctr">The head of data: <b>{xpWords(xp.xp, xp.usual).replace(/^E/, 'e')}</b>.</p>}
       {unlogged.map((a) => (
-        <Panel key={a} ink={AXIS_INK[a]}><span><b style={{ color: AXIS_INK[a] }}>{a} isn’t logged yet.</b> It plays low and wild until {LOG_FOR[a]} {a === 'Routine' ? 'is ticked' : 'is in'}.</span></Panel>
+        <Panel key={a} ink={AXIS_INK[a]}><span><b style={{ color: AXIS_INK[a] }}>{a} isn’t logged yet.</b> It plays low and wild until {LOG_FOR[a]}.</span></Panel>
       ))}
       {noData.length > 0 && <Panel ink={AXIS_INK[noData[0]]}><span><b style={{ color: AXIS_INK[noData[0]] }}>{noData.join(' and ')} {noData.length === 1 ? 'has' : 'have'} no data yet.</b> No data plays as an even 10.</span></Panel>}
       {f && t.tactic && (

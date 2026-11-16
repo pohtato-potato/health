@@ -21,11 +21,12 @@ export function Calendar({ season, today, matches, events = [], cont = false, wo
   const kind = (k: DayPlan['kind']) => (world === 2 && k === 'tiercup' ? 'Pair Cup' : KIND[k]);
   const days = daysOf(world);
   const res = resultsByDay(matches, season);
+  // Finding 3 (O42): the season record counts league matches only, as the table does.
   const counts = { W: 0, D: 0, L: 0 };
-  for (const r of res.values()) counts[r]++;
+  for (const m of matches) if (m.season === season && m.comp === 'league') counts[m.result]++;
   return (
     <section className="fb-cal" aria-label={`${seasonName(season)} calendar`}>
-      <div className="fb-row"><span className="fb-t">{seasonName(season)}</span><span className="fb-s">{counts.W} W · {counts.D} D · {counts.L} L</span></div>
+      <div className="fb-row"><span className="fb-t">{seasonName(season)}</span><span className="fb-s">League {counts.W} W · {counts.D} D · {counts.L} L</span></div>
       {world === 2 && <p className="fb-s">{days.length} days · {leagueMatchdays(2)} league matchdays</p>}
       <ol className="fb-calgrid">
         {days.map((p) => {

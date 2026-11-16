@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState, type CSSProperties } from 'react';
-import { ACHIEVEMENTS } from '../domain/achievements';
+import { ACHIEVEMENTS, ACTIVE_ACHIEVEMENTS } from '../domain/achievements';
 import { firsts, milestones, odometers, shelves, type Dated } from '../domain/earned';
 import { fmtDayMonth, fmtInt } from '../domain/format';
 import { availableThemes } from '../domain/themes';
@@ -105,7 +105,8 @@ export function Earned() {
 
   const worn = wornTitle(settings, unlocked, level);
   const titlesHad = TITLE_DEFS.filter((t) => t.rule(stats)).length + TITLES.filter((t) => t.unlocked(unlocked, level)).length;
-  const secretsFound = ACHIEVEMENTS.filter((a) => a.cat === 'secret' && unlocked.has(a.id)).length;
+  // O42 slip 30: counted as the Achievements page counts (retired secrets left out).
+  const secretsFound = ACTIVE_ACHIEVEMENTS.filter((a) => a.cat === 'secret' && unlocked.has(a.id)).length;
   const wearable = availableThemes(unlocked).length;
   const trophies = trophyCandidates({ today, settings, days, entries, sets, sightings });
   return (

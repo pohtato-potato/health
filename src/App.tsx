@@ -255,7 +255,8 @@ export function App() {
   return (
     <div className="app">
       <RegionRoot />
-      <Suspense fallback={<div className="page" />}>{page.el()}</Suspense>
+      {/* O42 slip 20: while a page's code loads, its name shows rather than a blank page. */}
+      <Suspense fallback={<div className="page"><p className="k-q page-loading" role="status">Opening {(route.path.split('/').filter(Boolean).pop() ?? 'today').replace(/-/g, ' ')}…</p></div>}>{page.el()}</Suspense>
       {page.tab && <TabBar active={page.tab} />}
       {/* Train shows its own "Back to the session" panel, so the floating pill would only cover it. */}
       {page.tab && route.path !== '/train' && <ResumePill />}

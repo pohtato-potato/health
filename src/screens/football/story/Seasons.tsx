@@ -1,5 +1,6 @@
 // Seasons: each one's finish, cups, kit and crest, and its Season Wrapped (look pass L4: filled panels).
 import { tierName } from '../../../football/data/load';
+import { seasonName } from '../../../football/pyramid/redraw';
 import type { SeasonSummary } from '../../../football/seasonStory';
 import { go } from '../../../router';
 import { Action, Hero, Panel } from '../../../ui/kit/Kit';
@@ -13,7 +14,7 @@ export function SeasonsView({ list, kitOf, crestOf }: { list: SeasonSummary[]; k
       <Hero value={list.length} ink="#c2b2ff" label={list.length === 1 ? 'season so far' : 'seasons so far'} />
       {[...list].reverse().map((s) => (
         <Panel key={s.season} ink={INK[s.move === 'up' ? 'up' : s.move === 'down' ? 'down' : 'stay']} className="lt-season">
-          <span className="lt-sh"><b>Season {s.season}</b><span className="k-q">{tierName(s.tier)}</span></span>
+          <span className="lt-sh"><b>{seasonName(s.season)}</b><span className="k-q">{tierName(s.tier)}</span></span>
           <span>{s.pos ? `Finished ${ord(s.pos)}${s.move === 'up' ? ', promoted' : s.move === 'down' ? ', relegated' : ''}` : 'Still playing'}</span>
           <span className="k-q">{s.record.W} won, {s.record.D} drawn, {s.record.L} lost</span>
           {s.cups.map((c) => <span key={c} className="k-q">{c}</span>)}

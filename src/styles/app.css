@@ -1768,7 +1768,7 @@ textarea.field {
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
 }
 .w-k {
-  font-size: 12px;
+  font-size: 15px; /* O42 slip 38 */
   font-weight: 600;
   letter-spacing: 0.01em;
   text-transform: none;
@@ -1787,3 +1787,4 @@ textarea.field {
 
 /* With the plus floating bottom right, the last row scrolls clear of it. */
 .app:has(> .fab-plus:not(.docked)) .page { padding-bottom: calc(var(--tab-h) + 36px + 66px + var(--safe-bottom)); }
+.page-loading { padding: 24px 16px; font-size: 16px; text-transform: capitalize; }

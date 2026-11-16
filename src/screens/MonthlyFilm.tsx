@@ -81,7 +81,8 @@ export function MonthlyFilmPage() {
       <button type="button" className="yu-close k-close" onClick={close} aria-label="Close the film"><Icon name="close" size={22} stroke={2.2} /><span>Close</span></button>
       <div className="yu-film-b" key={k} aria-live="polite"><Frame f={f} month={month} /></div>
       {k > 0 && <button type="button" className="yu-film-prev" onClick={(e) => { e.stopPropagation(); setI(k - 1); }}><Icon name="left" size={20} stroke={2.2} />Back</button>}
-      {k < frames.length - 1 && <span className="yu-film-hint">Tap to go on</span>}
+      {/* O42 slip 31: the screen count Reports' door names. */}
+      <span className="yu-film-hint">{k + 1} of {frames.length} screens{k < frames.length - 1 ? ' · tap to go on' : ''}</span>
     </div>
   );
 }

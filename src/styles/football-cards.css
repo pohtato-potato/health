@@ -84,7 +84,8 @@
 .pl-pitch .pl-lines * { fill: none; stroke: rgba(243,238,230,.22); stroke-width: .5; }
 .pl-tk { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 2px; width: 25%; min-height: 44px; padding: 0; border: 0; background: none; color: #f3eee6; cursor: pointer; font: inherit; }
 .pl-tk b { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: #120c22; border: 2.5px solid var(--uc); box-shadow: 0 0 10px color-mix(in srgb, var(--uc) 70%, transparent); font-family: var(--serif); font-size: 18px; font-weight: 600; color: #fff; }
-.pl-tk span { max-width: 100%; font-size: 14px; line-height: 1.15; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 1px 2px #000, 0 0 4px #000; }
+/* O42 slip 13: a long habit name wraps to a second line rather than being cut. */
+.pl-tk span { max-width: 100%; font-size: 14px; line-height: 1.15; text-align: center; overflow-wrap: anywhere; text-shadow: 0 1px 2px #000, 0 0 4px #000; }
 .pl-tk:focus-visible { outline: 3px solid #ffe27a; outline-offset: 2px; border-radius: 12px; }
 .pl-units { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .pl-unit { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 6px 10px; border-radius: 12px; border: 1.5px solid color-mix(in srgb, var(--uc) 60%, transparent); background: rgba(0,0,0,.25); color: #f3eee6; font: inherit; font-size: 15px; text-align: left; cursor: pointer; }
