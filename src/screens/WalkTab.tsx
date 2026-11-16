@@ -105,7 +105,7 @@ export function WalkTab() {
         )}
         <div className="k-row end">
           <Hero value={fmtInt(Math.round(km))} ink="var(--steps)" size="md" label="km from Delhi" />
-          <span className="k-col k-r"><b className="k-num">{steps.has(today) ? todayKm.toFixed(1) : '0'}</b><span className="k-q">km today</span></span>
+          <span className="k-col k-r"><b className="k-num">{steps.has(today) ? todayKm.toFixed(1) : '0'}</b><span className="k-q">km today</span>{steps.has(today) && <span className="k-q">{fmtInt(steps.get(today) ?? 0)} steps</span>}</span>
         </div>
         <WalkStrip strip={stripFor(km, todayKm, stretch, STOPS)} onOpen={() => go('/map')} />
         <PlaceStatusRow settings={settings} today={today} day={day} onPlace={(id) => void changePlace(today, id)} />
