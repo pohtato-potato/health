@@ -299,8 +299,9 @@ button.fb-todaycard { cursor: pointer; }
 .fb-tring { justify-self: center; }
 .fb-tcrest { display: grid; place-items: center; width: 26px; height: 26px; } /* O42: every club shows its crest in the table */
 .fb-tname { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.fb-tname b { font: 600 16px var(--sans); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fb-tname em { font: 600 14px var(--sans); font-style: normal; border: 1.5px solid currentColor; border-radius: 999px; padding: 0 7px; margin-left: 6px; }
+/* O42: a long club name wraps rather than being cut, and the You chip stays whole. */
+.fb-tname b { font: 600 16px var(--sans); overflow-wrap: anywhere; }
+.fb-tname em { display: inline-block; white-space: nowrap; font: 600 14px var(--sans); font-style: normal; border: 1.5px solid currentColor; border-radius: 999px; padding: 0 7px; margin-left: 6px; }
 .fb-form { display: flex; gap: 4px; }
 .fb-tpts { font: 400 22px var(--serif); display: flex; align-items: baseline; gap: 3px; font-variant-numeric: lining-nums tabular-nums; }
 .fb-tpts small { font: 400 14px var(--sans); color: var(--fb-quiet); }

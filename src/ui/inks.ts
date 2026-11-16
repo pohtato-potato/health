@@ -47,17 +47,15 @@ function hueSat(hex: string): [number, number] {
 /** Brabo's own colour on the chance bar: the orange of the home shirt, light enough to read. */
 export const BRABO_INK = '#ff9a4d';
 /**
- * The opponent's colour beside Brabo's (the chance bar's loss part, O41): its first club colour that is neither
- * grey nor close to Brabo's orange, brightened to read on the dark page; a plain blue when it has none.
+ * The opponent's colour on the chance bar's loss part (O41; owner, O42): its own first club colour that is not grey,
+ * brightened to read on the dark page, even when it sits near Brabo's orange (the words and percentages carry the
+ * meaning, never the colour alone); a plain blue only for a club whose colours are all grey, black or white.
  */
 export function rivalInk(colours: string[] | undefined): string {
-  const [oh] = hueSat(BRABO_INK);
   for (const c of colours ?? []) {
     if (!/^#?[0-9a-f]{6}$/i.test(c)) continue;
     const ink = brighten(c.startsWith('#') ? c : `#${c}`);
-    const [h, s] = hueSat(ink);
-    const gap = Math.min(Math.abs(h - oh), 360 - Math.abs(h - oh));
-    if (s > 0.25 && gap > 35) return ink;
+    if (hueSat(ink)[1] > 0.25) return ink;
   }
   return '#93c3dc';
 }

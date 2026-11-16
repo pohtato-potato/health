@@ -81,8 +81,21 @@ describe('finding 4: from 6 pm the chance reads "as it stands"', async () => {
   it('a day already past is always "as it stands"', () => {
     expect(lateFor('2026-11-17', new Date('2026-11-18T09:00:00').getTime())).toBe(true);
   });
-  it('the loss part is never Brabo orange', () => {
+  it('with no opponent the loss part is a plain blue', () => {
     expect(lossInkOf(undefined)).toBe('#93c3dc');
+  });
+  it('the loss part is the opponent’s own first colour, readable on the dark page (owner, O42)', async () => {
+    const { rivalInk } = await import('../../src/ui/inks');
+    const lum = (hex: string) => {
+      const n = parseInt(hex.slice(1), 16);
+      const f = (c: number) => { const v = c / 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+      return 0.2126 * f(n >> 16) + 0.7152 * f((n >> 8) & 255) + 0.0722 * f(n & 255);
+    };
+    const ink = rivalInk(['#e32219', '#ffffff']); // a red first colour, close to Brabo's orange
+    const n = parseInt(ink.slice(1), 16);
+    expect(n >> 16).toBeGreaterThan(((n >> 8) & 255) + 60); // still red, not swapped for blue
+    expect((lum(ink) + 0.05) / (lum('#0d0b16') + 0.05)).toBeGreaterThanOrEqual(3);
+    expect(rivalInk(['#000000', '#ffffff'])).toBe('#93c3dc'); // all grey: the plain blue
   });
 });
 
