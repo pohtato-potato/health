@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { kitSvg } from '../../../football/art/kit';
 import { crestSvg, type CrestOptKey, type CrestStep } from '../../../football/art/crest';
-import { CREST_LINES, KIT_MAN_TECH, launchOptions, slotsOpen, SPONSOR_STYLES, type KitSlot } from '../../../football/kits';
+import { CLASSIC_TECH, CREST_LINES, KIT_MAN_TECH, launchOptions, slotsOpen, SPONSOR_STYLES, type KitSlot } from '../../../football/kits';
 import type { Club } from '../../../football/store/club';
 import { kitFor, kitWall, type WallKit } from '../../../football/store/kitWall';
 import { Art } from '../Tonight';
@@ -24,6 +24,7 @@ export function KitsView({ c, act = {} }: { c: Club; act?: KitActions }) {
   const launch = s.phase === 'event' || unpicked;
   const next = unpicked ? s.season : s.season + 1;
   const kitMan = (s.treeUser?.researched ?? []).some((r) => r.id === KIT_MAN_TECH);
+  const classic = (s.treeUser?.researched ?? []).some((r) => r.id === CLASSIC_TECH);
   const open = slotsOpen(c.stage ?? c.tier, kitMan);
   const sp = s.sponsorStyle ?? 'A';
   // Finding 9: a shirt wears the crest the club had that season (it was always the step-two crest).
@@ -48,7 +49,7 @@ export function KitsView({ c, act = {} }: { c: Club; act?: KitActions }) {
               <fieldset key={slot} className="k-col" style={{ border: 0, padding: 0, margin: 0, gap: 6 }}>
                 <legend className="k-q" style={{ padding: 0, marginBottom: 6 }}>{SLOT[slot]}</legend>
                 <div className="kn-kits">
-                  {launchOptions(slot, next, perkValue(perksOfSave(s), 'kit-pick')).map((id) => {
+                  {launchOptions(slot, next, perkValue(perksOfSave(s), 'kit-pick'), classic).map((id) => {
                     const k = kitFor(id, next, c.matches);
                     if (!k) return null;
                     return (
@@ -65,6 +66,7 @@ export function KitsView({ c, act = {} }: { c: Club; act?: KitActions }) {
           {!open.includes('third') && <span className="k-q">The third kit opens with the kit man, in the tree, or at a bigger stage.</span>}
         </Panel>
       )}
+      {classic && !launch && <Panel ink={GOLD}><PanelTop name="Classic designs" c={GOLD} right="from the tree" /><span className="k-q">A classic design for each slot joins the kit maker on launch day, before season {s.season + 1}.</span></Panel>}
       <Panel ink={LAV}>
         <PanelTop name="Sponsor on the shirt" c={LAV} />
         <div className="kb-chiprow">

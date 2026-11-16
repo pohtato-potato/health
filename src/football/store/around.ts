@@ -10,7 +10,8 @@ import { physioDue } from '../../domain/treatment';
 import type { Day } from '../../domain/types';
 import { seasonLength } from '../calendar';
 import { worldOf } from '../pyramid/shape';
-import { groundShut, parcelDue, parcelTiles, type TileKind } from '../parcel';
+import { groundShut, parcelDue, parcelResearch, parcelTiles, type TileKind } from '../parcel';
+import type { ResearchGain } from '../tree/types';
 import { talkAsk, talkDue, talkTarget, talkWindow, type TalkHabit, type TalkOutcome, type TalkPick } from '../talks';
 import { loadHealth, type Health } from './gather';
 import type { Tonight } from './hooks';
@@ -86,6 +87,8 @@ export interface Parcel {
   others: StoredMatch[];
   talks: TalkOffer[];
   packs: number;
+  /** Research the tour or the museum paid on the day just played (ledger O40). */
+  research: ResearchGain[];
   /** Today's dice for the desk (made from yesterday), for the dice tile (p3-dice). */
   dice: Die[];
   /** Scouts back this morning (Fork 2, p3-scout): trips that ended yesterday, and loan targets a 6 turned up. */
@@ -122,6 +125,7 @@ export async function loadParcel(t: Tonight): Promise<Parcel> {
   const dice = diceFrozen(t.save, h, date);
   const scouts = morningReports(t.save, date, (await db.fbSeasons.get(t.save.season))?.tierOf);
   const cast = castNote(t.save, date);
+  const research = parcelResearch(t.save.tree?.gains ?? [], addDays(date, -1));
   const tiles = parcelTiles({
     result: Boolean(waiting || result),
     table: physioDue(day),
@@ -130,9 +134,10 @@ export async function loadParcel(t: Tonight): Promise<Parcel> {
     academy: t.morning.grew.length > 0,
     cast: Boolean(cast),
     dice: dice.length > 0,
+    research: research.length > 0,
     pack: packs > 0,
   });
-  return { tiles, due: parcelDue(aroundOf(t.save).parcel, date, shut, tiles), shut, waiting, result, others, talks, packs, dice, scouts, cast, today: day, sealAt: day.seal?.at };
+  return { tiles, due: parcelDue(aroundOf(t.save).parcel, date, shut, tiles), shut, waiting, result, others, talks, packs, research, dice, scouts, cast, today: day, sealAt: day.seal?.at };
 }
 
 /** True from Close the day until the 4 am roll-over: packs and results wait for the morning. */

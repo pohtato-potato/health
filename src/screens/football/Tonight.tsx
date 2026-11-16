@@ -2,6 +2,8 @@
 // shape, the plan and anything waiting as filled panels, one glowing action, doors for the rest.
 import { useState, type ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { loadExpected } from '../../football/store/chance';
+import { xpWords } from './HabitLine';
 import { clubCrest, crestSvg } from '../../football/art/crest';
 import { clubById } from '../../football/data/load';
 import { OWN } from '../../football/store/season';
@@ -76,6 +78,7 @@ function momentOf(t: TonightData): ReactNode {
 export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: string) => void }) {
   const [plan, setPlan] = useState(false);
   const chance = useChance(t.date);
+  const xp = useLiveQuery(() => loadExpected(t.date), [t.date]);
   const watch = onWatch ?? ((id: string) => go('/football/match', { id }));
   const moment = momentOf(t);
   if (moment) return <div className="lt-moment">{moment}</div>;
@@ -123,6 +126,7 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
         <Radar values={t.liveValues} flags={t.flags} fog={AXES.filter((a) => t.flags[a])} captain={t.save.slots.includes('armband') ? t.save.captain : undefined} opp={oppVals} oppInk="#93c3dc" oppName={t.opp?.name} inked size={300} label="Tonight’s shape so far" />
       </div>
       {chance && t.opp && !t.morning.intl && <div className="lt-stake"><ChanceBar c={chance} oppName={oppName} /></div>}
+      {xp && t.opp && !t.morning.intl && <p className="k-q lt-ctr">The head of data: <b>{xpWords(xp.xp, xp.usual).replace(/^E/, 'e')}</b>.</p>}
       {unlogged.map((a) => (
         <Panel key={a} ink={AXIS_INK[a]}><span><b style={{ color: AXIS_INK[a] }}>{a} isn’t logged yet.</b> It plays low and wild until {LOG_FOR[a]} {a === 'Routine' ? 'is ticked' : 'is in'}.</span></Panel>
       ))}

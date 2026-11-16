@@ -25,6 +25,8 @@ import { CrestOrFog, FactRow, Known, factLabel, factText } from './world/Fog';
 import { Action, HelpButton } from '../../ui/kit/Kit';
 import { Icon } from '../../ui/Icon';
 import { PARCEL_HOW } from './howDaily';
+import type { ResearchGain } from '../../football/tree/types';
+import { WHY_WORDS } from '../../football/tree/words';
 import '../../styles/look-tonight.css';
 
 function Art({ svg }: { svg: string }) {
@@ -100,6 +102,7 @@ export function ParcelView({ t, p: live }: { t: Tonight; p: Parcel }) {
         {k === 'academy' && <AcademyTile t={t} onNext={next} last={last} />}
         {k === 'cast' && p.cast && <CastTile note={p.cast} onNext={next} last={last} />}
         {k === 'dice' && <DiceTile dice={p.dice} date={t.date} onNext={next} last={last} />}
+        {k === 'research' && <ResearchTile gains={p.research} date={t.date} onNext={next} last={last} />}
         {k === 'pack' && <PackTile n={p.packs} date={t.date} onNext={next} last={last} />}
         </div>
         <div className="md-fill" />
@@ -339,6 +342,24 @@ function CastTile({ note, onNext, last }: { note: CastNote; onNext: () => void; 
       ))}
       <div className="md-btns">
         {note.scene && <Action wide quiet onClick={() => go('/football/cast', { scene: `${note.scene!.member}:${note.scene!.rank}` })}>A new scene</Action>}
+        <Next onNext={onNext} last={last} />
+      </div>
+    </>
+  );
+}
+
+/** The tour's or the museum's research, paid yesterday (ledger O40). */
+function ResearchTile({ gains, date, onNext, last }: { gains: ResearchGain[]; date: string; onNext: () => void; last: boolean }) {
+  const n = gains.reduce((t, g) => t + g.n, 0);
+  return (
+    <>
+      <div className="md-tile col" style={{ '--ink': TILE.research.ink } as React.CSSProperties}>
+        <span className="md-big" style={{ color: TILE.research.ink }}>+{n}</span>
+        <b style={{ flex: 'none' }}>research for the tree</b>
+        <ul className="lt-list">{gains.map((g, i) => <li key={i}><b>+{g.n}</b> {WHY_WORDS[g.why]}{g.note ? `: ${g.note.charAt(0).toLowerCase()}${g.note.slice(1)}` : ''}</li>)}</ul>
+      </div>
+      <div className="md-btns">
+        <Action wide quiet onClick={() => { void openParcel(date).then(() => go('/football/club', { view: 'tree' })); }}>See the tree</Action>
         <Next onNext={onNext} last={last} />
       </div>
     </>

@@ -84,12 +84,7 @@ export function moveChain(c: ChanceEvent, i: number, xi: XiPlace[], last?: strin
 }
 
 /** The player of the match: most goals, then most saves, then the first to score. */
-export function playerOfMatch(credits: { kind: 'goal' | 'save'; name: string }[] | undefined): string | undefined {
-  if (!credits?.length) return undefined;
-  const score = new Map<string, number>();
-  for (const c of credits) score.set(c.name, (score.get(c.name) ?? 0) + (c.kind === 'goal' ? 3 : 1));
-  return [...score].sort((a, b) => b[1] - a[1])[0][0];
-}
+export { playerOfMatch } from '../../../football/papers';
 
 /** What moved the odds on a chance, as chips in each axis' ink (the biggest first). */
 export function oddsChips(mods: Mod[], type: string): { text: string; axis: Axis }[] {

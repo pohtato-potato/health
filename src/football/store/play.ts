@@ -51,7 +51,7 @@ import { creditsFor } from '../players/credit';
 import { linkedLogged } from '../players/youth';
 import type { Ctx } from '../players/attributes';
 import { formationFor } from '../tree/rotation';
-import { engineOf, healNow, rotationOf, stageCapacity, treeAbilities, treeDay, treeMatch, treeSeasonEnd, type TreeCtx } from './tree';
+import { engineOf, healNow, rotationOf, stageCapacity, treeAbilities, treeDay, treeLegends, treeMatch, treeSeasonEnd, type TreeCtx } from './tree';
 import { LEAGUE, TIER_BANDS, tierName } from '../data/load';
 import { braboVotes, motionById, seasonRules, sitCongress, solidarityMoney } from '../congress/congress';
 import { CAST_IDS, bondDay, bondsOf, castById, closeResearch, emptyBonds, perkValue, perksHeld } from '../cast/bonds';
@@ -907,7 +907,10 @@ function clubDay(w: World, date: DayKey) {
   // Layer 4: loans come and go, trials, youngsters grow (sessions from the linked habit, growth from kept bedtimes).
   globeDay(w, date, w.save.season);
   w.ctx = playerCtx(w.h, w.save, w.squad);
+  const before = w.roster;
   w.roster = playersDay(w.roster, w.h, w.ctx, date, academyIds(w.squad), false, rotationOf(w.save, w.bundles.values()).rules);
+  const legends = [...w.roster.values()].filter((p) => p.clubLegend && !before.get(p.id)?.clubLegend).map((p) => ({ id: p.id, name: p.name, why: p.clubLegend!.why }));
+  if (legends.length) treeLegends(treeCtx(w), date, legends);
   // Departed players sign for a club in our division (spec §6).
   const tier = w.season.tierOf[OWN];
   const seats = Object.entries(w.season.tierOf).filter(([id, t]) => t === tier && id !== OWN && !w.clubs.get(id)?.folded).map(([id]) => ({ id, name: clubById(id).name, rating: rating(w, id) }));

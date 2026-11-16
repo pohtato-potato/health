@@ -12,7 +12,7 @@ import { euros } from '../../../football/money';
 import { clearTarget, researchTech, seeEra, seeEureka } from '../../../football/store/treeActions';
 import { techState } from '../../../football/tree/research';
 import { objectiveLine } from '../../../football/tree/season';
-import { fmtCount, METRIC_WORDS, ROMAN } from '../../../football/tree/words';
+import { fmtCount, METRIC_WORDS, ROMAN, WHY_WORDS } from '../../../football/tree/words';
 import { go } from '../../../router';
 import { useHeaded } from '../FootballHome';
 import { useModel, type Model } from './model';
@@ -24,6 +24,7 @@ import { techReach } from '../../../football/tree/reach';
 import { Bar, MarkRow, Note, PanelTop, Stat } from '../club/Bits';
 
 const eraOf = (id: EraId) => ERAS.find((e) => e.id === id)!;
+const fmtDay = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 const col = (c: string) => ({ ['--c' as string]: c }) as CSSProperties;
 
 type Era = (typeof ERAS)[number];
@@ -77,6 +78,7 @@ export function TreeHome() {
       <Aim m={m} target={target} />
       <Eras m={m} skip={aimFor(m, target) ? undefined : 0} />
       <Note>Every tech has its own small picture. Filled is done, gold is within reach. Tap any to read it.</Note>
+      <Lately m={m} />
       <Sect>Around the tree</Sect>
       <Doors two label="The tree's rooms">
         <Door icon="ground" name="Projects" value={m.projectsOpen.length ? `${m.projectsOpen.length} open` : 'Kaai quarter'} family="place" onClick={() => go('/football/projects')} />
@@ -85,6 +87,22 @@ export function TreeHome() {
         <Door icon="pack" name="Packs" value={m.packsWaiting.length ? `${m.packsWaiting.length} to open` : 'The album'} family="money" onClick={() => go('/football/packs')} />
       </Doors>
     </div>
+  );
+}
+
+/** The last research that came in, newest first: where each came from and when (ledger O40). */
+function Lately({ m }: { m: Model }) {
+  const last = [...m.eng.gains].reverse().slice(0, 6);
+  if (!last.length) return null;
+  return (
+    <>
+      <Sect>Research lately</Sect>
+      <Panel ink={TREE_INK}>
+        <ul className="lt-list">
+          {last.map((g, i) => <li key={i}><b>+{fmtCount(g.n)}</b> {WHY_WORDS[g.why]}{g.note && g.note !== WHY_WORDS[g.why] ? `: ${g.note.charAt(0).toLowerCase()}${g.note.slice(1)}` : ''} <span className="k-q">· {fmtDay(g.on)}</span></li>)}
+        </ul>
+      </Panel>
+    </>
   );
 }
 
