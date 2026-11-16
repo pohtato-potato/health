@@ -258,3 +258,15 @@ describe('O41 3: every club has an original crest', async () => {
     expect(id(realCrest(c, 40))).not.toBe(id(realCrest(c, 40)));
   });
 });
+
+describe('O41 11: arrivals are never silent', async () => {
+  const { ARRIVAL_NEWS, parcelTiles } = await import('../../src/football/parcel');
+  it('trialists, a finished building, staff, loans, eras and the doctor count as arrivals; a match report does not', () => {
+    for (const id of ['2026-12-01:trials', '2026-12-01:built:kaai-stand', '2026-12-01:tech:p-physio', '2026-12-01:loan-in:x', '2026-12-01:era:e2', '2026-12-01:doctor'])
+      expect(ARRIVAL_NEWS.test(id), id).toBe(true);
+    expect(ARRIVAL_NEWS.test('m-1:papers')).toBe(false);
+  });
+  it('the parcel opens with them straight after last night', () => {
+    expect(parcelTiles({ result: true, club: true, pack: true })).toEqual(['result', 'club', 'pack']);
+  });
+});

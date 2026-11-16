@@ -11,6 +11,7 @@ import { paceOn, paceWeekDone } from '../pace';
 import { BOUNTIES, BOARD_RESEARCH, TRACK_KIT_PIECES, TRACK_THEMES } from '../content/season';
 import { BOOSTS } from '../content/packs';
 import { ERAS } from '../content/tree';
+import { STAFF } from '../content/staff';
 import type { Reward } from '../content/types';
 import { reachOf } from '../continental';
 import { legendId } from '../rivals';
@@ -160,7 +161,11 @@ export function treeDay(c: TreeCtx, date: DayKey, youthDays: number) {
   }
   const st = settle(eng, user, date);
   user = st.user;
-  for (const id of st.done) c.news.push({ id: `${date}:tech:${id}`, date, kind: 'club', text: `Researched: ${techById(id)!.name}.` });
+  // O41 11 (O42): a tech that hires staff says who joins.
+  for (const id of st.done) {
+    const joins = STAFF.filter((x) => x.tech === id).map((x) => x.name);
+    c.news.push({ id: `${date}:tech:${id}`, date, kind: 'club', text: `Researched: ${techById(id)!.name}.${joins.length ? ` ${joins.join(' and ')} ${joins.length === 1 ? 'joins' : 'join'} the staff.` : ''}` });
+  }
   for (const e of erasOpen(researched())) if (!eng.eurekaBase[e]) {
     eng.eurekaBase[e] = { on: date, m: { ...eng.total } };
     c.news.push({ id: `${date}:era:${e}`, date, kind: 'club', text: `A new era: ${ERAS.find((x) => x.id === e)!.name}.` });

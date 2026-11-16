@@ -4,14 +4,15 @@
 // The desk's dice and the cast's message are seams: their tiles have a place in the order, nothing fills them yet.
 import type { DayKey } from '../domain/dates';
 
-export type TileKind = 'result' | 'table' | 'talks' | 'scout' | 'academy' | 'cast' | 'dice' | 'research' | 'pack';
+export type TileKind = 'result' | 'club' | 'table' | 'talks' | 'scout' | 'academy' | 'cast' | 'dice' | 'research' | 'pack';
 /** The order tiles open in. The result always leads. */
-export const TILE_ORDER: TileKind[] = ['result', 'table', 'talks', 'scout', 'academy', 'cast', 'dice', 'research', 'pack'];
+export const TILE_ORDER: TileKind[] = ['result', 'club', 'table', 'talks', 'scout', 'academy', 'cast', 'dice', 'research', 'pack'];
 export const PARCEL_MAX = 6;
 
 /** Each tile's own edge colour (p3-shut) and its title. */
 export const TILE: Record<TileKind, { ink: string; title: string }> = {
   result: { ink: '#ff7a1a', title: 'Last night' },
+  club: { ink: '#f2c46d', title: 'New at the club' },
   table: { ink: '#7fd8c8', title: 'The treatment table' },
   talks: { ink: '#c8e86a', title: 'Target talks' },
   scout: { ink: '#8fdcb6', title: 'A scout is back' },
@@ -28,6 +29,13 @@ export type ParcelInput = Partial<Record<TileKind, boolean>>;
 export function parcelTiles(i: ParcelInput): TileKind[] {
   return TILE_ORDER.filter((k) => i[k]).slice(0, PARCEL_MAX);
 }
+
+/**
+ * O41 11 (O42): what arrived at the club overnight is never silent. These news lines lead the parcel's "New at the
+ * club" tile: trialists, a building or project finished, research done (and the staff it hires), a loan in, a new
+ * era, the doctor's level.
+ */
+export const ARRIVAL_NEWS = /:(trials|built:|tech:|loan-in:|market-in:|era:|doctor)/;
 
 /** The parcel shows once a logging day, on the first open after 4 am, and never while the ground is shut. */
 export function parcelDue(opened: DayKey | undefined, today: DayKey, shut: boolean, tiles: TileKind[]): boolean {

@@ -10,7 +10,7 @@ import { physioDue } from '../../domain/treatment';
 import type { Day } from '../../domain/types';
 import { seasonLength } from '../calendar';
 import { worldOf } from '../pyramid/shape';
-import { groundShut, parcelDue, parcelResearch, parcelTiles, type TileKind } from '../parcel';
+import { ARRIVAL_NEWS, groundShut, parcelDue, parcelResearch, parcelTiles, type TileKind } from '../parcel';
 import type { ResearchGain } from '../tree/types';
 import { talkAsk, talkDue, talkTarget, talkWindow, type TalkHabit, type TalkOutcome, type TalkPick } from '../talks';
 import { loadHealth, type Health } from './gather';
@@ -19,7 +19,7 @@ import { OWN } from './season';
 import { diceFrozen } from './desk';
 import { morningReports } from './fog';
 import type { Die } from '../desk/types';
-import type { AroundUser, FbSave, PausedMatch, StoredMatch } from './tables';
+import type { AroundUser, FbNews, FbSave, PausedMatch, StoredMatch } from './tables';
 
 export const aroundOf = (s: Pick<FbSave, 'around'> | undefined | null): AroundUser => s?.around ?? {};
 
@@ -85,6 +85,8 @@ export interface Parcel {
   result?: StoredMatch;
   /** League pace (O36): the night's other matches, shown under the lead one (empty on a one-match night). */
   others: StoredMatch[];
+  /** O41 11 (O42): what arrived at the club on the day just played. */
+  club: FbNews[];
   talks: TalkOffer[];
   packs: number;
   /** Research the tour or the museum paid on the day just played (ledger O40). */
@@ -126,8 +128,10 @@ export async function loadParcel(t: Tonight): Promise<Parcel> {
   const scouts = morningReports(t.save, date, (await db.fbSeasons.get(t.save.season))?.tierOf);
   const cast = castNote(t.save, date);
   const research = parcelResearch(t.save.tree?.gains ?? [], addDays(date, -1));
+  const club = (await db.fbNews.where('date').equals(addDays(date, -1)).toArray()).filter((n) => ARRIVAL_NEWS.test(n.id));
   const tiles = parcelTiles({
     result: Boolean(waiting || result),
+    club: club.length > 0,
     table: physioDue(day),
     talks: talks.length > 0,
     scout: Boolean(t.morning.scout) || scouts.reports.length > 0 || scouts.leads.length > 0,
@@ -137,7 +141,7 @@ export async function loadParcel(t: Tonight): Promise<Parcel> {
     research: research.length > 0,
     pack: packs > 0,
   });
-  return { tiles, due: parcelDue(aroundOf(t.save).parcel, date, shut, tiles), shut, waiting, result, others, talks, packs, research, dice, scouts, cast, today: day, sealAt: day.seal?.at };
+  return { tiles, due: parcelDue(aroundOf(t.save).parcel, date, shut, tiles), shut, waiting, result, others, club, talks, packs, research, dice, scouts, cast, today: day, sealAt: day.seal?.at };
 }
 
 /** True from Close the day until the 4 am roll-over: packs and results wait for the morning. */

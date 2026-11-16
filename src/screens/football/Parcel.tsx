@@ -12,7 +12,7 @@ import { holdTalk, openParcel, type Parcel, type TalkOffer } from '../../footbal
 import type { Tonight } from '../../football/store/hooks';
 import { matchGate, storedGate } from '../../football/store/matchGate';
 import { OWN } from '../../football/store/season';
-import type { FbSave, PausedMatch, StoredMatch } from '../../football/store/tables';
+import type { FbNews, FbSave, PausedMatch, StoredMatch } from '../../football/store/tables';
 import { TALK_AGENT, talkTarget, type TalkPick } from '../../football/talks';
 import { RunLine } from './RunCard';
 import { go } from '../../router';
@@ -97,6 +97,7 @@ export function ParcelView({ t, p: live }: { t: Tonight; p: Parcel }) {
         <div key={at} className="lt-unseal" style={{ '--ink': TILE[k].ink } as React.CSSProperties}>
         {k === 'result' && (p.waiting || p.result) && <ResultTile waiting={p.waiting} m={p.result} save={t.save} onNext={next} last={last} />}
         {k === 'result' && live.others.length > 0 && <NightResults ms={live.others} />}
+        {k === 'club' && <ClubTile news={p.club} onNext={next} last={last} />}
         {k === 'table' && <TableTile date={t.date} onNext={next} last={last} />}
         {k === 'talks' && <TalksTile offers={p.talks} date={t.date} onNext={next} last={last} />}
         {k === 'scout' && <ScoutTile t={t} scouts={p.scouts} onNext={next} last={last} />}
@@ -351,6 +352,20 @@ function CastTile({ note, onNext, last }: { note: CastNote; onNext: () => void; 
 }
 
 /** The tour's or the museum's research, paid yesterday (ledger O40). */
+/** O41 11 (O42): who and what arrived at the club yesterday, each in its own line. */
+function ClubTile({ news, onNext, last }: { news: FbNews[]; onNext: () => void; last: boolean }) {
+  return (
+    <>
+      <div className="md-tile col" style={{ '--ink': TILE.club.ink } as React.CSSProperties}>
+        <span className="md-big" style={{ color: TILE.club.ink }}>{news.length}</span>
+        <b style={{ flex: 'none' }}>{news.length === 1 ? 'thing new at the club' : 'things new at the club'}</b>
+        <ul className="lt-list">{news.map((n) => <li key={n.id}>{n.text}</li>)}</ul>
+      </div>
+      <div className="md-btns"><Next onNext={onNext} last={last} /></div>
+    </>
+  );
+}
+
 function ResearchTile({ gains, date, onNext, last }: { gains: ResearchGain[]; date: string; onNext: () => void; last: boolean }) {
   const n = gains.reduce((t, g) => t + g.n, 0);
   return (

@@ -89,13 +89,15 @@ describe('world 2 screens', { timeout: 300_000 }, () => {
     expect(crown).toContain('Bottom three go down');
   });
 
-  it('every division: a pyramid of eight with % seen, the chosen table, hatched unknowns and a scout', () => {
+  it('every division: a pyramid of eight with % seen, the chosen table with every badge shown, and a scout', () => {
     const out = html(<EveryDivision l={l} tier={3} />);
     expect(out.match(/class="fb-step[ "]/g)).toHaveLength(8);
     expect(out).toContain('Division Six · you');
     expect(out).toMatch(/fb-step on[^"]*"[^>]*aria-label="Division Three/);
     expect(out).toContain('Send a scout to Division Three');
-    expect(out).toContain('fg-unk');
+    // O41 3 (O42): badges are always shown; the fog hides facts, never a crest.
+    expect(out).toContain('fb-tcrest');
+    expect(out).not.toContain('fg-unk');
   });
 
   it('the atlas has nine bands: eight divisions and abroad', () => {
