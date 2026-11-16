@@ -3,8 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { DOORS } from '../src/screens/you/doorList';
 
 describe('the doors', () => {
-  it('five doors in board one\'s order, Body kept fifth (the Diary is retired, R3 x-screens)', () => {
-    expect(DOORS.map((d) => d.label)).toEqual(['Tracks', 'Earned', 'Insights', 'Reports', 'Body']);
+  it('five doors, grouped by kind of place (O40): looking back, then earned, then the body (the Diary is retired, R3 x-screens)', () => {
+    expect(DOORS.map((d) => d.label)).toEqual(['Tracks', 'Insights', 'Reports', 'Earned', 'Body']);
+    expect(DOORS.map((d) => d.family)).toEqual(['back', 'back', 'back', 'earned', 'body']);
   });
 
   it('every door opens a route that exists', () => {

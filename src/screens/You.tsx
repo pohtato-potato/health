@@ -79,7 +79,7 @@ export function You() {
 
   const shown = shownTracks(settings).length;
   const subs = {
-    Reports: due.some((d) => d.id === 'story') ? `Week ${weekNumber(lastFullWeek(today))} is in` : 'Weeks and months',
+    Reports: 'Weeks and months',
     Earned: lv ? `${fmtInt(lv.unlocked.size)} earned` : 'Titles, records',
     Body: 'Check-in, photos',
     Tracks: `${COUNT_WORDS[shown] ?? fmtInt(shown)} of them`,
@@ -102,8 +102,8 @@ export function You() {
       {returnedAfterGap(days, today) && <div className="voice">{spokenLine(settings, today, 'returned', today)}</div>}
       <DueLines items={due} today={today} />
       <FilmPoster today={today} days={days} sessions={browse.sessions} sets={browse.sets} />
-      <Sect>Look closer</Sect>
-      <Doors subs={subs} />
+      {/* Ledger O40: the family headings (Looking back, Earned, Body) take the place of the one "Look closer" label. */}
+      <Doors subs={subs} counts={{ Reports: due.some((d) => d.id === 'story') ? `Week ${weekNumber(lastFullWeek(today))} is in` : undefined }} />
       <FootballLine />
       <Sect>Today’s lift</Sect>
       <DidYouKnow input={browse} />

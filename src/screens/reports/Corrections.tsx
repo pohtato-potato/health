@@ -30,7 +30,7 @@ export function Corrections() {
   return (
     <div className="page bare k-page k-light you yu-page">
       <div className="k-page">
-        <PageHead back="Reports" onBack={() => back('/reports')} title="Corrections" />
+        <PageHead back="Reports" onBack={() => back('/reports')} title="Corrections" family="upkeep" />
         {saved > 0 && settings && <div className="voice" role="status">{spokenLine(settings, today, 'correction', String(saved))}</div>}
         <span className="yu-q">A number put right shows this note wherever that week or month is read.</span>
         <section className="yu-sec"><h2>Add one</h2>

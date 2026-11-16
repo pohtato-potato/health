@@ -62,7 +62,7 @@ export function Tracks() {
   // Look pass: a filled panel per track in its own ink, its sentence and its line; the tile's animation stays, faint.
   return (
     <div className="page bare k-page k-light you">
-      <PageHead back="You" onBack={() => back('/you')} title="Tracks" />
+      <PageHead back="You" onBack={() => back('/you')} title="Tracks" family="back" />
       <div className="k-doors two k-track-tiles">
         {keys.map((k) => {
           const look = TRACK_LOOK[k];
