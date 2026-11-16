@@ -22,6 +22,7 @@ import { go } from '../../router';
 import { AXIS_INK, brighten, valueTier } from '../../ui/inks';
 import { Radar } from '../football/Radar';
 import { Art, chanceFor } from '../football/Tonight';
+import { paceSum, PaceSumView } from '../football/PaceSum';
 import '../../styles/football.css';
 
 const BRABO_INK = '#ffb15e';
@@ -161,6 +162,7 @@ export function TonightShape({ t, stadium, buzzOn, reel }: { t: Tonight; stadium
       {oppId && <p className="tm-vsx">against <Art svg={clubCrest(clubById(oppId), 22)} /><b style={{ color: oppInk }}>{name(oppId)}</b></p>}
       {oppId && t.oppTier && t.braboTier && (f.comp !== 'league' || t.oppTier !== t.braboTier) && <p className="tm-ln">{f.round ?? 'A cup tie'}: {name(oppId)} play in {t.oppTier === t.braboTier ? 'your division' : tierName(t.oppTier)}{t.oppTier < t.braboTier ? `, ${t.braboTier - t.oppTier === 1 ? 'one division' : `${t.braboTier - t.oppTier} divisions`} above you` : ''}.</p>}
       <Radar values={t.liveValues} flags={t.flags} opp={oppVals} oppInk={oppInk} oppName={oppId ? name(oppId) : undefined} fog={fog} inked pulse={pulse} size={300} label="Tonight’s shape so far" />
+      {paceSum(t) && <PaceSumView p={paceSum(t)!} />}
       {threat && oppId && <p className="tm-ln"><b style={{ color: oppInk }}>{name(oppId)}</b> {threat.kind === 'strong' ? 'are strong on' : 'lead you on'} <b style={{ color: AXIS_INK[threat.axis] }}>{threat.axis}</b>. {threat.answer}</p>}
       {t.fixtures.length > 1 ? (
         <div className="tm-night">

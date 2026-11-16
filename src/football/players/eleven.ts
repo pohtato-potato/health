@@ -79,9 +79,12 @@ export function squadValues(xi: XiPlace[], places?: Record<Unit, number>): Parti
   }
   return out;
 }
-/** Base = 0.7 × today + 0.3 × squad, rounded and clamped. A unit with no players plays on today alone. */
-export function blend(today: AxisValues, squad: Partial<AxisValues>, todayShare = TODAY_SHARE): AxisValues {
+/**
+ * Base = 0.7 × today + 0.3 × squad, rounded and clamped. A unit with no players plays on today alone, and so does an
+ * axis in `full` (a day past 20,000 steps counts in full for Pace, with no squad share: owner's letter A, O42).
+ */
+export function blend(today: AxisValues, squad: Partial<AxisValues>, todayShare = TODAY_SHARE, full: Axis[] = []): AxisValues {
   const out = {} as AxisValues;
-  for (const a of AXES as Axis[]) out[a] = clamp(Math.round(squad[a] == null ? today[a] : todayShare * today[a] + (1 - todayShare) * squad[a]!), 1, 20);
+  for (const a of AXES as Axis[]) out[a] = clamp(Math.round(squad[a] == null || full.includes(a) ? today[a] : todayShare * today[a] + (1 - todayShare) * squad[a]!), 1, 20);
   return out;
 }

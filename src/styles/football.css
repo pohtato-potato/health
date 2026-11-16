@@ -652,3 +652,11 @@ button.md-chip { min-height: 44px; cursor: pointer; }
 .fb-chance-fog b { color: #c2b2ff; }
 .tm-night { display: flex; flex-direction: column; gap: 12px; }
 .tm-nf { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid rgba(237, 230, 218, .18); }
+/* Pace's sum (O42): steps, squad, plan, morale, as chips with words. */
+.fb-pacesum { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 14px; border: 1px solid #8fdcb6; background: rgba(143, 220, 182, .1); }
+.fb-pacesum-h { font-size: 16px; color: #ede6da; }
+.fb-pacesum-h b { color: #8fdcb6; font-size: 20px; }
+.fb-pacesum-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.fb-pacesum-row > span { padding: 6px 10px; border-radius: 10px; background: rgba(255, 255, 255, .08); font-size: 15px; color: #ede6da; }
+.fb-pacesum-row b { font-size: 17px; }
+.fb-pacesum-n { font-size: 14px; line-height: 1.4; color: #c4c1cf; }

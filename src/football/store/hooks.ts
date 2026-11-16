@@ -54,6 +54,8 @@ export interface Tonight {
   base: AxisValues;
   nudges: Nudge[];
   total: AxisValues;
+  /** Pace counts in full tonight (a day past 20,000 steps, no squad share; O42). */
+  paceFull: boolean;
   tactic: { pick: Tactic; by: 'you' | 'assistant' };
   known: AbilityDef[];
   hiddenNote: boolean;
@@ -109,7 +111,7 @@ export async function loadTonight(date: DayKey): Promise<Tonight | null> {
   return {
     save, date, fixture, fixtures, opp,
     liveValues, flags: night.flags, xi: team.xi,
-    today: night.values, squad: team.squad, base: team.base, nudges: team.nudges, total: team.total, tactic: o.tactic,
+    today: night.values, squad: team.squad, base: team.base, nudges: team.nudges, total: team.total, paceFull: Boolean(o.opts.full?.includes('Pace')), tactic: o.tactic,
     known: opp?.known ?? [],
     hiddenNote: Boolean(opp?.hidden) && !save.met.includes(opp!.id),
     stack: save.earned.filter((e) => e.date > addDays(date, -7)).length,

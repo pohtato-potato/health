@@ -29,6 +29,7 @@ import { TacticPicker } from './players/Rotation';
 import { breakBeforeFor, matchdayList, paceNight, paceOn } from '../../football/pace';
 import { ChanceBar, lateFor, oppDrawing, useChances } from './Chance';
 import type { NightChance } from '../../football/store/chance';
+import { paceSum, PaceSumView } from './PaceSum';
 import type { Fixture } from '../../football/store/tonight';
 import { TACTIC_NAME } from '../../football/rotation/night';
 import { AXIS_INK } from '../../ui/inks';
@@ -101,6 +102,7 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
   const oppName = t.opp ? (t.opp.short && t.opp.name.length > 12 ? t.opp.name.split(' ')[0] : t.opp.name) : '';
   const oppVals = oppDrawing(t.oppTonight, t.liveValues, chance, lateFor(t.date));
   const many = t.fixtures.length > 1;
+  const pace = f ? paceSum(t) : undefined;
   const unlogged = AXES.filter((a) => t.flags[a] === 'not-logged');
   const noData = AXES.filter((a) => t.flags[a] === 'no-data');
   const league = Boolean(t.tactic && f?.comp === 'league' && t.opp);
@@ -129,6 +131,7 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
       <div className="lt-radar">
         <Radar values={t.liveValues} flags={t.flags} fog={AXES.filter((a) => t.flags[a])} captain={t.save.slots.includes('armband') ? t.save.captain : undefined} opp={oppVals} oppInk="#93c3dc" oppName={t.opp?.name} inked size={300} label="Tonight’s shape so far" />
       </div>
+      {pace && <PaceSumView p={pace} />}
       {!many && chance && t.opp && !t.morning.intl && <div className="lt-stake"><ChanceBar c={chance} oppName={oppName} oppId={t.opp.id} date={t.date} /></div>}
       {xp && t.opp && !t.morning.intl && <p className="k-q lt-ctr">The head of data: <b>{xpWords(xp.xp, xp.usual).replace(/^E/, 'e')}</b>.</p>}
       {unlogged.map((a) => (

@@ -119,3 +119,27 @@ describe('finding 5: runs and slides', async () => {
     expect(currentRun([m('a', 'W'), m('b', 'W'), m('c', 'W'), m('d', 'W')])?.line).toBe('Four wins in a row.');
   });
 });
+
+describe('Pace: the sum, and a day past 20,000 steps counts in full', async () => {
+  const { blend } = await import('../../src/football/players/eleven');
+  const { paceInFull } = await import('../../src/football/axes');
+  const { paceSum, paceSumWords } = await import('../../src/screens/football/PaceSum');
+  const today = { Pace: 20, Power: 10, Fuel: 10, Rest: 10, Routine: 10, Shape: 10 };
+  it('the usual blend gives 19 from steps 20 and a squad of 16; in full it gives 20', () => {
+    expect(blend(today, { Pace: 16 }).Pace).toBe(19);
+    expect(blend(today, { Pace: 16 }, undefined, ['Pace']).Pace).toBe(20);
+    expect(blend(today, { Pace: 16, Power: 16 }, undefined, ['Pace']).Power).toBe(Math.round(0.7 * 10 + 0.3 * 16));
+  });
+  it('only a day past 20,000 steps counts in full', () => {
+    expect(paceInFull(20000)).toBe(false);
+    expect(paceInFull(20001)).toBe(true);
+    expect(paceInFull(undefined)).toBe(false);
+  });
+  it('the sum reads as the owner traced it: steps, squad, plan, morale', () => {
+    const p = paceSum({ today, squad: { Pace: 16 }, nudges: [{ axis: 'Pace', d: -1, why: 'Hold' }, { axis: 'Pace', d: 1, why: 'morale High' }], liveValues: { ...today, Pace: 19 }, flags: {}, paceFull: false })!;
+    expect(paceSumWords(p)).toBe('your steps 20 · the squad 16 · Hold −1 · Morale High +1 = 19');
+  });
+  it('no sum while steps are not logged', () => {
+    expect(paceSum({ today, squad: {}, nudges: [], liveValues: today, flags: { Pace: 'not-logged' }, paceFull: false })).toBeUndefined();
+  });
+});

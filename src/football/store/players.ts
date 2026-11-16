@@ -4,6 +4,7 @@ import { addDays, type DayKey } from '../../domain/dates';
 import { FAREWELLS } from '../content/words';
 import { hashSeed, rng } from '../rng';
 import { AXES, type Axis, type AxisValues } from '../types';
+import { paceInFull } from '../axes';
 import { ctxFor, ratingOf, type Ctx } from '../players/attributes';
 import { at95After, cardAfter, firstCard } from '../players/cards';
 import { playersOn } from '../players/catalogue';
@@ -141,6 +142,8 @@ export interface NightOpts {
   falseNine?: number;
   /** Layer 4, Two fronts: players rested for the league match who are fully fresh tonight. */
   rested?: string[];
+  /** Axes that count in full tonight, with no squad share (Pace past 20,000 steps, O42). */
+  full?: Axis[];
 }
 export interface Night { xi: XiPlace[]; values: AxisValues; squad: Partial<AxisValues>; base: AxisValues; nudges: Nudge[]; total: AxisValues; /** Loans that played (stay keys) and the starters who sat out for them. */ loansPlayed?: string[]; loanRested?: string[] }
 
@@ -171,7 +174,7 @@ export function squadNight(roster: Roster, today: AxisValues, sick: boolean, o: 
   const loaned = !sick && o.loans?.length ? withLoans(starters, o.loans, o.logged ?? (() => false)) : undefined;
   const xi = sick ? benchOf(members, starters, formation) : loaned?.xi ?? starters;
   const squad = squadValues(xi, FORMATIONS[formation]);
-  const base = blend(today, squad, sick ? 0 : undefined);
+  const base = blend(today, squad, sick ? 0 : undefined, sick ? [] : o.full);
   const nudges = nudgesFor({ ...o.night, formation, chemistry: sick ? undefined : o.night?.chemistry, rules: o.rules ?? BASE_RULES });
   const { values, total } = applyNudges(base, nudges);
   return { xi, squad, base, values, nudges, total, ...(loaned?.played.length ? { loansPlayed: loaned.played, loanRested: loaned.rested } : {}) };
@@ -192,7 +195,7 @@ export function nightOptsFor(save: FbSave, roster: Roster, h: Health, date: DayK
   const chemistry = Object.fromEntries(AXES.map((u) => [u, Math.min(CHEM_MAX, (save.chem?.[u]?.level ?? 0) + (bonus[u] ?? 0))])) as Partial<Record<Unit, number>>;
   return {
     tactic, captains, setPiece: setPieceOf(pre.xi, sheet, inSquad),
-    opts: { sheet, latest, rules: rot.rules, night: { tactic: tactic.pick, chemistry, morale: save.morale, captain: save.slots.includes('armband') ? save.captain : undefined, agents: oppId ? agentsAt(roster.values(), oppId) : {} } } as NightOpts,
+    opts: { sheet, latest, rules: rot.rules, ...(paceInFull(h.days.get(date)?.steps) ? { full: ['Pace'] as Axis[] } : {}), night: { tactic: tactic.pick, chemistry, morale: save.morale, captain: save.slots.includes('armband') ? save.captain : undefined, agents: oppId ? agentsAt(roster.values(), oppId) : {} } } as NightOpts,
   };
 }
 
