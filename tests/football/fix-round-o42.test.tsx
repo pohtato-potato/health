@@ -85,3 +85,18 @@ describe('finding 4: from 6 pm the chance reads "as it stands"', async () => {
     expect(lossInkOf(undefined)).toBe('#93c3dc');
   });
 });
+
+describe('finding 2: Skip clears every match of the morning', () => {
+  it('the lead match\'s Skip marks both of that night\'s matches seen, and nothing from another night', async () => {
+    const { storedGate } = await import('../../src/football/store/matchGate');
+    const base = { season: 1, day: 3, events: { xg: [0, 0] }, score: [0, 1], result: 'L', values: {}, flags: {}, xi: [], credits: [], watched: false, braboHome: true } as never as Record<string, unknown>;
+    await db.fbMatches.bulkPut([
+      { ...base, id: 'a', date: '2026-11-18', comp: 'league', home: OWN, away: 'x', opp: 'x' },
+      { ...base, id: 'b', date: '2026-11-18', comp: 'bigcup', home: OWN, away: 'y', opp: 'y' },
+      { ...base, id: 'c', date: '2026-11-17', comp: 'league', home: 'z', away: OWN, opp: 'z' },
+    ] as never);
+    await storedGate.skipNight({ date: '2026-11-18' });
+    const seen = Object.fromEntries((await db.fbMatches.toArray()).map((m) => [m.id, m.watched]));
+    expect(seen).toEqual({ a: true, b: true, c: false });
+  });
+});

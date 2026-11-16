@@ -105,6 +105,11 @@ export async function markWatched(id: string) {
   await db.fbMatches.update(id, { watched: true });
 }
 
+/** Skip on the morning's lead match (finding 2, O42): every Brabo match of that night is marked seen, cup ties too. */
+export async function markNightWatched(date: DayKey) {
+  await db.fbMatches.where('date').equals(date).modify((m) => { if (m.home === OWN || m.away === OWN) m.watched = true; });
+}
+
 /** The answer picked at the press conference becomes tomorrow's back page (one answer per match). */
 export async function answerPress(matchId: string, i: 0 | 1 | 2): Promise<string | undefined> {
   return db.transaction('rw', [db.fbNews, db.fbMatches, db.fbSeasons], async () => {

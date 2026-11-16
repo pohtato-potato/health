@@ -125,7 +125,7 @@ export function ResultTile({ waiting, m, save, onNext, last }: { waiting?: Pause
   if (waiting || !m || storedGate.waiting(m)) {
     const f = waiting ? { home: waiting.prep.home, away: waiting.prep.away, round: waiting.prep.round } : m!;
     const watch = () => (waiting ? matchGate.watch() : storedGate.watch(m!));
-    const skip = async () => { setBusy(true); try { if (waiting) await matchGate.skip(); else await storedGate.skip(m!); } finally { setBusy(false); } };
+    const skip = async () => { setBusy(true); try { if (waiting) await matchGate.skip(); else await storedGate.skipNight(m!); } finally { setBusy(false); } };
     return (
       <>
         <h2 className="md-h">Last night: {shortName(f.home)} v {shortName(f.away)}</h2>

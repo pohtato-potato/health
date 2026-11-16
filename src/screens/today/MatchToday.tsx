@@ -66,7 +66,7 @@ export function MorningMatch({ m, save, today, more }: { m: StoredMatch; save: F
       <p className="tm-c">Last night’s shape is in. Watch it to see the score.</p>
       <button type="button" className="tm-watch" onClick={() => storedGate.watch(m)}>Watch the match</button>
       {/* Matchday §4 (choice D a): Skip shows the score of a match the assistant finished, without the replay. */}
-      <button type="button" className="tm-more" onClick={() => void storedGate.skip(m)}>Skip to the result</button>
+      <button type="button" className="tm-more" onClick={() => void storedGate.skipNight(m)}>Skip to the result</button>
       {more > 0 && <button type="button" className="tm-more" onClick={() => go('/football')}>{more === 1 ? 'One more match waits on Football' : `${more} more matches wait on Football`}</button>}
     </section>
   );
@@ -243,7 +243,8 @@ export function MatchToday({ now, part = 'top' }: { now: number; part?: 'top' | 
   };
   if (!got?.t || !settings) return null;
   const { t, recent } = got;
-  const unwatched = recent.filter((m) => !m.watched && (m.home === OWN || m.away === OWN));
+  // Today only ever offers last night's matches (finding 2, O42); older ones live in the calendar.
+  const unwatched = recent.filter((m) => !m.watched && (m.home === OWN || m.away === OWN) && m.date === addDays(date, -1));
   const latest = recent.filter((m) => m.home === OWN || m.away === OWN).pop();
   const lead = unwatched[unwatched.length - 1];
   if (part === 'shape') {
