@@ -283,3 +283,14 @@ describe('O41 11: arrivals are never silent', async () => {
     expect(parcelTiles({ result: true, club: true, pack: true })).toEqual(['result', 'club', 'pack']);
   });
 });
+
+describe('Football moments sit above the tab bar', () => {
+  it('every full-screen moment goes through MomentLayer, which draws on the page body', async () => {
+    const { readdirSync, readFileSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const walk = (d: string): string[] => readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(d, e.name)) : /\.tsx$/.test(e.name) ? [join(d, e.name)] : []));
+    const raw = walk('src').filter((f) => !f.endsWith(join('moments', 'Layer.tsx')) && readFileSync(f, 'utf8').includes('className="fb-moment"'));
+    expect(raw).toEqual([]);
+    expect(readFileSync('src/screens/football/moments/Layer.tsx', 'utf8')).toMatch(/createPortal\([^]*document\.body\)/);
+  });
+});

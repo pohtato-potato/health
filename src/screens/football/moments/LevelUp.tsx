@@ -4,13 +4,14 @@ import { crestSvg, type CrestOptKey, type CrestStep } from '../../../football/ar
 import { CREST_CHANGES, CREST_LINES, levelUpOptions } from '../../../football/kits';
 import { Aurora } from '../FootballHome';
 import { Art } from '../Tonight';
+import { MomentLayer } from './Layer';
 
 export function LevelUpView({ from, step, onPick }: { from: { step: CrestStep; opt: CrestOptKey }; step: CrestStep; onPick: (o: CrestOptKey | 'keep') => void }) {
   const opts = levelUpOptions(step);
   const [sel, setSel] = useState<CrestOptKey | 'keep'>('a');
   const shown = sel === 'keep' ? from : { step, opt: sel };
   return (
-    <div className="fb-moment" role="dialog" aria-modal="true" aria-labelledby="fb-lvl-t">
+    <MomentLayer role="dialog" aria-modal="true" aria-labelledby="fb-lvl-t">
       <Aurora c="#7fe0a8">
         <main className="fb-page">
           <span className="fb-lb">Promoted · club level up</span>
@@ -32,6 +33,6 @@ export function LevelUpView({ from, step, onPick }: { from: { step: CrestStep; o
           <div className="fb-btns"><button type="button" className="fb-btn pri" onClick={() => onPick(sel)}>Wear it</button></div>
         </main>
       </Aurora>
-    </div>
+    </MomentLayer>
   );
 }

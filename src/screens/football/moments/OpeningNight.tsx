@@ -2,11 +2,12 @@
 import { bundleById } from '../../../football/ground';
 import { projectById } from '../../../football/content/projects';
 import { Aurora } from '../FootballHome';
+import { MomentLayer } from './Layer';
 
 export function OpeningNightView({ id, onDone }: { id: string; onDone: () => void }) {
   const b = id === 'moving-day' ? { name: 'Kaai 42', effect: 'Moving day. The first match at Kaai 42 is a big night, and the groundshare ends.' } : bundleById(id) ?? openingOf(id);
   return (
-    <div className="fb-moment" role="dialog" aria-modal="true" aria-labelledby="fb-open-t">
+    <MomentLayer role="dialog" aria-modal="true" aria-labelledby="fb-open-t">
       <Aurora a="#ff7a1a" c="#7fe0a8">
         <main className="fb-page">
           <span className="fb-lb">Opening night</span>
@@ -20,7 +21,7 @@ export function OpeningNightView({ id, onDone }: { id: string; onDone: () => voi
           <div className="fb-btns"><button type="button" className="fb-btn pri" onClick={onDone}>Lights on</button></div>
         </main>
       </Aurora>
-    </div>
+    </MomentLayer>
   );
 }
 

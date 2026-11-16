@@ -10,6 +10,7 @@ import { markSigningSeen } from '../../../football/store/save';
 import type { FbSave } from '../../../football/store/tables';
 import { Aurora } from '../FootballHome';
 import { Art } from '../Tonight';
+import { MomentLayer } from './Layer';
 
 const WHERE = { shirt: 'On the shirt', kit: 'Making the kit', sleeve: 'On the sleeve', ground: 'On the ground', partner: 'A club partner' } as const;
 const N = ['', 'one season', 'two seasons', 'three seasons'];
@@ -23,7 +24,7 @@ export function SigningView({ save }: { save: FbSave }) {
   const days = seasonLength(worldOf(save));
   const clause = d.risk === 'flashy' ? 'A habit clause: one habit to keep while it runs.' : d.risk === 'dodgy' ? 'It may fold: 1 season in 4.' : 'None.';
   return (
-    <div className="fb-moment" role="dialog" aria-modal="true" aria-labelledby="fb-sign-t">
+    <MomentLayer role="dialog" aria-modal="true" aria-labelledby="fb-sign-t">
       <Aurora c="#f2c46d">
         <main className="fb-page fb-sign">
           <span className="fb-lb">Signed · Season {d.since}</span>
@@ -41,6 +42,6 @@ export function SigningView({ save }: { save: FbSave }) {
           <div className="fb-btns"><button type="button" className="fb-btn pri" onClick={() => void markSigningSeen()}>Keep it</button></div>
         </main>
       </Aurora>
-    </div>
+    </MomentLayer>
   );
 }
