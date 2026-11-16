@@ -67,7 +67,8 @@ export async function snapshot(date) {
   let tonight;
   try {
     const t = await loadTonight(date);
-    tonight = t ? { date: t.date, opp: t.opp ?? t.oppId ?? t.match?.opp, comp: t.comp, played: !!t.played, keys: Object.keys(t) } : null;
+    // O42: whether a fixture is drawn as tonight's, and the next one on a night with no match (the day between worlds).
+    tonight = t ? { date: t.date, opp: t.opp?.id ?? t.fixture?.opp, comp: t.fixture?.comp, fixtures: (t.fixtures ?? []).length, next: t.next ? { comp: t.next.comp, opp: t.next.opp } : null, played: (t.played ?? []).length, lastPlayed: t.save?.lastPlayed } : null;
   } catch (e) {
     tonight = { error: String(e && e.message) };
   }
