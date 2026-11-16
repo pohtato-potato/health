@@ -28,7 +28,7 @@ import { useTonight } from '../../../football/store/hooks';
 import type { Tier } from '../../../football/types';
 import { go } from '../../../router';
 import { AXIS_INK } from '../../../ui/inks';
-import { CrestOrFog } from '../world/Fog';
+import { ClubBadge } from '../world/Fog';
 import '../../../styles/matchday.css';
 import '../../../styles/desk.css';
 import '../../../styles/club.css';
@@ -48,7 +48,6 @@ const MARKET_SLOTS = 1;
 const MARKET = { title: 'The loan market', back: 'Deals', to: '/football/club', params: { view: 'deals' }, help: MARKET_HOW(MARKET_SLOTS, OPEN_DAYS, ROUNDS) };
 
 /** A target's crest: its club's, once its kit is known. */
-const kitKnown = (m: DeskModel, club?: string) => Boolean(club && m.view.world?.clubs.find((c) => c.id === club)?.facts.includes('kit'));
 
 /** /football/market */
 export function MarketRoute() {
@@ -105,7 +104,7 @@ function MarketPage({ m, stays }: { m: DeskModel; stays: Stay[] }) {
           return (
             <Panel key={l.key} ink={u}>
               <div className="km-who">
-                <CrestOrFog id={l.club} known={kitKnown(m, l.club)} size={44} />
+                <ClubBadge id={l.club} size={44} />
                 <span style={{ flex: 1, minWidth: 0 }}><b className="nm">{def.name}</b><br /><span className="k-q">{def.unit} · from {l.clubName}{c?.state.terms.kind === 'loan' ? ` · ${c.state.terms.days} days` : ''}</span></span>
               </div>
               <div className="k-row"><span className="k-q">Rated</span><b className="k-num" style={{ fontSize: 18 }}>{r.lo === r.hi ? r.lo : `${r.lo} to ${r.hi}`}</b></div>
@@ -132,7 +131,7 @@ function MarketPage({ m, stays }: { m: DeskModel; stays: Stay[] }) {
               const w = opinionWord(l.opinion);
               return (
                 <div key={l.club} className="km-club">
-                  <CrestOrFog id={l.club} known={kitKnown(m, l.club)} size={32} />
+                  <ClubBadge id={l.club} size={32} />
                   <span>{l.clubName}</span>
                   <b style={{ color: OPINION_INK[w] }}>{w}</b>
                 </div>
@@ -233,7 +232,7 @@ function Talk({ m, c }: { m: DeskModel; c: TalkCtx }) {
   return (
     <Page title={`Round ${s.round} of ${ROUNDS}`} back="Market" to="/football/market" help={TALK_HOW(ROUNDS)}>
       <div className="km-who">
-        {c.kind === 'loan' ? <CrestOrFog id={c.club!} known={kitKnown(m, c.club)} size={44} /> : <span className="mk-sil" aria-hidden="true" />}
+        {c.kind === 'loan' ? <ClubBadge id={c.club!} size={44} /> : <span className="mk-sil" aria-hidden="true" />}
         <span style={{ flex: 1, minWidth: 0 }}><b className="nm">{c.name}</b><br /><span className="k-q">{c.kind === 'loan' ? `from ${c.who} · ` : 'Sponsor talks · '}{facts.join(' · ')}</span></span>
       </div>
       {said && <Panel ink={said.round.hit ? GREEN : CORAL} flat><b style={{ color: said.round.hit ? GREEN : CORAL }}>{said.round.hit ? 'It came off' : 'No luck'} ({said.round.pct}%).</b></Panel>}

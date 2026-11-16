@@ -17,9 +17,8 @@ export const Unknown = ({ size = 28, label }: { size?: number; label?: string })
   <span className="fg-unk" role={label ? 'img' : undefined} aria-label={label} aria-hidden={label ? undefined : true} style={{ '--sz': `${size}px` } as CSSProperties}>?</span>
 );
 
-/** The club's crest when its kit and crest are known, else the fogged stand-in. */
-export const CrestOrFog = ({ id, known, size = 28 }: { id: string; known: boolean; size?: number }) =>
-  known ? <Art svg={clubCrest(clubById(id), size)} /> : <Unknown size={size} />;
+/** A club's crest. O41 3 (O42): badges are always shown; the fog hides facts, never a badge. */
+export const ClubBadge = ({ id, size = 28 }: { id: string; size?: number }) => <Art svg={clubCrest(clubById(id), size)} />;
 
 /** One fact: its value when known, hatched with "?" when not. */
 export function FactRow({ label, known, num, children }: { label: string; known: boolean; num?: boolean; children?: ReactNode }) {

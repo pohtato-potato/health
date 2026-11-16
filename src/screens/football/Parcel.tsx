@@ -22,7 +22,7 @@ import { DiceTile } from './desk/Desk';
 import { tierName } from '../../football/data/load';
 import type { Tier } from '../../football/types';
 import { leadLine, type ScoutReport } from '../../football/fog/report';
-import { CrestOrFog, FactRow, Known, factLabel, factText } from './world/Fog';
+import { ClubBadge, FactRow, Known, factLabel, factText } from './world/Fog';
 import { Action, HelpButton } from '../../ui/kit/Kit';
 import { Icon } from '../../ui/Icon';
 import { PARCEL_HOW } from './howDaily';
@@ -300,7 +300,7 @@ function ScoutReportCard({ r, t, day }: { r: ScoutReport; t: Tonight; day: strin
     <>
       <div className="md-tile col fg" style={{ '--ink': TILE.scout.ink } as React.CSSProperties}>
         <div className="md-row" style={{ justifyContent: 'flex-start', gap: 12 }}>
-          <CrestOrFog id={id} known={!r.hidden.includes('kit')} size={48} />
+          <ClubBadge id={id} size={48} />
           <span><b className="md-h" style={{ fontSize: 22 }}>{r.name}</b><br /><span className="md-q">{[tier ? tierName(tier as Tier) : 'Abroad', met ? 'met' : 'met never'].join(' · ')}</span></span>
         </div>
         <Known pct={r.after} from={r.before} />

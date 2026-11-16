@@ -235,3 +235,26 @@ describe('O41 1: no match tonight on the day between worlds', () => {
     expect(t.next).toBeUndefined();
   });
 });
+
+describe('O41 3: every club has an original crest', async () => {
+  const { CLUBS, worldDef } = await import('../../src/football/data/load');
+  const { WORLD_CLUBS } = await import('../../src/football/data/world');
+  const { originalParts, realCrest, clubCrest } = await import('../../src/football/art/crest');
+  const real = [...WORLD_CLUBS.map(worldDef), ...CLUBS.filter((c) => c.kind === 'real' && !WORLD_CLUBS.some((w) => w.id === c.id))];
+  it('each real club draws a crest with no letters, and no two share shape, field, symbol and colours', () => {
+    expect(real.length).toBeGreaterThanOrEqual(96);
+    const seen = new Set<string>();
+    for (const c of real) {
+      expect(clubCrest(c, 40)).not.toContain('<text');
+      const p = originalParts(c);
+      const key = `${p.shape}:${p.field}:${p.sym}:${c.colours[0]}:${c.colours[1]}`;
+      expect(seen.has(key), c.name).toBe(false);
+      seen.add(key);
+    }
+  });
+  it('two crests on one page keep their own clip', () => {
+    const id = (s: string) => s.match(/clipPath id="([^"]+)"/)?.[1];
+    const c = real.find((x) => originalParts(x).field !== 'plain')!;
+    expect(id(realCrest(c, 40))).not.toBe(id(realCrest(c, 40)));
+  });
+});

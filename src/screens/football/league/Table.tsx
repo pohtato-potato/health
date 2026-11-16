@@ -7,7 +7,8 @@ import { shapeOf, type WorldVersion } from '../../../football/pyramid/shape';
 import { OWN } from '../../../football/store/season';
 import type { Row } from '../../../football/table';
 import type { Result, Tier } from '../../../football/types';
-import { Unknown } from '../world/Fog';
+import { clubCrest } from '../../../football/art/crest';
+import { Art } from '../world/Fog';
 
 const WORD: Record<Result, string> = { W: 'won', D: 'drew', L: 'lost' };
 export function ResultMark({ r, shape = 'c' }: { r: Result; shape?: 'c' | 'd' | 's' }) {
@@ -19,9 +20,9 @@ function Cut({ kind, text }: { kind: 'up' | 'po' | 'down'; text: string }) {
 }
 
 /** `form` is Brabo's 28-day form rating, for the double-promotion line (Division Three and below). */
-/** `kitKnown`: whether a club's kit and crest are out of the fog (desk spec §4); an unknown club shows a hatched "?". */
+/** Every club shows its crest (O41 3, O42: badges are always shown). */
 /** `world`: the old six tiers of 18 (absent or 1), or world 2's eight divisions of 12 (LG-4). */
-export function Table({ tier, rows, day, form, waiting = false, kitKnown, world = 1, limit, onAll }: { tier: Tier; rows: Row[]; day?: string; form?: number; waiting?: boolean; kitKnown?: (id: string) => boolean; world?: WorldVersion; limit?: number; onAll?: () => void }) {
+export function Table({ tier, rows, day, form, waiting = false, world = 1, limit, onAll }: { tier: Tier; rows: Row[]; day?: string; form?: number; waiting?: boolean; world?: WorldVersion; limit?: number; onAll?: () => void }) {
   const shape = shapeOf({ world });
   const last = shape.divisions.length;
   const name = (t: number) => (world === 2 ? shape.name(t) : tierName(t as Tier));
@@ -37,7 +38,7 @@ export function Table({ tier, rows, day, form, waiting = false, kitKnown, world 
       <li key={r.id} className={`fb-trow${me ? ' me' : ''}`} style={{ '--k': clubColour(r.id) } as React.CSSProperties}>
         <Row href={limit ? undefined : `#/football/club-page?id=${encodeURIComponent(r.id)}`} label={`${pos}, ${club}, ${r.pts} points${r.form.length ? `, form ${r.form.map((x) => WORD[x]).join(' ')}` : ''}`}>
           <span className="fb-tpos">{pos}</span>
-          {me || !kitKnown || kitKnown(r.id) ? <span className="fb-tring" aria-hidden="true" /> : <Unknown size={20} />}
+          {me ? <span className="fb-tring" aria-hidden="true" /> : <span className="fb-tcrest"><Art svg={clubCrest(clubById(r.id), 24)} /></span>}
           <span className="fb-tname">
             <b>{club}{me && <em>You</em>}</b>
             {me && waiting && <span className="fb-s md-tbp">Last night: to be played</span>}

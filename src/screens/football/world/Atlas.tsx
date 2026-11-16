@@ -11,7 +11,7 @@ import { OWN } from '../../../football/store/season';
 import type { Tier } from '../../../football/types';
 import { shapeOf, worldOf, type WorldVersion } from '../../../football/pyramid/shape';
 import { go, useRoute } from '../../../router';
-import { Art, CrestOrFog } from './Fog';
+import { Art, ClubBadge } from './Fog';
 
 type Layer = Tier | 0;
 /** The land's bands: the divisions top first, then abroad (world 1: seven; world 2: nine, LG-4). */
@@ -81,7 +81,7 @@ export function AtlasView({ a, start }: { a: AtlasModel; start?: Layer }) {
             <li key={r.id} className={`fg-tr${me ? ' me' : ''}`}>
               <a href={`#/football/club-page?id=${encodeURIComponent(r.id)}`} aria-label={`${on === 0 ? '' : `${i + 1}, `}${me ? 'Brabo United' : c.name}${f ? `, known ${pctOf(f)}%` : ''}${r.pts !== undefined ? `, ${r.pts} points` : ''}`}>
                 <span className="q">{on === 0 ? '' : i + 1}</span>
-                {me ? <Art svg={own} /> : <CrestOrFog id={r.id} known={f!.has('kit')} />}
+                {me ? <Art svg={own} /> : <ClubBadge id={r.id} />}
                 <span className="nm"><b>{me ? 'Brabo United' : c.name}</b>{f && <span>Known {pctOf(f)}%</span>}</span>
                 <b className="n">{r.pts ?? ''}</b>
               </a>
