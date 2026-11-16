@@ -32,3 +32,15 @@ describe('a building in plain words', () => {
     expect(bundleDay(b, { id: b.id, progress: {} }, counts, -1, '2026-11-17').state.counted).toEqual(['2026-11-17']);
   });
 });
+
+describe('finding 14: each open tech says when', async () => {
+  const { etaWords, researchRate } = await import('../../src/football/tree/buildingWords');
+  it('banks about 6 a day: 140 from 88 is about 9 days', () => {
+    const gains = Array.from({ length: 14 }, (_, i) => ({ on: `2026-11-${String(8 + i).padStart(2, '0')}`, n: 6 }));
+    const r = researchRate(gains, '2026-11-21');
+    expect(r).toBe(6);
+    expect(etaWords(140, 88, r)).toBe('In about 9 days at this rate.');
+    expect(etaWords(80, 88, r)).toBe('The bank covers it now.');
+    expect(etaWords(140, 88, 0)).toBe('No research came in lately, so no date yet.');
+  });
+});

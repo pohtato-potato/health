@@ -2,7 +2,7 @@
 // projects on the Kaai skyline, the staff room and the board. Words in Atkinson Hyperlegible Next, numbers and titles
 // in Fraunces. Every state has a word beside its colour or line.
 import { dayOfLogging } from '../../../domain/dates';
-import { countedLine, countsLine, leftLine } from '../../../football/tree/buildingWords';
+import { countedLine, countsLine, etaWords, leftLine } from '../../../football/tree/buildingWords';
 import { seasonMoneyScale } from '../../../football/pyramid/shape';
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { ERAS, TECHS } from '../../../football/content/tree';
@@ -172,7 +172,7 @@ function Aim({ m, target }: { m: Model; target: TechDef | undefined }) {
         </span>
         {!saving && <button type="button" className="k-act kb-gold" onClick={() => void researchTech(t.id)}>{covered ? 'Research it' : 'Aim for it'}</button>}
       </div>
-      <span className="k-q">Costs {cost}, you have {fmtCount(m.bank)}.{saving ? ' It is researched by itself once the bank covers it.' : ''}</span>
+      <span className="k-q">Costs {cost}, you have {fmtCount(m.bank)}. <b>{etaWords(cost, m.bank, m.rate)}</b>{saving ? ' It is researched by itself once the bank covers it.' : ''}</span>
       <Bar pct={(m.bank / Math.max(1, cost)) * 100} c="#f2c46d" label={`${fmtCount(m.bank)} of ${cost} research`} />
       {saving && <Action quiet sm onClick={() => void clearTarget()}>Stop saving for it</Action>}
     </Panel>
@@ -356,11 +356,14 @@ function TechAction({ m, t, st, cost }: { m: Model; t: TechDef; st: ReturnType<t
   if (st === 'done') return <Panel ink={TREE_INK} flat><Icon name="check" size={24} color={TREE_INK} /><b>Researched</b></Panel>;
   if (st === 'sealed') return <Note>Its era opens after six techs of the era before.</Note>;
   if (st === 'locked') return <Note>Research what it needs first.</Note>;
-  if (m.user.target === t.id) return <Panel ink="#f2c46d"><b>Saving for it</b><Bar pct={(m.bank / Math.max(1, cost)) * 100} c="#f2c46d" /><span className="k-q">{fmtCount(m.bank)} of {cost}</span></Panel>;
+  if (m.user.target === t.id) return <Panel ink="#f2c46d"><b>Saving for it</b><Bar pct={(m.bank / Math.max(1, cost)) * 100} c="#f2c46d" /><span className="k-q">{fmtCount(m.bank)} of {cost}. {etaWords(cost, m.bank, m.rate)}</span></Panel>;
   return (
+    <>
+    <p className="k-q" style={{ margin: 0 }}>{etaWords(cost, m.bank, m.rate)} You bank about {Math.round(m.rate * 10) / 10} a day lately.</p>
     <button type="button" className="k-act wide kb-gold" onClick={() => void researchTech(t.id)}>
       {m.bank >= cost ? `Research it · ${cost}` : `Save for it · ${fmtCount(m.bank)} of ${cost}`}
     </button>
+    </>
   );
 }
 
@@ -376,6 +379,7 @@ export function EurekaMoment({ id }: { id: string }) {
       <p className="fbt-kick">Eureka</p>
       <div className="fbt-plate"><b>{t.name}</b><small>costs half: {m.cost(t.id)}</small></div>
       <p className="fbt-line c">{t.eureka.text} {t.text}</p>
+      {techState(t, m.researched) === 'open' && <p className="fbt-line c">{etaWords(m.cost(t.id), m.bank, m.rate)}</p>}
       {techState(t, m.researched) === 'open' && <button type="button" className="fbt-btn gold wide" onClick={() => { void researchTech(t.id); close(); }}>{m.bank >= m.cost(t.id) ? 'Research it' : 'Save for it'}</button>}
       <button type="button" className="fbt-btn wide" onClick={close}>Later</button>
     </div>

@@ -1,4 +1,5 @@
 // Everything the tree's screens show, worked out once from the save. Pure apart from the live query.
+import { researchRate } from '../../../football/tree/buildingWords';
 import { seasonMoneyScale, worldOf } from '../../../football/pyramid/shape';
 import { weekStart } from '../../../domain/dates';
 import { BUNDLES, isOpen as bundleOpen } from '../../../football/ground';
@@ -45,6 +46,8 @@ export function modelOf(t: TreeView) {
   return {
     t, eng, user, researched, eurekas, active: a,
     bank: bank(eng, user),
+    /** Research a day lately (finding 14, O42). */
+    rate: researchRate(eng.gains, t.today),
     eras: erasOpen(researched), era: currentEra(researched), erasUnseen: erasUnseen(user),
     eurekasUnseen: eng.eurekas.filter((e) => !user.seenEurekas.includes(e.id) && !researched.includes(e.id)).map((e) => e.id),
     cost: (id: string) => costOf(techById(id)!, eurekas),

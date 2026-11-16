@@ -1,5 +1,5 @@
 // Every building in plain words (finding 12, O42): what counts, the days that counted, and roughly how long is left.
-import { daysBetween, type DayKey } from '../../domain/dates';
+import { addDays, daysBetween, type DayKey } from '../../domain/dates';
 import { METRIC_WORDS } from './words';
 
 export interface NeedLike { what: string; count: number }
@@ -41,4 +41,20 @@ export function leftLine(needs: NeedLike[], s: StateLike | undefined, today: Day
   if (d < 14) return `About ${d} days to go at this rate.`;
   if (d < 70) return `About ${Math.round(d / 7)} weeks to go at this rate.`;
   return `About ${Math.round(d / 30)} months to go at this rate.`;
+}
+
+/** Research banked a day lately (finding 14, O42): the gains of the last 14 days over the days they span (at least 7). */
+export function researchRate(gains: { on: DayKey; n: number }[], today: DayKey): number {
+  const start = addDays(today, -13);
+  const xs = gains.filter((g) => g.on >= start && g.on <= today);
+  if (!xs.length) return 0;
+  const oldest = xs.reduce((a, g) => (g.on < a ? g.on : a), today);
+  return xs.reduce((t, g) => t + g.n, 0) / Math.max(7, daysBetween(oldest, today) + 1);
+}
+/** "In about 9 days at this rate", or "Covered now". */
+export function etaWords(cost: number, bank: number, rate: number): string {
+  if (bank >= cost) return 'The bank covers it now.';
+  if (rate <= 0) return 'No research came in lately, so no date yet.';
+  const d = Math.ceil((cost - bank) / rate);
+  return d <= 1 ? 'In about a day at this rate.' : `In about ${d} days at this rate.`;
 }
