@@ -9,6 +9,7 @@ import { PACE_PTS } from '../../src/football/axes';
 import { paceNext, weekRecap } from '../../src/football/habitLines';
 import { kickOffDone as kickOff } from './helpers/matchday';
 import { foundClub } from '../../src/football/store/save';
+import { loadTonight } from '../../src/football/store/hooks';
 import type { StoredMatch } from '../../src/football/store/tables';
 import { HabitLineView, habitLineFor, leagueLineFor, weekLineFor } from '../../src/screens/football/HabitLine';
 
@@ -37,11 +38,14 @@ describe('the football lines on other tabs', () => {
     await foundClub('2026-10-10', { shirt: 'H1', crest: 'a' });
     await kickOff('2026-10-10');
     const d = await habitLineFor('Pace', '2026-10-13');
-    expect(d?.text).toMatch(/^Pace \d+ to 9 for tonight$/);
-    expect(d?.sub).toBe('500 more steps makes it 10');
+    // O42 finding 7: the same blended, nudged figure as Tonight, with its sum.
+    const t = (await loadTonight('2026-10-13'))!;
+    expect(d?.text).toMatch(new RegExp(`^Pace \\d+ to ${t.liveValues.Pace} for tonight$`));
+    expect(d?.sub).toMatch(/^your steps 9 · /);
+    expect(d?.sub).toMatch(/500 more steps lifts your steps to 10\.$/);
     const out = html(<HabitLineView {...d!} />);
     expect(out).toContain('Football');
-    expect(out).toContain('500 more steps makes it 10');
+    expect(out).toContain('500 more steps lifts your steps to 10');
   });
 
   it('the recap line reads the week from fixture matches', () => {

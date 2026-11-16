@@ -20,7 +20,6 @@ const WINDOW = 14;
 const MIN_LOGGED = 4;
 const MIN_AREAS = 2;
 const TREND_GAP = 28;
-const TREND_POINTS = 8;
 
 interface Prepared { i: MomentumInput; dayBy: Map<DayKey, Day>; foodBy: Map<DayKey, FoodEntry[]>; done: TrainingSession[] }
 
@@ -91,6 +90,38 @@ export function momentumChange(today: DayKey, i: MomentumInput): number | undefi
   return now === undefined || then === undefined ? undefined : now - then;
 }
 
+export interface MomentumReason { area: MomentumArea; /** Points it moved the score, + or −; undefined when it joined or left. */ points?: number; line: string }
+const REASON_NAME: Record<MomentumArea, string> = { steps: 'Steps', protein: 'Protein', sleep: 'Sleep', training: 'Training' };
+const REASON_OF: Record<'steps' | 'protein' | 'sleep', string> = { steps: 'logged days at the step goal', protein: 'logged days at the protein target', sleep: 'logged nights at the sleep target' };
+/**
+ * O41 8 (O42 finding 29): what moved momentum over four weeks, biggest first. Each area moves the score by its own
+ * change over the number of areas in it; an area that joined or left the score says so.
+ */
+export function momentumReasons(today: DayKey, i: MomentumInput): MomentumReason[] {
+  const p = prepare(i);
+  const earlier = addDays(today, -TREND_GAP);
+  const now = scoresOf(today, p), then = scoresOf(earlier, p);
+  const tNow = tallies(today, p), tThen = tallies(earlier, p);
+  const n = Object.keys(now).length;
+  if (n < MIN_AREAS) return [];
+  const out: MomentumReason[] = [];
+  for (const a of AREAS) {
+    const x = now[a], y = then[a];
+    if (x === undefined && y === undefined) continue;
+    const name = REASON_NAME[a];
+    const counts = (t: typeof tNow) => (a === 'training' ? '' : `${t[a][1]} of ${t[a][0]}`);
+    if (x === undefined) { out.push({ area: a, line: `${name}: fewer than ${MIN_LOGGED} logged days in the last two weeks, so it left the score.` }); continue; }
+    if (y === undefined) { out.push({ area: a, line: `${name}: joined the score this fortnight.` }); continue; }
+    const points = Math.round(((x - y) * 100) / n);
+    if (points === 0) continue;
+    const line = a === 'training'
+      ? `${name}: ${sessionsIn(today, p)} sessions in the last two weeks, was ${sessionsIn(earlier, p)}.`
+      : `${name}: ${counts(tNow)} ${REASON_OF[a]}, was ${counts(tThen)}.`;
+    out.push({ area: a, points, line });
+  }
+  return out.sort((u, v) => Math.abs(v.points ?? 0.5) - Math.abs(u.points ?? 0.5));
+}
+
 /** How many more logged days would make a score. 0 once there is one. */
 export function momentumNeeds(today: DayKey, i: MomentumInput): number {
   const p = prepare(i);
@@ -107,24 +138,35 @@ export function momentumNeeds(today: DayKey, i: MomentumInput): number {
 
 const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 
-/** The plain number behind an area, for the sentence under its small line. */
-function amount(area: MomentumArea, date: DayKey, p: Prepared): string | undefined {
+/** The plain number behind an area, rounded as it is shown (steps to the hundred, sleep to the minute). */
+function amountValue(area: MomentumArea, date: DayKey, p: Prepared): number | undefined {
   const dates = windowOf(date);
   if (area === 'steps') {
     const xs = dates.flatMap((d) => { const v = p.dayBy.get(d)?.steps; return v === undefined ? [] : [v]; });
-    return xs.length ? fmtInt(Math.round(mean(xs) / 100) * 100) : undefined;
+    return xs.length ? Math.round(mean(xs) / 100) * 100 : undefined;
   }
   if (area === 'protein') {
     const xs = dates.flatMap((d) => { const f = p.foodBy.get(d); return f?.length ? [f.reduce((a, e) => a + e.protein, 0)] : []; });
-    return xs.length ? String(Math.round(mean(xs))) : undefined;
+    return xs.length ? Math.round(mean(xs)) : undefined;
   }
   if (area === 'sleep') {
     const xs = dates.flatMap((d) => { const s = p.dayBy.get(d)?.sleep; return s ? [sleepMinutes(s.asleep, s.woke)] : []; });
-    if (!xs.length) return undefined;
-    const m = Math.round(mean(xs));
-    return `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')}`;
+    return xs.length ? Math.round(mean(xs)) : undefined;
   }
-  return String(sessionsIn(date, p));
+  return sessionsIn(date, p);
+}
+function fmtAmount(area: MomentumArea, v: number): string {
+  if (area === 'steps') return fmtInt(v);
+  if (area === 'sleep') return `${Math.floor(v / 60)} h ${String(v % 60).padStart(2, '0')}`;
+  return String(v);
+}
+/** O42 finding 28: within 3% either way is Steady; the word follows the two numbers the tile shows. */
+export const STEADY_SHARE = 0.03;
+export function trendWord(area: MomentumArea, now: number, was: number | undefined): TrendRow['word'] {
+  if (was === undefined) return 'Steady';
+  const base = Math.max(Math.abs(was), 1);
+  const d = (now - was) / base;
+  return d > STEADY_SHARE ? (area === 'training' ? 'Building' : 'Improving') : d < -STEADY_SHARE ? 'Easing' : 'Steady';
 }
 
 const UNIT: Record<MomentumArea, (v: string) => string> = {
@@ -144,14 +186,14 @@ export function trendRows(today: DayKey, i: MomentumInput): TrendRow[] {
     const score = now[area];
     if (score === undefined) continue;
     const before = then[area];
-    const gap = before === undefined ? 0 : Math.round((score - before) * 100);
-    const word: TrendRow['word'] = gap >= TREND_POINTS ? (area === 'training' ? 'Building' : 'Improving') : gap <= -TREND_POINTS ? 'Easing' : 'Steady';
+    const valNow = amountValue(area, today, p) ?? 0;
+    const valWas = before !== undefined ? amountValue(area, earlier, p) : undefined;
+    const word = trendWord(area, valNow, valWas);
     // Every second day, oldest first. A day without a score holds the nearest one, so the line has no holes.
     const raw = Array.from({ length: 16 }, (_, n) => scoresOf(addDays(today, (n - 15) * 2), p)[area]);
     let held = raw.find((v) => v !== undefined) ?? score;
     const series = raw.map((v) => { held = v ?? held; return Math.round(held * 100); });
-    const amountNow = amount(area, today, p) ?? '0';
-    rows.push({ area, word, now: UNIT[area](amountNow), series, ...(before !== undefined ? { was: amount(area, earlier, p) } : {}) });
+    rows.push({ area, word, now: UNIT[area](fmtAmount(area, valNow)), series, ...(valWas !== undefined ? { was: fmtAmount(area, valWas) } : {}) });
   }
   return rows;
 }

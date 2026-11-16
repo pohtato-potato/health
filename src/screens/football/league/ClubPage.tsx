@@ -17,7 +17,7 @@ import { clubFog } from '../../../football/store/fog';
 import { deskOf } from '../../../football/store/desk';
 import { clockFilled } from '../../../football/desk/rules';
 import { weakSide } from '../../../football/matchday';
-import { FactRow, Known, Unknown } from '../world/Fog';
+import { FactRow, Known } from '../world/Fog';
 import { ResultMark } from './Table';
 import { movesOf, opinionKnown, opinionOf, opinionWord, OPINION_INK, type Move } from '../../../football/market/relations';
 import { relationSourceOf } from '../../../football/store/market';
@@ -51,7 +51,7 @@ export function ClubPageView({ d, wiki = false }: { d: ClubPageData; wiki?: bool
   return (
     <article className="fb-club fg" style={{ '--k': k.has('kit') ? c.colours[0] ?? '#888' : '#d6c4a0' } as React.CSSProperties}>
       <header className="fb-clubhd">
-        {k.has('kit') ? <Art svg={clubCrest(c, 64, own)} /> : <Unknown size={56} label="Crest not known yet" />}
+        <Art svg={clubCrest(c, 64, own)} />
         <div className="fb-col">
           <h2 className="fb-t">{c.name}</h2>
           <span className="fb-s">{[tierName(tier), pos ? nth(pos) : undefined, fog.met ? 'met' : 'never met'].filter(Boolean).join(' · ')}</span>

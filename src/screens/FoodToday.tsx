@@ -54,7 +54,7 @@ export function FoodToday() {
   return (
     <>
       <div className="page k-page k-light today fd-page">
-        <PageHead back="Today" onBack={() => back('/today')} title="Food" help={HOW} />
+        <PageHead back="Today" onBack={() => back('/today')} title="Food" help={HOW} family="food" />
         <div className="fd-date">
           <button type="button" className="fd-dbtn" aria-label="Previous day" onClick={() => setDate(addDays(date, -1))}>
             <Icon name="left" size={20} stroke={2} />

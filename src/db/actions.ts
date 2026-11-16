@@ -371,8 +371,8 @@ export async function deleteSet(id: string) {
   if (before) await recordEdit('sets', id, before, undefined);
 }
 
-export async function finishSession(id: string, flags: string[], notes: string, quality?: number, context?: string[]) {
-  await db.sessions.update(id, { status: 'done', endedAt: Date.now(), flags, notes: notes.trim() || undefined, ...(quality !== undefined ? { quality } : {}), ...(context ? { context } : {}) });
+export async function finishSession(id: string, flags: string[], notes: string, quality?: number, context?: string[], endedAt = Date.now()) {
+  await db.sessions.update(id, { status: 'done', endedAt, flags, notes: notes.trim() || undefined, ...(quality !== undefined ? { quality } : {}), ...(context ? { context } : {}) });
 }
 
 /** Throws away a session and its sets. */

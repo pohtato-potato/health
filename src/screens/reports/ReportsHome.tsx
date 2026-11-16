@@ -11,7 +11,10 @@ import { weeksWithData } from '../../domain/weeklyStory';
 import { kmFromSteps, setStride } from '../../domain/walk';
 import { back, go } from '../../router';
 import { Icon } from '../../ui/Icon';
-import { Empty, PageHead, Sect, type HowThisWorks } from '../../ui/kit/Kit';
+import { Door, Empty, FamilyDoors, PageHead, type HowThisWorks } from '../../ui/kit/Kit';
+import { FAMILIES } from '../../ui/kit/families';
+
+const BACK = FAMILIES.back.ink;
 
 const HOW: HowThisWorks = {
   title: 'Reports',
@@ -47,7 +50,7 @@ export function ReportsHome() {
   const line = spokenLine(settings, today, 'report', today);
   return (
     <div className="page bare k-page k-light you">
-      <PageHead back="You" onBack={() => back('/you')} title="Reports" help={HOW} />
+      <PageHead back="You" onBack={() => back('/you')} title="Reports" help={HOW} family="back" />
       {line && <div className="voice">{line}</div>}
       {!week && !month && <Empty icon="sheet" ink="#c2b2ff" title="Nothing to report yet" line="Your first story comes after your first full week." />}
       {week && (
@@ -59,26 +62,29 @@ export function ReportsHome() {
       )}
       {month && (
         <div className="k-doors two">
-          <button type="button" className="k-panel k-tap" style={{ '--ink': '#c2b2ff' } as CSSProperties} onClick={() => go('/reports/month', { m: month })}>
+          <button type="button" className="k-panel k-tap" style={{ '--ink': BACK } as CSSProperties} onClick={() => go('/reports/month', { m: month })}>
             <span className="k-lb">{mName}</span>
             <b className="k-num ink">{fmtInt(monthKm)} km</b>
             <span className="k-q">The month on a page</span>
             <Icon name="right" size={18} stroke={2.2} className="k-arrow" />
           </button>
-          <button type="button" className="k-panel k-tap" style={{ '--ink': '#f2c46d' } as CSSProperties} onClick={() => go('/film', { m: month })}>
+          <button type="button" className="k-panel k-tap" style={{ '--ink': BACK } as CSSProperties} onClick={() => go('/film', { m: month })}>
             <span className="k-lb">{mName}’s film</span>
-            <b className="k-num ink k-row" style={{ justifyContent: 'flex-start', gap: 6 }}><Icon name="play" size={22} stroke={2.4} color="#f2c46d" />Play</b>
+            <b className="k-num ink k-row" style={{ justifyContent: 'flex-start', gap: 6 }}><Icon name="play" size={22} stroke={2.4} color={BACK} />Play</b>
             <span className="k-q">{screens ? `${screens} screens` : 'The month in screens'}</span>
             <Icon name="right" size={18} stroke={2.2} className="k-arrow" />
           </button>
         </div>
       )}
-      <Sect>Older</Sect>
-      <div className="k-panel k-rows">
-        <button type="button" className="k-rowl" onClick={() => go('/reports/archive')}><span>Every past week and month</span><Icon name="right" size={18} stroke={2.2} /></button>
-        <button type="button" className="k-rowl" onClick={() => go('/year')}><span>Your year so far</span><Icon name="right" size={18} stroke={2.2} /></button>
-        <button type="button" className="k-rowl" onClick={() => go('/reports/corrections')}><span>Corrections</span><Icon name="right" size={18} stroke={2.2} /></button>
-      </div>
+      <FamilyDoors two label="Older" groups={{
+        back: [
+          <Door key="archive" line icon="sheet" name="The archive" value="Every past week and month" family="back" onClick={() => go('/reports/archive')} />,
+          <Door key="year" line icon="calendar" name="Your year" value="The year so far" family="back" onClick={() => go('/year')} />,
+          // Ledger O40: the journey page was reached only from a celebration; this is its door.
+          <Door key="journey" line icon="journey" name="The journey" value="Start to reveal day" family="back" onClick={() => go('/journey')} />,
+        ],
+        upkeep: [<Door key="fix" line icon="edit" name="Corrections" value="Put a past number right" family="upkeep" onClick={() => go('/reports/corrections')} />],
+      }} />
     </div>
   );
 }

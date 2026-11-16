@@ -3,10 +3,10 @@ import { bodyTileWords, labelFor, kindOf, WHOLE_BODY } from '../domain/bodyLog';
 import { addBodyEntry, deleteBodyEntry } from '../db/actions';
 import { addDays } from '../domain/dates';
 import { fmtDayMonth } from '../domain/format';
-import { back } from '../router';
+import { back, go } from '../router';
 import { BodyChart } from '../ui/BodyChart';
 import type { CSSProperties } from 'react';
-import { PageHead, Sect, Title, type HowThisWorks } from '../ui/kit/Kit';
+import { Door, Doors, PageHead, Sect, Title, type HowThisWorks } from '../ui/kit/Kit';
 
 const HOW: HowThisWorks = {
   title: 'The body log',
@@ -28,7 +28,7 @@ export function BodyLogPage() {
   const recent = body.filter((e) => e.date < today && e.date >= addDays(today, -14)).sort((a, b) => b.at - a.at);
   return (
     <div className="page bare k-page k-light you bl-page">
-      <PageHead back="Today" onBack={() => back('/today')} title="Body log" help={HOW} />
+      <PageHead back="Today" onBack={() => back('/today')} title="Body log" help={HOW} family="body" />
       <Title under={marked ? <b style={{ color: '#f4aedb' }}>Today: {marked}</b> : 'Tap where it hurts, then what kind.'}>How’s the body?</Title>
       <BodyChart date={today} entries={body} />
       <Sect>The whole body</Sect>
@@ -56,6 +56,12 @@ export function BodyLogPage() {
           </div>
         </>
       )}
+      {/* Ledger O40: Photos and the physio summary were three taps from any tab; from here they are two. */}
+      <Sect>More of the body</Sect>
+      <Doors two label="More of the body">
+        <Door line icon="camera" name="Photos" value="Check-in pictures" family="body" onClick={() => go('/photos')} />
+        <Door line icon="joint" name="For your physio" value="A summary to show" family="body" onClick={() => go('/physio')} />
+      </Doors>
     </div>
   );
 }

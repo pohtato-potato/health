@@ -29,3 +29,9 @@ export function chancePercents(c: Pick<Chance, 'w' | 'd' | 'l'>): [number, numbe
   for (let k = 0; k < 100 - out.reduce((t, x) => t + x, 0); k++) out[order[k % 3][1]]++;
   return out as [number, number, number];
 }
+
+/**
+ * Expected points (the head of data, ledger O40): three for each win and one for each draw, averaged over the same
+ * played-out matches as the chance. Reads the chance only; nothing in a match reads it back.
+ */
+export const expectedPoints = (c: Pick<Chance, 'w' | 'd'>): number => Math.round((3 * c.w + c.d) * 10) / 10;

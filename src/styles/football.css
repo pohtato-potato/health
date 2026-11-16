@@ -97,6 +97,11 @@ svg.fb-crest { filter: drop-shadow(0 0 6px rgba(255,122,26,.55)); }
 .fb-kc .sy { fill: none; stroke: var(--fb-ink); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
 .fb-kc .tx { font: 700 22px var(--fb-cond); fill: var(--fb-ink); text-anchor: middle; }
 .fb-kc .tx.s { font-size: 18px; }
+/* O42: original crests for real clubs: the shape in the first colour, a field in the second, the symbol on top. */
+.fb-oc .sh { fill: color-mix(in srgb, var(--k) 38%, #0d0a18); }
+.fb-oc .fd { fill: color-mix(in srgb, var(--k2) 70%, #0d0a18); }
+.fb-oc .sh.ln { fill: none; }
+.fb-oc .sb .sy { stroke: #fff; stroke-width: 5; filter: drop-shadow(0 0 1.5px #000) drop-shadow(0 0 1.5px #000); }
 
 /* ---- kits ---- */
 .fb-kit { flex: none; overflow: visible; }
@@ -285,15 +290,18 @@ button.fb-todaycard { cursor: pointer; }
 .fb-tiername { color: var(--t); text-shadow: 0 0 14px var(--t); }
 .fb-trows { margin: 0; padding: 0; list-style: none; border: 2px solid var(--t); border-radius: 18px; box-shadow: 0 0 18px -6px var(--t); padding: 4px 6px; animation: fb-tierpulse 3.2s ease-in-out infinite; }
 @keyframes fb-tierpulse { 50% { box-shadow: 0 0 26px -4px var(--t); } }
-.fb-trow a, .fb-trow-in { display: grid; grid-template-columns: 28px 16px minmax(0,1fr) auto; gap: 10px; align-items: center; min-height: 56px; padding: 6px 8px; color: var(--fb-ink); text-decoration: none; border-top: 1px solid rgba(255,255,255,.14); }
+.fb-trow a, .fb-trow-in { display: grid; grid-template-columns: 28px 26px minmax(0,1fr) auto; gap: 10px; align-items: center; min-height: 56px; padding: 6px 8px; color: var(--fb-ink); text-decoration: none; border-top: 1px solid rgba(255,255,255,.14); }
 .fb-trow:first-child a, .fb-trow:first-child .fb-trow-in { border-top: 0; }
 .fb-trow.me a, .fb-trow.me .fb-trow-in { border: 2px solid var(--k); border-radius: 16px; box-shadow: 0 0 16px -4px var(--k), inset 0 0 12px -6px var(--k); }
 .fb-trow.me + .fb-trow a, .fb-trow.me + .fb-trow .fb-trow-in { border-top-color: transparent; }
 .fb-tpos { font: 300 22px var(--serif); text-align: center; font-variant-numeric: lining-nums tabular-nums; }
 .fb-tring { width: 16px; height: 16px; border-radius: 50%; border: 3px solid var(--k); box-shadow: 0 0 8px var(--k); }
+.fb-tring { justify-self: center; }
+.fb-tcrest { display: grid; place-items: center; width: 26px; height: 26px; } /* O42: every club shows its crest in the table */
 .fb-tname { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.fb-tname b { font: 600 16px var(--sans); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fb-tname em { font: 600 14px var(--sans); font-style: normal; border: 1.5px solid currentColor; border-radius: 999px; padding: 0 7px; margin-left: 6px; }
+/* O42: a long club name wraps rather than being cut, and the You chip stays whole. */
+.fb-tname b { font: 600 16px var(--sans); overflow-wrap: anywhere; }
+.fb-tname em { display: inline-block; white-space: nowrap; font: 600 14px var(--sans); font-style: normal; border: 1.5px solid currentColor; border-radius: 999px; padding: 0 7px; margin-left: 6px; }
 .fb-form { display: flex; gap: 4px; }
 .fb-tpts { font: 400 22px var(--serif); display: flex; align-items: baseline; gap: 3px; font-variant-numeric: lining-nums tabular-nums; }
 .fb-tpts small { font: 400 14px var(--sans); color: var(--fb-quiet); }
@@ -647,3 +655,23 @@ button.md-chip { min-height: 44px; cursor: pointer; }
 .fb-chance-part i { width: 12px; height: 12px; border-radius: 3px; flex: none; }
 .fb-chance-part b { font: 600 20px var(--serif, Georgia, serif); }
 .fb-chance-note { margin: 0; font-size: 14px; line-height: 1.4; color: var(--k-quiet, #c4c1cf); }
+/* Finding 4 (O42): from 6 pm a day with nothing logged says plainly that the axes are in fog. */
+.fb-chance-fog { margin: 0; padding: 10px 12px; border-radius: 12px; border: 1px solid #c2b2ff; background: rgba(194, 178, 255, .12); font-size: 15px; line-height: 1.45; color: #ede6da; }
+.fb-chance-fog b { color: #c2b2ff; }
+.tm-night { display: flex; flex-direction: column; gap: 12px; }
+.tm-nf { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid rgba(237, 230, 218, .18); }
+/* Pace's sum (O42): steps, squad, plan, morale, as chips with words. */
+.fb-pacesum { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 14px; border: 1px solid #8fdcb6; background: rgba(143, 220, 182, .1); }
+.fb-pacesum-h { font-size: 16px; color: #ede6da; }
+.fb-pacesum-h b { color: #8fdcb6; font-size: 20px; }
+.fb-pacesum-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.fb-pacesum-row > span { padding: 6px 10px; border-radius: 10px; background: rgba(255, 255, 255, .08); font-size: 15px; color: #ede6da; }
+.fb-pacesum-row b { font-size: 17px; }
+.fb-pacesum-n { font-size: 14px; line-height: 1.4; color: #c4c1cf; }
+/* The signing moment (O41 #4). */
+.fb-sign { gap: 14px; }
+.fb-sign-art { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
+.fb-sign-rows { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.fb-sign-rows p { display: flex; justify-content: space-between; gap: 12px; margin: 0; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(242, 196, 109, .55); background: rgba(242, 196, 109, .1); font-size: 16px; }
+.fb-sign-rows span { color: #e6dcc8; }
+.fb-sign-rows b { text-align: right; color: #fff6d6; }

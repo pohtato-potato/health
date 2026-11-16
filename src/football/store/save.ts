@@ -1,4 +1,6 @@
 // Founding the club, settings and choices.
+import { oneBrandEach, SIGNING_SHARE } from '../money';
+import { seasonMoneyScale } from '../pyramid/shape';
 import { db } from '../../db/db';
 import { addDays, dayOfLogging, weekStart } from '../../domain/dates';
 import { pressHeadline } from '../news';
@@ -105,6 +107,11 @@ export async function markWatched(id: string) {
   await db.fbMatches.update(id, { watched: true });
 }
 
+/** Skip on the morning's lead match (finding 2, O42): every Brabo match of that night is marked seen, cup ties too. */
+export async function markNightWatched(date: DayKey) {
+  await db.fbMatches.where('date').equals(date).modify((m) => { if (m.home === OWN || m.away === OWN) m.watched = true; });
+}
+
 /** The answer picked at the press conference becomes tomorrow's back page (one answer per match). */
 export async function answerPress(matchId: string, i: 0 | 1 | 2): Promise<string | undefined> {
   return db.transaction('rw', [db.fbNews, db.fbMatches, db.fbSeasons], async () => {
@@ -184,7 +191,17 @@ export const sellHabit = (habit: HabitId) =>
   });
 /** Sign an offer: it fills its slot from the coming season when signed between seasons, else from this one. */
 export const acceptOffer = (o: Offer) =>
-  editSave((s) => ({ ...s, sponsors: [...(s.sponsors ?? []).filter((x) => x.slot !== o.slot || o.slot === 'partner'), { ...o, since: s.phase === 'event' ? s.season + 1 : s.season }], offers: (s.offers ?? []).filter((x) => x.slot !== o.slot || (o.slot === 'partner' && x !== o && x.brand !== o.brand)) }));
+  editSave((s) => {
+    const since = s.phase === 'event' ? s.season + 1 : s.season;
+    // A quarter of the first season's money on the day (O41 letter A), at the season's scale; the rest at its end.
+    const advance = Math.round(o.perSeason * seasonMoneyScale(s) * SIGNING_SHARE * 1000) / 1000;
+    const sponsors = [...(s.sponsors ?? []).filter((x) => x.slot !== o.slot || o.slot === 'partner'), { ...o, since, advance: { season: since, amount: advance } }];
+    // One brand, one place (finding 9, O42): its other offers go, and a slot just filled takes no more.
+    const offers = oneBrandEach((s.offers ?? []).filter((x) => x.brand !== o.brand && (x.slot !== o.slot || (o.slot === 'partner' && sponsors.filter((y) => y.slot === 'partner').length < 3))), sponsors);
+    return { ...s, sponsors, offers, budget: Math.round((s.budget + advance) * 1000) / 1000, signed: { brand: o.brand, slot: o.slot, perSeason: o.perSeason, seasons: o.seasons, advance, since, risk: o.risk, line: o.line } };
+  });
+/** The signing moment has been seen. */
+export const markSigningSeen = () => editSave((s) => (s.signed ? { ...s, signed: undefined } : undefined));
 /** Your own sponsor, typed in, in any slot. */
 export const setOwnSponsor = (name: string, slot: Slot) =>
   editSave((s) => (name.trim() ? { ...s, ownSponsor: { name: name.trim().slice(0, 40), slot } } : { ...s, ownSponsor: undefined }));

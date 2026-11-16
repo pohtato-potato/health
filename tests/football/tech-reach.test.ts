@@ -14,9 +14,9 @@ describe('every tech reaches somewhere (O40)', () => {
       for (const x of r) expect(routes.includes(`'${x.place.to}'`), `${t.id} → ${x.place.to}`).toBe(true);
     }
   });
-  it('only the two techs listed for the owner have nothing running yet', () => {
-    // Gegenpress would change match odds (not in this fork); Testimonials needs a "Club legend" the game lacks.
-    expect(TECHS.filter((t) => !techReach(t).some((x) => !x.waiting)).map((t) => t.id)).toEqual(['n-gegenpress', 'n-testimonials']);
+  it('only Gegenpress has nothing running yet', () => {
+    // Gegenpress would change match odds and waits for the owner; Testimonials was wired on 16 Nov.
+    expect(TECHS.filter((t) => !techReach(t).some((x) => !x.waiting)).map((t) => t.id)).toEqual(['n-gegenpress']);
   });
   it('the effects not run yet are only the ones listed for the owner', () => {
     const waiting = TECHS.flatMap((t) => t.effects).filter((e) =>

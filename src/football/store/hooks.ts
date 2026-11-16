@@ -10,7 +10,7 @@ import { comebackOn, loadHealth, nightFor, squadCondition } from './gather';
 import { dressingRoom, lowLogOn } from '../squadCare';
 import { opponentFor, type Opponent } from '../opponent';
 import type { FbSave, StoredMatch } from './tables';
-import { contTonight, fixtureFor, tonightKnocks, type Fixture } from './tonight';
+import { fixturesFor, tonightKnocks, type Fixture } from './tonight';
 import { monthAverage } from '../oldSelves';
 import { seasonChange, type SeasonChange } from '../seasonChange';
 import { AXES } from '../types';
@@ -42,6 +42,11 @@ export interface Tonight {
   save: FbSave;
   date: DayKey;
   fixture?: Fixture;
+  /**
+   * O41 1 (O42): a night already used with no match in it (the day between worlds, a break day closed early): no
+   * fixture is drawn as tonight's; the next one is here, and it plays tomorrow.
+   */
+  next?: Fixture;
   opp?: ClubDef;
   /** Tonight's shape so far: 70% today, 30% squad (spec §8); an axis with no data stays as it is. */
   liveValues: AxisValues;
@@ -54,6 +59,8 @@ export interface Tonight {
   base: AxisValues;
   nudges: Nudge[];
   total: AxisValues;
+  /** Pace counts in full tonight (a day past 20,000 steps, no squad share; O42). */
+  paceFull: boolean;
   tactic: { pick: Tactic; by: 'you' | 'assistant' };
   known: AbilityDef[];
   hiddenNote: boolean;
@@ -64,8 +71,8 @@ export interface Tonight {
   played: StoredMatch[];
   /** Matches played automatically and not yet watched. */
   unwatchedAuto: StoredMatch[];
-  /** The continental match on a double-header night. */
-  also?: string;
+  /** Every match of tonight, the first one included (a double-header night has two or more; finding 1, O42). */
+  fixtures: Fixture[];
   /** A finished season whose end screens are still to be seen. */
   change?: SeasonChange;
   /** Layer 4: the morning (growth overnight, trialists, the scout line, loans arriving, the break). */
@@ -94,7 +101,13 @@ export async function loadTonight(date: DayKey): Promise<Tonight | null> {
   const h = await loadHealth();
   const night = nightFor(h, date);
   const roster = new Map((await db.fbPlayers.toArray()).map((p) => [p.id, p]));
-  const fixture = season ? fixtureFor(save, season) : undefined;
+  const played = await db.fbMatches.where('date').equals(date).toArray();
+  const ahead = season ? fixturesFor(save, season) : [];
+  // A fixture is only drawn as tonight's when it can still play tonight.
+  const used = !played.length && Boolean(save.lastPlayed && save.lastPlayed >= date);
+  const fixtures = used ? [] : ahead;
+  const next = used ? ahead[0] : undefined;
+  const fixture = fixtures[0];
   const bundles = await db.fbBundles.toArray();
   const sick = h.days.get(date)?.status === 'sick';
   const o = nightOptsFor(save, roster, h, date, fixture?.opp, night.values, rotationOf(save, bundles));
@@ -103,19 +116,17 @@ export async function loadTonight(date: DayKey): Promise<Tonight | null> {
   for (const a of AXES) if (night.flags[a]) liveValues[a] = night.values[a];
   const opp = fixture?.opp ? clubById(fixture.opp) : undefined;
   const oppSaved = fixture?.opp ? await db.fbClubs.get(fixture.opp) : undefined;
-  const played = await db.fbMatches.where('date').equals(date).toArray();
   const unwatchedAuto = (await db.fbMatches.where('date').between(addDays(date, -60), date, true, false).toArray()).filter((m) => m.auto && !m.watched);
   return {
-    save, date, fixture, opp,
+    save, date, fixture, fixtures, next, opp,
     liveValues, flags: night.flags, xi: team.xi,
-    today: night.values, squad: team.squad, base: team.base, nudges: team.nudges, total: team.total, tactic: o.tactic,
+    today: night.values, squad: team.squad, base: team.base, nudges: team.nudges, total: team.total, paceFull: Boolean(o.opts.full?.includes('Pace')), tactic: o.tactic,
     known: opp?.known ?? [],
     hiddenNote: Boolean(opp?.hidden) && !save.met.includes(opp!.id),
     stack: save.earned.filter((e) => e.date > addDays(date, -7)).length,
     knocks: tonightKnocks(h, date, save.physioRoom),
     played, unwatchedAuto,
     change: await pendingChange(save),
-    also: season ? contTonight(save, season, (id) => clubById(id).name) : undefined,
     morning: morningFor(save, await db.fbSquad.toArray(), [...roster.values()], bundles, h, date, fixture),
     loansPlaying: team.loansPlayed ?? [], loanRested: team.loanRested ?? [],
     oppTonight: opp ? opponentFor(opp, { rating: oppSaved?.rating ?? undefined }) : undefined,

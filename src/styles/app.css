@@ -39,7 +39,9 @@
   --mono: 'DM Mono', ui-monospace, monospace;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
-  --tab-h: 76px;
+  /* The tab bar's own height; --tab-h is the room fixed things take at the bottom (the bar, plus the session pill while one is open). */
+  --tab-base: 76px;
+  --tab-h: var(--tab-base);
   color-scheme: dark;
 }
 
@@ -729,7 +731,7 @@ textarea.field {
   bottom: 0;
   width: 100%;
   max-width: 480px;
-  height: calc(var(--tab-h) + var(--safe-bottom));
+  height: calc(var(--tab-base) + var(--safe-bottom));
   padding: 8px 8px calc(10px + var(--safe-bottom));
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -772,11 +774,14 @@ textarea.field {
 .tabbar a.fb.on { color: #ffd9b8; }
 .fb-tabmark { display: grid; place-items: center; width: 44px; height: 44px; margin-top: -16px; border-radius: 50%; border: 2.5px solid #ff7a1a; background: #140d1a; color: #ffa25c; box-shadow: 0 0 14px -2px #ff7a1a, 0 0 22px -6px #6c3fc4; animation: fb-mark 3s ease-in-out infinite; }
 @keyframes fb-mark { 50% { box-shadow: 0 0 22px 0 #ff7a1a, 0 0 30px -4px #6c3fc4; } }
+/* Finding 16 (O42): while a session is open the pill sits in its own strip on the tab bar, and --tab-h grows by that
+   strip, so every page's bottom room, its own bottom button and the other floating controls sit above it, never under. */
+.app:has(> .resume) { --tab-h: calc(var(--tab-base) + 56px); }
 .resume {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(var(--tab-h) + var(--safe-bottom) + 10px);
+  bottom: calc(var(--tab-base) + var(--safe-bottom) + 6px);
   z-index: 19;
   height: 44px;
   padding: 0 18px;
@@ -1763,7 +1768,7 @@ textarea.field {
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
 }
 .w-k {
-  font-size: 12px;
+  font-size: 15px; /* O42 slip 38 */
   font-weight: 600;
   letter-spacing: 0.01em;
   text-transform: none;
@@ -1782,3 +1787,9 @@ textarea.field {
 
 /* With the plus floating bottom right, the last row scrolls clear of it. */
 .app:has(> .fab-plus:not(.docked)) .page { padding-bottom: calc(var(--tab-h) + 36px + 66px + var(--safe-bottom)); }
+.page-loading { padding: 24px 16px; font-size: 16px; text-transform: capitalize; }
+/* O42 finding 33: a record's moment on the closed day. Gold border and the kind in words, never colour alone. */
+.record-moment { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; padding: 16px; border-radius: 18px; border: 2px solid var(--gold, #f2c46d); background: color-mix(in srgb, #f2c46d 12%, transparent); animation: record-in .6s ease-out both; }
+.record-moment .record-k { font-size: 14px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #f2c46d; }
+.record-moment .record-v { font: 400 40px/1.05 var(--serif); color: var(--ink); }
+@keyframes record-in { from { transform: scale(.94); opacity: 0; } to { transform: none; opacity: 1; } }

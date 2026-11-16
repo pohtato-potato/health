@@ -1,113 +1,15 @@
 import { addDays, weekStart } from '../domain/dates';
-import { fmtDayMonth, fmtInt, fmtTime } from '../domain/format';
+import { fmtDayMonth } from '../domain/format';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { nextCheckInDate } from '../screens/Photos';
-import { findSession, hasGym } from '../domain/plan';
-import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useMeasurements, useSessions, useSettings, useToday } from '../db/hooks';
+import { useAllDays, useEntries, useEntriesBetween, useMeasurements, useSettings, useToday } from '../db/hooks';
 import { go, replaceSheet } from '../router';
 import { Icon, type IconName } from '../ui/Icon';
 import { Sheet } from '../ui/Sheet';
-import { LogSearch } from './LogSearch';
-import { DateChip, useLogDate } from '../ui/DateChip';
-import { checklistSlots, dayRings, freeMealsThisWeek, nextUp } from '../state/derived';
+import { useLogDate } from '../ui/DateChip';
+import { freeMealsThisWeek } from '../state/derived';
 import { StatusRow } from '../ui/StatusRow';
-import { usualFoods } from '../domain/usual';
-import { mealForTime, portionFor } from '../domain/foods';
-import { UsualChips } from '../screens/today/LogBelow';
-import { useAddUsual } from '../screens/today/useAddUsual';
-import { LogSheetLayout } from './LogSheetLayout';
-
-/** The + sheet (s2), in Today's order: one search box for anything, your usual foods, the drawn tiles, then More. */
-export function LogSheet() {
-  const settings = useSettings();
-  const today = useToday();
-  const [date, setDate] = useLogDate();
-  const days = useAllDays();
-  const entries = useEntries(date);
-  const sessions = useSessions();
-  const sets = useAllSets();
-  const active = useActiveSession();
-  const foods = useFoods();
-  const monthEntries = useEntriesBetween(addDays(today, -60), today);
-  const addUsual = useAddUsual();
-
-  if (!settings || !days || !entries || !sessions || !sets || active === undefined || !foods || !monthEntries) return <Sheet title="Log">{null}</Sheet>;
-  const mealNow = mealForTime();
-  const usual = usualFoods(monthEntries, foods, mealNow, today);
-
-  const day = days.find((d) => d.date === date);
-  const { totals } = dayRings(settings, date, day, entries);
-  const up = nextUp(settings, sessions, sets, days);
-  const plan = settings.plan;
-  const slots = checklistSlots(settings, date);
-  const ticked = slots.filter((s) => day?.ticks?.[s.key]).length;
-  const sessionName = active ? findSession(plan!, active.session)?.name ?? 'Session' : findSession(plan ?? { sessions: [] } as never, up?.sessionId ?? '')?.name;
-  const d: Record<string, string> = date === today ? {} : { d: date };
-
-  const tile = (icon: IconName, color: string, title: string, sub: string, onClick: () => void) => (
-    <button type="button" className="log-tile" onClick={onClick} style={{ ['--tint' as string]: color }}>
-      <span className="log-ic">
-        <Icon name={icon} size={22} color={color} />
-      </span>
-      <b>{title}</b>
-      <span>{sub}</span>
-    </button>
-  );
-
-  return (
-    <Sheet title="Log">
-      <LogSheetLayout
-        date={<DateChip value={date} onChange={setDate} />}
-        search={
-          <LogSearch
-            foods={foods}
-            onAction={(a) => (a.sheet ? replaceSheet(a.sheet) : go(a.route!))}
-            onFood={(f) => replaceSheet('addfood', { ...d, food: f.id })}
-            onQuick={() => replaceSheet('quick', d)}
-          />
-        }
-        usual={
-          usual.length > 0 && (
-            <section className="col gap2" aria-label={`Your usual ${mealNow}`}>
-              <span className="t14 q">Your usual {mealNow}</span>
-              <UsualChips
-                items={usual.map((u) => ({ id: u.food.id, name: u.food.name, portion: portionFor(u.food, u.amount) }))}
-                onAdd={(id) => {
-                  const u = usual.find((x) => x.food.id === id);
-                  if (u) void addUsual(u, date, mealNow);
-                }}
-              />
-            </section>
-          )
-        }
-        tiles={
-          <div className="log-grid">
-            {tile('food', 'var(--kcal)', 'Food', totals.entries ? `${fmtInt(totals.kcal)} kcal` : 'Nothing yet', () => replaceSheet('addfood', d))}
-            {tile('sun', 'var(--gold)', 'Morning log', day?.morning ? `Done ${fmtTime(day.morning.at)}` : 'Weight, sleep', () => replaceSheet('morning', d))}
-            {slots.length > 0
-              ? tile('pill', 'var(--pearl)', 'Checklist', `${ticked} of ${slots.length}`, () => replaceSheet('checklist', d))
-              : tile('pill', 'var(--pearl)', 'Checklist', 'Set up', () => go('/medicines'))}
-            {tile('steps', 'var(--steps)', 'Steps', day?.steps !== undefined ? fmtInt(day.steps) : 'Not logged', () => replaceSheet('steps', d))}
-            {plan && (active || up)
-              ? tile('train', 'var(--protein)', sessionName ?? 'Session', active ? 'In progress' : 'Start', () => (active ? go('/session') : hasGym(plan) ? go('/train') : go('/session', { start: up!.sessionId })))
-              : tile('train', 'var(--protein)', 'Session', 'No plan yet', () => go('/plan'))}
-            {tile('check', 'var(--gold)', 'Close the day', day?.foodDone ? 'Closed' : 'Meals, checklist', () => go('/close', d))}
-          </div>
-        }
-        more={
-          <button type="button" className="wide" onClick={() => replaceSheet('more', d)}>
-            <span className="col gap2">
-              <span className="t15">More</span>
-              <span className="t14 q">Drinks, night out, free meal, waist, status, check-in</span>
-            </span>
-            <Icon name="right" size={18} stroke={1.8} color="var(--quiet)" />
-          </button>
-        }
-      />
-    </Sheet>
-  );
-}
 
 /** + › More (s44): the less frequent logs, and status, which relaxes targets while it lasts. */
 export function MoreSheet() {

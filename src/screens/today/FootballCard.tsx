@@ -2,7 +2,7 @@
 // half-time from 6 pm, and tonight's match waiting once the day is closed. It never shows a score.
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
-import { dayOfLogging } from '../../domain/dates';
+import { addDays, dayOfLogging } from '../../domain/dates';
 import { clubCrest, crestSvg } from '../../football/art/crest';
 import { clubById } from '../../football/data/load';
 import { loadTonight, type Tonight } from '../../football/store/hooks';
@@ -113,15 +113,43 @@ export function KickOffCard({ m, save, onWatch, onLater }: { m: StoredMatch; sav
   );
 }
 
+/** A day closed after its match was played (finding 19, O42): the result once seen, else "in your parcel". */
+export function PlayedCard({ ms, date }: { ms: StoredMatch[]; date: string }) {
+  const last = dayOfLogging(Date.now());
+  const when = date === addDays(last, -1) ? 'Played last night' : `Played ${new Date(`${date}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'long' })}`;
+  return (
+    <Aurora className="fb-todaywrap fb-kickoff">
+      <div className="fb-todaycard" role="group" aria-label={when}>
+        <span className="fb-lb">{when}</span>
+        {ms.map((m) => {
+          const h = m.home === OWN ? m.score : [m.score[1], m.score[0]];
+          return (
+            <span key={m.id} className="fb-s">
+              {m.watched ? <b>{name(m.home)} {h[0]}–{h[1]} {name(m.away)}</b> : <b>{name(m.home)} v {name(m.away)}</b>}
+              {m.round ? ` · ${m.round}` : ''}
+            </span>
+          );
+        })}
+        {ms.some((m) => !m.watched) && <span className="fb-s">{ms.length > 1 ? 'They are' : 'It is'} in your parcel.</span>}
+        <span className="fb-btns">
+          <button type="button" className="fb-btn pri" onClick={() => go('/football')}>{ms.some((m) => !m.watched) ? 'Open the parcel' : 'See Football'}</button>
+        </span>
+      </div>
+    </Aurora>
+  );
+}
+
 /** Close the day's last screen: the closed day's match once it is played, else tonight's fixture waiting for the morning. */
 export function DayKickOff({ date }: { date: string }) {
   const got = useLiveQuery(async () => {
     const save = await db.fbSave.get('save');
-    const m = save ? await db.fbMatches.where('date').equals(date).first() : undefined;
+    const ms = save ? (await db.fbMatches.where('date').equals(date).toArray()).filter((x) => x.home === OWN || x.away === OWN) : [];
+    const m = ms[0];
     const t = save && !m ? await loadTonight(date) : null;
-    return save ? { save, m, t } : null;
+    return save ? { save, m, ms, t } : null;
   }, [date]);
   if (!got) return null;
+  if (got.m && date < dayOfLogging(Date.now())) return <PlayedCard ms={got.ms} date={date} />;
   if (got.m) return <KickOffCard m={got.m} save={got.save} onWatch={() => go('/football/match', { id: got.m!.id })} onLater={() => back('/today')} />;
   if (!got.t?.fixture) return null;
   return (

@@ -11,6 +11,8 @@ import { OWN } from '../../football/store/season';
 import type { FbNews, FbSave, StoredMatch } from '../../football/store/tables';
 import { Art, homeFirst, RESULT, scoreLine } from './Tonight';
 import { Press } from './Press';
+import { answerPapers, loadPapers, type Papers } from '../../football/store/papers';
+import { tapeOf, VIDEO_ROOM } from '../../football/tape';
 import { Studio } from './Studio';
 import { MomentumStrip, PickOfThree, playerOfMatch, ShotMap } from './match/MatchBits';
 import { TACTIC_NAME } from '../../football/rotation/night';
@@ -27,7 +29,7 @@ function callLine(c: CallRecord, m: StoredMatch): string {
   return `${c.minute}′ · ${c.by === 'you' ? 'you' : 'your assistant'} ${CALL_WORD[c.pick]} (${odds})${out}`;
 }
 
-export function FullTimeView({ m, save, studio, press, tier = 6, onWatch }: { m: StoredMatch; save: FbSave; studio?: FbNews; press?: FbNews; tier?: Tier; onWatch?: () => void }) {
+export function FullTimeView({ m, save, studio, press, tier = 6, onWatch, papers, tape }: { m: StoredMatch; save: FbSave; studio?: FbNews; press?: FbNews; tier?: Tier; onWatch?: () => void; papers?: Papers | null; tape?: boolean }) {
   const s = homeFirst(m);
   const xg = m.home === OWN ? m.events.xg : [m.events.xg[1], m.events.xg[0]];
   const crest = (id: string) => (id === OWN ? crestSvg(save.crest.step, save.crest.opt, 52) : clubCrest(clubById(id), 52));
@@ -81,8 +83,10 @@ export function FullTimeView({ m, save, studio, press, tier = 6, onWatch }: { m:
           <span className="k-q"><b style={{ color: '#ede6da' }}>{m.events.revealed}</b>: their hidden ability, now on their club page.</span>
         </Panel>
       )}
+      {tape && <OnTape m={m} />}
       {studio && <Studio lines={studio.text.split('\n')} />}
       {press?.lineId && <Press matchId={m.id} lineId={press.lineId} facts={facts} answered={press.answered} onAnswer={(i) => answerPress(m.id, i)} />}
+      {papers && <PapersLine matchId={m.id} p={papers} />}
     </div>
   );
 }
@@ -92,9 +96,44 @@ export function FullTime({ m, save, onWatch }: { m: StoredMatch; save: FbSave; o
   const got = useLiveQuery(async () => ({
     news: await db.fbNews.bulkGet([`${m.id}:studio`, `${m.id}:press`]),
     tier: (await db.fbSeasons.get(m.season))?.tierOf.bra,
+    papers: await loadPapers(m),
+    tape: Boolean((await db.fbBundles.get(VIDEO_ROOM))?.done),
   }), [m.id]);
-  return <FullTimeView m={m} save={save} studio={got?.news[0]} press={got?.news[1]} tier={got?.tier} onWatch={onWatch} />;
+  return <FullTimeView m={m} save={save} studio={got?.news[0]} press={got?.news[1]} tier={got?.tier} onWatch={onWatch} papers={got?.papers} tape={got?.tape} />;
 }
 
 /** The night out was logged light/medium/heavy, so Fuel rolled within its range on each chance (l-away). */
 export const rangedFuel = (m: Pick<StoredMatch, 'events'>) => m.events.chances.some((c) => c.mods.some((x) => x.kind === 'range'));
+
+/** The press office (ledger O40): after a big night, pick the line the papers run. Story prints it. */
+function PapersLine({ matchId, p }: { matchId: string; p: Papers }) {
+  const said = p.answered;
+  return (
+    <Panel ink="#f4aedb">
+      <b className="k-lb">The line for the papers</b>
+      {said === undefined ? (
+        <>
+          <span className="k-q">The press officer asks which line the papers run tomorrow. Pick one; Story prints it.</span>
+          <div className="k-col" style={{ gap: 8 }}>
+            {p.lines.map((l, i) => <button key={i} type="button" className="fb-btn fb-answer" onClick={() => void answerPapers(matchId, i as 0 | 1 | 2)}>{l}</button>)}
+          </div>
+        </>
+      ) : (
+        <span>The papers run your line: <b>“{p.lines[said]}”</b></span>
+      )}
+    </Panel>
+  );
+}
+
+/** The video room (ledger O40): every goal against on tape, and on a loss the unit it turned on. Words only. */
+function OnTape({ m }: { m: StoredMatch }) {
+  const t = tapeOf(m);
+  if (!t.goals.length) return null;
+  return (
+    <Panel ink="#93c3dc">
+      <b className="k-lb">On tape</b>
+      {t.turnedOn && <span>The video room: this one turned on <b>{t.turnedOn}</b>.</span>}
+      <ul className="lt-list">{t.goals.map((g, i) => <li key={i}><b>{g.minute}′</b> {g.type}{g.unit ? ` · ${g.unit}` : ''}</li>)}</ul>
+    </Panel>
+  );
+}

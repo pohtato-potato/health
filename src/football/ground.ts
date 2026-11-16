@@ -1,5 +1,6 @@
 // The ground and the Kaai quarter (spec §8.9; stadium design §4).
 // Bundles count only day or week totals from Health. They never read when anything was logged.
+import { noteDay } from './counted';
 import { addDays, type DayKey } from '../domain/dates';
 import type { AxisInput } from './axes';
 import { keptOn } from './contracts';
@@ -65,7 +66,7 @@ export const PLACES: { id: Place; name: string; x: number; y: number }[] = [
   { id: 'ferry', name: 'Ferry stop', x: 250, y: 190 },
 ];
 
-export interface BundleState { id: string; progress: Record<string, number>; done?: DayKey }
+export interface BundleState { id: string; progress: Record<string, number>; done?: DayKey; /** O42: the day it began counting, the latest days that counted (newest last, at most 12), and the 28 days before arrival credited once. */ from?: DayKey; counted?: DayKey[]; credit?: DayKey }
 export interface GroundState { tier: Tier; moved: boolean; done: string[]; budget: number }
 
 /** Open to work on: its tier reached, its bundles done, the move made, and not built yet. */
@@ -98,9 +99,10 @@ export function bundleDay(b: BundleDef, s: BundleState, counts: Record<Need, num
   if (s.done) return { state: s, spent: 0 };
   const progress = { ...s.progress };
   for (const n of b.needs) progress[n.what] = Math.min(n.count, (progress[n.what] ?? 0) + counts[n.what]);
+  const noted = noteDay(s, date, b.needs.some((n) => counts[n.what] > 0));
   const met = b.needs.every((n) => (progress[n.what] ?? 0) >= n.count);
-  if (met && budget >= b.money) return { state: { ...s, progress, done: date }, spent: b.money };
-  return { state: { ...s, progress }, spent: 0 };
+  if (met && budget >= b.money) return { state: { ...noted, progress, done: date }, spent: b.money };
+  return { state: { ...noted, progress }, spent: 0 };
 }
 /** A building is shut while its newest stage is being built (its downtime after completion). */
 export function shutUntil(b: BundleDef, done: DayKey): DayKey | undefined {

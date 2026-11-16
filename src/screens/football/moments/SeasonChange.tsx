@@ -6,6 +6,7 @@ import type { Tier } from '../../../football/types';
 import { OWN } from '../../../football/store/season';
 import { Aurora } from '../FootballHome';
 import { seasonName } from '../../../football/pyramid/redraw';
+import { MomentLayer } from './Layer';
 
 const nm = (id: string) => (id === OWN ? 'Brabo United' : clubById(id).name);
 const ord = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th'}`;
@@ -14,7 +15,7 @@ export function SeasonChangeView({ c, onDone }: { c: Change; onDone: () => void 
   const title = c.level === 'up' ? 'Up two divisions' : c.level === 'down' ? 'Down two divisions' : c.double ? 'Double promotion' : c.move === 'up' ? 'Promoted' : c.move === 'down' ? 'Relegated' : `Another season in ${tierName(c.from)}`;
   const tone = c.move === 'up' ? 'up' : c.move === 'down' ? 'down' : 'stay';
   return (
-    <div className="fb-moment" role="dialog" aria-modal="true" aria-label={title}>
+    <MomentLayer role="dialog" aria-modal="true" aria-label={title}>
       <Aurora a={c.move === 'down' ? '#3a2a6a' : '#6c3fc4'} c={c.move === 'down' ? '#2a3a6a' : '#ff7a1a'}>
         <main className={`fb-page fb-seasonend ${tone}`}>
           <span className="fb-lb">{seasonName(c.season)} · {tierName(c.from)} · finished {ord(c.pos)}</span>
@@ -55,6 +56,6 @@ export function SeasonChangeView({ c, onDone }: { c: Change; onDone: () => void 
           <button type="button" className="fb-btn pri" onClick={onDone}>{c.move === 'up' ? `On to ${tierName(c.to)}` : 'Carry on'}</button>
         </main>
       </Aurora>
-    </div>
+    </MomentLayer>
   );
 }

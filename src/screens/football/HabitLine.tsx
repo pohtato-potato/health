@@ -6,22 +6,27 @@ import { fmtInt } from '../../domain/format';
 import { tierName } from '../../football/data/load';
 import { paceNext, ordinal, weekRecap } from '../../football/habitLines';
 import { loadHealth, nightFor } from '../../football/store/gather';
+import { loadExpected } from '../../football/store/chance';
+import { loadTonight } from '../../football/store/hooks';
+import { PACE_FULL_STEPS } from '../../football/axes';
+import { paceSum, paceSumWords } from './PaceSum';
 import { OWN } from '../../football/store/season';
 import { standings, position } from '../../football/table';
 import type { Axis } from '../../football/types';
 import { go } from '../../router';
 
-export function HabitLineView({ text, sub }: { text: string; sub?: string }) {
+export function HabitLineView({ text, sub, xp }: { text: string; sub?: string; xp?: string }) {
   return (
     <button type="button" className="fb-hline" onClick={() => go('/football')}>
       <span className="fb-hline-k">Football</span>
       <span className="fb-hline-t">{text}</span>
       {sub && <span className="fb-hline-s">{sub}</span>}
+      {xp && <span className="fb-hline-s">{xp}</span>}
     </button>
   );
 }
 
-export interface LineData { text: string; sub?: string }
+export interface LineData { text: string; sub?: string; xp?: string }
 
 /** "Power 12 to 15 for tonight" (words, not a typed arrow). Nothing without a club, or while the axis is still settling in (no data yet). */
 export async function habitLineFor(axis: Axis, date: DayKey): Promise<LineData | null> {
@@ -29,13 +34,25 @@ export async function habitLineFor(axis: Axis, date: DayKey): Promise<LineData |
   const h = await loadHealth();
   const night = nightFor(h, date);
   if (night.flags[axis] === 'no-data') return null;
-  const to = night.values[axis];
+  // The same blended, nudged figure Tonight shows (finding 7, O42): today with the squad's share, the plan and morale.
+  const t = await loadTonight(date);
+  const to = t?.fixture ? t.liveValues[axis] : night.values[axis];
   const last = (await db.fbMatches.where('date').below(date).toArray()).filter((m) => !m.rotation).pop();
   const text = last ? `${axis} ${last.values[axis]} to ${to} for tonight` : `${axis} ${to} for tonight`;
-  if (axis !== 'Pace') return { text };
-  const next = paceNext(h.days.get(date)?.steps ?? 0);
-  return { text, sub: next ? `${fmtInt(next.more)} more steps makes it ${next.to}` : 'As high as Pace goes.' };
+  // The head of data (Data team, ledger O40): tonight's expected points, from the same played-out chance as Tonight.
+  const e = await loadExpected(date);
+  const xp = e ? xpWords(e.xp, e.usual) : undefined;
+  const more = xp ? { xp } : {};
+  if (axis !== 'Pace') return { text, ...more };
+  const steps = h.days.get(date)?.steps ?? 0;
+  const next = paceNext(steps);
+  const sum = t?.fixture ? paceSum(t) : undefined;
+  const way = next ? `${fmtInt(next.more)} more steps lifts your steps to ${next.to}.` : steps > PACE_FULL_STEPS ? 'Past 20,000 steps they count in full.' : 'Past 20,000 steps they count in full, with no squad share.';
+  return { text, sub: sum ? `${paceSumWords(sum)}. ${way}` : way, ...more };
 }
+
+/** "Expected points tonight: 1.4 of 3" (the head of data's line). */
+export const xpWords = (xp: number, usual: boolean) => `Expected points ${usual ? 'on a usual night' : 'tonight'}: ${xp.toFixed(1)} of 3`;
 
 export function HabitLine({ axis, now = Date.now() }: { axis: Axis; now?: number }) {
   const date = dayOfLogging(now);

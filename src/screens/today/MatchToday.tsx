@@ -12,16 +12,17 @@ import { prefOn } from '../../domain/types';
 import { clubCrest, crestSvg } from '../../football/art/crest';
 import { clubById, tierName } from '../../football/data/load';
 import { movedAxes, threatLine, wentAhead } from '../../football/matchup';
-import { ChanceBar, oppDrawing, useChance } from '../football/Chance';
+import { ChanceBar, lateFor, oppDrawing, useChances } from '../football/Chance';
 import { loadTonight, type Tonight } from '../../football/store/hooks';
 import { OWN } from '../../football/store/season';
 import { storedGate } from '../../football/store/matchGate';
 import type { FbSave, StoredMatch } from '../../football/store/tables';
 import { AXES, type Axis, type AxisValues } from '../../football/types';
 import { go } from '../../router';
-import { AXIS_INK, valueTier } from '../../ui/inks';
+import { AXIS_INK, brighten, valueTier } from '../../ui/inks';
 import { Radar } from '../football/Radar';
-import { Art } from '../football/Tonight';
+import { Art, chanceFor } from '../football/Tonight';
+import { paceSum, PaceSumView } from '../football/PaceSum';
 import '../../styles/football.css';
 
 const BRABO_INK = '#ffb15e';
@@ -30,20 +31,6 @@ const name = (id: string) => (id === OWN ? 'Brabo United' : clubById(id).name);
 const short = (id: string) => { if (id === OWN) return 'Brabo'; const n = clubById(id).name; const w = n.split(' ')[0]; return w.length >= 4 && w.length <= 12 ? w : clubById(id).short || n; };
 const inkOf = (id: string) => (id === OWN ? BRABO_INK : brighten(clubById(id).colours?.[0] ?? '#ff8fa8'));
 const crest = (save: FbSave, id: string, size: number) => (id === OWN ? crestSvg(save.crest.step, save.crest.opt, size) : clubCrest(clubById(id), size));
-
-/** Club colours are often dark; on the night page each needs to read as text. */
-function brighten(hex: string): string {
-  const m = /^#?([0-9a-f]{6})$/i.exec(hex);
-  if (!m) return hex;
-  const n = parseInt(m[1], 16);
-  let [r, g, b] = [n >> 16, (n >> 8) & 255, n & 255];
-  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  if (lum < 0.55) {
-    const k = (0.62 - lum) / (1 - lum);
-    [r, g, b] = [r, g, b].map((c) => Math.round(c + (255 - c) * k));
-  }
-  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
-}
 
 const AHEAD_KEY = 'health.ahead';
 function readAhead(date: DayKey): Axis | undefined {
@@ -80,7 +67,7 @@ export function MorningMatch({ m, save, today, more }: { m: StoredMatch; save: F
       <p className="tm-c">Last night’s shape is in. Watch it to see the score.</p>
       <button type="button" className="tm-watch" onClick={() => storedGate.watch(m)}>Watch the match</button>
       {/* Matchday §4 (choice D a): Skip shows the score of a match the assistant finished, without the replay. */}
-      <button type="button" className="tm-more" onClick={() => void storedGate.skip(m)}>Skip to the result</button>
+      <button type="button" className="tm-more" onClick={() => void storedGate.skipNight(m)}>Skip to the result</button>
       {more > 0 && <button type="button" className="tm-more" onClick={() => go('/football')}>{more === 1 ? 'One more match waits on Football' : `${more} more matches wait on Football`}</button>}
     </section>
   );
@@ -119,8 +106,10 @@ interface Fly { id: number; axis: Axis; delay: number }
 /** Tonight's shape against the opponent: radar, threat line, matchup bar, the pull-ahead line and the moments. */
 export function TonightShape({ t, stadium, buzzOn, reel }: { t: Tonight; stadium: boolean; buzzOn: boolean; reel: (axes: Axis[]) => void }) {
   const opp = t.oppTonight;
-  const chance = useChance(t.date);
-  const oppVals = useMemo(() => oppDrawing(opp, t.liveValues, chance), [opp, t.liveValues, chance]);
+  const chances = useChances(t.date);
+  const chance = chances === undefined ? undefined : chances[0] ?? null;
+  const late = lateFor(t.date);
+  const oppVals = useMemo(() => oppDrawing(opp, t.liveValues, chance, late), [opp, t.liveValues, chance, late]);
   const logged = Object.fromEntries(AXES.map((a) => [a, !t.flags[a]])) as Record<Axis, boolean>;
   // Fog of war: an axis with no data, or not logged yet, is hatched with "?" (q-pg-fog A); unlogged ones play low.
   const fog = AXES.filter((a) => t.flags[a]);
@@ -173,8 +162,24 @@ export function TonightShape({ t, stadium, buzzOn, reel }: { t: Tonight; stadium
       {oppId && <p className="tm-vsx">against <Art svg={clubCrest(clubById(oppId), 22)} /><b style={{ color: oppInk }}>{name(oppId)}</b></p>}
       {oppId && t.oppTier && t.braboTier && (f.comp !== 'league' || t.oppTier !== t.braboTier) && <p className="tm-ln">{f.round ?? 'A cup tie'}: {name(oppId)} play in {t.oppTier === t.braboTier ? 'your division' : tierName(t.oppTier)}{t.oppTier < t.braboTier ? `, ${t.braboTier - t.oppTier === 1 ? 'one division' : `${t.braboTier - t.oppTier} divisions`} above you` : ''}.</p>}
       <Radar values={t.liveValues} flags={t.flags} opp={oppVals} oppInk={oppInk} oppName={oppId ? name(oppId) : undefined} fog={fog} inked pulse={pulse} size={300} label="Tonight’s shape so far" />
+      {paceSum(t) && <PaceSumView p={paceSum(t)!} />}
       {threat && oppId && <p className="tm-ln"><b style={{ color: oppInk }}>{name(oppId)}</b> {threat.kind === 'strong' ? 'are strong on' : 'lead you on'} <b style={{ color: AXIS_INK[threat.axis] }}>{threat.axis}</b>. {threat.answer}</p>}
-      {chance && oppId && <ChanceBar c={chance} oppName={short(oppId)} />}
+      {t.fixtures.length > 1 ? (
+        <div className="tm-night">
+          <h3 className="tm-h">{t.fixtures.length === 2 ? 'Two' : t.fixtures.length} matches tonight</h3>
+          {t.fixtures.map((x, i) => {
+            const c = chanceFor(x, chances ?? []);
+            return (
+              <div key={`${x.comp}:${x.opp}:${i}`} className="tm-nf">
+                <p className="tm-vsx">{x.opp ? <><Art svg={clubCrest(clubById(x.opp), 22)} /><b style={{ color: inkOf(x.opp) }}>{name(x.opp)}</b></> : <b>Drawn on the night</b>}</p>
+                <p className="tm-ln">{x.round ?? x.label}{x.opp ? ` · ${x.braboHome ? 'home' : 'away'}` : ''}</p>
+                {c && x.opp && <ChanceBar c={c} oppName={short(x.opp)} oppId={x.opp} date={t.date} />}
+              </div>
+            );
+          })}
+          <p className="tm-ln">One shape plays {t.fixtures.length === 2 ? 'both' : 'them all'}. Each has its own chance.</p>
+        </div>
+      ) : chance && oppId && <ChanceBar c={chance} oppName={short(oppId)} oppId={oppId} date={t.date} />}
       {lead && oppVals && oppId && (
         <div className="tm-ahead">
           <p className="tm-at"><b style={{ color: AXIS_INK[lead] }}>{lead}</b><span>takes you ahead</span></p>
@@ -240,7 +245,8 @@ export function MatchToday({ now, part = 'top' }: { now: number; part?: 'top' | 
   };
   if (!got?.t || !settings) return null;
   const { t, recent } = got;
-  const unwatched = recent.filter((m) => !m.watched && (m.home === OWN || m.away === OWN));
+  // Today only ever offers last night's matches (finding 2, O42); older ones live in the calendar.
+  const unwatched = recent.filter((m) => !m.watched && (m.home === OWN || m.away === OWN) && m.date === addDays(date, -1));
   const latest = recent.filter((m) => m.home === OWN || m.away === OWN).pop();
   const lead = unwatched[unwatched.length - 1];
   if (part === 'shape') {

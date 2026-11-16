@@ -1,3 +1,4 @@
+import { sessionClock } from '../domain/quietSession';
 import { useState } from 'react';
 import { addDays, daysBetween } from '../domain/dates';
 import { fmtDayMonth, fmtInt, weekdayName } from '../domain/format';
@@ -28,6 +29,7 @@ import { TonightCard } from './train/Cards';
 import { FourWeeksCard, MonthCard, PlanCard, RecentCard, RecordsCard } from './train/Sections';
 import { BodyPanel, ExerciseBlock, WeekLead, WeightSheet, type ExRow, type Pick, type Place } from './train/Week';
 import { Action, Door, Doors, Empty, HelpButton, Panel, Sect, type HowThisWorks } from '../ui/kit/Kit';
+import { FAMILIES } from '../ui/kit/families';
 import { clock } from './NextUpCard';
 
 const WORDS = ['no', 'one', 'two', 'three', 'four', 'five'];
@@ -195,7 +197,7 @@ export function Train() {
         {active ? (
           <>
             <Panel ink="#8fc9b0">
-              <span className="k-lb">In progress · {clock(now - active.startedAt)}</span>
+              <span className="k-lb">In progress · {clock(sessionClock(active, sets?.filter((x) => x.sessionId === active.id) ?? [], now))}</span>
               <span className="k-title">{activeDef?.name ?? `Session ${active.session}`}</span>
               <span className="k-q">
                 {activeSets} set{activeSets === 1 ? '' : 's'} logged{active.short ? ' · short session' : ''}
@@ -325,9 +327,9 @@ export function Train() {
 
         <Sect>Around training</Sect>
         <Doors label="Around training">
-          <Door icon="win" ink="#f2c46d" name="Records" value={fmtInt(allRecords.length)} onClick={() => go('/records')} />
-          <Door icon="list" name="The plan" value={plan.planVersion ? `v${plan.planVersion}` : plan.name} onClick={() => go('/plan')} />
-          <Door icon="body" name="Body log" value={String((body ?? []).filter((b) => daysBetween(b.date, today) < 7).length || '–')} onClick={() => go('/body')} />
+          <Door icon="win" family="earned" name="Records" value={fmtInt(allRecords.length)} onClick={() => go('/records')} />
+          <Door icon="list" family="upkeep" name="The plan" value={plan.planVersion ? `v${plan.planVersion}` : `${plan.sessions.length} sessions`} onClick={() => go('/plan')} />
+          <Door icon="body" family="body" name="Body log" value={String((body ?? []).filter((b) => daysBetween(b.date, today) < 7).length || '–')} onClick={() => go('/body')} />
         </Doors>
 
         {four && <FourWeeksCard name={nameOf(tn?.session.session ?? pick)} then={four.then} rows={four.rows} />}
@@ -345,8 +347,8 @@ export function Train() {
             .map(({ ex, card, back }) => ({ key: ex.id, name: ex.name, pose: POSES[poseFor(ex)], tier: card.tier, next: card.next, seed: ex.id, back }))}
         />
 
-        <Panel ink="#ff9a76" onClick={() => go('/football/bounties')} label="Bounties: training jobs in Football's bounty list, this week">
-          <b className="k-lb">Bounties</b>
+        <Panel ink={FAMILIES.record.ink} onClick={() => go('/football/bounties')} label="Bounties, in Football's record: training jobs in Football's bounty list, this week">
+          <b className="k-lb">Bounties<small className="k-head-fam">Football · {FAMILIES.record.name}</small></b>
           <span>Training jobs sit in Football's one bounty list, with the rest. Every week has at least one.</span>
         </Panel>
 

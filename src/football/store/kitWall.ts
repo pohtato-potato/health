@@ -1,6 +1,6 @@
 // The kit wall: every season's kits, each with its record and the nights it wore the patch.
 import { BRABO_KITS, type KitDef } from '../art/kit';
-import { anniversaryKit, CATALOGUE, dataKit, FIRST_KITS, patchFor, weeksOf, type KitSlot } from '../kits';
+import { anniversaryKit, dataKit, FIRST_KITS, kitEntry, patchFor, weeksOf, type KitSlot } from '../kits';
 import type { FbSave, StoredMatch } from './tables';
 
 export interface WallKit { season: number; slot: KitSlot; id: string; name: string; kit: KitDef; collar?: string; record: { W: number; D: number; L: number }; patches: { date: string; text: string; round?: string }[] }
@@ -12,7 +12,7 @@ export function kitFor(id: string, season: number, matches: StoredMatch[]): { ki
     return { ...d, name: 'The data kit' };
   }
   if (id === 'ANNIV') { const k = anniversaryKit(season); return k ? { kit: k, name: 'The anniversary kit' } : undefined; }
-  const c = CATALOGUE.find((k) => k.id === id);
+  const c = kitEntry(id);
   return c ? { kit: c.kit, name: c.name } : undefined;
 }
 

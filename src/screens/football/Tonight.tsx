@@ -2,8 +2,11 @@
 // shape, the plan and anything waiting as filled panels, one glowing action, doors for the rest.
 import { useState, type ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { loadExpected } from '../../football/store/chance';
+import { xpWords } from './HabitLine';
 import { clubCrest, crestSvg } from '../../football/art/crest';
 import { clubById } from '../../football/data/load';
+import { seasonName } from '../../football/pyramid/redraw';
 import { OWN } from '../../football/store/season';
 import type { Tonight as TonightData } from '../../football/store/hooks';
 import type { StoredMatch } from '../../football/store/tables';
@@ -25,7 +28,10 @@ import { readOf, TEMPO_NAME, WIDTH_NAME } from '../../football/matchday';
 import { MorningCards } from './world/WorldScreens';
 import { TacticPicker } from './players/Rotation';
 import { breakBeforeFor, matchdayList, paceNight, paceOn } from '../../football/pace';
-import { ChanceBar, oppDrawing, useChance } from './Chance';
+import { ChanceBar, lateFor, oppDrawing, useChances } from './Chance';
+import type { NightChance } from '../../football/store/chance';
+import { paceSum, PaceSumView } from './PaceSum';
+import type { Fixture } from '../../football/store/tonight';
 import { TACTIC_NAME } from '../../football/rotation/night';
 import { AXIS_INK } from '../../ui/inks';
 import { Action, Door, FamilyDoors, Panel, Sect } from '../../ui/kit/Kit';
@@ -57,7 +63,25 @@ export const RESULT = { W: 'Won', D: 'Drew', L: 'Lost' } as const;
 
 const BRABO = '#ff7a1a';
 /** What an unlogged axis waits on, in words (the same answers Today gives). */
-const LOG_FOR: Record<Axis, string> = { Pace: 'your steps', Power: 'a session', Fuel: 'your food', Rest: 'your sleep', Routine: 'the checklist', Shape: 'a weigh-in' };
+/** O42 slip 36: the whole phrase, so the verb agrees ("until your steps are in"). */
+const LOG_FOR: Record<Axis, string> = { Pace: 'your steps are in', Power: 'a session is in', Fuel: 'your food is in', Rest: 'your sleep is in', Routine: 'the checklist is ticked', Shape: 'a weigh-in is in' };
+
+/**
+ * O41 1 (O42): the day between worlds, or a night already used with no match: says so, with the next match and that
+ * it plays tomorrow. Nothing is drawn as tonight's.
+ */
+export function NoMatchTonight({ t, next }: { t: Pick<TonightData, 'save'>; next: NonNullable<TonightData['next']> }) {
+  const opp = next.opp ? clubById(next.opp) : undefined;
+  const first = t.save.phase === 'season' && t.save.day === 1;
+  const vs = opp ? (next.braboHome ? `at home to ${opp.name}` : `away at ${opp.name}`) : (next.round ?? next.label);
+  return (
+    <Panel ink="#93c3dc">
+      <b className="k-lb">No match tonight</b>
+      <span>{first ? `${seasonName(t.save.season)} kicks off tomorrow, ${vs}.` : `Next up tomorrow: ${next.round ?? next.label}, ${vs}.`}</span>
+      <span className="k-q">A match is only shown as tonight’s when it plays tonight.</span>
+    </Panel>
+  );
+}
 
 /** A season moment waiting to be seen takes Tonight until it is: one thing leads. */
 function momentOf(t: TonightData): ReactNode {
@@ -75,7 +99,9 @@ function momentOf(t: TonightData): ReactNode {
 
 export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: string) => void }) {
   const [plan, setPlan] = useState(false);
-  const chance = useChance(t.date);
+  const chances = useChances(t.date);
+  const chance = chances === undefined ? undefined : chances[0] ?? null;
+  const xp = useLiveQuery(() => loadExpected(t.date), [t.date]);
   const watch = onWatch ?? ((id: string) => go('/football/match', { id }));
   const moment = momentOf(t);
   if (moment) return <div className="lt-moment">{moment}</div>;
@@ -93,7 +119,9 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
   const f = t.fixture;
   const own = crestSvg(t.save.crest.step, t.save.crest.opt, 54);
   const oppName = t.opp ? (t.opp.short && t.opp.name.length > 12 ? t.opp.name.split(' ')[0] : t.opp.name) : '';
-  const oppVals = oppDrawing(t.oppTonight, t.liveValues, chance);
+  const oppVals = oppDrawing(t.oppTonight, t.liveValues, chance, lateFor(t.date));
+  const many = t.fixtures.length > 1;
+  const pace = f ? paceSum(t) : undefined;
   const unlogged = AXES.filter((a) => t.flags[a] === 'not-logged');
   const noData = AXES.filter((a) => t.flags[a] === 'no-data');
   const league = Boolean(t.tactic && f?.comp === 'league' && t.opp);
@@ -101,7 +129,10 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
   const read = league && p && t.opp ? readOf(p, { id: t.opp.id, style: t.opp.style }, readScouted(scoutLevel(t.save, t.opp.id))) : undefined;
   const paced = paceOn(t.save, t.date) && !t.morning.intl;
   const night = paceNight(t.save.day, breakBeforeFor(t.save));
-  const where = f ? [f.round ?? f.label, f.opp ? (f.braboHome ? 'home' : 'away') : undefined].filter(Boolean).join(' · ') : 'Between seasons';
+  // On a night with no match, the header shows the next one, marked tomorrow.
+  const hf = f ?? t.next;
+  const hopp = t.opp ?? (t.next?.opp ? clubById(t.next.opp) : undefined);
+  const where = hf ? [f ? undefined : 'Tomorrow', hf.round ?? hf.label, hf.opp ? (hf.braboHome ? 'home' : 'away') : undefined].filter(Boolean).join(' · ') : 'Between seasons';
   // One glowing action: last night's match first, then the plan.
   const act = t.save.paused
     ? <Action wide onClick={watchWaiting}>Watch last night’s match</Action>
@@ -109,22 +140,25 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
 
   return (
     <div className="k-page lt-page">
+      {!f && t.next && !t.morning.intl && <NoMatchTonight t={t} next={t.next} />}
       {t.morning.intl && <Panel ink="#93c3dc"><b className="k-lb">No game tonight</b><span className="k-q">The season waits for the break. Next up, once it’s over:</span></Panel>}
-      <header className="lt-lead" aria-label={f && t.opp ? `${where}: Brabo v ${t.opp.name}` : where}>
+      <header className="lt-lead" aria-label={hf && hopp ? `${where}: Brabo v ${hopp.name}` : where}>
         <Art svg={own} className="lt-crest" />
         <span className="lt-vs">
           <span className="k-q">{where}</span>
-          <b className="lt-opp">{t.opp ? `v ${oppName}` : f ? 'Drawn on the night' : 'Tonight'}</b>
+          <b className="lt-opp">{t.opp ? `v ${oppName}` : hopp ? `v ${hopp.name}` : f ? 'Drawn on the night' : 'Tonight'}</b>
         </span>
-        {t.opp ? <Art svg={clubCrest(t.opp, 54)} className="lt-crest" /> : <span className="lt-crest lt-unknown" aria-hidden="true" />}
+        {hopp ? <Art svg={clubCrest(hopp, 54)} className="lt-crest" /> : <span className="lt-crest lt-unknown" aria-hidden="true" />}
       </header>
-      {t.also && <p className="k-q lt-ctr"><b>{t.also}</b></p>}
+      {many && <NightList t={t} chances={chances ?? []} />}
       <div className="lt-radar">
         <Radar values={t.liveValues} flags={t.flags} fog={AXES.filter((a) => t.flags[a])} captain={t.save.slots.includes('armband') ? t.save.captain : undefined} opp={oppVals} oppInk="#93c3dc" oppName={t.opp?.name} inked size={300} label="Tonight’s shape so far" />
       </div>
-      {chance && t.opp && !t.morning.intl && <div className="lt-stake"><ChanceBar c={chance} oppName={oppName} /></div>}
+      {pace && <PaceSumView p={pace} />}
+      {!many && chance && t.opp && !t.morning.intl && <div className="lt-stake"><ChanceBar c={chance} oppName={oppName} oppId={t.opp.id} date={t.date} /></div>}
+      {xp && t.opp && !t.morning.intl && <p className="k-q lt-ctr">The head of data: <b>{xpWords(xp.xp, xp.usual).replace(/^E/, 'e')}</b>.</p>}
       {unlogged.map((a) => (
-        <Panel key={a} ink={AXIS_INK[a]}><span><b style={{ color: AXIS_INK[a] }}>{a} isn’t logged yet.</b> It plays low and wild until {LOG_FOR[a]} {a === 'Routine' ? 'is ticked' : 'is in'}.</span></Panel>
+        <Panel key={a} ink={AXIS_INK[a]}><span><b style={{ color: AXIS_INK[a] }}>{a} isn’t logged yet.</b> It plays low and wild until {LOG_FOR[a]}.</span></Panel>
       ))}
       {noData.length > 0 && <Panel ink={AXIS_INK[noData[0]]}><span><b style={{ color: AXIS_INK[noData[0]] }}>{noData.join(' and ')} {noData.length === 1 ? 'has' : 'have'} no data yet.</b> No data plays as an even 10.</span></Panel>}
       {f && t.tactic && (
@@ -167,6 +201,37 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
         </Sheet>
       )}
     </div>
+  );
+}
+
+const WORD_N = ['No', 'One', 'Two', 'Three', 'Four'];
+/** The chance that belongs to a fixture: by opponent (one drawn on the night has none yet). */
+export const chanceFor = (f: Fixture, cs: NightChance[]) => (f.opp ? cs.find((c) => c.oppId === f.opp) : undefined);
+const shortName = (id: string) => { const c = clubById(id); return c.short && c.name.length > 12 ? c.name.split(' ')[0] : c.name; };
+
+/** Every match of a double-header night (finding 1, O42): each with its crest, where it is, and its own chance. */
+function NightList({ t, chances }: { t: TonightData; chances: NightChance[] }) {
+  return (
+    <section className="lt-night" aria-label={`${WORD_N[t.fixtures.length] ?? t.fixtures.length} matches tonight`}>
+      <h2 className="k-sect">{WORD_N[t.fixtures.length] ?? t.fixtures.length} matches tonight</h2>
+      {t.fixtures.map((f, i) => {
+        const c = chanceFor(f, chances);
+        const opp = f.opp ? clubById(f.opp) : undefined;
+        return (
+          <Panel key={`${f.comp}:${f.opp}:${i}`} ink={f.comp === 'league' ? '#93c3dc' : '#f2c46d'}>
+            <div className="lt-nrow">
+              {opp ? <Art svg={clubCrest(opp, 40)} className="lt-ncrest" /> : <span className="lt-ncrest lt-unknown" aria-hidden="true" />}
+              <span className="lt-ntext">
+                <span className="k-q">{f.round ?? f.label}{f.opp ? ` · ${f.braboHome ? 'home' : 'away'}` : ''}</span>
+                <b>{opp ? `v ${opp.name}` : 'Drawn on the night'}</b>
+              </span>
+            </div>
+            {c && opp && !t.morning.intl && <ChanceBar c={c} oppName={shortName(opp.id)} oppId={opp.id} date={t.date} />}
+          </Panel>
+        );
+      })}
+      <p className="k-q">One shape plays {t.fixtures.length === 2 ? 'both' : 'them all'}. Each has its own chance.</p>
+    </section>
   );
 }
 

@@ -3,6 +3,7 @@
 // stages and the journeys: each opens when its tech is researched and its building gates are met, takes the day's
 // real-habit counts, and is paid for from the budget when its needs are met. Every open project grows at once,
 // as the shipped ground does; the skyline shows each one glowing while it's built and dashed when it's next.
+import { noteDay } from '../counted';
 import type { DayKey } from '../../domain/dates';
 import { PLACES, type Place } from '../ground';
 import { PROJECTS } from '../content/projects';
@@ -10,7 +11,7 @@ import type { Metric, ProjectDef } from '../content/types';
 import type { Tier } from '../types';
 import type { DayMetrics } from './types';
 
-export interface ProjectState { id: string; progress: Record<string, number>; done?: DayKey }
+export interface ProjectState { id: string; progress: Record<string, number>; done?: DayKey; /** O42: the day it began counting, the latest days that counted (newest last, at most 12), and the 28 days before arrival credited once. */ from?: DayKey; counted?: DayKey[]; credit?: DayKey }
 export interface Gates { tier: Tier; moved: boolean; done: string[]; researched: string[] }
 
 /** Open to work on: added by its tech, its tier reached, the move made, the stages before it built. */
@@ -29,9 +30,10 @@ export function projectDay(p: ProjectDef, s: ProjectState, m: DayMetrics, budget
   if (s.done) return { state: s, spent: 0 };
   const progress = { ...s.progress };
   for (const n of p.needs) progress[n.what] = Math.min(n.count, Math.round(((progress[n.what] ?? 0) + (m[n.what as Metric] ?? 0)) * 10) / 10);
+  const noted = noteDay(s, date, p.needs.some((n) => (m[n.what as Metric] ?? 0) > 0));
   const met = p.needs.every((n) => (progress[n.what] ?? 0) >= n.count);
-  if (met && budget >= p.money) return { state: { ...s, progress, done: date }, spent: p.money };
-  return { state: { ...s, progress }, spent: 0 };
+  if (met && budget >= p.money) return { state: { ...noted, progress, done: date }, spent: p.money };
+  return { state: { ...noted, progress }, spent: 0 };
 }
 
 /** Share done, 0–1, across its needs. */

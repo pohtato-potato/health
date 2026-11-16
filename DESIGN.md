@@ -66,7 +66,7 @@ Explanations do not sit on the page as paragraphs. They sit behind a "?" (`HelpB
 
 - Metric colours keep one meaning everywhere: calories apricot, protein lavender, steps green, sleep blue.
 - The six Football axes keep their inks (Pace green, Power coral, Fuel lavender, Rest blue, Routine pink, Shape pearl), from `src/ui/inks.ts`.
-- Doors take the light of the page they sit on (`--w1`, `--w2`); their icon may carry an ink.
+- Doors are filled with their family's colour (rule 8). A door with no family takes the light of the page it sits on (`--w1`, `--w2`).
 - Gold may be used freely.
 - The orange glow is kept away from the purple, in opposite corners, so the two never mix into brown.
 
@@ -81,22 +81,31 @@ Explanations do not sit on the page as paragraphs. They sit behind a "?" (`HelpB
 
 Every icon is drawn in one line weight (`Icon`, stroke 1.6 on a 24 px grid). Never a typed character: no typed arrows, ticks, stars or question marks as icons.
 
-### 8. Finding your way in Football
+### 8. Finding your way
 
 Four words across the top: Tonight, Club, League, Story, underlined where you are (`FootballNav`). Everything else is a door on that section's page, showing one live value. Inside a page there is one way back and the page's name (`PageHead`, or `FootballHome inner=…`). There is no second row of pills.
 
-Football's doors come in six families, by the kind of place they open, always in this order and each under its own heading with its own drawn icon (`FamilyDoors`, `ui/kit/families.ts`):
+Every door in the app comes in a family, by the kind of place it opens: each family has its own colour, drawn icon and heading (`FamilyDoors`, `Door family=…`, `ui/kit/families.ts`), always in the order below. Football's six come first; the rest of the app has seven. A door to a metric's own page wears that metric's colour. A hue may mean one thing in Football and another outside it (pink is People there, Looking back here), never both on one page.
 
-| Family | Colour | Doors |
-|---|---|---|
-| People | pink `#f4aedb` | Team sheet, Squad, Staff, the cast, Academy, Trials, Duty |
-| The place | coral `#ff9a76` | The ground, Projects, Kits |
-| Money and deals | gold `#f2c46d` | Money, Deals, the loan market, Loans, Packs |
-| Plans and study | lavender `#c2b2ff` | The tree, the board, the desk, How it adds up |
-| The world | blue `#93c3dc` | Every division, the atlas, the cups, the calendar, the congress |
-| The record | green `#8fdcb6` | Seasons, Moments, Rivals, Old selves, Bounties, the album |
+| Where | Family | Colour | Doors |
+|---|---|---|---|
+| Football | People | pink `#f4aedb` | Team sheet, Squad, Staff, the cast, Academy, Trials, Duty |
+| Football | The place | coral `#ff9a76` | The ground, Projects, Kits |
+| Football | Money and deals | gold `#f2c46d` | Money, Deals, the loan market, Loans, Packs |
+| Football | Plans and study | lavender `#c2b2ff` | The tree, the board, the desk, How it adds up |
+| Football | The world | blue `#93c3dc` | Every division, the atlas, the cups, the calendar, the congress |
+| Football | The record | green `#8fdcb6` | Seasons, Moments, Rivals, Old selves, Bounties, the album (Train's Bounties panel too, marked "Football · The record") |
+| Today, Train, Walk, You | Food | apricot `#e98a5b` | Today's meals, the Food page |
+| Today, Train, Walk, You | Training | coral `#ff9a76` | Sets per muscle |
+| Today, Train, Walk, You | The walk | green `#8fdcb6` | Your routes, the Map, Wrapped |
+| Today, Train, Walk, You | Looking back | pink `#f4aedb` | Tracks, Insights, Reports, the month, the film, the archive, the year, the journey |
+| Today, Train, Walk, You | Earned | gold `#f2c46d` | Earned, Titles, Records, Themes, Secrets, Achievements, So far, Rewards |
+| Today, Train, Walk, You | Body | pearl `#d9e8f3` | Body (the check-in), the body log, Photos, For your physio |
+| Today, Train, Walk, You | Settings and upkeep | slate `#c4c1cf` | Settings, the plan, Corrections; no family wash, only the dark, so it is told from the body's pearl by its fill too |
 
-A family door is filled with its colour and its name is written in it. Anything waiting gets a count chip with words ("2 to open"), never a different colour. A locked or empty door is dimmed with a dashed edge and says why in words. Inside a page, the header's small line names its family in its colour. Orange stays for the one action. Every word keeps 4.5:1 or more with high contrast on or off (`tests/football/door-families.test.ts`).
+Protein and sleep have no page of their own, so no door wears lavender or blue outside Football. Where a page has four or more doors they sit under their family headings; fewer, they share one row.
+
+A family door is filled with its colour and its name is written in it. Anything waiting gets a count chip with words ("2 to open"), never a different colour. A locked or empty door is dimmed with a dashed edge and says why in words. Inside a page, the header's small line names its family in its colour. Orange stays for the one action. Every word keeps 4.5:1 or more with high contrast on or off, and every heading on every theme's light (`tests/football/door-families.test.ts`, `tests/door-families-app.test.ts`).
 
 ### 9. The rings
 

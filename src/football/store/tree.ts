@@ -11,6 +11,7 @@ import { paceOn, paceWeekDone } from '../pace';
 import { BOUNTIES, BOARD_RESEARCH, TRACK_KIT_PIECES, TRACK_THEMES } from '../content/season';
 import { BOOSTS } from '../content/packs';
 import { ERAS } from '../content/tree';
+import { STAFF } from '../content/staff';
 import type { Reward } from '../content/types';
 import { reachOf } from '../continental';
 import { legendId } from '../rivals';
@@ -20,9 +21,9 @@ import type { BraboAbility, Tier } from '../types';
 import { addMetrics, dayMetrics } from '../tree/metrics';
 import { stageIn, worldOf, seasonMoneyScale } from '../pyramid/shape';
 import { projectDay, projectOpen, TREE_PROJECTS } from '../tree/projects';
-import { activeEffects, erasOpen, eurekasDue, lessonFor, LOGGED_DAY, settle, techById, type Active } from '../tree/research';
+import { activeEffects, erasOpen, eurekasDue, lessonFor, LOGGED_DAY, ruleValue, settle, techById, type Active } from '../tree/research';
 import { boardDef, boardFor, boonsThisSeason, bountiesPicked, bountyProgress, objectiveMet, strengthOf, trackDue, type SeasonFacts } from '../tree/season';
-import { boostsWaiting } from '../tree/packs';
+import { albumProgress, boostsWaiting } from '../tree/packs';
 import { doctorLevel, healDays, payWages, treeIncome } from '../tree/staff';
 import { emptyEngine, emptyUser, type PackSource, type ResearchWhy, type TreeEngine, type TreeUser } from '../tree/types';
 import type { Health } from './gather';
@@ -94,6 +95,15 @@ export function treeDay(c: TreeCtx, date: DayKey, youthDays: number) {
   eng.days = [...eng.days.filter((d) => d.date !== date), { date, m }].slice(-KEEP_DAYS);
   eng.total = addMetrics(eng.total, m);
   if (m.logged) gain(eng, date, LOGGED_DAY, 'logged');
+  // The pre-season tour (ledger O40): with its tech, each logged day between seasons (the days before the next
+  // season's day 1) is a day on tour and pays the tech's research. From the day the tech is owned; no back-pay.
+  const on = activeFor(s, c.bundles.values());
+  const tour = ruleValue(on, 'research-tour', 0);
+  if (tour > 0 && s.phase === 'event' && m.logged) gain(eng, date, tour, 'tour', 'A day on tour');
+  // The museum (ledger O40): each finished album set pays its research once a week, on the week's first day.
+  const museum = ruleValue(on, 'museum-research', 0);
+  const sets = museum > 0 && weekStart(date) === date ? albumProgress(user).filter((p) => p.done).length : 0;
+  if (sets) gain(eng, date, sets * museum, 'museum', sets === 1 ? 'One finished album set' : `${sets} finished album sets`);
 
   // 2. The season track and the week's pack.
   if (s.phase === 'season') {
@@ -151,7 +161,11 @@ export function treeDay(c: TreeCtx, date: DayKey, youthDays: number) {
   }
   const st = settle(eng, user, date);
   user = st.user;
-  for (const id of st.done) c.news.push({ id: `${date}:tech:${id}`, date, kind: 'club', text: `Researched: ${techById(id)!.name}.` });
+  // O41 11 (O42): a tech that hires staff says who joins.
+  for (const id of st.done) {
+    const joins = STAFF.filter((x) => x.tech === id).map((x) => x.name);
+    c.news.push({ id: `${date}:tech:${id}`, date, kind: 'club', text: `Researched: ${techById(id)!.name}.${joins.length ? ` ${joins.join(' and ')} ${joins.length === 1 ? 'joins' : 'join'} the staff.` : ''}` });
+  }
   for (const e of erasOpen(researched())) if (!eng.eurekaBase[e]) {
     eng.eurekaBase[e] = { on: date, m: { ...eng.total } };
     c.news.push({ id: `${date}:era:${e}`, date, kind: 'club', text: `A new era: ${ERAS.find((x) => x.id === e)!.name}.` });
@@ -168,6 +182,28 @@ export function treeDay(c: TreeCtx, date: DayKey, youthDays: number) {
   }
   s.tree = eng;
   s.treeUser = user;
+}
+
+/**
+ * New Club legends (spec §4; ledger O40, Testimonials): the day a player becomes one, Story says so; with the
+ * Testimonials tech, the night brings a pack. Never a match, so no result, table or chance moves. Only legends made
+ * from now on: a legend from before the tech gets nothing back.
+ */
+export const TESTIMONIALS_TECH = 'n-testimonials';
+export function treeLegends(c: Pick<TreeCtx, 'save' | 'news'>, date: DayKey, legends: { id: string; name: string; why: 'apps' | 'record' | 'seasons' }[]) {
+  const s = c.save;
+  const owned = researchedOf(s).includes(TESTIMONIALS_TECH);
+  const eng: TreeEngine = structuredClone(engineOf(s));
+  for (const p of legends) {
+    const how = p.why === 'apps' ? '100 appearances' : p.why === 'record' ? 'a club record held for 26 weeks' : 'three seasons in the squad';
+    c.news.push({ id: `${date}:legend:${p.id}`, date, kind: 'club', text: `${p.name} is a Club legend: ${how}.` });
+    if (!owned) continue;
+    const id = `testimonial:${p.id}`;
+    if (eng.packs.some((x) => x.id === id)) continue;
+    eng.packs = [...eng.packs, { id, on: date, source: 'testimonial', size: 'normal', season: s.season }];
+    c.news.push({ id: `${date}:testimonial:${p.id}`, date, kind: 'club', text: `A testimonial night for ${p.name}: old teammates, a full stand and no league points. It brings a pack.` });
+  }
+  if (owned) s.tree = eng;
 }
 
 /** Waiting boosts that fit this match: a derby boost waits for a derby, a cup boost for a cup night, a home boost for home. */
@@ -288,3 +324,25 @@ export const stageCapacity = (done: string[]) => TREE_PROJECTS.filter((p) => p.c
 
 /** The tree's hand on tonight's rotation: rules, open formations, unit captains (see tree/rotation.ts). */
 export const rotationOf = (save: FbSave, bundles: Iterable<FbBundle>) => treeRotation(activeFor(save, bundles));
+
+/**
+ * Past days count toward what the club was given on arrival (owner's letter A, O41; finding 12, O42): once per placed
+ * save, every building and project open and unbuilt gets the 28 days before arrival, counted the way each counts a day.
+ * Nothing completes here (a finished one is paid for and announced on the next real day); `credit` marks it done.
+ */
+export function creditArrival(c: TreeCtx, ground: { add: (date: DayKey) => void }) {
+  const r = c.save.redrawn;
+  if (!r?.on || c.save.arrivalCredit) return;
+  const from = addDays(r.on, -28);
+  const g = { tier: stageIn(c.season, c.season.tierOf[OWN]), moved: Boolean(c.save.moved), done: builtOf(c.bundles.values()), researched: userOf(c.save).researched.map((x) => x.id) };
+  const open = TREE_PROJECTS.filter((p) => projectOpen(p, g) && !c.bundles.get(p.id)?.done);
+  for (let d = from; d < r.on; d = addDays(d, 1)) {
+    const m = dayMetrics(c.h, d, { bedtime: c.save.bedtime, youthDays: 0 });
+    for (const p of open) {
+      const cur = c.bundles.get(p.id) ?? { id: p.id, progress: {} };
+      c.bundles.set(p.id, { ...projectDay(p, cur, m, -1, d).state, credit: r.on });
+    }
+    ground.add(d);
+  }
+  c.save.arrivalCredit = r.on;
+}

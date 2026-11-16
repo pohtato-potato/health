@@ -5,7 +5,7 @@ const X0 = 10;
 const X1 = 290;
 
 /** Close the day's walk: the walker walks the day's kilometres from the morning towards the next stop, which is named. */
-export function DayWalker({ d, line }: { d: DayWalk; line: string }) {
+export function DayWalker({ d, line, start = 'This morning' }: { d: DayWalk; line: string; start?: string }) {
   const end = X0 + (X1 - X0) * Math.min(1, d.frac);
   return (
     <div className="day-walker" style={{ textAlign: 'left' }}>
@@ -21,7 +21,7 @@ export function DayWalker({ d, line }: { d: DayWalk; line: string }) {
         <circle className="day-walker-dot" cx={X0} cy="14" r="6" fill="var(--sage)" style={{ '--to': `${(end - X0).toFixed(1)}px` } as CSSProperties} />
       </svg>
       <div className="row t14 q" style={{ gap: 8 }}>
-        <span className="grow">{d.passed.length ? `Passed ${d.passed.join(', ')}` : 'This morning'}</span>
+        <span className="grow">{d.passed.length ? `Passed ${d.passed.join(', ')}` : start}</span>
       </div>
     </div>
   );

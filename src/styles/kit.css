@@ -100,7 +100,8 @@ button.k-panel, a.k-panel { cursor: pointer; text-decoration: none; min-height: 
 }
 .k-door .k-arrow { position: absolute; right: 9px; top: 12px; color: color-mix(in srgb, var(--ink) 80%, #fff); }
 /* Tidy: a door's live value reads whole; a long one wraps to a second line (the row of doors grows with it). */
-.k-door b.v { font: 600 20px/1.15 var(--serif); max-width: 100%; overflow-wrap: anywhere; text-wrap: balance; color: var(--k-cream); }
+.k-door b.v { font: 600 20px/1.15 var(--serif); max-width: 100%; overflow-wrap: break-word; text-wrap: balance; color: var(--k-cream); }
+.k-door b.v .k-fig { white-space: nowrap; font-size: clamp(16px, 4.8vw, 20px); }
 .k-door .nm { font-weight: 700; font-size: 15px; line-height: 1.15; overflow-wrap: anywhere; }
 
 /* ---- the one glowing action a page: its glow falls below it, like a real light ---- */
@@ -169,7 +170,7 @@ button.k-panel, a.k-panel { cursor: pointer; text-decoration: none; min-height: 
 @keyframes k-wipe { from { clip-path: inset(-10% 100% -10% 0); } to { clip-path: inset(-10% -2% -10% 0); } }
 @keyframes k-fade { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: none; } }
 .k-trend { gap: 2px; }
-.k-you-doors > :last-child:nth-child(odd) { grid-column: span 2; }
+.k-you-doors .k-doors > :last-child:nth-child(odd) { grid-column: span 2; }
 .k-clock { display: flex; flex-direction: column; align-items: flex-end; text-align: right; min-height: 44px; padding: 4px 4px 0 0; border: 0; background: none; color: var(--k-cream); font: inherit; cursor: pointer; max-width: 150px; }
 .k-clock b { font: 600 22px/1.1 var(--serif); }
 .k-clock .k-q { font-size: 14px; }
@@ -359,3 +360,6 @@ button.k-rowl { cursor: pointer; }
 html.contrast .k-door.fam { background: #0b0c1a; border-color: var(--ink); }
 html.contrast .k-door.locked { background: #0b0c1a; }
 html.contrast .k-door.locked .lk, html.contrast .k-door.locked .nm { color: var(--k-cream); }
+/* Settings and upkeep (ledger O40, the other tabs): a quiet slate that sits close to the body's pearl, so it is told
+   apart by its fill too: no family wash, only the page's own dark, with the slate edge, icon and name. */
+.k-door.fam[data-fam='upkeep'] { background: #141730; }

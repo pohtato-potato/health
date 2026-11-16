@@ -3,7 +3,9 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Icon, type IconName } from '../Icon';
 import { Sheet } from '../Sheet';
-import { FAMILIES, FAMILY_ORDER, type Family } from './families';
+import { APP_FAMILY_ORDER, FAMILIES, FAMILY_ORDER, type Family } from './families';
+
+const ALL_ORDER: Family[] = [...FAMILY_ORDER, ...APP_FAMILY_ORDER];
 
 const inkStyle = (ink?: string, style?: CSSProperties) => ({ ...(ink ? { ['--ink' as string]: ink } : {}), ...style }) as CSSProperties;
 
@@ -51,7 +53,7 @@ export function Door({ icon, name, value, ink, onClick, line, family, count, loc
   const shown = locked ?? value;
   const said = typeof shown === 'string' || typeof shown === 'number' ? `${name}: ${shown}` : name;
   return (
-    <button type="button" className={`k-door${line ? ' line' : ''}${family ? ' fam' : ''}${locked ? ' locked' : ''}`} style={inkStyle(col)} onClick={onClick} aria-label={count ? `${said}. ${count}` : said}>
+    <button type="button" className={`k-door${line ? ' line' : ''}${family ? ' fam' : ''}${locked ? ' locked' : ''}`} data-fam={family} style={inkStyle(col)} onClick={onClick} aria-label={count ? `${said}. ${count}` : said}>
       <Icon name={icon} size={line ? 30 : 22} color={col ?? 'currentColor'} stroke={1.6} />
       {line ? <><span className="nm">{name}</span><span className="ln">{shown}</span></> : <>{locked ? <span className="lk">{locked}</span> : <b className="v">{value}</b>}<span className="nm">{name}</span></>}
       {count && <span className="k-count">{count}</span>}
@@ -63,13 +65,13 @@ export function Door({ icon, name, value, ink, onClick, line, family, count, loc
 export const Doors = ({ two, children, label }: { two?: boolean; children: ReactNode; label?: string }) => <nav className={`k-doors${two ? ' two' : ''}`} aria-label={label}>{children}</nav>;
 
 /**
- * Doors grouped by family (ledger O40), always in the same order (people, the place, money and deals, plans and study,
- * the world, the record), each under its own heading with its icon and colour. Families with no door are left out.
+ * Doors grouped by family (ledger O40), always in the same order (Football's six, then the rest of the app's: families.ts),
+ * each under its own heading with its icon and colour. Families with no door are left out.
  */
 export function FamilyDoors({ groups, two, label }: { groups: Partial<Record<Family, (ReactNode | false | null | undefined)[]>>; two?: boolean; label: string }) {
   return (
     <div className="k-fams" aria-label={label}>
-      {FAMILY_ORDER.map((f) => {
+      {ALL_ORDER.map((f) => {
         const doors = (groups[f] ?? []).filter(Boolean);
         if (!doors.length) return null;
         const fam = FAMILIES[f];

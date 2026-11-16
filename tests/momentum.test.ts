@@ -158,11 +158,23 @@ describe('trendRows', () => {
     days: [...stepDays(metNow, 100, DATE).slice(0, 14), ...stepDays(metThen, 100, earlier).slice(0, 14)].map((d) => d),
   })).find((r) => r.area === 'steps')!;
 
-  it('up 8 points reads Improving, up 7 Steady, down 8 Easing', () => {
-    // 14 logged days: each day is 7.14 points, so +2 days is +14, +1 is +7.
-    expect(rowFor(9, 7).word).toBe('Improving');
-    expect(rowFor(8, 7).word).toBe('Steady');
-    expect(rowFor(5, 7).word).toBe('Easing');
+  it('the word follows the two numbers shown: within 3% is Steady (O42 finding 28)', async () => {
+    const { trendWord } = await import('../src/domain/momentum');
+    expect(trendWord('steps', 14800, 13700)).toBe('Improving');
+    expect(trendWord('training', 452, 443)).toBe('Steady');
+    expect(trendWord('training', 6, 4)).toBe('Building');
+    expect(trendWord('steps', 10200, 10000)).toBe('Steady');
+    expect(trendWord('steps', 9700, 10000)).toBe('Steady');
+    expect(trendWord('steps', 9600, 10000)).toBe('Easing');
+    expect(trendWord('protein', 140, undefined)).toBe('Steady');
+  });
+  it('a row never reads Easing when its figure went up', () => {
+    for (const [a, b] of [[9, 7], [8, 7], [5, 7]] as const) {
+      const r = rowFor(a, b);
+      const n = (x?: string) => Number((x ?? '').replace(/[^\d]/g, ''));
+      if (n(r.now) > n(r.was)) expect(r.word).not.toBe('Easing');
+      if (n(r.now) < n(r.was)) expect(r.word).not.toMatch(/Improving|Building/);
+    }
   });
 
   it('training going up reads Building', () => {
@@ -203,5 +215,22 @@ describe('trendRows', () => {
     const [r] = trendRows(DATE, input({ days: stepDays(7, 14) }));
     expect(r.was).toBeUndefined();
     expect(r.word).toBe('Steady');
+  });
+});
+
+describe('momentumReasons (O42 finding 29)', () => {
+  it('a fall names the area that pulled it down, with its points and its days', async () => {
+    const { momentumReasons } = await import('../src/domain/momentum');
+    const earlier = addDays(DATE, -28);
+    const sleepDays = (end: DayKey) => windowDays(14, end).map((d) => ({ date: d, sleep: sleep(480) }));
+    const merge = (a: ReturnType<typeof stepDays>, b: { date: DayKey; sleep: { asleep: number; woke: number } }[]) =>
+      a.map((d) => ({ ...d, ...(b.find((x) => x.date === d.date) ?? {}) }));
+    const days = [...merge(stepDays(4, 14, DATE), sleepDays(DATE)), ...merge(stepDays(14, 14, earlier), sleepDays(earlier))];
+    const i = input({ days: days as never });
+    const r = momentumReasons(DATE, i);
+    expect(r[0].area).toBe('steps');
+    expect(r[0].points).toBeLessThan(0);
+    expect(r[0].line).toBe('Steps: 4 of 14 logged days at the step goal, was 14 of 14.');
+    expect(r.reduce((a, x) => a + (x.points ?? 0), 0)).toBe(momentumChange(DATE, i));
   });
 });

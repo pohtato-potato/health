@@ -25,7 +25,7 @@ describe('tab bar A', () => {
 
   it('every Football route lives under the football tab', () => {
     const app = readFileSync('src/App.tsx', 'utf8');
-    for (const r of ['/football', '/football/club', '/football/league', '/football/story', '/football/match', '/football/player', '/football/club-page', '/football/cups', '/football/settings'])
+    for (const r of ['/football', '/football/club', '/football/league', '/football/story', '/football/match', '/football/player', '/football/club-page', '/football/settings'])
       expect(app).toContain(`'${r}': { el: () => <Football />, tab: 'football' }`);
   });
 

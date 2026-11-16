@@ -36,6 +36,9 @@ export const NO_DATA = 10;
  * engine draws it afresh between FOG values on every chance. A sick day or too little history is "no data" instead.
  */
 export const NOT_LOGGED = 2;
+/** Past this many steps a day counts in full for Pace, with no squad share (owner's letter A, O42). */
+export const PACE_FULL_STEPS = 20000;
+export const paceInFull = (steps: number | undefined) => (steps ?? 0) > PACE_FULL_STEPS;
 
 function lerp(pts: Table, x: number): number {
   if (x <= pts[0][0]) return pts[0][1];

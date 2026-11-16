@@ -105,7 +105,7 @@ export function WalkTab() {
         )}
         <div className="k-row end">
           <Hero value={fmtInt(Math.round(km))} ink="var(--steps)" size="md" label="km from Delhi" />
-          <span className="k-col k-r"><b className="k-num">{steps.has(today) ? todayKm.toFixed(1) : '0'}</b><span className="k-q">km today</span></span>
+          <span className="k-col k-r"><b className="k-num">{steps.has(today) ? todayKm.toFixed(1) : '0'}</b><span className="k-q">km today</span>{steps.has(today) && <span className="k-q">{fmtInt(steps.get(today) ?? 0)} steps</span>}</span>
         </div>
         <WalkStrip strip={stripFor(km, todayKm, stretch, STOPS)} onOpen={() => go('/map')} />
         <PlaceStatusRow settings={settings} today={today} day={day} onPlace={(id) => void changePlace(today, id)} />
@@ -123,7 +123,7 @@ export function WalkTab() {
             <Sect>Your routes</Sect>
             <Doors two label="Your routes">
               {routes.map((r) => (
-                <Door key={r.run.id} icon={kindOf(r.def) === 'challenge' ? 'route' : 'map'} name={r.state === 'set down' ? `${r.def.name} · set down` : r.def.name} value={`${fmtInt(Math.round(r.km))} km`} ink={r.def.ink ?? '#c9dcea'} onClick={() => go('/route', { id: r.run.id })} />
+                <Door key={r.run.id} icon={kindOf(r.def) === 'challenge' ? 'route' : 'map'} name={r.state === 'set down' ? `${r.def.name} · set down` : r.def.name} value={`${fmtInt(Math.round(r.km))} km`} family="walk" onClick={() => go('/route', { id: r.run.id })} />
               ))}
             </Doors>
           </>
@@ -133,8 +133,8 @@ export function WalkTab() {
         <span className="k-q" style={{ textAlign: 'center', marginTop: -4 }}>{freeLine(placesFree(runs ?? [], new Map(walking.map((w) => [w.run.id, w.km]))))}</span>
 
         <Doors two label="More of the walk">
-          <Door icon="map" name="Map" value={`${fmtInt(Math.round(km))} km`} onClick={() => go('/map')} />
-          <Door icon="book" name="Wrapped" value="The road" onClick={() => go('/road')} />
+          <Door icon="map" family="walk" name="Map" value={`${fmtInt(Math.round(km))} km`} onClick={() => go('/map')} />
+          <Door icon="book" family="walk" name="Wrapped" value="The road" onClick={() => go('/road')} />
         </Doors>
       </div>
       {showing && (

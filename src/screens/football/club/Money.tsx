@@ -1,6 +1,9 @@
 // The one transfer budget, last season's income, the sponsor slots and the offers.
 import { useState } from 'react';
-import { euros, KIT_SPONSOR_TECH, type Offer, type Risk, type Slot } from '../../../football/money';
+import { euros, KIT_SPONSOR_TECH, oneBrandEach, type Offer, type Risk, type Slot } from '../../../football/money';
+import { seasonMoneyScale } from '../../../football/pyramid/shape';
+import { useModel } from '../tree/model';
+import { SigningView } from '../moments/Signing';
 import type { Club } from '../../../football/store/club';
 import type { Tier } from '../../../football/types';
 import { WagesCard } from '../tree/TreeScreens';
@@ -13,6 +16,24 @@ export const RISK: Record<Risk, string> = { stable: 'Stable', flashy: 'Flashy', 
 const RISK_WHY: Record<Risk, string> = { stable: 'Pays steadily.', flashy: 'Pays more, with a habit clause.', dodgy: 'Pays most. 1 in 4 a season it folds.' };
 export const SLOT_NAME: Record<Slot, string> = { shirt: 'Shirt', kit: 'Kit maker', sleeve: 'Sleeve', ground: 'Ground naming', partner: 'Partner' };
 const m = euros;
+
+/** Money's lead (O41 #5): what is coming and going at the season's end, under the bank. Nothing is re-priced here. */
+function SeasonEnd({ c }: { c: Club }) {
+  const model = useModel();
+  const s = c.save;
+  const live = (s.sponsors ?? []).filter((x) => x.since <= s.season && s.season - x.since < x.seasons);
+  const k = seasonMoneyScale(s);
+  const coming = Math.round(live.reduce((t, x) => t + x.perSeason * k - (x.advance?.season === s.season ? x.advance.amount : 0), 0) * 1000) / 1000;
+  const wages = model?.wages ?? 0;
+  return (
+    <Panel ink={GOLD}>
+      <PanelTop name="At the season’s end" c={GOLD} />
+      <div className="k-row"><span>Coming in: sponsors</span><b className="k-num" style={{ fontSize: 18, color: GREEN }}>+ {m(coming)}</b></div>
+      <div className="k-row"><span>Coming in: TV, the gate, prize money</span><b style={{ color: GREEN }}>by where you finish</b></div>
+      <div className="k-row"><span>Going out: staff wages</span><b className="k-num" style={{ fontSize: 18, color: CORAL }}>− {m(wages)}</b></div>
+    </Panel>
+  );
+}
 
 function slotRows(tier: Tier, groundBuilt: boolean, kit: boolean, world2: boolean): { slot: Slot; open: boolean; why?: string }[] {
   return [
@@ -33,7 +54,9 @@ export function MoneyView({ c, groundBuilt = false, onAccept, onOwn }: { c: Club
   const kit = s.world !== 2 || (s.treeUser?.researched ?? []).some((r) => r.id === KIT_SPONSOR_TECH) || signed.some((x) => x.slot === 'kit');
   return (
     <div className="k-page">
-      <Hero value={m(s.budget)} ink={GOLD} label="the one budget" />
+      {s.signed && <SigningView save={s} />}
+      <Hero value={m(s.budget)} ink={GOLD} label="in the bank now" />
+      <SeasonEnd c={c} />
       {s.income ? (
         <Panel ink={GOLD}>
           <PanelTop name={`Income, season ${s.income.season}`} c={GOLD} />
@@ -63,9 +86,9 @@ export function MoneyView({ c, groundBuilt = false, onAccept, onOwn }: { c: Club
       </Panel>
       <Sect>Offers</Sect>
       {(s.offers ?? []).length === 0 && <Note>None now. New offers arrive between seasons for any open slot. Real brands come from Division Three up.</Note>}
-      {(s.offers ?? []).length > 0 && <Note>Sign one now and it pays from this season, at the season’s end.</Note>}
+      {(s.offers ?? []).length > 0 && <Note>Sign one now: a quarter of its first season is paid on the day, the rest at the season’s end.</Note>}
       <div className="kb-rows">
-        {(s.offers ?? []).map((o, i) => (
+        {oneBrandEach(s.offers ?? [], signed).map((o, i) => (
           <Panel key={`${o.slot}-${o.brand}-${i}`} ink={RISK_INK[o.risk]}>
             <PanelTop name={o.brand} c={RISK_INK[o.risk]} right={RISK[o.risk]} />
             <span className="k-q">{SLOT_NAME[o.slot]} · {m(o.perSeason)} a season · {o.seasons} {o.seasons === 1 ? 'season' : 'seasons'}</span>

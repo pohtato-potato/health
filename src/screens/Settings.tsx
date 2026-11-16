@@ -99,7 +99,7 @@ export function SettingsScreen() {
 
   return (
     <div className="page bare k-page k-light you yu-set-page set-k">
-      <PageHead back="You" onBack={() => back('/you')} title="Settings" />
+      <PageHead back="You" onBack={() => back('/you')} title="Settings" family="upkeep" />
       <SetupCard settings={settings} />
 
       <OpenGroup.Provider value={{ open, toggle: (id) => setOpen(open === id ? null : id), summary }}>

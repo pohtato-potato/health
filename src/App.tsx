@@ -34,7 +34,11 @@ import { FoodToday } from './screens/FoodToday';
 import { SessionScreen } from './screens/Session';
 import { SessionDone } from './screens/SessionDone';
 import { clock } from './screens/NextUpCard';
-import { LogSheet, MoreSheet } from './sheets/LogSheet';
+import { QuietSession } from './screens/QuietSession';
+import { sessionClock } from './domain/quietSession';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from './db/db';
+import { MoreSheet } from './sheets/LogSheet';
 import { SessionSettingsSheet } from './sheets/SessionSettings';
 import { dailySnapshot } from './db/snapshots';
 import { Checkup, EditHistory, Snapshots } from './screens/DataPages';
@@ -93,7 +97,6 @@ const DawnPage = page(() => import('./screens/Dawn'), 'DawnPage');
 const WrappedPage = page(() => import('./screens/Reports'), 'WrappedPage');
 
 const SHEETS: Record<string, () => ReactNode> = {
-  log: () => <LogSheet />,
   'session-settings': () => <SessionSettingsSheet />,
   more: () => <MoreSheet />,
   morning: () => <MorningLog />,
@@ -132,7 +135,8 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/football/market': { el: () => <Football />, tab: 'football' },
   '/football/rival': { el: () => <Football />, tab: 'football' },
   '/football/wrapped': { el: () => <Football />, tab: 'football' },
-  '/football/cups': { el: () => <Football />, tab: 'football' },
+  // O42 route sort: no page of its own; old links land on League's cups.
+  '/football/cups': { el: () => <Moved to="/football/league" params={{ view: 'cups' }} /> },
   '/football/settings': { el: () => <Football />, tab: 'football' },
   '/football/tech': { el: () => <Football />, tab: 'football' },
   '/football/era': { el: () => <Football />, tab: 'football' },
@@ -155,7 +159,6 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/football/sheet': { el: () => <Football />, tab: 'football' },
   '/football/blend': { el: () => <Football />, tab: 'football' },
   '/football/cup': { el: () => <Football />, tab: 'football' },
-  '/football/cup/match': { el: () => <Football />, tab: 'football' },
   '/football/cup/run': { el: () => <Football />, tab: 'football' },
   '/football/desk': { el: () => <Football />, tab: 'football' },
   '/football/congress': { el: () => <Football />, tab: 'football' },
@@ -251,7 +254,8 @@ export function App() {
   return (
     <div className="app">
       <RegionRoot />
-      <Suspense fallback={<div className="page" />}>{page.el()}</Suspense>
+      {/* O42 slip 20: while a page's code loads, its name shows rather than a blank page. */}
+      <Suspense fallback={<div className="page"><p className="k-q page-loading" role="status">Opening {(route.path.split('/').filter(Boolean).pop() ?? 'today').replace(/-/g, ' ')}…</p></div>}>{page.el()}</Suspense>
       {page.tab && <TabBar active={page.tab} />}
       {/* Train shows its own "Back to the session" panel, so the floating pill would only cover it. */}
       {page.tab && route.path !== '/train' && <ResumePill />}
@@ -264,6 +268,7 @@ export function App() {
       <MaintenanceWatcher />
       <ChallengeWatcher />
       <CardViewerHost />
+      {!route.path.startsWith('/session') && <QuietSession />}
     </div>
   );
 }
@@ -309,12 +314,13 @@ function ResumePill() {
   const active = useActiveSession();
   const settings = useSettings();
   const now = useNow(1000);
+  const sets = useLiveQuery(async () => (active ? await db.sets.where('sessionId').equals(active.id).toArray() : []), [active?.id]);
   if (!active || !settings) return null;
   const name = settings.plan ? findSession(settings.plan, active.session)?.name : undefined;
   return (
     <button type="button" className="resume" onClick={() => go('/session')}>
       <span className="dot" />
-      {name ?? `Session ${active.session}`} · {clock(now - active.startedAt)}
+      {name ?? `Session ${active.session}`} · {clock(sessionClock(active, sets ?? [], now))}
       <span className="q">Resume</span>
     </button>
   );

@@ -70,7 +70,9 @@ export interface FbSave {
   contracts?: Contract[];
   /** Habits sold: Football stops tracking them; Health never does. */
   sold?: HabitId[];
-  sponsors?: (Offer & { since: number })[];
+  sponsors?: (Offer & { since: number; /** A quarter of the first season paid on signing (O41). */ advance?: { season: number; amount: number } })[];
+  /** The signing moment waiting to be seen (O41 #4). */
+  signed?: { brand: string; slot: Offer['slot']; perSeason: number; seasons: number; advance: number; since: number; risk: Offer['risk']; line: string };
   /** Offers waiting between seasons. */
   offers?: Offer[];
   youthSlots?: number;
@@ -141,6 +143,8 @@ export interface FbSave {
   world?: 1 | 2;
   /** The world redrawn (LG-4): when the move was made, where Brabo was placed, the founding weeks, the gifts. */
   redrawn?: Redrawn;
+  /** O42: the 28 days before arrival were credited once to the buildings open then (the arrival day). */
+  arrivalCredit?: DayKey;
   /** Fork 4: every congress as it sat (engine side, written as a new season begins): the season's rule twists. */
   congress?: CongressRecord[];
   /** Fork 4: Brabo's votes, by the season the congress is for. A user key in play.ts. */
@@ -262,4 +266,4 @@ export interface FbSquadRow {
   grown?: DayKey[];
 }
 export interface FbNews { id: string; date: DayKey; kind: 'back' | 'world' | 'roundup' | 'club' | 'press' | 'studio'; text: string; clubId?: string; lineId?: string; matchId?: string; answered?: number }
-export interface FbBundle { id: string; progress: Record<string, number>; done?: DayKey }
+export interface FbBundle { id: string; progress: Record<string, number>; done?: DayKey; /** O42: the day it began counting, the latest days that counted (newest last, at most 12), and the 28 days before arrival credited once. */ from?: DayKey; counted?: DayKey[]; credit?: DayKey }

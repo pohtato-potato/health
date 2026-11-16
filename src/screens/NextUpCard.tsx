@@ -1,3 +1,4 @@
+import { sessionClock } from '../domain/quietSession';
 import { doneTodayLine, loggedLater, unfinishedInSession } from '../domain/trainingChecks';
 import { findSession, hasGym } from '../domain/plan';
 import type { Settings, TrainingSession } from '../domain/types';
@@ -33,7 +34,7 @@ export function NextUpCard({
   if (active) {
     const def = plan ? findSession(plan, active.session) : undefined;
     const n = sets?.filter((s) => s.sessionId === active.id && !s.drop).length ?? 0;
-    return <NextStrip title={`${def?.name ?? `Session ${active.session}`} · in progress`} sub={`${clock(now - active.startedAt)} · ${n} set${n === 1 ? '' : 's'} logged${active.short ? ' · short session' : ''}`} week={week} action={{ label: 'Resume', run: () => go('/session') }} onOpen={() => go('/session')} />;
+    return <NextStrip title={`${def?.name ?? `Session ${active.session}`} · in progress`} sub={`${clock(sessionClock(active, sets?.filter((s) => s.sessionId === active.id) ?? [], now))} · ${n} set${n === 1 ? '' : 's'} logged${active.short ? ' · short session' : ''}`} week={week} action={{ label: 'Resume', run: () => go('/session') }} onOpen={() => go('/session')} />;
   }
 
   if (!plan || !up) {

@@ -89,7 +89,7 @@ export function AchievementsPage() {
 
   return (
     <div className="page bare k-page k-light you ach-k">
-      <PageHead back="Earned" onBack={() => back('/earned')} title="Achievements" />
+      <PageHead back="Earned" onBack={() => back('/earned')} title="Achievements" family="earned" />
       <div className="col gap6">
         <div className="t15">
           <span className="sf" style={{ fontSize: 22 }}>

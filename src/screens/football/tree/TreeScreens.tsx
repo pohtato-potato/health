@@ -1,6 +1,8 @@
 // The tree's screens (rounds six to eight, as pinned): the tree in six eras, a tech, a eureka, entering a new era,
 // projects on the Kaai skyline, the staff room and the board. Words in Atkinson Hyperlegible Next, numbers and titles
 // in Fraunces. Every state has a word beside its colour or line.
+import { dayOfLogging } from '../../../domain/dates';
+import { countedLine, countsLine, etaWords, leftLine } from '../../../football/tree/buildingWords';
 import { seasonMoneyScale } from '../../../football/pyramid/shape';
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { ERAS, TECHS } from '../../../football/content/tree';
@@ -12,7 +14,7 @@ import { euros } from '../../../football/money';
 import { clearTarget, researchTech, seeEra, seeEureka } from '../../../football/store/treeActions';
 import { techState } from '../../../football/tree/research';
 import { objectiveLine } from '../../../football/tree/season';
-import { fmtCount, METRIC_WORDS, ROMAN } from '../../../football/tree/words';
+import { fmtCount, METRIC_WORDS, ROMAN, WHY_WORDS } from '../../../football/tree/words';
 import { go } from '../../../router';
 import { useHeaded } from '../FootballHome';
 import { useModel, type Model } from './model';
@@ -24,6 +26,7 @@ import { techReach } from '../../../football/tree/reach';
 import { Bar, MarkRow, Note, PanelTop, Stat } from '../club/Bits';
 
 const eraOf = (id: EraId) => ERAS.find((e) => e.id === id)!;
+const fmtDay = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 const col = (c: string) => ({ ['--c' as string]: c }) as CSSProperties;
 
 type Era = (typeof ERAS)[number];
@@ -77,6 +80,7 @@ export function TreeHome() {
       <Aim m={m} target={target} />
       <Eras m={m} skip={aimFor(m, target) ? undefined : 0} />
       <Note>Every tech has its own small picture. Filled is done, gold is within reach. Tap any to read it.</Note>
+      <Lately m={m} />
       <Sect>Around the tree</Sect>
       <Doors two label="The tree's rooms">
         <Door icon="ground" name="Projects" value={m.projectsOpen.length ? `${m.projectsOpen.length} open` : 'Kaai quarter'} family="place" onClick={() => go('/football/projects')} />
@@ -85,6 +89,22 @@ export function TreeHome() {
         <Door icon="pack" name="Packs" value={m.packsWaiting.length ? `${m.packsWaiting.length} to open` : 'The album'} family="money" onClick={() => go('/football/packs')} />
       </Doors>
     </div>
+  );
+}
+
+/** The last research that came in, newest first: where each came from and when (ledger O40). */
+function Lately({ m }: { m: Model }) {
+  const last = [...m.eng.gains].reverse().slice(0, 6);
+  if (!last.length) return null;
+  return (
+    <>
+      <Sect>Research lately</Sect>
+      <Panel ink={TREE_INK}>
+        <ul className="lt-list">
+          {last.map((g, i) => <li key={i}><b>+{fmtCount(g.n)}</b> {WHY_WORDS[g.why]}{g.note && g.note !== WHY_WORDS[g.why] ? `: ${g.note.charAt(0).toLowerCase()}${g.note.slice(1)}` : ''} <span className="k-q">· {fmtDay(g.on)}</span></li>)}
+        </ul>
+      </Panel>
+    </>
   );
 }
 
@@ -152,7 +172,7 @@ function Aim({ m, target }: { m: Model; target: TechDef | undefined }) {
         </span>
         {!saving && <button type="button" className="k-act kb-gold" onClick={() => void researchTech(t.id)}>{covered ? 'Research it' : 'Aim for it'}</button>}
       </div>
-      <span className="k-q">Costs {cost}, you have {fmtCount(m.bank)}.{saving ? ' It is researched by itself once the bank covers it.' : ''}</span>
+      <span className="k-q">Costs {cost}, you have {fmtCount(m.bank)}. <b>{etaWords(cost, m.bank, m.rate)}</b>{saving ? ' It is researched by itself once the bank covers it.' : ''}</span>
       <Bar pct={(m.bank / Math.max(1, cost)) * 100} c="#f2c46d" label={`${fmtCount(m.bank)} of ${cost} research`} />
       {saving && <Action quiet sm onClick={() => void clearTarget()}>Stop saving for it</Action>}
     </Panel>
@@ -336,11 +356,14 @@ function TechAction({ m, t, st, cost }: { m: Model; t: TechDef; st: ReturnType<t
   if (st === 'done') return <Panel ink={TREE_INK} flat><Icon name="check" size={24} color={TREE_INK} /><b>Researched</b></Panel>;
   if (st === 'sealed') return <Note>Its era opens after six techs of the era before.</Note>;
   if (st === 'locked') return <Note>Research what it needs first.</Note>;
-  if (m.user.target === t.id) return <Panel ink="#f2c46d"><b>Saving for it</b><Bar pct={(m.bank / Math.max(1, cost)) * 100} c="#f2c46d" /><span className="k-q">{fmtCount(m.bank)} of {cost}</span></Panel>;
+  if (m.user.target === t.id) return <Panel ink="#f2c46d"><b>Saving for it</b><Bar pct={(m.bank / Math.max(1, cost)) * 100} c="#f2c46d" /><span className="k-q">{fmtCount(m.bank)} of {cost}. {etaWords(cost, m.bank, m.rate)}</span></Panel>;
   return (
+    <>
+    <p className="k-q" style={{ margin: 0 }}>{etaWords(cost, m.bank, m.rate)} You bank about {Math.round(m.rate * 10) / 10} a day lately.</p>
     <button type="button" className="k-act wide kb-gold" onClick={() => void researchTech(t.id)}>
       {m.bank >= cost ? `Research it · ${cost}` : `Save for it · ${fmtCount(m.bank)} of ${cost}`}
     </button>
+    </>
   );
 }
 
@@ -356,6 +379,7 @@ export function EurekaMoment({ id }: { id: string }) {
       <p className="fbt-kick">Eureka</p>
       <div className="fbt-plate"><b>{t.name}</b><small>costs half: {m.cost(t.id)}</small></div>
       <p className="fbt-line c">{t.eureka.text} {t.text}</p>
+      {techState(t, m.researched) === 'open' && <p className="fbt-line c">{etaWords(m.cost(t.id), m.bank, m.rate)}</p>}
       {techState(t, m.researched) === 'open' && <button type="button" className="fbt-btn gold wide" onClick={() => { void researchTech(t.id); close(); }}>{m.bank >= m.cost(t.id) ? 'Research it' : 'Save for it'}</button>}
       <button type="button" className="fbt-btn wide" onClick={close}>Later</button>
     </div>
@@ -430,7 +454,7 @@ export function ProjectList({ m }: { m: Model }) {
   return (
     <>
       {buildings.length > 0 && <Sect>Buildings open · {euros(cost)} in all</Sect>}
-      {buildings.length > 0 && <p className="k-q">Each starts on its own days and is paid for, from the budget, the day its last day is in. {m.t.save.budget >= cost ? `The budget (${euros(m.t.save.budget)}) covers them all.` : `The budget is ${euros(m.t.save.budget)}: the cheapest come first.`}</p>}
+      {buildings.length > 0 && <p className="k-q">Each counts its own kind of day, all at once, and is paid for from the budget the day its last day is in. {m.t.save.budget >= cost ? `The budget (${euros(m.t.save.budget)}) covers them all.` : `The budget is ${euros(m.t.save.budget)}: the cheapest come first.`}</p>}
       <div className="kb-rows">
         {buildings.map((p) => <Project key={p.id} m={m} id={p.id} />)}
       </div>
@@ -458,6 +482,7 @@ function Project({ m, id }: { m: Model; id: string }) {
   const p = PROJECTS.find((x) => x.id === id)!;
   const s = m.states.get(id);
   const c = PROJECT_INK(p);
+  const today = dayOfLogging(Date.now());
   return (
     <Panel ink={c}>
       <PanelTop name={p.name} c={c} right={m.progress(id)} />
@@ -470,6 +495,8 @@ function Project({ m, id }: { m: Model; id: string }) {
           </div>
         );
       })}
+      <span><b>{countsLine(p.needs)}</b> {countedLine(s)}</span>
+      <span className="k-q">{leftLine(p.needs, s, today)}</span>
       {p.money > 0 && <span className="k-q">Costs {euros(p.money)} when its days are in · {m.t.save.budget >= p.money ? 'the budget covers it' : `${euros(p.money - m.t.save.budget)} short`}</span>}
       <span>{p.reward}</span>
     </Panel>

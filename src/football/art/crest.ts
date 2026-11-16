@@ -1,13 +1,14 @@
 // Crests as SVG strings (spec §8.8, boards 9–11). Brabo's five steps come from the approved files;
 // every other club is built from the crest kit: one of six outlines, a symbol, the club colour.
 import type { ClubDef } from '../data/load';
+import { WORLD_CLUBS } from '../data/world';
 import { hashSeed } from '../rng';
 import { CREST_STEPS } from './crestSteps';
 
 let n = 0;
 const uniq = (svg: string) => {
   n++;
-  return svg.replace(/id="(\w+)"/g, `id="$1-${n}"`).replace(/href="#(\w+)"/g, `href="#$1-${n}"`);
+  return svg.replace(/id="(\w+)"/g, `id="$1-${n}"`).replace(/href="#(\w+)"/g, `href="#$1-${n}"`).replace(/url\(#(\w+)\)/g, `url(#$1-${n})`);
 };
 
 export type CrestStep = 1 | 2 | 3 | 4 | 5;
@@ -91,34 +92,57 @@ export function kitCrest(shape: ShapeKey, sym: string, colour: string, size: num
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 
-const ring = (r = 42) => `<circle cx="50" cy="50" r="${r}" class="sh"/>`;
-const shield = 'M18 12 H82 V48 Q82 78 50 92 Q18 78 18 48 Z';
-// Board 11's eight drawn outlines; every other real club is its badge's shape and its letters.
-const REAL: Record<string, string> = {
-  Bayern: ring() + '<circle cx="50" cy="50" r="24" class="sy"/>' + [[38, 44], [50, 44], [38, 56], [50, 56]].map(([x, y]) => `<path d="M${x} ${y} l6 -6 l6 6 l-6 6 Z" class="sy"/>`).join(''),
-  'Real Madrid': '<circle cx="50" cy="60" r="28" class="sh"/><path d="M28 26 L34 14 L42 22 L50 10 L58 22 L66 14 L72 26 Z" class="sy"/><path d="M34 78 L66 42" class="sy"/>',
-  Barcelona: '<path d="M22 10 H78 V44 Q78 76 50 94 Q22 76 22 44 Z" class="sh"/><path d="M22 34 H78 M50 10 V34 M36 10 V34" class="sy"/><path d="M58 18 H70 M64 12 V28" class="sy"/><circle cx="50" cy="58" r="10" class="sy"/><path d="M38 46 V80 M62 46 V80" class="sy"/>',
-  Juventus: '<path d="M34 8 H66 V70 Q66 92 46 92 Q30 92 28 78" class="sh"/><path d="M42 16 V82 M50 16 V86 M58 16 V82" class="sy"/>',
-  Dortmund: ring() + '<text x="50" y="50" class="tx">BVB</text><text x="50" y="70" class="tx s">09</text>',
-  'Man City': ring() + '<path d="M28 50 H72 L66 60 H34 Z M50 50 V28 L64 44 H50" class="sy"/><path d="M30 68 Q40 62 50 68 T70 68 M30 76 Q40 70 50 76 T70 76" class="sy"/>',
-  Leeds: `<path d="${shield}" class="sh"/>` + Array.from({ length: 5 }, (_, i) => `<circle cx="${(50 + 11 * Math.cos(i * 1.2566 - 1.57)).toFixed(1)}" cy="${(46 + 11 * Math.sin(i * 1.2566 - 1.57)).toFixed(1)}" r="8" class="sy"/>`).join('') + '<circle cx="50" cy="46" r="5" class="sy"/>',
-  Liverpool: '<path d="M22 20 H78 V50 Q78 78 50 92 Q22 78 22 50 Z" class="sh"/><path d="M38 66 Q38 44 50 40 Q56 30 64 34 L58 40 Q62 56 52 66 Z M30 30 Q26 50 32 70 M70 30 Q74 50 68 70" class="sy"/>',
-};
-const REAL_ALIAS: Record<string, string> = { 'Bayern Munich': 'Bayern', 'FC Bayern': 'Bayern', 'Borussia Dortmund': 'Dortmund', 'Manchester City': 'Man City', 'Leeds United': 'Leeds', 'FC Barcelona': 'Barcelona' };
+/**
+ * O41 3 (O42): every real club gets an original crest, never a copy of its badge: one of the six outlines, a field
+ * divided in its second colour, and a symbol from the kit, all picked from its id. No letters and no drawn badge.
+ */
+export const FIELDS = {
+  plain: '',
+  band: '<path d="M0 40 H100 V60 H0 Z" class="fd"/>',
+  pale: '<path d="M40 0 H60 V100 H40 Z" class="fd"/>',
+  half: '<path d="M50 0 H100 V100 H50 Z" class="fd"/>',
+  chief: '<path d="M0 0 H100 V30 H0 Z" class="fd"/>',
+  sash: '<path d="M0 22 L22 0 L100 78 L78 100 Z" class="fd"/>',
+  chevron: '<path d="M0 62 L50 34 L100 62 V84 L50 56 L0 84 Z" class="fd"/>',
+  quarters: '<path d="M0 0 H50 V50 H0 Z M50 50 H100 V100 H50 Z" class="fd"/>',
+  stripes: '<path d="M18 0 H30 V100 H18 Z M44 0 H56 V100 H44 Z M70 0 H82 V100 H70 Z" class="fd"/>',
+} as const;
+export type FieldKey = keyof typeof FIELDS;
+const FIELD_KEYS = Object.keys(FIELDS) as FieldKey[];
+const SYM_KEYS = Object.keys(SYM);
 
-/** A real club's simplified outline. */
-export function realCrest(c: Pick<ClubDef, 'id' | 'name' | 'short' | 'crest' | 'colours'>, size: number): string {
-  const key = REAL[c.name] ? c.name : REAL_ALIAS[c.name];
-  const k = c.colours[0] ?? '#f3eee6';
-  let g = key ? REAL[key] : '';
-  if (!g) {
-    const [shape] = kitParts(c);
-    g = `<path d="${SHAPES[shape]}" class="sh"/><text x="50" y="${shape === 'banner' ? 52 : 58}" class="tx">${esc(c.short.slice(0, 3))}</text>`;
+type Parts = { shape: ShapeKey; field: FieldKey; sym: string };
+const partsAt = (h: number): Parts => ({ shape: SHAPE_KEYS[h % SHAPE_KEYS.length], field: FIELD_KEYS[(h >>> 4) % FIELD_KEYS.length], sym: SYM_KEYS[(h >>> 9) % SYM_KEYS.length] });
+const partsKey = (p: Parts) => `${p.shape}:${p.field}:${p.sym}`;
+let assigned: Map<string, Parts> | undefined;
+/** world.json's clubs, in id order, each take the first design no club before them has: no two crests alike. */
+function assignedParts(): Map<string, Parts> {
+  if (assigned) return assigned;
+  assigned = new Map();
+  const used = new Set<string>();
+  for (const id of WORLD_CLUBS.map((c) => c.id).sort()) {
+    let p = partsAt(hashSeed('crest-original', id));
+    for (let k = 1; used.has(partsKey(p)); k++) p = partsAt(hashSeed(`crest-original-${k}`, id));
+    used.add(partsKey(p));
+    assigned.set(id, p);
   }
-  return `<svg class="fb-kc" style="--k:${k}" width="${size}" height="${size}" viewBox="0 0 100 100" aria-hidden="true">${g}</svg>`;
+  return assigned;
+}
+/** The parts of a real club's original crest. */
+export function originalParts(c: Pick<ClubDef, 'id'>): Parts {
+  return assignedParts().get(c.id) ?? partsAt(hashSeed('crest-original', c.id));
 }
 
-/** Any club's crest: real → outline, quirky or old → kit of parts, own → the chosen step. */
+/** A real club's original crest (never its real badge). */
+export function realCrest(c: Pick<ClubDef, 'id' | 'colours'>, size: number): string {
+  const { shape, field, sym } = originalParts(c);
+  const k = c.colours[0] ?? '#f3eee6';
+  const k2 = c.colours[1] && c.colours[1].toLowerCase() !== k.toLowerCase() ? c.colours[1] : '#f3eee6';
+  const fd = FIELDS[field] ? `<clipPath id="cl"><path d="${SHAPES[shape]}"/></clipPath><g clip-path="url(#cl)">${FIELDS[field]}</g>` : '';
+  return uniq(`<svg class="fb-kc fb-oc" style="--k:${k};--k2:${k2}" width="${size}" height="${size}" viewBox="0 0 100 100" aria-hidden="true"><path d="${SHAPES[shape]}" class="sh"/>${fd}<path d="${SHAPES[shape]}" class="sh ln"/><g class="sb">${SYM[sym]}</g></svg>`);
+}
+
+/** Any club's crest: real → an original crest, quirky or old → kit of parts, own → the chosen step. */
 export function clubCrest(c: ClubDef, size: number, own?: { step: CrestStep; opt: CrestOptKey }): string {
   if (c.kind === 'own') return crestSvg(own?.step ?? 1, own?.opt ?? 'a', size);
   if (c.kind === 'real') return realCrest(c, size);

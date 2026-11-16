@@ -36,7 +36,7 @@ export function UsualChips({ items, onAdd }: { items: { id: string; name: string
  */
 export function MealTiles({ meals, onOpen, onRepeat }: { meals: { meal: Meal; kcal?: number; protein?: number; canRepeat: boolean }[]; onOpen: (m: Meal) => void; onRepeat: (m: Meal) => void }) {
   return (
-    <div className="k-panel td-meals" style={{ '--ink': 'var(--protein)' } as React.CSSProperties}>
+    <div className="k-panel td-meals" style={{ '--ink': 'var(--kcal)' } as React.CSSProperties}>
       {meals.map((m) => (
         <div key={m.meal} className="td-meal">
           <button type="button" className="td-meal-open" onClick={() => onOpen(m.meal)}>

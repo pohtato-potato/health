@@ -222,7 +222,10 @@ export function events(a, b) {
   if (A.division !== B.division && A.division && B.division) ev.push({ what: `division ${A.division} → ${B.division}`, words: [/promot|relegat|division|go(es)? up|go(es)? down/i] });
   if (A.title !== B.title && B.title) ev.push({ what: `title now ${B.title}`, words: [new RegExp(esc(String(B.title)), 'i')] });
   const opened = (B.openings ?? []).filter((o) => !(A.openings ?? []).includes(o));
-  for (const o of opened) ev.push({ what: `building finished: ${o}`, words: [new RegExp(esc(o).replace(/-/g, '.'), 'i'), /opens|opened|finished|built/i] });
+  for (const o of opened) ev.push({ what: `building finished: ${o}`, words: [/is built|is done|opens|opened|finished|New at the club/i] });
+  // O42: a project or ground stage finished (its `done` set), named in the news by its name, not its id.
+  const doneA = new Set((A.projects ?? []).filter((x) => x.done).map((x) => x.id));
+  for (const x of (B.projects ?? []).filter((x) => x.done && !doneA.has(x.id))) if (!opened.includes(x.id)) ev.push({ what: `project finished: ${x.id}`, words: [/is built|is done|New at the club/i] });
   const trialsA = (A.trials ?? []).length, trialsB = (B.trials ?? []).length;
   if (trialsB > trialsA) ev.push({ what: `trial day held (${(B.trials.at(-1)?.came ?? []).length} came)`, words: [/trial/i] });
   if ((B.squadCount ?? 0) > (A.squadCount ?? 0)) ev.push({ what: `squad grew ${A.squadCount} → ${B.squadCount}`, words: [/joins|joined|youngster|academy|trial|signed/i] });
@@ -280,13 +283,24 @@ export function unreachedRoutes(router, reachedKeys) {
 
 // ---- The whole pass ----
 
+/** O41 1 (O42): a night already used with no match in it must not draw a fixture as tonight's. */
+export function usedNightFlags(day) {
+  const out = [];
+  for (const s of [day.morning, day.evening]) {
+    const t = s?.tonight;
+    if (!t || t.error) continue;
+    if (t.fixtures > 0 && !t.played && t.lastPlayed && t.lastPlayed >= day.date) out.push(flag('fixture drawn on a night with no match', day.date, '/football', `the night of ${day.date} is already played (last played ${t.lastPlayed}) with no match, yet a fixture is drawn as tonight's`, page(day, '/football')?.shot, 'breaks trust'));
+  }
+  return out.slice(0, 1);
+}
+
 export function runChecks(run) {
   const flags = [];
   const days = run.days;
   for (let i = 0; i < days.length; i++) {
     const d = days[i], prev = days[i - 1], next = days[i + 1];
     for (const p of d.pages) flags.push(...pageFlags(d, p), ...trendWordFlags(d, p));
-    flags.push(...disagreementFlags(d), ...stateFlags(d), ...fixtureFlags(d, next), ...counterFlags(d, prev), ...doorFlags(d, run.doors ?? []));
+    flags.push(...disagreementFlags(d), ...stateFlags(d), ...fixtureFlags(d, next), ...counterFlags(d, prev), ...doorFlags(d, run.doors ?? []), ...usedNightFlags(d));
     const before = prev?.evening ?? prev?.morning ?? d.start, after = d.evening ?? d.morning;
     const evs = events(before, after);
     const rec = recordEvent(d.bestBefore, after?.day?.steps);

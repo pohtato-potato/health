@@ -15,6 +15,7 @@ import { Door, Doors, FamilyDoors, Panel } from '../../../ui/kit/Kit';
 import { useModel } from '../tree/model';
 import { Art } from '../Tonight';
 import type { Story } from './StoryHome';
+import { RunCard, runOf } from '../RunCard';
 
 const GOLD = '#f2c46d', CORAL = '#ff9a76';
 /** A big reward on the track: anything but the small album-card marks. */
@@ -71,8 +72,10 @@ export function StoryLead({ s }: { s: Story }) {
   const ups = upsets(s.all, s.seasons).length;
   const olds = [...s.l.clubs.values()].filter((c) => c.old && !c.old.standIn).length + (s.l.save.retired?.length ?? 0);
   const view = (v: string) => () => go('/football/story', { view: v });
+  const run = runOf(s.all);
   return (
     <div className="lt-story">
+      {run && <RunCard run={run} />}
       {m && <TrackLead n={m.track} track={trackOf(worldOf(s.l.save))} />}
       <RivalPanel r={list[0]} matches={s.all} />
       <FamilyDoors two label="More of the story" groups={{ record: [

@@ -1,6 +1,8 @@
-import { Suspense, lazy } from 'react';
-import { useAllDays, useAllSets, useEntries, useSessions, useSettings } from '../db/hooks';
-import { addDays, parseDay } from '../domain/dates';
+import { Suspense, lazy, useEffect } from 'react';
+import { useAllDays, useAllEntries, useAllSets, useEntries, useSessions, useSettings } from '../db/hooks';
+import { keepMomentOnce } from '../db/moments';
+import { dayRecords, type DayRecord, type RecordKind } from '../domain/dayRecords';
+import { addDays, dayOfLogging, parseDay } from '../domain/dates';
 import { fmtInt } from '../domain/format';
 import { dayDoses } from '../domain/medicines';
 import { findSession, realSets } from '../domain/plan';
@@ -22,6 +24,19 @@ const DayKickOff = lazy(() => import('./today/FootballCard').then((m) => ({ defa
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
+const RECORD_NAME: Record<RecordKind, string> = { steps: 'Steps', sleep: 'Sleep', protein: 'Protein', training: 'Training' };
+const RECORD_INK: Record<RecordKind, string> = { steps: 'var(--steps)', sleep: '#93c3dc', protein: 'var(--protein)', training: '#ff9a76' };
+/** O41 9 (O42 finding 33): a record gets its own moment on the closed day, gold with its kind named. */
+function RecordMoment({ r }: { r: DayRecord }) {
+  return (
+    <div className="record-moment" role="status" style={{ ['--ink' as string]: RECORD_INK[r.kind] }}>
+      <span className="record-k">New record · {RECORD_NAME[r.kind]}</span>
+      <b className="record-v">{r.value}</b>
+      <span className="t15">{r.sub}</span>
+    </div>
+  );
+}
+
 /** Day closed (s19): the totals against targets, training and the walk, a Gremlin line, tomorrow, and a star for a perfect day. */
 export function DayClosed({ date, summary: s, onDone }: { date: string; summary: DaySummary; onDone: () => void }) {
   const settings = useSettings();
@@ -29,6 +44,13 @@ export function DayClosed({ date, summary: s, onDone }: { date: string; summary:
   const sessions = useSessions();
   const sets = useAllSets();
   const entries = useEntries(date);
+  const allEntries = useAllEntries();
+  const records = days && sets && allEntries ? dayRecords(date, days, allEntries, realSets(sets)) : [];
+  const recKey = records.map((r) => r.kind).join(',');
+  // Finding 33 (O42): a record is kept on Earned's shelf once, when its day is closed.
+  useEffect(() => {
+    for (const r of records) void keepMomentOnce(`record-${r.kind}:${date}`, 'record', date, `${RECORD_NAME[r.kind]} record: ${r.line}`);
+  }, [recKey, date]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!settings || !days || !sessions || !sets || !entries) return <div className="page dayclosed" />;
   const day = days.find((d) => d.date === date);
   const { rings } = dayRings(settings, date, day, entries);
@@ -49,6 +71,11 @@ export function DayClosed({ date, summary: s, onDone }: { date: string; summary:
   const upName = up && settings.plan ? findSession(settings.plan, up.sessionId)?.name : undefined;
   const bed = tonightTarget(usualWake(days, tomorrowPlace.id, date) ?? 450, targetsFor(settings, date).sleepMin);
   const line = spokenLine(settings, date, rings.perfect ? 'perfect' : done.length ? 'trained' : 'evening', date);
+  // Finding 19 (O42): a day closed after it has passed speaks in the past tense; "tomorrow" is then today.
+  const now = dayOfLogging(Date.now());
+  const past = date < now;
+  const dayName = WEEKDAYS[parseDay(date).getDay()];
+  const nextLabel = past && tomorrow <= now ? (tomorrow === now ? 'Today' : WEEKDAYS[parseDay(tomorrow).getDay()]) : 'Tomorrow';
   const month = MONTHS[parseDay(date).getMonth()];
 
   const stat = (big: string, small: string, color: string, good: boolean) => (
@@ -73,6 +100,7 @@ export function DayClosed({ date, summary: s, onDone }: { date: string; summary:
         <h1 className="h1">{WEEKDAYS[parseDay(date).getDay()]}, closed</h1>
         <div className="t14 q">{rings.perfect ? `A perfect day. Its star is in ${month}’s sky.` : 'Closed and counted. The week evens it out.'}</div>
       </div>
+      {records.map((r) => <RecordMoment key={r.kind} r={r} />)}
       <div className="grid3" style={{ padding: '6px 0' }}>
         {stat(fmtInt(s.kcal), s.kcalInRange ? 'kcal · in range' : 'kcal', 'var(--kcal)', s.kcalInRange)}
         {stat(`${s.protein} g`, s.proteinClosed ? 'protein · met' : 'protein', 'var(--protein)', s.proteinClosed)}
@@ -81,12 +109,12 @@ export function DayClosed({ date, summary: s, onDone }: { date: string; summary:
       <div className="card" style={{ gap: 0, padding: '4px 16px' }}>
         {done.length > 0 && row(findSession(settings.plan!, done[0].session)?.name ?? `Session ${done[0].session}`, rec ? `${rec.exercise.toLowerCase()} record, ${rec.reps ?? rec.seconds}` : 'done')}
         {s.checklist.total > 0 && row('Checklist', `${s.checklist.done} of ${s.checklist.total}${meds.length ? ` · ${doses.onTime} on time` : ''}`)}
-        <DayWalker d={dayWalk(date, stepsByDay(days))} line={`${walkedToday !== undefined ? `${walkedToday.toFixed(1)} km today` : 'no steps logged'}${pos.to ? ` · ${nextStopLine(pos.to.name, pos.to.km - total, typicalKm)}` : ''}`} />
+        <DayWalker d={dayWalk(date, stepsByDay(days))} start={past ? `${dayName} morning` : undefined} line={`${walkedToday !== undefined ? `${walkedToday.toFixed(1)} km ${past ? `on ${dayName}` : 'today'}` : 'no steps logged'}${pos.to ? ` · ${nextStopLine(pos.to.name, pos.to.km - total, typicalKm)}` : ''}`} />
       </div>
       {line && <div className="voice center">“{line}”</div>}
       <div className="card" style={{ gap: 2 }}>
         <span className="t15">
-          Tomorrow · {tomorrowPlace.name}
+          {nextLabel} · {tomorrowPlace.name}
           {upName ? ` · ${upName}` : ''}
         </span>
         <span className="t13 q">{bed.text}</span>

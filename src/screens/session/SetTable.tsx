@@ -115,7 +115,7 @@ export function SetTable({
           <div key={r.key} id={`row-${r.key}`}>
             <div className={`setrow${isActive ? ' cur' : ''}${logged?.skipped ? ' skipped' : ''}`}>
               <div className={isActive ? 't15' : 't15 q'}>{label}</div>
-              <div className="t14 q" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div className="t14 q" style={{ lineHeight: 1.15, overflowWrap: 'anywhere' }}>
                 {lastText}
               </div>
               {isActive ? (

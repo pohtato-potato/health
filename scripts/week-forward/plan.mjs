@@ -19,7 +19,8 @@ export const KINDS = {
 export function weekPlan(start, days = 7) {
   const kinds = ['usual', 'record', 'rest', 'late', 'sleepOnly', 'perfect', 'missed'];
   const train = new Set([0, 3, 5]);
-  const onceOff = { 2: ['sponsor', 'building', 'research', 'kit', 'title', 'theme'], 3: ['trialist', 'dice', 'cup', 'plan'] };
+  // O42: day 4 also brings a building one day short (a labelled test nudge), so day 5's night finishes it.
+  const onceOff = { 2: ['sponsor', 'building', 'research', 'kit', 'title', 'theme'], 3: ['trialist', 'dice', 'cup', 'plan', 'finishBuilding'] };
   return Array.from({ length: days }, (_, i) => ({
     i, date: addDays(start, i), kind: kinds[i % kinds.length], train: train.has(i % 7), onceOff: onceOff[i] ?? [],
     // A live match is watched once in the week; the others are skipped, as the owner does on busy mornings.

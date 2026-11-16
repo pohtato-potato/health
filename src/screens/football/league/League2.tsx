@@ -6,7 +6,6 @@ import { ordinal } from '../../../football/habitLines';
 import { leagueMatchdays, seasonLength } from '../../../football/calendar';
 import { pairOf } from '../../../football/pyramid/cups';
 import { shapeOf, type Division } from '../../../football/pyramid/shape';
-import { clubFog } from '../../../football/store/fog';
 import type { League } from '../../../football/store/league';
 import { OWN } from '../../../football/store/season';
 import type { FbNews, StoredMatch } from '../../../football/store/tables';
@@ -30,13 +29,12 @@ export function LeagueHome2({ l, n }: { l: League; n?: { news: FbNews[]; matches
   const rows = l.tables[mine] ?? [];
   const pos = rows.findIndex((r) => r.id === OWN) + 1;
   const played = rows.find((r) => r.id === OWN)?.p ?? 0;
-  const kitKnown = (id: string) => clubFog(l.save, id).facts.has('kit');
   const cupRound = cupWords(l);
   return (
     <>
       <Hero value={pos ? ordinal(pos) : '–'} ink={GOLD} label={`${S2.name(mine)}`} under={`of ${rows.length} · ${dayLine(l)} · ${played} of ${leagueMatchdays(2)} played`} />
       <Panel ink={`var(--fb-t${mine})`} onClick={() => set({ view: 'full' })} label={`${S2.name(mine)}: the full table of ${rows.length}`} className="fb-top4">
-        <Table tier={mine} rows={rows} world={2} limit={4} kitKnown={kitKnown} waiting={Boolean(l.save.paused)} />
+        <Table tier={mine} rows={rows} world={2} limit={4} waiting={Boolean(l.save.paused)} />
         <span className="fb-s fb-seeall-line">See all {rows.length}</span>
       </Panel>
       {n && <BackPageCard news={n.news} matches={n.matches} today={n.today} more />}
@@ -66,7 +64,7 @@ export function FullTable2({ l }: { l: League }) {
   const mine = l.season.tierOf[OWN];
   const rows = l.tables[mine] ?? [];
   const played = rows.find((r) => r.id === OWN)?.p ?? 0;
-  return <Table tier={mine} rows={rows} world={2} form={l.form} kitKnown={(id) => clubFog(l.save, id).facts.has('kit')} waiting={Boolean(l.save.paused)} day={`${dayLine(l)} · ${played} played · points`} />;
+  return <Table tier={mine} rows={rows} world={2} form={l.form} waiting={Boolean(l.save.paused)} day={`${dayLine(l)} · ${played} played · points`} />;
 }
 
 /** Every division: the pyramid of eight, the chosen one's table under the fog, and a scout to send. */
@@ -98,7 +96,7 @@ export function EveryDivision({ l, tier }: { l: League; tier?: Tier }) {
         })}
       </ol>
       <div id="fb-div-table" style={{ scrollMarginTop: 72 }}>
-        <Table tier={on as Tier} rows={l.tables[on as Tier] ?? []} world={2} kitKnown={(id) => clubFog(l.save, id).facts.has('kit')} day={`${on === mine ? 'Your division · ' : ''}ratings ${S2.band(on).join('–')}`} />
+        <Table tier={on as Tier} rows={l.tables[on as Tier] ?? []} world={2} day={`${on === mine ? 'Your division · ' : ''}ratings ${S2.band(on).join('–')}`} />
       </div>
       <Panel flat>
         <p className="fb-s" style={{ margin: 0 }}>

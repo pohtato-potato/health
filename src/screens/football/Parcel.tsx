@@ -12,8 +12,9 @@ import { holdTalk, openParcel, type Parcel, type TalkOffer } from '../../footbal
 import type { Tonight } from '../../football/store/hooks';
 import { matchGate, storedGate } from '../../football/store/matchGate';
 import { OWN } from '../../football/store/season';
-import type { FbSave, PausedMatch, StoredMatch } from '../../football/store/tables';
+import type { FbNews, FbSave, PausedMatch, StoredMatch } from '../../football/store/tables';
 import { TALK_AGENT, talkTarget, type TalkPick } from '../../football/talks';
+import { RunLine } from './RunCard';
 import { go } from '../../router';
 import { AXIS_INK } from '../../ui/inks';
 import '../../styles/matchday.css';
@@ -21,10 +22,12 @@ import { DiceTile } from './desk/Desk';
 import { tierName } from '../../football/data/load';
 import type { Tier } from '../../football/types';
 import { leadLine, type ScoutReport } from '../../football/fog/report';
-import { CrestOrFog, FactRow, Known, factLabel, factText } from './world/Fog';
+import { ClubBadge, FactRow, Known, factLabel, factText } from './world/Fog';
 import { Action, HelpButton } from '../../ui/kit/Kit';
 import { Icon } from '../../ui/Icon';
 import { PARCEL_HOW } from './howDaily';
+import type { ResearchGain } from '../../football/tree/types';
+import { WHY_WORDS } from '../../football/tree/words';
 import '../../styles/look-tonight.css';
 
 function Art({ svg }: { svg: string }) {
@@ -94,12 +97,14 @@ export function ParcelView({ t, p: live }: { t: Tonight; p: Parcel }) {
         <div key={at} className="lt-unseal" style={{ '--ink': TILE[k].ink } as React.CSSProperties}>
         {k === 'result' && (p.waiting || p.result) && <ResultTile waiting={p.waiting} m={p.result} save={t.save} onNext={next} last={last} />}
         {k === 'result' && live.others.length > 0 && <NightResults ms={live.others} />}
+        {k === 'club' && <ClubTile news={p.club} onNext={next} last={last} />}
         {k === 'table' && <TableTile date={t.date} onNext={next} last={last} />}
         {k === 'talks' && <TalksTile offers={p.talks} date={t.date} onNext={next} last={last} />}
         {k === 'scout' && <ScoutTile t={t} scouts={p.scouts} onNext={next} last={last} />}
         {k === 'academy' && <AcademyTile t={t} onNext={next} last={last} />}
         {k === 'cast' && p.cast && <CastTile note={p.cast} onNext={next} last={last} />}
         {k === 'dice' && <DiceTile dice={p.dice} date={t.date} onNext={next} last={last} />}
+        {k === 'research' && <ResearchTile gains={p.research} date={t.date} onNext={next} last={last} />}
         {k === 'pack' && <PackTile n={p.packs} date={t.date} onNext={next} last={last} />}
         </div>
         <div className="md-fill" />
@@ -122,7 +127,7 @@ export function ResultTile({ waiting, m, save, onNext, last }: { waiting?: Pause
   if (waiting || !m || storedGate.waiting(m)) {
     const f = waiting ? { home: waiting.prep.home, away: waiting.prep.away, round: waiting.prep.round } : m!;
     const watch = () => (waiting ? matchGate.watch() : storedGate.watch(m!));
-    const skip = async () => { setBusy(true); try { if (waiting) await matchGate.skip(); else await storedGate.skip(m!); } finally { setBusy(false); } };
+    const skip = async () => { setBusy(true); try { if (waiting) await matchGate.skip(); else await storedGate.skipNight(m!); } finally { setBusy(false); } };
     return (
       <>
         <h2 className="md-h">Last night: {shortName(f.home)} v {shortName(f.away)}</h2>
@@ -153,6 +158,7 @@ export function ResultTile({ waiting, m, save, onNext, last }: { waiting?: Pause
       </div>
       <h2 className="md-h">You {WORD[m.result]} against {nameOf(opp)}.</h2>
       <p style={{ margin: 0 }}>{m.round ?? 'League'}{m.pens ? `, ${m.pens[0]}–${m.pens[1]} on penalties` : ''}{scorer ? `. ${scorer.name} scored.` : '.'}</p>
+      <RunLine upTo={m.date} />
       <div className="md-btns">
         <Action wide quiet onClick={() => go('/football/match', { id: m.id })}>Watch it</Action>
         <Next onNext={onNext} last={last} />
@@ -295,7 +301,7 @@ function ScoutReportCard({ r, t, day }: { r: ScoutReport; t: Tonight; day: strin
     <>
       <div className="md-tile col fg" style={{ '--ink': TILE.scout.ink } as React.CSSProperties}>
         <div className="md-row" style={{ justifyContent: 'flex-start', gap: 12 }}>
-          <CrestOrFog id={id} known={!r.hidden.includes('kit')} size={48} />
+          <ClubBadge id={id} size={48} />
           <span><b className="md-h" style={{ fontSize: 22 }}>{r.name}</b><br /><span className="md-q">{[tier ? tierName(tier as Tier) : 'Abroad', met ? 'met' : 'met never'].join(' · ')}</span></span>
         </div>
         <Known pct={r.after} from={r.before} />
@@ -339,6 +345,38 @@ function CastTile({ note, onNext, last }: { note: CastNote; onNext: () => void; 
       ))}
       <div className="md-btns">
         {note.scene && <Action wide quiet onClick={() => go('/football/cast', { scene: `${note.scene!.member}:${note.scene!.rank}` })}>A new scene</Action>}
+        <Next onNext={onNext} last={last} />
+      </div>
+    </>
+  );
+}
+
+/** The tour's or the museum's research, paid yesterday (ledger O40). */
+/** O41 11 (O42): who and what arrived at the club yesterday, each in its own line. */
+function ClubTile({ news, onNext, last }: { news: FbNews[]; onNext: () => void; last: boolean }) {
+  return (
+    <>
+      <div className="md-tile col" style={{ '--ink': TILE.club.ink } as React.CSSProperties}>
+        <span className="md-big" style={{ color: TILE.club.ink }}>{news.length}</span>
+        <b style={{ flex: 'none' }}>{news.length === 1 ? 'thing new at the club' : 'things new at the club'}</b>
+        <ul className="lt-list">{news.map((n) => <li key={n.id}>{n.text}</li>)}</ul>
+      </div>
+      <div className="md-btns"><Next onNext={onNext} last={last} /></div>
+    </>
+  );
+}
+
+function ResearchTile({ gains, date, onNext, last }: { gains: ResearchGain[]; date: string; onNext: () => void; last: boolean }) {
+  const n = gains.reduce((t, g) => t + g.n, 0);
+  return (
+    <>
+      <div className="md-tile col" style={{ '--ink': TILE.research.ink } as React.CSSProperties}>
+        <span className="md-big" style={{ color: TILE.research.ink }}>+{n}</span>
+        <b style={{ flex: 'none' }}>research for the tree</b>
+        <ul className="lt-list">{gains.map((g, i) => <li key={i}><b>+{g.n}</b> {WHY_WORDS[g.why]}{g.note ? `: ${g.note.charAt(0).toLowerCase()}${g.note.slice(1)}` : ''}</li>)}</ul>
+      </div>
+      <div className="md-btns">
+        <Action wide quiet onClick={() => { void openParcel(date).then(() => go('/football/club', { view: 'tree' })); }}>See the tree</Action>
         <Next onNext={onNext} last={last} />
       </div>
     </>

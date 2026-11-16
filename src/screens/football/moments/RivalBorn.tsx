@@ -4,12 +4,13 @@ import { clubById } from '../../../football/data/load';
 import { howText, twistOf, type Rival } from '../../../football/rivals';
 import { Aurora } from '../FootballHome';
 import { Art } from '../Tonight';
+import { MomentLayer } from './Layer';
 
 export function RivalBornView({ r, onDone }: { r: Rival; onDone: () => void }) {
   const c = clubById(r.clubId);
   const tw = twistOf(r);
   return (
-    <div className="fb-moment" role="dialog" aria-modal="true" aria-labelledby="fb-rival-t">
+    <MomentLayer role="dialog" aria-modal="true" aria-labelledby="fb-rival-t">
       <Aurora a="#ff6464" c="#6c3fc4">
         <main className="fb-page">
           <span className="fb-lb">A rival is born</span>
@@ -20,6 +21,6 @@ export function RivalBornView({ r, onDone }: { r: Rival; onDone: () => void }) {
           <div className="fb-btns"><button type="button" className="fb-btn pri" onClick={onDone}>Noted</button></div>
         </main>
       </Aurora>
-    </div>
+    </MomentLayer>
   );
 }

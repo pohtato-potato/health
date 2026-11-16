@@ -1,14 +1,14 @@
+import type { ReactNode } from 'react';
 import { go } from '../../router';
 import type { IconName } from '../../ui/Icon';
-import { Door } from '../../ui/kit/Kit';
+import { Door, FamilyDoors } from '../../ui/kit/Kit';
+import type { AppFamily } from '../../ui/kit/families';
 import { DOORS } from './doorList';
 
 const ICON: Record<(typeof DOORS)[number]['label'], IconName> = { Tracks: 'ground', Earned: 'pack', Insights: 'scope', Reports: 'sheet', Body: 'body' };
-/** You's pages as doors (board one): each in its own ink with one live line. Body is the fifth, kept from before. */
-export function Doors({ subs }: { subs: Record<(typeof DOORS)[number]['label'], string> }) {
-  return (
-    <nav className="k-doors two k-you-doors" aria-label="Look closer">
-      {DOORS.map((d) => <Door key={d.label} icon={ICON[d.label]} name={d.label} value={subs[d.label]} ink={d.hue} onClick={() => go(d.path)} line />)}
-    </nav>
-  );
+/** You's pages as doors (board one), each with one live line, grouped by the kind of place they open (ledger O40); anything waiting is a chip in words. */
+export function Doors({ subs, counts = {} }: { subs: Record<(typeof DOORS)[number]['label'], string>; counts?: Partial<Record<(typeof DOORS)[number]['label'], string>> }) {
+  const groups: Partial<Record<AppFamily, ReactNode[]>> = {};
+  for (const d of DOORS) (groups[d.family] ??= []).push(<Door key={d.label} icon={ICON[d.label]} name={d.label} value={subs[d.label]} family={d.family} count={counts[d.label]} onClick={() => go(d.path)} line />);
+  return <div className="k-you-doors"><FamilyDoors groups={groups} two label="Look closer" /></div>;
 }

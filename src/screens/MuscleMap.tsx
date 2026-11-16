@@ -61,7 +61,7 @@ export function MuscleMapPage() {
   return (
     <div className="page bare tr-kit k-light tr-gym">
       <div className="k-page">
-        <PageHead back="Train" onBack={() => back('/train')} title="Sets per muscle" help={HOW} />
+        <PageHead back="Train" onBack={() => back('/train')} title="Sets per muscle" help={HOW} family="training" />
         <span className="k-q">
           This week on your body: hard sets so far, against what the plan asks for. {toGo ? `${weekWords(0, toGo).replace(' to do', '')} session${toGo === 1 ? '' : 's'} to go.` : weekWords(week.doneCount, week.target) + '.'}
         </span>
@@ -75,9 +75,9 @@ export function MuscleMapPage() {
 
         <Sect>Around training</Sect>
         <Doors label="Around training">
-          <Door icon="win" ink="#f2c46d" name="Records" value={fmtInt(records)} onClick={() => go('/records')} />
-          <Door icon="list" name="The plan" value={plan.planVersion ? `v${plan.planVersion}` : plan.name} onClick={() => go('/plan')} />
-          <Door icon="body" name="Body log" value={String((body ?? []).filter((b) => daysBetween(b.date, today) < 7).length || '–')} onClick={() => go('/body')} />
+          <Door icon="win" family="earned" name="Records" value={fmtInt(records)} onClick={() => go('/records')} />
+          <Door icon="list" family="upkeep" name="The plan" value={plan.planVersion ? `v${plan.planVersion}` : `${plan.sessions.length} sessions`} onClick={() => go('/plan')} />
+          <Door icon="body" family="body" name="Body log" value={String((body ?? []).filter((b) => daysBetween(b.date, today) < 7).length || '–')} onClick={() => go('/body')} />
         </Doors>
 
         <Sect>Each muscle</Sect>

@@ -1,5 +1,6 @@
 // Plain words for the tree's counts, in UK English. Nothing here scolds.
 import type { Metric } from '../content/types';
+import type { ResearchWhy } from './types';
 
 /** "25 days at the protein target": the count goes in front. */
 export const METRIC_WORDS: Record<Metric, string> = {
@@ -35,3 +36,10 @@ export const METRIC_WORDS: Record<Metric, string> = {
 };
 export const fmtCount = (n: number) => (Number.isInteger(n) ? n.toLocaleString('en-GB') : n.toLocaleString('en-GB', { maximumFractionDigits: 1 }));
 export const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI'];
+
+/** Where research came from, in words (the tree's "Research lately" and the morning parcel). */
+export const WHY_WORDS: Record<ResearchWhy, string> = {
+  win: 'A win', draw: 'A draw', loss: 'A loss', logged: 'A logged day', board: 'The board', bounty: 'A bounty', pack: 'A pack',
+  duplicate: 'A duplicate card', tour: 'The pre-season tour', duty: 'International duty', cup: 'A cup run', pick: 'Pick of three',
+  desk: 'The desk', museum: 'The museum',
+};

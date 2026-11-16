@@ -52,17 +52,22 @@ export function youthDay(h: Health, y: FbSquadRow, date: DayKey, bedtime: number
 export const PROMOTED_START: Record<3 | 4 | 5, number> = { 3: 55, 4: 60, 5: 65 };
 
 /** Habits a youngster can be tied to: not already tied to another youngster, and not tracked before it arrived. */
-export function linkOptions(h: Health, y: FbSquadRow, others: FbSquadRow[], since: DayKey): { link: YouthLink; name: string }[] {
+/**
+ * The habits a trialist can be tied to (finding 35, O42: his own suggested habit or any habit already kept): every
+ * active checklist habit and every exercise in the plan not tied to another youngster, new ones first. `kept` marks
+ * one already being logged before the trialist came.
+ */
+export function linkOptions(h: Health, y: FbSquadRow, others: FbSquadRow[], since: DayKey): { link: YouthLink; name: string; kept: boolean }[] {
   const taken = new Set(others.filter((o) => o.id !== y.id && o.link).map((o) => `${o.link!.kind}:${o.link!.id}`));
-  const out: { link: YouthLink; name: string }[] = [];
+  const out: { link: YouthLink; name: string; kept: boolean }[] = [];
   for (const item of h.settings.checklist ?? []) {
     if (!item.active || item.med || taken.has(`habit:${item.id}`)) continue;
-    const before = [...h.days.values()].some((d) => d.date < since && item.slots.some((_, k) => d.ticks?.[`${item.id}:${k}`] != null));
-    if (!before) out.push({ link: { kind: 'habit', id: item.id }, name: item.name });
+    const kept = [...h.days.values()].some((d) => d.date < since && item.slots.some((_, k) => d.ticks?.[`${item.id}:${k}`] != null));
+    out.push({ link: { kind: 'habit', id: item.id }, name: item.name, kept });
   }
   for (const ex of (h.settings.plan?.sessions ?? []).flatMap((s) => s.exercises)) {
     if (taken.has(`exercise:${ex.id}`) || out.some((o) => o.link.id === ex.id)) continue;
-    if (!h.sets.some((s) => s.exerciseId === ex.id && s.date < since)) out.push({ link: { kind: 'exercise', id: ex.id }, name: ex.name });
+    out.push({ link: { kind: 'exercise', id: ex.id }, name: ex.name, kept: h.sets.some((s) => s.exerciseId === ex.id && s.date < since) });
   }
-  return out;
+  return out.sort((a, b) => Number(a.kept) - Number(b.kept));
 }

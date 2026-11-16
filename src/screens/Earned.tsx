@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState, type CSSProperties } from 'react';
-import { ACHIEVEMENTS } from '../domain/achievements';
+import { ACHIEVEMENTS, ACTIVE_ACHIEVEMENTS } from '../domain/achievements';
 import { firsts, milestones, odometers, shelves, type Dated } from '../domain/earned';
 import { fmtDayMonth, fmtInt } from '../domain/format';
 import { availableThemes } from '../domain/themes';
@@ -67,7 +67,7 @@ export function Earned() {
   if (sub === 'titles') {
     return (
       <div className="page bare k-page k-light you">
-        <PageHead back="Earned" onBack={toEarned} title="Titles" />
+        <PageHead back="Earned" onBack={toEarned} title="Titles" family="earned" />
         <TitlesWall settings={settings} stats={stats} unlocked={unlocked} level={level} />
       </div>
     );
@@ -75,7 +75,7 @@ export function Earned() {
   if (sub === 'rewards') {
     return (
       <div className="page bare k-page k-light you">
-        <PageHead back="Earned" onBack={toEarned} title="Rewards" />
+        <PageHead back="Earned" onBack={toEarned} title="Rewards" family="earned" />
         <Rewards settings={settings} unlocked={unlocked} today={today} />
       </div>
     );
@@ -90,7 +90,7 @@ export function Earned() {
     const odo = odometers({ days, sessions, sets });
     return (
       <div className="page bare k-page k-light you">
-        <PageHead back="Earned" onBack={toEarned} title="So far" />
+        <PageHead back="Earned" onBack={toEarned} title="So far" family="earned" />
         {odo.length > 0 && (
           <div className={`k-tiles${odo.length === 4 ? ' two' : ''}`}>
             {odo.map((o, i) => <div key={o.id} className="k-panel" style={{ '--ink': ['#8fdcb6', '#ff9a76', '#f2c46d', '#93c3dc'][i % 4] } as CSSProperties}><b className="k-num ink">{o.value}</b><span className="k-q">{o.label}</span></div>)}
@@ -105,12 +105,13 @@ export function Earned() {
 
   const worn = wornTitle(settings, unlocked, level);
   const titlesHad = TITLE_DEFS.filter((t) => t.rule(stats)).length + TITLES.filter((t) => t.unlocked(unlocked, level)).length;
-  const secretsFound = ACHIEVEMENTS.filter((a) => a.cat === 'secret' && unlocked.has(a.id)).length;
+  // O42 slip 30: counted as the Achievements page counts (retired secrets left out).
+  const secretsFound = ACTIVE_ACHIEVEMENTS.filter((a) => a.cat === 'secret' && unlocked.has(a.id)).length;
   const wearable = availableThemes(unlocked).length;
   const trophies = trophyCandidates({ today, settings, days, entries, sets, sightings });
   return (
     <div className="page bare k-page k-light you">
-      <PageHead back="You" onBack={() => back('/you')} title="Earned" help={HOW} />
+      <PageHead back="You" onBack={() => back('/you')} title="Earned" help={HOW} family="earned" />
       <div className="k-row end">
         <Hero value={fmtInt(unlocked.size)} ink={GOLD} label="earned" />
         <span className="k-col k-r" style={{ flex: 'none', paddingBottom: 4 }}>
@@ -122,13 +123,13 @@ export function Earned() {
       <NewTitle settings={settings} stats={stats} />
       <Sect>The cabinet</Sect>
       <Doors two label="The cabinet">
-        <Door line icon="pack" name="Titles" value={`${fmtInt(titlesHad)} earned`} ink={GOLD} onClick={() => go('/earned', { v: 'titles' })} />
-        <Door line icon="ground" name="Records" value="The book" ink="#ff9a76" onClick={() => go('/records')} />
-        <Door line icon="kit" name="Themes" value={`${fmtInt(wearable)} to wear`} ink="#c2b2ff" onClick={() => setThemes(true)} />
-        <Door line icon="scope" name="Secrets" value={`${fmtInt(secretsFound)} found`} ink="#8fdcb6" onClick={() => go('/achievements', { f: 'secret' })} />
-        <Door line icon="win" name="Achievements" value="Sets and progress" ink="#93c3dc" onClick={() => go('/achievements')} />
-        <Door line icon="calendar" name="So far" value="Shelves, firsts" ink="#f4aedb" onClick={() => go('/earned', { v: 'story' })} />
-        <Door line icon="bolt" name="Rewards" value="Confetti, gold rings" ink={GOLD} onClick={() => go('/earned', { v: 'rewards' })} />
+        <Door line icon="pack" name="Titles" value={`${fmtInt(titlesHad)} earned`} family="earned" onClick={() => go('/earned', { v: 'titles' })} />
+        <Door line icon="ground" name="Records" value="The book" family="earned" onClick={() => go('/records')} />
+        <Door line icon="kit" name="Themes" value={`${fmtInt(wearable)} to wear`} family="earned" onClick={() => setThemes(true)} />
+        <Door line icon="scope" name="Secrets" value={`${fmtInt(secretsFound)} found`} family="earned" onClick={() => go('/achievements', { f: 'secret' })} />
+        <Door line icon="win" name="Achievements" value="Sets and progress" family="earned" onClick={() => go('/achievements')} />
+        <Door line icon="calendar" name="So far" value="Shelves, firsts" family="earned" onClick={() => go('/earned', { v: 'story' })} />
+        <Door line icon="bolt" name="Rewards" value="Confetti, gold rings" family="earned" onClick={() => go('/earned', { v: 'rewards' })} />
       </Doors>
       {themes && <ThemeSheet settings={settings} unlocked={unlocked} today={today} onClose={() => setThemes(false)} />}
     </div>

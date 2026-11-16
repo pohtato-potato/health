@@ -4,7 +4,7 @@
 // finished at the next 4 am is stored unwatched; for that one Watch replays it and Skip just shows the score.
 import { go } from '../../router';
 import { finishWithAssistant } from './play';
-import { markWatched } from './save';
+import { markNightWatched, markWatched } from './save';
 import type { FbSave, PausedMatch, StoredMatch } from './tables';
 
 export const matchGate = {
@@ -12,8 +12,12 @@ export const matchGate = {
   waiting: (save: Pick<FbSave, 'paused'> | undefined | null): PausedMatch | undefined => save?.paused,
   /** Watch the waiting match live (before kick-off first). */
   watch: () => go('/football/match', { live: '1' }),
-  /** The assistant finishes it; resolves with the stored match once the score can be shown. */
-  skip: (): Promise<StoredMatch | undefined> => finishWithAssistant(),
+  /** The assistant finishes it; resolves with the stored match once the score can be shown. Every match of that night is marked seen. */
+  skip: async (): Promise<StoredMatch | undefined> => {
+    const m = await finishWithAssistant();
+    if (m) await markNightWatched(m.date);
+    return m;
+  },
 };
 
 /** A finished match nobody has seen yet (the catch-up kind). */
@@ -21,4 +25,6 @@ export const storedGate = {
   waiting: (m: Pick<StoredMatch, 'watched'>) => !m.watched,
   watch: (m: Pick<StoredMatch, 'id'>) => go('/football/match', { id: m.id }),
   skip: (m: Pick<StoredMatch, 'id'>) => markWatched(m.id),
+  /** The lead match's Skip (the parcel, Today): every Brabo match of its night is marked seen (finding 2, O42). */
+  skipNight: (m: Pick<StoredMatch, 'date'>) => markNightWatched(m.date),
 };

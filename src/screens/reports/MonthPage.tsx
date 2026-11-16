@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react';
 import { db } from '../../db/db';
 import { lastMonth } from '../../domain/film';
 import { fmtDayMonth, fmtDuration, fmtInt } from '../../domain/format';
+import { kmFromSteps } from '../../domain/walk';
 import { monthLabel } from '../../domain/goTo';
 import { assessment, monthSpread, sleepProfile, topFives, tryNext } from '../../domain/monthReport';
 import { back, go, useRoute } from '../../router';
@@ -41,10 +42,12 @@ export function MonthPage() {
   const next = tryNext(grades);
   const peak = Math.max(1, ...s.perWeekday);
   const empty = !grades.length && !s.sets;
+  // O42 slip 31: the month's kilometres, as Reports' door gives them.
+  const km = Math.round(kmFromSteps(input.days.filter((d) => d.date.startsWith(month)).reduce((n, d) => n + (d.steps ?? 0), 0)));
   return (
     <div className="page bare k-page k-light you yu-page">
       <div className="k-page">
-        <PageHead back="Reports" onBack={() => back('/reports')} title={monthLabel(month)} />
+        <PageHead back="Reports" onBack={() => back('/reports')} title={monthLabel(month)} family="back" />
         {empty && <div className="yu-card"><b>Nothing was logged this month</b><span className="yu-q">A report needs at least one day.</span></div>}
         {!empty && (
           <>
@@ -58,7 +61,7 @@ export function MonthPage() {
                   </div>
                 </div>
               )}
-              {s.stepsAvg !== undefined && <Stat value={fmtInt(s.stepsAvg)} label="steps a day" c={HUE.steps} c2={HUE.walk} vals={s.stepsSeries} />}
+              {s.stepsAvg !== undefined && <Stat value={fmtInt(s.stepsAvg)} label={`steps a day · ${fmtInt(km)} km in the month`} c={HUE.steps} c2={HUE.walk} vals={s.stepsSeries} />}
               {s.proteinAvg !== undefined && <Stat value={`${fmtInt(s.proteinAvg)} g`} label="protein a day" c={HUE.food} c2="#ff7db8" vals={s.proteinSeries} />}
               {s.sleepAvg !== undefined && <Stat value={fmtDuration(s.sleepAvg)} label="asleep a night" c={HUE.sleep} c2={HUE.train} vals={s.sleepSeries} />}
             </Reveal>

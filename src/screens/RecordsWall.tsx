@@ -1,6 +1,6 @@
-import { fmtDayMonth } from '../domain/format';
+import { fmtDayMonth, fmtInt } from '../domain/format';
 import { fmtKg, nextLoad } from '../domain/loads';
-import { allExercises, topOfRange, type ExerciseDef } from '../domain/plan';
+import { allExercises, realSets, topOfRange, type ExerciseDef } from '../domain/plan';
 import { medalsFor, type Medal } from '../domain/records';
 import { strengthForecast } from '../domain/strengthForecast';
 import { useAllSets, useSettings } from '../db/hooks';
@@ -34,6 +34,8 @@ export function RecordsWall() {
         Train
       </button>
       <h1 className="h1">Records</h1>
+      {/* O42 slip 26: the same count as Train's Records door. */}
+      <div className="t17">{fmtInt(realSets(sets).filter((x) => x.mark === '!!').length)} records set</div>
       <div className="t14 q lh">The three best sessions for each exercise, counted in clean reps times the weight.</div>
       {rows.length === 0 && <div className="t15 q">Records appear after your first sessions.</div>}
       {rows.map(({ ex, medals }) => (
