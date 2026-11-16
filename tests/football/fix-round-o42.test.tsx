@@ -182,3 +182,30 @@ describe('sponsors: one brand each, a quarter on signing (O42 9 and 10, O41 4 an
     }
   });
 });
+
+describe('finding 35: a trialist ties to his own habit or one already kept', () => {
+  const trialist = (): import('../../src/football/store/tables').FbSquadRow => ({
+    id: 'y-test-2026-12-02', kind: 'youth', name: 'A. Trialist', axis: 'Pace', potential: 4, what: 'stretch before bed', exercise: false,
+    season: 1, logged: [], status: 'trial', trialUntil: '2026-12-09',
+  });
+  it('lists habits already kept as well as new ones, new first', async () => {
+    const { linkOptions } = await import('../../src/football/players/youth');
+    const days = new Map([['2026-11-30', { date: '2026-11-30', ticks: { 'old:0': 1 } }]]);
+    const h = {
+      settings: { checklist: [{ id: 'old', name: 'Old habit', slots: ['Any time'], active: true }, { id: 'new', name: 'New habit', slots: ['Any time'], active: true }], plan: { sessions: [] } },
+      days, sets: [],
+    } as unknown as import('../../src/football/store/gather').Health;
+    const opts = linkOptions(h, trialist(), [], '2026-12-02');
+    expect(opts.map((o) => [o.name, o.kept])).toEqual([['New habit', false], ['Old habit', true]]);
+  });
+  it('tying to his own habit adds it to the checklist and ties him', async () => {
+    const { tieToOwnHabit } = await import('../../src/football/store/globeActions');
+    await db.fbSquad.put(trialist());
+    expect(await tieToOwnHabit('y-test-2026-12-02')).toBe(true);
+    const s = await db.settings.get('app');
+    const item = s!.checklist.find((c) => c.name === 'Stretch before bed');
+    expect(item).toBeTruthy();
+    const y = await db.fbSquad.get('y-test-2026-12-02');
+    expect(y!.link).toEqual({ kind: 'habit', id: item!.id });
+  });
+});

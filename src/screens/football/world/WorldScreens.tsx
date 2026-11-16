@@ -5,7 +5,7 @@ import { useEffect, type CSSProperties } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { go } from '../../../router';
 import { loadHealth } from '../../../football/store/gather';
-import { letTrialistGo, seeLoan, seeTrials, tieTrialist, useWorld, type BreakView, type Morning } from '../../../football/store/globeActions';
+import { letTrialistGo, seeLoan, seeTrials, tieToOwnHabit, tieTrialist, useWorld, type BreakView, type Morning } from '../../../football/store/globeActions';
 import { linkOptions, PROMOTE_GROWTH, type YouthLink } from '../../../football/players/youth';
 import { loanById, LOAN_DAYS, LOAN_MENTOR, LOAN_TIER_NAME } from '../../../football/globe/loans';
 import { loanSvg } from '../../../football/globe/art';
@@ -201,7 +201,7 @@ function Trialist({ y, lead }: { y: FbSquadRow; lead: boolean }) {
   );
 }
 
-/** Tie a trialist to a real habit (round seven). Football never makes a habit itself: add a new one in Settings first. */
+/** Tie a trialist to a real habit (round seven; O42 finding 35): the habit he came suggesting, which joins the checklist, or any habit already kept. */
 export function TiePage({ id }: { id: string }) {
   const w = useWorld();
   const opts = useLiveQuery(async () => {
@@ -222,23 +222,30 @@ export function TiePage({ id }: { id: string }) {
     );
   }
   const full = w.academy.filter((x) => x.link).length >= w.rules.academy;
-  const tie = (l: YouthLink) => { void tieTrialist(y.id, l).then((ok) => ok && go('/football/academy', undefined, { replace: true })); };
+  const done = (ok: boolean) => ok && go('/football/academy', undefined, { replace: true });
+  const tie = (l: YouthLink) => { void tieTrialist(y.id, l).then(done); };
+  const ownName = y.what.replace(/^./, (ch) => ch.toUpperCase());
+  const ownListed = (opts ?? []).some((o) => o.name.toLowerCase() === ownName.toLowerCase());
   return (
     <div className="k-page">
       <h2 className="kd-q">Tie {y.name} to a habit</h2>
-      <Note>It only counts on days you really log it. Only habits you haven't been logging already: a youngster stands for something new.</Note>
+      <Note>It only counts on days you really log it. His own habit joins your checklist; or pick one you already keep.</Note>
       {full && <Panel ink="#ffe27a"><PanelTop name="The academy is full" c="#ffe27a" /><span>{w.rules.academy} of {w.rules.academy} places taken. A place frees up when a youngster is promoted or leaves.</span></Panel>}
       <div className="kb-rows">
+        {!y.exercise && !ownListed && (
+          <button type="button" className="k-panel k-tap kd-target" style={{ ['--ink' as string]: '#ffe27a' }} disabled={full} onClick={() => { void tieToOwnHabit(y.id).then(done); }}>
+            <b style={{ color: '#ffe27a' }}>His own: {ownName}</b><span className="k-q">Joins your checklist · one tick a day on Today</span>
+          </button>
+        )}
         {(opts ?? []).map((o) => {
           const c = o.link.kind === 'exercise' ? '#ff9a76' : '#f4aedb';
           return (
             <button key={`${o.link.kind}:${o.link.id}`} type="button" className="k-panel k-tap kd-target" style={{ ['--ink' as string]: c }} disabled={full} onClick={() => tie(o.link)}>
-              <b style={{ color: c }}>{o.name}</b><span className="k-q">{o.link.kind === 'exercise' ? 'An exercise in the coach’s plan' : 'A checklist habit · ticks on Today'}</span>
+              <b style={{ color: c }}>{o.name}</b><span className="k-q">{o.link.kind === 'exercise' ? 'An exercise in the coach’s plan' : 'A checklist habit · ticks on Today'}{o.kept ? ' · one you already keep' : ' · new'}</span>
             </button>
           );
         })}
       </div>
-      {opts && opts.length === 0 && <Note>No new habit to tie to yet. Add one to the checklist in Settings, or an exercise to the coach's plan, and it shows up here.</Note>}
       {opts && opts.length > 0 && <Note>Want something else? Add it to the checklist in Settings, or to the coach's plan, and come back.</Note>}
       <Action quiet onClick={() => { void letTrialistGo(y.id, w.today).then(() => go('/football/trials', undefined, { replace: true })); }}>Let {y.name} go · no penalty</Action>
     </div>

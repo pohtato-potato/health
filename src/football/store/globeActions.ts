@@ -3,6 +3,7 @@
 import { worldOf } from '../pyramid/shape';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
+import { getSettings, patchSettings } from '../../db/actions';
 import { dayOfLogging, type DayKey } from '../../domain/dates';
 import { clubById, rememberClubs } from '../data/load';
 import { breakDue, BREAK_DAYS, callUps, loggedOn } from '../globe/duty';
@@ -43,6 +44,20 @@ export async function tieTrialist(id: string, link: YouthLink): Promise<boolean>
     ok = true;
   });
   return ok;
+}
+/**
+ * Tie a trialist to the habit he came suggesting (finding 35, O42): it joins the checklist as a new daily habit, one
+ * tick a day, and he is tied to it. False when the academy is full or he is not on trial.
+ */
+export async function tieToOwnHabit(id: string): Promise<boolean> {
+  const y = await db.fbSquad.get(id);
+  if (!y || y.status !== 'trial' || y.exercise) return false;
+  const name = y.what.replace(/^./, (c) => c.toUpperCase()).slice(0, 60);
+  const have = (await getSettings()).checklist.find((c) => c.name.toLowerCase() === name.toLowerCase());
+  const itemId = have?.id ?? `habit-${y.id.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`;
+  if (!have) await patchSettings((s) => ({ checklist: [...s.checklist, { id: itemId, name, slots: ['Any time'], active: true }] }));
+  else if (!have.active) await patchSettings((s) => ({ checklist: s.checklist.map((c) => (c.id === itemId ? { ...c, active: true } : c)) }));
+  return tieTrialist(id, { kind: 'habit', id: itemId });
 }
 /** Let a trialist go: no penalty, the door stays open. */
 export async function letTrialistGo(id: string, on: DayKey = dayOfLogging(Date.now())) {
