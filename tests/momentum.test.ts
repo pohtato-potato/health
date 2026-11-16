@@ -217,3 +217,20 @@ describe('trendRows', () => {
     expect(r.word).toBe('Steady');
   });
 });
+
+describe('momentumReasons (O42 finding 29)', () => {
+  it('a fall names the area that pulled it down, with its points and its days', async () => {
+    const { momentumReasons } = await import('../src/domain/momentum');
+    const earlier = addDays(DATE, -28);
+    const sleepDays = (end: DayKey) => windowDays(14, end).map((d) => ({ date: d, sleep: sleep(480) }));
+    const merge = (a: ReturnType<typeof stepDays>, b: { date: DayKey; sleep: { asleep: number; woke: number } }[]) =>
+      a.map((d) => ({ ...d, ...(b.find((x) => x.date === d.date) ?? {}) }));
+    const days = [...merge(stepDays(4, 14, DATE), sleepDays(DATE)), ...merge(stepDays(14, 14, earlier), sleepDays(earlier))];
+    const i = input({ days: days as never });
+    const r = momentumReasons(DATE, i);
+    expect(r[0].area).toBe('steps');
+    expect(r[0].points).toBeLessThan(0);
+    expect(r[0].line).toBe('Steps: 4 of 14 logged days at the step goal, was 14 of 14.');
+    expect(r.reduce((a, x) => a + (x.points ?? 0), 0)).toBe(momentumChange(DATE, i));
+  });
+});

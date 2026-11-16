@@ -343,3 +343,4 @@
 .ws-in em { font-style: normal; font-size: 20px; color: var(--q); }
 .story.ws .story-close { position: absolute; top: calc(env(safe-area-inset-top) + 4px); right: 14px; left: auto; bottom: auto; width: 44px; height: 44px; z-index: 3; }
 .story.ws .yu-sec h2 { font-family: var(--serif); font-weight: 400; font-size: 26px; color: var(--text); margin: 0; }
+.k-mom-why { display: flex; gap: 10px; align-items: baseline; font-size: 15px; } .k-mom-why .k-num { min-width: 36px; font-size: 18px; } /* O42 finding 29 */

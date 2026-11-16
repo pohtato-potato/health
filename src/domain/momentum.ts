@@ -90,6 +90,38 @@ export function momentumChange(today: DayKey, i: MomentumInput): number | undefi
   return now === undefined || then === undefined ? undefined : now - then;
 }
 
+export interface MomentumReason { area: MomentumArea; /** Points it moved the score, + or −; undefined when it joined or left. */ points?: number; line: string }
+const REASON_NAME: Record<MomentumArea, string> = { steps: 'Steps', protein: 'Protein', sleep: 'Sleep', training: 'Training' };
+const REASON_OF: Record<'steps' | 'protein' | 'sleep', string> = { steps: 'logged days at the step goal', protein: 'logged days at the protein target', sleep: 'logged nights at the sleep target' };
+/**
+ * O41 8 (O42 finding 29): what moved momentum over four weeks, biggest first. Each area moves the score by its own
+ * change over the number of areas in it; an area that joined or left the score says so.
+ */
+export function momentumReasons(today: DayKey, i: MomentumInput): MomentumReason[] {
+  const p = prepare(i);
+  const earlier = addDays(today, -TREND_GAP);
+  const now = scoresOf(today, p), then = scoresOf(earlier, p);
+  const tNow = tallies(today, p), tThen = tallies(earlier, p);
+  const n = Object.keys(now).length;
+  if (n < MIN_AREAS) return [];
+  const out: MomentumReason[] = [];
+  for (const a of AREAS) {
+    const x = now[a], y = then[a];
+    if (x === undefined && y === undefined) continue;
+    const name = REASON_NAME[a];
+    const counts = (t: typeof tNow) => (a === 'training' ? '' : `${t[a][1]} of ${t[a][0]}`);
+    if (x === undefined) { out.push({ area: a, line: `${name}: fewer than ${MIN_LOGGED} logged days in the last two weeks, so it left the score.` }); continue; }
+    if (y === undefined) { out.push({ area: a, line: `${name}: joined the score this fortnight.` }); continue; }
+    const points = Math.round(((x - y) * 100) / n);
+    if (points === 0) continue;
+    const line = a === 'training'
+      ? `${name}: ${sessionsIn(today, p)} sessions in the last two weeks, was ${sessionsIn(earlier, p)}.`
+      : `${name}: ${counts(tNow)} ${REASON_OF[a]}, was ${counts(tThen)}.`;
+    out.push({ area: a, points, line });
+  }
+  return out.sort((u, v) => Math.abs(v.points ?? 0.5) - Math.abs(u.points ?? 0.5));
+}
+
 /** How many more logged days would make a score. 0 once there is one. */
 export function momentumNeeds(today: DayKey, i: MomentumInput): number {
   const p = prepare(i);

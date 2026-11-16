@@ -1,5 +1,5 @@
 import { useMemo, type CSSProperties } from 'react';
-import { momentumChange, momentumNeeds, momentumOn, momentumSeries, trendRows, type MomentumArea, type MomentumInput } from '../../domain/momentum';
+import { momentumChange, momentumNeeds, momentumOn, momentumReasons, momentumSeries, trendRows, type MomentumArea, type MomentumInput } from '../../domain/momentum';
 import { CountUp } from '../../ui/you/CountUp';
 import { HelpButton, Panel, type HowThisWorks } from '../../ui/kit/Kit';
 import { MomentumChart, Spark } from './MomentumChart';
@@ -47,6 +47,7 @@ export function MomentumPanel({ today, input }: { today: string; input: Momentum
     change: momentumChange(today, input),
     needs: momentumNeeds(today, input),
     rows: trendRows(today, input),
+    reasons: momentumReasons(today, input),
   }), [today, input]);
 
   if (m.score === undefined) {
@@ -68,6 +69,17 @@ export function MomentumPanel({ today, input }: { today: string; input: Momentum
         <HelpButton how={MOMENTUM_HOW} />
       </div>
       <MomentumChart vals={m.series} line={MOM_INK} fill={MOM_FILL} label={`Momentum over the last four weeks, now ${m.score}`} />
+      {m.reasons.length > 0 && (
+        <Panel ink={MOM_INK}>
+          <span className="k-lb">What moved it</span>
+          {m.reasons.map((r) => (
+            <span key={r.area} className="k-mom-why">
+              {r.points !== undefined && <b className="k-num" style={{ color: AREA[r.area].ink }}>{r.points > 0 ? '+' : '−'}{Math.abs(r.points)}</b>}
+              <span>{r.line}</span>
+            </span>
+          ))}
+        </Panel>
+      )}
       {m.rows.length > 0 && (
         <div className="k-doors two">
           {m.rows.map((r, i) => {
