@@ -1,6 +1,6 @@
 import { Suspense, lazy } from 'react';
 import { useAllDays, useAllSets, useEntries, useSessions, useSettings } from '../db/hooks';
-import { addDays, parseDay } from '../domain/dates';
+import { addDays, dayOfLogging, parseDay } from '../domain/dates';
 import { fmtInt } from '../domain/format';
 import { dayDoses } from '../domain/medicines';
 import { findSession, realSets } from '../domain/plan';
@@ -49,6 +49,11 @@ export function DayClosed({ date, summary: s, onDone }: { date: string; summary:
   const upName = up && settings.plan ? findSession(settings.plan, up.sessionId)?.name : undefined;
   const bed = tonightTarget(usualWake(days, tomorrowPlace.id, date) ?? 450, targetsFor(settings, date).sleepMin);
   const line = spokenLine(settings, date, rings.perfect ? 'perfect' : done.length ? 'trained' : 'evening', date);
+  // Finding 19 (O42): a day closed after it has passed speaks in the past tense; "tomorrow" is then today.
+  const now = dayOfLogging(Date.now());
+  const past = date < now;
+  const dayName = WEEKDAYS[parseDay(date).getDay()];
+  const nextLabel = past && tomorrow <= now ? (tomorrow === now ? 'Today' : WEEKDAYS[parseDay(tomorrow).getDay()]) : 'Tomorrow';
   const month = MONTHS[parseDay(date).getMonth()];
 
   const stat = (big: string, small: string, color: string, good: boolean) => (
@@ -81,12 +86,12 @@ export function DayClosed({ date, summary: s, onDone }: { date: string; summary:
       <div className="card" style={{ gap: 0, padding: '4px 16px' }}>
         {done.length > 0 && row(findSession(settings.plan!, done[0].session)?.name ?? `Session ${done[0].session}`, rec ? `${rec.exercise.toLowerCase()} record, ${rec.reps ?? rec.seconds}` : 'done')}
         {s.checklist.total > 0 && row('Checklist', `${s.checklist.done} of ${s.checklist.total}${meds.length ? ` · ${doses.onTime} on time` : ''}`)}
-        <DayWalker d={dayWalk(date, stepsByDay(days))} line={`${walkedToday !== undefined ? `${walkedToday.toFixed(1)} km today` : 'no steps logged'}${pos.to ? ` · ${nextStopLine(pos.to.name, pos.to.km - total, typicalKm)}` : ''}`} />
+        <DayWalker d={dayWalk(date, stepsByDay(days))} start={past ? `${dayName} morning` : undefined} line={`${walkedToday !== undefined ? `${walkedToday.toFixed(1)} km ${past ? `on ${dayName}` : 'today'}` : 'no steps logged'}${pos.to ? ` · ${nextStopLine(pos.to.name, pos.to.km - total, typicalKm)}` : ''}`} />
       </div>
       {line && <div className="voice center">“{line}”</div>}
       <div className="card" style={{ gap: 2 }}>
         <span className="t15">
-          Tomorrow · {tomorrowPlace.name}
+          {nextLabel} · {tomorrowPlace.name}
           {upName ? ` · ${upName}` : ''}
         </span>
         <span className="t13 q">{bed.text}</span>

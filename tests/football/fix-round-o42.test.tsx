@@ -143,3 +143,18 @@ describe('Pace: the sum, and a day past 20,000 steps counts in full', async () =
     expect(paceSum({ today, squad: {}, nudges: [], liveValues: today, flags: { Pace: 'not-logged' }, paceFull: false })).toBeUndefined();
   });
 });
+
+describe('finding 19: closing a past day', async () => {
+  const { PlayedCard } = await import('../../src/screens/today/FootballCard');
+  const { CLUBS } = await import('../../src/football/data/load');
+  const x = CLUBS[0].id;
+  const m = (watched: boolean) => ({ id: 'm1', date: '2020-01-05', home: OWN, away: x, opp: x, score: [0, 9], round: 'Friendly', watched } as never);
+  it('a match already played shows "played" and the parcel, never "tonight"', () => {
+    const out = html(<PlayedCard ms={[m(false)]} date="2020-01-05" />);
+    expect(out).toContain('in your parcel');
+    expect(out).not.toMatch(/tonight/i);
+  });
+  it('once seen, the result', () => {
+    expect(html(<PlayedCard ms={[m(true)]} date="2020-01-05" />)).toContain('0–9');
+  });
+});
