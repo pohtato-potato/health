@@ -100,3 +100,22 @@ describe('finding 2: Skip clears every match of the morning', () => {
     expect(seen).toEqual({ a: true, b: true, c: false });
   });
 });
+
+describe('finding 5: runs and slides', async () => {
+  const { currentRun } = await import('../../src/football/runs');
+  const v = { Pace: 10, Power: 10, Fuel: 10, Rest: 10, Routine: 10, Shape: 10 };
+  const fog = { Pace: 'not-logged', Fuel: 'not-logged', Rest: 'not-logged', Routine: 'not-logged' } as const;
+  const m = (date: string, result: 'W' | 'D' | 'L', flags = {}) => ({ date, result, flags, values: v, home: OWN, away: 'x', comp: 'league' });
+  it('three losses in a row name the nights played in fog, plainly', () => {
+    const r = currentRun([m('2026-11-16', 'W'), m('2026-11-17', 'L'), m('2026-11-18', 'L', fog), m('2026-11-19', 'L', fog)])!;
+    expect(r).toMatchObject({ kind: 'L', n: 3, fog: 2, line: 'Three losses in a row.' });
+    expect(r.reason).toMatch(/^Two of them were played in fog/);
+  });
+  it('two in a row, or a draw last, is no run', () => {
+    expect(currentRun([m('2026-11-16', 'L'), m('2026-11-17', 'L')])).toBeUndefined();
+    expect(currentRun([m('2026-11-16', 'W'), m('2026-11-17', 'W'), m('2026-11-18', 'W'), m('2026-11-19', 'D')])).toBeUndefined();
+  });
+  it('a good run is said too', () => {
+    expect(currentRun([m('a', 'W'), m('b', 'W'), m('c', 'W'), m('d', 'W')])?.line).toBe('Four wins in a row.');
+  });
+});

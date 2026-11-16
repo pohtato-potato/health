@@ -14,6 +14,7 @@ import { matchGate, storedGate } from '../../football/store/matchGate';
 import { OWN } from '../../football/store/season';
 import type { FbSave, PausedMatch, StoredMatch } from '../../football/store/tables';
 import { TALK_AGENT, talkTarget, type TalkPick } from '../../football/talks';
+import { RunLine } from './RunCard';
 import { go } from '../../router';
 import { AXIS_INK } from '../../ui/inks';
 import '../../styles/matchday.css';
@@ -156,6 +157,7 @@ export function ResultTile({ waiting, m, save, onNext, last }: { waiting?: Pause
       </div>
       <h2 className="md-h">You {WORD[m.result]} against {nameOf(opp)}.</h2>
       <p style={{ margin: 0 }}>{m.round ?? 'League'}{m.pens ? `, ${m.pens[0]}–${m.pens[1]} on penalties` : ''}{scorer ? `. ${scorer.name} scored.` : '.'}</p>
+      <RunLine upTo={m.date} />
       <div className="md-btns">
         <Action wide quiet onClick={() => go('/football/match', { id: m.id })}>Watch it</Action>
         <Next onNext={onNext} last={last} />
