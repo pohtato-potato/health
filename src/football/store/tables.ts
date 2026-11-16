@@ -70,7 +70,9 @@ export interface FbSave {
   contracts?: Contract[];
   /** Habits sold: Football stops tracking them; Health never does. */
   sold?: HabitId[];
-  sponsors?: (Offer & { since: number })[];
+  sponsors?: (Offer & { since: number; /** A quarter of the first season paid on signing (O41). */ advance?: { season: number; amount: number } })[];
+  /** The signing moment waiting to be seen (O41 #4). */
+  signed?: { brand: string; slot: Offer['slot']; perSeason: number; seasons: number; advance: number; since: number; risk: Offer['risk']; line: string };
   /** Offers waiting between seasons. */
   offers?: Offer[];
   youthSlots?: number;

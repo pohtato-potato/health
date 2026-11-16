@@ -158,3 +158,27 @@ describe('finding 19: closing a past day', async () => {
     expect(html(<PlayedCard ms={[m(true)]} date="2020-01-05" />)).toContain('0–9');
   });
 });
+
+describe('sponsors: one brand each, a quarter on signing (O42 9 and 10, O41 4 and 5)', async () => {
+  const { acceptOffer } = await import('../../src/football/store/save');
+  const { oneBrandEach, openOffers } = await import('../../src/football/money');
+  const { rng } = await import('../../src/football/rng');
+  const offer = (brand: string, slot: 'sleeve' | 'partner' | 'shirt', perSeason = 4) => ({ brand, what: 'x', risk: 'stable' as const, slot, perSeason, seasons: 2 as const, line: 'A line.' });
+  it('signing pays a quarter on the day and takes the brand out of every other offer', async () => {
+    const save = (await db.fbSave.get('save'))!;
+    await db.fbSave.put({ ...save, budget: 10, offers: [offer('Pixelpost', 'sleeve'), offer('Pixelpost', 'partner'), offer('Orbis', 'partner')] });
+    await acceptOffer(offer('Pixelpost', 'sleeve'));
+    const s = (await db.fbSave.get('save'))!;
+    expect(s.budget).toBe(11);
+    expect(s.offers!.map((o) => o.brand)).toEqual(['Orbis']);
+    expect(s.signed).toMatchObject({ brand: 'Pixelpost', advance: 1 });
+    expect(s.sponsors!.at(-1)!.advance).toEqual({ season: s.season, amount: 1 });
+  });
+  it('a signed brand is never offered again, and a brand sits in one slot only', () => {
+    expect(oneBrandEach([offer('A', 'sleeve'), offer('A', 'partner'), offer('B', 'partner')], [offer('B', 'shirt')]).map((o) => `${o.brand}:${o.slot}`)).toEqual(['A:sleeve']);
+    for (let i = 0; i < 20; i++) {
+      const list = openOffers([], 3, true, rng(i));
+      expect(new Set(list.map((o) => o.brand)).size).toBe(list.length);
+    }
+  });
+});

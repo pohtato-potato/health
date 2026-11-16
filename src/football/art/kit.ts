@@ -1,4 +1,5 @@
 // Kits as SVG strings, ported from the round-3 kit board (build_kcs3 `kit`).
+import { sponsorMarkGroup } from './sponsorMark';
 import { crestGroup, type CrestOptKey, type CrestStep } from './crest';
 
 export const PATCH_CREAM = '#f3e7d3';
@@ -122,7 +123,8 @@ export function kitSvg(k: KitDef, view: 'front' | 'back', size: number, o: KitOp
     const [s, op] = k.crest ?? [2, 'c'];
     parts.push(maker(k.ink), `<g transform="translate(117 53) scale(.22)" class="fb-crest onshirt" style="--k:${k.ink}">${crestGroup(s, op)}</g>`);
     if (o.patch) parts.push(`<g class="patch"><circle cx="100" cy="82" r="7" fill="none" stroke="${PATCH_CREAM}" stroke-width="1.6"/><text x="100" y="84.5" class="patch-t" fill="${PATCH_CREAM}">${esc(o.patch.text.slice(0, 3))}</text></g>`);
-    if (o.sponsor) parts.push(sponsor(k.sp, k.ink, o.sponsor));
+    // The sponsor's outline mark sits over its name (O41: logos drawn as outlines that show on the kit).
+    if (o.sponsor) parts.push(...(o.patch ? [] : [sponsorMarkGroup(o.sponsor, k.ink, 100, k.sp === 'B' ? 87 : 94, 5.5)]), sponsor(k.sp, k.ink, o.sponsor));
   } else {
     parts.push(`<text x="100" y="44" class="neck" fill="${k.ink}">${esc((o.name ?? 'BRABO UNITED').toUpperCase())}</text>`,
       `<text x="100" y="140" class="${NUMCLS[k.sp]}" fill="${k.ink}" stroke="${k.numEdge ?? 'none'}">${esc(String(o.number ?? 42))}</text>`);

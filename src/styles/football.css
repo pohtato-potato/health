@@ -660,3 +660,10 @@ button.md-chip { min-height: 44px; cursor: pointer; }
 .fb-pacesum-row > span { padding: 6px 10px; border-radius: 10px; background: rgba(255, 255, 255, .08); font-size: 15px; color: #ede6da; }
 .fb-pacesum-row b { font-size: 17px; }
 .fb-pacesum-n { font-size: 14px; line-height: 1.4; color: #c4c1cf; }
+/* The signing moment (O41 #4). */
+.fb-sign { gap: 14px; }
+.fb-sign-art { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
+.fb-sign-rows { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.fb-sign-rows p { display: flex; justify-content: space-between; gap: 12px; margin: 0; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(242, 196, 109, .55); background: rgba(242, 196, 109, .1); font-size: 16px; }
+.fb-sign-rows span { color: #e6dcc8; }
+.fb-sign-rows b { text-align: right; color: #fff6d6; }

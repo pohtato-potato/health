@@ -162,7 +162,7 @@ function ClubFront({ c }: { c: Club }) {
           <Door key="kits" icon="kit" name="Kits" value={kitWall(c.save, c.matches).length} family="place" onClick={() => go('/football/club', { view: 'kits' })} />,
         ],
         money: [
-          <Door key="money" icon="money" name="Money" value={c.save.budget >= 10 ? `€${Math.round(c.save.budget)}m` : euros(c.save.budget)} count={offers ? `${offers} ${offers === 1 ? 'offer' : 'offers'} to sign` : undefined} family="money" onClick={() => go('/football/club', { view: 'money' })} />,
+          <Door key="money" icon="money" name="Money" value={euros(c.save.budget)} count={offers ? `${offers} ${offers === 1 ? 'offer' : 'offers'} to sign` : undefined} family="money" onClick={() => go('/football/club', { view: 'money' })} />,
           <Door key="deals" icon="deal" name="Deals" value={c.members.length} family="money" onClick={() => go('/football/club', { view: 'deals' })} />,
           ...(world ?? []).filter((d) => d.family === 'money').map((d) => <Door key={d.to} icon={d.icon} name={d.label} value={d.sub} count={d.count} family="money" onClick={() => go(d.to)} />),
           <Door key="packs" icon="pack" name="Packs" value={packs} count={packs ? `${packs} to open` : undefined} locked={packs ? undefined : 'None to open yet'} family="money" onClick={() => go('/football/packs')} />,

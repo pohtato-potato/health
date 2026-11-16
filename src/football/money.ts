@@ -47,12 +47,20 @@ export function offers(slot: Slot, tier: Tier, r: () => number): Offer[] {
  */
 const OPEN: { slot: Slot; from?: Tier }[] = [{ slot: 'shirt' }, { slot: 'kit' }, { slot: 'sleeve', from: 4 }, { slot: 'partner' }];
 export const KIT_SPONSOR_TECH = 's-kitsponsor';
-export function openOffers(signed: Pick<Offer, 'slot'>[], tier: Tier, kitSlot: boolean, r: () => number): Offer[] {
+export function openOffers(signed: Pick<Offer, 'slot' | 'brand'>[], tier: Tier, kitSlot: boolean, r: () => number): Offer[] {
   const taken = new Set(signed.map((s) => s.slot));
   const partners = signed.filter((s) => s.slot === 'partner').length;
-  return OPEN.filter((o) => (o.from === undefined || tier <= o.from) && (o.slot !== 'kit' || kitSlot) && (o.slot === 'partner' ? partners < 3 : !taken.has(o.slot)))
+  const all = OPEN.filter((o) => (o.from === undefined || tier <= o.from) && (o.slot !== 'kit' || kitSlot) && (o.slot === 'partner' ? partners < 3 : !taken.has(o.slot)))
     .flatMap((o) => offers(o.slot, tier, r));
+  return oneBrandEach(all, signed);
 }
+/** One brand, one place (finding 9, O42): a brand already signed is never offered, and a brand is offered in one slot only. */
+export function oneBrandEach(list: Offer[], signed: Pick<Offer, 'brand'>[]): Offer[] {
+  const seen = new Set(signed.map((s) => s.brand));
+  return list.filter((o) => (seen.has(o.brand) ? false : (seen.add(o.brand), true)));
+}
+/** A quarter of a deal's first season is paid on signing (O41 letter A); the rest comes at the season's end. */
+export const SIGNING_SHARE = 0.25;
 /** Dodgy sponsors collapse 1 season in 4. */
 export const dodgyCollapse = (r: () => number) => r() < 0.25;
 /** Millions in words people read: €820k under a million, €1.25m above. */

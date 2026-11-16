@@ -973,12 +973,14 @@ function seasonMoney(w: World, date: DayKey, tables: Record<Tier, Row[]>, up: Pa
   const m3 = (x: number) => Math.round(x * k * 1000) / 1000;
   // The congress's `solidarity`: a share of Crown League TV money passed down to every league club below, Brabo included.
   const solidarity = m3(solidarityMoney(div, rulesOf(w).solidarity, w.season.tierOf, lastDivision(w.season), (LEAGUE.income as unknown as Record<string, { tv: number }>)['1'].tv));
-  const total = m3(incomeFor(tier, pos, promoted, sponsorMoney, capShare * (1 + shop))) + solidarity;
-  const sponsorPaid = m3(sponsorMoney);
+  // A quarter of a deal's first season came on signing (O41 letter A): the season's end pays the rest.
+  const advance = Math.round(w.save.sponsors.reduce((t, s) => t + (s.advance?.season === w.save.season ? s.advance.amount : 0), 0) * 1000) / 1000;
+  const total = m3(incomeFor(tier, pos, promoted, sponsorMoney, capShare * (1 + shop))) + solidarity - advance;
+  const sponsorPaid = Math.round((m3(sponsorMoney) - advance) * 1000) / 1000;
   const prizeMoney = Math.round((total - sponsorPaid - solidarity) * 1000) / 1000;
   const reach = reachOf(w.season.continental, OWN);
   const cont = reach ? m3(contPrize(reach)) : 0;
-  w.save.income = { season: w.save.season, lines: [{ name: 'TV, gate and prize money', amount: prizeMoney }, ...(solidarity ? [{ name: solidarity > 0 ? 'Solidarity money' : 'Solidarity money passed down', amount: solidarity }] : []), { name: 'Sponsors', amount: sponsorPaid }, ...(cont ? [{ name: 'The Continental Cup', amount: cont }] : [])] };
+  w.save.income = { season: w.save.season, lines: [{ name: 'TV, gate and prize money', amount: prizeMoney }, ...(solidarity ? [{ name: solidarity > 0 ? 'Solidarity money' : 'Solidarity money passed down', amount: solidarity }] : []), { name: advance ? 'Sponsors (the rest; a quarter came on signing)' : 'Sponsors', amount: sponsorPaid }, ...(cont ? [{ name: 'The Continental Cup', amount: cont }] : [])] };
   w.save.budget = Math.round((w.save.budget + total + cont) * 1000) / 1000;
   // The kit maker's slot waits for the Kit sponsor tech in world 2 (O40); world 1 plays exactly as it always did.
   w.save.offers = openOffers(w.save.sponsors, nextTier, worldOf(w.save) !== 2 || (w.save.treeUser?.researched ?? []).some((x) => x.id === KIT_SPONSOR_TECH), r);
