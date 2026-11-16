@@ -148,7 +148,7 @@ export function Football() {
   }
   // Cup runs (ledger O28): the cups page, and the run in progress.
   if (path === '/football/desk' || path.startsWith('/football/desk/')) return <DeskRoute />;
-  if (path === '/football/cup' || path === '/football/cup/run' || path === '/football/cup/match') return <CupRoute path={path} />;
+  if (path === '/football/cup' || path === '/football/cup/run') return <CupRoute path={path} />;
   if (path === '/football/market') return <MarketRoute />;
   if (path === '/football/redrawn') return <FootballHome section="tonight" inner={{ title: 'New world', back: 'Tonight', to: '/football' }}><Redrawn /></FootballHome>;
   if (path === '/football/atlas') return <FootballHome section="league" inner={{ title: 'The atlas', back: 'League', to: '/football/league' }}><Atlas /></FootballHome>;

@@ -38,7 +38,7 @@ import { QuietSession } from './screens/QuietSession';
 import { sessionClock } from './domain/quietSession';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from './db/db';
-import { LogSheet, MoreSheet } from './sheets/LogSheet';
+import { MoreSheet } from './sheets/LogSheet';
 import { SessionSettingsSheet } from './sheets/SessionSettings';
 import { dailySnapshot } from './db/snapshots';
 import { Checkup, EditHistory, Snapshots } from './screens/DataPages';
@@ -97,7 +97,6 @@ const DawnPage = page(() => import('./screens/Dawn'), 'DawnPage');
 const WrappedPage = page(() => import('./screens/Reports'), 'WrappedPage');
 
 const SHEETS: Record<string, () => ReactNode> = {
-  log: () => <LogSheet />,
   'session-settings': () => <SessionSettingsSheet />,
   more: () => <MoreSheet />,
   morning: () => <MorningLog />,
@@ -136,7 +135,8 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/football/market': { el: () => <Football />, tab: 'football' },
   '/football/rival': { el: () => <Football />, tab: 'football' },
   '/football/wrapped': { el: () => <Football />, tab: 'football' },
-  '/football/cups': { el: () => <Football />, tab: 'football' },
+  // O42 route sort: no page of its own; old links land on League's cups.
+  '/football/cups': { el: () => <Moved to="/football/league" params={{ view: 'cups' }} /> },
   '/football/settings': { el: () => <Football />, tab: 'football' },
   '/football/tech': { el: () => <Football />, tab: 'football' },
   '/football/era': { el: () => <Football />, tab: 'football' },
@@ -159,7 +159,6 @@ const PAGES: Record<string, { el: () => ReactNode; tab?: string }> = {
   '/football/sheet': { el: () => <Football />, tab: 'football' },
   '/football/blend': { el: () => <Football />, tab: 'football' },
   '/football/cup': { el: () => <Football />, tab: 'football' },
-  '/football/cup/match': { el: () => <Football />, tab: 'football' },
   '/football/cup/run': { el: () => <Football />, tab: 'football' },
   '/football/desk': { el: () => <Football />, tab: 'football' },
   '/football/congress': { el: () => <Football />, tab: 'football' },
