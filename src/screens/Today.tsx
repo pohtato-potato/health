@@ -234,7 +234,11 @@ export function Today() {
   const weighIn = weighInToCome(day, settings.places ?? []);
   // The morning log is the next thing to log at any hour until it is in (rest, a closed day and a perfect day aside).
   const morningOpen = !day?.morning && !['rest', 'closed', 'perfect'].includes(momentKind);
-  const nextKind: NextKind = morningOpen ? 'morning' : weighIn && !['rest', 'closed', 'morning', 'perfect'].includes(momentKind) ? 'weighin' : momentKind;
+  // Finding 18 (O42): the weigh-in still to come leads only in the morning hours; after that the day's own moment
+  // (the meals, the steps) leads and the weigh-in keeps its own small "Add it" row, the one way back to the sheet.
+  const weighInDue = weighIn && !['rest', 'closed', 'morning', 'perfect'].includes(momentKind);
+  const nextKind: NextKind = morningOpen ? 'morning' : weighInDue && hour < 11 ? 'weighin' : momentKind;
+  const weighRow = weighInDue && nextKind !== 'weighin';
   const ringGold = ringsGold({ counting: goldCount, perfect: rings.perfect, played: perfectPlayed });
   const goldNums = rings.perfect && ringGold >= rings.of;
   const rowInk = (k: keyof typeof METRIC_INK) => (goldNums ? RING_GOLD : METRIC_INK[k]);
@@ -310,7 +314,7 @@ export function Today() {
           showCopyHint={logMinutes(nowMs) >= 19 * 60}
         />
       }
-      moment={
+      moment={<>
         <MomentCard
           sheen={playing?.kind === 'perfect'}
           kind={nextKind}
@@ -327,7 +331,13 @@ export function Today() {
           }}
           actions={{ logMorning: () => openSheet('morning'), closeDay: () => go('/close'), toClose: () => document.querySelector('.td-handle')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), addGap, typeSteps: () => openSheet('steps'), addFood: () => openSheet('addfood', { meal: mealNow }) }}
         />
-      }
+        {weighRow && (
+          <div className="k-panel flat td-weighrow" style={{ '--ink': 'var(--k-pearl)' } as React.CSSProperties}>
+            <span><b>Weigh-in to come</b> <span className="k-q">The rest of the morning log is saved.</span></span>
+            <button type="button" className="k-act sm quiet" onClick={() => openSheet('morning')}>Add it</button>
+          </div>
+        )}
+      </>}
       football={<Suspense fallback={null}><MatchToday now={nowMs} /></Suspense>}
       next={recordsTonight.length ? (
         <RecordsStrip records={recordsTonight.map((r) => `${r.exercise} ${fmtSet(r)}`)} onFinale={() => { const tn = tonight(sessions, sets, today); if (tn) go('/session/replay', { id: tn.session.id }); }} />

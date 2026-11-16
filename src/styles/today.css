@@ -430,3 +430,6 @@ button.td-clock { min-height: 44px; min-width: 44px; padding: 0 0 0 8px; border:
 .page.td-page { padding-bottom: calc(var(--tab-h) + var(--safe-bottom) + 24px); }
 .td-handle { position: static; transform: none; width: 100%; margin-top: 8px; }
 .td-moment-btn.gold.k-act { background: #ffd257; color: #241a00; box-shadow: 0 10px 24px -8px #ffd257; }
+/* Finding 18 (O42): the weigh-in's own row once the morning log is saved. */
+.td-weighrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; font-size: 15px; }
+.td-weighrow .k-act { min-height: 44px; flex: none; }
