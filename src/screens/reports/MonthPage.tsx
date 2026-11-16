@@ -44,7 +44,7 @@ export function MonthPage() {
   return (
     <div className="page bare k-page k-light you yu-page">
       <div className="k-page">
-        <PageHead back="Reports" onBack={() => back('/reports')} title={monthLabel(month)} />
+        <PageHead back="Reports" onBack={() => back('/reports')} title={monthLabel(month)} family="back" />
         {empty && <div className="yu-card"><b>Nothing was logged this month</b><span className="yu-q">A report needs at least one day.</span></div>}
         {!empty && (
           <>

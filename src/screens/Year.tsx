@@ -32,7 +32,7 @@ export function YearPage() {
   return (
     <div className="page bare k-page k-light you yu-page">
       <div className="k-page">
-        <PageHead back="You" onBack={() => back('/you')} title="Your year" />
+        <PageHead back="You" onBack={() => back('/you')} title="Your year" family="back" />
         {line && <div className="voice">{line}</div>}
         {!months.length && <div className="yu-card"><b>Nothing here yet</b><span className="yu-q">Your year fills in as you log.</span></div>}
         {frames.length > 0 && <button type="button" className="btn" onClick={() => setPlaying(true)}>Play the replay</button>}

@@ -74,7 +74,7 @@ export function Insights() {
   const [lead, ...rest] = stat ? stat.small.split(', ') : [];
   return (
     <div className="page bare k-page k-light you">
-      <PageHead back="You" onBack={() => back('/you')} title="Insights" help={HOW} />
+      <PageHead back="You" onBack={() => back('/you')} title="Insights" help={HOW} family="back" />
       <Ask input={input} />
       {stat && (
         <Panel ink="#8fdcb6">
@@ -93,7 +93,7 @@ export function Insights() {
         <Heatmap settings={settings} today={today} days={days} entries={entries.filter((e) => e.date >= from)} sessions={sessions} sets={sets} />
       </div>
       <Doors two label="More">
-        <Door line icon="ground" name="Record book" value="Every best" ink="#ff9a76" onClick={() => go('/records')} />
+        <Door line icon="ground" name="Record book" value="Every best" family="earned" onClick={() => go('/records')} />
         <Panel ink="#f2c46d">
           <span className="k-lb">Track record</span>
           <span className="k-q">{record ? `The app's forecasts landed in range ${record.hit} of ${record.total} times.` : 'No forecasts have come due yet.'}</span>

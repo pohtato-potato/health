@@ -20,7 +20,7 @@ export function Archive() {
   return (
     <div className="page bare k-page k-light you yu-page">
       <div className="k-page">
-        <PageHead back="Reports" onBack={() => back('/reports')} title="The archive" />
+        <PageHead back="Reports" onBack={() => back('/reports')} title="The archive" family="back" />
         {!weeks.length && !months.length && <div className="yu-card"><b>Nothing here yet</b><span className="yu-q">Finished weeks and months collect here.</span></div>}
         {months.length > 0 && (
           <section className="yu-sec"><h2>Months</h2>
