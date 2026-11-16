@@ -1,3 +1,4 @@
+import { sessionClock } from '../domain/quietSession';
 import { useState } from 'react';
 import { addDays, daysBetween } from '../domain/dates';
 import { fmtDayMonth, fmtInt, weekdayName } from '../domain/format';
@@ -196,7 +197,7 @@ export function Train() {
         {active ? (
           <>
             <Panel ink="#8fc9b0">
-              <span className="k-lb">In progress · {clock(now - active.startedAt)}</span>
+              <span className="k-lb">In progress · {clock(sessionClock(active, sets?.filter((x) => x.sessionId === active.id) ?? [], now))}</span>
               <span className="k-title">{activeDef?.name ?? `Session ${active.session}`}</span>
               <span className="k-q">
                 {activeSets} set{activeSets === 1 ? '' : 's'} logged{active.short ? ' · short session' : ''}

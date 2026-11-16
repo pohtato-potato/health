@@ -468,6 +468,8 @@ export interface TrainingSession {
   restLog?: { from: number; to: number; kind: 'lift' | 'rest' }[];
   /** v2: the rest running now, kept on the session so leaving the screen doesn't drop it. */
   activeRest?: { from: number; endsAt: number; total: number } | null;
+  /** O42: the last set's time when "carry on" was answered after four quiet hours (so it is asked once). */
+  quietAsked?: number;
   battery?: boolean;
   /** v2: the answer to each "Ready for heavier?" offer this session. */
   heavier?: Record<string, 'yes' | 'no'>;

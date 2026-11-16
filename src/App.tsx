@@ -34,6 +34,10 @@ import { FoodToday } from './screens/FoodToday';
 import { SessionScreen } from './screens/Session';
 import { SessionDone } from './screens/SessionDone';
 import { clock } from './screens/NextUpCard';
+import { QuietSession } from './screens/QuietSession';
+import { sessionClock } from './domain/quietSession';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from './db/db';
 import { LogSheet, MoreSheet } from './sheets/LogSheet';
 import { SessionSettingsSheet } from './sheets/SessionSettings';
 import { dailySnapshot } from './db/snapshots';
@@ -264,6 +268,7 @@ export function App() {
       <MaintenanceWatcher />
       <ChallengeWatcher />
       <CardViewerHost />
+      {!route.path.startsWith('/session') && <QuietSession />}
     </div>
   );
 }
@@ -309,12 +314,13 @@ function ResumePill() {
   const active = useActiveSession();
   const settings = useSettings();
   const now = useNow(1000);
+  const sets = useLiveQuery(async () => (active ? await db.sets.where('sessionId').equals(active.id).toArray() : []), [active?.id]);
   if (!active || !settings) return null;
   const name = settings.plan ? findSession(settings.plan, active.session)?.name : undefined;
   return (
     <button type="button" className="resume" onClick={() => go('/session')}>
       <span className="dot" />
-      {name ?? `Session ${active.session}`} · {clock(now - active.startedAt)}
+      {name ?? `Session ${active.session}`} · {clock(sessionClock(active, sets ?? [], now))}
       <span className="q">Resume</span>
     </button>
   );
