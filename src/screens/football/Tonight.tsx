@@ -6,6 +6,7 @@ import { loadExpected } from '../../football/store/chance';
 import { xpWords } from './HabitLine';
 import { clubCrest, crestSvg } from '../../football/art/crest';
 import { clubById } from '../../football/data/load';
+import { seasonName } from '../../football/pyramid/redraw';
 import { OWN } from '../../football/store/season';
 import type { Tonight as TonightData } from '../../football/store/hooks';
 import type { StoredMatch } from '../../football/store/tables';
@@ -65,6 +66,23 @@ const BRABO = '#ff7a1a';
 /** O42 slip 36: the whole phrase, so the verb agrees ("until your steps are in"). */
 const LOG_FOR: Record<Axis, string> = { Pace: 'your steps are in', Power: 'a session is in', Fuel: 'your food is in', Rest: 'your sleep is in', Routine: 'the checklist is ticked', Shape: 'a weigh-in is in' };
 
+/**
+ * O41 1 (O42): the day between worlds, or a night already used with no match: says so, with the next match and that
+ * it plays tomorrow. Nothing is drawn as tonight's.
+ */
+export function NoMatchTonight({ t, next }: { t: Pick<TonightData, 'save'>; next: NonNullable<TonightData['next']> }) {
+  const opp = next.opp ? clubById(next.opp) : undefined;
+  const first = t.save.phase === 'season' && t.save.day === 1;
+  const vs = opp ? (next.braboHome ? `at home to ${opp.name}` : `away at ${opp.name}`) : (next.round ?? next.label);
+  return (
+    <Panel ink="#93c3dc">
+      <b className="k-lb">No match tonight</b>
+      <span>{first ? `${seasonName(t.save.season)} kicks off tomorrow, ${vs}.` : `Next up tomorrow: ${next.round ?? next.label}, ${vs}.`}</span>
+      <span className="k-q">A match is only shown as tonight’s when it plays tonight.</span>
+    </Panel>
+  );
+}
+
 /** A season moment waiting to be seen takes Tonight until it is: one thing leads. */
 function momentOf(t: TonightData): ReactNode {
   const awake = (t.save.awakeLog ?? [])[t.save.awakeSeen ?? 0];
@@ -111,7 +129,10 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
   const read = league && p && t.opp ? readOf(p, { id: t.opp.id, style: t.opp.style }, readScouted(scoutLevel(t.save, t.opp.id))) : undefined;
   const paced = paceOn(t.save, t.date) && !t.morning.intl;
   const night = paceNight(t.save.day, breakBeforeFor(t.save));
-  const where = f ? [f.round ?? f.label, f.opp ? (f.braboHome ? 'home' : 'away') : undefined].filter(Boolean).join(' · ') : 'Between seasons';
+  // On a night with no match, the header shows the next one, marked tomorrow.
+  const hf = f ?? t.next;
+  const hopp = t.opp ?? (t.next?.opp ? clubById(t.next.opp) : undefined);
+  const where = hf ? [f ? undefined : 'Tomorrow', hf.round ?? hf.label, hf.opp ? (hf.braboHome ? 'home' : 'away') : undefined].filter(Boolean).join(' · ') : 'Between seasons';
   // One glowing action: last night's match first, then the plan.
   const act = t.save.paused
     ? <Action wide onClick={watchWaiting}>Watch last night’s match</Action>
@@ -119,14 +140,15 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
 
   return (
     <div className="k-page lt-page">
+      {!f && t.next && !t.morning.intl && <NoMatchTonight t={t} next={t.next} />}
       {t.morning.intl && <Panel ink="#93c3dc"><b className="k-lb">No game tonight</b><span className="k-q">The season waits for the break. Next up, once it’s over:</span></Panel>}
-      <header className="lt-lead" aria-label={f && t.opp ? `${where}: Brabo v ${t.opp.name}` : where}>
+      <header className="lt-lead" aria-label={hf && hopp ? `${where}: Brabo v ${hopp.name}` : where}>
         <Art svg={own} className="lt-crest" />
         <span className="lt-vs">
           <span className="k-q">{where}</span>
-          <b className="lt-opp">{t.opp ? `v ${oppName}` : f ? 'Drawn on the night' : 'Tonight'}</b>
+          <b className="lt-opp">{t.opp ? `v ${oppName}` : hopp ? `v ${hopp.name}` : f ? 'Drawn on the night' : 'Tonight'}</b>
         </span>
-        {t.opp ? <Art svg={clubCrest(t.opp, 54)} className="lt-crest" /> : <span className="lt-crest lt-unknown" aria-hidden="true" />}
+        {hopp ? <Art svg={clubCrest(hopp, 54)} className="lt-crest" /> : <span className="lt-crest lt-unknown" aria-hidden="true" />}
       </header>
       {many && <NightList t={t} chances={chances ?? []} />}
       <div className="lt-radar">

@@ -42,6 +42,11 @@ export interface Tonight {
   save: FbSave;
   date: DayKey;
   fixture?: Fixture;
+  /**
+   * O41 1 (O42): a night already used with no match in it (the day between worlds, a break day closed early): no
+   * fixture is drawn as tonight's; the next one is here, and it plays tomorrow.
+   */
+  next?: Fixture;
   opp?: ClubDef;
   /** Tonight's shape so far: 70% today, 30% squad (spec §8); an axis with no data stays as it is. */
   liveValues: AxisValues;
@@ -96,7 +101,12 @@ export async function loadTonight(date: DayKey): Promise<Tonight | null> {
   const h = await loadHealth();
   const night = nightFor(h, date);
   const roster = new Map((await db.fbPlayers.toArray()).map((p) => [p.id, p]));
-  const fixtures = season ? fixturesFor(save, season) : [];
+  const played = await db.fbMatches.where('date').equals(date).toArray();
+  const ahead = season ? fixturesFor(save, season) : [];
+  // A fixture is only drawn as tonight's when it can still play tonight.
+  const used = !played.length && Boolean(save.lastPlayed && save.lastPlayed >= date);
+  const fixtures = used ? [] : ahead;
+  const next = used ? ahead[0] : undefined;
   const fixture = fixtures[0];
   const bundles = await db.fbBundles.toArray();
   const sick = h.days.get(date)?.status === 'sick';
@@ -106,10 +116,9 @@ export async function loadTonight(date: DayKey): Promise<Tonight | null> {
   for (const a of AXES) if (night.flags[a]) liveValues[a] = night.values[a];
   const opp = fixture?.opp ? clubById(fixture.opp) : undefined;
   const oppSaved = fixture?.opp ? await db.fbClubs.get(fixture.opp) : undefined;
-  const played = await db.fbMatches.where('date').equals(date).toArray();
   const unwatchedAuto = (await db.fbMatches.where('date').between(addDays(date, -60), date, true, false).toArray()).filter((m) => m.auto && !m.watched);
   return {
-    save, date, fixture, fixtures, opp,
+    save, date, fixture, fixtures, next, opp,
     liveValues, flags: night.flags, xi: team.xi,
     today: night.values, squad: team.squad, base: team.base, nudges: team.nudges, total: team.total, paceFull: Boolean(o.opts.full?.includes('Pace')), tactic: o.tactic,
     known: opp?.known ?? [],

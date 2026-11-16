@@ -209,3 +209,29 @@ describe('finding 35: a trialist ties to his own habit or one already kept', () 
     expect(y!.link).toEqual({ kind: 'habit', id: item!.id });
   });
 });
+
+describe('O41 1: no match tonight on the day between worlds', () => {
+  it('a night already used with no match draws nothing as tonight and names tomorrow’s match', async () => {
+    await toWorld2(5);
+    const save = (await db.fbSave.get('save'))!;
+    // The move records the day between worlds as played (redrawSave sets lastPlayed to the move's day).
+    await db.fbSave.put({ ...save, lastPlayed: FOUNDED, day: 1, phase: 'season' });
+    const t = (await loadTonight(FOUNDED))!;
+    expect(t.fixture).toBeUndefined();
+    expect(t.fixtures).toEqual([]);
+    expect(t.next?.comp).toBe('league');
+    const out = html(<TonightView t={t} />);
+    expect(out).toContain('No match tonight');
+    expect(out).toContain('kicks off tomorrow');
+    expect(out).toContain('Tomorrow · ');
+    expect(out).not.toContain('Change the plan');
+  });
+  it('the next day, with the night not yet played, the match is tonight’s again', async () => {
+    await toWorld2(5);
+    const save = (await db.fbSave.get('save'))!;
+    await db.fbSave.put({ ...save, lastPlayed: FOUNDED, day: 1, phase: 'season' });
+    const t = (await loadTonight('2026-12-02'))!;
+    expect(t.fixture?.comp).toBe('league');
+    expect(t.next).toBeUndefined();
+  });
+});
