@@ -30,11 +30,31 @@ const role = (page, r, re) => page.getByRole(r, { name: re }).filter({ visible: 
 
 /** Clicks the first visible button whose name matches; false if there is none. */
 export async function tap(page, re, { r = 'button', wait = 400 } = {}) {
+  await answerQuiet(page);
   const b = role(page, r, re);
   if (!(await b.count())) return false;
   await b.scrollIntoViewIfNeeded().catch(() => undefined);
   await b.click({ timeout: 3000 });
   await page.waitForTimeout(wait);
+  return true;
+}
+
+/**
+ * O42: a session left quiet four hours asks "Finish with N sets?" over every page. The owner finishes it (the sets
+ * were done), so the tool does too; the diary's later screens show the next page, not the question.
+ */
+export async function answerQuiet(page) {
+  const sheet = page.locator('.sheet[role=dialog][aria-label$="is still open"]').first();
+  if (!(await sheet.count().catch(() => 0))) return false;
+  const fin = sheet.getByRole('button', { name: /^Finish (it )?with/ }).first();
+  if (await fin.count()) await fin.click({ timeout: 3000 }).catch(() => undefined);
+  else {
+    // No sets logged: nothing to keep, so it goes.
+    await sheet.getByRole('button', { name: /^Throw it away$/ }).first().click({ timeout: 3000 }).catch(() => undefined);
+    await page.waitForTimeout(300);
+    await sheet.getByRole('button', { name: /^Yes, throw it away/ }).first().click({ timeout: 3000 }).catch(() => undefined);
+  }
+  await page.waitForTimeout(800);
   return true;
 }
 
