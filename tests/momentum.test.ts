@@ -158,11 +158,23 @@ describe('trendRows', () => {
     days: [...stepDays(metNow, 100, DATE).slice(0, 14), ...stepDays(metThen, 100, earlier).slice(0, 14)].map((d) => d),
   })).find((r) => r.area === 'steps')!;
 
-  it('up 8 points reads Improving, up 7 Steady, down 8 Easing', () => {
-    // 14 logged days: each day is 7.14 points, so +2 days is +14, +1 is +7.
-    expect(rowFor(9, 7).word).toBe('Improving');
-    expect(rowFor(8, 7).word).toBe('Steady');
-    expect(rowFor(5, 7).word).toBe('Easing');
+  it('the word follows the two numbers shown: within 3% is Steady (O42 finding 28)', async () => {
+    const { trendWord } = await import('../src/domain/momentum');
+    expect(trendWord('steps', 14800, 13700)).toBe('Improving');
+    expect(trendWord('training', 452, 443)).toBe('Steady');
+    expect(trendWord('training', 6, 4)).toBe('Building');
+    expect(trendWord('steps', 10200, 10000)).toBe('Steady');
+    expect(trendWord('steps', 9700, 10000)).toBe('Steady');
+    expect(trendWord('steps', 9600, 10000)).toBe('Easing');
+    expect(trendWord('protein', 140, undefined)).toBe('Steady');
+  });
+  it('a row never reads Easing when its figure went up', () => {
+    for (const [a, b] of [[9, 7], [8, 7], [5, 7]] as const) {
+      const r = rowFor(a, b);
+      const n = (x?: string) => Number((x ?? '').replace(/[^\d]/g, ''));
+      if (n(r.now) > n(r.was)) expect(r.word).not.toBe('Easing');
+      if (n(r.now) < n(r.was)) expect(r.word).not.toMatch(/Improving|Building/);
+    }
   });
 
   it('training going up reads Building', () => {
