@@ -1,6 +1,8 @@
 // The tree's screens (rounds six to eight, as pinned): the tree in six eras, a tech, a eureka, entering a new era,
 // projects on the Kaai skyline, the staff room and the board. Words in Atkinson Hyperlegible Next, numbers and titles
 // in Fraunces. Every state has a word beside its colour or line.
+import { dayOfLogging } from '../../../domain/dates';
+import { countedLine, countsLine, leftLine } from '../../../football/tree/buildingWords';
 import { seasonMoneyScale } from '../../../football/pyramid/shape';
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { ERAS, TECHS } from '../../../football/content/tree';
@@ -448,7 +450,7 @@ export function ProjectList({ m }: { m: Model }) {
   return (
     <>
       {buildings.length > 0 && <Sect>Buildings open · {euros(cost)} in all</Sect>}
-      {buildings.length > 0 && <p className="k-q">Each starts on its own days and is paid for, from the budget, the day its last day is in. {m.t.save.budget >= cost ? `The budget (${euros(m.t.save.budget)}) covers them all.` : `The budget is ${euros(m.t.save.budget)}: the cheapest come first.`}</p>}
+      {buildings.length > 0 && <p className="k-q">Each counts its own kind of day, all at once, and is paid for from the budget the day its last day is in. {m.t.save.budget >= cost ? `The budget (${euros(m.t.save.budget)}) covers them all.` : `The budget is ${euros(m.t.save.budget)}: the cheapest come first.`}</p>}
       <div className="kb-rows">
         {buildings.map((p) => <Project key={p.id} m={m} id={p.id} />)}
       </div>
@@ -476,6 +478,7 @@ function Project({ m, id }: { m: Model; id: string }) {
   const p = PROJECTS.find((x) => x.id === id)!;
   const s = m.states.get(id);
   const c = PROJECT_INK(p);
+  const today = dayOfLogging(Date.now());
   return (
     <Panel ink={c}>
       <PanelTop name={p.name} c={c} right={m.progress(id)} />
@@ -488,6 +491,8 @@ function Project({ m, id }: { m: Model; id: string }) {
           </div>
         );
       })}
+      <span><b>{countsLine(p.needs)}</b> {countedLine(s)}</span>
+      <span className="k-q">{leftLine(p.needs, s, today)}</span>
       {p.money > 0 && <span className="k-q">Costs {euros(p.money)} when its days are in · {m.t.save.budget >= p.money ? 'the budget covers it' : `${euros(p.money - m.t.save.budget)} short`}</span>}
       <span>{p.reward}</span>
     </Panel>

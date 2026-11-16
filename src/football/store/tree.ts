@@ -319,3 +319,25 @@ export const stageCapacity = (done: string[]) => TREE_PROJECTS.filter((p) => p.c
 
 /** The tree's hand on tonight's rotation: rules, open formations, unit captains (see tree/rotation.ts). */
 export const rotationOf = (save: FbSave, bundles: Iterable<FbBundle>) => treeRotation(activeFor(save, bundles));
+
+/**
+ * Past days count toward what the club was given on arrival (owner's letter A, O41; finding 12, O42): once per placed
+ * save, every building and project open and unbuilt gets the 28 days before arrival, counted the way each counts a day.
+ * Nothing completes here (a finished one is paid for and announced on the next real day); `credit` marks it done.
+ */
+export function creditArrival(c: TreeCtx, ground: { add: (date: DayKey) => void }) {
+  const r = c.save.redrawn;
+  if (!r?.on || c.save.arrivalCredit) return;
+  const from = addDays(r.on, -28);
+  const g = { tier: stageIn(c.season, c.season.tierOf[OWN]), moved: Boolean(c.save.moved), done: builtOf(c.bundles.values()), researched: userOf(c.save).researched.map((x) => x.id) };
+  const open = TREE_PROJECTS.filter((p) => projectOpen(p, g) && !c.bundles.get(p.id)?.done);
+  for (let d = from; d < r.on; d = addDays(d, 1)) {
+    const m = dayMetrics(c.h, d, { bedtime: c.save.bedtime, youthDays: 0 });
+    for (const p of open) {
+      const cur = c.bundles.get(p.id) ?? { id: p.id, progress: {} };
+      c.bundles.set(p.id, { ...projectDay(p, cur, m, -1, d).state, credit: r.on });
+    }
+    ground.add(d);
+  }
+  c.save.arrivalCredit = r.on;
+}

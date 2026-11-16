@@ -51,7 +51,7 @@ import { creditsFor } from '../players/credit';
 import { linkedLogged } from '../players/youth';
 import type { Ctx } from '../players/attributes';
 import { formationFor } from '../tree/rotation';
-import { engineOf, healNow, rotationOf, stageCapacity, treeAbilities, treeDay, treeLegends, treeMatch, treeSeasonEnd, type TreeCtx } from './tree';
+import { creditArrival, engineOf, healNow, rotationOf, stageCapacity, treeAbilities, treeDay, treeLegends, treeMatch, treeSeasonEnd, type TreeCtx } from './tree';
 import { LEAGUE, TIER_BANDS, tierName } from '../data/load';
 import { braboVotes, motionById, seasonRules, sitCongress, solidarityMoney } from '../congress/congress';
 import { CAST_IDS, bondDay, bondsOf, castById, closeResearch, emptyBonds, perkValue, perksHeld } from '../cast/bonds';
@@ -196,6 +196,7 @@ async function playThrough(until: DayKey, closed: DayKey | null): Promise<Stored
   const w = await loadWorld(save, start);
   // Matchday (decision 9.1 a): a match still waiting at the next 4 am is finished by the assistant first.
   if (w.save.paused) finishPausedIn(w, false);
+  creditArrivalIn(w);
   for (let d = start; d <= until; d = addDays(d, 1)) { clubDay(w, d); playDate(w, d, d !== closed, d === until); }
   w.save.lastPlayed = until;
   await saveWorld(w, save, (cur) => !(cur?.lastPlayed && cur.lastPlayed >= until)); // another tab played first
@@ -1042,6 +1043,22 @@ function usualBedtime(w: World, date: DayKey): number | undefined {
   if (xs.length < 7) return undefined;
   xs.sort((a, b) => a - b);
   return fromBedOrder(xs[Math.floor(xs.length / 2)]);
+}
+/** The 28 days before arrival, once, for the ground's bundles and the tree's projects open then (O42 finding 12). */
+function creditArrivalIn(w: World) {
+  const r = w.save.redrawn;
+  if (!r?.on || w.save.arrivalCredit) return;
+  const g = { tier: stageIn(w.season, w.season.tierOf[OWN]), moved: Boolean(w.save.moved), done: doneBundles(w), budget: w.save.budget };
+  const open = BUNDLES.filter((b) => isOpen(b, g) && !w.bundles.get(b.id)?.done);
+  creditArrival(treeCtx(w), {
+    add: (d) => {
+      const counts = dayCounts({ input: axisInputFor(w.h, d), medsKept: medsTaken(w.h, d), youthDays: 0, usualBedtime: usualBedtime(w, d) });
+      for (const b of open) {
+        const cur = w.bundles.get(b.id) ?? { id: b.id, progress: {} };
+        w.bundles.set(b.id, { ...bundleDay(b, cur, counts, -1, d).state, credit: r.on });
+      }
+    },
+  });
 }
 /** Every day: open bundles take the day's totals; a finished one is paid for and opens from the next match. */
 function groundDay(w: World, date: DayKey, input: ReturnType<typeof axisInputFor>) {
