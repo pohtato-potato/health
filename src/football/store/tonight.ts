@@ -23,10 +23,18 @@ export interface Fixture {
   braboHome: boolean;
 }
 
-/** The continental match on a double-header night, when Brabo are in the field: "The Continental Cup, league phase 3 of 8, away at Benfica". */
+/** The continental match on a double-header night in one line: "Also tonight: The Continental Cup, league phase 3 of 8, away at Benfica". */
 export function contTonight(save: FbSave, season: FbSeason, name: (id: string) => string): string | undefined {
+  const f = contFixture(save, season);
+  if (!f) return undefined;
+  const final = /final$/.test(f.round ?? '') && !/(quarter|semi)/.test(f.round ?? '');
+  return `Also tonight: ${f.round}, ${final ? 'v' : f.braboHome ? 'home to' : 'away at'} ${name(f.opp)}.`;
+}
+
+/** The continental match on a double-header night as a fixture of its own. */
+export function contFixture(save: FbSave, season: FbSeason): Fixture | undefined {
   if (save.phase !== 'season') return undefined;
-  const night = contNight(save.day, worldOf(season)), c = season.continental;
+  const wv = worldOf(season), night = contNight(save.day, wv), c = season.continental;
   if (!night || !c?.field.includes(OWN)) return undefined;
   let pair: [string, string] | undefined, label = '';
   if (night.stage === 'phase') { pair = c.rounds[night.round - 1]?.find(([h, a]) => h === OWN || a === OWN); label = `league phase ${night.round} of 8`; }
@@ -37,8 +45,43 @@ export function contTonight(save: FbSave, season: FbSeason, name: (id: string) =
     label = r?.name.toLowerCase() ?? '';
   }
   if (!pair) return undefined;
-  const opp = pair[0] === OWN ? pair[1] : pair[0];
-  return `Also tonight: The Continental Cup, ${label}, ${night.stage === 'final' ? 'v' : pair[0] === OWN ? 'home to' : 'away at'} ${name(opp)}.`;
+  const [home, away] = pair;
+  return { day: save.day, comp: 'continental', label: `Day ${save.day} of ${seasonLength(wv)}`, round: `The Continental Cup, ${label}`, home, away, opp: home === OWN ? away : home, braboHome: home === OWN && night.stage !== 'final' };
+}
+
+/**
+ * Every Brabo match of tonight, in playing order (finding 1, O42): the night's own fixture, a cup tie riding on a
+ * league night, the second round of a two-round cup night (drawn on the night, "if you go through") and the
+ * continental match. One shape plays them all; each has its own chance.
+ */
+export function fixturesFor(save: FbSave, season: FbSeason): Fixture[] {
+  const first = fixtureFor(save, season);
+  const out: Fixture[] = first ? [first] : [];
+  if (save.phase !== 'season') return out;
+  const wv = worldOf(season);
+  if (save.day > seasonLength(wv)) return out;
+  const plan = daysOf(wv)[save.day - 1];
+  const label = `Day ${save.day} of ${seasonLength(wv)}`;
+  for (const b of [season.bigcup, ...Object.values(season.tiercups)]) {
+    let alive = false;
+    for (const r of b.rounds) {
+      if (r.day !== plan.day) continue;
+      const comp: Comp = b.id === 'bigcup' ? 'bigcup' : 'tiercup';
+      const t = r.ties.find((x) => (x.home === OWN || x.away === OWN) && x.away);
+      if (t && !t.winner) {
+        const opp = t.home === OWN ? t.away! : t.home;
+        if (!out.some((f) => f.comp === comp && f.opp === opp)) out.push({ day: save.day, comp, label, round: `${b.name}, ${r.name}`, home: t.home, away: t.away!, opp, braboHome: t.home === OWN && r.name !== 'Final' });
+        alive = true;
+      } else if (t?.winner) alive = t.winner === OWN;
+      else if (alive) {
+        out.push({ day: save.day, comp, label, round: `${b.name}, ${r.name}, if you go through`, home: '', away: '', opp: '', braboHome: true });
+        alive = false;
+      }
+    }
+  }
+  const cont = contFixture(save, season);
+  if (cont) out.push(cont);
+  return out;
 }
 
 export function fixtureFor(save: FbSave, season: FbSeason): Fixture | undefined {

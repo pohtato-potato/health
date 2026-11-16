@@ -647,3 +647,8 @@ button.md-chip { min-height: 44px; cursor: pointer; }
 .fb-chance-part i { width: 12px; height: 12px; border-radius: 3px; flex: none; }
 .fb-chance-part b { font: 600 20px var(--serif, Georgia, serif); }
 .fb-chance-note { margin: 0; font-size: 14px; line-height: 1.4; color: var(--k-quiet, #c4c1cf); }
+/* Finding 4 (O42): from 6 pm a day with nothing logged says plainly that the axes are in fog. */
+.fb-chance-fog { margin: 0; padding: 10px 12px; border-radius: 12px; border: 1px solid #c2b2ff; background: rgba(194, 178, 255, .12); font-size: 15px; line-height: 1.45; color: #ede6da; }
+.fb-chance-fog b { color: #c2b2ff; }
+.tm-night { display: flex; flex-direction: column; gap: 12px; }
+.tm-nf { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid rgba(237, 230, 218, .18); }

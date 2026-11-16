@@ -69,7 +69,7 @@ import { arrivalMoneyNews, arrivalOffers, startingBudget } from '../pyramid/redr
 export const CATCH_UP_CAP = 42;
 const resultOf = (s: [number, number], pens?: [number, number]): Result => (s[0] > s[1] || (pens && pens[0] > pens[1]) ? 'W' : s[0] < s[1] || (pens && pens[0] < pens[1]) ? 'L' : 'D');
 
-interface World { /** League pace (O36): the match's place in its day; 0 is the one-a-day match. */ slot: number; /** The chance (O40): a dry run collects each Brabo match's engine input here, by date. */ probe?: { date: DayKey; input: MatchInput }[]; bundles: Map<string, FbBundle>; squad: FbSquadRow[]; save: FbSave; season: FbSeason; oldSeasons: FbSeason[]; clubs: Map<string, FbClub>; matches: StoredMatch[]; news: FbNews[]; h: Health; past: StoredMatch[]; used: { id: string; date: DayKey }[]; roster: Roster; ctx: Ctx }
+interface World { /** League pace (O36): the match's place in its day; 0 is the one-a-day match. */ slot: number; /** The chance (O40): a dry run collects each Brabo match's engine input here, by date. */ probe?: { date: DayKey; input: MatchInput; comp?: Comp; oppId?: string; round?: string }[]; bundles: Map<string, FbBundle>; squad: FbSquadRow[]; save: FbSave; season: FbSeason; oldSeasons: FbSeason[]; clubs: Map<string, FbClub>; matches: StoredMatch[]; news: FbNews[]; h: Health; past: StoredMatch[]; used: { id: string; date: DayKey }[]; roster: Roster; ctx: Ctx }
 
 /** Plays every unplayed day up to and including `date`, in order. Days before `date` count as auto-played. */
 export async function kickOff(date: DayKey): Promise<StoredMatch[]> {
@@ -125,7 +125,9 @@ export async function migrateSave(): Promise<boolean> {
  * dry run of the days still to play. Nothing is written and no real dice are rolled: the dry run plays on copies, and
  * the input it returns is played out on its own fixed seeds (football/chance.ts). Undefined when there is no match.
  */
-export async function tonightInput(date: DayKey): Promise<{ input: MatchInput; usual?: AxisValues } | undefined> {
+/** One Brabo match of tonight as the dry run set it up (a double-header night has two or more, in playing order). */
+export interface TonightInput { input: MatchInput; comp?: Comp; oppId?: string; round?: string }
+export async function tonightInput(date: DayKey): Promise<{ input: MatchInput; usual?: AxisValues; all: TonightInput[] } | undefined> {
   const save = await db.fbSave.get('save');
   if (!save || save.engine !== 2) return undefined;
   const from = save.lastPlayed ? addDays(save.lastPlayed, 1) : save.founded;
@@ -135,13 +137,16 @@ export async function tonightInput(date: DayKey): Promise<{ input: MatchInput; u
   const w = await loadWorld(save, start < date ? start : date);
   // A usual night (the placing's level night): the median of the real nights in the 28 days up to yesterday.
   const usual = levelNightIn(w, addDays(date, -1))?.values;
-  if (save.paused?.date === date) return { input: pausedInput(save.paused, save, { watch: false }), ...(usual ? { usual } : {}) };
+  if (save.paused?.date === date) {
+    const p = save.paused, one = { input: pausedInput(p, save, { watch: false }), comp: p.prep.comp, oppId: p.prep.oppId, round: p.prep.round };
+    return { input: one.input, all: [one], ...(usual ? { usual } : {}) };
+  }
   w.probe = [];
   if (w.save.paused) finishPausedIn(w, false);
   // As "Close the day" plays it: the days before tonight as the 4 am rule would, tonight as a closed day.
   for (let d = start; d <= date; d = addDays(d, 1)) { clubDay(w, d); playDate(w, d, d !== date, d === date); }
-  const input = w.probe.find((x) => x.date === date)?.input;
-  return input ? { input, ...(usual ? { usual } : {}) } : undefined;
+  const all = w.probe.filter((x) => x.date === date).map(({ input, comp, oppId, round }) => ({ input, comp, oppId, round }));
+  return all.length ? { input: all[0].input, all, ...(usual ? { usual } : {}) } : undefined;
 }
 
 /**
@@ -786,7 +791,7 @@ function braboMaybe(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: str
       rivalTwist: rival ? 'rival' : oppId === legendId() ? 'antigoon' : undefined,
       style: club?.style ?? def.style, scouted: readScouted(scoutLevel(w.save, oppId, date)), prep, picks: [],
     };
-    w.probe?.push({ date, input: pausedInput(p, w.save, { watch: false }) });
+    w.probe?.push({ date, input: pausedInput(p, w.save, { watch: false }), comp, oppId, round });
     if (wait) {
       // Set up and stopped: the owner watches or skips it; the next 4 am finishes it with the assistant.
       w.save.paused = p;
@@ -795,7 +800,7 @@ function braboMaybe(w: World, date: DayKey, plan: DayPlan, comp: Comp, home: str
     const full = pausedInput(p, w.save, { watch: false });
     return braboTail(w, date, prep, playMatch(full), full.plan, undefined, readFor(p, w.save).line, leg);
   }
-  w.probe?.push({ date, input });
+  w.probe?.push({ date, input, comp, oppId, round });
   const events = playMatch(input);
   let pens: [number, number] | undefined;
   if (events.score[0] === events.score[1] && comp !== 'friendly' && comp !== 'event' && !(comp === 'worldcup' && leg) && !(comp === 'continental' && round?.includes('league phase'))) pens = penalties(values.Routine * 5, opp.rating, rng(hashSeed(String(seed), 'pens')));

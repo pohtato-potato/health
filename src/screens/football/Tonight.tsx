@@ -27,7 +27,9 @@ import { readOf, TEMPO_NAME, WIDTH_NAME } from '../../football/matchday';
 import { MorningCards } from './world/WorldScreens';
 import { TacticPicker } from './players/Rotation';
 import { breakBeforeFor, matchdayList, paceNight, paceOn } from '../../football/pace';
-import { ChanceBar, oppDrawing, useChance } from './Chance';
+import { ChanceBar, lateFor, oppDrawing, useChances } from './Chance';
+import type { NightChance } from '../../football/store/chance';
+import type { Fixture } from '../../football/store/tonight';
 import { TACTIC_NAME } from '../../football/rotation/night';
 import { AXIS_INK } from '../../ui/inks';
 import { Action, Door, FamilyDoors, Panel, Sect } from '../../ui/kit/Kit';
@@ -77,7 +79,8 @@ function momentOf(t: TonightData): ReactNode {
 
 export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: string) => void }) {
   const [plan, setPlan] = useState(false);
-  const chance = useChance(t.date);
+  const chances = useChances(t.date);
+  const chance = chances === undefined ? undefined : chances[0] ?? null;
   const xp = useLiveQuery(() => loadExpected(t.date), [t.date]);
   const watch = onWatch ?? ((id: string) => go('/football/match', { id }));
   const moment = momentOf(t);
@@ -96,7 +99,8 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
   const f = t.fixture;
   const own = crestSvg(t.save.crest.step, t.save.crest.opt, 54);
   const oppName = t.opp ? (t.opp.short && t.opp.name.length > 12 ? t.opp.name.split(' ')[0] : t.opp.name) : '';
-  const oppVals = oppDrawing(t.oppTonight, t.liveValues, chance);
+  const oppVals = oppDrawing(t.oppTonight, t.liveValues, chance, lateFor(t.date));
+  const many = t.fixtures.length > 1;
   const unlogged = AXES.filter((a) => t.flags[a] === 'not-logged');
   const noData = AXES.filter((a) => t.flags[a] === 'no-data');
   const league = Boolean(t.tactic && f?.comp === 'league' && t.opp);
@@ -121,11 +125,11 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
         </span>
         {t.opp ? <Art svg={clubCrest(t.opp, 54)} className="lt-crest" /> : <span className="lt-crest lt-unknown" aria-hidden="true" />}
       </header>
-      {t.also && <p className="k-q lt-ctr"><b>{t.also}</b></p>}
+      {many && <NightList t={t} chances={chances ?? []} />}
       <div className="lt-radar">
         <Radar values={t.liveValues} flags={t.flags} fog={AXES.filter((a) => t.flags[a])} captain={t.save.slots.includes('armband') ? t.save.captain : undefined} opp={oppVals} oppInk="#93c3dc" oppName={t.opp?.name} inked size={300} label="Tonight’s shape so far" />
       </div>
-      {chance && t.opp && !t.morning.intl && <div className="lt-stake"><ChanceBar c={chance} oppName={oppName} /></div>}
+      {!many && chance && t.opp && !t.morning.intl && <div className="lt-stake"><ChanceBar c={chance} oppName={oppName} oppId={t.opp.id} date={t.date} /></div>}
       {xp && t.opp && !t.morning.intl && <p className="k-q lt-ctr">The head of data: <b>{xpWords(xp.xp, xp.usual).replace(/^E/, 'e')}</b>.</p>}
       {unlogged.map((a) => (
         <Panel key={a} ink={AXIS_INK[a]}><span><b style={{ color: AXIS_INK[a] }}>{a} isn’t logged yet.</b> It plays low and wild until {LOG_FOR[a]} {a === 'Routine' ? 'is ticked' : 'is in'}.</span></Panel>
@@ -171,6 +175,37 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
         </Sheet>
       )}
     </div>
+  );
+}
+
+const WORD_N = ['No', 'One', 'Two', 'Three', 'Four'];
+/** The chance that belongs to a fixture: by opponent (one drawn on the night has none yet). */
+export const chanceFor = (f: Fixture, cs: NightChance[]) => (f.opp ? cs.find((c) => c.oppId === f.opp) : undefined);
+const shortName = (id: string) => { const c = clubById(id); return c.short && c.name.length > 12 ? c.name.split(' ')[0] : c.name; };
+
+/** Every match of a double-header night (finding 1, O42): each with its crest, where it is, and its own chance. */
+function NightList({ t, chances }: { t: TonightData; chances: NightChance[] }) {
+  return (
+    <section className="lt-night" aria-label={`${WORD_N[t.fixtures.length] ?? t.fixtures.length} matches tonight`}>
+      <h2 className="k-sect">{WORD_N[t.fixtures.length] ?? t.fixtures.length} matches tonight</h2>
+      {t.fixtures.map((f, i) => {
+        const c = chanceFor(f, chances);
+        const opp = f.opp ? clubById(f.opp) : undefined;
+        return (
+          <Panel key={`${f.comp}:${f.opp}:${i}`} ink={f.comp === 'league' ? '#93c3dc' : '#f2c46d'}>
+            <div className="lt-nrow">
+              {opp ? <Art svg={clubCrest(opp, 40)} className="lt-ncrest" /> : <span className="lt-ncrest lt-unknown" aria-hidden="true" />}
+              <span className="lt-ntext">
+                <span className="k-q">{f.round ?? f.label}{f.opp ? ` · ${f.braboHome ? 'home' : 'away'}` : ''}</span>
+                <b>{opp ? `v ${opp.name}` : 'Drawn on the night'}</b>
+              </span>
+            </div>
+            {c && opp && !t.morning.intl && <ChanceBar c={c} oppName={shortName(opp.id)} oppId={opp.id} date={t.date} />}
+          </Panel>
+        );
+      })}
+      <p className="k-q">One shape plays {t.fixtures.length === 2 ? 'both' : 'them all'}. Each has its own chance.</p>
+    </section>
   );
 }
 

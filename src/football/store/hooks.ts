@@ -10,7 +10,7 @@ import { comebackOn, loadHealth, nightFor, squadCondition } from './gather';
 import { dressingRoom, lowLogOn } from '../squadCare';
 import { opponentFor, type Opponent } from '../opponent';
 import type { FbSave, StoredMatch } from './tables';
-import { contTonight, fixtureFor, tonightKnocks, type Fixture } from './tonight';
+import { fixturesFor, tonightKnocks, type Fixture } from './tonight';
 import { monthAverage } from '../oldSelves';
 import { seasonChange, type SeasonChange } from '../seasonChange';
 import { AXES } from '../types';
@@ -64,8 +64,8 @@ export interface Tonight {
   played: StoredMatch[];
   /** Matches played automatically and not yet watched. */
   unwatchedAuto: StoredMatch[];
-  /** The continental match on a double-header night. */
-  also?: string;
+  /** Every match of tonight, the first one included (a double-header night has two or more; finding 1, O42). */
+  fixtures: Fixture[];
   /** A finished season whose end screens are still to be seen. */
   change?: SeasonChange;
   /** Layer 4: the morning (growth overnight, trialists, the scout line, loans arriving, the break). */
@@ -94,7 +94,8 @@ export async function loadTonight(date: DayKey): Promise<Tonight | null> {
   const h = await loadHealth();
   const night = nightFor(h, date);
   const roster = new Map((await db.fbPlayers.toArray()).map((p) => [p.id, p]));
-  const fixture = season ? fixtureFor(save, season) : undefined;
+  const fixtures = season ? fixturesFor(save, season) : [];
+  const fixture = fixtures[0];
   const bundles = await db.fbBundles.toArray();
   const sick = h.days.get(date)?.status === 'sick';
   const o = nightOptsFor(save, roster, h, date, fixture?.opp, night.values, rotationOf(save, bundles));
@@ -106,7 +107,7 @@ export async function loadTonight(date: DayKey): Promise<Tonight | null> {
   const played = await db.fbMatches.where('date').equals(date).toArray();
   const unwatchedAuto = (await db.fbMatches.where('date').between(addDays(date, -60), date, true, false).toArray()).filter((m) => m.auto && !m.watched);
   return {
-    save, date, fixture, opp,
+    save, date, fixture, fixtures, opp,
     liveValues, flags: night.flags, xi: team.xi,
     today: night.values, squad: team.squad, base: team.base, nudges: team.nudges, total: team.total, tactic: o.tactic,
     known: opp?.known ?? [],
@@ -115,7 +116,6 @@ export async function loadTonight(date: DayKey): Promise<Tonight | null> {
     knocks: tonightKnocks(h, date, save.physioRoom),
     played, unwatchedAuto,
     change: await pendingChange(save),
-    also: season ? contTonight(save, season, (id) => clubById(id).name) : undefined,
     morning: morningFor(save, await db.fbSquad.toArray(), [...roster.values()], bundles, h, date, fixture),
     loansPlaying: team.loansPlayed ?? [], loanRested: team.loanRested ?? [],
     oppTonight: opp ? opponentFor(opp, { rating: oppSaved?.rating ?? undefined }) : undefined,
