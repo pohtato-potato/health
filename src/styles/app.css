@@ -1788,3 +1788,8 @@ textarea.field {
 /* With the plus floating bottom right, the last row scrolls clear of it. */
 .app:has(> .fab-plus:not(.docked)) .page { padding-bottom: calc(var(--tab-h) + 36px + 66px + var(--safe-bottom)); }
 .page-loading { padding: 24px 16px; font-size: 16px; text-transform: capitalize; }
+/* O42 finding 33: a record's moment on the closed day. Gold border and the kind in words, never colour alone. */
+.record-moment { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; padding: 16px; border-radius: 18px; border: 2px solid var(--gold, #f2c46d); background: color-mix(in srgb, #f2c46d 12%, transparent); animation: record-in .6s ease-out both; }
+.record-moment .record-k { font-size: 14px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #f2c46d; }
+.record-moment .record-v { font: 400 40px/1.05 var(--serif); color: var(--ink); }
+@keyframes record-in { from { transform: scale(.94); opacity: 0; } to { transform: none; opacity: 1; } }

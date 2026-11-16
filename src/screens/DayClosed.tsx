@@ -1,5 +1,7 @@
-import { Suspense, lazy } from 'react';
-import { useAllDays, useAllSets, useEntries, useSessions, useSettings } from '../db/hooks';
+import { Suspense, lazy, useEffect } from 'react';
+import { useAllDays, useAllEntries, useAllSets, useEntries, useSessions, useSettings } from '../db/hooks';
+import { keepMomentOnce } from '../db/moments';
+import { dayRecords, type DayRecord, type RecordKind } from '../domain/dayRecords';
 import { addDays, dayOfLogging, parseDay } from '../domain/dates';
 import { fmtInt } from '../domain/format';
 import { dayDoses } from '../domain/medicines';
@@ -22,6 +24,19 @@ const DayKickOff = lazy(() => import('./today/FootballCard').then((m) => ({ defa
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
+const RECORD_NAME: Record<RecordKind, string> = { steps: 'Steps', sleep: 'Sleep', protein: 'Protein', training: 'Training' };
+const RECORD_INK: Record<RecordKind, string> = { steps: 'var(--steps)', sleep: '#93c3dc', protein: 'var(--protein)', training: '#ff9a76' };
+/** O41 9 (O42 finding 33): a record gets its own moment on the closed day, gold with its kind named. */
+function RecordMoment({ r }: { r: DayRecord }) {
+  return (
+    <div className="record-moment" role="status" style={{ ['--ink' as string]: RECORD_INK[r.kind] }}>
+      <span className="record-k">New record · {RECORD_NAME[r.kind]}</span>
+      <b className="record-v">{r.value}</b>
+      <span className="t15">{r.sub}</span>
+    </div>
+  );
+}
+
 /** Day closed (s19): the totals against targets, training and the walk, a Gremlin line, tomorrow, and a star for a perfect day. */
 export function DayClosed({ date, summary: s, onDone }: { date: string; summary: DaySummary; onDone: () => void }) {
   const settings = useSettings();
@@ -29,6 +44,13 @@ export function DayClosed({ date, summary: s, onDone }: { date: string; summary:
   const sessions = useSessions();
   const sets = useAllSets();
   const entries = useEntries(date);
+  const allEntries = useAllEntries();
+  const records = days && sets && allEntries ? dayRecords(date, days, allEntries, realSets(sets)) : [];
+  const recKey = records.map((r) => r.kind).join(',');
+  // Finding 33 (O42): a record is kept on Earned's shelf once, when its day is closed.
+  useEffect(() => {
+    for (const r of records) void keepMomentOnce(`record-${r.kind}:${date}`, 'record', date, `${RECORD_NAME[r.kind]} record: ${r.line}`);
+  }, [recKey, date]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!settings || !days || !sessions || !sets || !entries) return <div className="page dayclosed" />;
   const day = days.find((d) => d.date === date);
   const { rings } = dayRings(settings, date, day, entries);
@@ -78,6 +100,7 @@ export function DayClosed({ date, summary: s, onDone }: { date: string; summary:
         <h1 className="h1">{WEEKDAYS[parseDay(date).getDay()]}, closed</h1>
         <div className="t14 q">{rings.perfect ? `A perfect day. Its star is in ${month}’s sky.` : 'Closed and counted. The week evens it out.'}</div>
       </div>
+      {records.map((r) => <RecordMoment key={r.kind} r={r} />)}
       <div className="grid3" style={{ padding: '6px 0' }}>
         {stat(fmtInt(s.kcal), s.kcalInRange ? 'kcal · in range' : 'kcal', 'var(--kcal)', s.kcalInRange)}
         {stat(`${s.protein} g`, s.proteinClosed ? 'protein · met' : 'protein', 'var(--protein)', s.proteinClosed)}
