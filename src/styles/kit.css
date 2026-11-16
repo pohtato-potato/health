@@ -101,6 +101,7 @@ button.k-panel, a.k-panel { cursor: pointer; text-decoration: none; min-height: 
 .k-door .k-arrow { position: absolute; right: 9px; top: 12px; color: color-mix(in srgb, var(--ink) 80%, #fff); }
 /* Tidy: a door's live value reads whole; a long one wraps to a second line (the row of doors grows with it). */
 .k-door b.v { font: 600 20px/1.15 var(--serif); max-width: 100%; overflow-wrap: break-word; text-wrap: balance; color: var(--k-cream); }
+.k-door b.v .k-fig { white-space: nowrap; font-size: clamp(16px, 4.8vw, 20px); }
 .k-door .nm { font-weight: 700; font-size: 15px; line-height: 1.15; overflow-wrap: anywhere; }
 
 /* ---- the one glowing action a page: its glow falls below it, like a real light ---- */
