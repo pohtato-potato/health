@@ -13,6 +13,8 @@ import { dayRings, freeMealsThisWeek } from '../state/derived';
 import { phaseLine } from '../domain/phase';
 import { Panel, PageHead, Sect, type HowThisWorks } from '../ui/kit/Kit';
 import '../styles/food.css';
+import { pourAt, useChange, useTween } from '../ui/motion/motion';
+import { Roll } from '../ui/motion/Roll';
 
 const HOW: HowThisWorks = {
   title: 'Food',
@@ -35,6 +37,12 @@ export function FoodToday() {
   const ws = weekStart(date);
   const week = useEntriesBetween(ws, addDays(ws, 6));
   if (!settings || !days || !entries || !week) return <div className="page k-page k-light today fd-page" />;
+  return <FoodDay date={date} today={today} settings={settings} days={days} entries={entries} week={week} />;
+}
+
+/** The day itself, once everything is loaded (so the bars can remember where they were: O44, Food pours). */
+function FoodDay({ date, today, settings, days, entries, week }: { date: string; today: string; settings: NonNullable<ReturnType<typeof useSettings>>; days: NonNullable<ReturnType<typeof useAllDays>>; entries: NonNullable<ReturnType<typeof useEntries>>; week: NonNullable<ReturnType<typeof useEntriesBetween>> }) {
+  const ws = weekStart(date);
 
   const day = days.find((d) => d.date === date);
   const { totals, targets, rings } = dayRings(settings, date, day, entries);
@@ -45,6 +53,10 @@ export function FoodToday() {
   const kcalPct = Math.min(totals.kcal / scale, 1) * 100;
   const lo = (targets.kcalMin / scale) * 100;
   const hi = (targets.kcalMax / scale) * 100;
+  // Adding food pours the bars past the new mark and they slosh back (motion board two, Food take two).
+  const pour = useChange(`food:${date}`, [kcalPct, rings.protein.progress * 100]);
+  const pp = useTween(pour.n, 1500);
+  const poured = (i: number, to: number) => Math.max(0, Math.min(100, pour.n && pour.from ? pourAt(pour.from[i], to, pp) : to));
   const setDate = (d: string) => go('/food', d === today ? {} : { d }, { replace: true });
   const budget = weekBudget(targets, new Map(days.map((x) => [x.date, x])), week, ws, date);
   const spread = proteinSpread(entries);
@@ -74,17 +86,17 @@ export function FoodToday() {
 
         <div className="k-row end fd-lead">
           <span className="k-hero-row">
-            <span className="k-hero fd-kcal" style={{ '--ink': 'var(--kcal)' } as React.CSSProperties}>{fmtInt(totals.kcal)}</span>
+            <span className="k-hero fd-kcal" style={{ '--ink': 'var(--kcal)' } as React.CSSProperties}><Roll value={totals.kcal} format={fmtInt} step={10} id={`food:kcal:${date}`} /></span>
             <b>kcal</b>
           </span>
           <span className="k-col k-r">
-            <b className="k-num" style={{ color: 'var(--protein)' }}>{Math.round(totals.protein)} g</b>
+            <b className="k-num" style={{ color: 'var(--protein)' }}><Roll value={Math.round(totals.protein)} id={`food:protein:${date}`} /> g</b>
             <span className="k-q">of {fmtInt(targets.proteinG)} protein</span>
           </span>
         </div>
         <div className="fd-cal" role="img" aria-label={`${fmtInt(totals.kcal)} kcal; the aim is ${fmtInt(targets.kcalMin)} to ${fmtInt(targets.kcalMax)}`}>
           <i className="ok" style={{ left: `${lo}%`, width: `${hi - lo}%` }} />
-          <i className="v" style={{ width: `${kcalPct}%` }} />
+          <i className="v" style={{ width: `${poured(0, kcalPct)}%` }} />
         </div>
         <div className="k-row fd-scale" aria-hidden="true">
           <span className="k-q tn">0</span>
@@ -92,7 +104,7 @@ export function FoodToday() {
           <span className="k-q tn">{fmtInt(scale)}</span>
         </div>
         <div className={`fd-pro${rings.protein.closed ? ' closed' : ''}`} role="img" aria-label={`Protein ${Math.round(totals.protein)} of ${targets.proteinG} g`}>
-          <i style={{ width: `${rings.protein.progress * 100}%` }} />
+          <i style={{ width: `${poured(1, rings.protein.progress * 100)}%` }} />
         </div>
 
         <div className="fd-acts">

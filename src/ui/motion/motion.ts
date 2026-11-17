@@ -78,3 +78,17 @@ export function useTween(n: number, ms: number, delay = 0): number {
 export const spring = (p: number) => (p >= 1 ? 1 : p <= 0 ? 0 : 1 - Math.exp(-5 * p) * Math.cos(2.5 * Math.PI * p));
 export const easeOut = (p: number) => 1 - Math.pow(1 - p, 3);
 export const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
+
+/** A bar that pours (motion board two, Food take two): past the new mark, sloshes back under, a little over, then still. */
+export function pourAt(from: number, to: number, p: number): number {
+  if (p >= 1) return to;
+  const over = Math.sign(to - from || 1) * Math.max(5, Math.abs(to - from) * 0.18);
+  const ss = (q: number) => q * q * (3 - 2 * q);
+  const legs: [number, number, number][] = [[0.42, from, to + over], [0.62, to + over, to - over * 0.45], [0.8, to - over * 0.45, to + over * 0.18], [1, to + over * 0.18, to]];
+  let t0 = 0;
+  for (const [t1, a, b] of legs) {
+    if (p <= t1) return lerp(a, b, t0 === 0 ? easeOut((p - t0) / (t1 - t0)) : ss((p - t0) / (t1 - t0)));
+    t0 = t1;
+  }
+  return to;
+}
