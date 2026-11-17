@@ -2,6 +2,7 @@
 // watched, its result row takes the full width. Under it, tonight's shape fills in as you log, against the
 // opponent's dashed shape, with their threat line, the live matchup bar and the pull-ahead line. Calories never
 // appear here (R3 q-kcal). Each log flies to its axis; a log that takes an axis ahead plays the full moment.
+import { useMarkMatchNight } from '../../ui/motion/matchNight';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { buzz, crowd } from '../../audio';
@@ -106,6 +107,7 @@ interface Fly { id: number; axis: Axis; delay: number }
 /** Tonight's shape against the opponent: radar, threat line, matchup bar, the pull-ahead line and the moments. */
 export function TonightShape({ t, stadium, buzzOn, reel }: { t: Tonight; stadium: boolean; buzzOn: boolean; reel: (axes: Axis[]) => void }) {
   const opp = t.oppTonight;
+  useMarkMatchNight(t.date, Boolean(t.fixture) && !t.played.length);
   const chances = useChances(t.date);
   const chance = chances === undefined ? undefined : chances[0] ?? null;
   const late = lateFor(t.date);

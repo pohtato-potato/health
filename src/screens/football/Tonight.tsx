@@ -47,6 +47,7 @@ import { watchWaiting } from './match/Waiting';
 import '../../styles/look-tonight.css';
 import { db } from '../../db/db';
 import { useSeenBefore } from '../../ui/motion/motion';
+import { useMarkMatchNight } from '../../ui/motion/matchNight';
 
 /**
  * Your crest catches a shine after a win (motion board one, O44): once per won match, the first time Tonight opens
@@ -116,6 +117,7 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
   const chance = chances === undefined ? undefined : chances[0] ?? null;
   const xp = useLiveQuery(() => loadExpected(t.date), [t.date]);
   const shine = useWinShine(t.date);
+  useMarkMatchNight(t.date, Boolean(t.fixture) && !t.played.length);
   const watch = onWatch ?? ((id: string) => go('/football/match', { id }));
   const moment = momentOf(t);
   if (moment) return <div className="lt-moment">{moment}</div>;
