@@ -45,15 +45,15 @@
 @keyframes mo-wake { 0% { transform: scale(.7); box-shadow: 0 0 0 0 var(--uc); } 45% { transform: scale(1.25); box-shadow: 0 0 0 14px transparent, 0 0 24px 6px var(--uc); } 100% { transform: none; } }
 
 /* 10 · Buildings rise a storey per counted day; the lights come on when finished. */
-.mo-tower { display: flex; flex-direction: column-reverse; gap: 2px; width: 34px; flex: none; }
-.mo-tower i { display: block; height: 7px; border-radius: 2px; border: 1.5px solid var(--c); background: transparent; }
+.mo-tower { display: flex; flex-direction: column-reverse; gap: 2px; width: 30px; flex: none; margin-bottom: 4px; }
+.mo-tower i { display: block; height: 5px; border-radius: 2px; border: 1.5px solid var(--c); background: transparent; }
 .mo-tower i.on { background: var(--c); }
 .mo-tower i.new { animation: mo-storey 420ms cubic-bezier(.3, 1.5, .5, 1) var(--d) both; transform-origin: 50% 100%; }
 @keyframes mo-storey { from { transform: scaleY(0) translateY(6px); opacity: 0; } }
 .mo-tower.lit i.on { background: linear-gradient(90deg, var(--c) 0 30%, #fff6d6 30% 45%, var(--c) 45% 60%, #fff6d6 60% 75%, var(--c) 75%); }
 .mo-tower.lit.new-lit i.on { animation: mo-lights 700ms ease-out var(--d, 0ms) both; }
 @keyframes mo-lights { 0% { filter: brightness(.4); } 60% { filter: brightness(1.6) drop-shadow(0 0 6px #fff6d6); } 100% { filter: none; } }
-.fbt-sky path.mo-rise { transform-box: fill-box; transform-origin: 50% 100%; animation: mo-rise 900ms cubic-bezier(.3, 1.4, .5, 1) var(--d, 0ms) both; }
+.fbt-sky path.mo-rise, .fbt-sky path.mo-lit { transform-box: view-box; transform-origin: 0 290px; } .fbt-sky path.mo-rise { animation: mo-rise 900ms cubic-bezier(.3, 1.4, .5, 1) var(--d, 0ms) both; }
 @keyframes mo-rise { from { transform: scaleY(0); } }
 .fbt-sky path.mo-lit { animation: mo-rise 900ms cubic-bezier(.3, 1.4, .5, 1) var(--d, 0ms) both, mo-lights 900ms ease-out calc(var(--d, 0ms) + 900ms) both; }
 

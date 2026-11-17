@@ -1,9 +1,9 @@
 // Buildings rise (motion board two, O44): a project drawn as a tower of storeys, one per counted day (scaled to at
-// most 12). Storeys counted since you last looked rise one by one; when every day is in, the lights come on.
+// most 8). Storeys counted since you last looked rise one by one; when every day is in, the lights come on.
 import type { CSSProperties } from 'react';
 import { useSeenBefore } from './motion';
 
-const MAX = 12;
+const MAX = 8;
 export function towerOf(have: number, of: number): { storeys: number; on: number } {
   const storeys = Math.max(1, Math.min(MAX, of));
   return { storeys, on: of <= 0 ? 0 : Math.min(storeys, Math.floor((have / of) * storeys + 1e-9)) };
