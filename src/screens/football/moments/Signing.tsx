@@ -32,6 +32,14 @@ export function SigningView({ save }: { save: FbSave }) {
             {onShirt && <Art svg={kitSvg({ ...kit, sp: save.sponsorStyle ?? 'A' }, 'front', 150, { sponsor: d.slot === 'shirt' ? d.brand : undefined, label: `The home shirt with ${d.brand}` })} />}
             <Art svg={sponsorLogoSvg(d.brand, onShirt ? 110 : 160, '#fff6d6')} />
           </div>
+          {/* O44: the pen line draws itself, then the stamp lands (once, as the moment opens). */}
+          <svg className="mo-sign" viewBox="0 0 200 70" aria-hidden="true">
+            <path className="pen" pathLength={1} d="M10 50 C30 6 45 80 62 42 S90 14 104 48 S130 62 150 34 L190 40" />
+            <g className="stamp">
+              <rect x="118" y="4" width="70" height="34" rx="6" fill="rgba(18,16,28,.7)" stroke="#ff9a76" strokeWidth="4" />
+              <text x="153" y="27" textAnchor="middle" fill="#ff9a76" fontSize="16" fontWeight="700">SIGNED</text>
+            </g>
+          </svg>
           <h2 id="fb-sign-t" className="fb-momtitle">{d.brand}: {WHERE[d.slot].toLowerCase()} for {N[d.seasons] ?? `${d.seasons} seasons`}</h2>
           <div className="fb-sign-rows">
             <p><span>Pays</span><b>{euros(d.perSeason)} a season</b></p>
