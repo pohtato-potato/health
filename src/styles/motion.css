@@ -1,0 +1,93 @@
+/* The motion round (O44, boards one to three). Every animation here plays once and ends still; nothing keeps
+   moving under text, and nothing changes position once it lands (transforms only, no layout). */
+
+/* 1 · Numbers that roll: the glow as the figure lands. */
+.mo-roll { font-variant-numeric: tabular-nums; }
+.mo-roll.mo-landed { animation: mo-glow 900ms ease-out calc(var(--mo-ms, 1100ms) * 0.5) both; }
+@keyframes mo-glow { 0% { text-shadow: none; } 30% { text-shadow: 0 0 18px currentColor, 0 0 6px currentColor; } 100% { text-shadow: none; } }
+
+/* 2 · The chance bar: the chip that says what moved it (it pops in once, then stays as words). */
+.mo-chip { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 3px 12px; border-radius: 15px; border: 1.5px solid currentColor; font: 700 15px var(--ab, inherit); background: rgba(18, 16, 28, 0.6); animation: mo-chip 520ms cubic-bezier(.3, 1.5, .5, 1) 650ms both; }
+@keyframes mo-chip { from { opacity: 0; transform: translateY(8px) scale(.6); } }
+
+/* 8 · Sheets spring up with a small overshoot and settle. */
+.sheet { animation: mo-sheet 0.46s cubic-bezier(0.2, 0.8, 0.2, 1); }
+@keyframes mo-sheet {
+  0% { transform: translate(-50%, 100%); }
+  62% { transform: translate(-50%, -12px); }
+  82% { transform: translate(-50%, 3px); }
+  100% { transform: translate(-50%, 0); }
+}
+
+/* 9 · Crests: tonight's opponent flips in; your own catches one shine after a win. */
+.mo-flip-in { animation: mo-flip 900ms cubic-bezier(.2, .9, .3, 1.25) 150ms both; transform-origin: 50% 50%; }
+@keyframes mo-flip { 0% { transform: perspective(400px) rotateY(90deg) scale(.8); opacity: 0; } 50% { opacity: 1; } 100% { transform: none; opacity: 1; } }
+.mo-shine { position: relative; display: inline-block; overflow: hidden; border-radius: 12px; animation: mo-shine-glow 1.4s ease-out 600ms both; }
+.mo-shine::after { content: ''; position: absolute; inset: -20%; background: linear-gradient(115deg, transparent 30%, rgba(242, 196, 109, 0.95) 46%, rgba(255, 246, 214, 1) 50%, rgba(242, 196, 109, 0.95) 54%, transparent 70%); mix-blend-mode: multiply; transform: translateX(-120%); animation: mo-shine 1.1s ease-in-out 700ms both; pointer-events: none; }
+@keyframes mo-shine-glow { 0% { filter: none; } 45% { filter: drop-shadow(0 0 14px #f2c46d) brightness(1.15); } 100% { filter: none; } }
+@keyframes mo-shine { to { transform: translateX(120%); } }
+
+/* 5 · Money: coins spin in and the figure bumps; they drain out when money goes. */
+.mo-money { position: relative; display: inline-block; }
+.mo-money.up { animation: mo-bump 600ms ease-out 900ms both; }
+.mo-money.down { animation: mo-sink 600ms ease-out 700ms both; }
+@keyframes mo-bump { 40% { transform: scale(1.12); } 100% { transform: none; } }
+@keyframes mo-sink { 40% { transform: scale(.92); } 100% { transform: none; } }
+.mo-coin { position: absolute; left: 50%; top: 40%; width: 18px; height: 18px; margin: -9px; border-radius: 50%; background: #f2c46d; border: 2px solid #fff6d6; box-shadow: 0 0 10px #f2c46d; pointer-events: none; opacity: 0; }
+.mo-money.up .mo-coin { animation: mo-coin-in 1.1s cubic-bezier(.3, .7, .4, 1) var(--d) both; }
+.mo-money.down .mo-coin { animation: mo-coin-out 1.1s cubic-bezier(.5, 0, .7, .4) var(--d) both; }
+@keyframes mo-coin-in { 0% { transform: translate(var(--x), -80px) rotateY(0); opacity: 0; } 15% { opacity: 1; } 75% { transform: translate(0, 0) rotateY(720deg); opacity: 1; } 100% { transform: scale(.2); opacity: 0; } }
+@keyframes mo-coin-out { 0% { transform: scale(.3); opacity: 0; } 20% { transform: none; opacity: 1; } 100% { transform: translate(var(--x), 90px) rotateY(540deg); opacity: 0; } }
+
+/* 7 · The eleven: a player whose habit is logged today is awake (a lit ring); one just woken pops once. */
+.pl-pitch .pl-tk.mo-awake b { box-shadow: 0 0 0 3px #fff6d6, 0 0 16px 2px var(--uc); }
+.pl-pitch .pl-tk.mo-wake b { animation: mo-wake 900ms cubic-bezier(.3, 1.5, .5, 1) var(--d, 0ms) both; }
+@keyframes mo-wake { 0% { transform: scale(.7); box-shadow: 0 0 0 0 var(--uc); } 45% { transform: scale(1.25); box-shadow: 0 0 0 14px transparent, 0 0 24px 6px var(--uc); } 100% { transform: none; } }
+
+/* 10 · Buildings rise a storey per counted day; the lights come on when finished. */
+.mo-tower { display: flex; flex-direction: column-reverse; gap: 2px; width: 30px; flex: none; margin-bottom: 4px; }
+.mo-tower i { display: block; height: 5px; border-radius: 2px; border: 1.5px solid var(--c); background: transparent; }
+.mo-tower i.on { background: var(--c); }
+.mo-tower i.new { animation: mo-storey 420ms cubic-bezier(.3, 1.5, .5, 1) var(--d) both; transform-origin: 50% 100%; }
+@keyframes mo-storey { from { transform: scaleY(0) translateY(6px); opacity: 0; } }
+.mo-tower.lit i.on { background: linear-gradient(90deg, var(--c) 0 30%, #fff6d6 30% 45%, var(--c) 45% 60%, #fff6d6 60% 75%, var(--c) 75%); }
+.mo-tower.lit.new-lit i.on { animation: mo-lights 700ms ease-out var(--d, 0ms) both; }
+@keyframes mo-lights { 0% { filter: brightness(.4); } 60% { filter: brightness(1.6) drop-shadow(0 0 6px #fff6d6); } 100% { filter: none; } }
+.fbt-sky path.mo-rise, .fbt-sky path.mo-lit { transform-box: view-box; transform-origin: 0 290px; } .fbt-sky path.mo-rise { animation: mo-rise 900ms cubic-bezier(.3, 1.4, .5, 1) var(--d, 0ms) both; }
+@keyframes mo-rise { from { transform: scaleY(0); } }
+.fbt-sky path.mo-lit { animation: mo-rise 900ms cubic-bezier(.3, 1.4, .5, 1) var(--d, 0ms) both, mo-lights 900ms ease-out calc(var(--d, 0ms) + 900ms) both; }
+
+/* 11 · The back page is set like a press, word by word. */
+.mo-press { display: inline-block; animation: mo-slam 520ms cubic-bezier(.2, .9, .3, 1.2) var(--d) both; }
+@keyframes mo-slam { 0% { transform: scale(2.2); opacity: 0; } 60% { transform: scale(.94); opacity: 1; } 100% { transform: none; opacity: 1; } }
+
+/* 12 · A signing: the pen line draws, then the stamp lands. */
+.mo-sign { width: min(100%, 300px); height: auto; align-self: center; overflow: visible; }
+.mo-sign .pen { fill: none; stroke: #f2c46d; stroke-width: 4; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: mo-pen 1.5s ease-out 400ms both; }
+@keyframes mo-pen { to { stroke-dashoffset: 0; } }
+.mo-sign .stamp { transform-box: fill-box; transform-origin: 50% 50%; animation: mo-stamp 520ms cubic-bezier(.2, .9, .3, 1.2) 1.9s both; }
+@keyframes mo-stamp { 0% { transform: scale(2.2) rotate(-18deg); opacity: 0; } 70% { transform: scale(.92) rotate(-8deg); opacity: 1; } 100% { transform: rotate(-8deg); opacity: 1; } }
+
+/* 13 · The night's sum: each part drops in, then the total counts up to meet them. */
+.mo-drop { animation: mo-drop 480ms cubic-bezier(.3, 1.5, .5, 1) var(--d) both; }
+@keyframes mo-drop { from { transform: translateY(-14px); opacity: 0; } }
+
+/* 14 · The tab bar: the tapped icon bounces and draws itself; Football glows brighter on a match night. */
+.tabbar a.mo-tap svg { animation: mo-bounce 560ms cubic-bezier(.3, 1.6, .5, 1); }
+.tabbar a.mo-tap svg :is(path, line, circle, rect, polyline, polygon) { stroke-dasharray: 120; animation: mo-draw 700ms ease-out both; }
+@keyframes mo-bounce { 0% { transform: scale(.7) translateY(4px); } 50% { transform: scale(1.18) translateY(-3px); } 100% { transform: none; } }
+@keyframes mo-draw { from { stroke-dashoffset: 120; } to { stroke-dashoffset: 0; } }
+.tabbar a.fb.mo-night .fb-tabmark { border-color: #ffb066; color: #ffc58a; box-shadow: 0 0 22px 2px #ff7a1a, 0 0 34px -2px #6c3fc4; animation: fb-mark-night 3s ease-in-out infinite; }
+@keyframes fb-mark-night { 50% { box-shadow: 0 0 30px 6px #ff7a1a, 0 0 40px 0 #6c3fc4; } }
+
+/* 15 · Moving between tabs: the page slides the way you are going; the tab bar stays put. */
+.tabbar { view-transition-name: mo-tabbar; }
+::view-transition-group(mo-tabbar) { animation: none; }
+html.mo-go-right::view-transition-old(root) { animation: mo-out-left 320ms cubic-bezier(.3, .8, .3, 1) both; }
+html.mo-go-right::view-transition-new(root) { animation: mo-in-right 320ms cubic-bezier(.3, .8, .3, 1) both; }
+html.mo-go-left::view-transition-old(root) { animation: mo-out-right 320ms cubic-bezier(.3, .8, .3, 1) both; }
+html.mo-go-left::view-transition-new(root) { animation: mo-in-left 320ms cubic-bezier(.3, .8, .3, 1) both; }
+@keyframes mo-out-left { to { transform: translateX(-30%); opacity: 0; } }
+@keyframes mo-in-right { from { transform: translateX(30%); opacity: 0; } }
+@keyframes mo-out-right { to { transform: translateX(30%); opacity: 0; } }
+@keyframes mo-in-left { from { transform: translateX(-30%); opacity: 0; } }

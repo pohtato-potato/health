@@ -1,5 +1,6 @@
 // The one transfer budget, last season's income, the sponsor slots and the offers.
 import { useState } from 'react';
+import { MoneyFigure } from '../../../ui/motion/MoneyFigure';
 import { euros, KIT_SPONSOR_TECH, oneBrandEach, type Offer, type Risk, type Slot } from '../../../football/money';
 import { seasonMoneyScale } from '../../../football/pyramid/shape';
 import { useModel } from '../tree/model';
@@ -55,7 +56,7 @@ export function MoneyView({ c, groundBuilt = false, onAccept, onOwn }: { c: Club
   return (
     <div className="k-page">
       {s.signed && <SigningView save={s} />}
-      <Hero value={m(s.budget)} ink={GOLD} label="in the bank now" />
+      <Hero value={<MoneyFigure value={s.budget} format={m} id="club:bank" />} ink={GOLD} label="in the bank now" />
       <SeasonEnd c={c} />
       {s.income ? (
         <Panel ink={GOLD}>

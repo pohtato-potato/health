@@ -1,6 +1,8 @@
 // The Club section: the squad first, then deals, money, kits and the ground, one tap apart.
 import type { ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { Roll } from '../../../ui/motion/Roll';
+import { MoneyFigure } from '../../../ui/motion/MoneyFigure';
 import { tierName, TIER_NAMES } from '../../../football/data/load';
 import { loadClub, type Club } from '../../../football/store/club';
 import { acceptOffer, equipAbility, keepHabit, pickKit, renewContract, sellHabit, setCaptain, setOwnSponsor, setSponsorStyle, bookMove } from '../../../football/store/save';
@@ -126,7 +128,7 @@ function ClubFront({ c }: { c: Club }) {
           <Title under={`${tierName(c.tier)}${place ? ` · ${ordinal(place)}` : ''}`}>{own.name}</Title>
         </span>
         {rating !== undefined && (
-          <span className="k-col k-r"><span className="k-hero sm" style={{ color: VALUE_INK[valueTier(rating, 100)] }}>{rating}</span><span className="k-q">rating</span></span>
+          <span className="k-col k-r"><span className="k-hero sm" style={{ color: VALUE_INK[valueTier(rating, 100)] }}><Roll value={rating} id="club:rating" /></span><span className="k-q">rating</span></span>
         )}
       </div>
       {lb ? (
@@ -162,13 +164,13 @@ function ClubFront({ c }: { c: Club }) {
           <Door key="kits" icon="kit" name="Kits" value={kitWall(c.save, c.matches).length} family="place" onClick={() => go('/football/club', { view: 'kits' })} />,
         ],
         money: [
-          <Door key="money" icon="money" name="Money" value={<span className="k-fig">{euros(c.save.budget)}</span>} count={offers ? `${offers} ${offers === 1 ? 'offer' : 'offers'} to sign` : undefined} family="money" onClick={() => go('/football/club', { view: 'money' })} />,
+          <Door key="money" icon="money" name="Money" value={<span className="k-fig"><MoneyFigure value={c.save.budget} format={euros} id="club:money-door" /></span>} count={offers ? `${offers} ${offers === 1 ? 'offer' : 'offers'} to sign` : undefined} family="money" onClick={() => go('/football/club', { view: 'money' })} />,
           <Door key="deals" icon="deal" name="Deals" value={c.members.length} family="money" onClick={() => go('/football/club', { view: 'deals' })} />,
           ...(world ?? []).filter((d) => d.family === 'money').map((d) => <Door key={d.to} icon={d.icon} name={d.label} value={d.sub} count={d.count} family="money" onClick={() => go(d.to)} />),
           <Door key="packs" icon="pack" name="Packs" value={packs} count={packs ? `${packs} to open` : undefined} locked={packs ? undefined : 'None to open yet'} family="money" onClick={() => go('/football/packs')} />,
         ],
         plans: [
-          <Door key="tree" icon="tree" name="The tree" value={tree ? `${fmtCount(tree.bank)} pts` : 'Research'} family="plans" onClick={() => go('/football/club', { view: 'tree' })} />,
+          <Door key="tree" icon="tree" name="The tree" value={tree ? <><Roll value={tree.bank} format={fmtCount} id="club:tree-pts" /> pts</> : 'Research'} family="plans" onClick={() => go('/football/club', { view: 'tree' })} />,
           tree?.boonPick && <Door key="boon" icon="pack" name="The season’s boon" value="Pick one" count="1 to pick" family="plans" onClick={() => go('/football/boon')} />,
           tree && <Door key="board" icon="sheet" name="The board" value="Two goals" locked={board ? undefined : 'Set on the season’s first day'} family="plans" onClick={() => go('/football/board')} />,
           <Door key="desk" icon="desk" name="The desk" value={desk ? (desk.shut ? 'Shut' : desk.left.length ? count(desk.left.length, 'die', 'dice') : 'Spent') : '–'} family="plans" onClick={() => go('/football/desk')} />,

@@ -6,6 +6,7 @@
 import { useEffect, useRef } from 'react';
 import type { Place } from '../../../football/ground';
 import type { PlaceLook, StageLook } from '../../../football/tree/projects';
+import { useSeenBefore } from '../../../ui/motion/motion';
 
 /** Each stage's outline, by project id, on a 1420 × 414 riverside (quay at y 290). */
 const SHAPES: Record<string, string[]> = {
@@ -114,6 +115,15 @@ export function Skyline({ places, progress, focus }: { places: PlaceLook[]; prog
   const label = places.map((p) => `${p.name}: ${placeWords(p, progress)}`).join('. ');
   const lines = places.map((p) => placeLines(p, progress));
   const height = SUB_Y + (Math.max(1, ...lines.map((l) => l.length)) - 1) * SUB_GAP + 16;
+  // Buildings rise (O44): a stage finished since the quarter was last seen rises from the quay and its lights come on;
+  // one that started building rises once. The first visit shows the quarter as it stands.
+  const looks = places.flatMap((p) => p.stages.filter((x) => x.look === 'built' || x.look === 'building').map((x) => `${x.look}:${x.p.id}`));
+  const before = useSeenBefore<string[]>('skyline', looks);
+  let rose = 0;
+  const riseOf = (id: string, look: StageLook) => {
+    if (!before || before.includes(`${look}:${id}`) || (look !== 'built' && look !== 'building')) return undefined;
+    return { cls: look === 'built' ? ' mo-lit' : ' mo-rise', d: `${300 + rose++ * 220}ms` };
+  };
   return (
     <figure className="fbt-sky">
       <div className="fbt-scene" ref={box} role="img" aria-label={`The Kaai quarter, one riverside skyline. ${label}.`} tabIndex={0}>
@@ -123,10 +133,12 @@ export function Skyline({ places, progress, focus }: { places: PlaceLook[]; prog
             const cls = LOOK_CLASS[look];
             if (!cls) return [];
             const ds = SHAPES[s.id] ?? [];
+            const rise = riseOf(s.id, look);
+            const st = rise ? ({ ['--d' as string]: rise.d } as React.CSSProperties) : undefined;
             // A stage being built glows: a soft pulsing halo under a solid gold line.
             return cls === 'grow'
-              ? ds.flatMap((d, k) => [<path key={`${s.id}:h${k}`} className="halo" d={d} />, <path key={`${s.id}:${k}`} className="grow" d={d} />])
-              : ds.map((d, k) => <path key={`${s.id}:${k}`} className={cls} d={d} />);
+              ? ds.flatMap((d, k) => [<path key={`${s.id}:h${k}`} className="halo" d={d} />, <path key={`${s.id}:${k}`} className={`grow${rise?.cls ?? ''}`} style={st} d={d} />])
+              : ds.map((d, k) => <path key={`${s.id}:${k}`} className={`${cls}${rise?.cls ?? ''}`} style={st} d={d} />);
           }))}
           {RIVER}
           {places.map((p, i) => (

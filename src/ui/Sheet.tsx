@@ -27,7 +27,7 @@ export function Sheet({
   // Taps are ignored until the sheet has finished sliding in, so a tap meant for the page below can't land on a row.
   const [ready, setReady] = useState(false);
   useEffect(() => {
-    const t = window.setTimeout(() => setReady(true), 350);
+    const t = window.setTimeout(() => setReady(true), 460); // the spring up (motion.css, O44) takes 0.46 s
     return () => window.clearTimeout(t);
   }, []);
 

@@ -18,6 +18,28 @@ import { VALUE_INK, valueTier } from '../../../ui/inks';
 import { CARD_TIERS, type CardTier } from '../../../football/players/types';
 import { PlayerRotation, RotationLinks, rowWords } from './Rotation';
 import { matchRating } from '../../../football/rotation/condition';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../../../db/db';
+import { loadHealth } from '../../../football/store/gather';
+import { loggedOn } from '../../../football/globe/duty';
+import { useSeenBefore } from '../../../ui/motion/motion';
+import type { CSSProperties } from 'react';
+
+/**
+ * The eleven wake (motion board one, O44): the players whose habit is logged today, and of those the ones that woke
+ * since the pitch was last seen today (they light up once; the lit ring then stays, with "logged today" in its label).
+ */
+function useAwake(xi: XiPlace[]): { awake: Set<string>; fresh: Set<string> } {
+  const today = dayOfLogging(Date.now());
+  const ids = xi.map((x) => x.player);
+  const awake = useLiveQuery(async () => {
+    const [h, ps] = [await loadHealth(), await db.fbPlayers.bulkGet(ids)];
+    return ids.filter((_, i) => ps[i] && loggedOn(h, ps[i]!, today));
+  }, [ids.join(','), today]);
+  const before = useSeenBefore<string[] | null>(`eleven:${today}`, awake ?? null);
+  const on = new Set(awake ?? []);
+  return { awake: on, fresh: new Set([...on].filter((id) => !(before ?? []).includes(id))) };
+}
 
 const uc = (u: Unit) => ({ ['--uc' as string]: UNIT_COLOUR[u] });
 const fmtDate = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
@@ -44,6 +66,8 @@ export function ElevenSection() {
 /** The pitch with every token's match rating and name (round 8: the number sits inside the circle). */
 export function Pitch({ xi }: { xi: XiPlace[] }) {
   const used: Record<string, number> = {};
+  const { awake, fresh } = useAwake(xi);
+  let woke = 0;
   return (
     <div className="pl-pitch">
       {LINES}
@@ -51,7 +75,7 @@ export function Pitch({ xi }: { xi: XiPlace[] }) {
         const k = used[x.unit] = (used[x.unit] ?? -1) + 1;
         const spot = PLACES_433[x.unit][k] ?? PLACES_433[x.unit][0];
         return (
-          <button key={`${x.unit}${k}`} type="button" className="pl-tk" style={{ left: `${spot.x}%`, top: `${spot.y}%`, ...uc(x.unit) }} onClick={() => openPlayer(x.player)} aria-label={`${x.name}, ${x.unit}, ${spot.place}, match rating ${x.rating}`}>
+          <button key={`${x.unit}${k}`} type="button" className={`pl-tk${awake.has(x.player) ? ' mo-awake' : ''}${fresh.has(x.player) ? ' mo-wake' : ''}`} style={{ left: `${spot.x}%`, top: `${spot.y}%`, ...uc(x.unit), ...(fresh.has(x.player) ? { '--d': `${300 + woke++ * 160}ms` } as CSSProperties : {}) }} onClick={() => openPlayer(x.player)} aria-label={`${x.name}, ${x.unit}, ${spot.place}, match rating ${x.rating}${awake.has(x.player) ? ', logged today' : ''}`}>
             <b>{x.rating}</b><span>{x.name}</span>
           </button>
         );

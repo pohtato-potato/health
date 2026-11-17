@@ -2,6 +2,7 @@
 // watched, its result row takes the full width. Under it, tonight's shape fills in as you log, against the
 // opponent's dashed shape, with their threat line, the live matchup bar and the pull-ahead line. Calories never
 // appear here (R3 q-kcal). Each log flies to its axis; a log that takes an axis ahead plays the full moment.
+import { useMarkMatchNight } from '../../ui/motion/matchNight';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { buzz, crowd } from '../../audio';
@@ -106,6 +107,7 @@ interface Fly { id: number; axis: Axis; delay: number }
 /** Tonight's shape against the opponent: radar, threat line, matchup bar, the pull-ahead line and the moments. */
 export function TonightShape({ t, stadium, buzzOn, reel }: { t: Tonight; stadium: boolean; buzzOn: boolean; reel: (axes: Axis[]) => void }) {
   const opp = t.oppTonight;
+  useMarkMatchNight(t.date, Boolean(t.fixture) && !t.played.length);
   const chances = useChances(t.date);
   const chance = chances === undefined ? undefined : chances[0] ?? null;
   const late = lateFor(t.date);
@@ -161,7 +163,7 @@ export function TonightShape({ t, stadium, buzzOn, reel }: { t: Tonight; stadium
       <h2 className="k-sect tm-h">Tonight’s shape</h2>
       {oppId && <p className="tm-vsx">against <Art svg={clubCrest(clubById(oppId), 22)} /><b style={{ color: oppInk }}>{name(oppId)}</b></p>}
       {oppId && t.oppTier && t.braboTier && (f.comp !== 'league' || t.oppTier !== t.braboTier) && <p className="tm-ln">{f.round ?? 'A cup tie'}: {name(oppId)} play in {t.oppTier === t.braboTier ? 'your division' : tierName(t.oppTier)}{t.oppTier < t.braboTier ? `, ${t.braboTier - t.oppTier === 1 ? 'one division' : `${t.braboTier - t.oppTier} divisions`} above you` : ''}.</p>}
-      <Radar values={t.liveValues} flags={t.flags} opp={oppVals} oppInk={oppInk} oppName={oppId ? name(oppId) : undefined} fog={fog} inked pulse={pulse} size={300} label="Tonight’s shape so far" />
+      <Radar values={t.liveValues} flags={t.flags} opp={oppVals} oppInk={oppInk} oppName={oppId ? name(oppId) : undefined} fog={fog} inked pulse={pulse} size={300} label="Tonight’s shape so far" motionId={`today-radar:${t.date}`} />
       {paceSum(t) && <PaceSumView p={paceSum(t)!} />}
       {threat && oppId && <p className="tm-ln"><b style={{ color: oppInk }}>{name(oppId)}</b> {threat.kind === 'strong' ? 'are strong on' : 'lead you on'} <b style={{ color: AXIS_INK[threat.axis] }}>{threat.axis}</b>. {threat.answer}</p>}
       {t.fixtures.length > 1 ? (
@@ -173,13 +175,13 @@ export function TonightShape({ t, stadium, buzzOn, reel }: { t: Tonight; stadium
               <div key={`${x.comp}:${x.opp}:${i}`} className="tm-nf">
                 <p className="tm-vsx">{x.opp ? <><Art svg={clubCrest(clubById(x.opp), 22)} /><b style={{ color: inkOf(x.opp) }}>{name(x.opp)}</b></> : <b>Drawn on the night</b>}</p>
                 <p className="tm-ln">{x.round ?? x.label}{x.opp ? ` · ${x.braboHome ? 'home' : 'away'}` : ''}</p>
-                {c && x.opp && <ChanceBar c={c} oppName={short(x.opp)} oppId={x.opp} date={t.date} />}
+                {c && x.opp && <ChanceBar c={c} oppName={short(x.opp)} oppId={x.opp} date={t.date} values={t.liveValues} />}
               </div>
             );
           })}
           <p className="tm-ln">One shape plays {t.fixtures.length === 2 ? 'both' : 'them all'}. Each has its own chance.</p>
         </div>
-      ) : chance && oppId && <ChanceBar c={chance} oppName={short(oppId)} oppId={oppId} date={t.date} />}
+      ) : chance && oppId && <ChanceBar c={chance} oppName={short(oppId)} oppId={oppId} date={t.date} values={t.liveValues} />}
       {lead && oppVals && oppId && (
         <div className="tm-ahead">
           <p className="tm-at"><b style={{ color: AXIS_INK[lead] }}>{lead}</b><span>takes you ahead</span></p>
