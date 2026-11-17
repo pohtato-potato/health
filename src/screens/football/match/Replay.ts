@@ -1,8 +1,9 @@
 // The replay timeline: a stored match becomes timed steps the match screen plays (spec §5.2).
 // Nothing here is random: the same stored events always give the same replay.
 import type { ChanceEvent, MatchEvents } from '../../../football/types';
+import { roll, rollSeed } from './roll';
 
-export type StepKind = 'phase' | 'mod' | 'pct' | 'fly' | 'goalline' | 'result' | 'banner' | 'feed';
+export type StepKind = 'phase' | 'mod' | 'pct' | 'fly' | 'result' | 'banner' | 'feed';
 export const WAVES = ['rings', 'hex', 'net', 'rays', 'shards'] as const;
 export type Wave = (typeof WAVES)[number];
 export type Takeover = 'screamer' | 'big';
@@ -19,6 +20,8 @@ export interface Step {
     land?: [number, number];
     retake?: boolean;
     ok?: boolean;
+    /** A shot's roll (O44): its seed, whether it ends in the goal-line close-up, and how long the replay gives it. */
+    roll?: { seed: number; close: boolean; ms: number };
     goal?: 'for' | 'against';
     save?: boolean;
     wave?: Wave;
@@ -27,10 +30,12 @@ export interface Step {
   };
 }
 
-export const MAX_BIG_MS = 180_000;
-export const MAX_NORMAL_MS = 90_000;
-// Base lengths (ms). Big nights run slower and add takeovers.
-const T = { open: 3000, half: 2600, close: 2600, phase: 1400, mod: 1500, pct: 1100, fly: 1500, goalline: 2400, result: 2000, banner: 1800, takeover: 5200, feed: 0 };
+// The caps fit a usual 11 to 14 chance night with the roll (O44) unsqueezed.
+export const MAX_BIG_MS = 240_000;
+export const MAX_NORMAL_MS = 160_000;
+// Base lengths (ms). Big nights run slower and add takeovers. A shot's length is its roll's (3.6 to 6 s, never
+// slowed); after a goal-line roll the result holds longer, for the verdict and the close-up easing back.
+const T = { open: 3000, half: 2600, close: 2600, phase: 1400, mod: 1500, pct: 1100, result: 2000, lineResult: 2600, banner: 1800, takeover: 5200, feed: 0 };
 
 const isGoal = (c: ChanceEvent, ok: boolean) => (c.side === 'atk' ? ok : !ok);
 
@@ -40,7 +45,7 @@ export function timeline(ev: MatchEvents, big: boolean): Step[] {
   let t = 0;
   const push = (kind: StepKind, chance: number, data: Step['data'], len: number) => {
     steps.push({ at: Math.round(t), kind, chance, data });
-    t += len * (kind === 'result' && data.takeover ? 1 : slow);
+    t += len * ((kind === 'result' && data.takeover) || kind === 'fly' ? 1 : slow);
   };
   let mine = 0, theirs = 0, goals = 0, half = false;
   push('phase', -1, { bookend: 'kickoff', minute: 0, score: [0, 0] }, T.open);
@@ -51,15 +56,17 @@ export function timeline(ev: MatchEvents, big: boolean): Step[] {
     push('mod', i, {}, T.mod);
     push('pct', i, {}, T.pct);
     const shot = (land: [number, number], ok: boolean, retake: boolean) => {
-      push('fly', i, { land, retake }, T.fly);
-      if (c.glDist !== null && !retake) push('goalline', i, { land, ok }, T.goalline);
+      const close = c.glDist !== null && !retake, seed = rollSeed(ev.seed, i, retake);
+      const ms = roll(c, land, seed, close).ms;
+      push('fly', i, { land, retake, ok, roll: { seed, close, ms } }, ms);
+      return close;
     };
     const firstOk = firstLandingOk(c);
-    shot(c.land, firstOk, false);
+    let close = shot(c.land, firstOk, false);
     if (c.retake) {
-      push('result', i, { ok: firstOk, minute: c.minute }, T.result);
+      push('result', i, { ok: firstOk, minute: c.minute }, close ? T.lineResult : T.result);
       push('banner', i, { text: `${c.retake.why}! Chance 2 of 2`, minute: c.minute }, T.banner);
-      shot(c.retake.land, c.retake.ok, true);
+      close = shot(c.retake.land, c.retake.ok, true);
     }
     const goal = isGoal(c, c.ok);
     if (goal && c.side === 'atk') mine++; else if (goal) theirs++;
@@ -69,7 +76,7 @@ export function timeline(ev: MatchEvents, big: boolean): Step[] {
       if (c.side === 'atk') { data.wave = WAVES[goals % WAVES.length]; goals++; }
       if (c.side === 'atk' && (c.tag === 'SCREAMER' || big)) data.takeover = c.tag === 'SCREAMER' ? 'screamer' : 'big';
     } else if (c.side === 'def') data.save = true;
-    push('result', i, data, T.result + (data.takeover ? T.takeover : 0));
+    push('result', i, data, (close ? T.lineResult : T.result) + (data.takeover ? T.takeover : 0));
     push('feed', i, { minute: c.minute, text: feedLine(c, goal) }, T.feed);
   });
   if (!half) push('phase', -1, { bookend: 'halftime', minute: 45, score: [mine, theirs] }, T.half);
@@ -90,12 +97,11 @@ function feedLine(c: ChanceEvent, goal: boolean): string {
   return goal ? `They score. ${c.type}, ${c.pct}% to stop it.` : `Saved. ${c.type}, ${c.pct}% to stop it.`;
 }
 
-/** Squeeze the whole replay under its cap, keeping the order. */
+/** Squeeze the whole replay under its cap, keeping the order; each roll then plays in the time its step is given. */
 function fit(steps: Step[], total: number, cap: number): Step[] {
-  const end = total;
-  if (end <= cap - 1000) return [...steps, { at: Math.round(end), kind: 'feed', chance: -1, data: { text: 'end' } }];
-  const k = (cap - 1000) / end;
-  return [...steps.map((s) => ({ ...s, at: Math.round(s.at * k) })), { at: cap - 1000, kind: 'feed' as const, chance: -1, data: { text: 'end' } }];
+  const k = total <= cap - 1000 ? 1 : (cap - 1000) / total;
+  const out: Step[] = [...steps.map((s) => ({ ...s, at: Math.round(s.at * k) })), { at: Math.round(Math.min(total, cap - 1000)), kind: 'feed' as const, chance: -1, data: { text: 'end' } }];
+  return out.map((s, j) => (s.data.roll ? { ...s, data: { ...s.data, roll: { ...s.data.roll, ms: out[j + 1].at - s.at } } } : s));
 }
 
 export const lengthOf = (steps: Step[]) => steps[steps.length - 1]?.at ?? 0;
