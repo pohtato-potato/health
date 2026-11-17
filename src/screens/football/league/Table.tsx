@@ -9,6 +9,40 @@ import type { Row } from '../../../football/table';
 import type { Result, Tier } from '../../../football/types';
 import { clubCrest } from '../../../football/art/crest';
 import { Art } from '../world/Fog';
+import { useLayoutEffect, useRef } from 'react';
+import { useSeenBefore } from '../../../ui/motion/motion';
+import { Roll } from '../../../ui/motion/Roll';
+
+/**
+ * The table rearranges (motion board one, O44): when the order changed since the table was last seen here, every row
+ * starts at its old place and slides to its new one, yours last, so you watch yourself climb or drop. Ends still.
+ */
+function useRearrange(key: string, order: string[]) {
+  const list = useRef<HTMLOListElement>(null);
+  const before = useSeenBefore(key, order);
+  useLayoutEffect(() => {
+    const ol = list.current;
+    if (!ol || !before || typeof ol.animate !== 'function') return;
+    if (before.length !== order.length || before.some((id) => !order.includes(id)) || before.every((id, i) => order[i] === id)) return;
+    const els = order.map((id) => ol.querySelector<HTMLElement>(`li[data-id="${CSS.escape(id)}"]`));
+    if (els.some((e) => !e)) return;
+    const tops = els.map((e) => e!.offsetTop);
+    let k = 0;
+    order.forEach((id, now) => {
+      const was = before.indexOf(id);
+      if (was === now) return;
+      const me = id === OWN;
+      const el = els[now]!;
+      if (me) { el.style.position = 'relative'; el.style.zIndex = '2'; }
+      el.animate([{ transform: `translateY(${tops[was] - tops[now]}px)` }, { transform: 'none' }], {
+        duration: me ? 1000 : 700, delay: me ? 1200 : 300 + k++ * 70, easing: 'cubic-bezier(.3, 1.2, .5, 1)', fill: 'backwards',
+      });
+    });
+    // Positions are read once on open; this plays once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return list;
+}
 
 const WORD: Record<Result, string> = { W: 'won', D: 'drew', L: 'lost' };
 export function ResultMark({ r, shape = 'c' }: { r: Result; shape?: 'c' | 'd' | 's' }) {
@@ -27,7 +61,9 @@ export function Table({ tier, rows, day, form, waiting = false, world = 1, limit
   const last = shape.divisions.length;
   const name = (t: number) => (world === 2 ? shape.name(t) : tierName(t as Tier));
   const out: React.ReactNode[] = [];
-  (limit ? rows.slice(0, limit) : rows).forEach((r, i) => {
+  const shown = limit ? rows.slice(0, limit) : rows;
+  const list = useRearrange(`table:${world}:${tier}:${limit ?? 'all'}`, shown.map((r) => r.id));
+  shown.forEach((r, i) => {
     const pos = i + 1;
     if (pos === 3 && tier > 1) out.push(<Cut key="up" kind="up" text="Top two go up" />);
     if (pos === 7 && tier > 1) out.push(<Cut key="po" kind="po" text="3rd to 6th: playoffs" />);
@@ -35,7 +71,7 @@ export function Table({ tier, rows, day, form, waiting = false, world = 1, limit
     const me = r.id === OWN;
     const club = me ? 'Brabo United' : clubById(r.id).name;
     out.push(
-      <li key={r.id} className={`fb-trow${me ? ' me' : ''}`} style={{ '--k': clubColour(r.id) } as React.CSSProperties}>
+      <li key={r.id} className={`fb-trow${me ? ' me' : ''}`} data-id={r.id} style={{ '--k': clubColour(r.id) } as React.CSSProperties}>
         <Row href={limit ? undefined : `#/football/club-page?id=${encodeURIComponent(r.id)}`} label={`${pos}, ${club}, ${r.pts} points${r.form.length ? `, form ${r.form.map((x) => WORD[x]).join(' ')}` : ''}`}>
           <span className="fb-tpos">{pos}</span>
           {me ? <span className="fb-tring" aria-hidden="true" /> : <span className="fb-tcrest"><Art svg={clubCrest(clubById(r.id), 24)} /></span>}
@@ -44,7 +80,7 @@ export function Table({ tier, rows, day, form, waiting = false, world = 1, limit
             {me && waiting && <span className="fb-s md-tbp">Last night: to be played</span>}
             <span className="fb-form" aria-hidden="true">{r.form.length ? r.form.map((x, k) => <ResultMark key={k} r={x} />) : <span className="fb-s">No games yet</span>}</span>
           </span>
-          <span className="fb-tpts">{r.pts}<small>pts</small></span>
+          <span className="fb-tpts">{me ? <Roll value={r.pts} id={`table-pts:${world}:${tier}:${limit ?? 'all'}`} /> : r.pts}<small>pts</small></span>
         </Row>
       </li>,
     );
@@ -52,7 +88,7 @@ export function Table({ tier, rows, day, form, waiting = false, world = 1, limit
   return (
     <section className="fb-table" style={{ '--t': `var(--fb-t${tier})` } as React.CSSProperties} aria-label={`${name(tier)} table`}>
       {!limit && <div className="fb-row"><span className="fb-t fb-tiername">{name(tier)}</span>{day && <span className="fb-s">{day}</span>}</div>}
-      <ol className="fb-trows">{out}</ol>
+      <ol ref={list} className="fb-trows">{out}</ol>
       {onAll && limit && rows.length > limit && <button type="button" className="fb-btn sm fb-seeall" onClick={onAll}>See all {rows.length}</button>}
       {!limit && world === 1 && <Notes1 tier={tier} rows={rows} form={form} />}
       {!limit && world === 2 && (
