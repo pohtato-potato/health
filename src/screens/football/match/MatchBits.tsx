@@ -1,7 +1,9 @@
 // Matchday depth (spec 2026-11-12 §3): the pieces the match screens share. The score with crests, the momentum strip,
 // the shot map, the players in a move, the plan (before kick-off), the pick of three. Presentation only.
 import { clubCrest, crestSvg } from '../../../football/art/crest';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { clubById } from '../../../football/data/load';
+import { OWN } from '../../../football/store/season';
 import { pickWords, TEMPO_NAME, TEMPOS, WIDTH_NAME, WIDTHS, type MatchdayPlan, type PickTile, type Read } from '../../../football/matchday';
 import type { XiPlace } from '../../../football/players/types';
 import { hashSeed } from '../../../football/rng';
@@ -20,7 +22,7 @@ export const pctInk = (pct: number) => ({ color: VALUE_INK[valueTier(pct, 100)] 
 export function ScoreBar({ save, oppId, braboHome, score, big = false }: { save: FbSave; oppId: string; braboHome: boolean; score: [number, number]; big?: boolean }) {
   const opp = clubById(oppId);
   const own = <Art svg={crestSvg(save.crest.step, save.crest.opt, 28)} />, them = <Art svg={clubCrest(opp, 28)} />;
-  const sides = braboHome ? [['Brabo', own, score[0]], [opp.short || opp.name, them, score[1]]] as const : [[opp.short || opp.name, them, score[1]], ['Brabo', own, score[0]]] as const;
+  const sides = braboHome ? [['Brabo', own, score[0]], [clubName(opp.id), them, score[1]]] as const : [[clubName(opp.id), them, score[1]], ['Brabo', own, score[0]]] as const;
   return (
     <header className={`mt-score${big ? ' big' : ''}`} aria-label={`${sides[0][0]} ${sides[0][2]}, ${sides[1][0]} ${sides[1][2]}`}>
       <span className="md-side">{sides[0][1]}<b>{sides[0][0]}</b><b className="fb-num">{sides[0][2]}</b></span>
@@ -29,7 +31,10 @@ export function ScoreBar({ save, oppId, braboHome, score, big = false }: { save:
   );
 }
 
-/** Ninety minutes in fifteen slices: who had the ball's chances, goals taller. */
+/**
+ * Ninety minutes in fifteen slices (match screen round, O44): labelled, and readable without colour: your chances
+ * rise above the line, theirs hang below it, a goal is taller and filled.
+ */
 export function MomentumStrip({ chances, upTo = 90 }: { chances: ChanceEvent[]; upTo?: number }) {
   const cells = Array.from({ length: 15 }, (_, k) => {
     const cs = chances.filter((c) => !c.kept && c.minute > k * 6 && c.minute <= (k + 1) * 6);
@@ -38,9 +43,67 @@ export function MomentumStrip({ chances, upTo = 90 }: { chances: ChanceEvent[]; 
     return { side, goal: Boolean(goal), past: k * 6 < upTo };
   });
   return (
-    <div className="mt-strip" role="img" aria-label="Momentum across the ninety minutes">
-      {cells.map((c, k) => <i key={k} className={`${c.side ?? ''}${c.goal ? ' goal' : ''}${c.past ? '' : ' future'}`} />)}
-    </div>
+    <figure className="ms-strip">
+      <figcaption>The chances, minute by minute: <b>yours above the line</b>, <b>theirs below</b>, goals taller</figcaption>
+      <div className="mt-strip ms-updown" role="img" aria-label={`The chances across the ninety minutes: ${cells.filter((c) => c.side === 'atk').length} spells yours, ${cells.filter((c) => c.side === 'def').length} theirs`}>
+        {cells.map((c, k) => <i key={k} className={`${c.side ?? ''}${c.goal ? ' goal' : ''}${c.past ? '' : ' future'}`} />)}
+      </div>
+    </figure>
+  );
+}
+
+/** A club's name for the match screens: the full name, or its first word when long; never three-letter initials. */
+export function clubName(id: string): string {
+  if (id === OWN) return 'Brabo';
+  const n = clubById(id).name;
+  if (n.length <= 13) return n;
+  const w = n.split(' ')[0];
+  return w.length >= 4 && w.length <= 13 ? w : n;
+}
+
+/** A club's own colour for the scoreboard flip and the streamers: Brabo's orange, or the club's first colour. */
+export const clubInk = (id: string): string => (id === OWN ? '#ff8a3d' : clubById(id).colours[0] ?? '#7fb8ff');
+const textOn = (hex: string) => {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return '#14101c';
+  const v = parseInt(m[1], 16), lum = (0.299 * (v >> 16) + 0.587 * ((v >> 8) & 255) + 0.114 * (v & 255)) / 255;
+  return lum > 0.55 ? '#14101c' : '#ffffff';
+};
+
+/**
+ * One number on the scoreboard (match screen round, O44): when it changes it flips like a stadium board, the old
+ * top half folding down and the new bottom half falling into place, the tile lit in the scoring club's colour.
+ * `from` starts it on an older number, so a screen that opens on a goal flips too.
+ */
+export function FlipNum({ n, ink, from }: { n: number; ink: string; from?: number }) {
+  const [st, setSt] = useState(() => ({ now: n, was: from ?? n, k: from !== undefined && from !== n ? 1 : 0 }));
+  if (st.now !== n) setSt({ now: n, was: st.now, k: st.k + 1 });
+  const style = { ['--flip' as string]: ink, ['--flipt' as string]: textOn(ink) } as CSSProperties;
+  return (
+    <span className={`ms-flip${st.k ? ' go' : ''}`} key={st.k} style={style}>
+      <span className="ms-card">{st.now}</span>
+      {st.k > 0 && st.was !== st.now && (
+        <>
+          <span className="ms-half b old" aria-hidden="true">{st.was}</span>
+          <span className="ms-half b new" aria-hidden="true">{st.now}</span>
+          <span className="ms-half t" aria-hidden="true">{st.was}</span>
+        </>
+      )}
+    </span>
+  );
+}
+
+export interface BoardSide { id: string; crest: string; n: number; from?: number }
+/** The score with both crests and names (never initials), the numbers as flip tiles, and the clock under it. */
+export function Board({ sides, clock, label }: { sides: [BoardSide, BoardSide]; clock?: ReactNode; label?: string }) {
+  const [l, r] = sides;
+  return (
+    <header className="lt-board ms-board" aria-label={label ?? `${clubName(l.id)} ${l.n}, ${clubName(r.id)} ${r.n}`}>
+      <span className="ms-side"><Art svg={l.crest} /><b>{clubName(l.id)}</b></span>
+      <b className="ms-score" aria-hidden="true"><FlipNum n={l.n} from={l.from} ink={clubInk(l.id)} /><i>–</i><FlipNum n={r.n} from={r.from} ink={clubInk(r.id)} /></b>
+      <span className="ms-side"><Art svg={r.crest} /><b>{clubName(r.id)}</b></span>
+      {clock && <span className="lt-clock">{clock}</span>}
+    </header>
   );
 }
 

@@ -7,10 +7,10 @@ import type { ChanceEvent } from '../../../football/types';
 
 export const FPS = 60;
 /** The rim's flat sides sit at cos 30° from the centre; the ball (radius about 0.08) bounces off them. */
-const INRADIUS = Math.cos(Math.PI / 6);
+export const INRADIUS = Math.cos(Math.PI / 6);
 const WALL = INRADIUS - 0.08;
 /** Outward normals of the rim's six flat sides (the spokes run through the corners, Pace at the top). */
-const NORMALS: Pt[] = Array.from({ length: 6 }, (_, k) => {
+export const NORMALS: Pt[] = Array.from({ length: 6 }, (_, k) => {
   const a = -Math.PI / 2 + Math.PI / 6 + (k * Math.PI) / 3;
   return [Math.cos(a), Math.sin(a)];
 });

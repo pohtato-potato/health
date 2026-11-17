@@ -6,13 +6,15 @@ import { markWatched } from '../../football/store/save';
 import { OWN } from '../../football/store/season';
 import type { FbSave, StoredMatch } from '../../football/store/tables';
 import type { ChanceEvent, Mod } from '../../football/types';
-import { Art } from './Tonight';
 import { Aurora } from './FootballHome';
 import { AbilityBanner } from './match/AbilityBanner';
 import { Bookend } from './match/Bookends';
 import { Pitch, RollWord, type PitchState } from './match/Pitch';
 import { lengthOf, timeline, type Step } from './match/Replay';
 import { Takeover } from './match/Takeover';
+import { Board } from './match/MatchBits';
+import '../../styles/look-tonight.css';
+import '../../styles/match-screen.css';
 import { WAVE_NAMES } from './match/Shockwave';
 import { attendance, homeGround, TENANT_CAPACITY } from '../../football/ground';
 import { hashSeed } from '../../football/rng';
@@ -94,7 +96,7 @@ export function MatchPlayer({ m, save, onEnd, at, paused = false }: { m: StoredM
   useEffect(() => { if (v.done) void markWatched(m.id); }, [v.done, m.id]);
 
   const opp = clubById(m.opp);
-  const mineCrest = crestSvg(save.crest.step, save.crest.opt, 36);
+  const mineCrest = crestSvg(save.crest.step, save.crest.opt, 40);
   const left = m.braboHome ? 'Brabo United' : opp.name, right = m.braboHome ? opp.name : 'Brabo United';
   const shown: [number, number] = m.braboHome ? v.score : [v.score[1], v.score[0]];
   const wave = v.pitch.wave;
@@ -102,14 +104,14 @@ export function MatchPlayer({ m, save, onEnd, at, paused = false }: { m: StoredM
   return (
     <Aurora className={`fb-match ${v.phase?.side ?? ''}`}>
       <main className="fb-page fb-matchpage">
-        <header className="fb-board" aria-live="off">
-          <Art svg={m.braboHome ? mineCrest : clubCrest(opp, 36)} />
-          <span className="fb-bmid">
-            <b className="fb-num fb-bscore" aria-label={`${left} ${shown[0]}, ${right} ${shown[1]}`}>{shown[0]}–{shown[1]}</b>
-            <span className="fb-num fb-minute">{v.minute}’</span>
-          </span>
-          <Art svg={m.braboHome ? clubCrest(opp, 36) : mineCrest} />
-        </header>
+        <Board
+          sides={[
+            { id: m.home, crest: m.braboHome ? mineCrest : clubCrest(opp, 40), n: shown[0] },
+            { id: m.away, crest: m.braboHome ? clubCrest(opp, 40) : mineCrest, n: shown[1] },
+          ]}
+          clock={<><b>{v.minute}′</b> of 90</>}
+          label={`${left} ${shown[0]}, ${right} ${shown[1]}, ${v.minute} minutes`}
+        />
         <p className="fb-s fb-ctr">{m.round ?? ''}</p>
         <div className="fb-stage">
           <Pitch s={v.pitch} onWord={setWord} />
@@ -138,7 +140,7 @@ export function MatchPlayer({ m, save, onEnd, at, paused = false }: { m: StoredM
         <div className="fb-btns">
           {v.done
             ? <button type="button" className="fb-btn pri" onClick={onEnd}>Full time</button>
-            : <button type="button" className="fb-btn" onClick={() => setI(steps.length - 1)}>Skip to the result</button>}
+            : <button type="button" className="ms-skip" onClick={() => setI(steps.length - 1)}>Skip to the result</button>}
         </div>
         <p className="fb-s fb-ctr">{Math.round(lengthOf(steps) / 1000)} s match</p>
       </main>
