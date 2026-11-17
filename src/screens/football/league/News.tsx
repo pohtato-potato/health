@@ -7,14 +7,18 @@ import { fmtDayShort } from '../../../domain/format';
 import { backPage } from '../../../football/store/league';
 import type { FbNews, StoredMatch } from '../../../football/store/tables';
 import { go } from '../../../router';
+import { PressWords } from '../../../ui/motion/PressWords';
+import { useSeenBefore } from '../../../ui/motion/motion';
 
 export function BackPageCard({ news, matches, today, more = false }: { news: FbNews[]; matches: StoredMatch[]; today: string; more?: boolean }) {
   const b = backPage(news, matches, today);
+  // A new headline is set like a press the first time it is seen (O44).
+  const before = useSeenBefore<string | null>('backpage', b.headline?.text ?? null);
   if (!b.headline) return null;
   return (
     <section className="fb-backpage" aria-label="The back page">
       <span className="fb-lb">The back page · {fmtDayShort(b.headline.date)}</span>
-      <b className="fb-bphl">{b.headline.text}</b>
+      <b className="fb-bphl"><PressWords text={b.headline.text} play={before !== b.headline.text} /></b>
       {b.callback && <p className="fb-s">{b.callback}</p>}
       {more && <button type="button" className="fb-btn sm" onClick={() => go('/football/league', { view: 'news' })}>All the news</button>}
     </section>
