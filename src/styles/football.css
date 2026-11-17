@@ -97,11 +97,8 @@ svg.fb-crest { filter: drop-shadow(0 0 6px rgba(255,122,26,.55)); }
 .fb-kc .sy { fill: none; stroke: var(--fb-ink); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
 .fb-kc .tx { font: 700 22px var(--fb-cond); fill: var(--fb-ink); text-anchor: middle; }
 .fb-kc .tx.s { font-size: 18px; }
-/* O42: original crests for real clubs: the shape in the first colour, a field in the second, the symbol on top. */
-.fb-oc .sh { fill: color-mix(in srgb, var(--k) 38%, #0d0a18); }
-.fb-oc .fd { fill: color-mix(in srgb, var(--k2) 70%, #0d0a18); }
-.fb-oc .sh.ln { fill: none; }
-.fb-oc .sb .sy { stroke: #fff; stroke-width: 5; filter: drop-shadow(0 0 1.5px #000) drop-shadow(0 0 1.5px #000); }
+/* 17 Nov: real clubs' crests are drawings of their real badges (realCrests.ts); colours are set inline. */
+.fb-rc .tx { font-weight: 800; letter-spacing: -.02em; }
 
 /* ---- kits ---- */
 .fb-kit { flex: none; overflow: visible; }

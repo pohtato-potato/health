@@ -1,9 +1,9 @@
-// Crests as SVG strings (spec §8.8, boards 9–11). Brabo's five steps come from the approved files;
-// every other club is built from the crest kit: one of six outlines, a symbol, the club colour.
+// Crests as SVG strings (spec §8.8, boards 9–11). Brabo's five steps come from the approved files; every real club
+// has its own drawing of its real badge (realCrests.ts); quirky and old clubs are built from the crest kit.
 import type { ClubDef } from '../data/load';
-import { WORLD_CLUBS } from '../data/world';
 import { hashSeed } from '../rng';
 import { CREST_STEPS } from './crestSteps';
+import { onDark, REAL_CRESTS } from './realCrests';
 
 let n = 0;
 const uniq = (svg: string) => {
@@ -92,57 +92,24 @@ export function kitCrest(shape: ShapeKey, sym: string, colour: string, size: num
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 
-/**
- * O41 3 (O42): every real club gets an original crest, never a copy of its badge: one of the six outlines, a field
- * divided in its second colour, and a symbol from the kit, all picked from its id. No letters and no drawn badge.
- */
-export const FIELDS = {
-  plain: '',
-  band: '<path d="M0 40 H100 V60 H0 Z" class="fd"/>',
-  pale: '<path d="M40 0 H60 V100 H40 Z" class="fd"/>',
-  half: '<path d="M50 0 H100 V100 H50 Z" class="fd"/>',
-  chief: '<path d="M0 0 H100 V30 H0 Z" class="fd"/>',
-  sash: '<path d="M0 22 L22 0 L100 78 L78 100 Z" class="fd"/>',
-  chevron: '<path d="M0 62 L50 34 L100 62 V84 L50 56 L0 84 Z" class="fd"/>',
-  quarters: '<path d="M0 0 H50 V50 H0 Z M50 50 H100 V100 H50 Z" class="fd"/>',
-  stripes: '<path d="M18 0 H30 V100 H18 Z M44 0 H56 V100 H44 Z M70 0 H82 V100 H70 Z" class="fd"/>',
-} as const;
-export type FieldKey = keyof typeof FIELDS;
-const FIELD_KEYS = Object.keys(FIELDS) as FieldKey[];
-const SYM_KEYS = Object.keys(SYM);
+/** True when a real club has its own drawn crest. */
+export const hasRealCrest = (id: string) => id in REAL_CRESTS;
 
-type Parts = { shape: ShapeKey; field: FieldKey; sym: string };
-const partsAt = (h: number): Parts => ({ shape: SHAPE_KEYS[h % SHAPE_KEYS.length], field: FIELD_KEYS[(h >>> 4) % FIELD_KEYS.length], sym: SYM_KEYS[(h >>> 9) % SYM_KEYS.length] });
-const partsKey = (p: Parts) => `${p.shape}:${p.field}:${p.sym}`;
-let assigned: Map<string, Parts> | undefined;
-/** world.json's clubs, in id order, each take the first design no club before them has: no two crests alike. */
-function assignedParts(): Map<string, Parts> {
-  if (assigned) return assigned;
-  assigned = new Map();
-  const used = new Set<string>();
-  for (const id of WORLD_CLUBS.map((c) => c.id).sort()) {
-    let p = partsAt(hashSeed('crest-original', id));
-    for (let k = 1; used.has(partsKey(p)); k++) p = partsAt(hashSeed(`crest-original-${k}`, id));
-    used.add(partsKey(p));
-    assigned.set(id, p);
+/** A real club's crest: its own drawing of the real badge, in its colours. */
+export function realCrest(c: Pick<ClubDef, 'id' | 'name' | 'crest' | 'colours'>, size: number): string {
+  const body = REAL_CRESTS[c.id];
+  const k = onDark(c.colours[0]);
+  if (!body) {
+    const [shape, sym] = kitParts(c);
+    return kitCrest(shape, sym, k, size);
   }
-  return assigned;
-}
-/** The parts of a real club's original crest. */
-export function originalParts(c: Pick<ClubDef, 'id'>): Parts {
-  return assignedParts().get(c.id) ?? partsAt(hashSeed('crest-original', c.id));
-}
-
-/** A real club's original crest (never its real badge). */
-export function realCrest(c: Pick<ClubDef, 'id' | 'colours'>, size: number): string {
-  const { shape, field, sym } = originalParts(c);
-  const k = c.colours[0] ?? '#f3eee6';
-  const k2 = c.colours[1] && c.colours[1].toLowerCase() !== k.toLowerCase() ? c.colours[1] : '#f3eee6';
-  const fd = FIELDS[field] ? `<clipPath id="cl"><path d="${SHAPES[shape]}"/></clipPath><g clip-path="url(#cl)">${FIELDS[field]}</g>` : '';
-  return uniq(`<svg class="fb-kc fb-oc" style="--k:${k};--k2:${k2}" width="${size}" height="${size}" viewBox="0 0 100 100" aria-hidden="true"><path d="${SHAPES[shape]}" class="sh"/>${fd}<path d="${SHAPES[shape]}" class="sh ln"/><g class="sb">${SYM[sym]}</g></svg>`);
+  const k2 = onDark(c.colours[1] ?? c.colours[0]);
+  const raw = (h: string | undefined, f: string) => (h && /^#[0-9a-f]{6}$/i.test(h) ? h : f);
+  const vars = `--k:${k};--k2:${k2};--c1:${raw(c.colours[0], k)};--c2:${raw(c.colours[1], k2)}`;
+  return uniq(`<svg class="fb-kc fb-rc" style="${vars}" width="${size}" height="${size}" viewBox="0 0 100 100" aria-hidden="true">${body}</svg>`);
 }
 
-/** Any club's crest: real → an original crest, quirky or old → kit of parts, own → the chosen step. */
+/** Any club's crest: real → its drawn badge, quirky or old → kit of parts, own → the chosen step. */
 export function clubCrest(c: ClubDef, size: number, own?: { step: CrestStep; opt: CrestOptKey }): string {
   if (c.kind === 'own') return crestSvg(own?.step ?? 1, own?.opt ?? 'a', size);
   if (c.kind === 'real') return realCrest(c, size);
