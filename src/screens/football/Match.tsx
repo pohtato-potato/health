@@ -10,8 +10,7 @@ import { Art } from './Tonight';
 import { Aurora } from './FootballHome';
 import { AbilityBanner } from './match/AbilityBanner';
 import { Bookend } from './match/Bookends';
-import { GoalLineCaption } from './match/GoalLine';
-import { Pitch, type PitchState } from './match/Pitch';
+import { Pitch, RollWord, type PitchState } from './match/Pitch';
 import { lengthOf, timeline, type Step } from './match/Replay';
 import { Takeover } from './match/Takeover';
 import { WAVE_NAMES } from './match/Shockwave';
@@ -28,7 +27,6 @@ export interface View {
   banner?: string;
   bookend?: Step['data']['bookend'];
   takeover?: { kind: 'screamer' | 'big'; minute: number };
-  goalline?: { ok: boolean; decided: boolean };
   feed: { minute: number; text: string }[];
   done: boolean;
 }
@@ -38,7 +36,6 @@ export function viewAt(steps: Step[], chances: ChanceEvent[], i: number): View {
   const v: View = { minute: 0, score: [0, 0], pitch: { flying: false, zoom: false, save: false, resultKey: 0 }, mods: [], feed: [], done: false };
   for (let k = 0; k <= i && k < steps.length; k++) {
     const s = steps[k], c = chances[s.chance];
-    if (s.kind !== 'goalline') v.goalline = undefined;
     if (s.kind === 'phase') v.takeover = undefined;
     switch (s.kind) {
       case 'phase':
@@ -49,16 +46,21 @@ export function viewAt(steps: Step[], chances: ChanceEvent[], i: number): View {
         break;
       case 'mod': v.bookend = undefined; v.mods = c?.mods ?? []; break;
       case 'pct': v.pct = c?.pct; break;
-      case 'fly': v.pitch = { ...v.pitch, ball: s.data.land, flying: true, zoom: false, wave: undefined, save: false }; v.banner = undefined; break;
-      case 'goalline': v.pitch = { ...v.pitch, zoom: true }; v.goalline = { ok: !!s.data.ok, decided: false }; break;
+      case 'fly': {
+        const r = s.data.roll;
+        v.pitch = { ...v.pitch, ball: s.data.land, flying: true, zoom: !!r?.close, wave: undefined, save: false, roll: r && { seed: r.seed, ok: !!s.data.ok, ms: r.ms } };
+        v.banner = undefined;
+        break;
+      }
       case 'result':
-        v.pitch = { ...v.pitch, flying: false, zoom: false, wave: s.data.wave, save: !!s.data.save, resultKey: k };
+        v.pitch = { ...v.pitch, flying: false, wave: s.data.wave, save: !!s.data.save, resultKey: k };
         if (s.data.score) v.score = s.data.score;
         if (s.data.takeover) v.takeover = { kind: s.data.takeover, minute: s.data.minute ?? v.minute };
         break;
       case 'banner': v.banner = s.data.text; break;
       case 'feed':
-        if (s.data.text === 'end') v.done = true;
+        // The end (also where Skip lands): any roll stops at once on its stored landing.
+        if (s.data.text === 'end') { v.done = true; v.pitch = { ...v.pitch, flying: false, roll: undefined }; }
         else if (s.data.text) v.feed = [{ minute: s.data.minute ?? 0, text: s.data.text }, ...v.feed].slice(0, 3);
         break;
     }
@@ -82,6 +84,7 @@ export function MatchPlayer({ m, save, onEnd, at, paused = false }: { m: StoredM
     return () => clearTimeout(t);
   }, [i, steps, paused]);
   const v = viewAt(steps, m.events.chances, i);
+  const [word, setWord] = useState<boolean | null>(null);
   const step = steps[i];
   useEffect(() => {
     if (step?.kind !== 'result') return;
@@ -109,8 +112,7 @@ export function MatchPlayer({ m, save, onEnd, at, paused = false }: { m: StoredM
         </header>
         <p className="fb-s fb-ctr">{m.round ?? ''}</p>
         <div className="fb-stage">
-          <Pitch s={v.pitch} />
-          {v.goalline && <GoalLineCaption ok={v.goalline.ok} decided={false} side={v.phase?.side ?? 'atk'} />}
+          <Pitch s={v.pitch} onWord={setWord} />
           {v.bookend && <Bookend kind={v.bookend} score={shown} home={left} away={right} ground={ground} />}
         </div>
         <section className="fb-call" aria-live="polite">
@@ -118,7 +120,7 @@ export function MatchPlayer({ m, save, onEnd, at, paused = false }: { m: StoredM
           {v.phase && (
             <div className="fb-row">
               <span className={`fb-tag ${v.phase.side === 'atk' ? 'or' : 'pu'}`}>{v.phase.side === 'atk' ? 'You attack' : 'They attack'}</span>
-              <span className="fb-s">{v.phase.minute}’ · {v.phase.type}</span>
+              <span className="fb-s">{v.phase.minute}’ · {v.phase.type}<RollWord inShape={v.pitch.flying ? word : null} /></span>
             </div>
           )}
           {v.mods.length > 0 && (

@@ -29,7 +29,9 @@ import { Action, Chip, HelpButton, Panel } from '../../../ui/kit/Kit';
 import { CALL_HOW, MATCH_HOW } from '../howDaily';
 import { Gremlin, Pundit } from '../Studio';
 import '../../../styles/look-tonight.css';
-import { Pitch } from './Pitch';
+import { Pitch, RollWord } from './Pitch';
+import { firstLandingOk } from './Replay';
+import { roll, rollSeed } from './roll';
 
 const run = (st: MatchState) => { while (nextChance(st)) { /* to the next stop */ } return st; };
 const isGoal = (c: ChanceEvent) => !c.kept && (c.side === 'atk' ? c.ok : !c.ok);
@@ -93,8 +95,11 @@ export function PreKickOff({ p, save, onKickOff, onSkip }: { p: PausedMatch; sav
   );
 }
 
-type Phase = 'enter' | 'shot' | 'result';
-const MS: Record<Phase, number> = { enter: 1800, shot: 1300, result: 1400 };
+// A chance: the move comes in, the ball rolls (O44; a retake rolls again after "Chance 2 of 2"), then the result.
+// A shot lasts as long as its roll; a goal-line roll's result holds for the verdict and the close-up easing back,
+// and a goal shows its verdict and burst on the pitch before the goal screen.
+type Phase = 'enter' | 'shot' | 'retry' | 'shot2' | 'result';
+const MS = { enter: 1800, retry: 1800, result: 1400, lineResult: 2600, goal: 1000, lineGoal: 1800 };
 
 /** The score with both crests, big in the middle, and the clock under it: what leads every match screen. */
 function Scoreboard({ p, save, score, minute, label }: { p: PausedMatch; save: FbSave; score: [number, number]; minute?: number; label?: ReactNode }) {
@@ -129,18 +134,33 @@ function LivePlay({ p, save, onEnd }: { p: PausedMatch; save: FbSave; onEnd: () 
   const once = (f: () => Promise<void>) => { if (busy) return; setBusy(true); void f(); };
   const c = st.chances[k];
   const credits = useMemo(() => creditsFor({ seed: p.input.seed, chances: st.chances, score: [0, 0], xg: [0, 0], moments: [] }, p.prep.xi, clubById(p.prep.oppId).name, undefined, p.prep.setPiece), [st, p]);
+  const [word, setWord] = useState<boolean | null>(null);
+  // The two possible rolls of this chance, the same as its replay will roll them.
+  const rolls = useMemo(() => {
+    if (!c || c.kept) return null;
+    const first = { seed: rollSeed(p.input.seed, k, false), land: c.land, ok: firstLandingOk(c), close: c.glDist !== null };
+    const second = c.retake && { seed: rollSeed(p.input.seed, k, true), land: c.retake.land, ok: c.retake.ok, close: false };
+    return { first: { ...first, ms: roll(c, first.land, first.seed, first.close).ms }, second: second && { ...second, ms: roll(c, second.land, second.seed, false).ms } };
+  }, [c, k, p.input.seed]);
+  const shot = rolls && (phase === 'shot2' || (phase === 'result' && rolls.second) ? rolls.second! : rolls.first);
   useEffect(() => {
     if (!c || goal !== null) return;
+    const next = () => { setK(k + 1); setPhase('enter'); };
+    const toResult = () => { setPhase('result'); if (isGoal(c)) buzz(save.buzz, c.side === 'atk' ? [60, 40, 120] : 80); };
+    const close = !!shot?.close;
+    const wait = c.kept ? MS.enter : phase === 'enter' ? MS.enter : phase === 'shot' || phase === 'shot2' ? shot!.ms : phase === 'retry' ? (close ? MS.lineResult : MS.retry)
+      : isGoal(c) ? (close ? MS.lineGoal : MS.goal) : close ? MS.lineResult : MS.result;
     const t = setTimeout(() => {
-      if (c.kept) { setK(k + 1); setPhase('enter'); return; }
+      if (c.kept) return next();
       if (phase === 'enter') setPhase('shot');
-      else if (phase === 'shot') {
-        setPhase('result');
-        if (isGoal(c)) { buzz(save.buzz, c.side === 'atk' ? [60, 40, 120] : 80); setGoal(k); }
-      } else { setK(k + 1); setPhase('enter'); }
-    }, MS[phase]);
+      else if (phase === 'shot') { if (rolls?.second) setPhase('retry'); else toResult(); }
+      else if (phase === 'retry') setPhase('shot2');
+      else if (phase === 'shot2') toResult();
+      else if (isGoal(c)) setGoal(k);
+      else next();
+    }, wait);
     return () => clearTimeout(t);
-  }, [c, k, phase, goal, save.buzz]);
+  }, [c, k, phase, goal, save.buzz, rolls, shot]);
   const upTo = st.chances.slice(0, c ? k + (phase === 'result' ? 1 : 0) : k);
   const score: [number, number] = [upTo.filter((x) => x.side === 'atk' && x.ok && !x.kept).length, upTo.filter((x) => x.side === 'def' && !x.ok).length];
   const minute = c ? c.minute : st.stop?.kind === 'half' ? 45 : st.stop?.kind === 'call' ? st.stop.offer.minute : 90;
@@ -169,7 +189,11 @@ function LivePlay({ p, save, onEnd }: { p: PausedMatch; save: FbSave; onEnd: () 
       <MomentumStrip chances={upTo} upTo={minute} />
       <div className="md-stadium lt-stadium">
         <i className="lt-flood" aria-hidden="true" />
-        <Pitch s={{ chance: c, ball: phase === 'enter' ? undefined : c.land, flying: phase === 'shot', zoom: false, save: phase === 'result' && c.side === 'def' && c.ok, resultKey: k }} dots={st.chances.slice(0, k)} entry={phase !== 'enter'} />
+        <Pitch
+          s={{ chance: c, ball: phase === 'enter' || !shot ? undefined : shot.land, flying: phase === 'shot' || phase === 'shot2', zoom: !!shot?.close, save: phase === 'result' && c.side === 'def' && c.ok, resultKey: k, roll: shot ? { seed: shot.seed, ok: shot.ok } : undefined }}
+          dots={st.chances.slice(0, k)}
+          onWord={setWord}
+        />
       </div>
       <div className="lt-now" key={k}>
         {chain.length > 0 && (
@@ -178,7 +202,7 @@ function LivePlay({ p, save, onEnd }: { p: PausedMatch; save: FbSave; onEnd: () 
           </ol>
         )}
         <div className="k-row lt-chance">
-          <span className="k-col"><span className="lt-cap">{c.minute}′ · {c.type}</span>{phase === 'result' ? <b className={`lt-res ${isGoal(c) ? (c.side === 'atk' ? 'g' : 'x') : ''}`}>{isGoal(c) ? (c.side === 'atk' ? 'Goal!' : 'They score.') : c.side === 'atk' ? 'It stays out.' : 'Stopped.'}</b> : <span className="k-q">{c.side === 'atk' ? 'Your chance' : 'Their chance'}</span>}</span>
+          <span className="k-col"><span className="lt-cap">{c.minute}′ · {c.type}<RollWord inShape={phase === 'shot' || phase === 'shot2' ? word : null} /></span>{phase === 'result' ? <b className={`lt-res ${isGoal(c) ? (c.side === 'atk' ? 'g' : 'x') : ''}`}>{isGoal(c) ? (c.side === 'atk' ? 'Goal!' : 'They score.') : c.side === 'atk' ? 'It stays out.' : 'Stopped.'}</b> : <span className="k-q">{c.retake && (phase === 'retry' || phase === 'shot2') ? `${c.retake.why}! Chance 2 of 2` : c.side === 'atk' ? 'Your chance' : 'Their chance'}</span>}</span>
           <span className="lt-pct"><b className="fb-num" style={pctInk(c.pct)}>{c.pct}%</b><span className="k-q">{c.side === 'atk' ? 'to score' : 'to stop it'}</span></span>
         </div>
         {chips.length > 0 && <div className="lt-chips">{chips.map((x) => <Chip key={x.text} ink={AXIS_INK[x.axis]}>{x.text}</Chip>)}</div>}

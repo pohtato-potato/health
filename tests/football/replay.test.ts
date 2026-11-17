@@ -15,12 +15,12 @@ const match = (chances: ChanceEvent[]): MatchEvents => {
 const kinds = (s: Step[], i: number) => s.filter((x) => x.chance === i).map((x) => x.kind);
 
 describe('replay timeline', () => {
-  it('8 chances on a big night stay under 180 s, even all goals with goal-line checks', () => {
+  it('8 chances on a big night stay under the cap, even all goals with goal-line checks', () => {
     const m = match(Array.from({ length: 8 }, (_, i) => ch(i, 'atk', true, { glDist: 0.01, tag: i === 0 ? 'SCREAMER' : undefined })));
     expect(lengthOf(timeline(m, true))).toBeLessThanOrEqual(MAX_BIG_MS);
   });
 
-  it('6 chances on a normal night stay under 90 s', () => {
+  it('6 chances on a normal night stay under the cap', () => {
     const m = match(Array.from({ length: 6 }, (_, i) => ch(i, i % 2 ? 'def' : 'atk', i % 3 === 0, { glDist: i === 2 ? 0.02 : null })));
     expect(lengthOf(timeline(m, false))).toBeLessThanOrEqual(MAX_NORMAL_MS);
     const worst = match(Array.from({ length: 6 }, (_, i) => ch(i, 'atk', true, { glDist: 0.01 })));
@@ -34,17 +34,33 @@ describe('replay timeline', () => {
     for (let k = 1; k < s.length; k++) expect(s[k].at).toBeGreaterThanOrEqual(s[k - 1].at);
   });
 
-  it('goal-line steps appear only when glDist is set', () => {
+  it('the goal-line close-up comes only when glDist is set, and each roll gets its own length (O44)', () => {
     const s = timeline(match([ch(0, 'atk', true, { glDist: 0.02 }), ch(1, 'atk', false)]), false);
-    expect(kinds(s, 0)).toContain('goalline');
-    expect(kinds(s, 1)).not.toContain('goalline');
+    const fly = s.filter((x) => x.kind === 'fly');
+    expect(fly.map((x) => x.data.roll!.close)).toEqual([true, false]);
+    expect(fly[0].data.roll!.ms).toBeGreaterThanOrEqual(5000);
+    expect(fly[0].data.roll!.ms).toBeLessThanOrEqual(6000);
+    expect(fly[1].data.roll!.ms).toBeGreaterThanOrEqual(3600);
+    expect(fly[1].data.roll!.ms).toBeLessThanOrEqual(4600);
+    for (const f of fly) expect(s[s.indexOf(f) + 1].at - f.at).toBe(f.data.roll!.ms);
+    expect(timeline(match([ch(0, 'atk', true, { glDist: 0.02 }), ch(1, 'atk', false)]), false)).toEqual(s);
+  });
+
+  it('a usual 12-chance night plays unsqueezed, every roll at its own length', () => {
+    const m = match(Array.from({ length: 12 }, (_, i) => ch(i % 8, i % 2 ? 'def' : 'atk', i % 3 === 0, { glDist: i % 6 === 0 ? 0.02 : null })));
+    const s = timeline(m, false);
+    expect(lengthOf(s)).toBeLessThan(MAX_NORMAL_MS - 1000);
+    for (const f of s.filter((x) => x.kind === 'fly')) expect(f.data.roll!.ms).toBeGreaterThanOrEqual(3600);
   });
 
   it('a retake says Chance 2 of 2 and flies twice', () => {
     const s = timeline(match([ch(0, 'atk', true, { pct: 40, retake: { land: [0, 0], ok: true, why: 'Second wind' } })]), false);
     const b = s.find((x) => x.kind === 'banner')!;
     expect(b.data.text).toContain('Chance 2 of 2');
-    expect(kinds(s, 0).filter((k) => k === 'fly')).toHaveLength(2);
+    const fly = s.filter((x) => x.kind === 'fly' && x.chance === 0);
+    expect(fly).toHaveLength(2);
+    expect(fly[0].data.roll!.seed).not.toBe(fly[1].data.roll!.seed);
+    expect(fly.map((x) => x.data.ok)).toEqual([false, true]);
     expect(s.filter((x) => x.kind === 'result' && x.chance === 0)[0].data.ok).toBe(false);
   });
 
