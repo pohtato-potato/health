@@ -20,9 +20,8 @@
 }
 
 /* 9 · Crests: tonight's opponent flips in; your own catches one shine after a win. */
-.mo-flip { display: inline-block; perspective: 400px; }
-.mo-flip > * { display: inline-block; animation: mo-flip 900ms cubic-bezier(.2, .9, .3, 1.25) 150ms both; transform-origin: 50% 50%; }
-@keyframes mo-flip { 0% { transform: rotateY(90deg) scale(.8); opacity: 0; } 50% { opacity: 1; } 100% { transform: none; opacity: 1; } }
+.mo-flip-in { animation: mo-flip 900ms cubic-bezier(.2, .9, .3, 1.25) 150ms both; transform-origin: 50% 50%; }
+@keyframes mo-flip { 0% { transform: perspective(400px) rotateY(90deg) scale(.8); opacity: 0; } 50% { opacity: 1; } 100% { transform: none; opacity: 1; } }
 .mo-shine { position: relative; display: inline-block; overflow: hidden; border-radius: 12px; }
 .mo-shine::after { content: ''; position: absolute; inset: -20%; background: linear-gradient(115deg, transparent 35%, rgba(255, 246, 214, 0.85) 50%, transparent 65%); transform: translateX(-120%); animation: mo-shine 1.1s ease-in-out 700ms both; pointer-events: none; }
 @keyframes mo-shine { to { transform: translateX(120%); } }

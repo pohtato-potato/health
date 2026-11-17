@@ -45,6 +45,19 @@ import { weekStrip } from '../../domain/pledge';
 import { clockOf } from '../Pledge';
 import { watchWaiting } from './match/Waiting';
 import '../../styles/look-tonight.css';
+import { db } from '../../db/db';
+import { useSeenBefore } from '../../ui/motion/motion';
+
+/**
+ * Your crest catches a shine after a win (motion board one, O44): once per won match, the first time Tonight opens
+ * after it. Undefined while loading.
+ */
+function useWinShine(date: string): boolean {
+  const last = useLiveQuery(() => db.fbMatches.where('date').below(date).reverse().sortBy('date').then((ms) => ms[0] ?? null), [date]);
+  const won = last?.result === 'W' ? last.id : null;
+  const before = useSeenBefore<string | null>('crest-shine', won);
+  return Boolean(won && before !== won);
+}
 
 /** Our own SVG strings (crests, kits): built from data we ship, escaped where text goes in. */
 export function Art({ svg, className }: { svg: string; className?: string }) {
@@ -102,6 +115,7 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
   const chances = useChances(t.date);
   const chance = chances === undefined ? undefined : chances[0] ?? null;
   const xp = useLiveQuery(() => loadExpected(t.date), [t.date]);
+  const shine = useWinShine(t.date);
   const watch = onWatch ?? ((id: string) => go('/football/match', { id }));
   const moment = momentOf(t);
   if (moment) return <div className="lt-moment">{moment}</div>;
@@ -143,12 +157,12 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
       {!f && t.next && !t.morning.intl && <NoMatchTonight t={t} next={t.next} />}
       {t.morning.intl && <Panel ink="#93c3dc"><b className="k-lb">No game tonight</b><span className="k-q">The season waits for the break. Next up, once it’s over:</span></Panel>}
       <header className="lt-lead" aria-label={hf && hopp ? `${where}: Brabo v ${hopp.name}` : where}>
-        <Art svg={own} className="lt-crest" />
+        <Art svg={own} className={`lt-crest${shine ? ' mo-shine' : ''}`} />
         <span className="lt-vs">
           <span className="k-q">{where}</span>
           <b className="lt-opp">{t.opp ? `v ${oppName}` : hopp ? `v ${hopp.name}` : f ? 'Drawn on the night' : 'Tonight'}</b>
         </span>
-        {hopp ? <Art svg={clubCrest(hopp, 54)} className="lt-crest" /> : <span className="lt-crest lt-unknown" aria-hidden="true" />}
+        {hopp ? <Art svg={clubCrest(hopp, 54)} className="lt-crest mo-flip-in" /> : <span className="lt-crest lt-unknown" aria-hidden="true" />}
       </header>
       {many && <NightList t={t} chances={chances ?? []} />}
       <div className="lt-radar">
