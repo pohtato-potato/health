@@ -155,7 +155,7 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
         <Radar values={t.liveValues} flags={t.flags} fog={AXES.filter((a) => t.flags[a])} captain={t.save.slots.includes('armband') ? t.save.captain : undefined} opp={oppVals} oppInk="#93c3dc" oppName={t.opp?.name} inked size={300} label="Tonight’s shape so far" />
       </div>
       {pace && <PaceSumView p={pace} />}
-      {!many && chance && t.opp && !t.morning.intl && <div className="lt-stake"><ChanceBar c={chance} oppName={oppName} oppId={t.opp.id} date={t.date} /></div>}
+      {!many && chance && t.opp && !t.morning.intl && <div className="lt-stake"><ChanceBar c={chance} oppName={oppName} oppId={t.opp.id} date={t.date} values={t.liveValues} /></div>}
       {xp && t.opp && !t.morning.intl && <p className="k-q lt-ctr">The head of data: <b>{xpWords(xp.xp, xp.usual).replace(/^E/, 'e')}</b>.</p>}
       {unlogged.map((a) => (
         <Panel key={a} ink={AXIS_INK[a]}><span><b style={{ color: AXIS_INK[a] }}>{a} isn’t logged yet.</b> It plays low and wild until {LOG_FOR[a]}.</span></Panel>
@@ -226,7 +226,7 @@ function NightList({ t, chances }: { t: TonightData; chances: NightChance[] }) {
                 <b>{opp ? `v ${opp.name}` : 'Drawn on the night'}</b>
               </span>
             </div>
-            {c && opp && !t.morning.intl && <ChanceBar c={c} oppName={shortName(opp.id)} oppId={opp.id} date={t.date} />}
+            {c && opp && !t.morning.intl && <ChanceBar c={c} oppName={shortName(opp.id)} oppId={opp.id} date={t.date} values={t.liveValues} />}
           </Panel>
         );
       })}

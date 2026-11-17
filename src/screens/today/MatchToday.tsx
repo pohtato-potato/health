@@ -173,13 +173,13 @@ export function TonightShape({ t, stadium, buzzOn, reel }: { t: Tonight; stadium
               <div key={`${x.comp}:${x.opp}:${i}`} className="tm-nf">
                 <p className="tm-vsx">{x.opp ? <><Art svg={clubCrest(clubById(x.opp), 22)} /><b style={{ color: inkOf(x.opp) }}>{name(x.opp)}</b></> : <b>Drawn on the night</b>}</p>
                 <p className="tm-ln">{x.round ?? x.label}{x.opp ? ` · ${x.braboHome ? 'home' : 'away'}` : ''}</p>
-                {c && x.opp && <ChanceBar c={c} oppName={short(x.opp)} oppId={x.opp} date={t.date} />}
+                {c && x.opp && <ChanceBar c={c} oppName={short(x.opp)} oppId={x.opp} date={t.date} values={t.liveValues} />}
               </div>
             );
           })}
           <p className="tm-ln">One shape plays {t.fixtures.length === 2 ? 'both' : 'them all'}. Each has its own chance.</p>
         </div>
-      ) : chance && oppId && <ChanceBar c={chance} oppName={short(oppId)} oppId={oppId} date={t.date} />}
+      ) : chance && oppId && <ChanceBar c={chance} oppName={short(oppId)} oppId={oppId} date={t.date} values={t.liveValues} />}
       {lead && oppVals && oppId && (
         <div className="tm-ahead">
           <p className="tm-at"><b style={{ color: AXIS_INK[lead] }}>{lead}</b><span>takes you ahead</span></p>
