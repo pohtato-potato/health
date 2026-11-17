@@ -7,6 +7,7 @@ import { finishWithAssistant } from '../../../football/store/play';
 import type { FbSave } from '../../../football/store/tables';
 import { go } from '../../../router';
 import { Art } from '../Tonight';
+import { clubName } from './MatchBits';
 import { Action, Panel } from '../../../ui/kit/Kit';
 
 /** Opens the waiting match to watch live (before kick-off first). */
@@ -18,7 +19,7 @@ export function WaitingMatch({ save }: { save: FbSave }) {
   if (!p) return null;
   const opp = clubById(p.prep.oppId);
   const own = <Art svg={crestSvg(save.crest.step, save.crest.opt, 40)} />, them = <Art svg={clubCrest(opp, 40)} />;
-  const [l, r] = p.prep.braboHome ? [['Brabo', own], [opp.short || opp.name, them]] as const : [[opp.short || opp.name, them], ['Brabo', own]] as const;
+  const [l, r] = p.prep.braboHome ? [['Brabo', own], [clubName(opp.id), them]] as const : [[clubName(opp.id), them], ['Brabo', own]] as const;
   const skip = async () => {
     setBusy(true);
     const m = await finishWithAssistant();

@@ -1,6 +1,6 @@
 // Full time: the score, xG, the moments, a hidden ability found out, then the studio and the press.
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { db } from '../../db/db';
 import { clubCrest, crestSvg } from '../../football/art/crest';
 import { clubById } from '../../football/data/load';
@@ -13,8 +13,10 @@ import { Art, homeFirst, RESULT, scoreLine } from './Tonight';
 import { Press } from './Press';
 import { answerPapers, loadPapers, type Papers } from '../../football/store/papers';
 import { tapeOf, VIDEO_ROOM } from '../../football/tape';
+import { hashSeed } from '../../football/rng';
 import { Studio } from './Studio';
-import { MomentumStrip, PickOfThree, playerOfMatch, ShotMap } from './match/MatchBits';
+import { clubInk, MomentumStrip, PickOfThree, playerOfMatch, ShotMap } from './match/MatchBits';
+import '../../styles/match-screen.css';
 import { TACTIC_NAME } from '../../football/rotation/night';
 import type { CallRecord } from '../../football/types';
 import { Action, Panel } from '../../ui/kit/Kit';
@@ -41,8 +43,10 @@ export function FullTimeView({ m, save, studio, press, tier = 6, onWatch, papers
     return () => { if (root.dataset.ft === m.result) delete root.dataset.ft; };
   }, [m.result]);
   return (
-    <div className="lt-ft">
-      <div className="k-row"><span className="lt-cap">Full time</span><span className="k-q">{m.round ?? ''}</span></div>
+    <div className="lt-ft ms-ft">
+      <Streamers m={m} />
+      <div className="k-row"><span className="lt-cap">Full time · {scoreLine(m)}</span><span className="k-q">{m.round ?? ''}</span></div>
+      {studio && <Studio lines={studio.text.split('\n')} />}
       <article className={`fb-card hot fb-result r-${m.result}`}>
         <div className="fb-duel">
           <Art svg={crest(m.home)} />
@@ -64,7 +68,6 @@ export function FullTimeView({ m, save, studio, press, tier = 6, onWatch, papers
           {m.plan && <p className="k-q">Plan: {TACTIC_NAME[m.plan.tactic ?? m.tactic?.pick ?? 'hold']}{m.plan.half2 ? `, ${TACTIC_NAME[m.plan.half2]} after half-time` : ''} · tempo {m.plan.tempo ?? 'normal'}{m.plan.card ? ` · tactic card +1 ${m.plan.card}` : ''}{m.plan.read && m.plan.read !== 'Not scouted yet' ? `. ${m.plan.read}` : ''}</p>}
         </Panel>
       )}
-      {m.pick && <PickOfThree matchId={m.id} pick={m.pick} name={(id) => clubById(id).name} />}
       {(m.credits?.length ?? 0) > 0 && (
         <Panel ink="#f2c46d">
           <b className="k-lb">Goals and saves</b>
@@ -83,8 +86,8 @@ export function FullTimeView({ m, save, studio, press, tier = 6, onWatch, papers
           <span className="k-q"><b style={{ color: '#ede6da' }}>{m.events.revealed}</b>: their hidden ability, now on their club page.</span>
         </Panel>
       )}
+      {m.pick && <PickOfThree matchId={m.id} pick={m.pick} name={(id) => clubById(id).name} />}
       {tape && <OnTape m={m} />}
-      {studio && <Studio lines={studio.text.split('\n')} />}
       {press?.lineId && <Press matchId={m.id} lineId={press.lineId} facts={facts} answered={press.answered} onAnswer={(i) => answerPress(m.id, i)} />}
       {papers && <PapersLine matchId={m.id} p={papers} />}
     </div>
@@ -135,5 +138,31 @@ function OnTape({ m }: { m: StoredMatch }) {
       {t.turnedOn && <span>The video room: this one turned on <b>{t.turnedOn}</b>.</span>}
       <ul className="lt-list">{t.goals.map((g, i) => <li key={i}><b>{g.minute}′</b> {g.type}{g.unit ? ` · ${g.unit}` : ''}</li>)}</ul>
     </Panel>
+  );
+}
+
+/**
+ * Streamers over full time (match screen round, O44): Brabo's colours fall on a win, the other club's on a loss, and a
+ * few drift slowly down on a draw. They fall behind the cards, so they never cover text being read, and they are gone
+ * after a few seconds.
+ */
+function Streamers({ m }: { m: StoredMatch }) {
+  const [on, setOn] = useState(true);
+  useEffect(() => { const t = setTimeout(() => setOn(false), 6000); return () => clearTimeout(t); }, [m.id]);
+  const them = m.home === OWN ? m.away : m.home;
+  const opp = clubById(them);
+  const inks = m.result === 'W' ? ['#ff8a3d', '#c2b2ff', '#fff6d6'] : m.result === 'L' ? [clubInk(them), opp.colours[1] ?? '#ffffff', '#ede6da'] : ['#ff8a3d', clubInk(them), '#ede6da'];
+  const bits = useMemo(() => {
+    const n = m.result === 'D' ? 14 : 44;
+    return Array.from({ length: n }, (_, k) => {
+      const h = hashSeed(m.id, 'streamer', String(k));
+      return { x: (h % 1000) / 10, ink: inks[k % inks.length], delay: ((h >> 10) % 1400) / 1000, dur: (m.result === 'D' ? 4.2 : 2.6) + ((h >> 20) % 900) / 1000, spin: (h >> 4) % 2 ? 1 : -1, w: 7 + ((h >> 8) % 5) };
+    });
+  }, [m.id, m.result]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!on) return null;
+  return (
+    <div className={`ms-streamers ${m.result === 'D' ? 'drift' : ''}`} aria-hidden="true">
+      {bits.map((b, k) => <i key={k} style={{ left: `${b.x}%`, background: b.ink, width: b.w, animationDuration: `${b.dur}s`, animationDelay: `${b.delay}s`, ['--spin' as string]: b.spin } as CSSProperties} />)}
+    </div>
   );
 }

@@ -67,7 +67,11 @@ describe('matchday screens', () => {
     expect(out).toContain('Shoot on sight');
     expect(out).toContain('Keep the ball');
     expect(out).toContain(`${offer!.options[0].pct}%`);
-    expect(out).toContain('your assistant takes the best odds');
+    expect(out).toContain('Your assistant takes the best odds');
+    // Match screen round (O44): the call stays on the pitch, a solid shape for the safer run, a dashed one for the long shot.
+    expect(out).toContain('ms-callpitch');
+    expect(out).toContain(`solid shape ${offer!.options[0].pct}%`);
+    expect(out).toContain(`dashed shape ${offer!.options[1].pct}%`);
     expect(out).not.toContain('middle road');
   });
   it('half-time: the studio, the shot map so far, and Change the plan?', async () => {

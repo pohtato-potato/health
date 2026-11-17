@@ -24,12 +24,14 @@ import { FullTime } from '../FullTime';
 import { Art } from '../Tonight';
 import { PlayerCard } from '../players/Card';
 import { buzz } from '../Match';
-import { ElevenDots, MomentumStrip, moveChain, oddsChips, pctInk, PlanPanel, ShotMap } from './MatchBits';
+import { Board, clubName, ElevenDots, MomentumStrip, moveChain, oddsChips, pctInk, PlanPanel, ShotMap, type BoardSide } from './MatchBits';
+import { OWN } from '../../../football/store/season';
+import '../../../styles/match-screen.css';
 import { Action, Chip, HelpButton, Panel } from '../../../ui/kit/Kit';
 import { CALL_HOW, MATCH_HOW } from '../howDaily';
 import { Gremlin, Pundit } from '../Studio';
 import '../../../styles/look-tonight.css';
-import { Pitch, RollWord } from './Pitch';
+import { CallPitch, Pitch, RollWord, ShapeKey } from './Pitch';
 import { firstLandingOk } from './Replay';
 import { roll, rollSeed } from './roll';
 
@@ -101,20 +103,19 @@ export function PreKickOff({ p, save, onKickOff, onSkip }: { p: PausedMatch; sav
 type Phase = 'enter' | 'shot' | 'retry' | 'shot2' | 'result';
 const MS = { enter: 1800, retry: 1800, result: 1400, lineResult: 2600, goal: 1000, lineGoal: 1800 };
 
-/** The score with both crests, big in the middle, and the clock under it: what leads every match screen. */
-function Scoreboard({ p, save, score, minute, label }: { p: PausedMatch; save: FbSave; score: [number, number]; minute?: number; label?: ReactNode }) {
-  const opp = clubById(p.prep.oppId);
-  const own = <Art svg={crestSvg(save.crest.step, save.crest.opt, 34)} />, them = <Art svg={clubCrest(opp, 34)} />;
-  const name = opp.short || opp.name;
-  const [l, r] = p.prep.braboHome ? [['Brabo', own, score[0]], [name, them, score[1]]] as const : [[name, them, score[1]], ['Brabo', own, score[0]]] as const;
-  return (
-    <header className="lt-board" aria-label={`${l[0]} ${l[2]}, ${r[0]} ${r[2]}${minute !== undefined ? `, ${minute} minutes` : ''}`}>
-      <span className="lt-side">{l[1]}<b>{l[0]}</b></span>
-      <b className="lt-score" key={`${score[0]}-${score[1]}`}>{l[2]}<i>–</i>{r[2]}</b>
-      <span className="lt-side r"><b>{r[0]}</b>{r[1]}</span>
-      {(minute !== undefined || label) && <span className="lt-clock">{label ?? <><b>{minute}′</b> of 90</>}</span>}
-    </header>
-  );
+/** The score with both crests and names, the numbers as flip tiles, and the clock under it: what leads every match screen. */
+function Scoreboard({ p, save, score, minute, label, from }: { p: PausedMatch; save: FbSave; score: [number, number]; minute?: number; label?: ReactNode; from?: [number, number] }) {
+  const own: BoardSide = { id: OWN, crest: crestSvg(save.crest.step, save.crest.opt, 40), n: score[0], from: from?.[0] };
+  const them: BoardSide = { id: p.prep.oppId, crest: clubCrest(clubById(p.prep.oppId), 40), n: score[1], from: from?.[1] };
+  const sides: [BoardSide, BoardSide] = p.prep.braboHome ? [own, them] : [them, own];
+  const clock = label ?? (minute !== undefined ? <><b>{minute}′</b> of 90</> : undefined);
+  return <Board sides={sides} clock={clock} label={`${clubName(sides[0].id)} ${sides[0].n}, ${clubName(sides[1].id)} ${sides[1].n}${minute !== undefined ? `, ${minute} minutes` : ''}`} />;
+}
+
+/** Whose chance it is, in words on a coloured tag (match screen round, O44): "Your attack · counter". */
+const TYPE_WORD: Record<string, string> = { 'Counter-attack': 'counter', 'Set piece': 'set piece', 'Through ball': 'through ball', 'Tap-in': 'tap-in', 'Long shot': 'long shot', 'Cross into the box': 'cross', 'Corner': 'corner', 'Break through the middle': 'through the middle', 'Scramble in the box': 'scramble', 'Long-range effort': 'from range' };
+function SideTag({ c }: { c: ChanceEvent }) {
+  return <span className={`ms-side-tag ${c.side}`}>{c.side === 'atk' ? 'Your attack' : 'They attack'} · {TYPE_WORD[c.type] ?? c.type.toLowerCase()}</span>;
 }
 
 /** Live (r3-live), with the calls, the goals and half-time as they come. */
@@ -182,32 +183,35 @@ function LivePlay({ p, save, onEnd }: { p: PausedMatch; save: FbSave; onEnd: () 
     );
   }
   const chain = moveChain(c, k, p.prep.xi, credits.find((x) => x.i === k)?.name);
-  const chips = oddsChips(c.mods, c.type);
+  const opp = clubById(p.prep.oppId);
+  // What moved the odds, with the other club named in full rather than by its initials.
+  const chips = oddsChips(c.mods, c.type).map((x) => ({ ...x, text: opp.short && x.text.startsWith(`${opp.short} `) ? x.text.replace(opp.short, clubName(opp.id)) : x.text }));
+  const verdict = phase === 'result' ? (isGoal(c) ? (c.side === 'atk' ? 'Goal!' : 'They score.') : c.side === 'atk' ? 'It stays out.' : 'Stopped.') : null;
+  const rolling = phase === 'shot' || phase === 'shot2';
   return (
-    <Fit className={`md-live lt-live ${c.side}`} label="The match, live">
+    <Fit className={`md-live lt-live ms-live ${c.side}`} label="The match, live">
       <Scoreboard p={p} save={save} score={score} minute={minute} />
-      <MomentumStrip chances={upTo} upTo={minute} />
-      <div className="md-stadium lt-stadium">
+      <div className="ms-tagrow" key={`t${k}`}><SideTag c={c} /><RollWord inShape={rolling ? word : null} /></div>
+      <div className="md-stadium lt-stadium ms-stadium">
         <i className="lt-flood" aria-hidden="true" />
         <Pitch
-          s={{ chance: c, ball: phase === 'enter' || !shot ? undefined : shot.land, flying: phase === 'shot' || phase === 'shot2', zoom: !!shot?.close, save: phase === 'result' && c.side === 'def' && c.ok, resultKey: k, roll: shot ? { seed: shot.seed, ok: shot.ok } : undefined }}
+          s={{ chance: c, ball: phase === 'enter' || !shot ? undefined : shot.land, flying: rolling, zoom: !!shot?.close, save: phase === 'result' && c.side === 'def' && c.ok, resultKey: k, roll: shot ? { seed: shot.seed, ok: shot.ok } : undefined }}
           dots={st.chances.slice(0, k)}
           onWord={setWord}
         />
       </div>
-      <div className="lt-now" key={k}>
-        {chain.length > 0 && (
-          <ol className="md-chain" aria-label="The move">
-            {chain.map((n, i) => <li key={n} className={i === chain.length - 1 ? 'last' : undefined}>{n}</li>)}
-          </ol>
-        )}
-        <div className="k-row lt-chance">
-          <span className="k-col"><span className="lt-cap">{c.minute}′ · {c.type}<RollWord inShape={phase === 'shot' || phase === 'shot2' ? word : null} /></span>{phase === 'result' ? <b className={`lt-res ${isGoal(c) ? (c.side === 'atk' ? 'g' : 'x') : ''}`}>{isGoal(c) ? (c.side === 'atk' ? 'Goal!' : 'They score.') : c.side === 'atk' ? 'It stays out.' : 'Stopped.'}</b> : <span className="k-q">{c.retake && (phase === 'retry' || phase === 'shot2') ? `${c.retake.why}! Chance 2 of 2` : c.side === 'atk' ? 'Your chance' : 'Their chance'}</span>}</span>
-          <span className="lt-pct"><b className="fb-num" style={pctInk(c.pct)}>{c.pct}%</b><span className="k-q">{c.side === 'atk' ? 'to score' : 'to stop it'}</span></span>
+      <div className="lt-now ms-now" key={k}>
+        <div className={`ms-chance${verdict ? ' done' : ''}`}>
+          <span className="ms-say">
+            <span className="lt-cap">{c.minute}′ · {verdict ? `${c.pct}% ${c.side === 'atk' ? 'to score' : 'to stop it'}` : c.retake && (phase === 'retry' || phase === 'shot2') ? `${c.retake.why}! Chance 2 of 2` : c.side === 'atk' ? 'your chance' : 'their chance'}</span>
+            {verdict ? <b className={`ms-verdict ${isGoal(c) ? (c.side === 'atk' ? 'g' : 'x') : ''}`} role="status">{verdict}</b> : <span className="ms-wait">{rolling ? 'The ball is live…' : 'The move is on…'}</span>}
+          </span>
+          {!verdict && <span className="lt-pct"><b className="fb-num" style={pctInk(c.pct)}>{c.pct}%</b><span className="k-q">{c.side === 'atk' ? 'to score' : 'to stop it'}</span></span>}
         </div>
-        {chips.length > 0 && <div className="lt-chips">{chips.map((x) => <Chip key={x.text} ink={AXIS_INK[x.axis]}>{x.text}</Chip>)}</div>}
+        {chain.length > 0 && <p className="ms-line"><b>The move</b> {chain.map((n, i) => <span key={n} className={i === chain.length - 1 ? 'last' : undefined}>{i > 0 && ' → '}{n}</span>)}</p>}
+        {chips.length > 0 && <p className="ms-line"><b>Moved the odds</b> {chips.map((x, i) => <span key={x.text} style={{ color: AXIS_INK[x.axis] }}>{i > 0 && ' · '}{x.text}</span>)}</p>}
       </div>
-      <div className="lt-foot"><button type="button" className="lt-skip" onClick={onEnd}>Skip to the result</button></div>
+      <div className="lt-foot"><button type="button" className="ms-skip" onClick={onEnd}>Skip to the result</button></div>
     </Fit>
   );
 }
@@ -222,31 +226,34 @@ const TAKE_LABEL: Record<string, string> = { 'Counter-attack': 'Run at them', 'S
 const fair = (pct: number) => (pct >= 55 ? 'A good chance.' : pct >= 30 ? 'A fair chance.' : 'A long way out.');
 
 /** A call (r3-call): three options stacked, each a full filled choice in its axis ink, saying what it risks. */
-export function CallView({ offer, p, save, chances, onPick }: { offer: CallOffer; p: PausedMatch; save: FbSave; chances: ChanceEvent[]; onPick: (pick: CallPick) => void }) {
+export function CallView({ offer, p, save, onPick }: { offer: CallOffer; p: PausedMatch; save: FbSave; chances: ChanceEvent[]; onPick: (pick: CallPick) => void }) {
   const opp = clubById(p.prep.oppId);
   const take = offer.options[0], shoot = offer.options[1], keep = offer.options[2];
-  const opts: { pick: CallPick; ink: string; name: string; line: string; odds: ReactNode; style?: CSSProperties }[] = [
-    { pick: 'take', ink: AXIS_INK[take.axis!], name: TAKE_LABEL[take.type!] ?? 'Take it on', line: `${take.axis} takes it on. ${fair(take.pct)}`, odds: `${take.pct}%`, style: pctInk(take.pct) },
-    { pick: 'shoot', ink: AXIS_INK.Power, name: 'Shoot on sight', line: 'From range. Unlikely, but a screamer if it lands.', odds: `${shoot.pct}%`, style: pctInk(shoot.pct) },
-    { pick: 'keep', ink: AXIS_INK.Routine, name: 'Keep the ball', line: keep.pct ? `No chance now. Their next attack is ${keep.pct} points easier to stop.` : 'No chance now. They have no attack left to stop.', odds: 'Safe', style: { color: '#8fdcb6' } },
+  const opts: { pick: CallPick; ink: string; name: string; line: string; key: ReactNode; odds: ReactNode; style?: CSSProperties }[] = [
+    { pick: 'take', ink: AXIS_INK[take.axis!], name: TAKE_LABEL[take.type!] ?? 'Take it on', line: `${take.axis} takes it on. ${fair(take.pct)}`, key: <ShapeKey ink={AXIS_INK[take.axis!]} />, odds: `${take.pct}%`, style: pctInk(take.pct) },
+    { pick: 'shoot', ink: AXIS_INK.Power, name: 'Shoot on sight', line: 'From range. A screamer if it lands.', key: <ShapeKey ink={AXIS_INK.Power} dashed />, odds: `${shoot.pct}%`, style: pctInk(shoot.pct) },
+    { pick: 'keep', ink: AXIS_INK.Routine, name: 'Keep the ball', line: keep.pct ? `No shot. Their next attack is ${keep.pct} points easier to stop.` : 'No shot. They have no attack left to stop.', key: <ShapeKey ink={AXIS_INK.Routine} none />, odds: 'Safe', style: { color: '#8fdcb6' } },
   ];
   return (
-    <Fit className="md-callpage lt-call" label={`Call ${offer.n} of ${offer.of}`}>
-      <Scoreboard p={p} save={save} score={offer.score} label={<><b>{offer.minute}′</b> · call {offer.n} of {offer.of}</>} />
-      <MomentumStrip chances={chances} upTo={offer.minute} />
+    <Fit className="md-callpage lt-call ms-call" label={`Call ${offer.n} of ${offer.of}`}>
+      <Scoreboard p={p} save={save} score={offer.score} />
+      <div className="ms-tagrow"><span className="ms-side-tag call">Your call · {offer.minute}′{offer.of > 1 ? ` · ${offer.n} of ${offer.of}` : ''}</span><span className="k-q">The shapes are your chances</span></div>
       <div className="lt-ask">
-        <h2 className="md-ask">{(SITUATION[take.type!] ?? 'A chance is on.').replace('{opp}', opp.short || opp.name)} What do you shout?</h2>
+        <h2 className="md-ask">{(SITUATION[take.type!] ?? 'A chance is on.').replace('{opp}', clubName(opp.id))} What do you shout?</h2>
         <HelpButton how={CALL_HOW} />
+      </div>
+      <div className="ms-stadium ms-callstage">
+        <CallPitch shapes={[{ pct: take.pct, ink: AXIS_INK[take.axis!], dashed: false }, { pct: shoot.pct, ink: AXIS_INK.Power, dashed: true }]} />
       </div>
       <div className="mt-opts lt-opts">
         {opts.map((o, i) => (
           <button key={o.pick} type="button" className="mt-opt lt-opt" style={{ ['--ink' as string]: o.ink, ['--i' as string]: i } as CSSProperties} onClick={() => onPick(o.pick)}>
-            <span><b style={{ color: o.ink }}>{o.name}</b><small>{o.line}</small></span>
+            <span><b style={{ color: o.ink }}>{o.key}{o.name}</b><small>{o.line}</small></span>
             <b className="fb-num md-odds" style={o.style}>{o.odds}</b>
           </button>
         ))}
       </div>
-      <p className="k-q lt-note">The odds come from tonight’s numbers. If you are not watching, your assistant takes the best odds.</p>
+      <p className="k-q lt-note ms-note">Odds from tonight’s numbers. Not watching? Your assistant takes the best odds.</p>
     </Fit>
   );
 }
@@ -272,7 +279,7 @@ function GoalView({ c, p, save, score, credit, onOn }: { c: ChanceEvent; p: Paus
         )}
         {!ours && <Art svg={clubCrest(opp, 72)} className="md-gcrest" />}
         <div className="md-stadium sm lt-stadium"><Pitch s={{ chance: c, ball: c.land, flying: false, zoom: false, save: false, resultKey: 0 }} /></div>
-        <Scoreboard p={p} save={save} score={score} />
+        <Scoreboard p={p} save={save} score={score} from={ours ? [score[0] - 1, score[1]] : [score[0], score[1] - 1]} />
         <div className="lt-foot"><Action wide onClick={onOn}>Carry on</Action></div>
       </main>
     </Aurora>
@@ -308,7 +315,7 @@ export function HalfView({ p, save, chances, score, onGo }: { p: PausedMatch; sa
 /** A Gremlin line and a pundit line about this match's first half (no time of any log, only tonight's numbers). */
 function halfLines(p: PausedMatch, chances: ChanceEvent[], score: [number, number]): [string, string] {
   const opp = clubById(p.prep.oppId);
-  const name = opp.short || opp.name;
+  const name = clubName(opp.id);
   const theirs = chances.filter((c) => c.side === 'def' && !c.kept);
   const kinds = new Map<string, number>();
   for (const c of theirs) kinds.set(c.type, (kinds.get(c.type) ?? 0) + 1);

@@ -1,70 +1,45 @@
 // The radar as the pitch: your shape for the chance, the landing region, the ball, and the burst.
 // The ball rolls in, bounces and settles on the stored landing (O44); the roll is drawn here and nowhere else.
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { hexagon, inside, polygon, radii, type Pt } from '../../../football/radar';
 import { AXES, type ChanceEvent } from '../../../football/types';
 import { band } from '../Radar';
 import { Save } from './Save';
 import { Shockwave } from './Shockwave';
 import { GoalLineCaption, ZOOM } from './GoalLine';
-import { roll } from './roll';
+import { INRADIUS, NORMALS, roll } from './roll';
 import type { Wave } from './Replay';
 
 export const C = 160, R = 92;
 const pts = (p: Pt[]) => p.map(([x, y]) => `${(C + x * R).toFixed(1)},${(C + y * R).toFixed(1)}`).join(' ');
 export const toPx = ([x, y]: [number, number]): [number, number] => [C + x * R, C + y * R];
 
-/** The picture's drawing area (the viewBox) and an axis label's size, in its own units. */
-const VIEW = { x0: -48, y0: 0, x1: 368, y1: 320 };
-const LAB_PX = 18, CHAR_W = 0.62 * LAB_PX;
-type Box = { x0: number; y0: number; x1: number; y1: number };
-type Spot = { x: number; y: number; anchor: 'start' | 'middle' | 'end' };
+/**
+ * The play (match screen round, O44): your rim, and around it the landing region out to 1.3 rim-widths. Landings
+ * further out (a wide reach, up to about 1.9 in the owner's matches) are drawn on that edge, on the same line from
+ * the centre: still outside the rim and your shape, so what the picture says is unchanged.
+ */
+export const PLAY = 1.3;
+const hexNorm = (p: Pt) => Math.max(...NORMALS.map(([nx, ny]) => p[0] * nx + p[1] * ny)) / INRADIUS;
+export const onPitch = (p: Pt): [number, number] => { const n = hexNorm(p); return n > PLAY ? [(p[0] * PLAY) / n, (p[1] * PLAY) / n] : [p[0], p[1]]; };
 
 /**
- * Where each axis label goes (tidy fix): by its spoke, but never over a marker dot, the ball, the shape's line or the
- * dashed reach.
- * Tries the usual spot, then nudges along and out from the spoke, keeping inside the picture; if every spot is taken
- * (a crowded edge), the one touching the fewest things wins. `marks` are circles [x, y, r] in picture units.
+ * The picture's drawing area: cropped close to the play so the radar fills the width, with the axis labels at fixed
+ * spots outside it, the same every chance: Pace above, Rest below, the four side axes in the picture's corners, clear
+ * of the play's slanted sides, so nothing sits on the ball's way, a marker or the shape, and nothing moves under a
+ * magnifier.
  */
-export function placeLabels(texts: string[], lines: [number, number][][], marks: [number, number, number][]): Spot[] {
-  const edges = lines.flatMap((l) => l.map((p, i) => [p, l[(i + 1) % l.length]] as const));
-  const boxOf = (s: Spot, w: number): Box => {
-    const x0 = s.anchor === 'start' ? s.x : s.anchor === 'end' ? s.x - w : s.x - w / 2;
-    return { x0: x0 - 3, x1: x0 + w + 3, y0: s.y - LAB_PX * 0.8 - 2, y1: s.y + LAB_PX * 0.25 + 2 };
-  };
-  const hitsMark = (b: Box, [x, y, r]: [number, number, number]) => {
-    const dx = Math.max(b.x0 - x, 0, x - b.x1), dy = Math.max(b.y0 - y, 0, y - b.y1);
-    return dx * dx + dy * dy < r * r;
-  };
-  const hitsEdge = (b: Box, [[ax, ay], [bx, by]]: readonly [[number, number], [number, number]]) => {
-    for (let t = 0; t <= 1; t += 0.05) { const x = ax + (bx - ax) * t, y = ay + (by - ay) * t; if (x > b.x0 && x < b.x1 && y > b.y0 && y < b.y1) return true; }
-    return false;
-  };
-  const cost = (b: Box) => {
-    if (b.x0 < VIEW.x0 || b.x1 > VIEW.x1 || b.y0 < VIEW.y0 || b.y1 > VIEW.y1) return 100;
-    return marks.filter((m) => hitsMark(b, m)).length + edges.filter((e) => hitsEdge(b, e)).length;
-  };
-  const NUDGE: [number, number][] = [[0, 0], [0, -18], [0, 18], [14, 0], [14, -18], [14, 18], [0, -34], [0, 34], [28, 0], [28, -26], [28, 26], [0, -52], [0, 52], [14, -52], [14, 52], [0, -70], [0, 70], [14, -70], [14, 70]];
-  return texts.map((text, i) => {
-    const [x, y] = polygon([1, 1, 1, 1, 1, 1])[i];
-    const anchor = Math.abs(x) < 0.2 ? 'middle' : x > 0 ? 'start' : 'end';
-    const w = text.length * CHAR_W;
-    // Along the spoke (out) and across it (for top and bottom labels across is sideways; for the others, up and down).
-    const across: [number, number] = Math.abs(x) < 0.2 ? [1, 0] : [0, 1];
-    let best: Spot | undefined, bestCost = Infinity;
-    for (const [out, side] of NUDGE) {
-      const spot: Spot = {
-        x: C + x * (R + 20 + out) + across[0] * side,
-        y: C + y * (R + 20 + out) + (y < -0.5 ? -6 : y > 0.5 ? 16 : 5) + across[1] * side,
-        anchor,
-      };
-      const k = cost(boxOf(spot, w));
-      if (k < bestCost) { best = spot; bestCost = k; }
-      if (k === 0) break;
-    }
-    return best!;
-  });
-}
+export const VIEWBOX = '0 12 320 300';
+type Spot = { x: number; y: number; anchor: 'start' | 'middle' | 'end' };
+/** In AXES order: Pace, Power, Fuel, Rest, Routine, Shape. */
+export const LABEL_SPOTS: Spot[] = [
+  { x: C, y: 30, anchor: 'middle' },
+  { x: 318, y: 60, anchor: 'end' },
+  { x: 318, y: 276, anchor: 'end' },
+  { x: C, y: 304, anchor: 'middle' },
+  { x: 2, y: 276, anchor: 'start' },
+  { x: 2, y: 60, anchor: 'start' },
+];
 
 /**
  * `roll`: this shot rolls (O44). It starts when `flying` turns on for a new roll and plays on through the verdict;
@@ -92,18 +67,12 @@ export function Pitch({ s, dots = [], onWord }: { s: PitchState; dots?: ChanceEv
   const poly = c ? polygon(radii(c.values, c.side)) : hexagon(0.5);
   const shape = pts(poly);
   // The ball waits on the centre spot, clear of the axis labels (it used to wait under "Rest").
-  const [bx, by] = s.ball ? toPx(s.ball) : [C, C];
-  const px = (p: Pt[]) => p.map(([x, y]) => [C + x * R, C + y * R] as [number, number]);
-  const lines = c ? [px(poly), px(hexagon(c.reach))] : [];
-  const marks: [number, number, number][] = [
-    ...dots.filter((d) => !d.kept).map((d) => [...toPx(d.land), 10] as [number, number, number]),
-    [bx, by, 12],
-  ];
-  const spots = c ? placeLabels(AXES.map((a) => `${a} ${Math.round(c.values[a])}`), lines, marks) : [];
+  const ball = s.ball && onPitch(s.ball);
+  const [bx, by] = ball ? toPx(ball) : [C, C];
 
   // The roll (O44), drawn frame by frame straight onto the picture; React only draws the still parts.
-  const key = c && s.ball && s.roll ? `${s.roll.seed}|${s.ball[0]}|${s.ball[1]}|${s.zoom}` : '';
-  const plan = useMemo(() => (key && c && s.ball ? roll(c, s.ball, s.roll!.seed, s.zoom) : null), [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  const key = c && ball && s.roll ? `${s.roll.seed}|${ball[0]}|${ball[1]}|${s.zoom}` : '';
+  const plan = useMemo(() => (key && c && ball ? roll(c, ball, s.roll!.seed, s.zoom) : null), [key]); // eslint-disable-line react-hooks/exhaustive-deps
   const el = {
     zoomer: useRef<SVGGElement>(null), shaker: useRef<SVGGElement>(null), ball: useRef<SVGCircleElement>(null),
     trail: useRef<SVGPathElement>(null), flash: useRef<SVGPolygonElement>(null), ring: useRef<SVGCircleElement>(null),
@@ -186,19 +155,20 @@ export function Pitch({ s, dots = [], onWord }: { s: PitchState; dots?: ChanceEv
 
   return (
     <>
-      <svg className={`fb-pitch ${c?.side ?? ''}`} viewBox="-48 0 416 320" role="img" aria-label={c ? `${c.side === 'atk' ? 'You attack' : 'They attack'}: ${c.type}, ${c.pct}%` : 'The pitch'}>
+      <svg className={`fb-pitch ${c?.side ?? ''}`} viewBox={VIEWBOX} role="img" aria-label={c ? `${c.side === 'atk' ? 'You attack' : 'They attack'}: ${c.type}, ${c.pct}%` : 'The pitch'}>
         <g ref={el.zoomer} className="zoomer">
           {/* The shake moves only the drawing, never the axis labels. */}
           <g ref={el.shaker}>
             <polygon points={pts(hexagon(1))} className="rim" />
             <polygon points={pts(hexagon(0.5))} className="grid" />
-            {c && <polygon points={pts(hexagon(c.reach))} className="reach" />}
+            {/* The reach is drawn out to the play's edge (see PLAY). */}
+            {c && <polygon points={pts(hexagon(Math.min(PLAY, c.reach)))} className="reach" />}
             <polygon points={shape} className="glow" />
             <polygon points={shape} className={`mine ${c?.side ?? ''}`} />
             <polygon ref={el.flash} points={shape} className={`flash ${c?.side ?? ''}`} opacity={0} />
             {dots.map((d, k) => {
               if (d.kept) return null;
-              const [x, y] = toPx(d.land);
+              const [x, y] = toPx(onPitch(d.land));
               const goal = d.side === 'atk' ? d.ok : !d.ok;
               return <circle key={`d${k}`} cx={x} cy={y} r={goal ? 6 : 5} className={`pdot ${d.side}${goal ? ' goal' : ''}`} />;
             })}
@@ -209,15 +179,15 @@ export function Pitch({ s, dots = [], onWord }: { s: PitchState; dots?: ChanceEv
           </g>
           {c && AXES.map((a, i) => {
             const lit = c.side === 'atk' ? i < 3 : i >= 3;
-            const sp = spots[i];
+            const sp = LABEL_SPOTS[i];
             return (
               <text key={a} x={sp.x} y={sp.y} textAnchor={sp.anchor} className={`plab ${band(c.values[a])}${lit ? '' : ' dimlab'}`}>
                 {a} <tspan className="v">{Math.round(c.values[a])}</tspan>
               </text>
             );
           })}
-          {s.wave && s.ball && <Shockwave key={`w${s.resultKey}`} kind={s.wave} x={bx} y={by} />}
-          {s.save && s.ball && <Save key={`s${s.resultKey}`} x={bx} y={by} />}
+          {s.wave && ball && <Shockwave key={`w${s.resultKey}`} kind={s.wave} x={bx} y={by} />}
+          {s.save && ball && <Save key={`s${s.resultKey}`} x={bx} y={by} />}
         </g>
       </svg>
       {cap && c && s.roll && <GoalLineCaption ok={s.roll.ok} decided={cap === 'verdict'} side={c.side} />}
@@ -230,4 +200,41 @@ export function RollWord({ inShape }: { inShape: boolean | null }) {
   // Between rolls the slot stays, unseen, so the caption never reflows under a magnifier.
   if (inShape === null) return <b className="fb-io" aria-hidden="true" style={{ visibility: 'hidden' }}>OUT</b>;
   return <b className={`fb-io ${inShape ? 'in' : 'out'}`} role="status">{inShape ? 'IN' : 'OUT'}</b>;
+}
+
+/** One option of a call drawn on the pitch: its shape's ink, and solid or dashed (never colour alone). */
+export interface CallShape { pct: number; ink: string; dashed: boolean }
+
+/**
+ * A call, on the pitch (match screen round, O44): each option that shoots draws its own shape on the radar, sized so
+ * its area is its chance (a 23% shot covers 23% of the rim), solid for the safer run and dashed for the long shot.
+ * Keeping the ball shoots nothing, so it draws nothing.
+ */
+export function CallPitch({ shapes, side = 'atk' }: { shapes: CallShape[]; side?: 'atk' | 'def' }) {
+  return (
+    <svg className={`fb-pitch ms-callpitch ${side}`} viewBox="64 52 192 216" role="img" aria-label={`Your options on the pitch: ${shapes.map((x) => `${x.dashed ? 'dashed' : 'solid'} shape ${x.pct}%`).join(', ')}`}>
+      <polygon points={pts(hexagon(1))} className="rim" />
+      <polygon points={pts(hexagon(0.5))} className="grid" />
+      {[...shapes].sort((a, b) => b.pct - a.pct).map((x, k) => (
+        <polygon
+          key={k}
+          points={pts(hexagon(Math.sqrt(Math.max(0, Math.min(100, x.pct)) / 100)))}
+          className={`ms-opt${x.dashed ? ' dash' : ''}`}
+          style={{ ['--ink' as string]: x.ink, animationDelay: `${0.15 + k * 0.2}s` } as CSSProperties}
+        />
+      ))}
+      <circle cx={C} cy={C} r={7} className="ball" />
+    </svg>
+  );
+}
+
+/** The small key beside each option's name: its shape as drawn on the pitch, or a struck-out one for "nothing". */
+export function ShapeKey({ ink, dashed, none = false }: { ink: string; dashed?: boolean; none?: boolean }) {
+  return (
+    <svg className="ms-key" viewBox="-12 -12 24 24" aria-hidden="true" style={{ ['--ink' as string]: ink } as CSSProperties}>
+      {none
+        ? <><circle r="8" className="none" /><path d="M-6 6 L6 -6" className="none" /></>
+        : <polygon points={hexagon(0.8).map(([x, y]) => `${(x * 11).toFixed(1)},${(y * 11).toFixed(1)}`).join(' ')} className={dashed ? 'dash' : 'solid'} />}
+    </svg>
+  );
 }
