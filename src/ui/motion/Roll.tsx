@@ -12,7 +12,9 @@ export function rollAt(from: number, to: number, p: number, over: number): numbe
   return past + (to - past) * (q * q * (3 - 2 * q));
 }
 
-export function Roll({ value, format = (n) => String(Math.round(n)), id, step = 1, ms = 1100, countIn = false, replay = 0, className, style }: {
+export function Roll({ value, format = (n) => String(Math.round(n)), id, step = 1, ms = 1100, countIn = false, replay = 0, delay = 0, className, style }: {
+  /** Wait this long before rolling (it shows where it starts until then). */
+  delay?: number;
   value: number;
   format?: (n: number) => string;
   /** Remember the value here between visits, so a change made elsewhere rolls once on return. */
@@ -32,11 +34,11 @@ export function Roll({ value, format = (n) => String(Math.round(n)), id, step = 
   else if (ch.n !== run.current.n) run.current = { ...run.current, n: ch.n, k: run.current.k + 1, from: ch.from as number };
   else if (replay !== run.current.replay) run.current = { ...run.current, replay, k: run.current.k + 1, from: 0 };
   const { k, from } = run.current;
-  const p = useTween(k, ms);
+  const p = useTween(k, ms, delay);
   const over = Math.max(Math.abs(value - from) * 0.12, step);
   const shown = k && p < 1 && Number.isFinite(from) ? rollAt(from, value, p, over) : value;
   return (
-    <span key={k} className={`mo-roll${k ? ' mo-landed' : ''}${className ? ` ${className}` : ''}`} style={{ ...style, ['--mo-ms' as string]: `${ms}ms` }}>
+    <span key={k} className={`mo-roll${k ? ' mo-landed' : ''}${className ? ` ${className}` : ''}`} style={{ ...style, ['--mo-ms' as string]: `${ms + delay}ms` }}>
       {format(shown)}
     </span>
   );

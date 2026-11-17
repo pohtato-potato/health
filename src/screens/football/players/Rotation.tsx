@@ -1,5 +1,6 @@
 // Engine 2, layer 2 screens: the team sheet, how tonight adds up, the morning tactic, the limit-break moment, and the
 // rotation facts on a player (form, freshness, past his best, traits, free agency and the buy-back).
+import { Roll } from '../../../ui/motion/Roll';
 import { useState } from 'react';
 import { traitById } from '../../../football/content/traits';
 import { clubById } from '../../../football/data/load';
@@ -209,10 +210,10 @@ export function BlendRoute() {
           const ns = t.nudges.filter((n) => n.axis === a);
           const v = t.liveValues[a];
           return (
-            <div key={a} style={uc(a)}>
+            <div key={a} className="mo-drop" style={{ ...uc(a), ['--d' as string]: `${120 + AXES.indexOf(a) * 140}ms` }}>
               <span className="rt-bn">{a}</span>
               <span className="rt-bb" aria-hidden="true"><i className="rt-td" style={{ width: `${Math.round(t.today[a] * 3.5)}%` }} /><i className="rt-sq" style={{ width: `${Math.round((t.squad[a] ?? 0) * 1.5)}%` }} /></span>
-              <b className="pl-num">{v}</b>
+              <b className="pl-num"><Roll value={v} countIn delay={300 + AXES.indexOf(a) * 140} ms={900} /></b>
               <small>{t.flags[a] ? 'no data tonight: plays as it is' : `today ${t.today[a]} · squad ${t.squad[a] != null ? Math.round(t.squad[a]!) : '—'}${ns.length ? ` · ${ns.map((n) => `${signed(n.d)} ${n.why}`).join(', ')}` : ''}${Math.abs(ns.reduce((s, n) => s + n.d, 0)) > 3 ? ' (capped at 3)' : ''}`}</small>
             </div>
           );

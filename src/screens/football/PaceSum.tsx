@@ -2,6 +2,9 @@
 // steps, the squad, the plan and morale. The same figure on Tonight, Today and Walk.
 import type { Tonight } from '../../football/store/hooks';
 import { NUDGE_CAP } from '../../football/rotation/night';
+import type { CSSProperties } from 'react';
+import { useSeenBefore } from '../../ui/motion/motion';
+import { Roll } from '../../ui/motion/Roll';
 
 export interface PaceSum { steps: number; squad?: number; full: boolean; nudges: { why: string; d: number }[]; total: number }
 
@@ -23,14 +26,21 @@ export const paceSumWords = (p: PaceSum) =>
   [`your steps ${p.steps}`, ...(p.squad != null ? [`the squad ${p.squad}`] : []), ...p.nudges.map((n) => `${cap(n.why)} ${signed(n.d)}`)].join(' · ') + ` = ${p.total}`;
 export const paceSumNote = (p: PaceSum) => (p.full ? 'Past 20,000 steps your steps count in full, with no squad share.' : p.squad != null ? 'Your steps count 70%, the starters 30%. Steps top out at 20 at 20,000; past that they count in full.' : 'Your steps count in full: no Pace players start tonight.');
 
+/**
+ * The night's sum (motion board two, O44): when the sum changed since it was last seen, each part drops in, one after
+ * another, and then the total counts up to meet them. Otherwise it simply shows.
+ */
 export function PaceSumView({ p }: { p: PaceSum }) {
+  const words = paceSumWords(p);
+  const before = useSeenBefore<string>('pacesum', words);
+  const play = before !== words;
+  const parts = [`your steps|${p.steps}`, ...(p.squad != null ? [`the squad|${p.squad}`] : []), ...p.nudges.map((n) => `${cap(n.why)}|${signed(n.d)}`)];
+  const drop = (i: number) => (play ? { className: 'mo-drop', style: { '--d': `${150 + i * 220}ms` } as CSSProperties } : {});
   return (
-    <div className="fb-pacesum" role="group" aria-label={`Pace tonight: ${paceSumWords(p)}`}>
-      <span className="fb-pacesum-h"><b>Pace {p.total}</b> tonight</span>
+    <div className="fb-pacesum" role="group" aria-label={`Pace tonight: ${words}`}>
+      <span className="fb-pacesum-h"><b>Pace {play ? <Roll value={p.total} countIn delay={150 + parts.length * 220} /> : p.total}</b> tonight</span>
       <span className="fb-pacesum-row" aria-hidden="true">
-        <span>your steps <b>{p.steps}</b></span>
-        {p.squad != null && <span>the squad <b>{p.squad}</b></span>}
-        {p.nudges.map((n) => <span key={n.why}>{cap(n.why)} <b>{signed(n.d)}</b></span>)}
+        {parts.map((x, i) => { const [w, n] = x.split('|'); return <span key={w} {...drop(i)}>{w} <b>{n}</b></span>; })}
       </span>
       <span className="fb-pacesum-n">{paceSumNote(p)}</span>
     </div>

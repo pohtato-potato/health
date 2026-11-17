@@ -68,7 +68,7 @@
 @keyframes mo-stamp { 0% { transform: scale(2.2) rotate(-18deg); opacity: 0; } 70% { transform: scale(.92) rotate(-8deg); opacity: 1; } 100% { transform: rotate(-8deg); opacity: 1; } }
 
 /* 13 · The night's sum: each part drops in, then the total counts up to meet them. */
-.mo-drop { display: inline-block; animation: mo-drop 480ms cubic-bezier(.3, 1.5, .5, 1) var(--d) both; }
+.mo-drop { animation: mo-drop 480ms cubic-bezier(.3, 1.5, .5, 1) var(--d) both; }
 @keyframes mo-drop { from { transform: translateY(-14px); opacity: 0; } }
 
 /* 14 · The tab bar: the tapped icon bounces and draws itself; Football glows brighter on a match night. */
