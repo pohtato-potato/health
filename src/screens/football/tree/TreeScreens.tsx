@@ -1,6 +1,7 @@
 // The tree's screens (rounds six to eight, as pinned): the tree in six eras, a tech, a eureka, entering a new era,
 // projects on the Kaai skyline, the staff room and the board. Words in Atkinson Hyperlegible Next, numbers and titles
 // in Fraunces. Every state has a word beside its colour or line.
+import { Tower } from '../../../ui/motion/Tower';
 import { dayOfLogging } from '../../../domain/dates';
 import { countedLine, countsLine, etaWords, leftLine } from '../../../football/tree/buildingWords';
 import { seasonMoneyScale } from '../../../football/pyramid/shape';
@@ -486,15 +487,20 @@ function Project({ m, id }: { m: Model; id: string }) {
   return (
     <Panel ink={c}>
       <PanelTop name={p.name} c={c} right={m.progress(id)} />
-      {p.needs.map((n) => {
-        const have = Math.min(n.count, s?.progress[n.what] ?? 0);
-        return (
-          <div key={n.what} className="k-col" style={{ gap: 3 }}>
-            <Bar pct={(have / n.count) * 100} c={c} label={`${fmtCount(have)} of ${fmtCount(n.count)}`} />
-            <span className="k-q">Grows on {METRIC_WORDS[n.what]} · {fmtCount(have)} of {fmtCount(n.count)}</span>
-          </div>
-        );
-      })}
+      <div className="k-row" style={{ alignItems: 'flex-end', gap: 14 }}>
+        <div className="k-col" style={{ flex: 1, minWidth: 0 }}>
+          {p.needs.map((n) => {
+            const have = Math.min(n.count, s?.progress[n.what] ?? 0);
+            return (
+              <div key={n.what} className="k-col" style={{ gap: 3 }}>
+                <Bar pct={(have / n.count) * 100} c={c} label={`${fmtCount(have)} of ${fmtCount(n.count)}`} />
+                <span className="k-q">Grows on {METRIC_WORDS[n.what]} · {fmtCount(have)} of {fmtCount(n.count)}</span>
+              </div>
+            );
+          })}
+        </div>
+        <Tower id={id} c={c} have={p.needs.reduce((t, n) => t + Math.min(n.count, s?.progress[n.what] ?? 0), 0)} of={p.needs.reduce((t, n) => t + n.count, 0)} />
+      </div>
       <span><b>{countsLine(p.needs)}</b> {countedLine(s)}</span>
       <span className="k-q">{leftLine(p.needs, s, today)}</span>
       {p.money > 0 && <span className="k-q">Costs {euros(p.money)} when its days are in · {m.t.save.budget >= p.money ? 'the budget covers it' : `${euros(p.money - m.t.save.budget)} short`}</span>}
