@@ -1,4 +1,6 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { Roll } from '../../ui/motion/Roll';
+import { fmtInt } from '../../domain/format';
 
 /** The steps box: a whole number of 0 or more; empty or anything else saves nothing. */
 export function parseSteps(input: string): number | undefined {
@@ -7,34 +9,16 @@ export function parseSteps(input: string): number | undefined {
   return Number(t);
 }
 
-/** A number that counts up from zero when the page opens and each time the rings are tapped. The width stays put: the digits are tabular. */
-export function CountUp({ text, play }: { text: string; play: number }) {
-  const ref = useRef<HTMLElement>(null);
-  const latest = useRef(text);
-  latest.current = text;
-  useLayoutEffect(() => {
-    const el = ref.current;
-    const target = Number(latest.current.replace(/,/g, ''));
-    if (!el || !Number.isFinite(target) || target <= 0) return;
-    const fmt = new Intl.NumberFormat('en-IN');
-    const started = performance.now();
-    let raf = 0;
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - started) / 1100);
-      const eased = 1 - Math.pow(1 - t, 3);
-      el.textContent = t >= 1 ? latest.current : fmt.format(Math.round(target * eased));
-      if (t < 1) raf = requestAnimationFrame(tick);
-    };
-    el.textContent = '0';
-    raf = requestAnimationFrame(tick);
-    return () => {
-      cancelAnimationFrame(raf);
-      el.textContent = latest.current;
-    };
-  }, [play]);
+/**
+ * A number that counts up from zero when the page opens and each time the rings are tapped, and rolls past its new
+ * value and back when it changes (the shared Roll, O44). The width stays put: the digits are tabular.
+ */
+export function CountUp({ text, play, id }: { text: string; play: number; id?: string }) {
+  const n = /^[\d,]+$/.test(text) ? Number(text.replace(/,/g, '')) : NaN;
+  if (!Number.isFinite(n) || n <= 0) return <b className="tn">{text}</b>;
   return (
-    <b ref={ref} className="tn">
-      {text}
+    <b className="tn">
+      <Roll value={n} format={fmtInt} id={id} countIn replay={play} />
     </b>
   );
 }
@@ -56,7 +40,7 @@ export function RingsNumbers({ rows, rings, closed, of = 4, onLogFood, onLogSlee
         <div className="td-nums">
           {rows.map((r) => (
             <button key={r.key} type="button" className={`td-num${r.done ? ' rad' : ''}`} style={{ '--c': r.ink } as React.CSSProperties} aria-expanded={shown === r.key} aria-label={`${r.name} ${r.value} ${r.unit}${r.done ? ', goal met' : ''}. Show target`} onClick={() => setShown(shown === r.key ? null : r.key)}>
-              <CountUp text={r.value} play={play} />
+              <CountUp text={r.value} play={play} id={`today:${r.key}`} />
               <span>{r.unit}</span>
             </button>
           ))}
