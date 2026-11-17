@@ -40,8 +40,8 @@
 @keyframes mo-coin-out { 0% { transform: scale(.3); opacity: 0; } 20% { transform: none; opacity: 1; } 100% { transform: translate(var(--x), 90px) rotateY(540deg); opacity: 0; } }
 
 /* 7 · The eleven: a player whose habit is logged today is awake (a lit ring); one just woken pops once. */
-.pl-tk.mo-awake b { box-shadow: 0 0 0 3px #fff6d6, 0 0 16px 2px var(--uc); }
-.pl-tk.mo-wake b { animation: mo-wake 900ms cubic-bezier(.3, 1.5, .5, 1) var(--d, 0ms) both; }
+.pl-pitch .pl-tk.mo-awake b { box-shadow: 0 0 0 3px #fff6d6, 0 0 16px 2px var(--uc); }
+.pl-pitch .pl-tk.mo-wake b { animation: mo-wake 900ms cubic-bezier(.3, 1.5, .5, 1) var(--d, 0ms) both; }
 @keyframes mo-wake { 0% { transform: scale(.7); box-shadow: 0 0 0 0 var(--uc); } 45% { transform: scale(1.25); box-shadow: 0 0 0 14px transparent, 0 0 24px 6px var(--uc); } 100% { transform: none; } }
 
 /* 10 · Buildings rise a storey per counted day; the lights come on when finished. */
