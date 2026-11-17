@@ -33,10 +33,12 @@ function useRearrange(key: string, order: string[]) {
       if (was === now) return;
       const me = id === OWN;
       const el = els[now]!;
-      if (me) { el.style.position = 'relative'; el.style.zIndex = '2'; }
-      el.animate([{ transform: `translateY(${tops[was] - tops[now]}px)` }, { transform: 'none' }], {
+      // Your row climbs over the others on a solid backing, so its words never mix with theirs; the backing goes when it lands.
+      if (me) Object.assign(el.style, { position: 'relative', zIndex: '2', background: 'rgba(18, 20, 40, 0.96)', borderRadius: '16px' });
+      const a = el.animate([{ transform: `translateY(${tops[was] - tops[now]}px)` }, { transform: 'none' }], {
         duration: me ? 1000 : 700, delay: me ? 1200 : 300 + k++ * 70, easing: 'cubic-bezier(.3, 1.2, .5, 1)', fill: 'backwards',
       });
+      if (me) a.finished.then(() => Object.assign(el.style, { position: '', zIndex: '', background: '', borderRadius: '' }), () => undefined);
     });
     // Positions are read once on open; this plays once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
