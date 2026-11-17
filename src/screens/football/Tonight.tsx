@@ -152,7 +152,7 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
       </header>
       {many && <NightList t={t} chances={chances ?? []} />}
       <div className="lt-radar">
-        <Radar values={t.liveValues} flags={t.flags} fog={AXES.filter((a) => t.flags[a])} captain={t.save.slots.includes('armband') ? t.save.captain : undefined} opp={oppVals} oppInk="#93c3dc" oppName={t.opp?.name} inked size={300} label="Tonight’s shape so far" />
+        <Radar values={t.liveValues} flags={t.flags} fog={AXES.filter((a) => t.flags[a])} captain={t.save.slots.includes('armband') ? t.save.captain : undefined} opp={oppVals} oppInk="#93c3dc" oppName={t.opp?.name} inked size={300} label="Tonight’s shape so far" motionId={`tonight-radar:${t.date}`} />
       </div>
       {pace && <PaceSumView p={pace} />}
       {!many && chance && t.opp && !t.morning.intl && <div className="lt-stake"><ChanceBar c={chance} oppName={oppName} oppId={t.opp.id} date={t.date} values={t.liveValues} /></div>}

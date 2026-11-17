@@ -2,6 +2,7 @@
 import { hexagon, polygon, radii, type Pt } from '../../football/radar';
 import { AXES, type Axis, type AxisFlags, type AxisValues, type Side } from '../../football/types';
 import { AXIS_INK, valueTier } from '../../ui/inks';
+import { lerp, spring, useChange, useTween } from '../../ui/motion/motion';
 
 /** The five-step value scale for a 1–20 value: colour is only ever a second cue beside the number. */
 export const band = (v: number) => valueTier(v);
@@ -13,9 +14,14 @@ const pts = (p: Pt[], c: number, r: number) => p.map(([x, y]) => `${(c + x * r).
  * `opp` draws the opponent's shape dashed in their colour; `fog` hatches an axis with no data (q-pg-fog A);
  * `inked` colours each axis word in its own ink (pages round 2) and dots the corners by value.
  */
-export function Radar({ values, flags = {}, side, reach, captain, size = 300, label = 'Tonight’s shape', bare = false, gold, opp, oppInk = '#ff8fa8', oppName, fog = [], inked = false, pulse }: { gold?: Axis; values: AxisValues; flags?: AxisFlags; side?: Side; reach?: number; captain?: Axis; size?: number; label?: string; bare?: boolean; opp?: AxisValues; oppInk?: string; oppName?: string; fog?: Axis[]; inked?: boolean; pulse?: { axis: Axis; id: number } }) {
+export function Radar({ values, flags = {}, side, reach, captain, size = 300, label = 'Tonight’s shape', bare = false, gold, opp, oppInk = '#ff8fa8', oppName, fog = [], inked = false, pulse, motionId }: { /** Remember the shape here: when an axis moved since it was last seen, the shape springs toward it (O44). */ motionId?: string; gold?: Axis; values: AxisValues; flags?: AxisFlags; side?: Side; reach?: number; captain?: Axis; size?: number; label?: string; bare?: boolean; opp?: AxisValues; oppInk?: string; oppName?: string; fog?: Axis[]; inked?: boolean; pulse?: { axis: Axis; id: number } }) {
   const vb = 320, c = vb / 2, r = 92;
-  const rs = side ? radii(values, side) : AXES.map((a) => Math.max(0.03, Math.min(1, values[a] / 20)));
+  const seen = useChange(motionId, values);
+  const k = spring(useTween(seen.n, 1300));
+  const was = seen.n ? seen.from : undefined;
+  // While it springs, the shape is drawn between where it was and where it is; the labels say the new values at once.
+  const drawn: AxisValues = was ? (Object.fromEntries(AXES.map((a) => [a, Math.max(0, lerp(was[a], values[a], k))])) as AxisValues) : values;
+  const rs = side ? radii(drawn, side) : AXES.map((a) => Math.max(0.03, Math.min(1.12, drawn[a] / 20)));
   const shape = pts(polygon(rs), c, r);
   const rim = pts(hexagon(1), c, r);
   const mid = pts(hexagon(0.5), c, r);
@@ -52,8 +58,8 @@ export function Radar({ values, flags = {}, side, reach, captain, size = 300, la
         </g>
         {inked && AXES.map((a, i) => {
           if (fog.includes(a)) return null;
-          const k = Math.max(0.03, Math.min(1, values[a] / 20));
-          const [x, y] = spoke(i, k);
+          const kk = Math.max(0.03, Math.min(1.12, drawn[a] / 20));
+          const [x, y] = spoke(i, kk);
           return <circle key={a} cx={x} cy={y} r={pulse?.axis === a ? 9 : 7} className={`dot ${band(values[a])}${pulse?.axis === a ? ' hit' : ''}`} data-axis={a} />;
         })}
         {!bare && AXES.map((a, i) => {
