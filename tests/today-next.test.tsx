@@ -26,16 +26,13 @@ describe('NextStrip', () => {
 });
 
 describe('RecordsStrip', () => {
-  it('shows "2 records tonight" in gold with each record and a Finale button', () => {
-    const html = renderToStaticMarkup(<RecordsStrip records={['Test row 10 kg × 19', 'Test raise 5 kg × 17']} onFinale={() => {}} />);
-    expect(html).toContain('2 records tonight');
-    expect(html).toContain('goldtxt');
-    expect(html).toContain('Test row 10 kg × 19');
-    expect(html).toContain('Test raise 5 kg × 17');
+  it('heads the card "Record night" with each lift and a Finale button', () => {
+    const rows = [{ key: 'a', name: 'Test row', now: '10 kg × 19', gain: '+2 reps', was: '10 kg × 17', from: 0.9 }];
+    const html = renderToStaticMarkup(<RecordsStrip rows={rows} onFinale={() => {}} />);
+    expect(html).toContain('Record night');
+    expect(html).toContain('1 new best');
+    expect(html).toContain('Test row');
     expect(html).toContain('>Finale<');
-  });
-  it('says "1 record tonight" for one', () => {
-    expect(renderToStaticMarkup(<RecordsStrip records={['Test row 10 kg × 19']} onFinale={() => {}} />)).toContain('1 record tonight');
   });
 });
 

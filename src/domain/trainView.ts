@@ -5,6 +5,7 @@ import { GROUPS, musclesOf } from './muscles';
 import { allExercises, realSets, valueOfSet, type PlanDef } from './plan';
 import { loggedLater } from './trainingChecks';
 import { formScore } from './quality';
+import { fmtSet as setWords } from './setText';
 import type { SetEntry, TrainingSession } from './types';
 
 const done = (sessions: TrainingSession[]) => sessions.filter((s) => s.status === 'done').sort((a, b) => a.startedAt - b.startedAt);
@@ -174,4 +175,32 @@ export function filmDue(sessions: TrainingSession[], today: DayKey): boolean {
   const [y, m] = today.split('-').map(Number);
   const last = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`;
   return done(sessions).some((s) => s.date.startsWith(last));
+}
+
+/** One lift's record tonight (board 8 `s8-record`): the new best, the best before it, and what it gained. */
+export interface RecordGain { key: string; name: string; now: string; was?: string; gain: string; from: number }
+
+/**
+ * Tonight's records with the best that came before each: a heavier load gains kilos, the same load gains reps (or
+ * seconds). `from` is where the old best sits on a bar that ends at the new one. One row per lift, its best set.
+ */
+export function recordGains(records: SetEntry[], sets: SetEntry[]): RecordGain[] {
+  const keyOf = (x: SetEntry) => `${x.exerciseId}|${x.exercise}|${x.side}`;
+  const val = (x: SetEntry) => x.reps ?? x.seconds ?? 0;
+  const better = (a: SetEntry, b: SetEntry) => (a.loadKg ?? 0) !== (b.loadKg ?? 0) ? (a.loadKg ?? 0) > (b.loadKg ?? 0) : val(a) > val(b);
+  const top = new Map<string, SetEntry>();
+  for (const r of records) if (!top.has(keyOf(r)) || better(r, top.get(keyOf(r))!)) top.set(keyOf(r), r);
+  return [...top.values()].map((r) => {
+    const prior = sets.filter((x) => keyOf(x) === keyOf(r) && x.at < r.at && x.sessionId !== r.sessionId && !x.drop && !x.skipped);
+    const best = prior.reduce<SetEntry | undefined>((b, x) => (!b || better(x, b) ? x : b), undefined);
+    const base = { key: keyOf(r), name: r.exercise, now: setWords(r) };
+    if (!best) return { ...base, gain: 'First time', from: 0 };
+    const kg = r.loadKg ?? 0;
+    const was = best.loadKg ?? 0;
+    if (kg > was) return { ...base, was: setWords(best), gain: `+${fmtKg(kg - was)} kg`, from: kg ? was / kg : 0 };
+    const atLoad = prior.filter((x) => (x.loadKg ?? 0) === kg).reduce<SetEntry | undefined>((b, x) => (!b || val(x) > val(b) ? x : b), undefined);
+    if (!atLoad || val(r) <= val(atLoad)) return { ...base, was: setWords(best), gain: 'New best', from: 0 };
+    const unit = r.reps === undefined && r.seconds !== undefined ? 's' : val(r) - val(atLoad) === 1 ? 'rep' : 'reps';
+    return { ...base, was: setWords(atLoad), gain: `+${val(r) - val(atLoad)} ${unit}`, from: val(atLoad) / val(r) };
+  });
 }

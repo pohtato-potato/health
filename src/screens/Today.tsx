@@ -79,8 +79,7 @@ import { SeasonStrip, useUnlockedIds } from '../ui/Theme';
 import { hasReward } from '../domain/rewards';
 import { NextUpCard } from './NextUpCard';
 import { RecordsStrip } from './today/NextStrip';
-import { tonight } from '../domain/trainView';
-import { fmtSet } from '../domain/setText';
+import { recordGains, tonight } from '../domain/trainView';
 import { regionAt } from '../domain/regions';
 import { themeDayOn } from '../domain/calendar';
 import { journeyStart as journeyStartOf } from './Journey';
@@ -345,7 +344,7 @@ export function Today() {
       </>}
       football={<Suspense fallback={null}><MatchToday now={nowMs} /></Suspense>}
       next={recordsTonight.length ? (
-        <RecordsStrip records={recordsTonight.map((r) => `${r.exercise} ${fmtSet(r)}`)} onFinale={() => { const tn = tonight(sessions, sets, today); if (tn) go('/session/replay', { id: tn.session.id }); }} />
+        <RecordsStrip rows={recordGains(recordsTonight, sets)} onFinale={() => { const tn = tonight(sessions, sets, today); if (tn) go('/session/replay', { id: tn.session.id }); }} />
       ) : (
         <NextUpCard settings={settings} up={up} active={active} trainedToday={trainedToday} weeks={weeks} />
       )}
