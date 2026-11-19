@@ -92,17 +92,17 @@ export function MealRow({ meal, foods, date, slot, onRemove }: { meal: SavedMeal
     <div className="food-row">
       <div className="col gap2 grow" style={{ minWidth: 0 }}>
         <span className="t16">{meal.name}</span>
-        <span className="t13 q" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span className="t14 q" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {t.names.join(', ')}
         </span>
-        <button type="button" className="t12 d" style={{ alignSelf: 'flex-start', textDecoration: 'underline' }} onClick={onRemove}>
+        <button type="button" className="t14 d" style={{ alignSelf: 'flex-start', textDecoration: 'underline' }} onClick={onRemove}>
           Remove
         </button>
       </div>
       <div className="row" style={{ gap: 14 }}>
         <div className="t14 tn right">
           {fmtInt(t.kcal)}
-          <div className="t12 lav">{Math.round(t.protein)} g</div>
+          <div className="t14 lav">{Math.round(t.protein)} g</div>
         </div>
         <button
           type="button"

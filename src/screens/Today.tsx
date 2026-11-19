@@ -34,17 +34,16 @@ import { LiveRings } from './today/LiveRings';
 import { RingMomentFx } from './today/RingMomentFx';
 import { useRingMoment } from './today/useRingMoment';
 import { RING_WORD, ringsGold } from '../domain/ringMoments';
-import { RING_GOLD } from '../ui/rings/GlowRings';
 import { lookOf } from '../domain/themes';
 import { useLiveTheme } from '../ui/live/useLiveTheme';
 import { Panel, Sect } from '../ui/kit/Kit';
 import { Icon } from '../ui/Icon';
 import { MEAL_NAMES } from '../domain/types';
 import { closedWords, glanceUnder } from './today/TodayLine';
-import { TodayLayout } from './today/TodayLayout';
+import { TodayLayout, panelVars } from './today/TodayLayout';
 import { DrawerHandle, TodayDrawer } from './today/TodayDrawer';
 import { proteinState } from '../domain/proteinState';
-import { ChecklistChips, MealTiles, UsualChips, mealTotals } from './today/LogBelow';
+import { ChecklistPanel, LogBuckets, MealsPanel, UsualChips, mealTotals } from './today/LogBelow';
 import { LogSearch } from '../sheets/LogSearch';
 import { sameAsYesterday, usualFoods } from '../domain/usual';
 import { mealForTime, portionFor } from '../domain/foods';
@@ -74,13 +73,13 @@ import {
   weeksFor,
 } from '../state/derived';
 import { Banners } from './Banners';
+import { OnThisDayCard } from './OnThisDay';
 import '../styles/today.css';
 import { SeasonStrip, useUnlockedIds } from '../ui/Theme';
 import { hasReward } from '../domain/rewards';
 import { NextUpCard } from './NextUpCard';
 import { RecordsStrip } from './today/NextStrip';
-import { tonight } from '../domain/trainView';
-import { fmtSet } from '../domain/setText';
+import { recordGains, tonight } from '../domain/trainView';
 import { regionAt } from '../domain/regions';
 import { themeDayOn } from '../domain/calendar';
 import { journeyStart as journeyStartOf } from './Journey';
@@ -240,11 +239,12 @@ export function Today() {
   const nextKind: NextKind = morningOpen ? 'morning' : weighInDue && hour < 11 ? 'weighin' : momentKind;
   const weighRow = weighInDue && nextKind !== 'weighin';
   const ringGold = ringsGold({ counting: goldCount, perfect: rings.perfect, played: perfectPlayed });
-  const goldNums = rings.perfect && ringGold >= rings.of;
-  const rowInk = (k: keyof typeof METRIC_INK) => (goldNums ? RING_GOLD : METRIC_INK[k]);
+  // A perfect day (h7-perfect): the rings glow gold, but the numbers keep their own inks; no text turns gold.
+  const rowInk = (k: keyof typeof INK_AT) => look.ring.inks[INK_AT[k]];
   return (
     <TodayLayout
       glow={!!glow}
+      light={panelVars(look.ring.inks)}
       fx={<RingMomentFx playing={playing} />}
       overlays={
         <>
@@ -264,26 +264,30 @@ export function Today() {
       }
       walk={<WalkTop caption={caption} scene={scene} stamp={stamp} status={<StatusChip today={today} days={days} />} onOpen={() => go('/walk')} />}
       due={<DueCard due={dueToday({ today, settings, checkins: checkins.map((c) => c.date), measurements })} />}
-      banner={<><OfficeUsual /><Banners noMorning={morningOpen} /></>}
+      banner={<><OfficeUsual /><Banners noMorning={morningOpen} /><OnThisDayCard /></>}
       line={
         <TodayLine
-          head={playing?.kind === 'ring' ? `${RING_WORD[playing.ring]} closed` : closedWords(rings.closed, rings.of)}
+          head="Today"
+          level={1}
           text={lineKind === 'glance' ? glanceUnder(lineText) : lineText}
           kind={lineKind}
-          gold={moment === 'perfect'}
           clock={fmtTime(nowMs)}
           why={themeDay ? { name: themeDay.name, text: themeDay.why } : undefined}
           onOpen={() => setDrawerOpen(true)}
         />
       }
       season={<SeasonStrip settings={settings} today={today} />}
+      dayChip={playing?.kind === 'ring' ? `${RING_WORD[playing.ring]} closed` : rings.perfect ? 'Perfect day' : rings.closed >= rings.of ? closedWords(rings.closed, rings.of) : `${rings.closed} of ${rings.of} closed`}
+      perfect={rings.perfect}
+      nextChip={rings.perfect && !day?.foodDone ? 'All met' : gap.gapG > 0 && !closedFlags.protein && !day?.foodDone ? `${Math.round(gap.gapG)} g to go` : undefined}
+      nextInk={look.ring.inks[INK_AT.protein]}
       rings={
         <RingsNumbers
           rows={[
-            { key: 'kcal', name: 'Calories', value: fmtInt(totals.kcal), unit: 'kcal', target: `${fmtInt(targets.kcalMin)}–${fmtInt(targets.kcalMax)} kcal`, ink: rowInk('kcal'), known: true, done: closedFlags.kcal },
-            { key: 'protein', name: 'Protein', value: String(Math.round(totals.protein)), unit: 'g protein', target: `of ${targets.proteinG} g`, ink: rowInk('protein'), known: true, done: closedFlags.protein },
-            { key: 'steps', name: 'Steps', value: day?.steps !== undefined ? fmtInt(totals.steps) : '—', unit: 'steps', target: `${totals.eased ? 'eased to ' : 'of '}${fmtInt(stepsGoal(targets, totals.eased))}`, ink: rowInk('steps'), known: day?.steps !== undefined, done: closedFlags.steps },
-            { key: 'sleep', name: 'Sleep', value: sleepMin !== undefined ? fmtDuration(sleepMin).replace(/ m$/, '') : '—', unit: 'sleep', target: `last night · aim ${fmtDuration(targets.sleepMin)}`, ink: rowInk('sleep'), known: sleepMin !== undefined, done: closedFlags.sleep },
+            { key: 'kcal', name: 'Calories', value: fmtInt(totals.kcal), unit: 'kcal', progress: rings.kcal.progress, target: `${fmtInt(targets.kcalMin)}–${fmtInt(targets.kcalMax)} kcal`, ink: rowInk('kcal'), known: true, done: closedFlags.kcal },
+            { key: 'protein', name: 'Protein', value: String(Math.round(totals.protein)), unit: 'g', progress: rings.protein.progress, target: `of ${targets.proteinG} g`, ink: rowInk('protein'), known: true, done: closedFlags.protein },
+            { key: 'steps', name: 'Steps', value: day?.steps !== undefined ? fmtInt(totals.steps) : '—', unit: '', progress: day?.steps !== undefined ? rings.steps.progress : 0, target: `${totals.eased ? 'eased to ' : 'of '}${fmtInt(stepsGoal(targets, totals.eased))}`, ink: rowInk('steps'), known: day?.steps !== undefined, done: closedFlags.steps },
+            { key: 'sleep', name: 'Sleep', value: sleepMin !== undefined ? fmtDuration(sleepMin).replace(/ m$/, '') : '—', unit: '', progress: sleepMin !== undefined ? rings.sleep.progress : 0, target: `last night · aim ${fmtDuration(targets.sleepMin)}`, ink: rowInk('sleep'), known: sleepMin !== undefined, done: closedFlags.sleep },
           ]}
           closed={rings.closed}
           of={rings.of}
@@ -340,38 +344,48 @@ export function Today() {
       </>}
       football={<Suspense fallback={null}><MatchToday now={nowMs} /></Suspense>}
       next={recordsTonight.length ? (
-        <RecordsStrip records={recordsTonight.map((r) => `${r.exercise} ${fmtSet(r)}`)} onFinale={() => { const tn = tonight(sessions, sets, today); if (tn) go('/session/replay', { id: tn.session.id }); }} />
+        <RecordsStrip rows={recordGains(recordsTonight, sets)} onFinale={() => { const tn = tonight(sessions, sets, today); if (tn) go('/session/replay', { id: tn.session.id }); }} />
       ) : (
         <NextUpCard settings={settings} up={up} active={active} trainedToday={trainedToday} weeks={weeks} />
       )}
       shape={<Suspense fallback={null}><MatchToday now={nowMs} part="shape" /></Suspense>}
+      meals={<MealsPanel meals={MEALS.map((m) => ({ meal: m, kcal: perMeal[m]?.kcal, protein: perMeal[m]?.protein, canRepeat: sameAsYesterday(monthEntries, m, today, 0).length > 0 }))} kcalAim={targets.kcalMax} proteinAim={targets.proteinG} onOpen={(m) => go('/food', { meal: m })} onRepeat={(m) => void repeat(m)} />}
       log={
         <section className="td-log" data-section="log" aria-label="Log">
+          <LogBuckets
+            b={{
+              food: { kcal: totals.kcal, aim: targets.kcalMax },
+              morning: { at: day?.morning?.at },
+              checklist: { done: slots.filter((x) => day?.ticks?.[x.key] !== undefined).length, of: slots.length },
+              steps: { n: day?.steps, of: stepsGoal(targets, totals.eased) },
+              session: up || trainedToday.length ? { name: trainedToday.length ? findSession(settings.plan!, trainedToday[0].session)?.name ?? 'Session' : sessionName, done: trainedToday.length > 0 } : undefined,
+              close: { rings: [rings.kcal.progress, rings.protein.progress, rings.steps.progress, rings.sleep.progress].slice(0, rings.of), closed: !!(day?.foodDone || day?.partial) },
+            }}
+            on={{ food: () => go('/food'), morning: () => openSheet('morning'), checklist: () => document.getElementById('td-panel-checklist')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), steps: () => openSheet('steps'), session: () => go('/train'), close: () => go('/close'), more: () => openSheet('more') }}
+          />
+          <LogSearch foods={foods} onAction={(a) => (a.sheet ? openSheet(a.sheet) : go(a.route!))} onFood={(f) => openSheet('addfood', { food: f.id })} onQuick={() => openSheet('quick')} />
           <Sect>Quick add</Sect>
           <UsualChips items={usual.map((u) => ({ id: u.food.id, name: u.food.name, portion: portionFor(u.food, u.amount) }))} onAdd={addUsual} />
-          <LogSearch foods={foods} onAction={(a) => (a.sheet ? openSheet(a.sheet) : go(a.route!))} onFood={(f) => openSheet('addfood', { food: f.id })} onQuick={() => openSheet('quick')} />
-          <Sect>Today’s meals</Sect>
-          <MealTiles meals={MEALS.map((m) => ({ meal: m, kcal: perMeal[m]?.kcal, protein: perMeal[m]?.protein, canRepeat: sameAsYesterday(monthEntries, m, today, 0).length > 0 }))} onOpen={(m) => go('/food', { meal: m })} onRepeat={(m) => void repeat(m)} />
           <Panel ink="var(--k-pearl)" flat onClick={() => go('/body')} label={`Body log: ${bodyTileWords(body, today)}`}>
             <Icon name="body" size={26} color="var(--k-pearl)" />
             <span className="k-col"><b>Body log</b><span className="k-q">{bodyTileWords(body, today)}</span></span>
           </Panel>
           {slots.length > 0 && (
             <>
-              <Sect>Checklist</Sect>
-              <ChecklistChips items={slots.map((x) => ({ key: x.key, name: slots.filter((y) => y.itemId === x.itemId).length > 1 ? `${x.name} · ${x.slot}` : x.name, on: !!day?.ticks?.[x.key] }))} onToggle={(key, on) => { const slot = slots.find((y) => y.key === key)?.slot ?? 'Daily'; const t = tickFor(today, slot, settings, day, on, Date.now()); void setTick(today, key, on, t.at, t.recordedLate); }} />
-              <p className="td-hint k-q">Press and hold a row to tick it.</p>
+              <ChecklistPanel items={slots.map((x) => ({ key: x.key, name: slots.filter((y) => y.itemId === x.itemId).length > 1 ? `${x.name} · ${x.slot}` : x.name, on: day?.ticks?.[x.key] !== undefined, at: day?.ticks?.[x.key] }))} onToggle={(key, on) => { const slot = slots.find((y) => y.key === key)?.slot ?? 'Daily'; const t = tickFor(today, slot, settings, day, on, Date.now()); void setTick(today, key, on, t.at, t.recordedLate); }} />
+              <p className="td-hint k-q">Press and hold an item to tick it. Hold a ticked one to untick it.</p>
             </>
           )}
         </section>
       }
-      handle={<DrawerHandle closeLabel={day?.foodDone || day?.partial ? 'Day closed' : 'Close the day'} gold={rings.perfect && !day?.foodDone} onCloseDay={() => go('/close')} />}
+      handle={<DrawerHandle closeLabel={day?.foodDone || day?.partial ? 'Day closed' : rings.perfect ? 'Close the day · Plated' : 'Close the day'} gold={rings.perfect && !day?.foodDone} onCloseDay={() => go('/close')} />}
     />
   );
 }
 
 /** The ring numbers keep each metric's own colour on every theme (look pass, rule 10): calories, protein, steps, sleep. */
-const METRIC_INK = { kcal: '#ff8a4d', protein: '#b79bff', steps: '#5ff0b0', sleep: '#6cc8ff' } as const;
+/** Each number's place in a theme's four ring inks (board seven: the bars and numbers take the rings' colours). */
+const INK_AT = { kcal: 0, protein: 1, steps: 2, sleep: 3 } as const;
 
 function lineForTheDay(today: string, moment: string, line: string): string {
   const key = 'health.line';

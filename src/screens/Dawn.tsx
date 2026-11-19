@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useAllDays, useAllSets, useEntries, useSessions, useSettings, useToday } from '../db/hooks';
 import { addDays } from '../domain/dates';
-import { fmt1, fmtDuration, fmtInt } from '../domain/format';
+import { fmt1, fmtClock, fmtDuration, fmtInt } from '../domain/format';
 import { findSession } from '../domain/plan';
 import { regionAt } from '../domain/regions';
 import { sleepMinutes, stepsGoal } from '../domain/rings';
@@ -10,21 +10,17 @@ import { themeDayOn } from '../domain/calendar';
 import { go } from '../router';
 import { dayRings, nextUp } from '../state/derived';
 import { ensureReveal } from '../state/reveal';
-import { Aurora } from '../ui/live/Aurora';
-import { auroraFor } from '../walk/page';
-import '../styles/live.css';
 import '../styles/creatures.css';
 
-function nightLine(min: number): string {
+export function nightLine(min: number): string {
   if (min >= 480) return 'A long, slow night.';
   if (min >= 420) return 'A good night.';
   if (min >= 360) return 'Not quite a full night.';
   return 'A short night.';
 }
 
-interface Card {
+export interface DawnCard {
   id: string;
-  sky?: CSSProperties;
   body: ReactNode;
 }
 
@@ -47,10 +43,10 @@ export function DawnPage() {
   const leave = () => go('/today');
   const ready = !!settings && !!days && !!sessions && !!sets && !!entries && marked;
 
-  const cards = useMemo<Card[]>(() => {
+  const cards = useMemo<DawnCard[]>(() => {
     if (!ready || !settings || !days || !sessions || !sets || !entries) return [];
     const day = days.find((d) => d.date === today);
-    const out: Card[] = [];
+    const out: DawnCard[] = [];
     const min = day?.sleep ? sleepMinutes(day.sleep.asleep, day.sleep.woke) : 0;
     out.push({
       id: 'night',
@@ -58,7 +54,7 @@ export function DawnPage() {
         <>
           <span className="dawn-lab">Last night</span>
           <p className="dawn-big tn">{fmtDuration(min)}</p>
-          <p className="dawn-note">{nightLine(min)}</p>
+          <p className="dawn-note">{nightLine(min)}{day?.sleep ? ` ${fmtClock(day.sleep.asleep)} to ${fmtClock(day.sleep.woke)}${day.sleep.rested ? `, rested ${day.sleep.rested} of 5` : ''}.` : ''}</p>
         </>
       ),
     });
@@ -112,41 +108,56 @@ export function DawnPage() {
     // Only the first read counts: the cards don't shuffle if the day changes underneath them.
   }, [!!ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!ready) return <div className="dawn lv" style={auroraFor('plains') as CSSProperties}><Aurora /></div>;
+  if (!ready) return <div className="dawn" aria-busy="true"><DawnSky /></div>;
   if (!cards.length) {
     leave();
     return null;
   }
-  const km = days ? kmFromSteps(days.reduce((n, d) => n + (d.steps ?? 0), 0)) : 0;
-  const card = cards[Math.min(i, cards.length - 1)];
-  const last = i >= cards.length - 1;
+  return <DawnView cards={cards} i={i} onNext={() => setI(i + 1)} onLeave={leave} />;
+}
+
+/** The sky behind the cards: a dawn gradient and a sun that rises once. Decoration only. */
+function DawnSky() {
   return (
-    <div className="dawn lv" role="dialog" aria-label="The morning reveal" style={card.sky ?? (auroraFor(regionAt(km)) as CSSProperties)} onClick={() => !last && setI(i + 1)}>
-      <Aurora />
+    <div className="dawn-sky" aria-hidden="true">
+      <span className="dawn-sun" />
+    </div>
+  );
+}
+
+/**
+ * The morning reveal (board 23 `o23-dawn`): a sunrise behind the cards, one card at a time. "Tap to go on" and "Skip"
+ * are buttons (a tap anywhere on the sky goes on too); the last card has "To today" in their place.
+ */
+export function DawnView({ cards, i, onNext, onLeave }: { cards: DawnCard[]; i: number; onNext: () => void; onLeave: () => void }) {
+  if (!cards.length) return null;
+  const at = Math.min(i, cards.length - 1);
+  const card = cards[at];
+  const last = at >= cards.length - 1;
+  return (
+    <div className="dawn" role="dialog" aria-label="The morning reveal" onClick={() => !last && onNext()}>
+      <DawnSky />
       <div className="dawn-bar">
         <span className="dawn-pips" aria-hidden="true">
-          {cards.map((c, k) => <i key={c.id} className={k <= i ? 'on' : ''} />)}
+          {cards.map((c, k) => <i key={c.id} className={k === at ? 'on' : k < at ? 'seen' : ''} />)}
         </span>
-        <span className="sr-only">Card {i + 1} of {cards.length}</span>
-        {!last && (
-          <button type="button" className="dawn-skip" onClick={(e) => { e.stopPropagation(); leave(); }}>
-            Skip
-          </button>
-        )}
+        <span className="sr-only">Card {at + 1} of {cards.length}</span>
       </div>
       <div className="dawn-card" key={card.id} aria-live="polite">
-        {card.body}
+        <div className="dawn-panel">{card.body}</div>
       </div>
       <div className="dawn-foot">
         {last ? (
-          <button type="button" className="btn lg block dawn-done" onClick={leave}>
+          <button type="button" className="btn lg block dawn-done" onClick={onLeave}>
             To today
           </button>
         ) : (
-          <span>Tap to go on</span>
+          <div className="dawn-acts">
+            <button type="button" className="dawn-next" onClick={(e) => { e.stopPropagation(); onNext(); }}>Tap to go on</button>
+            <button type="button" className="dawn-skip" onClick={(e) => { e.stopPropagation(); onLeave(); }}>Skip</button>
+          </div>
         )}
       </div>
     </div>
   );
 }
-

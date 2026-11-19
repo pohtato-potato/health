@@ -4,7 +4,7 @@ import { useEffect } from 'react';
  * The moon Close the day above the tab bar (boards three and five): one wide button on the night-blue, with its
  * moon. It turns gold on a perfect day. Today in detail opens from the line under the heading.
  */
-export function DrawerHandle({ closeLabel, gold, onCloseDay }: { closeLabel: 'Close the day' | 'Day closed'; gold?: boolean; onCloseDay: () => void }) {
+export function DrawerHandle({ closeLabel, gold, onCloseDay }: { closeLabel: 'Close the day' | 'Close the day · Plated' | 'Day closed'; gold?: boolean; onCloseDay: () => void }) {
   return (
     <div className="td-handle" data-section="handle">
       <button type="button" className={`td-moonbtn${gold ? ' gold' : ''}`} onClick={onCloseDay}>

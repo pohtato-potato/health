@@ -166,7 +166,7 @@ export function ThemeSheet({ settings, unlocked, today, onClose }: { settings: S
         })}
       </div>
       <div className="t14 q lh">
-        Showing now: {themeById(current)?.name}. A theme changes the light behind each page, the action colour, the rings and Walk's sky; each number keeps its own colour. Diwali, Holi and your birthday bring their own look for the day when seasonal themes are on. {ACHIEVEMENTS.filter((a) => a.reward?.endsWith('theme')).length} themes to earn.
+        Showing now: {themeById(current)?.name}. A theme changes the light behind each page, the action colour, the rings with their bars and numbers on Today, and Walk's sky. Diwali, Holi and your birthday bring their own look for the day when seasonal themes are on. {ACHIEVEMENTS.filter((a) => a.reward?.endsWith('theme')).length} themes to earn.
       </div>
     </Sheet>
   );

@@ -16,11 +16,11 @@ export function glanceUnder(text: string): string {
  * under it, small: the plain glance, or the voice at moments (italic; gold on a perfect day). A joint flag speaks
  * plainly. Tapping the line opens today in detail.
  */
-export function TodayLine({ head, text, kind, gold, clock, why, onOpen }: { head: string; text: string; kind: 'glance' | 'voice' | 'flag'; gold?: boolean; clock: string; why?: { name: string; text: string }; onOpen?: () => void }) {
+export function TodayLine({ head, level = 2, text, kind, gold, clock, why, onOpen }: { head: string; /** 1 when the head is the page's own heading (Home C). */ level?: 1 | 2; text: string; kind: 'glance' | 'voice' | 'flag'; gold?: boolean; clock: string; why?: { name: string; text: string }; onOpen?: () => void }) {
   return (
     <div className="td-line-wrap" data-section="line">
       <div className="k-row td-headrow">
-        <h2 className={`td-head${gold ? ' gold' : ''}`}>{head}</h2>
+        {level === 1 ? <h1 className={`td-head${gold ? ' gold' : ''}`}>{head}</h1> : <h2 className={`td-head${gold ? ' gold' : ''}`}>{head}</h2>}
         {onOpen ? (
           <button type="button" className="td-clock tn" onClick={onOpen} aria-label={`${clock}. Open today in detail`}>{clock}</button>
         ) : (

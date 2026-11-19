@@ -2,7 +2,8 @@ import { MaintenanceRead } from './today/MaintenanceRead';
 import { FoodPledge } from './Pledge';
 import { addDays, weekStart } from '../domain/dates';
 import { fmtDayShort, fmtInt } from '../domain/format';
-import { MEAL_NAMES, MEALS } from '../domain/types';
+import { MEAL_NAMES, MEALS, type Meal } from '../domain/types';
+import { FoodBar } from './FoodBar';
 import { useAllDays, useEntries, useEntriesBetween, useSettings, useToday } from '../db/hooks';
 import { back, go, openSheet, useRoute } from '../router';
 import { Icon } from '../ui/Icon';
@@ -19,7 +20,7 @@ import { Roll } from '../ui/motion/Roll';
 const HOW: HowThisWorks = {
   title: 'Food',
   steps: [
-    { icon: 'food', ink: 'var(--kcal)', head: 'Log as you go', line: 'Add food opens on the meal for the time; your usuals are one tap.' },
+    { icon: 'food', ink: 'var(--kcal)', head: 'Log as you go', line: 'Add food opens on the meal for the time; your usuals are one tap. Each meal is its own part of the bar, named by its letter underneath.' },
     { icon: 'check', ink: '#8fc9b0', head: 'Land in the green', line: 'The green part of the bar is the aim for today. Anywhere in it counts.' },
     { icon: 'bolt', ink: 'var(--protein)', head: 'Protein to the line', line: 'The lavender bar fills to the day’s protein.' },
     { icon: 'night', ink: 'var(--sleep)', head: 'Day complete', line: 'Mark it once everything eaten is in. Averages use complete days.' },
@@ -51,8 +52,8 @@ function FoodDay({ date, today, settings, days, entries, week }: { date: string;
   // The bar runs to a quarter past the top of the aim, rounded up to a thousand; the green part is the aim.
   const scale = Math.max(1000, Math.ceil((targets.kcalMax * 1.25) / 500) * 500);
   const kcalPct = Math.min(totals.kcal / scale, 1) * 100;
-  const lo = (targets.kcalMin / scale) * 100;
-  const hi = (targets.kcalMax / scale) * 100;
+  const byMeal = Object.fromEntries(MEALS.map((m) => [m, entries.filter((e) => e.meal === m).reduce((t, e) => t + e.kcal, 0)])) as Record<Meal, number>;
+  const proteinLeft = Math.max(0, Math.round(targets.proteinG - totals.protein));
   // Adding food pours the bars past the new mark and they slosh back (motion board two, Food take two).
   const pour = useChange(`food:${date}`, [kcalPct, rings.protein.progress * 100]);
   const pp = useTween(pour.n, 1500);
@@ -89,19 +90,15 @@ function FoodDay({ date, today, settings, days, entries, week }: { date: string;
             <span className="k-hero fd-kcal" style={{ '--ink': 'var(--kcal)' } as React.CSSProperties}><Roll value={totals.kcal} format={fmtInt} step={10} id={`food:kcal:${date}`} /></span>
             <b>kcal</b>
           </span>
-          <span className="k-col k-r">
-            <b className="k-num" style={{ color: 'var(--protein)' }}><Roll value={Math.round(totals.protein)} id={`food:protein:${date}`} /> g</b>
-            <span className="k-q">of {fmtInt(targets.proteinG)} protein</span>
+          <span className="tn fd-aim">aim {fmtInt(targets.kcalMin)}–{fmtInt(targets.kcalMax)}{totals.freeMeal ? ' · free meal' : ''}</span>
+        </div>
+        <FoodBar kcal={totals.kcal} byMeal={byMeal} aimMin={targets.kcalMin} aimMax={targets.kcalMax} scale={scale} fill={poured(0, kcalPct)} />
+        <div className="k-row end fd-prow">
+          <span className="k-hero-row">
+            <b className="k-num" style={{ color: 'var(--protein)' }}><Roll value={Math.round(totals.protein)} id={`food:protein:${date}`} /></b>
+            <span className="k-q">of {fmtInt(targets.proteinG)} g protein</span>
           </span>
-        </div>
-        <div className="fd-cal" role="img" aria-label={`${fmtInt(totals.kcal)} kcal; the aim is ${fmtInt(targets.kcalMin)} to ${fmtInt(targets.kcalMax)}`}>
-          <i className="ok" style={{ left: `${lo}%`, width: `${hi - lo}%` }} />
-          <i className="v" style={{ width: `${poured(0, kcalPct)}%` }} />
-        </div>
-        <div className="k-row fd-scale" aria-hidden="true">
-          <span className="k-q tn">0</span>
-          <span className="tn" style={{ color: '#8fc9b0' }}>aim {fmtInt(targets.kcalMin)} to {fmtInt(targets.kcalMax)}{totals.freeMeal ? ' · free meal' : ''}</span>
-          <span className="k-q tn">{fmtInt(scale)}</span>
+          <span className="k-q tn">{proteinLeft > 0 ? `${fmtInt(proteinLeft)} g to go` : 'Protein closed'}</span>
         </div>
         <div className={`fd-pro${rings.protein.closed ? ' closed' : ''}`} role="img" aria-label={`Protein ${Math.round(totals.protein)} of ${targets.proteinG} g`}>
           <i style={{ width: `${poured(1, rings.protein.progress * 100)}%` }} />

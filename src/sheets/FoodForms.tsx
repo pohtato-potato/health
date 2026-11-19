@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { barcodeSupported, lookupBarcode, scanBarcode, type ScannedFood } from '../sources/barcode';
 import { fmtInt } from '../domain/format';
 import { mealForTime, numbersPatch, per100FromTotal, portionFor, stepFor, unitLabel, valuesFor } from '../domain/foods';
-import { impossibleDensity, isWeighedMeat, lightDishWarning, portionWarning, QUICK_PROTEIN_KCAL, similarFood } from '../domain/foodChecks';
+import { impossibleDensity, isWeighedMeat, lightDishWarning, portionWarning, similarFood } from '../domain/foodChecks';
 import { MEAL_NAMES, MEALS, type Food, type FoodEntry, type FoodUnit, type Meal, type Settings } from '../domain/types';
 import { addEntry, archiveFood, deleteEntry, mergeFoods, patchSettings, saveFood, updateEntry } from '../db/actions';
 import { askConfirm } from '../ui/Confirm';
@@ -14,6 +14,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { closeSheet, replaceSheet, useRoute } from '../router';
 import { DecField, Seg, Stepper, SwitchRow } from '../ui/controls';
 import { Sheet } from '../ui/Sheet';
+import { QuickKcalForm, type QuickKcal as QuickKcalValues } from './QuickKcalForm';
 import { useToast } from '../ui/Toasts';
 import { DateChip, useLogDate } from '../ui/DateChip';
 
@@ -353,54 +354,19 @@ export function QuickKcal() {
   const toast = useToast();
   const [date, setDate] = useLogDate();
   const [meal, setMeal] = useState<Meal>((params.get('meal') as Meal) || mealForTime());
-  const [name, setName] = useState('');
-  const [kcal, setKcal] = useState<number | undefined>();
-  const [protein, setProtein] = useState<number | 'unknown' | undefined>();
-  const ready = kcal !== undefined && name.trim() !== '' && protein !== undefined;
-
-  const bigNoProtein = protein === 0 && (kcal ?? 0) > QUICK_PROTEIN_KCAL;
-  const add = async () => {
-    if (!ready) return;
-    if (!(await okToAdd({ date, name: name.trim() }))) return;
-    const unknown = protein === 'unknown';
-    const e = await addEntry({ date, meal, at: Date.now(), kind: 'quick', name: name.trim(), portion: 'Estimate', kcal: Math.round(kcal!), protein: unknown ? 0 : protein, ...(unknown ? { proteinUnknown: true } : {}) });
-    toast({ text: `${e.name} · ${fmtInt(e.kcal)} kcal`, action: { label: 'Undo', run: () => deleteEntry(e.id) } });
+  const add = async (q: QuickKcalValues) => {
+    if (!(await okToAdd({ date, name: q.name }))) return;
+    const unknown = q.protein === 'unknown';
+    const e = await addEntry({ date, meal, at: Date.now(), kind: 'quick', name: q.name, portion: 'Estimate', kcal: q.kcal, protein: unknown ? 0 : (q.protein as number), ...(unknown ? { proteinUnknown: true } : {}) });
+    toast({ text: `${e.name} · ${fmtInt(e.kcal)} kcal`, sub: `Added to ${MEAL_NAMES[meal].toLowerCase()}`, action: { label: 'Undo', run: () => deleteEntry(e.id) } });
     closeSheet();
   };
 
   return (
-    <Sheet title="Quick kcal" sub="For when you just want the number in">
+    <Sheet title="Quick kcal" sub="Just the numbers">
       <DateChip value={date} onChange={setDate} />
       <MealPicker meal={meal} onChange={setMeal} />
-      <label className="flabel">
-        <span className="lbl">What was it?</span>
-        <input className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder="Office samosa" spellCheck autoCapitalize="sentences" />
-      </label>
-      <label className="flabel">
-        <span className="lbl apri">Kcal</span>
-        <DecField value={kcal} onChange={setKcal} placeholder="0" autoFocus />
-      </label>
-      <div className="flabel">
-        <span className="lbl lav">Protein</span>
-        <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }} role="radiogroup" aria-label="Protein">
-          {([0, 5, 10, 20, 30, 'unknown'] as const).map((g) => (
-            <button key={g} type="button" role="radio" aria-checked={protein === g} className={`chip sm${protein === g ? ' on' : ''}`} onClick={() => setProtein(g)}>
-              {g === 'unknown' ? 'Not sure' : `${g} g`}
-            </button>
-          ))}
-        </div>
-        {bigNoProtein && (
-          <div className="notice t14 lh" role="status">
-            0 g for {fmtInt(kcal!)} kcal? Most meals that size have some. “Not sure” keeps the protein count honest instead of counting zero.
-            <button type="button" className="chip sm" style={{ marginTop: 8 }} onClick={() => setProtein('unknown')}>
-              Make it Not sure
-            </button>
-          </div>
-        )}
-      </div>
-      <button type="button" className="btn lg block" disabled={!ready} onClick={add}>
-        Add to {MEAL_NAMES[meal].toLowerCase()}
-      </button>
+      <QuickKcalForm onAdd={(q) => void add(q)} autoFocus />
     </Sheet>
   );
 }
