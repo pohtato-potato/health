@@ -15,6 +15,7 @@ import { replaceSheet, useRoute } from '../router';
 import { Seg, Stepper, TimeTile } from '../ui/controls';
 import { Icon } from '../ui/Icon';
 import { Sheet } from '../ui/Sheet';
+import { QuickKcalForm, type QuickKcal } from './QuickKcalForm';
 import { useToast } from '../ui/Toasts';
 import { askConfirm } from '../ui/Confirm';
 import { DateChip, useLogDate } from '../ui/DateChip';
@@ -24,7 +25,7 @@ import '../styles/food.css';
 /** Each own category tab in its own colour. */
 const CAT_INKS = ['var(--protein)', 'var(--kcal)', 'var(--steps)', 'var(--blue)', 'var(--gold)', 'var(--pearl)'];
 
-type Tab = 'recent' | 'frequent' | 'mine' | 'meals' | `cat:${string}`;
+type Tab = 'recent' | 'frequent' | 'mine' | `cat:${string}`;
 
 export function AddFood() {
   const { params } = useRoute();
@@ -86,6 +87,13 @@ export function AddFood() {
   const addYesterday = async () => {
     const added = await addEntries(sameAsYesterday(history, meal, date, Date.now()));
     toast({ text: `${MEAL_NAMES[meal]}: same as yesterday`, sub: `${added.length} item${added.length === 1 ? '' : 's'} added`, action: { label: 'Undo', run: () => added.forEach((e) => void deleteEntry(e.id)) } });
+  };
+  const yTotal = yesterday.reduce((t, e) => ({ kcal: t.kcal + e.kcal, protein: t.protein + e.protein }), { kcal: 0, protein: 0 });
+  const quickAdd = async (q: QuickKcal) => {
+    if (!(await okToAdd({ date, name: q.name }))) return;
+    const unknown = q.protein === 'unknown';
+    const e = await addEntry({ date, meal, at: Date.now(), kind: 'quick', name: q.name, portion: 'Estimate', kcal: q.kcal, protein: unknown ? 0 : (q.protein as number), ...(unknown ? { proteinUnknown: true } : {}), ...(eaten !== undefined ? { eatenAt: atOn(date, eaten) } : {}) });
+    toast({ text: `${e.name} · ${fmtInt(e.kcal)} kcal`, sub: `Added to ${MEAL_NAMES[meal].toLowerCase()}`, action: { label: 'Undo', run: () => deleteEntry(e.id) } });
   };
   const amt = picked ? amount ?? picked.defaultAmount : 0;
   const meat = !!picked && isWeighedMeat(picked);
@@ -161,6 +169,32 @@ export function AddFood() {
         <Icon name="search" size={18} stroke={1.8} color="var(--k-quiet)" />
         <input className="field" placeholder="Search your foods" value={query} onChange={(e) => setQuery(e.target.value)} />
       </label>
+      {!query && !plate && !picked && yesterday.length > 0 && (
+        <button type="button" className="k-panel af-yday" aria-label={`Add the same as yesterday: ${yesterday.length} item${yesterday.length === 1 ? '' : 's'}, ${fmtInt(yTotal.kcal)} kcal, ${Math.round(yTotal.protein)} g protein`} onClick={() => void addYesterday()}>
+          <span>Same as yesterday</span>
+          <b className="tn">
+            <span className="apri">{fmtInt(yTotal.kcal)}</span> · <span className="lav">{Math.round(yTotal.protein)} g</span>
+          </b>
+        </button>
+      )}
+      {!query && !plate && !picked && (settings.meals ?? []).length > 0 && (
+        <section className="col af-saved" aria-labelledby="af-saved-h">
+          <h3 id="af-saved-h" className="k-sect af-sect">Saved meals</h3>
+          {(settings.meals ?? []).map((m) => (
+            <MealRow
+              key={m.id}
+              meal={m}
+              foods={live}
+              date={date}
+              slot={meal}
+              onRemove={async () => {
+                if (await askConfirm({ title: `Remove the saved meal “${m.name}”?`, body: 'Logged entries stay.', yes: 'Remove' })) void patchSettings((s) => ({ meals: (s.meals ?? []).filter((x) => x.id !== m.id) }));
+              }}
+            />
+          ))}
+        </section>
+      )}
+      {!query && !plate && !picked && <QuickKcalForm onAdd={(q) => void quickAdd(q)} />}
       {!query && usuals.length > 0 && (
         <div className="col gap8">
           <h3 className="k-sect af-sect">Your usuals · {place.name}</h3>
@@ -173,22 +207,6 @@ export function AddFood() {
           </div>
         </div>
       )}
-      {!query && !plate && !picked && yesterday.length > 0 && (
-        <div className="col gap8">
-          <h3 className="k-sect af-sect">Same as yesterday</h3>
-          <div className="k-panel af-yday" style={{ '--ink': 'var(--protein)' } as React.CSSProperties}>
-            {yesterday.map((e, i) => (
-              <div key={i} className="af-yrow">
-                <span>{e.name}</span>
-                <b className="tn">{fmtInt(e.kcal)}{e.protein >= 1 ? ` · ${Math.round(e.protein)} g` : ''}</b>
-              </div>
-            ))}
-          </div>
-          <button type="button" className="k-act wide" onClick={() => void addYesterday()}>
-            Add {yesterday.length === 1 ? 'it' : `${yesterday.length === 2 ? '2' : yesterday.length} things`}
-          </button>
-        </div>
-      )}
 
       {plate && (
         <div className="plate">
@@ -198,12 +216,12 @@ export function AddFood() {
               <span className="apri">{fmtInt(plateTotal.kcal)}</span> · <span className="lav">{Math.round(plateTotal.protein)} g</span>
             </div>
           </div>
-          {plateItems.length === 0 && <div className="t13 q">Tap foods below to put them on the plate.</div>}
+          {plateItems.length === 0 && <div className="t14 q">Tap foods below to put them on the plate.</div>}
           {plateItems.map(({ food, amount: a }) => (
             <div key={food.id} className="col gap4">
               <div className="row base">
                 <span className="t15">{food.name}</span>
-                <span className="t12 q">{portionFor(food, a)}</span>
+                <span className="t14 q">{portionFor(food, a)}</span>
               </div>
               <Stepper value={a} onChange={(v) => setPlateAmount(food.id, v)} step={stepFor(food)} min={0} max={5000} decimals={food.unit === 'serving' ? 1 : 0} unit={unitLabel(food, a)} size={22} label={`Amount of ${food.name}`} />
             </div>
@@ -225,7 +243,6 @@ export function AddFood() {
             { id: 'recent', label: 'Recent' },
             { id: 'frequent', label: 'Frequent' },
             { id: 'mine', label: 'My foods' },
-            { id: 'meals', label: 'Meals' },
           ]}
           value={activeTab}
           onChange={setTab}
@@ -251,11 +268,11 @@ export function AddFood() {
           <div className="row base">
             <div className="col gap2" style={{ minWidth: 0 }}>
               <div className="t17">{picked.name}</div>
-              <div className="t13 q">{portionFor(picked, amt)}</div>
+              <div className="t14 q">{portionFor(picked, amt)}</div>
             </div>
             <div className="right tn">
               <div className="t16 apri">{fmtInt(valuesFor(picked, basisAmt).kcal)} kcal</div>
-              <div className="t13 lav">{Math.round(valuesFor(picked, basisAmt).protein)} g protein</div>
+              <div className="t14 lav">{Math.round(valuesFor(picked, basisAmt).protein)} g protein</div>
             </div>
           </div>
           <Stepper
@@ -308,7 +325,7 @@ export function AddFood() {
               <span className="lbl">You weighed it</span>
               <Seg options={[{ id: 'raw', label: 'Raw' }, { id: 'cooked', label: 'Cooked' }]} value={weighed} onChange={setWeighedAs} />
               {basisAmt !== amt && (
-                <span className="t13 q lh">
+                <span className="t14 q lh">
                   {amt} g {weighed} ≈ {basisAmt} g {picked.weighed}, which is what its numbers are for.
                 </span>
               )}
@@ -325,25 +342,7 @@ export function AddFood() {
         </div>
       )}
 
-      {activeTab === 'meals' && !query && (
-        <div className="col">
-          {(settings.meals ?? []).map((m) => (
-            <MealRow
-              key={m.id}
-              meal={m}
-              foods={live}
-              date={date}
-              slot={meal}
-              onRemove={async () => {
-                if (await askConfirm({ title: `Remove the saved meal “${m.name}”?`, body: 'Logged entries stay.', yes: 'Remove' })) void patchSettings((s) => ({ meals: (s.meals ?? []).filter((x) => x.id !== m.id) }));
-              }}
-            />
-          ))}
-          {!(settings.meals ?? []).length && <div className="t14 q lh" style={{ padding: '10px 2px' }}>No saved meals yet. On Food today, tap “Save as a meal” under any meal with two or more foods.</div>}
-        </div>
-      )}
-
-      <div className="col" style={activeTab === 'meals' && !query ? { display: 'none' } : undefined}>
+      <div className="col">
         {list.map((f) => {
           const v = valuesFor(f, f.defaultAmount);
           return (
@@ -358,12 +357,12 @@ export function AddFood() {
                 }}
               >
                 <span className="t16">{f.name}</span>
-                <span className="t13 q">{portionFor(f, f.defaultAmount)}</span>
+                <span className="t14 q">{portionFor(f, f.defaultAmount)}</span>
               </button>
               <div className="row" style={{ gap: 14 }}>
                 <div className="t14 tn right">
                   {fmtInt(v.kcal)}
-                  <div className="t12 lav">{Math.round(v.protein)} g</div>
+                  <div className="t14 lav">{Math.round(v.protein)} g</div>
                 </div>
                 <button type="button" className="round sm" aria-label={`${plate ? 'Put on the plate' : 'Add'}: ${f.name}`} onClick={() => tapAdd(f)}>
                   +
@@ -387,9 +386,11 @@ export function AddFood() {
         <button type="button" className="link" onClick={() => replaceSheet('food-new', { ...(query ? { name: query } : {}), meal, d: date })}>
           Create a food
         </button>
-        <button type="button" className="link" onClick={() => replaceSheet('quick', { meal, d: date })}>
-          Quick kcal
-        </button>
+        {query && (
+          <button type="button" className="link" onClick={() => replaceSheet('quick', { meal, d: date })}>
+            Quick kcal
+          </button>
+        )}
         <button type="button" className="link" onClick={() => replaceSheet('label', { meal, d: date })}>
           From a label
         </button>

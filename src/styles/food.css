@@ -61,10 +61,19 @@ html.contrast .fd-cal .ok { background: transparent; border-width: 3px; }
 .af-sect { margin: 6px 0 0; }
 .af-pill { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: 999px; border: 0; background: rgba(237, 230, 218, 0.12); color: var(--k-cream); font: 700 15px var(--sans); cursor: pointer; }
 .af-pill span { font-weight: 400; font-size: 14px; color: var(--k-quiet); }
-.af-yday { gap: 0; padding: 4px 14px; }
-.af-yrow { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 46px; border-top: 1px solid rgba(237, 230, 218, 0.14); font-size: 15px; }
-.af-yrow:first-child { border-top: 0; }
-.af-yrow b { font: 600 16px var(--serif); white-space: nowrap; }
+.af-yday { display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 12px; min-height: 52px; padding: 0 16px; color: var(--k-cream); font: 700 16px var(--sans); text-align: left; cursor: pointer; }
+.af-yday b { font: 600 17px var(--serif); white-space: nowrap; }
+.af-saved { gap: 0; }
+/* Quick kcal as it really is (board 4 f4-half): logged once, never saved. */
+.af-quick { gap: 10px; }
+.af-qh { margin: 0; font: 600 20px var(--serif); color: var(--k-cream); }
+.af-qline { margin: -4px 0 0; font-size: 14px; }
+.af-qnums { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.af-qnone { display: flex; align-items: center; color: var(--k-quiet); }
+.af-qacts { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.af-qunk { min-height: 44px; }
+.af-quick .chip.on { color: #16142e; }
+.af-qacts .k-act { min-width: 140px; }
 
 /* The morning log (board three): "Good morning"; lights out (lavender) and woke (blue) panels with their wheels;
    how rested in five even boxes, the pick lit in the action colour; the sleepy window; the weigh-in in a gold panel;

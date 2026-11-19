@@ -33,6 +33,12 @@ describe('Food: the meal bar (h22-food, f4-bar)', () => {
     expect(bar()).not.toMatch(/to the aim/);
   });
 
+  it('renders with no data: no segments, a dash for every meal', () => {
+    const html = renderToStaticMarkup(<FoodBar kcal={0} byMeal={{ breakfast: 0, lunch: 0, snacks: 0, dinner: 0 }} aimMin={2000} aimMax={2200} scale={3000} fill={0} />);
+    expect(html).not.toContain('fd-seg ');
+    expect([...html.matchAll(/<span class="m-\w+">([^<]+)<\/span>/g)].map((m) => m[1])).toEqual(['B —', 'L —', 'S —', 'D —']);
+  });
+
   it('keeps the bar still once poured: no looping animation on the fill', () => {
     const css = readFileSync('src/styles/food.css', 'utf8');
     const segs = css.slice(css.indexOf('.fd-segs'));
