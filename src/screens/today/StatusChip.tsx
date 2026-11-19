@@ -7,6 +7,7 @@ import type { Day, Status } from '../../domain/types';
 /**
  * The status chip at the top of Today (R4 3, R3 j-tour): what you are now, or what is planned next, with its dates.
  * Tap it to set travelling or sick ahead of time, from one day to another. A sick day plays the rotation squad.
+ * Board 10 `h10-status`: lanterns sway over the panel (decoration); the choices are the app's own statuses.
  */
 export function StatusChip({ today, days }: { today: DayKey; days: Pick<Day, 'date' | 'status'>[] }) {
   const chip = chipFor(days, today);
@@ -34,8 +35,10 @@ export function StatusChip({ today, days }: { today: DayKey; days: Pick<Day, 'da
         {chip.text}
       </button>
       {open && (
-        <div className="td-statusset" role="group" aria-label="Set a status">
-          <div className="td-statusrow" role="radiogroup" aria-label="Status">
+        <div className="td-statusset" role="group" aria-labelledby="td-st-h">
+          <span className="td-lanterns" aria-hidden="true">{[0, 1, 2, 3, 4].map((i) => <i key={i} />)}</span>
+          <h2 id="td-st-h" className="td-st-h">What’s going on?</h2>
+          <div className="td-statusrow" role="radiogroup" aria-labelledby="td-st-h">
             {CHIP_STATUSES.map((s) => (
               <button key={s.id} type="button" role="radio" aria-checked={status === s.id} className={`chip${status === s.id ? ' on' : ''}`} onClick={() => setStatus(s.id)}>{s.label}</button>
             ))}
@@ -44,9 +47,9 @@ export function StatusChip({ today, days }: { today: DayKey; days: Pick<Day, 'da
             <label><span>From</span><input type="date" value={from} onChange={(e) => e.target.value && setFrom(e.target.value)} /></label>
             <label><span>To</span><input type="date" value={to} min={from} onChange={(e) => e.target.value && setTo(e.target.value)} /></label>
           </div>
-          <p className="td-hint2">{status === 'travelling' ? 'Your own squad plays as you log on the road.' : 'On these days the rotation squad plays, and nothing you miss counts against you.'}</p>
+          <p className="td-hint2">Calories go up to maintenance while it lasts. {status === 'travelling' ? 'Your own squad plays as you log on the road.' : 'The rotation squad plays, and nothing you miss counts against you.'}</p>
           <div className="td-statusacts">
-            <button type="button" className="btn" onClick={save}>Save</button>
+            <button type="button" className="btn td-st-on" onClick={save}>{w ? 'Save' : 'Turn it on'}</button>
             {w && <button type="button" className="btn ghost" onClick={clear}>Clear {w.from > today ? 'this plan' : 'from today'}</button>}
           </div>
         </div>
