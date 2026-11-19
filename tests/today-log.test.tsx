@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { logMatches } from '../src/sheets/LogSearch';
-import { ChecklistPanel, MealTiles, UsualChips, mealTotals } from '../src/screens/today/LogBelow';
+import { ChecklistPanel, MealsPanel, UsualChips, mealTotals } from '../src/screens/today/LogBelow';
 import type { Food, FoodEntry } from '../src/domain/types';
 
 const food = (id: string, name: string, archived = false) => ({ id, name, archived, kcal: 100 }) as unknown as Food;
@@ -27,19 +27,19 @@ describe('UsualChips', () => {
   });
 });
 
-describe('MealTiles', () => {
+describe('MealsPanel', () => {
   const noop = () => {};
-  it('a logged row shows protein then kcal, as drawn ("21 g · 310")', () => {
-    const html = renderToStaticMarkup(<MealTiles meals={[{ meal: 'breakfast', kcal: 310, protein: 21, canRepeat: false }]} onOpen={noop} onRepeat={noop} />);
-    expect(html).toContain('>310<');
-    expect(html).toContain('>21 g<');
-    expect(html).toContain('21 g protein, 310 kcal');
+  const panel = (meals: Parameters<typeof MealsPanel>[0]['meals']) => renderToStaticMarkup(<MealsPanel meals={meals} kcalAim={1800} proteinAim={120} onOpen={noop} onRepeat={noop} />);
+  it('a logged row shows its kcal and protein in words', () => {
+    const html = panel([{ meal: 'breakfast', kcal: 310, protein: 21, canRepeat: false }]);
+    expect(html).toContain('>310</b> kcal');
+    expect(html).toContain('21 g protein');
+    expect(html).toContain('Breakfast: 310 kcal, 21 g protein');
   });
-  it('an empty row says "not yet", or offers "Same as yesterday" when it can', () => {
-    const can = renderToStaticMarkup(<MealTiles meals={[{ meal: 'lunch', canRepeat: true }]} onOpen={noop} onRepeat={noop} />);
-    expect(can).toContain('Same as yesterday');
-    const cannot = renderToStaticMarkup(<MealTiles meals={[{ meal: 'lunch', canRepeat: false }]} onOpen={noop} onRepeat={noop} />);
-    expect(cannot).toContain('not yet');
+  it('an empty row offers "Add", and "Same as yesterday" when it can', () => {
+    expect(panel([{ meal: 'lunch', canRepeat: true }])).toContain('Same as yesterday');
+    const cannot = panel([{ meal: 'lunch', canRepeat: false }]);
+    expect(cannot).toContain('>Add<');
     expect(cannot).not.toContain('Same as yesterday');
   });
 });

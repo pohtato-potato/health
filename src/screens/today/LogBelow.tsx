@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { fmtTime } from '../../domain/format';
 import { TodayPanel } from './TodayLayout';
 import type { FoodEntry, Meal } from '../../domain/types';
@@ -31,33 +31,125 @@ export function UsualChips({ items, onAdd }: { items: { id: string; name: string
   );
 }
 
+export interface MealRow { meal: Meal; kcal?: number; protein?: number; canRepeat: boolean }
+
 /**
- * Today's meals in one filled panel (board three): a row each, protein and kcal on the right, "not yet" for an
- * empty one, which can repeat yesterday's when there is one. A row opens that meal on Food.
+ * The meals panel (board 6 `h6-c`), after Next: a row per meal that fills like a bowl with what was eaten (a third of
+ * the day's calorie aim fills it; the surface ripples), its kcal and protein in words with a protein bar, or "Add"
+ * for a meal not logged, and "Same as yesterday" when yesterday's can be repeated. A row opens that meal on Food.
  */
-export function MealTiles({ meals, onOpen, onRepeat }: { meals: { meal: Meal; kcal?: number; protein?: number; canRepeat: boolean }[]; onOpen: (m: Meal) => void; onRepeat: (m: Meal) => void }) {
+export function MealsPanel({ meals, kcalAim, proteinAim, onOpen, onRepeat }: { meals: MealRow[]; kcalAim: number; proteinAim: number; onOpen: (m: Meal) => void; onRepeat: (m: Meal) => void }) {
+  const kcal = meals.reduce((n, m) => n + (m.kcal ?? 0), 0);
+  const protein = meals.reduce((n, m) => n + (m.protein ?? 0), 0);
+  const share = (v: number, aim: number) => `${Math.round(Math.min(1, aim > 0 ? v / (aim / 3) : 0) * 100)}%`;
   return (
-    <div className="k-panel td-meals" style={{ '--ink': 'var(--kcal)' } as React.CSSProperties}>
-      {meals.map((m) => (
-        <div key={m.meal} className="td-meal">
-          <button type="button" className="td-meal-open" onClick={() => onOpen(m.meal)}>
-            <span className="td-meal-name">{MEAL_NAME[m.meal]}</span>
-            {m.kcal !== undefined ? (
-              <span className="td-meal-v tn" aria-label={`${Math.round(m.protein ?? 0)} g protein, ${Math.round(m.kcal)} kcal`}>
-                <span style={{ color: 'var(--protein)' }}>{Math.round(m.protein ?? 0)} g</span> · <span style={{ color: 'var(--kcal)' }}>{Math.round(m.kcal)}</span>
-              </span>
-            ) : (
-              !m.canRepeat && <span className="td-meal-v k-q">not yet</span>
-            )}
-          </button>
-          {m.kcal === undefined && m.canRepeat && (
-            <button type="button" className="td-same" onClick={() => onRepeat(m.meal)}>
-              Same as yesterday
+    <TodayPanel id="meals" title="Meals" chip={`${Math.round(kcal).toLocaleString('en-GB')} kcal · ${Math.round(protein)} g`} className="td-mealsp">
+      <ul className="td-ml">
+        {meals.map((m, i) => (
+          <li key={m.meal} className={`td-ml-row${m.kcal !== undefined ? ' in' : ''}`} style={{ '--h': m.kcal !== undefined ? share(m.kcal, kcalAim) : '0%', '--p': share(m.protein ?? 0, proteinAim), '--i': i } as CSSProperties}>
+            {m.kcal !== undefined && <span className="td-ml-lq" aria-hidden="true"><i /></span>}
+            <button type="button" className="td-ml-open" onClick={() => onOpen(m.meal)} aria-label={m.kcal !== undefined ? `${MEAL_NAME[m.meal]}: ${Math.round(m.kcal)} kcal, ${Math.round(m.protein ?? 0)} g protein` : `${MEAL_NAME[m.meal]}: add`}>
+              <span className="td-ml-name">{MEAL_NAME[m.meal]}</span>
+              {m.kcal !== undefined ? (
+                <span className="td-ml-v">
+                  <span><b className="tn">{Math.round(m.kcal)}</b> kcal</span>
+                  <span className="td-ml-p">{Math.round(m.protein ?? 0)} g protein</span>
+                  <i className="td-ml-pb" aria-hidden="true"><i /></i>
+                </span>
+              ) : (
+                <span className="td-ml-add">Add</span>
+              )}
             </button>
-          )}
-        </div>
-      ))}
-    </div>
+            {m.kcal === undefined && m.canRepeat && (
+              <button type="button" className="td-same" onClick={() => onRepeat(m.meal)}>Same as yesterday</button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </TodayPanel>
+  );
+}
+
+export interface Buckets {
+  food: { kcal: number; aim: number };
+  morning: { at?: number };
+  checklist: { done: number; of: number };
+  steps: { n?: number; of: number };
+  session?: { name: string; done: boolean };
+  close: { rings: number[]; closed: boolean };
+}
+export interface BucketActions { food: () => void; morning: () => void; checklist: () => void; steps: () => void; session: () => void; close: () => void; more: () => void }
+
+const pct = (v: number, of: number) => `${Math.round(Math.max(0, Math.min(1, of > 0 ? v / of : 0)) * 100)}%`;
+const short = (n: number) => (n >= 1000 && n % 1000 === 0 ? `${n / 1000}k` : n.toLocaleString('en-GB'));
+
+/**
+ * The log (board 12 `h12-log`): one tile per bucket, each filling its own way, each with its number in words. Food
+ * fills like a bowl; the morning's sun rises over a line once it is logged; the checklist's pills drop into an
+ * organiser, one slot per item; footprints walk across as far as the steps reach; plates slide onto the bar for the
+ * next session; Close the day shows the rings, small. The pictures play once; More and search sit under them.
+ */
+export function LogBuckets({ b, on }: { b: Buckets; on: BucketActions }) {
+  const slots = Math.min(b.checklist.of, 7);
+  const prints = b.steps.n === undefined ? 0 : Math.round(Math.min(1, b.steps.n / Math.max(1, b.steps.of)) * 8);
+  const shut = b.close.rings.filter((p) => p >= 1).length;
+  return (
+    <section className="td-lb" aria-labelledby="td-lb-h">
+      <h2 id="td-lb-h" className="td-lb-h">Log</h2>
+      <div className="td-lb-grid">
+        <button type="button" className="td-bk k-food" style={{ '--f': pct(b.food.kcal, b.food.aim) } as CSSProperties} onClick={on.food} aria-label={`Food: ${Math.round(b.food.kcal)} of ${b.food.aim} kcal`}>
+          <span className="td-bk-fill" aria-hidden="true" />
+          <span className="td-bk-hd">Food</span>
+          <b className="tn">{Math.round(b.food.kcal).toLocaleString('en-GB')}<small>of {b.food.aim.toLocaleString('en-GB')} kcal</small></b>
+        </button>
+        <button type="button" className={`td-bk k-morning${b.morning.at !== undefined ? ' on' : ''}`} onClick={on.morning} aria-label={b.morning.at !== undefined ? `Morning: logged at ${fmtTime(b.morning.at)}` : 'Morning: not logged'}>
+          <span className="td-bk-scn" aria-hidden="true"><i className="hz" /><i className="sun" /></span>
+          <span className="td-bk-hd">Morning</span>
+          <b className="tn">{b.morning.at !== undefined ? fmtTime(b.morning.at) : '—'}<small>{b.morning.at !== undefined ? 'logged' : 'not yet'}</small></b>
+        </button>
+        <button type="button" className="td-bk k-check" onClick={on.checklist} aria-label={`Checklist: ${b.checklist.done} of ${b.checklist.of} ticked`}>
+          <span className="td-bk-scn" aria-hidden="true">
+            <span className="box" style={{ '--n': Math.max(1, slots) } as CSSProperties}>
+              {Array.from({ length: slots }, (_, i) => <span key={i}>{i < b.checklist.done && <i style={{ '--d': `${i * 0.25}s` } as CSSProperties} />}</span>)}
+            </span>
+          </span>
+          <span className="td-bk-hd">Checklist</span>
+          <b className="tn">{b.checklist.done}<small>of {b.checklist.of} ticked</small></b>
+        </button>
+        <button type="button" className="td-bk k-steps" onClick={on.steps} aria-label={b.steps.n === undefined ? 'Steps: not logged' : `Steps: ${b.steps.n} of ${b.steps.of}`}>
+          <span className="td-bk-scn feet" aria-hidden="true">
+            {Array.from({ length: prints }, (_, i) => <i key={i} style={{ '--x': `${8 + i * 12}%`, '--y': i % 2 ? '10px' : '22px', '--d': `${(i * 0.18).toFixed(2)}s` } as CSSProperties} />)}
+          </span>
+          <span className="td-bk-hd">Steps</span>
+          <b className="tn">{b.steps.n === undefined ? '—' : b.steps.n.toLocaleString('en-GB')}<small>of {short(b.steps.of)}</small></b>
+        </button>
+        {b.session && (
+          <button type="button" className={`td-bk wide k-session${b.session.done ? ' on' : ''}`} onClick={on.session} aria-label={`${b.session.name}: ${b.session.done ? 'done today' : 'up next'}`}>
+            <span className="td-bk-scn" aria-hidden="true"><span className="bar"><i className="l" /><i className="l2" /><i className="r" /><i className="r2" /></span></span>
+            <span className="td-bk-col"><span className="td-bk-hd">{b.session.name}</span><b>{b.session.done ? 'Done' : 'Up next'}</b></span>
+            <span className="td-bk-act">{b.session.done ? 'See it' : 'Start'}</span>
+          </button>
+        )}
+        <button type="button" className="td-bk wide k-close" onClick={on.close} aria-label={`Close the day: ${shut} of ${b.close.rings.length} rings closed${b.close.closed ? ', closed' : ''}`}>
+          <span className="td-bk-scn" aria-hidden="true">
+            <span className="rings">
+              {b.close.rings.map((p, i) => (
+                <svg key={i} viewBox="0 0 28 28" style={{ '--ri': `var(--td-i${i + 1})`, '--p': Math.max(0, Math.min(1, p)), '--d': `${(0.4 + i * 0.2).toFixed(1)}s` } as CSSProperties}>
+                  <circle className="tr" cx="14" cy="14" r="10.5" />
+                  <circle className={`on${p >= 1 ? ' shut' : ''}`} cx="14" cy="14" r="10.5" pathLength={66} />
+                </svg>
+              ))}
+            </span>
+          </span>
+          <span className="td-bk-col"><span className="td-bk-hd">Close the day</span><b>{shut} of {b.close.rings.length}<small>rings closed</small></b></span>
+          <span className="td-bk-act">{b.close.closed ? 'Open' : 'Close'}</span>
+        </button>
+      </div>
+      <button type="button" className="td-more" onClick={on.more}>
+        <span>More: drinks, night out, free meal, waist, status, check-in</span>
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </button>
+    </section>
   );
 }
 

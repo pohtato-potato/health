@@ -43,7 +43,7 @@ import { closedWords, glanceUnder } from './today/TodayLine';
 import { TodayLayout, panelVars } from './today/TodayLayout';
 import { DrawerHandle, TodayDrawer } from './today/TodayDrawer';
 import { proteinState } from '../domain/proteinState';
-import { ChecklistPanel, MealTiles, UsualChips, mealTotals } from './today/LogBelow';
+import { ChecklistPanel, LogBuckets, MealsPanel, UsualChips, mealTotals } from './today/LogBelow';
 import { LogSearch } from '../sheets/LogSearch';
 import { sameAsYesterday, usualFoods } from '../domain/usual';
 import { mealForTime, portionFor } from '../domain/foods';
@@ -348,13 +348,23 @@ export function Today() {
         <NextUpCard settings={settings} up={up} active={active} trainedToday={trainedToday} weeks={weeks} />
       )}
       shape={<Suspense fallback={null}><MatchToday now={nowMs} part="shape" /></Suspense>}
+      meals={<MealsPanel meals={MEALS.map((m) => ({ meal: m, kcal: perMeal[m]?.kcal, protein: perMeal[m]?.protein, canRepeat: sameAsYesterday(monthEntries, m, today, 0).length > 0 }))} kcalAim={targets.kcalMax} proteinAim={targets.proteinG} onOpen={(m) => go('/food', { meal: m })} onRepeat={(m) => void repeat(m)} />}
       log={
         <section className="td-log" data-section="log" aria-label="Log">
+          <LogBuckets
+            b={{
+              food: { kcal: totals.kcal, aim: targets.kcalMax },
+              morning: { at: day?.morning?.at },
+              checklist: { done: slots.filter((x) => day?.ticks?.[x.key] !== undefined).length, of: slots.length },
+              steps: { n: day?.steps, of: stepsGoal(targets, totals.eased) },
+              session: up || trainedToday.length ? { name: trainedToday.length ? findSession(settings.plan!, trainedToday[0].session)?.name ?? 'Session' : sessionName, done: trainedToday.length > 0 } : undefined,
+              close: { rings: [rings.kcal.progress, rings.protein.progress, rings.steps.progress, rings.sleep.progress].slice(0, rings.of), closed: !!(day?.foodDone || day?.partial) },
+            }}
+            on={{ food: () => go('/food'), morning: () => openSheet('morning'), checklist: () => document.getElementById('td-panel-checklist')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), steps: () => openSheet('steps'), session: () => go('/train'), close: () => go('/close'), more: () => openSheet('more') }}
+          />
+          <LogSearch foods={foods} onAction={(a) => (a.sheet ? openSheet(a.sheet) : go(a.route!))} onFood={(f) => openSheet('addfood', { food: f.id })} onQuick={() => openSheet('quick')} />
           <Sect>Quick add</Sect>
           <UsualChips items={usual.map((u) => ({ id: u.food.id, name: u.food.name, portion: portionFor(u.food, u.amount) }))} onAdd={addUsual} />
-          <LogSearch foods={foods} onAction={(a) => (a.sheet ? openSheet(a.sheet) : go(a.route!))} onFood={(f) => openSheet('addfood', { food: f.id })} onQuick={() => openSheet('quick')} />
-          <Sect>Today’s meals</Sect>
-          <MealTiles meals={MEALS.map((m) => ({ meal: m, kcal: perMeal[m]?.kcal, protein: perMeal[m]?.protein, canRepeat: sameAsYesterday(monthEntries, m, today, 0).length > 0 }))} onOpen={(m) => go('/food', { meal: m })} onRepeat={(m) => void repeat(m)} />
           <Panel ink="var(--k-pearl)" flat onClick={() => go('/body')} label={`Body log: ${bodyTileWords(body, today)}`}>
             <Icon name="body" size={26} color="var(--k-pearl)" />
             <span className="k-col"><b>Body log</b><span className="k-q">{bodyTileWords(body, today)}</span></span>
