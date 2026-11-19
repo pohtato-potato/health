@@ -6,14 +6,27 @@
 .fd-lead { margin-top: 4px; }
 .fd-kcal { font-size: 72px; }
 @media (max-width: 359px) { .fd-kcal { font-size: 60px; } }
-.fd-cal { position: relative; height: 26px; border-radius: 999px; background: rgba(237, 230, 218, 0.12); overflow: hidden; }
-.fd-cal i { position: absolute; top: 0; bottom: 0; display: block; }
-.fd-cal .v { left: 0; border-radius: 999px; background: var(--kcal); box-shadow: 0 0 14px -2px var(--kcal); }
-.fd-cal .ok { border-left: 2px solid #8fc9b0; border-right: 2px solid #8fc9b0; background: rgba(143, 201, 176, 0.32); z-index: 1; }
-.fd-scale { font-size: 14px; }
-.fd-pro { height: 10px; border-radius: 999px; background: rgba(237, 230, 218, 0.12); overflow: hidden; margin-top: 4px; }
-.fd-pro i { display: block; height: 100%; border-radius: 999px; background: var(--protein); }
-.fd-pro.closed i { box-shadow: 0 0 12px var(--protein); }
+/* The meal bar (board 22 h22-food from board 4 f4-bar): each meal a segment in a shade of the calorie ink, over the aim band. */
+.fd-page { --m-b: color-mix(in oklab, var(--kcal) 62%, #fff); --m-l: var(--kcal); --m-s: color-mix(in oklab, var(--kcal) 50%, #ff5c33); --m-d: color-mix(in oklab, var(--kcal) 55%, #f0b04a); }
+.fd-cal { position: relative; height: 44px; margin-top: 4px; border-radius: 12px; background: rgba(237, 230, 218, 0.09); overflow: hidden; }
+.fd-cal .ok { position: absolute; top: 0; bottom: 0; display: block; border-left: 2px solid #8fc9b0; border-right: 2px solid #8fc9b0; background: rgba(143, 201, 176, 0.24); }
+.fd-segs { position: absolute; left: 0; top: 0; bottom: 0; display: flex; gap: 3px; z-index: 1; }
+.fd-seg { min-width: 4px; }
+.fd-seg:last-child { box-shadow: 0 0 14px var(--seg); }
+.fd-seg.m-breakfast, .fd-letters .m-breakfast { --seg: var(--m-b); }
+.fd-seg.m-lunch, .fd-letters .m-lunch { --seg: var(--m-l); }
+.fd-seg.m-snacks, .fd-letters .m-snacks { --seg: var(--m-s); }
+.fd-seg.m-dinner, .fd-letters .m-dinner { --seg: var(--m-d); }
+.fd-seg { background: var(--seg); }
+.fd-letters { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.fd-letters span { color: var(--seg); }
+.fd-aim { white-space: nowrap; color: #8fc9b0; font-size: 15px; font-weight: 700; }
+.fd-prow { margin-top: 6px; }
+.fd-prow .k-num { font-size: 30px; }
+.fd-pro { height: 14px; border-radius: 7px; background: rgba(237, 230, 218, 0.1); overflow: hidden; }
+.fd-pro i { display: block; height: 100%; border-radius: 7px; background: var(--protein); box-shadow: 0 0 12px var(--protein); }
+html.contrast .fd-seg:last-child, html.contrast .fd-pro i { box-shadow: none; }
+html.contrast .fd-cal .ok { background: transparent; border-width: 3px; }
 .fd-meal { gap: 0; }
 .fd-meal > .k-row { min-height: 32px; }
 .fd-meal > .k-row b { font-family: var(--serif); font-weight: 600; font-size: 17px; }
