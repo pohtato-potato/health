@@ -18,10 +18,11 @@ import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
 import { checklistSlots, morningQuestions, swapSentence } from '../state/derived';
 import { isEased, placeFor, placeOptions } from '../domain/places';
-import { stepsGoal } from '../domain/rings';
+import { sleepMinutes, stepsGoal } from '../domain/rings';
 import { targetsFor } from '../state/derived';
 import { Icon } from '../ui/Icon';
 import { StepsRing } from '../ui/StepsRing';
+import { MorningLogged, morningParts } from '../ui/MorningLogged';
 import { ensurePlace, setOfficeDay } from '../db/actions';
 import { isOfficeDay } from '../domain/officeUsual';
 import { CaughtWindow, clockOf } from '../screens/Pledge';
@@ -125,7 +126,15 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
       const f = flagged[0];
       toast({ kicker: `${f.group} flagged`, text: swapSentence(settings.plan, f.swap) ?? 'Noted.', sub: f.advice, ms: 7000 });
     } else {
-      toast({ text: day?.morning ? 'Morning log updated' : 'Morning log saved', sub: weight === undefined ? 'The weigh-in can follow: tap “Weigh-in to come” on Today.' : undefined, action: { label: 'Undo', run: () => void undoEdit(editId) } });
+      const sleepMin = asleep !== undefined && woke !== undefined ? sleepMinutes(asleep, woke) : undefined;
+      const parts = morningParts({ sleepMin, rested: sleepMin !== undefined ? rested : undefined, weightKg: weight, place: [o.home, o.office, ...o.rest].find((p) => p.id === place)?.name });
+      toast({
+        text: day?.morning ? 'Morning updated' : 'Morning logged',
+        sub: weight === undefined ? `${fmtTime(Date.now())} · the weigh-in can follow: tap “Weigh-in to come” on Today.` : fmtTime(Date.now()),
+        body: <MorningLogged parts={parts} sleepMin={sleepMin} sleepTarget={targetsFor(settings, today).sleepMin} />,
+        ms: 6500,
+        action: { label: 'Undo', run: () => void undoEdit(editId) },
+      });
     }
   };
 

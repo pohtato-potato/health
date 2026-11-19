@@ -10,6 +10,8 @@ export interface ToastInput {
   action?: { label: string; run: () => void };
   ms?: number;
   onTap?: () => void;
+  /** Extra content under the words, such as the morning's ticked parts. */
+  body?: ReactNode;
 }
 
 interface ToastItem extends ToastInput {
@@ -80,6 +82,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               )}
               <span className="v">{t.text}</span>
               {t.sub && <span className="x">{t.sub}</span>}
+              {t.body}
             </div>
             {t.action && (
               <button

@@ -201,3 +201,18 @@ button.cd-row { cursor: pointer; }
 .fd-acts { position: static; transform: none; width: auto; max-width: none; padding: 4px 0 0; background: none; }
 .cd-go { position: static; margin: 6px 0 0; padding: 8px 0 0; background: none; }
 .ml-save { position: static; margin: 4px 0 0; padding: 4px 0 0; background: none; }
+
+/* Morning logged (board 5 s5-saved): each part ticks in one after another, then the sleep ring fills and glows. */
+.mlg { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.mlg-list { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.mlg-list li { display: flex; align-items: center; gap: 8px; font-size: 15px; animation: mlg-in 320ms calc(var(--i) * 160ms + 200ms) cubic-bezier(.3, 1.4, .5, 1) both; }
+.mlg-list li svg { color: var(--steps); flex-shrink: 0; }
+.mlg-ring { display: flex; align-items: center; gap: 10px; font-size: 15px; animation: mlg-in 320ms calc(var(--i) * 160ms + 260ms) both; }
+.mlg-ring svg { flex-shrink: 0; }
+.mlg-rw { display: flex; flex-direction: column; }
+.mlg-ring b { font-weight: 700; white-space: nowrap; }
+.mlg-fill { fill: none; stroke: var(--sleep); stroke-width: 5; stroke-linecap: round; filter: drop-shadow(0 0 5px var(--sleep)); animation: mlg-fill 800ms calc(var(--i, 4) * 160ms + 400ms) cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes mlg-in { from { opacity: 0; transform: scale(0.6); } }
+@keyframes mlg-fill { from { stroke-dashoffset: var(--p); } }
+@media (prefers-reduced-motion: reduce) { .mlg-list li, .mlg-ring, .mlg-fill { animation: none; } }
+html.contrast .mlg-fill { filter: none; }
