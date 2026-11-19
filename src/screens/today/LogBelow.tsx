@@ -76,9 +76,8 @@ export interface Buckets {
   checklist: { done: number; of: number };
   steps: { n?: number; of: number };
   session?: { name: string; done: boolean };
-  close: { rings: number[]; closed: boolean };
 }
-export interface BucketActions { food: () => void; morning: () => void; checklist: () => void; steps: () => void; session: () => void; close: () => void; more: () => void }
+export interface BucketActions { food: () => void; morning: () => void; checklist: () => void; steps: () => void; session: () => void; more: () => void }
 
 const pct = (v: number, of: number) => `${Math.round(Math.max(0, Math.min(1, of > 0 ? v / of : 0)) * 100)}%`;
 const short = (n: number) => (n >= 1000 && n % 1000 === 0 ? `${n / 1000}k` : n.toLocaleString('en-GB'));
@@ -87,12 +86,11 @@ const short = (n: number) => (n >= 1000 && n % 1000 === 0 ? `${n / 1000}k` : n.t
  * The log (board 12 `h12-log`): one tile per bucket, each filling its own way, each with its number in words. Food
  * fills like a bowl; the morning's sun rises over a line once it is logged; the checklist's pills drop into an
  * organiser, one slot per item; footprints walk across as far as the steps reach; plates slide onto the bar for the
- * next session; Close the day shows the rings, small. The pictures play once; More and search sit under them.
+ * next session (Close the day is the moon button at the end of the page). The pictures play once; More and search sit under them.
  */
 export function LogBuckets({ b, on }: { b: Buckets; on: BucketActions }) {
   const slots = Math.min(b.checklist.of, 7);
   const prints = b.steps.n === undefined ? 0 : Math.round(Math.min(1, b.steps.n / Math.max(1, b.steps.of)) * 8);
-  const shut = b.close.rings.filter((p) => p >= 1).length;
   return (
     <section className="td-lb" aria-labelledby="td-lb-h">
       <h2 id="td-lb-h" className="td-lb-h">Log</h2>
@@ -130,20 +128,6 @@ export function LogBuckets({ b, on }: { b: Buckets; on: BucketActions }) {
             <span className="td-bk-act">{b.session.done ? 'See it' : 'Start'}</span>
           </button>
         )}
-        <button type="button" className="td-bk wide k-close" onClick={on.close} aria-label={`Close the day: ${shut} of ${b.close.rings.length} rings closed${b.close.closed ? ', closed' : ''}`}>
-          <span className="td-bk-scn" aria-hidden="true">
-            <span className="rings">
-              {b.close.rings.map((p, i) => (
-                <svg key={i} viewBox="0 0 28 28" style={{ '--ri': `var(--td-i${i + 1})`, '--p': Math.max(0, Math.min(1, p)), '--d': `${(0.4 + i * 0.2).toFixed(1)}s` } as CSSProperties}>
-                  <circle className="tr" cx="14" cy="14" r="10.5" />
-                  <circle className={`on${p >= 1 ? ' shut' : ''}`} cx="14" cy="14" r="10.5" pathLength={66} />
-                </svg>
-              ))}
-            </span>
-          </span>
-          <span className="td-bk-col"><span className="td-bk-hd">Close the day</span><b>{shut} of {b.close.rings.length}<small>rings closed</small></b></span>
-          <span className="td-bk-act">{b.close.closed ? 'Open' : 'Close'}</span>
-        </button>
       </div>
       <button type="button" className="td-more" onClick={on.more}>
         <span>More: drinks, night out, free meal, waist, status, check-in</span>

@@ -34,8 +34,7 @@ export function momentFor(i: MomentInput): MomentKind {
   if (!i.morningDone && m < 14 * H) return 'morning';
   if (i.perfect && m >= 19 * H) return 'perfect';
   if (m >= 21 * H) return 'close';
-  if (m >= 19 * H && i.proteinGapG > 0) return 'protein';
-  if (m >= 11 * H && m < 19 * H && i.stepsKnown === false) return 'stepsMissing';
-  if (m >= 11 * H && m < 19 * H && i.stepsLeft > 0) return 'steps';
+  // Next is about food (h6-c): the protein still to go from late morning. Steps live in The day and the Log tile.
+  if (m >= 11 * H && i.proteinGapG > 0) return 'protein';
   return 'glance';
 }

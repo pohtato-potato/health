@@ -1,7 +1,7 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
-import { addDays, dayKey, logHour, partOfDay, weekStart } from '../domain/dates';
+import { addDays, dayKey, logHour, weekStart } from '../domain/dates';
 import { revealDue } from '../domain/creatures';
-import { fmtDuration, fmtInt, fmtTime } from '../domain/format';
+import { fmtDayShort, fmtDuration, fmtInt, fmtTime } from '../domain/format';
 import { findSession } from '../domain/plan';
 import { sleepMinutes, stepsGoal } from '../domain/rings';
 import { pinnedLine, spokenLine, plainFlagLine, type Moment } from '../domain/voice';
@@ -10,25 +10,12 @@ import { useKonami } from '../ui/useKonami';
 import { useActiveSession, useAllDays, useAllSets, useEntries, useEntriesBetween, useFoods, useMeasurements, useSessions, useNow, useSettings, useToday, useBody } from '../db/hooks';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
-import { StatusChip } from './today/StatusChip';
+import { chipFor } from '../domain/statusChip';
 import { weighInToCome } from '../domain/morningLog';
 import { OfficeUsual } from './today/OfficeUsual';
-import { DueCard, dueToday } from './today/DueCard';
 import { bodyTileWords } from '../domain/bodyLog';
 import { prefOn } from '../domain/types';
 import { kmFromSteps } from '../domain/walk';
-import { scenePlace, todayWalkLine, walkCaption } from '../domain/walkCaption';
-import { arrivedToday, nearestPlace, restLine, stoneFor, stopLine, tomorrowLine, usualAndBig, whereLine, whereNow } from '../walk/page';
-import { stopToday, stretchAt } from '../walk/road';
-import { STOPS, STRETCHES } from '../walk/content';
-import { stepsByDay } from '../walk/runs';
-import { skyLine } from '../walk/sky';
-import { arrivalFor } from '../walk/arrivals';
-import { WalkScene } from '../walk/WalkScene';
-import { landmarkFor } from '../walk/art/landmarks';
-import { positionAt } from '../domain/walk';
-import { StampTemplate } from './walk/Arrival';
-import { WalkTop } from './today/WalkTop';
 import { RingsNumbers } from './today/RingsNumbers';
 import { LiveRings } from './today/LiveRings';
 import { RingMomentFx } from './today/RingMomentFx';
@@ -36,22 +23,19 @@ import { useRingMoment } from './today/useRingMoment';
 import { RING_WORD, ringsGold } from '../domain/ringMoments';
 import { lookOf } from '../domain/themes';
 import { useLiveTheme } from '../ui/live/useLiveTheme';
-import { Panel, Sect } from '../ui/kit/Kit';
-import { Icon } from '../ui/Icon';
 import { MEAL_NAMES } from '../domain/types';
-import { closedWords, glanceUnder } from './today/TodayLine';
+import { closedWords } from './today/TodayLine';
 import { TodayLayout, panelVars } from './today/TodayLayout';
 import { DrawerHandle, TodayDrawer } from './today/TodayDrawer';
 import { proteinState } from '../domain/proteinState';
-import { ChecklistPanel, LogBuckets, MealsPanel, UsualChips, mealTotals } from './today/LogBelow';
+import { ChecklistPanel, LogBuckets, MealsPanel, mealTotals } from './today/LogBelow';
 import { LogSearch } from '../sheets/LogSearch';
 import { sameAsYesterday, usualFoods } from '../domain/usual';
-import { mealForTime, portionFor } from '../domain/foods';
+import { mealForTime } from '../domain/foods';
 import { checklistSlots } from '../state/derived';
 import type { Meal } from '../domain/types';
 import { MomentCard, type NextKind } from './today/MomentCard';
 import { useGapAdd } from './today/useGapAdd';
-import { useAddUsual } from './today/useAddUsual';
 import { momentFor } from '../domain/todayMoment';
 import { tickFor } from '../domain/checklist';
 import { TodayLine } from './today/TodayLine';
@@ -77,14 +61,10 @@ import { OnThisDayCard } from './OnThisDay';
 import '../styles/today.css';
 import { SeasonStrip, useUnlockedIds } from '../ui/Theme';
 import { hasReward } from '../domain/rewards';
-import { NextUpCard } from './NextUpCard';
 import { RecordsStrip } from './today/NextStrip';
 import { recordGains, tonight } from '../domain/trainView';
 import { regionAt } from '../domain/regions';
 import { themeDayOn } from '../domain/calendar';
-import { journeyStart as journeyStartOf } from './Journey';
-import { seasonalThemeOn } from '../domain/themes';
-import type { Festive } from '../walk/art/festive';
 
 // Football's card loads with Football's data, apart from Today's own bundle.
 const MatchToday = lazy(() => import('./today/MatchToday').then((m) => ({ default: m.MatchToday })));
@@ -117,7 +97,6 @@ export function Today() {
   const nowMs = useNow(60_000);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const gapAdd = useGapAdd(today, foods);
-  const addUsualNow = useAddUsual();
   const route = useRoute();
   const { busy: momentShowing } = useMoments();
   const [ringSpin, setRingSpin] = useState(0);
@@ -192,32 +171,12 @@ export function Today() {
   const lineText = flag ? line : voiceNow ? lineForTheDay(today, moment, line) : glanceLine({ minutes: logMinutes(nowMs), closedRings: rings.closed, ringsOf: rings.of, dayClosed: !!day?.foodDone, sessionTonight, nextSession: day?.foodDone && up ? sessionName : undefined, morningDone: !!day?.morning });
   const gap = proteinGap({ protein: totals.protein, proteinTarget: targets.proteinG, kcal: totals.kcal, kcalMax: targets.kcalMax }, foods, monthEntries, Date.now());
   const addGap = () => void gapAdd(gap.picks);
-  // The walk at the top says what the Walk tab says: its title and one of its lines (the milestone's km when nothing else).
-  const steps = stepsByDay(days);
-  const startDay = journeyStartOf(settings, days);
-  const stretch = stretchAt(walkKm, STRETCHES);
-  const stone = stoneFor(walkKm);
-  const arrived = arrivedToday(steps, today);
-  const arrival = arrived ? arrivalFor(arrived, steps, startDay) : undefined;
-  const stop = stopToday(steps, today, STOPS);
-  const { usualKm, bigKm } = usualAndBig(days, today);
-  const walkLine = todayWalkLine({ arrival: arrived, stop: stop && stopLine(stop).text, rest: restLine(day?.status, nearestPlace(walkKm)), sky: skyLine(today), tomorrow: tomorrowLine(walkKm, usualKm, bigKm), stepsIn: steps.has(today), stone });
   const here = settings.places?.length ? placeFor(day, settings, Date.now()) : undefined;
-  const caption = walkCaption({ date: today, place: here?.name, status: day?.status, title: stretch?.name ?? whereLine(whereNow(walkKm)), line: walkLine });
-  const festive = prefOn(settings.prefs, 'seasonal') ? (seasonalThemeOn(today, settings.birthday) as Festive | undefined) : undefined;
-  // The scene is the place, as the arrival's welcome draws it (the fort at Gwalior), every day, not only on arrival.
-  const pos = positionAt(walkKm);
-  const scene = <WalkScene km={walkKm} todayKm={kmFromSteps(day?.steps ?? 0)} view="band" place={scenePlace(walkKm, pos.from, pos.done ? undefined : pos.to, (n) => !!landmarkFor(n))} part={partOfDay(new Date(nowMs))} landmarkScale={1.3} festive={festive} />;
   // How the day went lights the land: gold for a perfect day or a record night, green for a session in range.
   const tn = tonight(sessions, sets, today);
   const glow = devGlow(dayGlow({ perfect: rings.perfect, session: tn && { records: tn.records.length, checks: tn.checks, formAvg: tn.formAvg } }), route.params);
-  const stamp = arrival ? <StampTemplate name={arrival.name} state={arrival.state} n={arrival.n} ut={arrival.ut} /> : undefined;
   const mealNow = mealForTime();
   const usual = usualFoods(monthEntries, foods, mealNow, today);
-  const addUsual = (id: string) => {
-    const u = usual.find((x) => x.food.id === id);
-    if (u) void addUsualNow(u, today, mealNow);
-  };
   const perMeal = mealTotals(entries);
   const MEALS: Meal[] = ['breakfast', 'lunch', 'snacks', 'dinner'];
   const repeat = async (m: Meal) => {
@@ -262,14 +221,13 @@ export function Today() {
           )}
         </>
       }
-      walk={<WalkTop caption={caption} scene={scene} stamp={stamp} status={<StatusChip today={today} days={days} />} onOpen={() => go('/walk')} />}
-      due={<DueCard due={dueToday({ today, settings, checkins: checkins.map((c) => c.date), measurements })} />}
       banner={<><OfficeUsual /><Banners noMorning={morningOpen} /><OnThisDayCard /></>}
       line={
         <TodayLine
           head="Today"
           level={1}
-          text={lineKind === 'glance' ? glanceUnder(lineText) : lineText}
+          sub={[fmtDayShort(today), here?.name, chipFor(days, today).now ? chipFor(days, today).text : undefined].filter(Boolean).join(' · ')}
+          text={lineKind === 'flag' ? lineText : ''}
           kind={lineKind}
           clock={fmtTime(nowMs)}
           why={themeDay ? { name: themeDay.name, text: themeDay.why } : undefined}
@@ -345,9 +303,7 @@ export function Today() {
       football={<Suspense fallback={null}><MatchToday now={nowMs} /></Suspense>}
       next={recordsTonight.length ? (
         <RecordsStrip rows={recordGains(recordsTonight, sets)} onFinale={() => { const tn = tonight(sessions, sets, today); if (tn) go('/session/replay', { id: tn.session.id }); }} />
-      ) : (
-        <NextUpCard settings={settings} up={up} active={active} trainedToday={trainedToday} weeks={weeks} />
-      )}
+      ) : undefined}
       shape={<Suspense fallback={null}><MatchToday now={nowMs} part="shape" /></Suspense>}
       meals={<MealsPanel meals={MEALS.map((m) => ({ meal: m, kcal: perMeal[m]?.kcal, protein: perMeal[m]?.protein, canRepeat: sameAsYesterday(monthEntries, m, today, 0).length > 0 }))} kcalAim={targets.kcalMax} proteinAim={targets.proteinG} onOpen={(m) => go('/food', { meal: m })} onRepeat={(m) => void repeat(m)} />}
       log={
@@ -359,17 +315,10 @@ export function Today() {
               checklist: { done: slots.filter((x) => day?.ticks?.[x.key] !== undefined).length, of: slots.length },
               steps: { n: day?.steps, of: stepsGoal(targets, totals.eased) },
               session: up || trainedToday.length ? { name: trainedToday.length ? findSession(settings.plan!, trainedToday[0].session)?.name ?? 'Session' : sessionName, done: trainedToday.length > 0 } : undefined,
-              close: { rings: [rings.kcal.progress, rings.protein.progress, rings.steps.progress, rings.sleep.progress].slice(0, rings.of), closed: !!(day?.foodDone || day?.partial) },
             }}
-            on={{ food: () => go('/food'), morning: () => openSheet('morning'), checklist: () => document.getElementById('td-panel-checklist')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), steps: () => openSheet('steps'), session: () => go('/train'), close: () => go('/close'), more: () => openSheet('more') }}
+            on={{ food: () => go('/food'), morning: () => openSheet('morning'), checklist: () => document.getElementById('td-panel-checklist')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), steps: () => openSheet('steps'), session: () => go('/train'), more: () => openSheet('more') }}
           />
           <LogSearch foods={foods} onAction={(a) => (a.sheet ? openSheet(a.sheet) : go(a.route!))} onFood={(f) => openSheet('addfood', { food: f.id })} onQuick={() => openSheet('quick')} />
-          <Sect>Quick add</Sect>
-          <UsualChips items={usual.map((u) => ({ id: u.food.id, name: u.food.name, portion: portionFor(u.food, u.amount) }))} onAdd={addUsual} />
-          <Panel ink="var(--k-pearl)" flat onClick={() => go('/body')} label={`Body log: ${bodyTileWords(body, today)}`}>
-            <Icon name="body" size={26} color="var(--k-pearl)" />
-            <span className="k-col"><b>Body log</b><span className="k-q">{bodyTileWords(body, today)}</span></span>
-          </Panel>
           {slots.length > 0 && (
             <>
               <ChecklistPanel items={slots.map((x) => ({ key: x.key, name: slots.filter((y) => y.itemId === x.itemId).length > 1 ? `${x.name} · ${x.slot}` : x.name, on: day?.ticks?.[x.key] !== undefined, at: day?.ticks?.[x.key] }))} onToggle={(key, on) => { const slot = slots.find((y) => y.key === key)?.slot ?? 'Daily'; const t = tickFor(today, slot, settings, day, on, Date.now()); void setTick(today, key, on, t.at, t.recordedLate); }} />

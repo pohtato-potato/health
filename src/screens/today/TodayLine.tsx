@@ -16,7 +16,7 @@ export function glanceUnder(text: string): string {
  * under it, small: the plain glance, or the voice at moments (italic; gold on a perfect day). A joint flag speaks
  * plainly. Tapping the line opens today in detail.
  */
-export function TodayLine({ head, level = 2, text, kind, gold, clock, why, onOpen }: { head: string; /** 1 when the head is the page's own heading (Home C). */ level?: 1 | 2; text: string; kind: 'glance' | 'voice' | 'flag'; gold?: boolean; clock: string; why?: { name: string; text: string }; onOpen?: () => void }) {
+export function TodayLine({ head, level = 2, sub, text, kind, gold, clock, why, onOpen }: { head: string; /** Under the heading (Home C): the date and the place. */ sub?: string; /** 1 when the head is the page's own heading (Home C). */ level?: 1 | 2; text: string; kind: 'glance' | 'voice' | 'flag'; gold?: boolean; clock: string; why?: { name: string; text: string }; onOpen?: () => void }) {
   return (
     <div className="td-line-wrap" data-section="line">
       <div className="k-row td-headrow">
@@ -27,6 +27,7 @@ export function TodayLine({ head, level = 2, text, kind, gold, clock, why, onOpe
           <span className="td-clock tn">{clock}</span>
         )}
       </div>
+      {sub && <p className="td-sub">{sub}</p>}
       {text && (
         <button type="button" className={`td-line td-line-${kind}${gold ? ' gold' : ''}`} onClick={onOpen} aria-label={`${text}. Open today in detail`} disabled={!onOpen}>
           {text}
