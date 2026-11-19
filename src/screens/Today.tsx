@@ -41,7 +41,7 @@ import { Panel, Sect } from '../ui/kit/Kit';
 import { Icon } from '../ui/Icon';
 import { MEAL_NAMES } from '../domain/types';
 import { closedWords, glanceUnder } from './today/TodayLine';
-import { TodayLayout } from './today/TodayLayout';
+import { TodayLayout, panelVars } from './today/TodayLayout';
 import { DrawerHandle, TodayDrawer } from './today/TodayDrawer';
 import { proteinState } from '../domain/proteinState';
 import { ChecklistChips, MealTiles, UsualChips, mealTotals } from './today/LogBelow';
@@ -241,10 +241,11 @@ export function Today() {
   const weighRow = weighInDue && nextKind !== 'weighin';
   const ringGold = ringsGold({ counting: goldCount, perfect: rings.perfect, played: perfectPlayed });
   const goldNums = rings.perfect && ringGold >= rings.of;
-  const rowInk = (k: keyof typeof METRIC_INK) => (goldNums ? RING_GOLD : METRIC_INK[k]);
+  const rowInk = (k: keyof typeof INK_AT) => (goldNums ? RING_GOLD : look.ring.inks[INK_AT[k]]);
   return (
     <TodayLayout
       glow={!!glow}
+      light={panelVars(look.ring.inks)}
       fx={<RingMomentFx playing={playing} />}
       overlays={
         <>
@@ -280,7 +281,7 @@ export function Today() {
       season={<SeasonStrip settings={settings} today={today} />}
       dayChip={playing?.kind === 'ring' ? `${RING_WORD[playing.ring]} closed` : rings.closed >= rings.of ? closedWords(rings.closed, rings.of) : `${rings.closed} of ${rings.of} closed`}
       nextChip={gap.gapG > 0 && !closedFlags.protein && !day?.foodDone ? `${Math.round(gap.gapG)} g to go` : undefined}
-      nextInk={METRIC_INK.protein}
+      nextInk={look.ring.inks[INK_AT.protein]}
       rings={
         <RingsNumbers
           rows={[
@@ -375,7 +376,8 @@ export function Today() {
 }
 
 /** The ring numbers keep each metric's own colour on every theme (look pass, rule 10): calories, protein, steps, sleep. */
-const METRIC_INK = { kcal: '#ff8a4d', protein: '#b79bff', steps: '#5ff0b0', sleep: '#6cc8ff' } as const;
+/** Each number's place in a theme's four ring inks (board seven: the bars and numbers take the rings' colours). */
+const INK_AT = { kcal: 0, protein: 1, steps: 2, sleep: 3 } as const;
 
 function lineForTheDay(today: string, moment: string, line: string): string {
   const key = 'health.line';

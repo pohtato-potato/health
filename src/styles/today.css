@@ -439,17 +439,17 @@ button.td-clock { min-height: 44px; min-width: 44px; padding: 0 0 0 8px; border:
 .td-aur {
   position: fixed; inset: -20%; z-index: -1; pointer-events: none; filter: blur(28px); opacity: 0.6;
   background:
-    radial-gradient(40% 30% at 20% 18%, rgb(224 112 138 / 0.5), transparent 70%),
-    radial-gradient(45% 30% at 85% 30%, rgb(232 162 106 / 0.42), transparent 70%),
-    radial-gradient(50% 35% at 40% 75%, rgb(63 162 122 / 0.36), transparent 70%),
-    radial-gradient(40% 30% at 90% 90%, rgb(167 123 255 / 0.32), transparent 70%);
+    radial-gradient(40% 30% at 20% 18%, color-mix(in srgb, var(--td-i1, #ff8a4d) 50%, transparent), transparent 70%),
+    radial-gradient(45% 30% at 85% 30%, color-mix(in srgb, var(--td-i2, #b79bff) 42%, transparent), transparent 70%),
+    radial-gradient(50% 35% at 40% 75%, color-mix(in srgb, var(--td-i3, #5ff0b0) 34%, transparent), transparent 70%),
+    radial-gradient(40% 30% at 90% 90%, color-mix(in srgb, var(--td-i4, #6cc8ff) 30%, transparent), transparent 70%);
   animation: td-aur 18s ease-in-out infinite alternate;
 }
 @keyframes td-aur { 0% { transform: translate(0, 0) rotate(0); } 50% { transform: translate(4%, -3%) rotate(6deg); } 100% { transform: translate(-4%, 4%) rotate(-5deg); } }
 html.contrast .td-aur { display: none; }
 
 .td-panel { border-radius: 20px; border: 1.5px solid var(--td-edge); background: color-mix(in srgb, #120d1c 66%, transparent); overflow: hidden; }
-.td-panel-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; padding: 8px 14px; background: linear-gradient(90deg, rgb(255 149 80 / 0.2), rgb(185 160 255 / 0.13)); }
+.td-panel-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; padding: 8px 14px; background: linear-gradient(90deg, color-mix(in srgb, var(--td-i1, #ff8a4d) 20%, transparent), color-mix(in srgb, var(--td-i2, #b79bff) 13%, transparent)); }
 .td-panel-title { margin: 0; font: 700 14px/1.1 var(--sans); letter-spacing: 0.05em; text-transform: uppercase; color: var(--k-cream); }
 .td-pchip { --c: #5ff0b0; display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; border-radius: 8px; font: 700 14px/1 var(--sans); color: var(--c); background: color-mix(in srgb, var(--c) 18%, #120d1c); white-space: nowrap; }
 .td-panel-body { display: flex; flex-direction: column; gap: 12px; padding: 12px 14px; }

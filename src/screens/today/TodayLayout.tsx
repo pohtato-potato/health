@@ -1,5 +1,10 @@
 import type { CSSProperties, ReactNode } from 'react';
 
+/** The theme's four ring inks as page variables, for the aurora, the panel bars and the ring bars (board seven). */
+export function panelVars(inks: readonly string[]): CSSProperties {
+  return Object.fromEntries(inks.slice(0, 4).map((c, i) => [`--td-i${i + 1}`, c])) as CSSProperties;
+}
+
 /** One of Home's panels (board six, Home C): a labelled header bar with an optional status chip, then its body. */
 export function TodayPanel({ id, title, chip, chipInk, children }: { id: string; title: string; chip?: string; chipInk?: string; children: ReactNode }) {
   return (
