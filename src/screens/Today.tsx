@@ -34,7 +34,6 @@ import { LiveRings } from './today/LiveRings';
 import { RingMomentFx } from './today/RingMomentFx';
 import { useRingMoment } from './today/useRingMoment';
 import { RING_WORD, ringsGold } from '../domain/ringMoments';
-import { RING_GOLD } from '../ui/rings/GlowRings';
 import { lookOf } from '../domain/themes';
 import { useLiveTheme } from '../ui/live/useLiveTheme';
 import { Panel, Sect } from '../ui/kit/Kit';
@@ -239,8 +238,8 @@ export function Today() {
   const nextKind: NextKind = morningOpen ? 'morning' : weighInDue && hour < 11 ? 'weighin' : momentKind;
   const weighRow = weighInDue && nextKind !== 'weighin';
   const ringGold = ringsGold({ counting: goldCount, perfect: rings.perfect, played: perfectPlayed });
-  const goldNums = rings.perfect && ringGold >= rings.of;
-  const rowInk = (k: keyof typeof INK_AT) => (goldNums ? RING_GOLD : look.ring.inks[INK_AT[k]]);
+  // A perfect day (h7-perfect): the rings glow gold, but the numbers keep their own inks; no text turns gold.
+  const rowInk = (k: keyof typeof INK_AT) => look.ring.inks[INK_AT[k]];
   return (
     <TodayLayout
       glow={!!glow}
@@ -271,15 +270,15 @@ export function Today() {
           level={1}
           text={lineKind === 'glance' ? glanceUnder(lineText) : lineText}
           kind={lineKind}
-          gold={moment === 'perfect'}
           clock={fmtTime(nowMs)}
           why={themeDay ? { name: themeDay.name, text: themeDay.why } : undefined}
           onOpen={() => setDrawerOpen(true)}
         />
       }
       season={<SeasonStrip settings={settings} today={today} />}
-      dayChip={playing?.kind === 'ring' ? `${RING_WORD[playing.ring]} closed` : rings.closed >= rings.of ? closedWords(rings.closed, rings.of) : `${rings.closed} of ${rings.of} closed`}
-      nextChip={gap.gapG > 0 && !closedFlags.protein && !day?.foodDone ? `${Math.round(gap.gapG)} g to go` : undefined}
+      dayChip={playing?.kind === 'ring' ? `${RING_WORD[playing.ring]} closed` : rings.perfect ? 'Perfect day' : rings.closed >= rings.of ? closedWords(rings.closed, rings.of) : `${rings.closed} of ${rings.of} closed`}
+      perfect={rings.perfect}
+      nextChip={rings.perfect && !day?.foodDone ? 'All met' : gap.gapG > 0 && !closedFlags.protein && !day?.foodDone ? `${Math.round(gap.gapG)} g to go` : undefined}
       nextInk={look.ring.inks[INK_AT.protein]}
       rings={
         <RingsNumbers
@@ -368,7 +367,7 @@ export function Today() {
           )}
         </section>
       }
-      handle={<DrawerHandle closeLabel={day?.foodDone || day?.partial ? 'Day closed' : 'Close the day'} gold={rings.perfect && !day?.foodDone} onCloseDay={() => go('/close')} />}
+      handle={<DrawerHandle closeLabel={day?.foodDone || day?.partial ? 'Day closed' : rings.perfect ? 'Close the day · Plated' : 'Close the day'} gold={rings.perfect && !day?.foodDone} onCloseDay={() => go('/close')} />}
     />
   );
 }

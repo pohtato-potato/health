@@ -21,9 +21,9 @@ describe('MomentCard', () => {
     expect(html).toContain('Last night is waiting');
     expect(buttons(html)).toEqual(['Log the morning']);
   });
-  it('perfect: "All four closed", gold, with a gold Close the day', () => {
+  it('perfect: "Everything is in", with a gold Close the day', () => {
     const html = render('perfect');
-    expect(html).toContain('All four closed');
+    expect(html).toContain('Everything is in');
     expect(html).toContain('td-moment gold');
     expect(buttons(html)).toEqual(['Close the day']);
   });

@@ -60,7 +60,7 @@ export function MomentCard({ kind, data, actions, sheen }: { kind: NextKind; dat
     case 'weighin':
       return card('var(--k-pearl)', 'Weigh-in to come', 'The morning log is saved. Only this is left.', act('Add it', actions.logMorning));
     case 'perfect':
-      return card('var(--k-gold)', `All ${data.ringsOf === 3 ? 'three' : 'four'} closed`, 'Close it while it’s gold.', (
+      return card('var(--k-gold)', 'Everything is in', 'Close the day for its card.', (
         <button type="button" className="k-act sm td-moment-btn gold" onClick={actions.closeDay}>
           Close the day
         </button>

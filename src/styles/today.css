@@ -542,3 +542,16 @@ html.contrast .td-panel.td-ck-all { box-shadow: none; border-width: 3px; }
 @keyframes td-rec-grow { from { transform: scaleX(var(--from)); } }
 @media (prefers-reduced-motion: reduce) { .td-rec, .td-rec-bar > i { animation: none; } }
 html.contrast .td-rec-was, html.contrast .td-rec-note { color: #f3ecdd; }
+
+/* A perfect day (board 7 h7-perfect): the day panel's rings breathe a gold glow with a few twinkles; no text turns gold. */
+.td-panel.td-perfect { position: relative; border-color: color-mix(in srgb, #ffd257 70%, transparent); box-shadow: 0 0 28px -8px rgb(255 210 87 / 0.55); }
+.td-perfect .td-pchip { color: #241a05; background: #ffd257; }
+.td-perfect .td-ringfig { animation: td-breathe 3.2s ease-in-out infinite; }
+@keyframes td-breathe { 0%, 100% { filter: drop-shadow(0 0 4px rgb(255 210 87 / 0.35)); } 50% { filter: drop-shadow(0 0 16px rgb(255 210 87 / 0.8)); } }
+.td-twinkles { position: absolute; inset: 44px 0 0; pointer-events: none; z-index: 0; }
+.td-twinkles i { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: #ffe7a0; box-shadow: 0 0 8px #ffd257; opacity: 0; animation: td-twinkle 2.6s calc(var(--t) * 0.5s) ease-in-out infinite; }
+.td-twinkles i:nth-child(1) { left: 8%; top: 14%; } .td-twinkles i:nth-child(2) { left: 34%; top: 6%; } .td-twinkles i:nth-child(3) { left: 30%; top: 78%; }
+.td-twinkles i:nth-child(4) { left: 4%; top: 64%; } .td-twinkles i:nth-child(5) { left: 40%; top: 42%; }
+@keyframes td-twinkle { 0%, 100% { opacity: 0; transform: scale(0.4); } 50% { opacity: 1; transform: scale(1); } }
+.td-moment.gold .td-moment-title { color: var(--k-cream, #f3ece0); }
+@media (prefers-reduced-motion: reduce) { .td-perfect .td-ringfig { animation: none; filter: drop-shadow(0 0 10px rgb(255 210 87 / 0.6)); } .td-twinkles i { animation: none; opacity: 0.8; } }
