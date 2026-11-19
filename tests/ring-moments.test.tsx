@@ -64,7 +64,7 @@ describe('the living rings', () => {
     }
   });
   it('the numbers start at their true value before they count up', () => {
-    const html = renderToStaticMarkup(<RingsNumbers rows={[{ key: 'kcal', name: 'Calories', value: '1,640', unit: 'kcal', target: 't', ink: 'x', known: true }]} rings={null} closed={0} onLogFood={() => {}} onSaveSteps={() => {}} showCopyHint={false} />);
+    const html = renderToStaticMarkup(<RingsNumbers rows={[{ key: 'kcal', name: 'Calories', value: '1,640', unit: 'kcal', target: 't', ink: 'x', known: true, progress: 0.5 }]} rings={null} closed={0} onLogFood={() => {}} onSaveSteps={() => {}} showCopyHint={false} />);
     expect(html).toContain('1,640');
   });
 });

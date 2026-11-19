@@ -3,18 +3,18 @@ import { describe, expect, it } from 'vitest';
 import { RingsNumbers, type RingRow } from '../src/screens/today/RingsNumbers';
 
 const rows = (stepsKnown = true): RingRow[] => [
-  { key: 'kcal', name: 'Calories', value: '1,640', unit: 'kcal', target: '1,840–2,190', ink: 'var(--kcal)', known: true },
-  { key: 'protein', name: 'Protein', value: '98', unit: 'g', target: 'of 130 g', ink: 'var(--protein)', known: true },
-  { key: 'steps', name: 'Steps', value: stepsKnown ? '7,310' : '—', unit: 'steps', target: 'of 10,000', ink: 'var(--steps)', known: stepsKnown },
+  { key: 'kcal', name: 'Calories', value: '1,640', unit: 'kcal', target: '1,840–2,190', ink: 'var(--kcal)', known: true, progress: 0.5 },
+  { key: 'protein', name: 'Protein', value: '98', unit: 'g', target: 'of 130 g', ink: 'var(--protein)', known: true, progress: 0.5 },
+  { key: 'steps', name: 'Steps', value: stepsKnown ? '7,310' : '—', unit: 'steps', target: 'of 10,000', ink: 'var(--steps)', known: stepsKnown, progress: 0.5 },
 ];
 const render = (r: RingRow[]) => renderToStaticMarkup(<RingsNumbers rows={r} rings={<svg />} closed={0} onLogFood={() => {}} onSaveSteps={() => {}} showCopyHint={false} />);
 
 describe('RingsNumbers', () => {
-  it('at rest shows only each number and its unit', () => {
+  it('at rest shows each name, number and unit with its bar, and no target', () => {
     const html = render(rows());
-    for (const t of ['1,640', 'kcal', '98', '>g<', '7,310', 'steps']) expect(html).toContain(t);
+    for (const t of ['Calories', '1,640', 'kcal', '98', '>g<', '7,310', 'steps']) expect(html).toContain(t);
     expect(html).not.toContain('of 130');
-    expect(html).not.toContain('%');
+    expect(html).toContain('class="td-bar"');
     expect(html.toLowerCase()).not.toContain('closed<');
   });
   it('shows steps not logged as "—", never 0', () => {

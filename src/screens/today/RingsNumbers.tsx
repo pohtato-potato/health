@@ -23,11 +23,12 @@ export function CountUp({ text, play, id }: { text: string; play: number; id?: s
   );
 }
 
-export type RingRow = { key: 'kcal' | 'protein' | 'steps' | 'sleep'; name: string; value: string; unit: string; target: string; ink: string; known: boolean; /** The goal is met: the number turns radiant with a soft glow, in its own colour. */ done?: boolean };
+export type RingRow = { key: 'kcal' | 'protein' | 'steps' | 'sleep'; name: string; value: string; unit: string; target: string; ink: string; known: boolean; /** The share of the goal reached, for the row's bar (0 or more; drawn capped at full). */ progress: number; /** The goal is met: the number turns radiant with a soft glow, in its own colour. */ done?: boolean };
 
 /**
- * The rings with only their numbers beside them, each in its ring's ink with a tiny unit. Tapping a number shows
- * its target and its action in place: Log food, or a number pad for steps. The ring drawing is passed in.
+ * The rings with a bar for each beside them (Home C, board six): the name, the number in the ring's ink with a small
+ * unit, and the bar filled to its share. Tapping a row shows its target and its action in place: Log food, or a
+ * number pad for steps. The ring drawing is passed in.
  */
 export function RingsNumbers({ rows, rings, closed, of = 4, onLogFood, onLogSleep, onSaveSteps, showCopyHint, play = 0 }: { play?: number; rows: RingRow[]; rings: ReactNode; closed: number; of?: number; onLogFood: () => void; onLogSleep?: () => void; onSaveSteps: (steps: number) => void; showCopyHint: boolean }) {
   const [shown, setShown] = useState<RingRow['key'] | null>(null);
@@ -39,9 +40,15 @@ export function RingsNumbers({ rows, rings, closed, of = 4, onLogFood, onLogSlee
         {rings}
         <div className="td-nums">
           {rows.map((r) => (
-            <button key={r.key} type="button" className={`td-num${r.done ? ' rad' : ''}`} style={{ '--c': r.ink } as React.CSSProperties} aria-expanded={shown === r.key} aria-label={`${r.name} ${r.value} ${r.unit}${r.done ? ', goal met' : ''}. Show target`} onClick={() => setShown(shown === r.key ? null : r.key)}>
-              <CountUp text={r.value} play={play} id={`today:${r.key}`} />
-              <span>{r.unit}</span>
+            <button key={r.key} type="button" className={`td-num${r.done ? ' rad' : ''}`} style={{ '--c': r.ink } as React.CSSProperties} aria-expanded={shown === r.key} aria-label={`${r.name} ${r.value}${r.unit ? ` ${r.unit}` : ''}${r.done ? ', goal met' : ''}. Show target`} onClick={() => setShown(shown === r.key ? null : r.key)}>
+              <span className="td-num-top">
+                <span className="td-num-name">{r.name}</span>
+                <CountUp text={r.value} play={play} id={`today:${r.key}`} />
+                {r.unit && <span className="td-num-unit">{r.unit}</span>}
+              </span>
+              <span className="td-bar" aria-hidden="true" style={{ '--p': `${Math.round(Math.min(1, Math.max(0, r.progress)) * 100)}%` } as React.CSSProperties}>
+                <i />
+              </span>
             </button>
           ))}
         </div>

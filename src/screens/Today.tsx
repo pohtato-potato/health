@@ -267,7 +267,8 @@ export function Today() {
       banner={<><OfficeUsual /><Banners noMorning={morningOpen} /></>}
       line={
         <TodayLine
-          head={playing?.kind === 'ring' ? `${RING_WORD[playing.ring]} closed` : closedWords(rings.closed, rings.of)}
+          head="Today"
+          level={1}
           text={lineKind === 'glance' ? glanceUnder(lineText) : lineText}
           kind={lineKind}
           gold={moment === 'perfect'}
@@ -277,13 +278,16 @@ export function Today() {
         />
       }
       season={<SeasonStrip settings={settings} today={today} />}
+      dayChip={playing?.kind === 'ring' ? `${RING_WORD[playing.ring]} closed` : rings.closed >= rings.of ? closedWords(rings.closed, rings.of) : `${rings.closed} of ${rings.of} closed`}
+      nextChip={gap.gapG > 0 && !closedFlags.protein && !day?.foodDone ? `${Math.round(gap.gapG)} g to go` : undefined}
+      nextInk={METRIC_INK.protein}
       rings={
         <RingsNumbers
           rows={[
-            { key: 'kcal', name: 'Calories', value: fmtInt(totals.kcal), unit: 'kcal', target: `${fmtInt(targets.kcalMin)}–${fmtInt(targets.kcalMax)} kcal`, ink: rowInk('kcal'), known: true, done: closedFlags.kcal },
-            { key: 'protein', name: 'Protein', value: String(Math.round(totals.protein)), unit: 'g protein', target: `of ${targets.proteinG} g`, ink: rowInk('protein'), known: true, done: closedFlags.protein },
-            { key: 'steps', name: 'Steps', value: day?.steps !== undefined ? fmtInt(totals.steps) : '—', unit: 'steps', target: `${totals.eased ? 'eased to ' : 'of '}${fmtInt(stepsGoal(targets, totals.eased))}`, ink: rowInk('steps'), known: day?.steps !== undefined, done: closedFlags.steps },
-            { key: 'sleep', name: 'Sleep', value: sleepMin !== undefined ? fmtDuration(sleepMin).replace(/ m$/, '') : '—', unit: 'sleep', target: `last night · aim ${fmtDuration(targets.sleepMin)}`, ink: rowInk('sleep'), known: sleepMin !== undefined, done: closedFlags.sleep },
+            { key: 'kcal', name: 'Calories', value: fmtInt(totals.kcal), unit: 'kcal', progress: rings.kcal.progress, target: `${fmtInt(targets.kcalMin)}–${fmtInt(targets.kcalMax)} kcal`, ink: rowInk('kcal'), known: true, done: closedFlags.kcal },
+            { key: 'protein', name: 'Protein', value: String(Math.round(totals.protein)), unit: 'g', progress: rings.protein.progress, target: `of ${targets.proteinG} g`, ink: rowInk('protein'), known: true, done: closedFlags.protein },
+            { key: 'steps', name: 'Steps', value: day?.steps !== undefined ? fmtInt(totals.steps) : '—', unit: '', progress: day?.steps !== undefined ? rings.steps.progress : 0, target: `${totals.eased ? 'eased to ' : 'of '}${fmtInt(stepsGoal(targets, totals.eased))}`, ink: rowInk('steps'), known: day?.steps !== undefined, done: closedFlags.steps },
+            { key: 'sleep', name: 'Sleep', value: sleepMin !== undefined ? fmtDuration(sleepMin).replace(/ m$/, '') : '—', unit: '', progress: sleepMin !== undefined ? rings.sleep.progress : 0, target: `last night · aim ${fmtDuration(targets.sleepMin)}`, ink: rowInk('sleep'), known: sleepMin !== undefined, done: closedFlags.sleep },
           ]}
           closed={rings.closed}
           of={rings.of}

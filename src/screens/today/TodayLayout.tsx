@@ -1,30 +1,50 @@
 import type { CSSProperties, ReactNode } from 'react';
 
+/** One of Home's panels (board six, Home C): a labelled header bar with an optional status chip, then its body. */
+export function TodayPanel({ id, title, chip, chipInk, children }: { id: string; title: string; chip?: string; chipInk?: string; children: ReactNode }) {
+  return (
+    <section className="td-panel" aria-labelledby={`td-panel-${id}`}>
+      <header className="td-panel-bar">
+        <h2 className="td-panel-title" id={`td-panel-${id}`}>{title}</h2>
+        {chip && (
+          <span className="td-pchip" style={chipInk ? ({ '--c': chipInk } as CSSProperties) : undefined}>
+            {chip}
+          </span>
+        )}
+      </header>
+      <div className="td-panel-body">{children}</div>
+    </section>
+  );
+}
+
 /**
- * Today on the kit (look pass, boards three and five). The first screen: the walk as a short banner, the count of
- * closed rings as the heading with the day's line under it, the rings with their numbers (the lead), the one lit
- * panel with the next thing to log and its glowing action, then Football's panel. Then the day's other panels
- * (status, what is due, banners, the season, training), and, scrolled, tonight's shape, quick add, the meals, the
- * body log and the checklist. The moon Close the day rides above the tab bar, and the page leaves room for it.
+ * Today, Home C (board six): the aurora behind everything, the walk as a short banner, the page heading with the
+ * clock and the day's line, then the desk's labelled panels: The day (the rings with a bar for each) and Next (the
+ * one lit thing to log, then training). Then Football's panel and the day's other panels (status, what is due,
+ * banners, the season), and, scrolled, tonight's shape and the log. The moon Close the day rides at the end.
  */
-export function TodayLayout(p: { walk: ReactNode; status?: ReactNode; due?: ReactNode; banner?: ReactNode; line: ReactNode; season?: ReactNode; rings: ReactNode; moment: ReactNode; football?: ReactNode; next: ReactNode; shape?: ReactNode; fx?: ReactNode; log: ReactNode; handle: ReactNode; overlays?: ReactNode; before?: ReactNode; light?: CSSProperties; glow?: boolean }) {
+export function TodayLayout(p: { walk: ReactNode; status?: ReactNode; due?: ReactNode; banner?: ReactNode; line: ReactNode; season?: ReactNode; rings: ReactNode; dayChip?: string; moment: ReactNode; football?: ReactNode; next: ReactNode; nextChip?: string; nextInk?: string; shape?: ReactNode; fx?: ReactNode; log: ReactNode; handle: ReactNode; overlays?: ReactNode; before?: ReactNode; light?: CSSProperties; glow?: boolean }) {
   return (
     <>
       {p.before}
       {p.overlays}
       <div className={`page td-page k-page k-light today${p.glow ? ' td-glow' : ''}`} style={p.light}>
+        <div className="td-aur" aria-hidden="true"></div>
         {p.fx}
-        <h1 className="sr-only">Today</h1>
         {p.walk}
         {p.line}
-        {p.rings}
-        {p.moment}
+        <TodayPanel id="day" title="The day" chip={p.dayChip}>
+          {p.rings}
+        </TodayPanel>
+        <TodayPanel id="next" title="Next" chip={p.nextChip} chipInk={p.nextInk}>
+          {p.moment}
+          {p.next}
+        </TodayPanel>
         {p.football}
         {p.status}
         {p.due}
         {p.banner}
         {p.season}
-        {p.next}
         {p.shape}
         {p.log}
         {/* The moon button closes the page, in the flow: nothing fixed covers content at any scroll (design check). */}
