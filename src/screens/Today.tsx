@@ -44,7 +44,7 @@ import { closedWords, glanceUnder } from './today/TodayLine';
 import { TodayLayout, panelVars } from './today/TodayLayout';
 import { DrawerHandle, TodayDrawer } from './today/TodayDrawer';
 import { proteinState } from '../domain/proteinState';
-import { ChecklistChips, MealTiles, UsualChips, mealTotals } from './today/LogBelow';
+import { ChecklistPanel, MealTiles, UsualChips, mealTotals } from './today/LogBelow';
 import { LogSearch } from '../sheets/LogSearch';
 import { sameAsYesterday, usualFoods } from '../domain/usual';
 import { mealForTime, portionFor } from '../domain/foods';
@@ -363,9 +363,8 @@ export function Today() {
           </Panel>
           {slots.length > 0 && (
             <>
-              <Sect>Checklist</Sect>
-              <ChecklistChips items={slots.map((x) => ({ key: x.key, name: slots.filter((y) => y.itemId === x.itemId).length > 1 ? `${x.name} · ${x.slot}` : x.name, on: !!day?.ticks?.[x.key] }))} onToggle={(key, on) => { const slot = slots.find((y) => y.key === key)?.slot ?? 'Daily'; const t = tickFor(today, slot, settings, day, on, Date.now()); void setTick(today, key, on, t.at, t.recordedLate); }} />
-              <p className="td-hint k-q">Press and hold a row to tick it.</p>
+              <ChecklistPanel items={slots.map((x) => ({ key: x.key, name: slots.filter((y) => y.itemId === x.itemId).length > 1 ? `${x.name} · ${x.slot}` : x.name, on: day?.ticks?.[x.key] !== undefined, at: day?.ticks?.[x.key] }))} onToggle={(key, on) => { const slot = slots.find((y) => y.key === key)?.slot ?? 'Daily'; const t = tickFor(today, slot, settings, day, on, Date.now()); void setTick(today, key, on, t.at, t.recordedLate); }} />
+              <p className="td-hint k-q">Press and hold an item to tick it. Hold a ticked one to untick it.</p>
             </>
           )}
         </section>

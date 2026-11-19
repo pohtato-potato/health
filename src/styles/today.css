@@ -477,3 +477,37 @@ html.contrast .td-panel-bar { background: #1a1b2e; }
 @media (prefers-reduced-motion: reduce) {
   .td-aur, .td-bar i { animation: none; }
 }
+
+/* Checklist, hold to tick (board 7 k7-live, k7-frames). Press: the row dips and its ring starts. Hold: the ring runs
+   round and the colour pours along the row. Let go early: it drains back. Done: the disc pops, the tick draws, eight
+   sparks fly and the time settles in. The next row to do keeps a ring looping as a hint (owner, 19 Nov: loops loop). */
+.td-panel-body > .td-chips { display: flex; flex-direction: column; gap: 0; margin: -12px -14px; }
+.td-panel-body > .td-chips .td-hold { margin: 0; min-height: 52px; gap: 12px; font-size: 16px; --ck: var(--ax-routine); transition: transform 160ms ease; }
+.td-hold.holding { transform: scale(0.985); }
+.td-hold .td-hold-fill { background: color-mix(in srgb, var(--ck, #8fc9b0) 30%, transparent); transition: transform 260ms ease-out; }
+.td-hold.holding .td-hold-fill { transition: transform 650ms linear; }
+.td-ck-ring { flex-shrink: 0; overflow: visible; }
+.td-ck-track { fill: none; stroke: color-mix(in srgb, var(--ck) 35%, transparent); stroke-width: 2.5; }
+.td-ck-run { fill: none; stroke: var(--ck); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 100 100; stroke-dashoffset: 100; transition: stroke-dashoffset 260ms ease-out; }
+.td-hold.holding .td-ck-run { stroke-dashoffset: 0; transition: stroke-dashoffset 650ms linear; }
+.td-ck-disc { fill: var(--ck); transform-box: fill-box; transform-origin: center; transform: scale(0); }
+.td-ck-tick { fill: none; stroke: #16142e; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 100 100; stroke-dashoffset: 100; }
+.td-hold.on .td-ck-disc { transform: scale(1); }
+.td-hold.on .td-ck-tick { stroke-dashoffset: 0; }
+.td-hold.on .td-ck-track { stroke: var(--ck); }
+.td-hold.just .td-ck-disc { animation: td-ck-pop 380ms cubic-bezier(.3, 1.6, .5, 1); }
+.td-hold.just .td-ck-tick { animation: td-ck-draw 320ms 160ms ease-out both; }
+.td-ck-sparks line { stroke: var(--ck); stroke-width: 2; stroke-linecap: round; opacity: 0; }
+.td-hold.just .td-ck-sparks line { animation: td-ck-spark 600ms 120ms ease-out; }
+.td-ck-ring.hint .td-ck-run { animation: td-ck-hint 2.4s ease-in-out infinite; }
+.td-ck-when { font: 600 16px var(--sans); color: var(--k-cream); white-space: nowrap; }
+.td-ck-when.hold { color: var(--k-quiet); font-weight: 400; }
+.td-hold.just .td-ck-when { animation: td-ck-settle 360ms 300ms ease-out both; }
+@keyframes td-ck-pop { from { transform: scale(0); } }
+@keyframes td-ck-draw { from { stroke-dashoffset: 100; } }
+@keyframes td-ck-spark { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-6px); } }
+@keyframes td-ck-hint { 0%, 100% { stroke-dashoffset: 100; } 50% { stroke-dashoffset: 72; } }
+@keyframes td-ck-settle { from { opacity: 0; transform: translateY(4px); } }
+@media (prefers-reduced-motion: reduce) {
+  .td-hold.just .td-ck-disc, .td-hold.just .td-ck-tick, .td-hold.just .td-ck-sparks line, .td-ck-ring.hint .td-ck-run, .td-hold.just .td-ck-when { animation: none; }
+}

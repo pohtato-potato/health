@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { logMatches } from '../src/sheets/LogSearch';
-import { ChecklistChips, MealTiles, UsualChips, mealTotals } from '../src/screens/today/LogBelow';
+import { ChecklistPanel, MealTiles, UsualChips, mealTotals } from '../src/screens/today/LogBelow';
 import type { Food, FoodEntry } from '../src/domain/types';
 
 const food = (id: string, name: string, archived = false) => ({ id, name, archived, kcal: 100 }) as unknown as Food;
@@ -44,13 +44,13 @@ describe('MealTiles', () => {
   });
 });
 
-describe('ChecklistChips', () => {
-  it('says "taken" when ticked, in words as well as colour', () => {
-    const html = renderToStaticMarkup(<ChecklistChips items={[{ key: 'm1:0', name: 'Test tablet', on: true }, { key: 'm2:0', name: 'Test drops', on: false }]} onToggle={() => {}} />);
-    expect(html).toContain('Test tablet, taken');
+describe('ChecklistPanel', () => {
+  it('says "ticked" when ticked, in words as well as colour', () => {
+    const html = renderToStaticMarkup(<ChecklistPanel items={[{ key: 'm1:0', name: 'Test tablet', on: true }, { key: 'm2:0', name: 'Test drops', on: false }]} onToggle={() => {}} />);
+    expect(html).toContain('Test tablet, ticked');
     expect(html).toContain('Test drops, to do');
-    expect(html).toContain('>to do<');
-    expect(html).not.toContain('Test drops, taken');
+    expect(html).toContain('>hold<');
+    expect(html).not.toContain('Test drops, ticked');
   });
 });
 

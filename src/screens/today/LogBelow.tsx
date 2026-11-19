@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import { Icon } from '../../ui/Icon';
+import { fmtTime } from '../../domain/format';
+import { TodayPanel } from './TodayLayout';
 import type { FoodEntry, Meal } from '../../domain/types';
 
 const MEAL_NAME: Record<Meal, string> = { breakfast: 'Breakfast', lunch: 'Lunch', snacks: 'Snacks', dinner: 'Dinner' };
@@ -60,52 +61,83 @@ export function MealTiles({ meals, onOpen, onRepeat }: { meals: { meal: Meal; kc
   );
 }
 
-/** One checklist row: press and hold to tick (about 0.65 s, with a fill under the finger), so a brush never ticks it. */
-function HoldRow({ name, on, onToggle }: { name: string; on: boolean; onToggle: () => void }) {
+export interface CheckItem { key: string; name: string; on: boolean; at?: number }
+
+const HOLD_MS = 650;
+
+/**
+ * One checklist row (board 7 `k7-live`, `k7-frames`): press and hold to tick, so a brush never ticks it. Press, and
+ * the row dips and its ring starts; hold, and the ring runs round as the colour pours along the row; let go early and
+ * it drains back. Done: the disc pops, the tick draws, eight sparks fly and the time settles in. Enter, Space or a
+ * screen reader's activate toggles at once: the button alternative to the hold.
+ */
+function HoldRow({ item, hint, onToggle }: { item: CheckItem; hint: boolean; onToggle: () => void }) {
+  const { name, on, at } = item;
   const [holding, setHolding] = useState(false);
+  const [just, setJust] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stop = () => {
     setHolding(false);
     if (timer.current) clearTimeout(timer.current);
   };
+  const done = () => {
+    setHolding(false);
+    if (!on) {
+      setJust(true);
+      setTimeout(() => setJust(false), 1400);
+    }
+    navigator.vibrate?.(12);
+    onToggle();
+  };
+  const when = on && at !== undefined ? fmtTime(at) : undefined;
   return (
     <button
       type="button"
-      className={`td-hold${on ? ' on' : ''}${holding ? ' holding' : ''}`}
+      className={`td-hold${on ? ' on' : ''}${holding ? ' holding' : ''}${just ? ' just' : ''}`}
       aria-pressed={on}
-      aria-label={`${name}${on ? ', taken' : ', to do'}. Press and hold to ${on ? 'untick' : 'tick'}`}
+      aria-label={`${name}, ${on ? (when ? `ticked at ${when}` : 'ticked') : 'to do'}. Press and hold to ${on ? 'untick' : 'tick'}`}
       onPointerDown={() => {
         setHolding(true);
-        timer.current = setTimeout(() => {
-          setHolding(false);
-          onToggle();
-        }, 650);
+        timer.current = setTimeout(done, HOLD_MS);
       }}
       onPointerUp={stop}
       onPointerLeave={stop}
       onPointerCancel={stop}
       onContextMenu={(e) => e.preventDefault()}
-      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onToggle())}
+      onClick={(e) => e.detail === 0 && onToggle()}
     >
       <span className="td-hold-fill" aria-hidden="true" />
+      <svg className={`td-ck-ring${hint && !on ? ' hint' : ''}`} viewBox="0 0 32 32" width={32} height={32} aria-hidden="true">
+        <circle cx={16} cy={16} r={13} className="td-ck-track" />
+        <circle cx={16} cy={16} r={13} pathLength={100} className="td-ck-run" transform="rotate(-90 16 16)" />
+        <circle cx={16} cy={16} r={11} className="td-ck-disc" />
+        <path d="M10.5 16.5 L14.5 20.5 L21.5 12.5" pathLength={100} className="td-ck-tick" />
+        <g className="td-ck-sparks">
+          {[0, 45, 90, 135, 180, 225, 270, 315].map((d) => (
+            <g key={d} transform={`rotate(${d} 16 16)`}>
+              <line x1={16} y1={1} x2={16} y2={-3} />
+            </g>
+          ))}
+        </g>
+      </svg>
       <span className="td-hold-name">{name}</span>
-      {on ? (
-        <span className="td-hold-on"><Icon name="check" size={20} stroke={2.4} /><span className="sr-only"> · taken</span></span>
-      ) : (
-        <span className="td-hold-off">to do</span>
-      )}
+      {on ? <span className="td-ck-when tn">{when ?? 'done'}</span> : <span className="td-ck-when hold">hold</span>}
     </button>
   );
 }
 
-/** The checklist in one filled panel: a row per dose, ticked with a held press. */
-export function ChecklistChips({ items, onToggle }: { items: { key: string; name: string; on: boolean }[]; onToggle: (key: string, on: boolean) => void }) {
+/** The checklist panel on Home: a header bar with the count done, then a row per dose, ticked with a held press. */
+export function ChecklistPanel({ items, onToggle }: { items: CheckItem[]; onToggle: (key: string, on: boolean) => void }) {
   if (!items.length) return null;
+  const done = items.filter((i) => i.on).length;
+  const next = items.find((i) => !i.on)?.key;
   return (
-    <div className="k-panel td-chips" style={{ '--ink': 'var(--ax-routine)' } as React.CSSProperties}>
-      {items.map((i) => (
-        <HoldRow key={i.key} name={i.name} on={i.on} onToggle={() => onToggle(i.key, !i.on)} />
-      ))}
-    </div>
+    <TodayPanel id="td-checklist" title="Checklist" chip={`${done} of ${items.length}`} chipInk="var(--ax-routine)">
+      <div className="td-chips">
+        {items.map((i) => (
+          <HoldRow key={i.key} item={i} hint={i.key === next} onToggle={() => onToggle(i.key, !i.on)} />
+        ))}
+      </div>
+    </TodayPanel>
   );
 }
