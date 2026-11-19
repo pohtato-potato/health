@@ -269,3 +269,23 @@ html.contrast .dc-shine { display: none; }
 .mb-open { display: flex; flex-direction: column; gap: 10px; align-items: center; margin-top: 8px; }
 .mb-open .k-act { min-height: 48px; }
 html.contrast .mb-card { background: #120d1c; }
+
+/* The week (board 6 c6-week): the week's card on a stack of cards; the depth is decoration only. */
+.cw { width: min(100%, 360px); margin: 8px auto 0; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.cw-h2 { margin: 6px 0 0; font: 600 22px var(--serif); color: #f3ece0; }
+.cw-stack { position: relative; width: min(100%, 300px); padding-bottom: 14px; }
+.cw-stack .dc { width: 100%; z-index: 2; border-width: 4px; }
+.cw-depth { position: absolute; left: 50%; bottom: 0; height: 60%; border-radius: 22px; border: 3px solid color-mix(in srgb, var(--dc-even) 55%, #1a1222); background: #1a1222; transform: translateX(-50%); }
+.cw-depth.d1 { width: 94%; bottom: 7px; z-index: 1; }
+.cw-depth.d2 { width: 86%; z-index: 0; opacity: 0.7; }
+.cw-rings { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; justify-items: center; margin: 4px 0; }
+.cw-rings span { opacity: 0.45; }
+.cw-rings span.on { opacity: 1; }
+.cw-rings svg { width: 100%; max-width: 32px; height: auto; margin: 0; }
+.cw-deal { min-height: 48px; width: min(100%, 300px); }
+.cw-dealt { width: 100%; }
+.cw-dealt > * { animation: cw-deal 420ms cubic-bezier(.2, .9, .3, 1) both; }
+.cw-dealt > :nth-child(2) { animation-delay: 60ms; } .cw-dealt > :nth-child(3) { animation-delay: 120ms; } .cw-dealt > :nth-child(4) { animation-delay: 180ms; }
+.cw-dealt > :nth-child(5) { animation-delay: 240ms; } .cw-dealt > :nth-child(6) { animation-delay: 300ms; } .cw-dealt > :nth-child(7) { animation-delay: 360ms; }
+@keyframes cw-deal { from { opacity: 0; transform: translateY(-40px) rotate(-6deg); } }
+@media (prefers-reduced-motion: reduce) { .cw-dealt > * { animation: none; } }

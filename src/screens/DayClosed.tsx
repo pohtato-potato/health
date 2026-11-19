@@ -12,9 +12,10 @@ import type { DaySummary } from '../domain/usualDay';
 import { spokenLine } from '../domain/voice';
 import { kmFromSteps, positionAt } from '../domain/walk';
 import { back, go } from '../router';
-import { storyWeek } from '../domain/weekly';
+import { storyWeek, weekNumber } from '../domain/weekly';
 import { DayCard, breakout, dayTier, tierLine, type DayStat } from './close/DayCard';
 import { MonthBinder, type BinderDay } from './close/MonthBinder';
+import { WeekCard } from './close/WeekCard';
 import { nextStopLine } from '../walk/lines';
 import { dayWalk } from '../walk/dayWalk';
 import { stepsByDay } from '../walk/runs';
@@ -121,11 +122,17 @@ export function DayClosed({ date, summary: s, onDone, opp }: { date: string; sum
     const b = breakout({ debut: sessions.some((x) => x.status === 'done' && x.date === k) && !sessions.some((x) => x.status === 'done' && x.date < k), records: [], prevOpen: !!prev && !(prev.foodDone || prev.partial), status: dd.status });
     return { tier: dayTier(r.closed, r.of), rings: [r.kcal.progress, r.protein.progress, r.steps.progress, r.sleep.progress].slice(0, r.of), ribbon: b, tot: totalsOf(byDate.get(k) ?? []), steps: dd.steps, place: placeFor(dd, settings) };
   };
-  const monthCells: BinderDay[] = Array.from({ length: monthDays }, (_, i) => {
-    const k = dayKey(new Date(d0.getFullYear(), d0.getMonth(), i + 1));
+  const cellOf = (k: string): BinderDay => {
     const c = k === date ? { tier: dayTier(rings.closed, rings.of), rings: ringList, ribbon: brk } : cardOf(k);
     return c ? { date: k, tier: c.tier, rings: c.rings, ribbon: c.ribbon?.ink } : { date: k };
-  });
+  };
+  const monthCells = Array.from({ length: monthDays }, (_, i) => cellOf(dayKey(new Date(d0.getFullYear(), d0.getMonth(), i + 1))));
+  // The week (c6-week): closing a Sunday also deals the week's card, Monday to today.
+  const weekKeys = d0.getDay() === 0 ? Array.from({ length: 7 }, (_, i) => addDays(date, i - 6)) : [];
+  const weekTot = weekKeys.reduce((t, k) => {
+    const x = totalsOf(byDate.get(k) ?? []);
+    return { kcal: t.kcal + x.kcal, protein: t.protein + x.protein, steps: t.steps + (days.find((d) => d.date === k)?.steps ?? 0) };
+  }, { kcal: 0, protein: 0, steps: 0 });
   const picked = openDay && openDay !== date ? cardOf(openDay) : undefined;
 
   return (
@@ -133,6 +140,13 @@ export function DayClosed({ date, summary: s, onDone, opp }: { date: string; sum
       <h1 className="dc-h1">{dayName}’s card</h1>
       <DayCard reveal tier={dayTier(rings.closed, rings.of)} dateLabel={`${parseDay(date).getDate()} ${month.slice(0, 3)}`} title={`${dayName} ${where}`} rings={ringList} stats={stats} ribbon={brk} foot={brk ? brk.foot : opp ? `Shape sealed for ${opp}` : tierLine({ kcal: rings.kcal.closed, protein: rings.protein.closed, steps: rings.steps.closed, sleep: rings.sleep.closed }, rings.of, { kcal: rings.kcal.state, proteinG: targets.proteinG - s.protein, steps: s.stepsLeft ?? targets.steps, sleepMin: targets.sleepMin - rings.sleep.value })} />
       {rings.perfect && <p className="k-q dc-perfect">A perfect day. Its star is in {month}’s sky.</p>}
+      {weekKeys.length > 0 && (
+        <WeekCard days={weekKeys.map(cellOf)} week={weekNumber(date)} today={now} onOpen={(k) => setOpenDay(k === date ? null : k)} stats={[
+          { name: 'Calories', value: fmtInt(weekTot.kcal), ink: 'var(--kcal)' },
+          { name: 'Protein', value: `${fmtInt(weekTot.protein)} g`, ink: 'var(--protein)' },
+          { name: 'Steps', value: fmtInt(weekTot.steps), ink: 'var(--steps)' },
+        ]} />
+      )}
       <div className="dc-acts">
         <button type="button" className="k-act quiet" onClick={() => go('/reports/week', { w: storyWeek(date) })}>
           The week
