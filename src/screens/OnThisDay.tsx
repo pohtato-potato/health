@@ -11,6 +11,7 @@ import { bump } from '../db/actions';
 import { db } from '../db/db';
 import { useAllDays, useAllEntries, useSessions, useSettings, useToday } from '../db/hooks';
 import { dayRings } from '../state/derived';
+import { TodayPanel } from './today/TodayLayout';
 
 /** The same date a year, six months, three months or a month back: the oldest one with something in it. */
 export function memoryDates(today: DayKey): { date: DayKey; label: string }[] {
@@ -36,6 +37,15 @@ export function memoryDates(today: DayKey): { date: DayKey; label: string }[] {
   });
 }
 
+const HIDDEN_KEY = 'health.onthisday.hidden';
+function readHidden(): string | null {
+  try {
+    return localStorage.getItem(HIDDEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
 export function OnThisDayCard() {
   const settings = useSettings();
   const today = useToday();
@@ -45,11 +55,12 @@ export function OnThisDayCard() {
   const wins = useLiveQuery(() => db.wins.toArray(), []);
   const unlocks = useLiveQuery(() => db.achievements.toArray(), []);
   const [open, setOpen] = useState(false);
+  const [hidden, setHidden] = useState(() => readHidden() === today);
   if (!settings || !days || !entries || !sessions || !wins || !unlocks) return null;
 
   const has = (d: DayKey) => days.some((x) => x.date === d && (x.steps !== undefined || x.morning)) || entries.some((e) => e.date === d);
   const pick = memoryDates(today).find((m) => has(m.date));
-  if (!pick) return null;
+  if (!pick || hidden) return null;
   const d = pick.date;
   const day = days.find((x) => x.date === d);
   const es = entries.filter((e) => e.date === d);
@@ -89,6 +100,14 @@ export function OnThisDayCard() {
       rows={rows}
       extras={extras}
       open={open}
+      onHide={() => {
+        setHidden(true);
+        try {
+          localStorage.setItem(HIDDEN_KEY, today);
+        } catch {
+          /* storage can be unavailable; it stays hidden until reload */
+        }
+      }}
       onToggle={() => {
         if (!open) void bump('onthisday', { day: today });
         setOpen(!open);
@@ -104,11 +123,9 @@ export interface MemoryRow { name: string; then: string; now: string }
  * date and the day's line in text, then that day's numbers against today's. More (wins, unlocks, what was eaten) opens
  * under it.
  */
-export function MemoryCard({ when, dateLabel, line, rows, extras, open, onToggle }: { when: string; dateLabel: string; line: string; rows: MemoryRow[]; extras: string[]; open: boolean; onToggle: () => void }) {
+export function MemoryCard({ when, dateLabel, line, rows, extras, open, onToggle, onHide }: { when: string; dateLabel: string; line: string; rows: MemoryRow[]; extras: string[]; open: boolean; onToggle: () => void; onHide?: () => void }) {
   return (
-    <section className="otd" aria-labelledby="otd-h">
-      <h2 id="otd-h" className="otd-h">On this day</h2>
-      <p className="otd-when">{when}</p>
+    <TodayPanel id="onthis" title="On this day" chip={when.replace(/, on .*$/, '')} className="otd">
       <div className="otd-snap">
         <i className="otd-tape" aria-hidden="true" />
         <span className="otd-date">{dateLabel}</span>
@@ -124,12 +141,11 @@ export function MemoryCard({ when, dateLabel, line, rows, extras, open, onToggle
           ))}
         </dl>
       )}
-      {extras.length > 0 && (
-        <>
-          <button type="button" className="otd-more" aria-expanded={open} onClick={onToggle}>{open ? 'Less' : 'Remember more'}</button>
-          {open && extras.map((x) => <p key={x} className="otd-x">{x}</p>)}
-        </>
-      )}
-    </section>
+      {open && extras.map((x) => <p key={x} className="otd-x">{x}</p>)}
+      <div className="otd-acts">
+        {extras.length > 0 && <button type="button" className="otd-more" aria-expanded={open} onClick={onToggle}>{open ? 'Less' : 'Remember more'}</button>}
+        {onHide && <button type="button" className="otd-more otd-hide" onClick={onHide}>Hide for today</button>}
+      </div>
+    </TodayPanel>
   );
 }

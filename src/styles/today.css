@@ -303,6 +303,7 @@
 
 /* The heading: the count of closed rings, the clock, the day's line under it. */
 .td-line-wrap { gap: 2px; }
+.td-sub { margin: 0; font: 600 15px/1.3 var(--sans); color: var(--k-quiet); overflow-wrap: anywhere; }
 .td-headrow { align-items: baseline; }
 .td-head { margin: 0; font: 400 26px/1.15 var(--serif); color: var(--k-cream); }
 .td-head.gold { color: #ffd257; text-shadow: 0 0 18px rgb(255 196 64 / 0.45); }
@@ -468,8 +469,13 @@ html.contrast .td-panel-bar { background: #1a1b2e; }
 .td-bar i { position: absolute; inset: 0 auto 0 0; width: var(--p); border-radius: 5px; background: var(--c); transform-origin: left; animation: td-bar 1s cubic-bezier(.2, .8, .2, 1) both; }
 .td-num.rad .td-bar i { box-shadow: 0 0 10px var(--c); }
 @keyframes td-bar { from { transform: scaleX(0); } }
-.td-panel .td-ringfig svg { max-width: 112px; height: auto; }
-@media (max-width: 380px) { .td-panel .td-ringfig svg { max-width: 84px; } .td-panel .td-rings-row { gap: 10px; } .td-panel-body { padding: 12px; } }
+.td-panel .td-rings-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); align-items: center; }
+.td-panel .td-ringfig { display: grid; place-items: center; min-width: 0; }
+.td-panel .td-ringfig svg { width: 100%; max-width: 200px; height: auto; }
+.td-panel .td-num-top { flex-wrap: nowrap; }
+.td-panel .td-num-name { flex: 1 1 auto; min-width: 0; }
+.td-panel .td-num b, .td-panel .td-num .td-num-unit { white-space: nowrap; }
+@media (max-width: 380px) { .td-panel .td-rings-row { gap: 10px; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); } .td-panel-body { padding: 12px; } .td-panel .td-num-name, .td-panel .td-num b { font-size: 15px; } }
 
 /* Next: the lit panel and training share one body; the strip loses its own hairlines inside it. */
 .td-panel .td-next { border: 0; padding: 0; }
@@ -663,23 +669,32 @@ html.contrast .td-statusset { background: #0b0c1a; border-color: var(--k-cream, 
 @media (prefers-reduced-motion: reduce) { .td-lanterns i { animation: none; } }
 .td-statusset .td-dates input { padding: 0 2px; font-size: 14px; width: 100%; }
 
-/* On this day (h10-onthis): a taped snapshot drops in once, then that day's numbers against today's. */
-.otd { background: var(--surface); border: 1px solid var(--hairline); border-radius: 18px; padding: 16px; display: grid; gap: 12px; overflow: hidden; }
-.otd-h { margin: 0; font: 600 20px var(--serif); color: var(--text); }
-.otd-when { margin: -8px 0 0; font-size: 14px; color: var(--quiet); }
-.otd-snap { position: relative; justify-self: center; width: min(100%, 280px); background: #f3ead9; color: #2a2433; border-radius: 4px; padding: 22px 16px 16px; box-shadow: 0 10px 24px rgb(0 0 0 / .35); transform: rotate(-2deg); animation: otd-drop .7s cubic-bezier(.2,.9,.3,1.2) both; }
-.otd-tape { position: absolute; top: -9px; left: 50%; width: 84px; height: 22px; margin-left: -42px; background: rgb(233 223 196 / .8); border: 1px solid rgb(0 0 0 / .08); transform: rotate(3deg); }
-.otd-date { display: block; font: 600 16px var(--serif); }
-.otd-line { margin: 6px 0 0; font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; }
+/* On this day (h10-onthis), in Home's panel: a taped snapshot drops in once, then that day's numbers against today's. */
+.otd-snap { position: relative; background: color-mix(in srgb, var(--k-cream, var(--text)) 8%, #15172c); border: 1px solid color-mix(in srgb, var(--k-cream, var(--text)) 18%, transparent); color: var(--k-cream, var(--text)); border-radius: 14px; padding: 20px 16px 14px; transform: rotate(-1.2deg); animation: otd-drop .7s cubic-bezier(.2,.9,.3,1.2) both; }
+.otd-tape { position: absolute; top: -9px; left: 50%; width: 76px; height: 20px; margin-left: -38px; background: color-mix(in srgb, var(--td-i1, #e98a5b) 55%, #f3ead9); opacity: .85; border-radius: 2px; transform: rotate(3deg); }
+.otd-date { display: block; font: 600 17px var(--serif); }
+.otd-line { margin: 6px 0 0; font-size: 15px; line-height: 1.4; color: var(--k-quiet, var(--quiet)); overflow-wrap: anywhere; }
 .otd-rows { margin: 0; display: grid; gap: 8px; }
 .otd-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; font-size: 15px; }
-.otd-row dt { color: var(--quiet); }
+.otd-row dt { color: var(--k-quiet, var(--quiet)); }
 .otd-row dd { margin: 0; }
-.otd-then { color: var(--dim); }
-.otd-row b { color: var(--text); font-weight: 600; }
-.otd-more { justify-self: start; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--btn-border); background: transparent; color: var(--text); font-size: 15px; }
-.otd-x { margin: 0; font-size: 14px; color: var(--quiet); overflow-wrap: anywhere; }
-@keyframes otd-drop { from { opacity: 0; transform: translateY(-24px) rotate(-8deg); } }
+.otd-then { color: var(--k-quiet, var(--quiet)); }
+.otd-row b { color: var(--k-cream, var(--text)); font-weight: 700; }
+.otd-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.otd-more { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--k-cream, var(--text)) 30%, transparent); background: transparent; color: var(--k-cream, var(--text)); font: 600 15px var(--sans); cursor: pointer; }
+.otd-x { margin: 0; font-size: 14px; color: var(--k-quiet, var(--quiet)); overflow-wrap: anywhere; }
+@keyframes otd-drop { from { opacity: 0; transform: translateY(-20px) rotate(-6deg); } }
 @media (prefers-reduced-motion: reduce) { .otd-snap { animation: none; } }
-html.contrast .otd { border-color: var(--text); }
-html.contrast .otd-then { color: var(--quiet); }
+html.contrast .otd-snap { border-color: var(--k-cream, var(--text)); }
+
+/* Tonight's match on Home (h6-c): one panel, the chance as three numbers, then the shape so far. */
+.td-panel.tm-card { position: relative; }
+.tm-pcts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; text-align: center; }
+.tm-pct { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 14px; color: var(--k-quiet); }
+.tm-pct b { font: 600 30px/1.05 var(--serif); }
+.tm-shapeh { margin: 0; font-size: 15px; color: var(--k-quiet); overflow-wrap: anywhere; }
+.tm-shapeh b { color: var(--k-cream); }
+.tm-radar { display: grid; place-items: center; }
+.tm-radar svg { width: 80%; max-width: 280px; height: auto; overflow: visible; }
+@media (max-width: 380px) { .tm-radar { padding-left: 36px; } .tm-radar svg { width: 76%; } }
+.tm-note { margin: 0; font-size: 14px; color: var(--k-quiet); overflow-wrap: anywhere; }

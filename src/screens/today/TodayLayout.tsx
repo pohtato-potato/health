@@ -28,7 +28,7 @@ export function TodayPanel({ id, title, chip, chipInk, className, children }: { 
  * one lit thing to log, then training). Then Football's panel and the day's other panels (status, what is due,
  * banners, the season), and, scrolled, tonight's shape and the log. The moon Close the day rides at the end.
  */
-export function TodayLayout(p: { walk: ReactNode; status?: ReactNode; due?: ReactNode; banner?: ReactNode; line: ReactNode; season?: ReactNode; rings: ReactNode; dayChip?: string; moment: ReactNode; football?: ReactNode; meals?: ReactNode; next: ReactNode; nextChip?: string; nextInk?: string; shape?: ReactNode; fx?: ReactNode; log: ReactNode; handle: ReactNode; overlays?: ReactNode; before?: ReactNode; light?: CSSProperties; glow?: boolean; /** All rings closed (h7-perfect): the day panel breathes a gold glow. */ perfect?: boolean }) {
+export function TodayLayout(p: { walk?: ReactNode; status?: ReactNode; due?: ReactNode; banner?: ReactNode; line: ReactNode; season?: ReactNode; rings: ReactNode; dayChip?: string; moment: ReactNode; football?: ReactNode; meals?: ReactNode; next: ReactNode; nextChip?: string; nextInk?: string; shape?: ReactNode; fx?: ReactNode; log: ReactNode; handle: ReactNode; overlays?: ReactNode; before?: ReactNode; light?: CSSProperties; glow?: boolean; /** All rings closed (h7-perfect): the day panel breathes a gold glow. */ perfect?: boolean }) {
   return (
     <>
       {p.before}

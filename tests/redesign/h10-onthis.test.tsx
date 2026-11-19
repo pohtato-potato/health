@@ -21,8 +21,7 @@ const card = (over: Partial<Parameters<typeof MemoryCard>[0]> = {}) =>
 describe('On this day (h10-onthis)', () => {
   it('says when, and puts the day’s line in text on the snapshot', () => {
     const html = card();
-    expect(html).toMatch(/<h2[^>]*>On this day<\/h2>/);
-    expect(html).toContain('Three months ago, on 19 Aug.');
+    expect(html).toMatch(/<h2 class="td-panel-title"[^>]*>On this day<\/h2><span class="td-pchip">Three months ago<\/span>/);
     expect(html).toMatch(/<span class="otd-date">Wed 19 Aug<\/span><p class="otd-line">6,000 steps, Session A.<\/p>/);
   });
 
@@ -53,9 +52,16 @@ describe('On this day (h10-onthis)', () => {
 
   it('renders only on a memory date: the card returns nothing otherwise, and shows on Home', () => {
     const src = readFileSync('src/screens/OnThisDay.tsx', 'utf8');
-    expect(src).toMatch(/if \(!pick\) return null;/);
+    expect(src).toMatch(/if \(!pick \|\| hidden\) return null;/);
     expect(readFileSync('src/screens/Today.tsx', 'utf8')).toContain('<OnThisDayCard />');
     expect(memoryDates('2026-03-31').map((m) => m.date)).toEqual(['2025-03-31', '2025-12-31']);
+  });
+
+  it('sits in Home’s panel style and can be hidden for the day', () => {
+    const html = card({ onHide: () => {} });
+    expect(html).toMatch(/<section class="td-panel otd"/);
+    expect(html).toMatch(/<button type="button" class="otd-more otd-hide">Hide for today<\/button>/);
+    expect(card()).not.toContain('Hide for today');
   });
 
   it('renders with no data: no rows and no extras still says the day', () => {

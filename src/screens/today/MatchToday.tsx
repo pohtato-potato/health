@@ -11,9 +11,11 @@ import { useSettings } from '../../db/hooks';
 import { addDays, dayOfLogging, type DayKey } from '../../domain/dates';
 import { prefOn } from '../../domain/types';
 import { clubCrest, crestSvg } from '../../football/art/crest';
-import { clubById, tierName } from '../../football/data/load';
-import { movedAxes, threatLine, wentAhead } from '../../football/matchup';
-import { ChanceBar, lateFor, oppDrawing, useChances } from '../football/Chance';
+import { clubById } from '../../football/data/load';
+import { movedAxes, wentAhead } from '../../football/matchup';
+import { DRAW_INK, lateFor, lossInkOf, oppDrawing, shownChance, useChances } from '../football/Chance';
+import { chancePercents } from '../../football/chance';
+import { TodayPanel } from './TodayLayout';
 import { loadTonight, type Tonight } from '../../football/store/hooks';
 import { OWN } from '../../football/store/season';
 import { storedGate } from '../../football/store/matchGate';
@@ -22,8 +24,7 @@ import { AXES, type Axis, type AxisValues } from '../../football/types';
 import { go } from '../../router';
 import { AXIS_INK, brighten, valueTier } from '../../ui/inks';
 import { Radar } from '../football/Radar';
-import { Art, chanceFor } from '../football/Tonight';
-import { paceSum, PaceSumView } from '../football/PaceSum';
+import { Art } from '../football/Tonight';
 import { ordinal } from '../../football/habitLines';
 import { position, standings } from '../../football/table';
 import '../../styles/football.css';
@@ -138,12 +139,11 @@ export function TonightShape({ t, stadium, buzzOn, reel }: { t: Tonight; stadium
   const chance = chances === undefined ? undefined : chances[0] ?? null;
   const late = lateFor(t.date);
   const oppVals = useMemo(() => oppDrawing(opp, t.liveValues, chance, late), [opp, t.liveValues, chance, late]);
-  const logged = Object.fromEntries(AXES.map((a) => [a, !t.flags[a]])) as Record<Axis, boolean>;
   // Fog of war: an axis with no data, or not logged yet, is hatched with "?" (q-pg-fog A); unlogged ones play low.
   const fog = AXES.filter((a) => t.flags[a]);
   const noData = fog.filter((a) => t.flags[a] === 'no-data'), unlogged = fog.filter((a) => t.flags[a] === 'not-logged');
   const prev = useRef<{ date: DayKey; v: AxisValues } | null>(null);
-  const [ahead, setAhead] = useState<Axis | undefined>(() => readAhead(t.date));
+  const [, setAhead] = useState<Axis | undefined>(() => readAhead(t.date));
   const [moment, setMoment] = useState<{ axis: Axis; id: number } | null>(null);
   const [pulse, setPulse] = useState<{ axis: Axis; id: number } | undefined>();
 
@@ -181,47 +181,24 @@ export function TonightShape({ t, stadium, buzzOn, reel }: { t: Tonight; stadium
   const f = t.fixture;
   if (!f || t.morning.intl) return null;
   const oppId = f.opp;
-  const threat = oppVals ? threatLine(oppId ? name(oppId) : 'They', oppVals, t.liveValues, logged) : undefined;
-  const lead = ahead && oppVals && t.liveValues[ahead] > oppVals[ahead] ? ahead : undefined;
   const oppInk = oppId ? inkOf(oppId) : '#ff8fa8';
+  const pct = chance && oppId ? chancePercents(shownChance(chance, late).c) : undefined;
+  const others = t.fixtures.slice(1);
   return (
-    <section className="tm-shape" aria-label="Tonight’s shape">
-      <h2 className="k-sect tm-h">Tonight’s shape</h2>
-      {oppId && <p className="tm-vsx">against <Art svg={clubCrest(clubById(oppId), 22)} /><b style={{ color: oppInk }}>{name(oppId)}</b></p>}
-      {oppId && t.oppTier && t.braboTier && (f.comp !== 'league' || t.oppTier !== t.braboTier) && <p className="tm-ln">{f.round ?? 'A cup tie'}: {name(oppId)} play in {t.oppTier === t.braboTier ? 'your division' : tierName(t.oppTier)}{t.oppTier < t.braboTier ? `, ${t.braboTier - t.oppTier === 1 ? 'one division' : `${t.braboTier - t.oppTier} divisions`} above you` : ''}.</p>}
-      <Radar values={t.liveValues} flags={t.flags} opp={oppVals} oppInk={oppInk} oppName={oppId ? name(oppId) : undefined} fog={fog} inked pulse={pulse} size={300} label="Tonight’s shape so far" motionId={`today-radar:${t.date}`} />
-      {paceSum(t) && <PaceSumView p={paceSum(t)!} />}
-      {threat && oppId && <p className="tm-ln"><b style={{ color: oppInk }}>{name(oppId)}</b> {threat.kind === 'strong' ? 'are strong on' : 'lead you on'} <b style={{ color: AXIS_INK[threat.axis] }}>{threat.axis}</b>. {threat.answer}</p>}
-      {t.fixtures.length > 1 ? (
-        <div className="tm-night">
-          <h3 className="tm-h">{t.fixtures.length === 2 ? 'Two' : t.fixtures.length} matches tonight</h3>
-          {t.fixtures.map((x, i) => {
-            const c = chanceFor(x, chances ?? []);
-            return (
-              <div key={`${x.comp}:${x.opp}:${i}`} className="tm-nf">
-                <p className="tm-vsx">{x.opp ? <><Art svg={clubCrest(clubById(x.opp), 22)} /><b style={{ color: inkOf(x.opp) }}>{name(x.opp)}</b></> : <b>Drawn on the night</b>}</p>
-                <p className="tm-ln">{x.round ?? x.label}{x.opp ? ` · ${x.braboHome ? 'home' : 'away'}` : ''}</p>
-                {c && x.opp && <ChanceBar c={c} oppName={short(x.opp)} oppId={x.opp} date={t.date} values={t.liveValues} />}
-              </div>
-            );
-          })}
-          <p className="tm-ln">One shape plays {t.fixtures.length === 2 ? 'both' : 'them all'}. Each has its own chance.</p>
-        </div>
-      ) : chance && oppId && <ChanceBar c={chance} oppName={short(oppId)} oppId={oppId} date={t.date} values={t.liveValues} />}
-      {lead && oppVals && oppId && (
-        <div className="tm-ahead">
-          <p className="tm-at"><b style={{ color: AXIS_INK[lead] }}>{lead}</b><span>takes you ahead</span></p>
-          <p className="tm-cv"><span>You <b className={`tn ${valueTier(t.liveValues[lead])}`}>{t.liveValues[lead]}</b></span><span>{short(oppId)} <b className={`tn ${valueTier(oppVals[lead])}`}>{oppVals[lead]}</b></span></p>
-        </div>
-      )}
-      {t.respond && <p className="tm-ln"><b className="tm-back">The dressing room responds.</b> After last night’s defeat, +1 tonight on <b style={{ color: AXIS_INK[t.respond] }}>{t.respond}</b>.</p>}
-      {t.lowLog && <p className="tm-ln"><b className="tm-back">Low-log week.</b> Medicines and <b style={{ color: AXIS_INK[t.lowLog] }}>{t.lowLog}</b> are all that’s needed; the rest plays at your typical level.</p>}
-      {(['Power', 'Pace'] as const).some((a) => t.condition[a] < 80) && (
-        <p className="tm-ln"><b>Squad condition:</b> {(['Power', 'Pace'] as const).filter((a) => t.condition[a] < 80).map((a) => `${a} ${t.condition[a]}%`).join(', ')}. Low condition lowers tonight’s ceiling, never your logged numbers. Rest and a full night refill it.</p>
-      )}
-      {t.comeback && <p className="tm-ln"><b className="tm-back">Comeback lift.</b> A full day after a gap: +1 tonight on your weakest logged axis.</p>}
-      {noData.length > 0 && <p className="tm-ln"><b className="tm-fog">{noData.join(' and ')} {noData.length === 1 ? 'is' : 'are'} in fog.</b> No data, so {noData.length === 1 ? 'it plays' : 'they play'} as an even 10.</p>}
-      {unlogged.length > 0 && <p className="tm-ln"><b className="tm-fog">{unlogged.join(' and ')} {unlogged.length === 1 ? 'is' : 'are'} not logged yet.</b> Left in fog, {unlogged.length === 1 ? 'it plays' : 'they play'} low and unpredictable tonight.</p>}
+    <MatchCard
+      title={`${oppId ? name(oppId) : 'Drawn on the night'} (${f.braboHome ? 'H' : 'A'}) · 4 am`}
+      pct={pct}
+      inks={[BRABO_INK, DRAW_INK, lossInkOf(oppId)]}
+      fogLine={fogLine(noData, unlogged)}
+      notes={[
+        others.length ? `Also tonight: ${others.map((x) => (x.opp ? name(x.opp) : x.round ?? x.label)).join(', ')}. One shape plays ${others.length === 1 ? 'both' : 'them all'}.` : '',
+        t.respond ? `The dressing room responds: +1 tonight on ${t.respond}.` : '',
+        t.comeback ? 'Comeback lift: +1 tonight on your weakest logged axis.' : '',
+        t.lowLog ? `Low-log week: medicines and ${t.lowLog} are all that’s needed.` : '',
+        (['Power', 'Pace'] as const).some((x) => t.condition[x] < 80) ? `Squad condition: ${(['Power', 'Pace'] as const).filter((x) => t.condition[x] < 80).map((x) => `${x} ${t.condition[x]}%`).join(', ')}.` : '',
+      ].filter(Boolean)}
+      radar={<Radar values={t.liveValues} flags={t.flags} opp={oppVals} oppInk={oppInk} oppName={oppId ? name(oppId) : undefined} fog={fog} inked pulse={pulse} size={300} label="Tonight’s shape so far" motionId={`today-radar:${t.date}`} />}
+    >
       {moment && oppVals && oppId && (
         <button type="button" className="tm-moment" key={moment.id} style={{ '--ax': AXIS_INK[moment.axis] } as React.CSSProperties} onClick={() => setMoment(null)} aria-live="assertive">
           <span className="tm-burst" aria-hidden="true" />
@@ -230,7 +207,35 @@ export function TonightShape({ t, stadium, buzzOn, reel }: { t: Tonight; stadium
           <small>Tap to carry on</small>
         </button>
       )}
-    </section>
+    </MatchCard>
+  );
+}
+
+/** "Power in fog: no data", "Rest not logged yet": the shape's fog in one line. */
+export function fogLine(noData: Axis[], unlogged: Axis[]): string | undefined {
+  const parts = [noData.length ? `${noData.join(' and ')} in fog: no data` : '', unlogged.length ? `${unlogged.join(' and ')} not logged yet` : ''].filter(Boolean);
+  return parts.length ? `${parts.join('. ')}.` : undefined;
+}
+
+/**
+ * Tonight's match on Home (board 6 `h6-c`): one panel. The header names the opponent and kick-off with the win chance as
+ * its chip; then win, draw and loss as numbers, the shape so far, and only the notes that change tonight.
+ */
+export function MatchCard({ title, pct, inks, fogLine: fl, notes, radar, children }: { title: string; pct?: [number, number, number]; inks: [string, string, string]; fogLine?: string; notes: string[]; radar: React.ReactNode; children?: React.ReactNode }) {
+  return (
+    <TodayPanel id="match" title={title} chip={pct ? `${pct[0]}% win` : undefined} chipInk={inks[0]} className="tm-card">
+      {pct && (
+        <div className="tm-pcts" role="group" aria-label={`Tonight’s chance: win ${pct[0]} in 100, draw ${pct[1]}, loss ${pct[2]}`}>
+          {(['win', 'draw', 'loss'] as const).map((w, i) => (
+            <span key={w} className="tm-pct" aria-hidden="true"><b className="tn" style={{ color: inks[i] }}>{pct[i]}%</b>{w}</span>
+          ))}
+        </div>
+      )}
+      <p className="tm-shapeh"><b>Tonight’s shape</b>{fl && <span> · {fl}</span>}</p>
+      <div className="tm-radar">{radar}</div>
+      {notes.map((n) => <p key={n} className="tm-note">{n}</p>)}
+      {children}
+    </TodayPanel>
   );
 }
 
@@ -240,7 +245,7 @@ function FlyLayer({ flies }: { flies: Fly[] }) {
   useEffect(() => {
     const next: Record<number, { x: number; y: number }> = {};
     for (const f of flies) {
-      const el = document.querySelector(`.tm-shape .lab[data-axis="${f.axis}"]`) ?? document.querySelector('.tm-shape');
+      const el = document.querySelector(`.tm-card .lab[data-axis="${f.axis}"]`) ?? document.querySelector('.tm-card');
       const r = el?.getBoundingClientRect();
       if (r) next[f.id] = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     }
