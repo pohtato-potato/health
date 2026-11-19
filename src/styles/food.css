@@ -79,12 +79,43 @@ html.contrast .fd-cal .ok { background: transparent; border-width: 3px; }
    how rested in five even boxes, the pick lit in the action colour; the sleepy window; the weigh-in in a gold panel;
    then where today, the questions, the checklist; "Save the morning" glows at the bottom of the sheet, in reach. */
 .ml-sheet { display: flex; flex-direction: column; gap: 10px; }
-.ml-sleep { gap: 8px; }
-.ml-wheel { align-items: stretch; padding: 10px 10px 8px; gap: 0; }
-.ml-wheel > .col { align-items: flex-start !important; }
-.ml-wheel > .col > .t12 { font-size: 14px; color: color-mix(in srgb, var(--ink) 26%, #e4e0ee); }
-.ml-wheel .wheel-row.on, .ml-wheel .wheel-row[aria-selected='true'] { font-family: var(--serif); color: var(--ink); }
-.ml-wheel > .k-q { font-size: 14px; }
+/* The night dial (board 5 s5-a): moon at lights out, sun at waking, the arc between, the hours in the middle. */
+.ml-sleephead { align-items: center; }
+.ml-sleephead .k-sect { margin: 0; }
+.ml-pledged { font-size: 14px; text-align: center; }
+.nd { display: flex; flex-direction: column; align-items: center; gap: 10px; --nd-moon: var(--sleep); --nd-sun: var(--k-gold); }
+.nd-dial { display: block; max-width: 100%; height: auto; touch-action: none; overflow: visible; }
+.nd-track { fill: none; stroke: rgba(237, 230, 218, 0.1); stroke-width: 18; }
+.nd-tick { stroke: rgba(237, 230, 218, 0.4); stroke-width: 2; stroke-linecap: round; }
+.nd-hr { fill: var(--k-quiet); font: 600 14px var(--sans); }
+.nd-arc { fill: none; stroke: var(--nd-moon); stroke-width: 18; stroke-linecap: round; filter: drop-shadow(0 0 8px var(--nd-moon)); animation: nd-draw 900ms cubic-bezier(.2, .8, .2, 1) both; }
+.nd-arc.unset { opacity: 0.35; filter: none; animation: none; }
+.nd-h { cursor: grab; outline: none; }
+.nd-dial.dragging .nd-h { cursor: grabbing; }
+.nd-h .nd-hbg, .nd-h .nd-hbg-fill { stroke: #16142e; stroke-width: 3; }
+.nd-asleep .nd-hbg, .nd-asleep .nd-hbg-fill { fill: var(--nd-moon); }
+.nd-asleep .nd-hbg-fill { stroke: none; }
+.nd-woke .nd-hbg { fill: var(--nd-sun); }
+.nd-cut { fill: #16142e; }
+.nd-ray { stroke: #16142e; stroke-width: 2.5; stroke-linecap: round; }
+.nd-woke { transform-box: fill-box; transform-origin: center; animation: nd-pop 420ms 700ms cubic-bezier(.3, 1.6, .5, 1) both; }
+.nd-h.unset { opacity: 0.5; }
+.nd-h:focus-visible .nd-hbg { stroke: var(--k-cream); stroke-width: 4; }
+.nd-len { fill: var(--k-cream); font: 600 28px var(--serif); font-variant-numeric: tabular-nums; }
+.nd-lenl { fill: var(--k-quiet); font: 600 14px var(--sans); }
+.nd-times { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+.nd-time { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 8px; border-radius: 16px; background: rgba(237, 230, 218, 0.06); }
+.nd-tl { font: 700 14px var(--sans); }
+.nd-t-asleep .nd-tl { color: var(--nd-moon); }
+.nd-t-woke .nd-tl { color: var(--nd-sun); }
+.nd-time b { font: 600 22px var(--serif); color: var(--k-cream); white-space: nowrap; }
+.nd-nudge { display: flex; gap: 6px; }
+.nd-nudge button { min-width: 52px; min-height: 44px; border-radius: 12px; border: 1.5px solid rgba(237, 230, 218, 0.5); background: transparent; color: var(--k-cream); font: 700 15px var(--sans); cursor: pointer; }
+@keyframes nd-draw { from { stroke-dashoffset: var(--len); } }
+@keyframes nd-pop { from { transform: scale(0); } }
+@media (prefers-reduced-motion: reduce) { .nd-arc, .nd-woke { animation: none; } }
+html.contrast .nd-arc { filter: none; }
+html.contrast .nd-track { stroke: rgba(237, 230, 218, 0.25); }
 .ml-same { align-self: flex-start; align-items: center; }
 .ml-same.on { background: color-mix(in srgb, var(--sleep) 30%, transparent); box-shadow: inset 0 0 0 2px var(--sleep); }
 .ml-sheet .k-sect { margin-top: 6px; }

@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { addDays } from '../domain/dates';
-import { fmtDayLong, fmtDuration, fmtInt, fmtTime } from '../domain/format';
+import { fmtDayLong, fmtInt, fmtTime } from '../domain/format';
 import { homePlace } from '../domain/places';
-import { NIGHT_FROM, sleepMinutes, sleepWheelItems } from '../domain/rings';
 import type { Day, MuscleId, Settings } from '../domain/types';
 import { saveMorningLog, setTick } from '../db/actions';
 import { isMorningSlot } from '../domain/morningLog';
@@ -14,7 +13,7 @@ import { DateChip, useLogDate } from '../ui/DateChip';
 import { closeSheet } from '../router';
 import { IntField } from '../ui/controls';
 import { Dial } from '../ui/Dial';
-import { Wheel } from '../ui/Wheel';
+import { NightDial } from '../ui/NightDial';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
 import { checklistSlots, morningQuestions, swapSentence } from '../state/derived';
@@ -68,8 +67,6 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
   const body = useBody();
   const trendNow = weight !== undefined ? weightTrend([...before.filter((d) => d.weightKg !== undefined).map((d) => ({ date: d.date, kg: d.weightKg! })), { date: today, kg: weight }]).pop()?.trend : undefined;
 
-  const sleepLen = asleep !== undefined && woke !== undefined ? sleepMinutes(asleep, woke) : undefined;
-
   const sameAsYesterday = () => {
     if (!lastSleep) return;
     setAsleep(lastSleep.asleep);
@@ -115,22 +112,17 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
   return (
     <Sheet title="Good morning" sub={fmtDayLong(today)}>
       <div className="ml-sheet">
-        <div className="grid2 ml-sleep">
-          <div className="k-panel ml-wheel" style={{ '--ink': 'var(--protein)' } as React.CSSProperties}>
-            {/* Both ends take any time of day: a sleepless night can mean asleep at 7 am and awake at 2 pm. */}
-            <SleepWheel label="Lights out" value={asleep} hint={lastSleep?.asleep ?? 23 * 60} from={ASLEEP_FROM} onChange={editAsleep} />
-            <span className="k-q tn">{typeof pledged === 'number' ? `pledged ${clockOf(pledged)}` : ' '}</span>
-          </div>
-          <div className="k-panel ml-wheel" style={{ '--ink': 'var(--sleep)' } as React.CSSProperties}>
-            <SleepWheel label="Woke" value={woke} hint={lastSleep?.woke ?? 7 * 60} from={WOKE_FROM} onChange={editWoke} />
-            <span className="k-q tn">{sleepLen !== undefined ? `${fmtDuration(sleepLen).replace(/ m$/, '')} asleep` : ' '}</span>
-          </div>
+        <div className="k-row ml-sleephead">
+          <h3 className="k-sect">Sleep</h3>
+          {lastSleep && (
+            <button type="button" className={`af-pill ml-same${carried ? ' on' : ''}`} aria-pressed={carried} onClick={sameAsYesterday}>
+              Same as yesterday
+            </button>
+          )}
         </div>
-        {lastSleep && (
-          <button type="button" className={`af-pill ml-same${carried ? ' on' : ''}`} aria-pressed={carried} onClick={sameAsYesterday}>
-            Same as yesterday
-          </button>
-        )}
+        {/* Both ends take any time of day: a sleepless night can mean asleep at 7 am and awake at 2 pm. */}
+        <NightDial asleep={asleep} woke={woke} hintAsleep={lastSleep?.asleep ?? 23 * 60} hintWoke={lastSleep?.woke ?? 7 * 60} onAsleep={editAsleep} onWoke={editWoke} />
+        {typeof pledged === 'number' && <span className="k-q tn ml-pledged">Pledged lights out at {clockOf(pledged)}</span>}
 
         <h3 className="k-sect">How rested?</h3>
         <div className="ml-seg" role="radiogroup" aria-label="How rested">
@@ -264,32 +256,5 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
         </div>
       </div>
     </Sheet>
-  );
-}
-
-
-function fmtClock(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  return `${h % 12 || 12}:${String(minutes % 60).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`;
-}
-
-/**
- * One wheel of times in five-minute steps. Last night's time sits in the middle, greyed,
- * until the wheel is touched: nothing is saved unless it is set.
- */
-/** The Asleep wheel runs a full day from 18:00 (evening first); the Woke wheel a full day from midnight. */
-const ASLEEP_FROM = NIGHT_FROM;
-const WOKE_FROM = 0;
-function SleepWheel({ label, value, hint, from, onChange }: { label: string; value: number | undefined; hint: number; from: number; onChange: (m: number) => void }) {
-  const items = sleepWheelItems(from);
-  const norm = (m: number) => (m < from ? m + 1440 : m);
-  const shown = norm(value ?? hint);
-  return (
-    <div className="col" style={{ alignItems: 'center', gap: 4 }}>
-      <span className="t12 q">{label}</span>
-      <div style={{ opacity: value === undefined ? 0.45 : 1 }}>
-        <Wheel width={110} label={label} items={items} value={items.reduce((best, m) => (Math.abs(m - shown) < Math.abs(best - shown) ? m : best), items[0])} format={(m) => fmtClock(m % 1440)} onChange={(m) => onChange(m % 1440)} />
-      </div>
-    </div>
   );
 }
