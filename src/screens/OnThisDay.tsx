@@ -125,7 +125,12 @@ export interface MemoryRow { name: string; then: string; now: string }
  */
 export function MemoryCard({ when, dateLabel, line, rows, extras, open, onToggle, onHide }: { when: string; dateLabel: string; line: string; rows: MemoryRow[]; extras: string[]; open: boolean; onToggle: () => void; onHide?: () => void }) {
   return (
-    <TodayPanel id="onthis" title="On this day" chip={when.replace(/, on .*$/, '')} className="otd">
+    <TodayPanel id="onthis" title="On this day" chip={when.replace(/, on .*$/, '')} className="otd" action={onHide && (
+      <button type="button" className="otd-close" onClick={onHide}>
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3 L13 13 M13 3 L3 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+        Close
+      </button>
+    )}>
       <div className="otd-snap">
         <i className="otd-tape" aria-hidden="true" />
         <span className="otd-date">{dateLabel}</span>
@@ -142,10 +147,11 @@ export function MemoryCard({ when, dateLabel, line, rows, extras, open, onToggle
         </dl>
       )}
       {open && extras.map((x) => <p key={x} className="otd-x">{x}</p>)}
-      <div className="otd-acts">
-        {extras.length > 0 && <button type="button" className="otd-more" aria-expanded={open} onClick={onToggle}>{open ? 'Less' : 'Remember more'}</button>}
-        {onHide && <button type="button" className="otd-more otd-hide" onClick={onHide}>Hide for today</button>}
-      </div>
+      {extras.length > 0 && (
+        <div className="otd-acts">
+          <button type="button" className="otd-more" aria-expanded={open} onClick={onToggle}>{open ? 'Less' : 'Remember more'}</button>
+        </div>
+      )}
     </TodayPanel>
   );
 }

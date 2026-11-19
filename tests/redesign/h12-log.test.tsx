@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { LogBuckets, MealsPanel, type Buckets } from '../../src/screens/today/LogBelow';
 
 const noop = () => {};
-const on = { food: noop, morning: noop, checklist: noop, steps: noop, session: noop, close: noop, more: noop };
+const on = { food: noop, morning: noop, checklist: noop, steps: noop, session: noop, more: noop };
 // Invented numbers.
 const full: Buckets = {
   food: { kcal: 1240, aim: 1900 },
@@ -12,14 +12,15 @@ const full: Buckets = {
   checklist: { done: 2, of: 4 },
   steps: { n: 6420, of: 10000 },
   session: { name: 'Session B', done: false },
-  close: { rings: [1, 0.6, 1, 0.3], closed: false },
 };
 const log = (b: Buckets) => renderToStaticMarkup(<LogBuckets b={b} on={on} />);
 
 describe('Logging, each bucket its own fill (h12-log)', () => {
   it('gives every bucket its own fill style', () => {
     const html = log(full);
-    for (const k of ['k-food', 'k-morning', 'k-check', 'k-steps', 'k-session', 'k-close']) expect(html).toContain(`td-bk${k === 'k-session' || k === 'k-close' ? ' wide' : ''} ${k}`);
+    for (const k of ['k-food', 'k-morning', 'k-check', 'k-steps', 'k-session']) expect(html).toContain(`td-bk${k === 'k-session' ? ' wide' : ''} ${k}`);
+    // Close the day is the moon button at the end of the page, not a tile (owner, 19 Nov).
+    expect(html).not.toContain('k-close');
     const css = readFileSync('src/styles/today.css', 'utf8');
     for (const s of ['.td-bk-fill {', '.td-bk .sun {', '.td-bk .box i {', '.td-bk .feet i {', '.td-bk .bar i {', '.td-bk .rings .on {']) expect(css).toContain(s);
   });
@@ -30,7 +31,6 @@ describe('Logging, each bucket its own fill (h12-log)', () => {
     expect(html).toContain('7:12 am<small>logged</small>');
     expect(html).toContain('2<small>of 4 ticked</small>');
     expect(html).toContain('6,420<small>of 10k</small>');
-    expect(html).toContain('2 of 4<small>rings closed</small>');
   });
 
   it('fills the organiser one slot per item, a pill per tick, and walks the steps as far as they reach', () => {
@@ -60,7 +60,7 @@ describe('Logging, each bucket its own fill (h12-log)', () => {
   });
 
   it('renders with no data: dashes, no pills, no prints, no session', () => {
-    const html = log({ food: { kcal: 0, aim: 1900 }, morning: {}, checklist: { done: 0, of: 0 }, steps: { of: 10000 }, close: { rings: [0, 0, 0, 0], closed: false } });
+    const html = log({ food: { kcal: 0, aim: 1900 }, morning: {}, checklist: { done: 0, of: 0 }, steps: { of: 10000 } });
     expect(html).toContain('—<small>not yet</small>');
     expect(html).toContain('—<small>of 10k</small>');
     expect(html).not.toContain('k-session');

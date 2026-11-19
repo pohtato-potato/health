@@ -57,11 +57,12 @@ describe('On this day (h10-onthis)', () => {
     expect(memoryDates('2026-03-31').map((m) => m.date)).toEqual(['2025-03-31', '2025-12-31']);
   });
 
-  it('sits in Home’s panel style and can be hidden for the day', () => {
+  it('sits in Home’s panel style with a Close button in its header', () => {
     const html = card({ onHide: () => {} });
     expect(html).toMatch(/<section class="td-panel otd"/);
-    expect(html).toMatch(/<button type="button" class="otd-more otd-hide">Hide for today<\/button>/);
-    expect(card()).not.toContain('Hide for today');
+    expect(html).toMatch(/<header class="td-panel-bar">[\s\S]*<button type="button" class="otd-close">[\s\S]*Close<\/button><\/header>/);
+    expect(card()).not.toContain('otd-close');
+    expect(readFileSync('src/styles/today.css', 'utf8')).toMatch(/\.otd-close \{[^}]*min-height: 44px/);
   });
 
   it('renders with no data: no rows and no extras still says the day', () => {

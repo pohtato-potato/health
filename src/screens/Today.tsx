@@ -13,7 +13,6 @@ import { db } from '../db/db';
 import { chipFor } from '../domain/statusChip';
 import { weighInToCome } from '../domain/morningLog';
 import { OfficeUsual } from './today/OfficeUsual';
-import { DueCard, dueToday } from './today/DueCard';
 import { bodyTileWords } from '../domain/bodyLog';
 import { prefOn } from '../domain/types';
 import { kmFromSteps } from '../domain/walk';
@@ -24,8 +23,6 @@ import { useRingMoment } from './today/useRingMoment';
 import { RING_WORD, ringsGold } from '../domain/ringMoments';
 import { lookOf } from '../domain/themes';
 import { useLiveTheme } from '../ui/live/useLiveTheme';
-import { Panel } from '../ui/kit/Kit';
-import { Icon } from '../ui/Icon';
 import { MEAL_NAMES } from '../domain/types';
 import { closedWords } from './today/TodayLine';
 import { TodayLayout, panelVars } from './today/TodayLayout';
@@ -224,7 +221,6 @@ export function Today() {
           )}
         </>
       }
-      due={<DueCard due={dueToday({ today, settings, checkins: checkins.map((c) => c.date), measurements })} />}
       banner={<><OfficeUsual /><Banners noMorning={morningOpen} /><OnThisDayCard /></>}
       line={
         <TodayLine
@@ -319,15 +315,10 @@ export function Today() {
               checklist: { done: slots.filter((x) => day?.ticks?.[x.key] !== undefined).length, of: slots.length },
               steps: { n: day?.steps, of: stepsGoal(targets, totals.eased) },
               session: up || trainedToday.length ? { name: trainedToday.length ? findSession(settings.plan!, trainedToday[0].session)?.name ?? 'Session' : sessionName, done: trainedToday.length > 0 } : undefined,
-              close: { rings: [rings.kcal.progress, rings.protein.progress, rings.steps.progress, rings.sleep.progress].slice(0, rings.of), closed: !!(day?.foodDone || day?.partial) },
             }}
-            on={{ food: () => go('/food'), morning: () => openSheet('morning'), checklist: () => document.getElementById('td-panel-checklist')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), steps: () => openSheet('steps'), session: () => go('/train'), close: () => go('/close'), more: () => openSheet('more') }}
+            on={{ food: () => go('/food'), morning: () => openSheet('morning'), checklist: () => document.getElementById('td-panel-checklist')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), steps: () => openSheet('steps'), session: () => go('/train'), more: () => openSheet('more') }}
           />
           <LogSearch foods={foods} onAction={(a) => (a.sheet ? openSheet(a.sheet) : go(a.route!))} onFood={(f) => openSheet('addfood', { food: f.id })} onQuick={() => openSheet('quick')} />
-          <Panel ink="var(--k-pearl)" flat onClick={() => go('/body')} label={`Body log: ${bodyTileWords(body, today)}`}>
-            <Icon name="body" size={26} color="var(--k-pearl)" />
-            <span className="k-col"><b>Body log</b><span className="k-q">{bodyTileWords(body, today)}</span></span>
-          </Panel>
           {slots.length > 0 && (
             <>
               <ChecklistPanel items={slots.map((x) => ({ key: x.key, name: slots.filter((y) => y.itemId === x.itemId).length > 1 ? `${x.name} · ${x.slot}` : x.name, on: day?.ticks?.[x.key] !== undefined, at: day?.ticks?.[x.key] }))} onToggle={(key, on) => { const slot = slots.find((y) => y.key === key)?.slot ?? 'Daily'; const t = tickFor(today, slot, settings, day, on, Date.now()); void setTick(today, key, on, t.at, t.recordedLate); }} />

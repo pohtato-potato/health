@@ -14,6 +14,8 @@ describe('Home after the owner’s review (h6-c)', () => {
     expect(src).not.toContain('<WalkTop');
     expect(src).not.toContain('Quick add');
     expect(src).not.toContain('<NextUpCard');
+    expect(src).not.toContain('<DueCard');
+    expect(src).not.toContain('Body log');
     const html = renderToStaticMarkup(<TodayLine head="Today" level={1} sub="Thu 1 Jan · Home" text="" kind="glance" clock="9:00 am" />);
     expect(html).toMatch(/<h1 class="td-head">Today<\/h1>[\s\S]*<p class="td-sub">Thu 1 Jan · Home<\/p>/);
   });

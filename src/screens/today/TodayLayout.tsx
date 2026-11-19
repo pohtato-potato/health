@@ -6,7 +6,7 @@ export function panelVars(inks: readonly string[]): CSSProperties {
 }
 
 /** One of Home's panels (board six, Home C): a labelled header bar with an optional status chip, then its body. */
-export function TodayPanel({ id, title, chip, chipInk, className, children }: { id: string; title: string; chip?: string; chipInk?: string; className?: string; children: ReactNode }) {
+export function TodayPanel({ id, title, chip, chipInk, className, action, children }: { id: string; title: string; chip?: string; chipInk?: string; className?: string; /** A button at the end of the header bar. */ action?: ReactNode; children: ReactNode }) {
   return (
     <section className={`td-panel${className ? ` ${className}` : ''}`} aria-labelledby={`td-panel-${id}`}>
       <header className="td-panel-bar">
@@ -16,6 +16,7 @@ export function TodayPanel({ id, title, chip, chipInk, className, children }: { 
             {chip}
           </span>
         )}
+        {action}
       </header>
       <div className="td-panel-body">{children}</div>
     </section>

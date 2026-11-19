@@ -34,10 +34,13 @@ describe('momentFor: the moment card rule', () => {
     expect(at({ minutes: hm(19, 30), proteinGapG: 0 })).not.toBe('protein');
     expect(at({ minutes: hm(19, 30), proteinGapG: 22 })).toBe('protein');
   });
-  it('shows steps 11:00–19:00 when steps are left', () => {
-    expect(at({ minutes: hm(10, 59), stepsLeft: 3880 })).not.toBe('steps');
-    expect(at({ minutes: hm(11), stepsLeft: 3880 })).toBe('steps');
-    expect(at({ minutes: hm(19), stepsLeft: 3880 })).toBe('glance');
+  it('never makes Next about steps (owner, 19 Nov): steps left fall back to the meal glance', () => {
+    expect(at({ minutes: hm(11), stepsLeft: 3880 })).toBe('glance');
+    expect(at({ minutes: hm(14), stepsLeft: 3880, stepsKnown: false })).toBe('glance');
+  });
+  it('shows the protein still to go from 11:00', () => {
+    expect(at({ minutes: hm(10, 59), proteinGapG: 40 })).toBe('glance');
+    expect(at({ minutes: hm(11), proteinGapG: 40 })).toBe('protein');
   });
   it('an empty day falls back to glance', () => {
     expect(at({})).toBe('glance');

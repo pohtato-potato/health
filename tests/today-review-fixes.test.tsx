@@ -50,8 +50,7 @@ describe('final review fixes', () => {
 
   it('Important 5: steps not logged never show as a deficit', () => {
     const base = { minutes: 14 * 60, morningDone: true, perfect: false, dayClosed: false, proteinGapG: 0, stepsLeft: 8000 };
-    expect(momentFor({ ...base, stepsKnown: false })).toBe('stepsMissing');
-    expect(momentFor({ ...base, stepsKnown: true })).toBe('steps');
+    expect(momentFor({ ...base, stepsKnown: false })).toBe('glance');
     const html = renderToStaticMarkup(<MomentCard kind="stepsMissing" data={{ closedRings: 0, proteinGapG: 0, gapFoods: '', addLabel: '', stepsLeft: 8000 }} actions={{ logMorning() {}, closeDay() {}, addGap() {}, typeSteps() {} }} />);
     expect(html).toContain('Steps not logged yet');
     expect(html).not.toContain('8,000');
