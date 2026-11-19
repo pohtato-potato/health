@@ -47,6 +47,18 @@ export function tierLine(shut: Record<RingKey, boolean>, of: 3 | 4, short: { kca
   return `${RING_NAME[closed[0]]} and ${RING_NAME[closed[1]].toLowerCase()}`;
 }
 
+/**
+ * A breakout (board 5 `c5-break`): the same card with a coloured ribbon under the header, in words. One at most:
+ * a gym debut, then a record, then a comeback after an open day, then a rest day.
+ */
+export function breakout(i: { debut: boolean; records: { line: string }[]; prevOpen: boolean; status?: string }): { text: string; ink: string; foot: string } | undefined {
+  if (i.debut) return { text: 'Gym debut', ink: 'var(--dc-plated)', foot: 'Only ever one of these' };
+  if (i.records.length) return { text: 'Record night', ink: 'var(--dc-record)', foot: i.records[0].line };
+  if (i.prevOpen) return { text: 'Comeback', ink: 'var(--dc-comeback)', foot: 'Closed after an open day' };
+  if (i.status === 'sick' || i.status === 'injured') return { text: 'Rest day', ink: 'var(--dc-closed)', foot: `Marked ${i.status}; it still counts` };
+  return undefined;
+}
+
 const RING_INK = ['var(--kcal)', 'var(--protein)', 'var(--steps)', 'var(--sleep)'];
 
 /** The day's rings, small: one per ring, closed ones bright. Decoration for the count said in words. */

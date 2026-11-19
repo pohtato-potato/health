@@ -13,7 +13,7 @@ import { spokenLine } from '../domain/voice';
 import { kmFromSteps, positionAt } from '../domain/walk';
 import { back, go } from '../router';
 import { storyWeek } from '../domain/weekly';
-import { DayCard, dayTier, tierLine, type DayStat } from './close/DayCard';
+import { DayCard, breakout, dayTier, tierLine, type DayStat } from './close/DayCard';
 import { nextStopLine } from '../walk/lines';
 import { dayWalk } from '../walk/dayWalk';
 import { stepsByDay } from '../walk/runs';
@@ -91,6 +91,13 @@ export function DayClosed({ date, summary: s, onDone, opp }: { date: string; sum
   const sessionName = done.length ? findSession(settings.plan!, done[0].session)?.name ?? `Session ${done[0].session}` : undefined;
   const ringList = [rings.kcal.progress, rings.protein.progress, rings.steps.progress, rings.sleep.progress].slice(0, rings.of);
   const where = place.kind === 'home' ? 'at home' : place.kind === 'office' ? 'at the office' : `at ${place.name}`;
+  const prevDay = days.find((d) => d.date === addDays(date, -1));
+  const brk = breakout({
+    debut: done.length > 0 && !sessions.some((x) => x.status === 'done' && x.date < date),
+    records: records.map((r) => ({ line: r.line })),
+    prevOpen: !!prevDay && !(prevDay.foodDone || prevDay.partial),
+    status: day?.status,
+  });
   const stats: DayStat[] = [
     { name: 'Calories', value: fmtInt(s.kcal), ink: 'var(--kcal)' },
     { name: 'Protein', value: `${s.protein} g`, ink: 'var(--protein)' },
@@ -101,7 +108,7 @@ export function DayClosed({ date, summary: s, onDone, opp }: { date: string; sum
   return (
     <div className="page dayclosed closed-sky">
       <h1 className="dc-h1">{dayName}’s card</h1>
-      <DayCard reveal tier={dayTier(rings.closed, rings.of)} dateLabel={`${parseDay(date).getDate()} ${month.slice(0, 3)}`} title={`${dayName} ${where}`} rings={ringList} stats={stats} foot={opp ? `Shape sealed for ${opp}` : tierLine({ kcal: rings.kcal.closed, protein: rings.protein.closed, steps: rings.steps.closed, sleep: rings.sleep.closed }, rings.of, { kcal: rings.kcal.state, proteinG: targets.proteinG - s.protein, steps: s.stepsLeft ?? targets.steps, sleepMin: targets.sleepMin - rings.sleep.value })} />
+      <DayCard reveal tier={dayTier(rings.closed, rings.of)} dateLabel={`${parseDay(date).getDate()} ${month.slice(0, 3)}`} title={`${dayName} ${where}`} rings={ringList} stats={stats} ribbon={brk} foot={brk ? brk.foot : opp ? `Shape sealed for ${opp}` : tierLine({ kcal: rings.kcal.closed, protein: rings.protein.closed, steps: rings.steps.closed, sleep: rings.sleep.closed }, rings.of, { kcal: rings.kcal.state, proteinG: targets.proteinG - s.protein, steps: s.stepsLeft ?? targets.steps, sleepMin: targets.sleepMin - rings.sleep.value })} />
       {rings.perfect && <p className="k-q dc-perfect">A perfect day. Its star is in {month}’s sky.</p>}
       <div className="dc-acts">
         <button type="button" className="k-act quiet" onClick={() => go('/reports/week', { w: storyWeek(date) })}>

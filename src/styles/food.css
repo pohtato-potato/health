@@ -219,7 +219,7 @@ html.contrast .mlg-fill { filter: none; }
 
 /* The closed day's card (board 6 c6-a, from round three; tiers c6-tiers). Each tier is a colour and a name. The card
    flips in once and the rings draw in once it lands; the shine runs across it on a slow loop (decoration). */
-:root { --dc-closed: #c9c3d6; --dc-first: #ff9fb0; --dc-clean: #4fe0d0; --dc-even: #b9a0ff; --dc-plated: #ffc94d; --dc-train: #ff9a76; }
+:root { --dc-closed: #c9c3d6; --dc-first: #ff9fb0; --dc-clean: #4fe0d0; --dc-even: #b9a0ff; --dc-plated: #ffc94d; --dc-train: #ff9a76; --dc-record: #ff7a3d; --dc-comeback: #72c2ff; }
 .dc-h1 { margin: 18px 0 4px; text-align: center; font: 600 28px var(--serif); color: var(--k-cream, #f3ece0); }
 .dc { position: relative; width: min(100%, 300px); margin: 0 auto; border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 8px; border: 3px solid var(--b); overflow: hidden; color: #f3ece0; font: 400 15px/1.35 var(--sans);
   background: radial-gradient(95% 55% at 12% 0%, color-mix(in srgb, var(--b) 42%, transparent), transparent 70%), radial-gradient(85% 50% at 100% 100%, color-mix(in srgb, var(--b) 28%, transparent), transparent 70%), #1a1222;
