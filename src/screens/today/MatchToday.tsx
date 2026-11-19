@@ -24,6 +24,8 @@ import { AXIS_INK, brighten, valueTier } from '../../ui/inks';
 import { Radar } from '../football/Radar';
 import { Art, chanceFor } from '../football/Tonight';
 import { paceSum, PaceSumView } from '../football/PaceSum';
+import { ordinal } from '../../football/habitLines';
+import { position, standings } from '../../football/table';
 import '../../styles/football.css';
 
 const BRABO_INK = '#ffb15e';
@@ -77,28 +79,52 @@ export function MorningMatch({ m, save, today, more }: { m: StoredMatch; save: F
 const WORD = { W: 'Won', D: 'Drew', L: 'Lost' } as const;
 
 /**
- * After the match is watched (board five): one filled panel, tappable. Last night's result word and score in its
- * colour on the left; tonight's opponent, their crest and home or away on the right. It opens last night's match.
+ * Which two of last night's parts decided it (board 8 `s8-win`): the two highest on a win or a draw, the two lowest
+ * on a loss. Parts with no data are left out; nothing when fewer than two were played.
  */
-export function ResultRow({ m, save, today, next }: { m: StoredMatch; save: FbSave; today: DayKey; next?: { opp: string; home: boolean; round?: string } }) {
-  const mine = m.score, opp = m.opp;
-  const xg = m.events.xg;
+export function carriedLine(m: Pick<StoredMatch, 'values' | 'flags' | 'result'>): string | undefined {
+  if (!m.values) return undefined;
+  const live = AXES.filter((a) => !m.flags?.[a] && Number.isFinite(m.values[a]));
+  if (live.length < 2) return undefined;
+  const sorted = [...live].sort((x, y) => (m.result === 'L' ? m.values[x] - m.values[y] : m.values[y] - m.values[x]));
+  const two = `${sorted[0]} ${m.values[sorted[0]]} and ${sorted[1]} ${m.values[sorted[1]]}`;
+  return m.result === 'W' ? `${two} carried it` : m.result === 'D' ? `${two} held it level` : `${two} let it slip`;
+}
+
+const PTS = { W: 3, D: 1, L: 0 } as const;
+
+/**
+ * The morning after (board 8 `s8-win`), between Next and the meals: last night's result named in words, the score
+ * large between the two crests, which two parts carried it, and in the league the points and the place. The score
+ * opens last night's match; tonight's opponent sits under it.
+ */
+export function ResultRow({ m, save, today, next, pos }: { m: StoredMatch; save: FbSave; today: DayKey; next?: { opp: string; home: boolean; round?: string }; pos?: number }) {
+  const mine = m.score;
   const when = playedWhen(m, today).replace('played ', '');
-  const right = next?.opp ? next.opp : opp;
+  const night = when === 'this morning' ? 'Last night' : when[0].toUpperCase() + when.slice(1);
+  const carried = carriedLine(m);
+  const table = m.comp === 'league' ? `+${PTS[m.result]} pt${PTS[m.result] === 1 ? '' : 's'}${pos ? ` · ${ordinal(pos)}` : ''}` : undefined;
   return (
-    <button type="button" className={`k-panel k-tap flat tm-res r-${m.result}`} style={{ '--ink': '#ff9a4d' } as React.CSSProperties} onClick={() => go('/football/match', { id: m.id })}
-      aria-label={`${WORD[m.result]} ${mine[0]}–${mine[1]} against ${name(opp)}, ${when}. xG ${xg[0].toFixed(1)} to ${xg[1].toFixed(1)}.${next?.opp ? ` Tonight: ${name(next.opp)}, ${next.home ? 'at home' : 'away'}.` : ''} Open the match`}>
-      <span className="tm-rs">
-        <b className="tm-score">{WORD[m.result]} <span className="tn">{mine[0]}–{mine[1]}</span>{m.pens ? <small> ({m.pens[0]}–{m.pens[1]} pens)</small> : null}</b>
-        <span className="k-q">{when === 'this morning' ? 'last night' : when}</span>
-      </span>
-      <span className="tm-crest" aria-hidden="true"><Art svg={crest(save, right, 34)} /></span>
-      <span className="tm-vs">
-        <b style={{ color: inkOf(right) }}>{name(right)}</b>
-        <span className="k-q">{next?.opp ? `tonight, ${next.home ? 'home' : 'away'}` : `last night · ${m.round ?? 'League'}`}</span>
-      </span>
-      <svg className="k-arrow" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-    </button>
+    <section className={`k-panel flat tm-res r-${m.result}`} aria-labelledby="tm-res-h">
+      <header className="tm-res-head">
+        <h2 id="tm-res-h" className="tm-res-h">{night}</h2>
+        <span className="tm-res-word">{WORD[m.result]}</span>
+      </header>
+      <button type="button" className="tm-res-main" onClick={() => go('/football/match', { id: m.id })}
+        aria-label={`${WORD[m.result]} ${mine[0]}–${mine[1]} against ${name(m.opp)}${m.pens ? `, ${m.pens[0]}–${m.pens[1]} on penalties` : ''}. Open the match`}>
+        <span className="tm-res-crest" aria-hidden="true"><Art svg={crest(save, OWN, 40)} /></span>
+        <b className="tm-res-score tn">{mine[0]}–{mine[1]}</b>
+        <span className="tm-res-crest" aria-hidden="true"><Art svg={crest(save, m.opp, 40)} /></span>
+        <span className="tm-res-vs">{m.round ?? 'League'} · against <span style={{ color: inkOf(m.opp) }}>{name(m.opp)}</span>{m.pens ? ` · ${m.pens[0]}–${m.pens[1]} pens` : ''}</span>
+      </button>
+      {(carried || table) && (
+        <div className="tm-res-foot">
+          {carried && <span className="tm-res-why">{carried}</span>}
+          {table && <span className="tm-res-pts">{table}</span>}
+        </div>
+      )}
+      {next?.opp && <p className="tm-res-next">Tonight: {name(next.opp)}, {next.home ? 'at home' : 'away'}</p>}
+    </section>
   );
 }
 
@@ -237,7 +263,11 @@ export function MatchToday({ now, part = 'top' }: { now: number; part?: 'top' | 
     const t = await loadTonight(date);
     if (!t) return null;
     const recent = await db.fbMatches.where('date').between(addDays(date, -60), date, true, false).toArray();
-    return { t, recent: recent.sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id)) };
+    // The league place after last night (s8-win), as the Football tab's league line works it out.
+    const season = await db.fbSeasons.get(t.save.season);
+    const tier = season?.tierOf[OWN];
+    const pos = season && tier !== undefined ? position(standings(season.results[tier] ?? [], Object.keys(season.tierOf).filter((id) => season.tierOf[id] === tier), season.deductions), OWN) : undefined;
+    return { t, pos: pos || undefined, recent: recent.sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id)) };
   }, [date]);
   const [flies, setFlies] = useState<Fly[]>([]);
   const reel = (axes: Axis[]) => {
@@ -246,7 +276,7 @@ export function MatchToday({ now, part = 'top' }: { now: number; part?: 'top' | 
     window.setTimeout(() => setFlies([]), 900 + axes.length * 420);
   };
   if (!got?.t || !settings) return null;
-  const { t, recent } = got;
+  const { t, recent, pos } = got;
   // Today only ever offers last night's matches (finding 2, O42); older ones live in the calendar.
   const unwatched = recent.filter((m) => !m.watched && (m.home === OWN || m.away === OWN) && m.date === addDays(date, -1));
   const latest = recent.filter((m) => m.home === OWN || m.away === OWN).pop();
@@ -260,5 +290,5 @@ export function MatchToday({ now, part = 'top' }: { now: number; part?: 'top' | 
     );
   }
   const f = t.fixture;
-  return lead ? <MorningMatch m={lead} save={t.save} today={date} more={unwatched.length - 1} /> : latest && latest.date === addDays(date, -1) ? <ResultRow m={latest} save={t.save} today={date} next={f?.opp ? { opp: f.opp, home: f.braboHome, round: f.round } : undefined} /> : null;
+  return lead ? <MorningMatch m={lead} save={t.save} today={date} more={unwatched.length - 1} /> : latest && latest.date === addDays(date, -1) ? <ResultRow m={latest} save={t.save} today={date} pos={pos} next={f?.opp ? { opp: f.opp, home: f.braboHome, round: f.round } : undefined} /> : null;
 }
