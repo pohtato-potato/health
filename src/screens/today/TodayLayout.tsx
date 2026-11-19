@@ -6,9 +6,9 @@ export function panelVars(inks: readonly string[]): CSSProperties {
 }
 
 /** One of Home's panels (board six, Home C): a labelled header bar with an optional status chip, then its body. */
-export function TodayPanel({ id, title, chip, chipInk, children }: { id: string; title: string; chip?: string; chipInk?: string; children: ReactNode }) {
+export function TodayPanel({ id, title, chip, chipInk, className, children }: { id: string; title: string; chip?: string; chipInk?: string; className?: string; children: ReactNode }) {
   return (
-    <section className="td-panel" aria-labelledby={`td-panel-${id}`}>
+    <section className={`td-panel${className ? ` ${className}` : ''}`} aria-labelledby={`td-panel-${id}`}>
       <header className="td-panel-bar">
         <h2 className="td-panel-title" id={`td-panel-${id}`}>{title}</h2>
         {chip && (

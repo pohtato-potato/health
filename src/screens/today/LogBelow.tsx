@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { fmtTime } from '../../domain/format';
 import { TodayPanel } from './TodayLayout';
 import type { FoodEntry, Meal } from '../../domain/types';
@@ -126,13 +126,33 @@ function HoldRow({ item, hint, onToggle }: { item: CheckItem; hint: boolean; onT
   );
 }
 
-/** The checklist panel on Home: a header bar with the count done, then a row per dose, ticked with a held press. */
+const WORDS = ['', '', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+/** The chip when every item is done (board 7 `k7-all`): "All six", "All 14", or "Done" for a single item. */
+export const allWord = (n: number) => (n === 1 ? 'Done' : `All ${WORDS[n] ?? n}`);
+
+/**
+ * The checklist panel on Home: a header bar with the count done, then a row per dose, ticked with a held press.
+ * When the last one is ticked (board 7 `k7-all`) the edge turns gold, the chip says "All six" and a gold light runs
+ * down the list once. Gold is kept for this state only.
+ */
 export function ChecklistPanel({ items, onToggle }: { items: CheckItem[]; onToggle: (key: string, on: boolean) => void }) {
-  if (!items.length) return null;
   const done = items.filter((i) => i.on).length;
+  const all = items.length > 0 && done === items.length;
+  const [sweep, setSweep] = useState(false);
+  const was = useRef(all);
+  useEffect(() => {
+    if (all && !was.current) {
+      setSweep(true);
+      const t = setTimeout(() => setSweep(false), 1600);
+      was.current = all;
+      return () => clearTimeout(t);
+    }
+    was.current = all;
+  }, [all]);
+  if (!items.length) return null;
   const next = items.find((i) => !i.on)?.key;
   return (
-    <TodayPanel id="td-checklist" title="Checklist" chip={`${done} of ${items.length}`} chipInk="var(--ax-routine)">
+    <TodayPanel id="checklist" title="Checklist" chip={all ? allWord(items.length) : `${done} of ${items.length}`} chipInk={all ? 'var(--k-gold)' : 'var(--ax-routine)'} className={all ? `td-ck-all${sweep ? ' sweep' : ''}` : undefined}>
       <div className="td-chips">
         {items.map((i) => (
           <HoldRow key={i.key} item={i} hint={i.key === next} onToggle={() => onToggle(i.key, !i.on)} />
