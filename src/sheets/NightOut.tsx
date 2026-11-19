@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
+
+// Night out (board 11 `h11-night`): the street's glowing dots, as decoration. [left %, top %, size px, colour, delay s]
+const BOKEH: [number, number, number, string, number][] = [[10, 8, 10, '#ff4fd8', 0], [80, 12, 14, '#22c4ff', 1], [60, 30, 8, '#ffd36b', 2], [15, 48, 12, '#22c4ff', 0.5], [88, 70, 10, '#ff4fd8', 1.6], [40, 88, 14, '#ffd36b', 2.4], [70, 92, 8, '#b6ec6a', 0.8]];
 import { addDays, weekStart } from '../domain/dates';
 import { fmt1, fmtInt, weekdayName } from '../domain/format';
 import { DRINKS, mealForTime } from '../domain/foods';
@@ -80,7 +83,15 @@ export function NightOutSheet() {
   };
 
   return (
-    <Sheet title="Night out" sub={`${weekdayName(today)}${who ? ` · ${who}` : ''}`} tall>
+    <Sheet title="Night out" tall className="no-neon" head={
+      <div className="no-sign">
+        <b>Night out</b>
+        <span>Have a good one.</span>
+      </div>
+    }>
+      <span className="no-bokeh" aria-hidden="true">
+        {BOKEH.map(([x, y, s, c, d], i) => <i key={i} style={{ left: `${x}%`, top: `${y}%`, '--s': `${s}px`, '--c': c, '--d': `${d}s` } as CSSProperties} />)}
+      </span>
       <DateChip value={today} onChange={setDate} />
       <label className="flabel">
         <span className="lbl">With who, or where? Optional</span>
@@ -113,7 +124,7 @@ export function NightOutSheet() {
             ))}
           </div>
         )}
-        <label className="li" style={{ minHeight: 56 }}>
+        <label className="li no-tube" style={{ minHeight: 56, '--c': '#ffd36b' } as CSSProperties}>
           <span className="s">
             <span>Count it as this week&apos;s free meal</span>
             <small>{freeUsed ? `This week's went on ${weekdayName(freeUsed.date)}.` : 'Your calorie ring counts the day as closed.'}{saveUp > 0 ? ` You've saved ${fmtInt(saveUp)} kcal for it.` : ''}</small>
@@ -122,8 +133,8 @@ export function NightOutSheet() {
         </label>
       </div>
 
-      <div className="col gap8">
-        <div className="lbl gold">Drinks</div>
+      <div className="col gap8 no-tube no-drinks" style={{ '--c': '#ff9a3c' } as CSSProperties}>
+        <div className="lbl gold">Drinks{drinks ? ` · ${drinks}` : ''}</div>
         <div className="list">
           {DRINKS.map((d) => {
             const c = counts[d.id] ?? 0;
@@ -152,24 +163,24 @@ export function NightOutSheet() {
         </div>
       </div>
 
-      <div className="card" style={{ gap: 6 }}>
+      <div className="card no-kc" style={{ gap: 6 }}>
         <div className="lbl">Tonight, roughly</div>
         <div className="num" style={{ fontSize: 34 }}>
           {fmtInt(range.kcal[0] + drinkKcal)}–{fmtInt(range.kcal[1] + drinkKcal)} <span className="t16 q">kcal</span>
         </div>
         {items.length > 0 && <div className="t14 q">Protein {range.protein[0]}–{range.protein[1]} g. Football plays Fuel on slightly wider dice for it, and the match report says so.</div>}
-        <div className="t13 q lh">
+        <div className="t14 q lh">
           {drinks ? `${drinks} drink${drinks === 1 ? '' : 's'}, about ${fmt1(std)} standard drink${std === 1 ? '' : 's'}.` : 'No drinks: Designated driver.'} Logged quietly.
         </div>
       </div>
 
-      <div className="col gap4" style={{ padding: '0 2px' }}>
+      <div className="col gap4 no-tom">
         <div className="lbl">Tomorrow, Health eases off</div>
         <div className="t14 q lh">Your step goal drops to {fmtInt(stepsGoal(t, true))}.</div>
       </div>
 
-      <button type="button" className="btn lg block" disabled={!items.length && !drinks} onClick={log}>
-        Log night out
+      <button type="button" className="btn lg block no-save" disabled={!items.length && !drinks} onClick={log}>
+        Save night out
       </button>
     </Sheet>
   );

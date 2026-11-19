@@ -14,6 +14,7 @@ export function Sheet({
   tall,
   onClose = closeSheet,
   head,
+  className,
 }: {
   title?: ReactNode;
   sub?: ReactNode;
@@ -21,6 +22,8 @@ export function Sheet({
   tall?: boolean;
   onClose?: () => void;
   head?: ReactNode;
+  /** A sheet's own world, e.g. night out's neon street. */
+  className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const drag = useRef<{ y: number; dy: number } | null>(null);
@@ -64,7 +67,7 @@ export function Sheet({
   return createPortal(
     <>
       <div className="scrim" onClick={onClose} />
-      <div ref={ref} className={`sheet${tall ? ' tall' : ''}`} role="dialog" aria-modal="true" aria-label={typeof title === 'string' ? title : undefined}>
+      <div ref={ref} className={`sheet${tall ? ' tall' : ''}${className ? ` ${className}` : ''}`} role="dialog" aria-modal="true" aria-label={typeof title === 'string' ? title : undefined}>
         <div className="sheet-head" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
           <div className="grabber" />
           {(title || head) && (
