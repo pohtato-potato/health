@@ -51,7 +51,7 @@ The hat-trick (`t17-bloom`) stays as it is. Deals, kits, the tree, the desk, the
 - **Real data only.** Each screen reads what the app already stores. Where the mock shows something the app does not store, the PR does not invent it: it is either left out with a line in the PR description, or the screen moves to the last round.
 - **Port the look, not the markup.** CSS comes over from the builder into the area's stylesheet under `src/styles/`, renamed to the app's prefixes and tokens. Colours go through CSS tokens so `html.contrast` reaches them.
 - **Accessibility floor** (the owner has about 40% vision loss): nothing that carries meaning under 14 px, every target at least 44 px, never colour alone, no marquee or moving text for anything essential, the magnifier's standard text size.
-- **Motion.** The O44 rule in `src/styles/motion.css` stands: animations play once and end still, and nothing moves under text. A mock that loops (the hold-to-tick ring, the plates swap, the goal scenes) plays its loop at most three times, then rests on its end frame. Reduced motion shows the end frame straight away.
+- **Motion.** One-shot animations follow the O44 rule in `src/styles/motion.css`: they play once and end still. A mock that loops (the hold-to-tick ring, the plates swap, the goal scenes) keeps looping, as drawn: the owner's ruling of 19 Nov. Nothing essential moves: text and numbers stay still while decoration loops around them. Reduced motion shows the end frame straight away.
 - **The ring-and-rays moment is centred.** One shared component draws it. Its centre piece sits in the ring's exact centre at every size, checked by a test on the markup and by eye at 340 px.
 - **Design bans:** no eyebrows or kickers, no gradient text, no emoji icons, no glass decoration, no coloured left border wider than 1 px.
 - **Checked like the boards:** at 1400, 420 and 340 px wide, with no horizontal page scroll, no text under 14 px, nothing clipped, and the reduced-motion end frame.
@@ -77,3 +77,5 @@ Pages no board has pinned, to triage first (keep as it is, or redesign):
 6. Outside Football: check-in, setup, pledge, photos, readiness, heatmap, benchmark, the maintenance cards, journey, the quiet session, review, day closed, the Tracks pages (sleep, steps, drinks, joints, shape, training, compare, food), banners, the not-found page.
 
 Open questions carried into the round: whether readiness comes back, and whether the departure rows show "km".
+
+Settled 19 Nov: looping animations loop (section 5). Code work for each part runs in its own forked session.

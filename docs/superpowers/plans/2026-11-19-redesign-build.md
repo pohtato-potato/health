@@ -4,6 +4,8 @@
 
 **Goal:** Build every pinned screen from the redesign boards into the app, one screen per pull request, then run one last `impeccable` design round for the pages no board pinned.
 
+**Where the work runs:** each part is built in its own forked Claude session, one screen PR at a time; this session keeps the plan.
+
 **Architecture:** Each screen is its own task and its own PR: a static-render test that pins the screen's structure and copy, the component change in the screen's existing file, the CSS ported from the mock builder into that area's stylesheet, a check at three widths, merged before the next. Shared pieces are built inside the first screen that needs them and reused after. The last design round is a pinboard, not code; its screens join this queue only once pinned.
 
 **Tech Stack:** Vite, React 19, TypeScript, Dexie (`dexie-react-hooks`), Vitest with `react-dom/server` static-render tests.
@@ -15,7 +17,7 @@
 - **This repo is public:** no names, places, foods, medicines, body numbers or plans in code, tests or comments. Test values are invented; never copy a sample from a board.
 - "Nothing that carries meaning is under 14 px." "Every target is at least 44 px." "Never colour alone."
 - No marquee or moving text for anything essential.
-- O44 motion rule: "Every animation here plays once and ends still; nothing keeps moving under text." Pinned loops play at most 3 times, then rest on their end frame. Under `prefers-reduced-motion: reduce`, and under the app's own reduce-motion setting where one exists, the end frame shows at once.
+- One-shot animations follow O44: "Every animation here plays once and ends still." Pinned loops keep looping (owner, 19 Nov); only decoration loops, never text or numbers. Under `prefers-reduced-motion: reduce`, and under the app's own reduce-motion setting where one exists, the end frame shows at once.
 - Design bans: no eyebrows or kickers, no gradient text, no emoji icons, no glass decoration, no coloured left border wider than 1 px.
 - Colours come from CSS tokens, so `html.contrast` reaches them.
 - A component that imports the router (`window.location`) can't be rendered with `renderToStaticMarkup`. Keep pure view parts in files that don't import the router, and pass actions in as props.
@@ -42,7 +44,7 @@ Every screen task below follows these steps. A row in a part's table supplies th
 - [ ] **Step 3: Read the mock.** Open the screen on its board, and find its builder string by id in `Review shared/mockups/` (`grep -n "'<screen-id>'" build_*.py`). List what the screen shows. Mark anything the app does not store; that part is left out (Global Constraints, last line).
 - [ ] **Step 4: Write the failing test** in `tests/redesign/<screen-id>.test.tsx`: render the view with invented props through `renderToStaticMarkup` and assert the row's "Test pins", plus `renders with no data` (Review Focus 1).
 - [ ] **Step 5: Run it and see it fail.** `npx vitest run tests/redesign/<screen-id>.test.tsx`. Expected: FAIL on the new pins.
-- [ ] **Step 6: Build the screen.** Change the component to the mock's structure. Port its CSS into the area's stylesheet with the app's prefixes and tokens. Add any loop cap and reduced-motion end frame.
+- [ ] **Step 6: Build the screen.** Change the component to the mock's structure. Port its CSS into the area's stylesheet with the app's prefixes and tokens. Keep pinned loops looping; add the reduced-motion end frame.
 - [ ] **Step 7: Run the tests.** `npx vitest run` then `npm run typecheck`. Expected: all pass, no type errors.
 - [ ] **Step 8: Check it by eye.** Start the dev server, open the screen with dev seed data, and check at 1400, 420 and 340 px wide, once with `html.contrast`. In the browser console, the overflow scan (no element past the phone's right edge outside a clipping parent) and the small-text scan (no text node under 14 px) both return empty. Freeze animations at the end (`document.getAnimations().forEach(a => a.finish())`) and compare with the mock side by side.
 - [ ] **Step 9: Commit and open the PR.** `git add` the test, the component and the stylesheet. Commit as `redesign(<area>): <screen title>`. Open a PR titled the same, with the board link, a screenshot at 340 px, and a "Left out" list (Step 3). Merge once CI passes, before the next task starts.
@@ -60,7 +62,7 @@ Every screen task below follows these steps. A row in a part's table supplies th
 | 1.5 | `s5-a` Sleep, the night dial | 5 | `src/sheets/MorningLog.tsx` | both handles are buttons with labels and the times as text |
 | 1.6 | `m6-full` + `m6-also` Good morning, whole page | 6 | `src/sheets/MorningLog.tsx` | dial, rested, weigh-in, soreness, then "Also this morning"; each place chip has a label |
 | 1.7 | `s5-saved` After you save the morning | 5 | `src/sheets/MorningLog.tsx` | "Morning logged" lists each saved part; reduced motion shows all ticks |
-| 1.8 | `k7-live` + `k7-frames` Checklist, hold to tick | 7 | `src/screens/today/DueCard.tsx` | each item has a button alternative to the hold; the ring loop caps at 3 |
+| 1.8 | `k7-live` + `k7-frames` Checklist, hold to tick | 7 | `src/screens/today/DueCard.tsx` | each item has a button alternative to the hold; the ring loops as drawn |
 | 1.9 | `k7-all` The last tick of the day | 7 | `src/screens/today/DueCard.tsx` | all done: the done chip text shows; gold only on this state |
 | 1.10 | `c6-a` Close, reveal A | 6 | `src/screens/CloseDay.tsx` | the two buttons on one row, each ≥ 44 px |
 | 1.11 | `c6-tiers` Close, the four tiers | 6 | `src/screens/CloseDay.tsx` | each tier names itself in text |
@@ -148,7 +150,7 @@ Every screen task below follows these steps. A row in a part's table supplies th
 | 3.6 | `t12-records` Records, centred medals | 12 | `src/screens/RecordsWall.tsx` | the 1, 2, 3 centred (same check as `Orb`) |
 | 3.7 | `l11-before-a` + `l11-before-b` Before | 11 | `src/screens/live/BeforeScreen.tsx` | road and set list views of the same blocks |
 | 3.8 | `l11-guide-a` Guide, the figure | 11 | `src/screens/live/GuideScreen.tsx` | the key instructions stay as text beside the figure (its open note) |
-| 3.9 | `l11-plates` Plates change | 11 | `src/screens/live/PlatesScreen.tsx` | old and new plates as text; loop caps at 3 |
+| 3.9 | `l11-plates` Plates change | 11 | `src/screens/live/PlatesScreen.tsx` | old and new plates as text; the swap loops as drawn |
 | 3.10 | `s12-ladder` The set, the ladder | 12 | `src/screens/live/SetScreen.tsx` | the rep count as text; the +1 float `aria-hidden` |
 | 3.11 | `l11-check` Check, with fixes | 11 | `src/screens/live/CheckScreen.tsx` | − and + fix the count; the change line says what changed |
 | 3.12 | `l13-rest` Rest | 13 | `src/screens/live/RestLive.tsx` | the time left as text; the ring not cropped |
@@ -209,5 +211,5 @@ Not code. It runs once all of Parts 1–5 that do not wait on it are merged, or 
 
 - [ ] **Step 1: Triage.** For every page in spec section 6, items 5 and 6, open it in the app with dev seed data and mark it *keep* or *redesign*. Add any page found during Parts 1–5 that needs a redesign and was not pinned.
 - [ ] **Step 2: Run `impeccable`** on the redesign list together with items 1–4 of spec section 6: the graduation transition, club pages with that club's opinion of you, the market with named players, and one muscle page. Same rules as the boards. Real numbers come from the backup, read locally only. Hypotheticals are labelled.
-- [ ] **Step 3: Publish the board** and ask the owner, in one numbered list, the open questions: readiness, "km" on departures, the loop cap of 3 (Global Constraints), plus any the round raises.
+- [ ] **Step 3: Publish the board** and ask the owner, in one numbered list, the open questions: readiness, "km" on departures, plus any the round raises.
 - [ ] **Step 4: Fold the pins into this plan** as new rows, one screen per task, and commit with `docs: final round pins`.
