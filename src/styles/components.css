@@ -1049,42 +1049,6 @@
 }
 
 /* The + sheet (s2) and More (s44): drawn tiles tinted by their metric. */
-.log-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-.log-tile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  min-height: 104px;
-  padding: 12px 6px;
-  border-radius: 18px;
-  background: var(--surface);
-  border: 1px solid var(--hairline);
-  text-align: center;
-}
-.log-tile b {
-  font-size: 14px;
-  font-weight: 600;
-}
-.log-tile > span:last-child {
-  font-size: 14px;
-  color: var(--quiet);
-  line-height: 1.25;
-}
-.log-ic {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--tint) 16%, transparent);
-  margin-bottom: 2px;
-}
 .log-search {
   display: flex;
   align-items: center;
@@ -1355,3 +1319,38 @@
 
 /* Label mode: the form is drawn like the label on the pack. */
 .label-card { border: 2px solid color-mix(in srgb, var(--text) 75%, transparent); border-radius: 12px; padding: 12px; }
+
+/* + › More (board 12 h12-more): one round line-icon badge per row; each row's border carries its theme. */
+.mr-list { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.mr-row { --c: #f0a83a; --bd: linear-gradient(var(--c), var(--c)); position: relative; width: 100%; display: grid; grid-template-columns: 48px minmax(0, 1fr) 20px; gap: 12px; align-items: center; min-height: 68px; padding: 8px 12px; border-radius: 18px; border: 2.5px solid transparent; background: linear-gradient(#171026, #171026) padding-box, var(--bd) border-box; color: #f3ece0; font: inherit; text-align: left; cursor: pointer; }
+.mr-ic { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; color: var(--c); background: color-mix(in srgb, var(--c) 18%, transparent); border: 1.5px solid color-mix(in srgb, var(--c) 55%, transparent); }
+.mr-tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mr-tx b { font: 700 17px var(--sans); color: #f3ece0; }
+.mr-tx > span { font: 400 14px/1.3 var(--sans); color: #d4caee; overflow-wrap: anywhere; }
+.mr-go { color: #d4caee; }
+/* drinks: a beer's border with a foam top and rising bubbles */
+.mr-drk { --c: #f0a83a; --bd: linear-gradient(#fff3d6 0 22%, #e39a24 22% 100%); }
+.mr-drk::before { content: ''; position: absolute; left: 10px; right: 10px; top: -7px; height: 12px; background: radial-gradient(7px 6px at 7px 6px, #fff3d6 96%, transparent) 0 0 / 14px 12px repeat-x; animation: mr-foam 3s ease-in-out infinite alternate; }
+@keyframes mr-foam { to { background-position: 7px 0; } }
+.mr-bub i { position: absolute; bottom: 8px; width: 5px; height: 5px; border-radius: 50%; background: rgba(255, 231, 170, 0.8); animation: mr-bub 2.4s linear infinite; }
+.mr-bub i:nth-child(1) { right: 14px; } .mr-bub i:nth-child(2) { right: 22px; animation-delay: 0.8s; } .mr-bub i:nth-child(3) { right: 30px; animation-delay: 1.6s; }
+@keyframes mr-bub { from { transform: translateY(0); opacity: 0.9; } to { transform: translateY(-18px); opacity: 0; } }
+/* night out: a neon border that flickers */
+.mr-nit { --c: #ff4fd8; box-shadow: 0 0 14px rgba(255, 79, 216, 0.55), inset 0 0 12px rgba(255, 79, 216, 0.25); animation: mr-flick 5s steps(1) infinite 1s; }
+.mr-nit .mr-ic svg { filter: drop-shadow(0 0 4px #ff4fd8); }
+@keyframes mr-flick { 0%, 46%, 54%, 100% { box-shadow: 0 0 14px rgba(255, 79, 216, 0.55), inset 0 0 12px rgba(255, 79, 216, 0.25); } 48%, 52% { box-shadow: 0 0 4px rgba(255, 79, 216, 0.25), inset 0 0 2px rgba(255, 79, 216, 0.1); } }
+/* free meal: a border that slowly cycles the thali's colours */
+.mr-fre { --c: #ff9550; --bd: linear-gradient(90deg, #ffe08a, #ff9550, #5fe3a1, #c0642b, #ffe08a, #ff9550); background-size: 100% 100%, 300% 100%; animation: mr-thali 8s linear infinite; }
+@keyframes mr-thali { to { background-position: 0 0, 300% 0; } }
+/* waist: a yellow tape measure with ticks */
+.mr-wst { --c: #ffd23f; --bd: repeating-linear-gradient(90deg, #ffd23f 0 7px, #2a1a04 7px 8.5px); border-width: 4px; }
+/* check-in: green with a yellow tape band */
+.mr-chk { --c: #5fe3a1; --bd: linear-gradient(115deg, #1f6b45 0 62%, #ffd23f 62% 74%, #1f6b45 74%); }
+/* status: a warm lantern glow; the picker sits in the row */
+.mr-sta { --c: #ffb03a; --bd: linear-gradient(#ffb03a, #c26a12); grid-template-columns: 48px minmax(0, 1fr); box-shadow: 0 0 18px -4px rgba(255, 176, 58, 0.7); cursor: default; }
+.mr-sta .mr-ic svg { transform-origin: 50% 0; animation: mr-sway 3s ease-in-out infinite alternate; }
+@keyframes mr-sway { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
+.mr-sta-pick { grid-column: 1 / -1; }
+html.contrast .mr-row { background: #0b0c1a padding-box, var(--bd) border-box; }
+html.contrast .mr-tx > span, html.contrast .mr-go { color: #f3ecdd; }
+@media (prefers-reduced-motion: reduce) { .mr-drk::before, .mr-bub i, .mr-nit, .mr-fre, .mr-sta .mr-ic svg { animation: none; } .mr-bub { display: none; } }
