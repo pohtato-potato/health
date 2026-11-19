@@ -21,6 +21,32 @@ export function dayTier(closed: number, of: number): DayTier {
   return { name, ink: TIER_INK[name] };
 }
 
+type RingKey = 'kcal' | 'protein' | 'steps' | 'sleep';
+const RING_ORDER: RingKey[] = ['kcal', 'protein', 'steps', 'sleep'];
+const RING_NAME: Record<RingKey, string> = { kcal: 'Calories', protein: 'Protein', steps: 'Steps', sleep: 'Sleep' };
+const COUNT = ['', 'one', 'two', 'three', 'four'];
+
+/**
+ * The card's foot (board 6 `c6-tiers`): why the day earned its tier. Every ring; the one ring that fell short and by
+ * how much; the two that closed; or the one that did.
+ */
+export function tierLine(shut: Record<RingKey, boolean>, of: 3 | 4, short: { kcal: 'under' | 'in' | 'over'; proteinG: number; steps: number; sleepMin: number }): string {
+  const rings = RING_ORDER.slice(0, of);
+  const closed = rings.filter((k) => shut[k]);
+  if (closed.length === of) return `All ${COUNT[of]} rings`;
+  if (!closed.length) return 'Counted all the same';
+  if (closed.length === of - 1) {
+    const miss = rings.find((k) => !shut[k])!;
+    if (miss === 'kcal') return `Calories ${short.kcal === 'over' ? 'over' : 'under'} the aim`;
+    if (miss === 'protein') return `Protein short by ${Math.max(1, Math.round(short.proteinG))} g`;
+    if (miss === 'steps') return `Steps short by ${Math.max(1, Math.round(short.steps)).toLocaleString('en-GB')}`;
+    const m = Math.max(1, Math.round(short.sleepMin));
+    return `Sleep short by ${m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')}`}`;
+  }
+  if (closed.length === 1) return `${RING_NAME[closed[0]]} closed`;
+  return `${RING_NAME[closed[0]]} and ${RING_NAME[closed[1]].toLowerCase()}`;
+}
+
 const RING_INK = ['var(--kcal)', 'var(--protein)', 'var(--steps)', 'var(--sleep)'];
 
 /** The day's rings, small: one per ring, closed ones bright. Decoration for the count said in words. */

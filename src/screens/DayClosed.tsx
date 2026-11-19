@@ -13,7 +13,7 @@ import { spokenLine } from '../domain/voice';
 import { kmFromSteps, positionAt } from '../domain/walk';
 import { back, go } from '../router';
 import { storyWeek } from '../domain/weekly';
-import { DayCard, dayTier, type DayStat } from './close/DayCard';
+import { DayCard, dayTier, tierLine, type DayStat } from './close/DayCard';
 import { nextStopLine } from '../walk/lines';
 import { dayWalk } from '../walk/dayWalk';
 import { stepsByDay } from '../walk/runs';
@@ -55,7 +55,7 @@ export function DayClosed({ date, summary: s, onDone, opp }: { date: string; sum
   }, [recKey, date]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!settings || !days || !sessions || !sets || !entries) return <div className="page dayclosed" />;
   const day = days.find((d) => d.date === date);
-  const { rings } = dayRings(settings, date, day, entries);
+  const { rings, targets } = dayRings(settings, date, day, entries);
   const done = sessions.filter((x) => x.status === 'done' && x.date === date);
   const rec = realSets(sets)
     .filter((x) => x.date === date && x.mark === '!!')
@@ -101,7 +101,7 @@ export function DayClosed({ date, summary: s, onDone, opp }: { date: string; sum
   return (
     <div className="page dayclosed closed-sky">
       <h1 className="dc-h1">{dayName}’s card</h1>
-      <DayCard reveal tier={dayTier(rings.closed, rings.of)} dateLabel={`${parseDay(date).getDate()} ${month.slice(0, 3)}`} title={`${dayName} ${where}`} rings={ringList} stats={stats} foot={opp ? `Shape sealed for ${opp}` : undefined} />
+      <DayCard reveal tier={dayTier(rings.closed, rings.of)} dateLabel={`${parseDay(date).getDate()} ${month.slice(0, 3)}`} title={`${dayName} ${where}`} rings={ringList} stats={stats} foot={opp ? `Shape sealed for ${opp}` : tierLine({ kcal: rings.kcal.closed, protein: rings.protein.closed, steps: rings.steps.closed, sleep: rings.sleep.closed }, rings.of, { kcal: rings.kcal.state, proteinG: targets.proteinG - s.protein, steps: s.stepsLeft ?? targets.steps, sleepMin: targets.sleepMin - rings.sleep.value })} />
       {rings.perfect && <p className="k-q dc-perfect">A perfect day. Its star is in {month}’s sky.</p>}
       <div className="dc-acts">
         <button type="button" className="k-act quiet" onClick={() => go('/reports/week', { w: storyWeek(date) })}>
