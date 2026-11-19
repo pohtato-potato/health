@@ -11,7 +11,9 @@ import { tonightTarget, usualWake } from '../domain/sleepRegularity';
 import type { DaySummary } from '../domain/usualDay';
 import { spokenLine } from '../domain/voice';
 import { kmFromSteps, positionAt } from '../domain/walk';
-import { back } from '../router';
+import { back, go } from '../router';
+import { storyWeek } from '../domain/weekly';
+import { DayCard, dayTier, type DayStat } from './close/DayCard';
 import { nextStopLine } from '../walk/lines';
 import { dayWalk } from '../walk/dayWalk';
 import { stepsByDay } from '../walk/runs';
@@ -38,7 +40,7 @@ function RecordMoment({ r }: { r: DayRecord }) {
 }
 
 /** Day closed (s19): the totals against targets, training and the walk, a Gremlin line, tomorrow, and a star for a perfect day. */
-export function DayClosed({ date, summary: s, onDone }: { date: string; summary: DaySummary; onDone: () => void }) {
+export function DayClosed({ date, summary: s, onDone, opp }: { date: string; summary: DaySummary; onDone: () => void; opp?: string }) {
   const settings = useSettings();
   const days = useAllDays();
   const sessions = useSessions();
@@ -66,6 +68,7 @@ export function DayClosed({ date, summary: s, onDone }: { date: string; summary:
   const recentKm = days.filter((d) => d.date <= date && d.date > addDays(date, -14) && d.steps !== undefined).map((d) => kmFromSteps(d.steps!));
   const typicalKm = recentKm.length ? recentKm.reduce((a, b) => a + b, 0) / recentKm.length : undefined;
   const tomorrow = addDays(date, 1);
+  const place = placeFor(day, settings);
   const tomorrowPlace = placeFor(days.find((d) => d.date === tomorrow) ?? day, settings);
   const up = nextUp(settings, sessions, sets, days);
   const upName = up && settings.plan ? findSession(settings.plan, up.sessionId)?.name : undefined;
@@ -78,34 +81,37 @@ export function DayClosed({ date, summary: s, onDone }: { date: string; summary:
   const nextLabel = past && tomorrow <= now ? (tomorrow === now ? 'Today' : WEEKDAYS[parseDay(tomorrow).getDay()]) : 'Tomorrow';
   const month = MONTHS[parseDay(date).getMonth()];
 
-  const stat = (big: string, small: string, color: string, good: boolean) => (
-    <span className="col" style={{ alignItems: 'center', gap: 2 }}>
-      <b className="serif tn" style={{ fontSize: 26, color: good ? color : 'var(--quiet)' }}>
-        {big}
-      </b>
-      <span className="t12 q">{small}</span>
-    </span>
-  );
   const row = (k: string, v: string) => (
     <div className="diary-row" style={{ textAlign: 'left' }}>
       <span className="t14 q">{k}</span>
       <span className="t14 right">{v}</span>
     </div>
   );
+  const recCount = realSets(sets).filter((x) => x.date === date && x.mark === '!!').length;
+  const sessionName = done.length ? findSession(settings.plan!, done[0].session)?.name ?? `Session ${done[0].session}` : undefined;
+  const ringList = [rings.kcal.progress, rings.protein.progress, rings.steps.progress, rings.sleep.progress].slice(0, rings.of);
+  const where = place.kind === 'home' ? 'at home' : place.kind === 'office' ? 'at the office' : `at ${place.name}`;
+  const stats: DayStat[] = [
+    { name: 'Calories', value: fmtInt(s.kcal), ink: 'var(--kcal)' },
+    { name: 'Protein', value: `${s.protein} g`, ink: 'var(--protein)' },
+    { name: 'Steps', value: s.steps === undefined ? '—' : fmtInt(s.steps), ink: 'var(--steps)' },
+    ...(sessionName ? [{ name: sessionName, value: recCount ? `${recCount} record${recCount === 1 ? '' : 's'}` : 'done', ink: 'var(--dc-train)' }] : []),
+  ];
 
   return (
     <div className="page dayclosed closed-sky">
-      <div className="col" style={{ alignItems: 'center', textAlign: 'center', gap: 6, paddingTop: 24 }}>
-        {rings.perfect && <span className="closed-star" aria-hidden="true" />}
-        <h1 className="h1">{WEEKDAYS[parseDay(date).getDay()]}, closed</h1>
-        <div className="t14 q">{rings.perfect ? `A perfect day. Its star is in ${month}’s sky.` : 'Closed and counted. The week evens it out.'}</div>
+      <h1 className="dc-h1">{dayName}’s card</h1>
+      <DayCard reveal tier={dayTier(rings.closed, rings.of)} dateLabel={`${parseDay(date).getDate()} ${month.slice(0, 3)}`} title={`${dayName} ${where}`} rings={ringList} stats={stats} foot={opp ? `Shape sealed for ${opp}` : undefined} />
+      {rings.perfect && <p className="k-q dc-perfect">A perfect day. Its star is in {month}’s sky.</p>}
+      <div className="dc-acts">
+        <button type="button" className="k-act quiet" onClick={() => go('/reports/week', { w: storyWeek(date) })}>
+          The week
+        </button>
+        <button type="button" className="k-act" onClick={() => back('/today')}>
+          Good night
+        </button>
       </div>
       {records.map((r) => <RecordMoment key={r.kind} r={r} />)}
-      <div className="grid3" style={{ padding: '6px 0' }}>
-        {stat(fmtInt(s.kcal), s.kcalInRange ? 'kcal · in range' : 'kcal', 'var(--kcal)', s.kcalInRange)}
-        {stat(`${s.protein} g`, s.proteinClosed ? 'protein · met' : 'protein', 'var(--protein)', s.proteinClosed)}
-        {stat(s.steps === undefined ? '—' : fmtInt(s.steps), s.steps === undefined ? 'steps' : s.stepsLeft ? `steps · ${fmtInt(s.stepsLeft)} short` : day?.eased ? 'steps · eased goal' : 'steps · goal', 'var(--steps)', s.steps !== undefined && !s.stepsLeft)}
-      </div>
       <div className="card" style={{ gap: 0, padding: '4px 16px' }}>
         {done.length > 0 && row(findSession(settings.plan!, done[0].session)?.name ?? `Session ${done[0].session}`, rec ? `${rec.exercise.toLowerCase()} record, ${rec.reps ?? rec.seconds}` : 'done')}
         {s.checklist.total > 0 && row('Checklist', `${s.checklist.done} of ${s.checklist.total}${meds.length ? ` · ${doses.onTime} on time` : ''}`)}
@@ -120,14 +126,9 @@ export function DayClosed({ date, summary: s, onDone }: { date: string; summary:
         <span className="t13 q">{bed.text}</span>
       </div>
       <Suspense fallback={null}><DayKickOff date={date} /></Suspense>
-      <div className="row" style={{ gap: 10 }}>
-        <button type="button" className="btn ghost grow" onClick={onDone}>
-          Edit the day
-        </button>
-        <button type="button" className="btn grow" onClick={() => back('/today')}>
-          Done
-        </button>
-      </div>
+      <button type="button" className="link dc-edit" onClick={onDone}>
+        Edit the day
+      </button>
     </div>
   );
 }

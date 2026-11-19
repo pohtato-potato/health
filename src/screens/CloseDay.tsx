@@ -48,7 +48,8 @@ export function CloseDay() {
   const tonight = tonightTarget(usualWake(days, tomorrowPlace, date) ?? 450, targets.sleepMin);
 
   if (closed) {
-    return <DayClosed date={date} summary={daySummary(day, entries, todays, targets, slots.length)} onDone={() => setClosed(false)} />;
+    const sealedFor = date === today && tonightMatch?.opp && !tonightMatch.played.length ? tonightMatch.opp.name : undefined;
+    return <DayClosed date={date} summary={daySummary(day, entries, todays, targets, slots.length)} onDone={() => setClosed(false)} opp={sealedFor} />;
   }
 
   const now = Date.now();
