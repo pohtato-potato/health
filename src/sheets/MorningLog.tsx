@@ -4,7 +4,7 @@ import { fmtDayLong, fmtInt, fmtTime } from '../domain/format';
 import { homePlace } from '../domain/places';
 import type { Day, MuscleId, Settings } from '../domain/types';
 import { saveMorningLog, setTick } from '../db/actions';
-import { isMorningSlot } from '../domain/morningLog';
+import { alsoThisMorning, isMorningSlot } from '../domain/morningLog';
 import { useAllDays, useAllSets, useBody, useSessions, useSettings } from '../db/hooks';
 import { bodyTileWords } from '../domain/bodyLog';
 import { weightTrend } from '../domain/streaks';
@@ -17,7 +17,11 @@ import { NightDial } from '../ui/NightDial';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toasts';
 import { checklistSlots, morningQuestions, swapSentence } from '../state/derived';
-import { placeOptions } from '../domain/places';
+import { isEased, placeFor, placeOptions } from '../domain/places';
+import { stepsGoal } from '../domain/rings';
+import { targetsFor } from '../state/derived';
+import { Icon } from '../ui/Icon';
+import { StepsRing } from '../ui/StepsRing';
 import { ensurePlace, setOfficeDay } from '../db/actions';
 import { isOfficeDay } from '../domain/officeUsual';
 import { CaughtWindow, clockOf } from '../screens/Pledge';
@@ -64,6 +68,23 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
   const [ticks, setTicks] = useState<Record<string, boolean>>(() => Object.fromEntries(morningSlots.map((s) => [s.key, day?.ticks?.[s.key] !== undefined])));
   // Readiness's energy, stomach and soreness are retired from the form (R3 x-ready); answers already stored are kept.
   const [more, setMore] = useState(false);
+  const [placeSet, setPlaceSet] = useState(day?.place !== undefined);
+  const [asked, setAsked] = useState<Record<string, boolean>>(() => Object.fromEntries(questions.map((q) => [q.id, day?.answers?.[q.id] !== undefined])));
+  const answer = (id: string, yes: boolean) => {
+    setAnswers({ ...answers, [id]: yes });
+    setAsked({ ...asked, [id]: true });
+  };
+  const o = placeOptions(settings);
+  const officeDay = isOfficeDay(day, settings.places ?? []);
+  const yPlace = placeFor(yesterday, settings);
+  const stepGoal = stepsGoal(targetsFor(settings, yesterdayKey), isEased(yesterday, yPlace));
+  const also = alsoThisMorning({
+    place: placeSet,
+    status: day?.status !== undefined || !!day?.morning,
+    ...Object.fromEntries(questions.map((q) => [`q:${q.id}`, !!asked[q.id]])),
+    ...(morningSlots.length ? { checklist: morningSlots.every((s) => ticks[s.key]) } : {}),
+    ...(settings.prefs.confirmSteps ? { steps: steps !== undefined } : {}),
+  });
   const body = useBody();
   const trendNow = weight !== undefined ? weightTrend([...before.filter((d) => d.weightKg !== undefined).map((d) => ({ date: d.date, kg: d.weightKg! })), { date: today, kg: weight }]).pop()?.trend : undefined;
 
@@ -112,6 +133,7 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
   return (
     <Sheet title="Good morning" sub={fmtDayLong(today)}>
       <div className="ml-sheet">
+        <DateChip value={today} onChange={onDate} />
         <div className="k-row ml-sleephead">
           <h3 className="k-sect">Sleep</h3>
           {lastSleep && (
@@ -156,98 +178,89 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
         <div className="k-q">After the toilet, before food or water. Leave it if you didn't weigh. The trend is the number that matters; a single morning moves with water.</div>
       </div>
 
-        <DateChip value={today} onChange={onDate} />
-      <div className="k-panel ml-place" style={{ '--ink': 'var(--k-pearl)' } as React.CSSProperties}>
-        <div className="row base">
-          <span className="lbl">Where today</span>
-          <span className="t12 q">change any time</span>
-        </div>
-        {(() => {
-          const o = placeOptions(settings);
-          const big = [o.home, o.office];
-          return (
-            <>
-              <div className="grid2">
-                {big.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    className={`place-big ${p.kind}${place === p.id && !p.virtual ? ' on' : ''}`}
-                    aria-pressed={place === p.id && !p.virtual}
-                    onClick={async () => setPlace(p.virtual ? await ensurePlace(p.kind as 'home' | 'office') : p.id)}
-                  >
-                    <PlaceIcon place={p} size={18} />
-                    {p.name}
-                  </button>
-                ))}
-              </div>
-              {o.rest.length > 0 && (
-                <div className="place-row" style={{ gridTemplateColumns: `repeat(${Math.min(o.rest.length, 3)}, minmax(0, 1fr))` }}>
-                  {o.rest.map((p) => (
-                    <button key={p.id} type="button" className={`chip sm${place === p.id ? ' on' : ''}`} aria-pressed={place === p.id} onClick={() => setPlace(p.id)}>
-                      <PlaceIcon place={p} size={14} /> {p.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {/* Office days are away games (matchday §5): mark one by hand, or let the place do it. */}
-              <button type="button" className={`chip sm${isOfficeDay(day, settings.places ?? []) ? ' on' : ''}`} aria-pressed={isOfficeDay(day, settings.places ?? [])} style={{ minHeight: 44 }}
-                onClick={() => void setOfficeDay(today, !isOfficeDay(day, settings.places ?? []))}>
-                Office day: an away game
-              </button>
-              <span className="lbl">Status</span>
-              <StatusRow today={today} current={day?.status} />
-            </>
-          );
-        })()}
-      </div>
-
-      {questions.map((q) => (
-        <div key={q.id} className="k-panel flat ml-q">
-          <div className="col gap2">
-            <div className="t15">{q.question ?? q.label}</div>
-            {q.hint && <div className="t12 q">{q.hint}</div>}
-          </div>
-          <div className="row" style={{ gap: 8 }}>
-            <button type="button" className={`chip${!answers[q.id] ? ' on' : ''}`} onClick={() => setAnswers({ ...answers, [q.id]: false })}>
-              No
-            </button>
-            <button type="button" className={`chip${answers[q.id] ? ' on' : ''}`} onClick={() => setAnswers({ ...answers, [q.id]: true })}>
-              Yes
-            </button>
-          </div>
-        </div>
-      ))}
-      {morningSlots.length > 0 && (
-        <div className="col gap8">
-          <h3 className="k-sect">Morning checklist</h3>
-          <div className="row wrap" style={{ gap: 8, justifyContent: 'flex-start' }}>
-            {morningSlots.map((s) => (
-              <button key={s.key} type="button" role="switch" aria-checked={!!ticks[s.key]} className={`chip sm${ticks[s.key] ? ' on' : ''}`} onClick={() => setTicks({ ...ticks, [s.key]: !ticks[s.key] })}>
-                {s.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-      {settings.prefs.confirmSteps && (
-        <label className="k-panel flabel" style={{ '--ink': 'var(--steps)' } as React.CSSProperties}>
-          <span className="lbl" style={{ color: 'var(--steps)' }}>
-            Yesterday's final steps
-          </span>
-          <IntField value={steps} onChange={setSteps} placeholder="From Samsung Health" label="Yesterday's final steps" />
-          <span className="t12 q lh">
-            {yesterday?.steps !== undefined && yesterday.stepsAt ? `You logged ${fmtInt(yesterday.steps)} at ${fmtTime(yesterday.stepsAt)}. The final count is ready by now.` : 'The final count is ready by now.'}
-          </span>
-        </label>
-      )}
       <div className="k-panel">
         <button type="button" className="row tap44" aria-expanded={more} onClick={() => setMore(!more)} style={{ minHeight: 44 }}>
           <span className="t15">Body</span>
-          <span className="t13 q">{bodyTileWords(body ?? [], today)}</span>
+          <span className="t14 q">{bodyTileWords(body ?? [], today)}</span>
         </button>
         {more && <BodyChart date={today} entries={body ?? []} />}
       </div>
+
+      <section className="k-panel ml-also" aria-labelledby="ml-also-h">
+        <div className="k-row ml-alsohead">
+          <h3 id="ml-also-h" className="ml-alsoh">Also this morning</h3>
+          <span className="ml-alsochip tn">{also.done} of {also.of}</span>
+        </div>
+
+        <span className="ml-lb">Where today</span>
+        <div className="ml-places">
+          {[o.home, o.office, ...o.rest].map((p) => {
+            const on = place === p.id && !('virtual' in p && p.virtual);
+            return (
+              <button
+                key={p.id}
+                type="button"
+                className={`ml-pl k-${p.kind}${on ? ' on' : ''}`}
+                aria-pressed={on}
+                onClick={async () => {
+                  setPlace('virtual' in p && p.virtual ? await ensurePlace(p.kind as 'home' | 'office') : p.id);
+                  setPlaceSet(true);
+                }}
+              >
+                <PlaceIcon place={p} size={18} /> {p.name}
+              </button>
+            );
+          })}
+        </div>
+        {/* Office days are away games (matchday §5): mark one by hand, or let the place do it. */}
+        <button type="button" className={`chip sm ml-away${officeDay ? ' on' : ''}`} aria-pressed={officeDay} onClick={() => void setOfficeDay(today, !officeDay)}>
+          Office day: an away game
+        </button>
+
+        <span className="ml-lb">How are you</span>
+        <StatusRow today={today} current={day?.status} fine />
+
+        {questions.map((q) => (
+          <div key={q.id} className="ml-q">
+            <span className="ml-lb">{q.question ?? q.label}</span>
+            {q.hint && <span className="k-q">{q.hint}</span>}
+            <div className="ml-yn" role="radiogroup" aria-label={q.question ?? q.label}>
+              <button type="button" role="radio" aria-checked={!answers[q.id]} className={`chip sm${!answers[q.id] ? ' on' : ''}`} onClick={() => answer(q.id, false)}>
+                No
+              </button>
+              <button type="button" role="radio" aria-checked={!!answers[q.id]} className={`chip sm${answers[q.id] ? ' on' : ''}`} onClick={() => answer(q.id, true)}>
+                Yes
+              </button>
+            </div>
+          </div>
+        ))}
+
+        {morningSlots.length > 0 && (
+          <>
+            <span className="ml-lb">Morning checklist</span>
+            <div className="ml-ticks">
+              {morningSlots.map((s) => (
+                <button key={s.key} type="button" role="switch" aria-checked={!!ticks[s.key]} className={`chip sm ml-tick${ticks[s.key] ? ' on' : ''}`} onClick={() => setTicks({ ...ticks, [s.key]: !ticks[s.key] })}>
+                  {ticks[s.key] && <Icon name="check" size={16} stroke={2.4} />}
+                  {s.name}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {settings.prefs.confirmSteps && (
+          <label className="flabel ml-steps">
+            <span className="ml-lb">Yesterday's final steps</span>
+            <StepsRing steps={steps} goal={stepGoal} />
+            <IntField value={steps} onChange={setSteps} placeholder="From your phone" label="Yesterday's final steps" />
+            <span className="k-q lh">
+              {yesterday?.steps !== undefined && yesterday.stepsAt ? `You logged ${fmtInt(yesterday.steps)} at ${fmtTime(yesterday.stepsAt)}. The final count is ready by now.` : 'The final count is ready by now.'}
+            </span>
+          </label>
+        )}
+      </section>
+
 
         <div className="ml-save">
           <button type="button" className="k-act wide" onClick={save} disabled={saving}>

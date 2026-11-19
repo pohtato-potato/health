@@ -14,3 +14,9 @@ export function weighInToCome(day: Pick<Day, 'morning' | 'weightKg' | 'status' |
 export function isMorningSlot(slot: string): boolean {
   return /morning|^am$|breakfast|daily|wake/i.test(slot.trim());
 }
+
+/** "Also this morning · 4 of 6" (board 6 `m6-full`): how many of the parts shown are done. */
+export function alsoThisMorning(parts: Record<string, boolean>): { done: number; of: number } {
+  const v = Object.values(parts);
+  return { done: v.filter(Boolean).length, of: v.length };
+}

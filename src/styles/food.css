@@ -129,9 +129,43 @@ html.contrast .nd-track { stroke: rgba(237, 230, 218, 0.25); }
 .ml-weigh { gap: 6px; }
 .ml-wlb { color: var(--ink); }
 .ml-kg { font: 600 28px var(--serif); color: var(--k-cream); white-space: nowrap; }
-.ml-place { gap: 8px; }
-.ml-place .lbl { color: var(--ink); font-weight: 700; }
-.ml-q { justify-content: space-between; }
+/* Also this morning (board 6 m6-full, m6-also): each choice has its own colour; picking one squeezes it, fills it,
+   ripples once and leaves a soft glow; ticks pop in. */
+.ml-also { gap: 10px; }
+.ml-alsohead { align-items: center; }
+.ml-alsoh { margin: 0; font: 600 20px var(--serif); color: var(--k-cream); }
+.ml-alsochip { padding: 4px 12px; border-radius: 999px; border: 1px solid rgba(237, 230, 218, 0.4); font: 700 14px var(--sans); color: var(--k-cream); }
+.ml-lb { font: 700 15px var(--sans); color: var(--k-cream); margin-top: 4px; }
+.ml-places { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.ml-pl { --c: var(--k-pearl); display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 0 10px; border-radius: 16px; border: 1.5px solid color-mix(in srgb, var(--c) 70%, transparent); background: transparent; color: var(--c); font: 700 16px var(--sans); cursor: pointer; min-width: 0; }
+.ml-pl.k-home { --c: var(--kcal); }
+.ml-pl.k-office { --c: var(--sleep); }
+.ml-pl.k-trip { --c: var(--steps); }
+.ml-pl.k-friends { --c: var(--protein); }
+.ml-pl.on { background: var(--c); border-color: var(--c); color: #16142e; box-shadow: 0 0 18px -4px var(--c); animation: ml-pick 520ms cubic-bezier(.3, 1.4, .5, 1); }
+.ml-also .status-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.ml-also .status-row .chip { --c: var(--k-pearl); border-color: color-mix(in srgb, var(--c) 70%, transparent); color: var(--c); }
+.ml-also .status-row .st-fine { --c: var(--steps); }
+.ml-also .status-row .st-sick { --c: var(--k-gold); }
+.ml-also .status-row .st-injured { --c: #ff8a7a; }
+.ml-also .status-row .st-travelling { --c: var(--sleep); }
+.ml-also .status-row .st-break { --c: var(--protein); }
+.ml-also .status-row .chip.on { background: var(--c); border-color: var(--c); color: #16142e; box-shadow: 0 0 16px -4px var(--c); animation: ml-pick 520ms cubic-bezier(.3, 1.4, .5, 1); }
+.ml-away { align-self: flex-start; }
+.ml-q { display: flex; flex-direction: column; gap: 6px; }
+.ml-yn, .ml-ticks { display: flex; flex-wrap: wrap; gap: 8px; }
+.ml-tick { gap: 6px; }
+.ml-tick svg { animation: ml-tickpop 360ms cubic-bezier(.3, 1.6, .5, 1); }
+.ml-steps { gap: 8px; }
+.ml-stepsring { display: flex; align-items: center; gap: 10px; font-size: 16px; }
+.ml-stepsring b { font: 600 22px var(--serif); color: var(--k-cream); }
+.sr-track { fill: none; stroke: rgba(237, 230, 218, 0.14); stroke-width: 6; }
+.sr-fill { fill: none; stroke: var(--steps); stroke-width: 6; stroke-linecap: round; }
+.ml-stepsring.met .sr-fill { filter: drop-shadow(0 0 5px var(--steps)); }
+@keyframes ml-pick { 0% { transform: scale(1); box-shadow: 0 0 0 0 var(--c); } 35% { transform: scale(0.94); } 100% { transform: scale(1); box-shadow: 0 0 18px -4px var(--c), 0 0 0 10px transparent; } }
+@keyframes ml-tickpop { from { transform: scale(0); } }
+@media (prefers-reduced-motion: reduce) { .ml-pl.on, .ml-also .status-row .chip.on, .ml-tick svg { animation: none; } }
+html.contrast .ml-pl.on, html.contrast .ml-also .status-row .chip.on, html.contrast .ml-stepsring.met .sr-fill { box-shadow: none; filter: none; }
 .ml-save { position: sticky; bottom: 0; z-index: 2; margin: 4px -4px 0; padding: 12px 4px calc(6px + var(--safe-bottom)); background: linear-gradient(rgba(20, 18, 44, 0), #16142e 38%); }
 .ml-sheet .chip.on { color: #16142e; }
 
