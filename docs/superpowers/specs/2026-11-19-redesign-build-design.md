@@ -6,7 +6,7 @@ The repo is public. This spec holds no names, body numbers, foods, medicines, pl
 
 ## 1. What this is
 
-Twenty-three redesign rounds (Home/Train boards 3–23, Walk/You boards 1–9) settled how each screen should look. This spec turns them into a build: **one screen per pull request**, each one shippable alone, in a fixed order. Pages that need a redesign but were never pinned do not get built from guesswork. They go to one last design round (section 6), are put through `impeccable` there, and join the queue only once that round is pinned.
+Twenty-three redesign rounds (Home/Train boards 3–23, Walk/You boards 1–9) settled how each screen should look. This spec turns them into a build: **one pull request per tab**, holding every screen in that tab (Home and everything inside it, and so on), each tab shippable alone, in a fixed order. Inside a tab the screens are built one at a time, one commit each. Pages that need a redesign but were never pinned do not get built from guesswork. They go to one last design round (section 6), are put through `impeccable` there, and join the queue only once that round is pinned.
 
 ## 2. The reference
 
@@ -47,7 +47,7 @@ The hat-trick (`t17-bloom`) stays as it is. Deals, kits, the tree, the desk, the
 
 ## 5. Build rules for every screen
 
-- **One screen, one pull request.** Branch `redesign/<screen-id>` from fresh `main`, merged before the next starts. A screen that needs a shared piece builds it in the same PR; the next screen reuses it.
+- **One tab, one pull request.** Branch `redesign/<tab>` from fresh `main`. Each screen in the tab is one commit on it, finished and checked before the next screen starts. The PR merges when the whole tab is done, before the next tab starts. A screen that needs a shared piece builds it in its own commit; later screens reuse it. (Owner's ruling, 19 Nov.)
 - **Real data only.** Each screen reads what the app already stores. Where the mock shows something the app does not store, the PR does not invent it: it is either left out with a line in the PR description, or the screen moves to the last round.
 - **Port the look, not the markup.** CSS comes over from the builder into the area's stylesheet under `src/styles/`, renamed to the app's prefixes and tokens. Colours go through CSS tokens so `html.contrast` reaches them.
 - **Accessibility floor** (the owner has about 40% vision loss): nothing that carries meaning under 14 px, every target at least 44 px, never colour alone, no marquee or moving text for anything essential, the magnifier's standard text size.

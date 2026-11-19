@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build every pinned screen from the redesign boards into the app, one screen per pull request, then run one last `impeccable` design round for the pages no board pinned.
+**Goal:** Build every pinned screen from the redesign boards into the app, one pull request per tab (every screen in that tab), then run one last `impeccable` design round for the pages no board pinned.
 
-**Where the work runs:** each part is built in its own forked Claude session, one screen PR at a time; this session keeps the plan.
+**Where the work runs:** each part is one tab and one pull request, built in its own forked Claude session, one screen (one commit) at a time; this session keeps the plan.
 
-**Architecture:** Each screen is its own task and its own PR: a static-render test that pins the screen's structure and copy, the component change in the screen's existing file, the CSS ported from the mock builder into that area's stylesheet, a check at three widths, merged before the next. Shared pieces are built inside the first screen that needs them and reused after. The last design round is a pinboard, not code; its screens join this queue only once pinned.
+**Architecture:** Each part is one tab and one PR on branch `redesign/<tab>`. Each screen is its own task and its own commit on that branch: a static-render test that pins the screen's structure and copy, the component change in the screen's existing file, the CSS ported from the mock builder into that area's stylesheet, a check at three widths, finished before the next screen starts. The tab's PR merges once its last screen is in. Shared pieces are built inside the first screen that needs them and reused after. The last design round is a pinboard, not code; its screens join this queue only once pinned.
 
 **Tech Stack:** Vite, React 19, TypeScript, Dexie (`dexie-react-hooks`), Vitest with `react-dom/server` static-render tests.
 
@@ -37,9 +37,9 @@
 
 ## The screen loop
 
-Every screen task below follows these steps. A row in a part's table supplies the screen id, its board, the file, and what the test pins.
+Every screen task below follows these steps; one part is one tab and one PR. A row in a part's table supplies the screen id, its board, the file, and what the test pins.
 
-- [ ] **Step 1: Branch.** `git checkout main && git pull --ff-only && git checkout -b redesign/<screen-id>`.
+- [ ] **Step 1: Branch (first screen of a part only).** `git checkout main && git pull --ff-only && git checkout -b redesign/<tab>` with `<tab>` one of `home`, `football`, `train`, `walk`, `you`. Later screens in the part stay on that branch.
 - [ ] **Step 2: Find the code.** Open the file in the row. Confirm it renders the screen by finding a line of the screen's current copy in it (`grep -rn "<copy>" src/screens`). If the row's file is wrong, use the one the grep finds and correct the row in this plan in the same PR.
 - [ ] **Step 3: Read the mock.** Open the screen on its board, and find its builder string by id in `Review shared/mockups/` (`grep -n "'<screen-id>'" build_*.py`). List what the screen shows. Mark anything the app does not store; that part is left out (Global Constraints, last line).
 - [ ] **Step 4: Write the failing test** in `tests/redesign/<screen-id>.test.tsx`: render the view with invented props through `renderToStaticMarkup` and assert the row's "Test pins", plus `renders with no data` (Review Focus 1).
@@ -47,11 +47,12 @@ Every screen task below follows these steps. A row in a part's table supplies th
 - [ ] **Step 6: Build the screen.** Change the component to the mock's structure. Port its CSS into the area's stylesheet with the app's prefixes and tokens. Keep pinned loops looping; add the reduced-motion end frame.
 - [ ] **Step 7: Run the tests.** `npx vitest run` then `npm run typecheck`. Expected: all pass, no type errors.
 - [ ] **Step 8: Check it by eye.** Start the dev server, open the screen with dev seed data, and check at 1400, 420 and 340 px wide, once with `html.contrast`. In the browser console, the overflow scan (no element past the phone's right edge outside a clipping parent) and the small-text scan (no text node under 14 px) both return empty. Freeze animations at the end (`document.getAnimations().forEach(a => a.finish())`) and compare with the mock side by side.
-- [ ] **Step 9: Commit and open the PR.** `git add` the test, the component and the stylesheet. Commit as `redesign(<area>): <screen title>`. Open a PR titled the same, with the board link, a screenshot at 340 px, and a "Left out" list (Step 3). Merge once CI passes, before the next task starts.
+- [ ] **Step 9: Commit and push.** `git add` the test, the component and the stylesheet. Commit as `redesign(<tab>): <screen title>` and push. After the part's first screen, open the tab's PR as a draft titled `Redesign: <Tab> tab`, with the board links. Each later screen adds a line to the PR description: its id, a screenshot at 340 px, and its "Left out" list (Step 3).
+- [ ] **Step 10 (last screen of a part only): Ship the tab.** Run `npx vitest run`, `npm run typecheck` and `npm run build` on the branch, mark the PR ready, and merge once CI passes, before the next part starts.
 
 ---
 
-## Part 1 · Home
+## Part 1 · Home (PR `redesign/home`)
 
 | Task | Screen | Board | File | Test pins |
 |---|---|---|---|---|
@@ -80,7 +81,7 @@ Every screen task below follows these steps. A row in a part's table supplies th
 | 1.23 | `h10-onthis` On this day | 10 | `src/screens/OnThisDay.tsx` | renders only on a memory date; the day's line is text |
 | 1.24 | `o23-dawn` The morning reveal | 23 | `src/screens/Dawn.tsx` | one card at a time; "Tap to go on" and "Skip" are buttons |
 
-## Part 2 · Football
+## Part 2 · Football (PR `redesign/football`)
 
 | Task | Screen | Board | File | Test pins |
 |---|---|---|---|---|
@@ -138,7 +139,7 @@ Every screen task below follows these steps. A row in a part's table supplies th
 | 2.52 | `s20-rival` The rival | 20 | `src/screens/football/story/Rivalry.tsx` | both crests and the rivalry modifier |
 | 2.53 | `s20-bounty` Bounties | 20 | find with `grep -rln "ount" src/screens/football` | this week's bounties with reward text |
 
-## Part 3 · Train and the live session
+## Part 3 · Train and the live session (PR `redesign/train`)
 
 | Task | Screen | Board | File | Test pins |
 |---|---|---|---|---|
@@ -158,7 +159,7 @@ Every screen task below follows these steps. A row in a part's table supplies th
 | 3.14 | `l11-look-b` Quick look, the scoreboard | 11 | `src/screens/live/QuickLooks.tsx` | flip digits carry the numbers as text |
 | 3.15 | `q13-seal` + `l10-finale` The finale and quality seal | 13 / 10 | `src/screens/live/LiveFinale.tsx` | flags first; seven pages in order; the seal's bar colours |
 
-## Part 4 · Walk
+## Part 4 · Walk (PR `redesign/walk`)
 
 | Task | Screen | Board | File | Test pins |
 |---|---|---|---|---|
@@ -176,7 +177,7 @@ Every screen task below follows these steps. A row in a part's table supplies th
 | 4.12 | `o23-road` The road so far | 23 | `src/screens/walk/RoadSoFar.tsx` | each kind of place keeps its shape and a text label |
 | 4.13 | `o23-finish` A walk finished | 23 | `src/screens/walk/FinishPage.tsx` | the road draws once; the exit stamp as text |
 
-## Part 5 · You and Reports
+## Part 5 · You and Reports (PR `redesign/you`)
 
 | Task | Screen | Board | File | Test pins |
 |---|---|---|---|---|
