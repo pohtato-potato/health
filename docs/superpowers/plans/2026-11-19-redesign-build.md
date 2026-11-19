@@ -76,7 +76,7 @@ Every screen task below follows these steps; one part is one tab and one PR. A r
 | 1.18 | `h12-log` Logging, each bucket its own fill | 12 | `src/screens/today/LogBelow.tsx` | one fill style per bucket; each has its number as text |
 | 1.19 | `h12-more` The + sheet | 12 | `src/sheets/LogSheet.tsx` | every entry has an icon badge and a label |
 | 1.20 | `h11-night` Night out, all neon | 11 | `src/sheets/NightOut.tsx` | the neon page renders its fields; no text under the moving sign |
-| 1.21 | `h10-left` What's left | 10 | `src/sheets/QuickSheets.tsx` | room left and protein left as two tiles; "—" with no target |
+| ~~1.21~~ | ~~`h10-left` What's left~~ | 10 | — | Dropped: the sheet stays removed (removed in edd6639; owner, 19 Nov) |
 | 1.22 | `h10-status` Status, for an occasion | 10 | `src/screens/today/StatusChip.tsx` | occasions come from the app's list; lanterns `aria-hidden` |
 | 1.23 | `h10-onthis` On this day | 10 | `src/screens/OnThisDay.tsx` | renders only on a memory date; the day's line is text |
 | 1.24 | `o23-dawn` The morning reveal | 23 | `src/screens/Dawn.tsx` | one card at a time; "Tap to go on" and "Skip" are buttons |
