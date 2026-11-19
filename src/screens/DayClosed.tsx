@@ -1,8 +1,8 @@
-import { Suspense, lazy, useEffect } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { useAllDays, useAllEntries, useAllSets, useEntries, useSessions, useSettings } from '../db/hooks';
 import { keepMomentOnce } from '../db/moments';
 import { dayRecords, type DayRecord, type RecordKind } from '../domain/dayRecords';
-import { addDays, dayOfLogging, parseDay } from '../domain/dates';
+import { addDays, dayKey, dayOfLogging, parseDay } from '../domain/dates';
 import { fmtInt } from '../domain/format';
 import { dayDoses } from '../domain/medicines';
 import { findSession, realSets } from '../domain/plan';
@@ -14,6 +14,7 @@ import { kmFromSteps, positionAt } from '../domain/walk';
 import { back, go } from '../router';
 import { storyWeek } from '../domain/weekly';
 import { DayCard, breakout, dayTier, tierLine, type DayStat } from './close/DayCard';
+import { MonthBinder, type BinderDay } from './close/MonthBinder';
 import { nextStopLine } from '../walk/lines';
 import { dayWalk } from '../walk/dayWalk';
 import { stepsByDay } from '../walk/runs';
@@ -23,6 +24,7 @@ import { dayRings, nextUp, targetsFor } from '../state/derived';
 // Football's kick-off loads with Football's data.
 const DayKickOff = lazy(() => import('./today/FootballCard').then((m) => ({ default: m.DayKickOff })));
 
+const totalsOf = (es: { kcal: number; protein: number }[]) => es.reduce((t, e) => ({ kcal: t.kcal + e.kcal, protein: t.protein + e.protein }), { kcal: 0, protein: 0 });
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -47,6 +49,7 @@ export function DayClosed({ date, summary: s, onDone, opp }: { date: string; sum
   const sets = useAllSets();
   const entries = useEntries(date);
   const allEntries = useAllEntries();
+  const [openDay, setOpenDay] = useState<string | null>(null);
   const records = days && sets && allEntries ? dayRecords(date, days, allEntries, realSets(sets)) : [];
   const recKey = records.map((r) => r.kind).join(',');
   // Finding 33 (O42): a record is kept on Earned's shelf once, when its day is closed.
@@ -105,6 +108,26 @@ export function DayClosed({ date, summary: s, onDone, opp }: { date: string; sum
     ...(sessionName ? [{ name: sessionName, value: recCount ? `${recCount} record${recCount === 1 ? '' : 's'}` : 'done', ink: 'var(--dc-train)' }] : []),
   ];
 
+  // The month (c5-binder): one small card per closed day; a day not closed stays empty.
+  const d0 = parseDay(date);
+  const monthDays = new Date(d0.getFullYear(), d0.getMonth() + 1, 0).getDate();
+  const byDate = new Map<string, typeof allEntries>();
+  for (const e of allEntries ?? []) (byDate.get(e.date) ?? byDate.set(e.date, []).get(e.date)!).push(e);
+  const cardOf = (k: string) => {
+    const dd = days.find((x) => x.date === k);
+    if (!dd || !(dd.foodDone || dd.partial)) return undefined;
+    const r = dayRings(settings, k, dd, byDate.get(k) ?? []).rings;
+    const prev = days.find((x) => x.date === addDays(k, -1));
+    const b = breakout({ debut: sessions.some((x) => x.status === 'done' && x.date === k) && !sessions.some((x) => x.status === 'done' && x.date < k), records: [], prevOpen: !!prev && !(prev.foodDone || prev.partial), status: dd.status });
+    return { tier: dayTier(r.closed, r.of), rings: [r.kcal.progress, r.protein.progress, r.steps.progress, r.sleep.progress].slice(0, r.of), ribbon: b, tot: totalsOf(byDate.get(k) ?? []), steps: dd.steps, place: placeFor(dd, settings) };
+  };
+  const monthCells: BinderDay[] = Array.from({ length: monthDays }, (_, i) => {
+    const k = dayKey(new Date(d0.getFullYear(), d0.getMonth(), i + 1));
+    const c = k === date ? { tier: dayTier(rings.closed, rings.of), rings: ringList, ribbon: brk } : cardOf(k);
+    return c ? { date: k, tier: c.tier, rings: c.rings, ribbon: c.ribbon?.ink } : { date: k };
+  });
+  const picked = openDay && openDay !== date ? cardOf(openDay) : undefined;
+
   return (
     <div className="page dayclosed closed-sky">
       <h1 className="dc-h1">{dayName}’s card</h1>
@@ -118,6 +141,17 @@ export function DayClosed({ date, summary: s, onDone, opp }: { date: string; sum
           Good night
         </button>
       </div>
+      {picked && openDay && (
+        <div className="mb-open">
+          <DayCard tier={picked.tier} dateLabel={`${parseDay(openDay).getDate()} ${month.slice(0, 3)}`} title={`${WEEKDAYS[parseDay(openDay).getDay()]} ${picked.place.kind === 'home' ? 'at home' : picked.place.kind === 'office' ? 'at the office' : `at ${picked.place.name}`}`} rings={picked.rings} ribbon={picked.ribbon} foot={picked.ribbon?.foot} stats={[
+            { name: 'Calories', value: fmtInt(Math.round(picked.tot.kcal)), ink: 'var(--kcal)' },
+            { name: 'Protein', value: `${Math.round(picked.tot.protein)} g`, ink: 'var(--protein)' },
+            { name: 'Steps', value: picked.steps === undefined ? '—' : fmtInt(picked.steps), ink: 'var(--steps)' },
+          ]} />
+          <button type="button" className="k-act quiet" onClick={() => setOpenDay(null)}>Back to the month</button>
+        </div>
+      )}
+      <MonthBinder month={month} days={monthCells} total={monthDays} today={now} onOpen={(k) => setOpenDay(k === date ? null : k)} />
       {records.map((r) => <RecordMoment key={r.kind} r={r} />)}
       <div className="card" style={{ gap: 0, padding: '4px 16px' }}>
         {done.length > 0 && row(findSession(settings.plan!, done[0].session)?.name ?? `Session ${done[0].session}`, rec ? `${rec.exercise.toLowerCase()} record, ${rec.reps ?? rec.seconds}` : 'done')}
