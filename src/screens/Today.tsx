@@ -73,6 +73,7 @@ import {
   weeksFor,
 } from '../state/derived';
 import { Banners } from './Banners';
+import { OnThisDayCard } from './OnThisDay';
 import '../styles/today.css';
 import { SeasonStrip, useUnlockedIds } from '../ui/Theme';
 import { hasReward } from '../domain/rewards';
@@ -263,7 +264,7 @@ export function Today() {
       }
       walk={<WalkTop caption={caption} scene={scene} stamp={stamp} status={<StatusChip today={today} days={days} />} onOpen={() => go('/walk')} />}
       due={<DueCard due={dueToday({ today, settings, checkins: checkins.map((c) => c.date), measurements })} />}
-      banner={<><OfficeUsual /><Banners noMorning={morningOpen} /></>}
+      banner={<><OfficeUsual /><Banners noMorning={morningOpen} /><OnThisDayCard /></>}
       line={
         <TodayLine
           head="Today"

@@ -662,3 +662,24 @@ html.contrast .td-bk b small, html.contrast .td-ml-v { color: #f3ecdd; }
 html.contrast .td-statusset { background: #0b0c1a; border-color: var(--k-cream, #f3ece0); }
 @media (prefers-reduced-motion: reduce) { .td-lanterns i { animation: none; } }
 .td-statusset .td-dates input { padding: 0 2px; font-size: 14px; width: 100%; }
+
+/* On this day (h10-onthis): a taped snapshot drops in once, then that day's numbers against today's. */
+.otd { background: var(--surface); border: 1px solid var(--hairline); border-radius: 18px; padding: 16px; display: grid; gap: 12px; overflow: hidden; }
+.otd-h { margin: 0; font: 600 20px var(--serif); color: var(--text); }
+.otd-when { margin: -8px 0 0; font-size: 14px; color: var(--quiet); }
+.otd-snap { position: relative; justify-self: center; width: min(100%, 280px); background: #f3ead9; color: #2a2433; border-radius: 4px; padding: 22px 16px 16px; box-shadow: 0 10px 24px rgb(0 0 0 / .35); transform: rotate(-2deg); animation: otd-drop .7s cubic-bezier(.2,.9,.3,1.2) both; }
+.otd-tape { position: absolute; top: -9px; left: 50%; width: 84px; height: 22px; margin-left: -42px; background: rgb(233 223 196 / .8); border: 1px solid rgb(0 0 0 / .08); transform: rotate(3deg); }
+.otd-date { display: block; font: 600 16px var(--serif); }
+.otd-line { margin: 6px 0 0; font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; }
+.otd-rows { margin: 0; display: grid; gap: 8px; }
+.otd-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; font-size: 15px; }
+.otd-row dt { color: var(--quiet); }
+.otd-row dd { margin: 0; }
+.otd-then { color: var(--dim); }
+.otd-row b { color: var(--text); font-weight: 600; }
+.otd-more { justify-self: start; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--btn-border); background: transparent; color: var(--text); font-size: 15px; }
+.otd-x { margin: 0; font-size: 14px; color: var(--quiet); overflow-wrap: anywhere; }
+@keyframes otd-drop { from { opacity: 0; transform: translateY(-24px) rotate(-8deg); } }
+@media (prefers-reduced-motion: reduce) { .otd-snap { animation: none; } }
+html.contrast .otd { border-color: var(--text); }
+html.contrast .otd-then { color: var(--quiet); }

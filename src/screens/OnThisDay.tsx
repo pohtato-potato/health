@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { achievementById } from '../domain/achievements';
 import { parseDay, dayKey, type DayKey } from '../domain/dates';
 import { festivalOn } from '../domain/festivals';
-import { fmt1, fmtDayShort, fmtInt } from '../domain/format';
+import { fmt1, fmtDayMonth, fmtDayShort, fmtInt } from '../domain/format';
 import { findSession } from '../domain/plan';
 import { weightTrend } from '../domain/streaks';
 import { arrivals } from '../domain/walk';
@@ -71,43 +71,65 @@ export function OnThisDayCard() {
   const dayWins = wins.filter((w) => w.date === d);
   const dayAch = unlocks.filter((u) => u.date === d && !u.quiet).map((u) => achievementById(u.id)?.name).filter(Boolean) as string[];
 
+  const todaySteps = days.find((x) => x.date === today)?.steps;
+  const rows: MemoryRow[] = [
+    ...(then !== undefined && now !== undefined ? [{ name: 'Weight', then: fmt1(then), now: `${fmt1(now)} kg` }] : []),
+    ...(day?.steps !== undefined && todaySteps !== undefined ? [{ name: 'Steps', then: fmtInt(day.steps), now: fmtInt(todaySteps) }] : []),
+  ];
+  const extras = [
+    ...dayWins.map((w) => `Win: ${w.text}`),
+    ...(dayAch.length ? [`Unlocked: ${dayAch.join(', ')}.`] : []),
+    ...(es.length ? [`Ate: ${[...new Set(es.filter((e) => e.kind === 'food').map((e) => e.name))].slice(0, 5).join(', ') || 'quick adds'}.`] : []),
+  ];
   return (
-    <button
-      type="button"
-      className="card"
-      style={{ textAlign: 'left' }}
-      onClick={() => {
+    <MemoryCard
+      when={`${pick.label.replace(/ today$/, '')}, on ${fmtDayMonth(d)}.`}
+      dateLabel={fmtDayShort(d)}
+      line={lines.length ? `${lines.join(', ')}.` : 'A quiet day, logged all the same.'}
+      rows={rows}
+      extras={extras}
+      open={open}
+      onToggle={() => {
         if (!open) void bump('onthisday', { day: today });
         setOpen(!open);
       }}
-      aria-expanded={open}
-    >
-      <div className="row base">
-        <div className="lbl lav">On this day</div>
-        <div className="t12 q">{fmtDayShort(d)}</div>
-      </div>
-      <div className="sf" style={{ fontSize: 20 }}>
-        {pick.label}
-      </div>
-      <div className="t14 lh">{lines.length ? `${lines.join(', ')}.` : 'A quiet day, logged all the same.'}</div>
-      {open && (
-        <div className="col gap6">
-          {then !== undefined && now !== undefined && (
-            <div className="t14 lh">
-              Your trend was {fmt1(then)} kg. Today it’s {fmt1(now)} kg{Math.abs(now - then) >= 0.1 ? `: ${fmt1(Math.abs(now - then))} kg ${now < then ? 'down' : 'up'} since` : ''}.
-            </div>
-          )}
-          {dayWins.map((w) => (
-            <div key={w.id} className="t14 gold lh">
-              Win: {w.text}
-            </div>
-          ))}
-          {dayAch.length > 0 && <div className="t14 q lh">Unlocked: {dayAch.join(', ')}.</div>}
-          {es.length > 0 && <div className="t13 q lh">Ate: {[...new Set(es.filter((e) => e.kind === 'food').map((e) => e.name))].slice(0, 5).join(', ') || 'quick adds'}.</div>}
-        </div>
-      )}
-      {!open && <div className="t12 q">Tap to remember more</div>}
-    </button>
+    />
   );
 }
 
+export interface MemoryRow { name: string; then: string; now: string }
+
+/**
+ * On this day (board 10 `h10-onthis`), on Home on a memory date only: a taped snapshot of that day drops in, with the
+ * date and the day's line in text, then that day's numbers against today's. More (wins, unlocks, what was eaten) opens
+ * under it.
+ */
+export function MemoryCard({ when, dateLabel, line, rows, extras, open, onToggle }: { when: string; dateLabel: string; line: string; rows: MemoryRow[]; extras: string[]; open: boolean; onToggle: () => void }) {
+  return (
+    <section className="otd" aria-labelledby="otd-h">
+      <h2 id="otd-h" className="otd-h">On this day</h2>
+      <p className="otd-when">{when}</p>
+      <div className="otd-snap">
+        <i className="otd-tape" aria-hidden="true" />
+        <span className="otd-date">{dateLabel}</span>
+        <p className="otd-line">{line}</p>
+      </div>
+      {rows.length > 0 && (
+        <dl className="otd-rows">
+          {rows.map((r) => (
+            <div key={r.name} className="otd-row">
+              <dt>{r.name}</dt>
+              <dd><span className="otd-then tn">{r.then}</span> <span aria-hidden="true">→</span><span className="sr-only">, now</span> <b className="tn">{r.now}</b></dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      {extras.length > 0 && (
+        <>
+          <button type="button" className="otd-more" aria-expanded={open} onClick={onToggle}>{open ? 'Less' : 'Remember more'}</button>
+          {open && extras.map((x) => <p key={x} className="otd-x">{x}</p>)}
+        </>
+      )}
+    </section>
+  );
+}
