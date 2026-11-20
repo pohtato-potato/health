@@ -18,7 +18,8 @@ import { Studio } from './Studio';
 import { clubInk, MomentumStrip, PickOfThree, playerOfMatch, ShotMap } from './match/MatchBits';
 import '../../styles/match-screen.css';
 import { TACTIC_NAME } from '../../football/rotation/night';
-import type { CallRecord } from '../../football/types';
+import type { Axis, CallRecord, ChanceEvent, ModKind } from '../../football/types';
+import { AXIS_INK } from '../../ui/inks';
 import { Action, Panel } from '../../ui/kit/Kit';
 import '../../styles/look-tonight.css';
 
@@ -29,6 +30,67 @@ function callLine(c: CallRecord, m: StoredMatch): string {
   const odds = c.pick === 'take' ? `${c.odds.take}%` : c.pick === 'shoot' ? `${c.odds.shoot}%` : 'safe';
   const out = c.pick === 'keep' ? '' : ev?.ok ? ': in.' : ': stayed out.';
   return `${c.minute}′ · ${c.by === 'you' ? 'you' : 'your assistant'} ${CALL_WORD[c.pick]} (${odds})${out}`;
+}
+
+
+/** One ability that played tonight (f23-ft): what it did and on how many chances. */
+export interface Played { name: string; line: string; tally: string; ink: string }
+const PLAYED_KINDS: ModKind[] = ['ability', 'captain', 'stack', 'card', 'sub'];
+const NAME: Partial<Record<ModKind, string>> = { captain: 'Captain’s armband', stack: 'The weekly stack', sub: 'Off the bench' };
+const signed = (d: number) => `${d > 0 ? '+' : ''}${Number.isInteger(d) ? d : d.toFixed(2).replace(/0$/, '')}`;
+const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
+
+/** Your abilities that touched a chance tonight, most-used first; a retake is its own row with what came of it. */
+export function whatPlayed(chances: ChanceEvent[]): Played[] {
+  const by = new Map<string, { axes: Map<Axis, number>; n: number }>();
+  for (const c of chances) {
+    const seen = new Set<string>();
+    for (const x of c.mods) {
+      if (!PLAYED_KINDS.includes(x.kind) || x.d <= 0) continue;
+      const name = x.kind === 'ability' || x.kind === 'card' ? x.why : NAME[x.kind] ?? x.why;
+      const row = by.get(name) ?? { axes: new Map(), n: 0 };
+      row.axes.set(x.axis, Math.max(row.axes.get(x.axis) ?? 0, x.d));
+      if (!seen.has(name)) { row.n += 1; seen.add(name); }
+      by.set(name, row);
+    }
+  }
+  const rows: Played[] = [...by].sort((a, b) => b[1].n - a[1].n).map(([name, r]) => {
+    const axes = [...r.axes];
+    const same = axes.every(([, d]) => d === axes[0][1]);
+    const line = axes.length === 1 ? `${signed(axes[0][1])} ${axes[0][0]}` : same && axes.length > 2 ? `${signed(axes[0][1])} to ${axes.length} axes` : axes.map(([a, d]) => `${signed(d)} ${a}`).join(', ');
+    return { name, line, tally: plural(r.n, 'chance'), ink: AXIS_INK[axes[0][0]] };
+  });
+  for (const c of chances) {
+    if (!c.retake) continue;
+    rows.unshift({ name: c.retake.why, line: `The ${c.minute}′ miss, taken again`, tally: c.retake.ok ? (c.side === 'atk' ? '1 goal' : 'Saved') : c.side === 'atk' ? 'Missed again' : 'In', ink: '#5fe3a1' });
+  }
+  return rows;
+}
+
+/** What played tonight: one quiet line per ability, a coloured dot beside its name. */
+export function WhatPlayed({ rows }: { rows: Played[] }) {
+  if (!rows.length) return null;
+  return (
+    <section className="ft-played" aria-label="What played tonight">
+      <div className="ft-hd"><b>What played tonight</b><span>{rows.length} {rows.length === 1 ? 'ability' : 'abilities'}</span></div>
+      <ul>{rows.map((r, k) => <li key={r.name} style={{ ['--c' as string]: r.ink, animationDelay: `${(k * 0.12).toFixed(2)}s` } as CSSProperties}><i aria-hidden="true" /><span><b>{r.name}</b><small>{r.line}</small></span><em>{r.tally}</em></li>)}</ul>
+    </section>
+  );
+}
+
+/** Their hidden ability, found out tonight: a cream card sealed with their crest, saying whether it woke. */
+export function HiddenSeal({ club, crest, name, text, woke }: { club: string; crest: string; name: string; text?: string; woke: number }) {
+  return (
+    <section className="ft-seal" aria-label={`${club}’s hidden ability`}>
+      <Art svg={crest} className="ft-wax" />
+      <span>
+        <small>{club}’s hidden ability</small>
+        <b>{name}</b>
+        {text && <p>{text}</p>}
+        <span className={`ft-woke ${woke ? 'on' : ''}`}>{woke ? `Woke on ${plural(woke, 'chance')}` : 'Never woke tonight'}</span>
+      </span>
+    </section>
+  );
 }
 
 export function FullTimeView({ m, save, studio, press, tier = 6, onWatch, papers, tape }: { m: StoredMatch; save: FbSave; studio?: FbNews; press?: FbNews; tier?: Tier; onWatch?: () => void; papers?: Papers | null; tape?: boolean }) {
@@ -59,6 +121,7 @@ export function FullTimeView({ m, save, studio, press, tier = 6, onWatch, papers
         {rangedFuel(m) && <p className="fb-s fb-ctr">Fuel played on wider dice tonight: the night out was logged as a range, so each chance rolled it a little either side of the middle.</p>}
         {onWatch && <Action quiet sm onClick={onWatch}>{m.watched ? 'Watch again' : 'Watch the match'}</Action>}
       </article>
+      <WhatPlayed rows={whatPlayed(m.events.chances)} />
       {m.comp === 'league' && m.events.calls && (
         <Panel className="md-ft">
           <MomentumStrip chances={m.events.chances} />
@@ -80,12 +143,11 @@ export function FullTimeView({ m, save, studio, press, tier = 6, onWatch, papers
           <ul className="lt-list">{m.events.moments.map((x, i) => <li key={i}>{x}</li>)}</ul>
         </Panel>
       )}
-      {m.events.revealed && (
-        <Panel ink="#c2b2ff">
-          <b className="k-lb">Found out</b>
-          <span className="k-q"><b style={{ color: '#ede6da' }}>{m.events.revealed}</b>: their hidden ability, now on their club page.</span>
-        </Panel>
-      )}
+      {m.events.revealed && (() => {
+        const opp = clubById(m.home === OWN ? m.away : m.home);
+        return <HiddenSeal club={opp.name} crest={clubCrest(opp, 40)} name={m.events.revealed} text={opp.hidden?.name === m.events.revealed ? opp.hidden.text : undefined}
+          woke={m.events.chances.filter((c) => c.mods.some((x) => x.kind === 'hidden')).length} />;
+      })()}
       {m.pick && <PickOfThree matchId={m.id} pick={m.pick} name={(id) => clubById(id).name} />}
       {tape && <OnTape m={m} />}
       {press?.lineId && <Press matchId={m.id} lineId={press.lineId} facts={facts} answered={press.answered} onAnswer={(i) => answerPress(m.id, i)} />}
