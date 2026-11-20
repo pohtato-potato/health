@@ -7,14 +7,14 @@ import { LOBBY_DAYS, LOBBY_RISK, lobbyOpen, motionById, type Vote } from '../../
 import { seasonLength } from '../../../football/calendar';
 import { worldOf } from '../../../football/pyramid/shape';
 import { askDef, askOpen, asksOf, castById, MAX_RANK, perksAt, RANK_AT } from '../../../football/cast/bonds';
-import type { CastId, CastMember } from '../../../football/content/desk/types';
-import { castVote, hallOf, lastCongress } from '../../../football/store/congress';
+import type { CastId, CastMember, Motion } from '../../../football/content/desk/types';
+import { castVote, hallOf, lastCongress, type HallMotion } from '../../../football/store/congress';
 import { bondsOfSave, scenesWaiting, seeScene } from '../../../football/store/cast';
 import { loadDesk } from '../../../football/store/desk';
 import { useTonight } from '../../../football/store/hooks';
 import type { FbSave } from '../../../football/store/tables';
 import { go, useRoute } from '../../../router';
-import { Action, Door, Empty, Hero, Panel, Sect, Title, type HowThisWorks } from '../../../ui/kit/Kit';
+import { Action, Door, Empty, Panel, Sect, Title, type HowThisWorks } from '../../../ui/kit/Kit';
 import { BLUE, CORAL, GOLD, GREEN, LAV, PINK } from '../club/Bits';
 import { FootballHome } from '../FootballHome';
 import '../../../styles/desk.css';
@@ -69,35 +69,13 @@ export function CongressRoute() {
   const c = m?.view.congress;
   if (!t || !m || !c) return <NoClub title="The congress" section="league" />;
   const hall = hallOf(c);
-  const passing = hall.filter((h) => h.passing).length;
   const voted = hall.some((h) => h.brabo !== 'abstain');
   const last = lastCongress(t.save);
   const when = c.open ? (c.daysLeft !== undefined ? `${c.daysLeft} ${c.daysLeft === 1 ? 'day' : 'days'} left to lobby` : 'lobbying until the new season') : `lobbying opens ${LOBBY_DAYS} days before the season ends`;
   return (
     <Page title="Congress" back="League" to="/football/league" help={CONGRESS_HOW} section="league">
-      <Hero value={`${passing}/${hall.length}`} ink={GOLD} label="passing as it stands" under={`Before season ${c.season} · ${when}`} />
-      {hall.map((h) => {
-        const def = motionById(h.id)!;
-        const ink = h.passing ? GREEN : CORAL;
-        return (
-          <Panel key={h.id} ink={ink} className="cg-motion">
-            <Title as="h2" under={def.text}>{def.name}</Title>
-            <div className="cg-seats" role="img" aria-label={`${h.for} for, ${h.against} against, ${h.abstain} abstaining`}>
-              <span className="cg-bar for" style={{ flexGrow: h.for }} />
-              <span className="cg-bar abs" style={{ flexGrow: h.abstain }} />
-              <span className="cg-bar ag" style={{ flexGrow: h.against }} />
-            </div>
-            <div className="k-row"><span className="k-q">As it stands</span><b className="cg-count" style={{ color: ink }}>{h.for}–{h.against}{h.abstain ? ` · ${h.abstain} abstain` : ''}</b></div>
-            {h.lobbied > 0 && <div className="k-row"><span className="k-q">Won by lobbying</span><b>{h.lobbied}</b></div>}
-            <span><b className="k-lb">If it passes</b> <span className="k-q">{def.plays}</span></span>
-            <div className="k-pills cg-vote" role="radiogroup" aria-label={`Your vote on ${def.name}`}>
-              {(['for', 'against', 'abstain'] as Vote[]).map((v) => (
-                <button key={v} type="button" role="radio" className="k-pill" aria-checked={h.brabo === v} onClick={() => void castVote(c.season, h.id, v)}>{VOTE_WORD[v]}</button>
-              ))}
-            </div>
-          </Panel>
-        );
-      })}
+      <HallHead seats={hall[0] ? hall[0].for + hall[0].against + hall[0].abstain : c.clubs.length + 1} season={c.season} line={when} />
+      {hall.map((h, i) => <MotionChalk key={h.id} h={h} def={motionById(h.id)!} i={i} n={hall.length} onVote={(v) => void castVote(c.season, h.id, v)} />)}
       {c.open && voted && <Action wide onClick={() => go('/football/desk/job', { id: 'lobby' })}>Lobby a club · one die</Action>}
       {last && (
         <>
@@ -115,6 +93,45 @@ export function CongressRoute() {
         </>
       )}
     </Page>
+  );
+}
+
+/** The hall's head (board 23, c23-congress): how many seats vote, and when lobbying runs. */
+export function HallHead({ seats, season, line }: { seats: number; season: number; line: string }) {
+  return (
+    <div className="cg23-hall">
+      <b className="fb-num">{seats}</b>
+      <span><strong>seats vote before season {season}</strong>Yours is one of them. The count below is as things stand, {line}.</span>
+    </div>
+  );
+}
+
+/** One motion as a chalk card on the tactics board: the seats for and against as numbers, a bar meeting the
+ *  middle line, the abstentions, Passing or Falling in words, and your vote. */
+export function MotionChalk({ h, def, i, n, onVote }: { h: HallMotion; def: Motion; i: number; n: number; onVote: (v: Vote) => void }) {
+  const tot = Math.max(1, h.for + h.against);
+  const d = 0.2 + i * 0.25;
+  return (
+    <section className="cg23" aria-labelledby={`cg-${h.id}`} style={{ '--d': `${d}s` } as CSSProperties}>
+      <span className={`cg23-v ${h.passing ? 'ok' : 'no'}`}>{h.passing ? 'Passing' : 'Falling'}</span>
+      <small>Motion {i + 1} of {n}</small>
+      <h2 id={`cg-${h.id}`}>{def.name}</h2>
+      <p>{def.text}</p>
+      <div className="cg23-cnt">
+        <span><b className="fb-num f">{h.for}</b><small>for</small></span>
+        <div className="cg23-bar" role="img" aria-label={`${h.for} for, ${h.against} against; it needs more for than against`}>
+          <i className="f" style={{ width: `${(h.for / tot) * 100}%` }} /><i className="a" style={{ width: `${(h.against / tot) * 100}%` }} />
+        </div>
+        <span className="rt"><b className="fb-num a">{h.against}</b><small>against</small></span>
+      </div>
+      <p className="cg23-ab">{h.abstain} {h.abstain === 1 ? 'seat abstains' : 'seats abstain'} · it passes on more for than against{h.lobbied > 0 ? ` · ${h.lobbied} won by lobbying` : ''}</p>
+      <p className="cg23-if"><b>If it passes</b> {def.plays}</p>
+      <div className="cg23-vt" role="radiogroup" aria-label={`Your vote on ${def.name}`}>
+        {(['for', 'against', 'abstain'] as Vote[]).map((v) => (
+          <button key={v} type="button" role="radio" aria-checked={h.brabo === v} onClick={() => onVote(v)}>{VOTE_WORD[v]}</button>
+        ))}
+      </div>
+    </section>
   );
 }
 
