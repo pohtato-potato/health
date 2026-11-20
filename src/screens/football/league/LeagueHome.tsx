@@ -1,6 +1,11 @@
 // The League section: the table first, then the pyramid, the calendar and the cups, one tap apart.
 import { useLiveQuery } from 'dexie-react-hooks';
-import { tierName } from '../../../football/data/load';
+import type { CSSProperties } from 'react';
+import { clubById, tierName } from '../../../football/data/load';
+import { clubCrest, crestSvg } from '../../../football/art/crest';
+import { ordinal } from '../../../football/habitLines';
+import type { Row } from '../../../football/table';
+import { Art } from '../world/Fog';
 import { loadLeague, type League } from '../../../football/store/league';
 import { OWN } from '../../../football/store/season';
 import type { Tier } from '../../../football/types';
@@ -44,6 +49,16 @@ export function LeagueView({ l, view, tier, extra, n }: { l: League; view: Leagu
       {view === 'news' && n && <NewsView news={n.news} matches={n.matches} today={n.today} />}
       {view === 'table' && (
         <>
+          {!tier && (() => {
+            const rows = l.tables[mine] ?? [];
+            const me = rows.find((r) => r.id === OWN);
+            return (
+              <>
+                <LeagueHead crest={crestSvg(l.save.crest.step, l.save.crest.opt, 76)} pos={rows.indexOf(me!) + 1} division={tierName(mine)} line={`of ${rows.length} · ${l.save.phase === 'season' ? `Day ${l.save.day} of 42` : 'Between seasons'} · ${me?.p ?? 0} played`} />
+                <CrestLadder rows={rows} own={crestSvg(l.save.crest.step, l.save.crest.opt, 30)} up={mine > 1 ? 2 : 0} down={mine < 6 ? 3 : 0} division={tierName(mine)} />
+              </>
+            );
+          })()}
           {n && <BackPageCard news={n.news} matches={n.matches} today={n.today} more />}
           <div className="fb-tierpick">
             <button type="button" className="fb-btn sm" disabled={t === 1} aria-label={t > 1 ? `Up to ${tierName((t - 1) as Tier)}` : 'Top tier'} onClick={() => set({ tier: String(t - 1) })}><Icon name="up" size={22} stroke={2} /></button>
@@ -91,6 +106,43 @@ export function LeagueView({ l, view, tier, extra, n }: { l: League; view: Leagu
   );
 }
 
+
+/** The League's head (board 19, l19-home): your crest beside your position, the division and how far in. */
+export function LeagueHead({ crest, pos, division, line }: { crest: string; pos: number; division: string; line: string }) {
+  const word = pos ? ordinal(pos) : '';
+  return (
+    <div className="lh19">
+      <span className="cr"><Art svg={crest} /></span>
+      <div>
+        <b className="fb-num" aria-label={pos ? word : 'No position yet'}>{pos ? <>{pos}<sup>{word.slice(String(pos).length)}</sup></> : '–'}</b>
+        <strong>{division}</strong>
+        <span>{line}</span>
+      </div>
+    </div>
+  );
+}
+
+const ZONE_INK = { up: '#ffd36b', po: '#c2b2ff', dn: '#93c3dc' } as const;
+const ZONE_WORD = { up: 'promotion place', po: 'play-off place', dn: 'relegation place' } as const;
+/** Every crest in table order, the zones as a line under them and in words for a screen reader. `up` and `down`
+ *  are how many go up and down (0 where none do); third to sixth are the play-offs wherever clubs go up. */
+export function CrestLadder({ rows, own, up, down, division }: { rows: Row[]; own: string; up: number; down: number; division: string }) {
+  const zone = (pos: number) => (pos <= up ? 'up' : up && pos >= 3 && pos <= 6 ? 'po' : down && pos > rows.length - down ? 'dn' : undefined);
+  return (
+    <ol className="ld19" aria-label={`${division} in order, by crest`}>
+      {rows.map((r, i) => {
+        const me = r.id === OWN;
+        const z = zone(i + 1);
+        const name = me ? 'Brabo United (you)' : clubById(r.id).name;
+        return (
+          <li key={r.id} className={me ? 'me' : undefined} aria-label={`${i + 1}, ${name}${z ? `, ${ZONE_WORD[z]}` : ''}`} style={{ '--zc': z ? ZONE_INK[z] : 'rgba(243, 238, 230, .2)', '--d': `${0.2 + i * 0.06}s` } as CSSProperties}>
+            <Art svg={me ? own : clubCrest(clubById(r.id), 24)} /><i aria-hidden="true">{i + 1}</i>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
 
 export function LeagueHome() {
   const { params } = useRoute();

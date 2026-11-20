@@ -805,3 +805,22 @@ html.contrast .sc-hd span { color: #fff; }
 html.contrast .wr-page { background: #000; --wr-ink: #ffe27a; }
 html.contrast .wr-tiles div, html.contrast .wr-bars i { background: #1a1a1a; outline: 1px solid #fff; }
 html.contrast .wr-back { border-color: #fff; }
+
+/* League, the current page (board 19, l19-home): your crest beside your place, the ladder of crests in table order. */
+.lh19 { display: flex; align-items: center; gap: 14px; }
+.lh19 .cr { flex: none; filter: drop-shadow(0 0 16px rgba(255, 122, 26, .6)); animation: lh19-land .8s .2s cubic-bezier(.34, 1.56, .64, 1) both; }
+@keyframes lh19-land { from { opacity: 0; transform: scale(.5) rotate(-12deg); } }
+.lh19 b { display: block; font: 700 92px/.82 var(--fb-cond); color: #f2c46d; }
+.lh19 b sup { font-size: 38px; vertical-align: top; }
+.lh19 strong { display: block; font: 700 24px/1 var(--fb-cond); text-transform: uppercase; color: #fff; overflow-wrap: anywhere; }
+.lh19 span { font: 700 14px/1.35 var(--sans); color: rgba(243, 238, 230, .85); }
+.ld19 { list-style: none; margin: 0; display: flex; align-items: flex-end; gap: 4px; padding: 10px 8px 0; border-radius: 16px; background: rgba(255, 255, 255, .04); overflow: hidden; }
+.ld19 li { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; padding-bottom: 6px; animation: ld19-up .45s var(--d) ease-out both; }
+.ld19 li svg { width: 100%; max-width: 24px; height: auto; }
+.ld19 li.me svg { max-width: 30px; filter: drop-shadow(0 0 8px #ff7a1a); }
+@keyframes ld19-up { from { opacity: 0; transform: translateY(10px); } }
+.ld19 li i { font: 700 14px var(--fb-cond); font-style: normal; color: rgba(243, 238, 230, .75); }
+.ld19 li.me { padding-bottom: 16px; }
+.ld19 li.me i { color: #ffa25c; }
+.ld19 li::after { content: ''; width: 100%; height: 4px; border-radius: 2px; background: var(--zc); }
+html.contrast .ld19 li i, html.contrast .lh19 span { color: #fff; }
