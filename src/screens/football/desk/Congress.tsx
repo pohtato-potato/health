@@ -155,28 +155,39 @@ export function CastRoute() {
   const ranks = members.reduce((n, y) => n + y.rank, 0);
   return (
     <Page title="The cast" back="Club" to="/football/club" help={CAST_HOW} section="club">
-      <Hero value={ranks} ink={PINK} label={ranks === 1 ? 'rank between you' : 'ranks between you'} under={`of ${members.length * MAX_RANK} · nothing is ever taken away`} />
+      <div className="bh21"><b className="tn">{members.length}</b><span><strong>{members.length === 1 ? 'bond' : 'bonds'}</strong>{ranks} {ranks === 1 ? 'rank' : 'ranks'} between you of {members.length * MAX_RANK}. Spend a die with someone and the bond grows; nothing is ever taken away.</span></div>
       {waiting[0] && (
         <Panel ink={GOLD} onClick={() => go('/football/cast', { scene: `${waiting[0].member}:${waiting[0].rank}` })} label={`A new scene with ${castById(waiting[0].member)!.name}`}>
           <span className="k-col"><b>Rank {waiting[0].rank} with {castById(waiting[0].member)!.name}</b><span className="k-q">{waiting.length > 1 ? `A new scene, and ${waiting.length - 1} more after it` : 'A new scene is waiting'}</span></span>
         </Panel>
       )}
-      {members.map((y) => (
-        <Panel key={y.id} ink={PINK} onClick={() => go('/football/cast', { member: y.id })} label={`${y.name}, ${y.role}: rank ${y.rank}`} className="cg-member">
-          <span className="cg-mrow">
-            <i className="cg-sil" aria-hidden="true" />
-            <span className="k-col" style={{ flex: 1 }}>
-              <b>{y.name}</b>
-              <span className="k-q">{y.role}</span>
-              <Pips rank={y.rank} />
-              <span className="k-q">{y.rank >= MAX_RANK ? `Rank ${MAX_RANK}` : `${y.toNext} to rank ${y.rank + 1}`}{y.askOpen ? ' · an ask is open' : ''}</span>
-            </span>
-            <span className="cg-rank" aria-hidden="true">{y.rank}</span>
-          </span>
-        </Panel>
-      ))}
+      <BondPlates members={members} />
       <Action wide onClick={() => go('/football/desk/job', { id: 'cast' })}>Time with the cast · one die</Action>
     </Page>
+  );
+}
+
+const BOND_INK = ['#ff9a76', '#5fe3a1', '#c2b2ff', '#ffd36b', '#8fd8ff', '#ff7d9c', '#93c3dc'];
+const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+/** The staff as bonds (board 21, b21-list): one slanted plate per person, a card for them with the rank in its corner,
+ * the rank in diamonds and as a big number, and a flashing tag when they have asked you something. */
+export function BondPlates({ members }: { members: MemberRow[] }) {
+  return (
+    <div className="bo21">
+      {members.map((y, i) => (
+        <button key={y.id} type="button" className={`bo21-p${y.askOpen ? ' ask' : ''}`} style={{ '--c': BOND_INK[i % BOND_INK.length], '--d': `${0.15 + i * 0.08}s` } as CSSProperties}
+          onClick={() => go('/football/cast', { member: y.id })} aria-label={`${y.name}, ${y.role}: rank ${y.rank} of ${MAX_RANK}${y.askOpen ? ', has asked you something' : ''}`}>
+          <span className="bc21" aria-hidden="true"><i>{ROMAN[y.rank] ?? y.rank}</i><span className="cg-sil" /></span>
+          <span className="bn21">
+            <b>{y.name}</b><small>{y.role}</small>
+            <Pips rank={y.rank} ink="var(--c)" />
+            <small className="nx">{y.rank >= MAX_RANK ? 'The bond is whole' : `${y.toNext} to rank ${y.rank + 1}`}</small>
+            {y.askOpen && <em className="tg">Has asked you something</em>}
+          </span>
+          <span className="br21" aria-hidden="true"><b>{y.rank}</b><small>of {MAX_RANK}</small></span>
+        </button>
+      ))}
+    </div>
   );
 }
 
