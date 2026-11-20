@@ -887,3 +887,33 @@ html.contrast .ft23-r.ch { background: #ffd36b; }
 @keyframes tn21-pulse { 50% { box-shadow: 0 0 0 5px rgba(255, 90, 106, .35); } }
 html.contrast .tn21 { background: #000; border-color: #fff; }
 html.contrast .tn21 > span:last-child { color: #fff; }
+
+/* The news (board 21, n21-news): filters per kind, then the feed by day, each kind in its own form. */
+.nf21 { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 2px 16px; }
+.nf21 button { flex: none; min-height: 44px; display: flex; align-items: center; gap: 6px; padding: 0 14px; border-radius: 22px; border: 1.5px solid var(--c); background: none; color: #fff; font: 700 15px var(--sans); cursor: pointer; }
+.nf21 button b { font: 700 18px var(--fb-cond); color: var(--c); }
+.nf21 button[aria-pressed='true'] { background: #fff; color: #101018; border-color: #fff; }
+.nf21 button[aria-pressed='true'] b { color: #101018; }
+.nd21 { margin: 6px 0 -2px; font: 700 15px var(--sans); color: rgba(243, 238, 230, .75); display: flex; align-items: center; gap: 10px; }
+.nd21::after { content: ''; flex: 1; height: 1px; background: rgba(255, 255, 255, .15); }
+.ns21 { display: flex; flex-direction: column; gap: 8px; }
+.ns21 .bp { padding: 14px; background: #f4ecd8; color: #14100a; border-radius: 4px; transform: rotate(-.6deg); animation: ns21-stick .5s var(--d) cubic-bezier(.34, 1.56, .64, 1) both; }
+@keyframes ns21-stick { from { opacity: 0; transform: rotate(-4deg) scale(.9); } }
+.ns21 .bp small { font: 700 14px var(--sans); color: #7a4a10; }
+.ns21 .bp b { display: block; font: 700 32px/.95 var(--fb-cond); text-transform: uppercase; margin-top: 4px; overflow-wrap: anywhere; }
+.ns21 .pr { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 10px; align-items: center; padding: 12px; border-radius: 16px; background: rgba(255, 154, 118, .12); animation: ns21-up .4s var(--d) ease-out both; }
+@keyframes ns21-up { from { opacity: 0; transform: translateY(10px); } }
+.ns21 .pr .mic { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: #ff9a76; color: #101018; }
+.ns21 .pr .mic svg { width: 24px; height: 24px; }
+.ns21 .pr b { font: 700 17px/1.3 var(--sans); color: #fff; }
+.ns21 .pr small { display: block; font: 700 14px var(--sans); color: #ff9a76; margin-top: 2px; }
+.ns21 .sd { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 16px; background: rgba(194, 178, 255, .08); }
+.ns21 .sd > small { font: 700 14px var(--sans); color: #c2b2ff; }
+.ns21 .sd p { margin: 0; max-width: 86%; padding: 8px 12px; border-radius: 16px 16px 16px 4px; background: #c2b2ff; color: #1a1430; font: 700 15px/1.35 var(--sans); animation: ns21-pop .4s var(--d) cubic-bezier(.34, 1.56, .64, 1) both; }
+.ns21 .sd p:nth-of-type(even) { align-self: flex-end; border-radius: 16px 16px 4px 16px; background: #fff; }
+@keyframes ns21-pop { from { opacity: 0; transform: scale(.8); } }
+.ns21 .nl21 { --k: #8fdcb6; display: grid; grid-template-columns: 10px minmax(0, 1fr); gap: 10px; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, var(--k) 8%, transparent); font: 400 15px/1.4 var(--sans); color: #fff; animation: ns21-up .4s var(--d) ease-out both; }
+.ns21 .nl21.world { --k: #93c3dc; } .ns21 .nl21.roundup { --k: #ffd36b; }
+.ns21 .nl21::before { content: ''; width: 10px; height: 10px; margin-top: 6px; border-radius: 50%; background: var(--k); box-shadow: 0 0 8px var(--k); }
+html.contrast .nd21, html.contrast .ns21 .sd > small { color: #fff; }
+html.contrast .ns21 .pr, html.contrast .ns21 .sd, html.contrast .ns21 .nl21 { background: #000; box-shadow: inset 0 0 0 1.5px #fff; }
