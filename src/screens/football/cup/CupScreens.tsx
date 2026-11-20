@@ -8,9 +8,10 @@ import { cupsOpen, type CupBook } from '../../../football/cup/book';
 import { titleOf } from '../../../football/cup/cards';
 import type { Deal } from '../../../football/cup/deck';
 import { cupByN, CUPS } from '../../../football/cup/ladder';
-import { dealToday, loadBook, loadRun, startCupRun } from '../../../football/cup/store';
+import { dealToday, loadBook, loadRun, startCupRun, type CupDone } from '../../../football/cup/store';
 import type { Card } from '../../../football/cup/types';
 import { clubById } from '../../../football/data/load';
+import { db } from '../../../db/db';
 import { go, useRoute } from '../../../router';
 import { AXIS_INK } from '../../../ui/inks';
 import { Panel, Sect } from '../../../ui/kit/Kit';
@@ -83,10 +84,46 @@ const recLine = (c: CupDef, b: CupBook) => {
   return `${rec.won ? `Won ${rec.won}×` : `Furthest: ${rec.furthest} stops`}${rec.fastest != null ? ` · fastest win ${rec.fastest} cards` : ''} · ${rec.runs} run${rec.runs === 1 ? '' : 's'}`;
 };
 
+const dayShort = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+
+/** The cups won (board 20, c20-cups): their trophies rise, then the record across every winning run, then each run
+ *  won with its wins of played, score, best win and day. Nothing won: nothing shown. */
+export function CupsWon({ done }: { done: CupDone[] }) {
+  const won = done.filter((d) => d.result === 'won');
+  if (!won.length) return null;
+  const cups = [...new Set(won.map((d) => d.cup))].map(cupByN);
+  const sum = (f: (d: CupDone) => number) => won.reduce((a, d) => a + f(d), 0);
+  const beaten = new Set(won.flatMap((d) => d.stats.beaten)).size;
+  return (
+    <section className="cw20" aria-label="Cups won">
+      <div className="tc20" role="img" aria-label={`${cups.length} ${cups.length === 1 ? 'cup' : 'cups'} won: ${cups.map((c) => c.name).join(', ')}`}>
+        {cups.slice(0, 5).map((c, i) => <span key={c.n} className="tc20-t" style={{ '--d': `${0.2 + i * 0.2}s`, color: c.colour } as CSSProperties}><Trophy kind={c.silver} colour={c.colour} size={i === 1 ? 72 : 60} /></span>)}
+      </div>
+      <div className="cu20"><b>{cups.length} {cups.length === 1 ? 'cup' : 'cups'}, {sum((d) => d.stats.won)} from {sum((d) => d.stats.played)}</b><span>{sum((d) => d.stats.goalsFor)} scored, {sum((d) => d.stats.goalsAgainst)} let in, {beaten} {beaten === 1 ? 'club' : 'clubs'} beaten</span></div>
+      <h3 className="cup-h3">Cup runs won</h3>
+      <div className="cr20">
+        {won.map((d, i) => {
+          const c = cupByN(d.cup);
+          const big = d.stats.biggest;
+          return (
+            <div key={`${d.cup}-${d.date}-${i}`} style={{ '--c': c.colour, '--d': `${0.6 + Math.min(i, 8) * 0.12}s` } as CSSProperties}>
+              <Trophy kind={c.silver} colour={c.colour} size={44} />
+              <b>{c.name}</b>
+              <em className="fb-num">{d.stats.won}/{d.stats.played}</em>
+              <small>{d.stats.goalsFor}–{d.stats.goalsAgainst}{big ? ` · best ${big.for}–${big.against} v ${big.club}` : ''} · {dayShort(d.date)}</small>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 /** /football/cup: the cabinet. The cup you are on leads; then the twelve cups, then the record book. */
 export function CupsPage() {
   const run = useLiveQuery(async () => (await loadRun()) ?? null, []);
   const book = useLiveQuery(loadBook, []);
+  const done = useLiveQuery(() => db.cupDone.orderBy('date').toArray(), []);
   if (run === undefined || !book) return null;
   const open = cupsOpen(book);
   const live = run && !run.run.over ? run.run : null;
@@ -104,6 +141,8 @@ export function CupsPage() {
       {live ? <CupAct onClick={() => go('/football/cup/run')}>Carry on the run</CupAct>
         : run?.run.over ? <CupAct onClick={() => go('/football/cup/run')}>See how it ended</CupAct>
           : <CupAct onClick={() => go('/football/cup', { n: String(open) })}>Start a run</CupAct>}
+
+      {done && <CupsWon done={done} />}
 
       <Sect>The twelve cups</Sect>
       <ol className="cup-ladder">
