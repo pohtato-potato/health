@@ -13,21 +13,21 @@ import { DealsView } from './Deals';
 import { MoneyView } from './Money';
 import { go, useRoute } from '../../../router';
 import { PlayerView } from './Player';
-import { SquadView } from './Squad';
+import { AbilitySlots, Binder, SquadView } from './Squad';
 import { Pitch } from '../players/Screens';
 import { TreeHome } from '../tree/TreeScreens';
 import { useWorldDoors } from '../world/WorldScreens';
 import { useModel } from '../tree/model';
 import { Kaai } from './Kaai';
 import { kaaiStory } from '../../../football/ground';
-import { Action, Door, Doors, FamilyDoors, Hero, Panel, Sect, type HowThisWorks } from '../../../ui/kit/Kit';
+import { Action, Door, FamilyDoors, Panel, Sect, type HowThisWorks } from '../../../ui/kit/Kit';
 import { usePlayers, useSheet, useTonight } from '../../../football/store/hooks';
 import { loadLeague } from '../../../football/store/league';
 import { loadDesk } from '../../../football/store/desk';
 import { OWN } from '../../../football/store/season';
 import { clubById } from '../../../football/data/load';
 import { crestSvg } from '../../../football/art/crest';
-import { elevenOf, UNIT_COLOUR } from '../../../football/players/eleven';
+import { elevenOf } from '../../../football/players/eleven';
 import { membersOf } from '../../../football/store/players';
 import { AXES } from '../../../football/types';
 import { euros } from '../../../football/money';
@@ -61,18 +61,20 @@ export function ClubView({ c, view }: { c: Club; view: ClubViewId; extra?: Parti
   );
 }
 
-/** The squad page (a door on Club): the six units, then the habits that make the club. */
+/** The squad page (a door on Club), the binder (board 22): the equipped abilities, every unit as a page of cards, then
+ * the habits that make the club. */
 function SquadPage({ c }: { c: Club }) {
   const players = usePlayers();
+  const sheet = useSheet();
   const squad = players?.filter((p) => p.status === 'squad') ?? [];
+  const xi = players ? sheet?.xi ?? elevenOf(membersOf(new Map(players.map((p) => [p.id, p])))) : [];
   return (
-    <div className="k-page">
+    <div className="k-page bd19-page">
+      <AbilitySlots slots={c.save.slots} />
       {players && (
         <>
-          <Hero value={squad.length} ink="#8fdcb6" label={squad.length === 1 ? 'player in the squad' : 'players in the squad'} />
-          <Doors label="The units">
-            {AXES.map((u) => <Door key={u} icon="people" name={u} ink={UNIT_COLOUR[u]} value={squad.filter((p) => p.unit === u).length} onClick={() => go('/football/unit', { u })} />)}
-          </Doors>
+          <p className="bd19-n"><b className="tn">{squad.length}</b> {squad.length === 1 ? 'player in the squad' : 'players in the squad'}</p>
+          <Binder players={squad} starters={new Set(xi.map((x) => x.player))} />
         </>
       )}
       <SquadView c={c} onCaptain={(a) => void setCaptain(a)} onEquip={(id, i) => void equipAbility(id, i)} />

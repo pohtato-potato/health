@@ -1,6 +1,11 @@
 // The squad, on the kit: the six members (three attack, three defend) as filled panels with their rating in its value
 // colour, the bench, the armband and the ability slots. Same taps as before; only the look is new.
+import type { CSSProperties } from 'react';
 import { abilityById, BUILT_INS } from '../../../football/data/abilities';
+import { UNIT_COLOUR, UNIT_WHERE } from '../../../football/players/eleven';
+import type { FbPlayer } from '../../../football/players/types';
+import { AXES } from '../../../football/types';
+import { PlayerCard } from '../players/Card';
 import type { Club, Member } from '../../../football/store/club';
 import type { FbSquadRow } from '../../../football/store/tables';
 import { MAX_SLOTS } from '../../../football/squad';
@@ -11,6 +16,56 @@ import { Panel, Sect } from '../../../ui/kit/Kit';
 import { GOLD, LAV, Note, PanelTop } from './Bits';
 
 const ATTACK: Axis[] = ['Pace', 'Power', 'Fuel'];
+const SLOT_INK = ['#ff9a76', '#5fe3a1', '#c2b2ff'];
+const PAGE = 10;
+
+/** The equipped abilities, one tile per slot, at the top of the squad (board 22, c22-binder). */
+export function AbilitySlots({ slots }: { slots: string[] }) {
+  return (
+    <ul className="t22sl" aria-label="Ability slots">
+      {Array.from({ length: MAX_SLOTS }, (_, i) => {
+        const a = slots[i] ? abilityById(slots[i]) : undefined;
+        return <li key={i} className={a ? undefined : 'empty'} style={{ '--c': SLOT_INK[i % SLOT_INK.length] } as CSSProperties}><small>Slot {i + 1}</small>{a?.name ?? 'Empty'}</li>;
+      })}
+    </ul>
+  );
+}
+
+/** The binder: each unit a page of small cards, best first, with the rating under each; tonight's starters ringed. */
+export function Binder({ players, starters }: { players: FbPlayer[]; starters: Set<string> }) {
+  let k = 0;
+  return (
+    <>
+      <div className="bd19-lg"><span><i aria-hidden="true" />Starts tonight</span><span>Number: rating</span></div>
+      <div className="bd19">
+        {AXES.map((u) => {
+          const ps = players.filter((p) => p.unit === u).sort((a, b) => b.overall - a.overall);
+          const show = ps.slice(0, PAGE);
+          return (
+            <section key={u} style={{ '--c': UNIT_COLOUR[u] } as CSSProperties} aria-labelledby={`bd-${u}`}>
+              <h3 id={`bd-${u}`}>{u}<small>{ps.length} · {UNIT_WHERE[u]}</small></h3>
+              {ps.length === 0 ? <p className="k-q">No one signed yet.</p> : (
+                <div className="gr">
+                  {show.map((p) => {
+                    const xi = starters.has(p.id);
+                    return (
+                      <button key={p.id} type="button" className={`bd19-c${xi ? ' xi' : ''}`} style={{ '--d': `${0.1 + k++ * 0.03}s` } as CSSProperties}
+                        aria-label={`${p.name}, ${p.overall}${xi ? ', starts tonight' : ''}`} onClick={() => go('/football/player', { id: p.id })}>
+                        <PlayerCard card={p.card} art={p.art} seed={p.id} noView />
+                        <b className="tn" aria-hidden="true">{p.overall}</b>
+                      </button>
+                    );
+                  })}
+                  {ps.length > PAGE && <button type="button" className="more" onClick={() => go('/football/unit', { u })}>{ps.length - PAGE} more in {u}</button>}
+                </div>
+              )}
+            </section>
+          );
+        })}
+      </div>
+    </>
+  );
+}
 
 /** One member: its rating in its value colour, in a panel of its axis's ink. */
 function Member({ m }: { m: Member }) {
