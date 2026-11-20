@@ -1,5 +1,5 @@
 // The one transfer budget, last season's income, the sponsor slots and the offers.
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { MoneyFigure } from '../../../ui/motion/MoneyFigure';
 import { euros, KIT_SPONSOR_TECH, oneBrandEach, type Offer, type Risk, type Slot } from '../../../football/money';
 import { seasonMoneyScale } from '../../../football/pyramid/shape';
@@ -8,7 +8,7 @@ import { SigningView } from '../moments/Signing';
 import type { Club } from '../../../football/store/club';
 import type { Tier } from '../../../football/types';
 import { WagesCard } from '../tree/TreeScreens';
-import { Action, Hero, Panel, Sect } from '../../../ui/kit/Kit';
+import { Panel, Sect } from '../../../ui/kit/Kit';
 import { BLUE, CORAL, GOLD, GREEN, LAV, Note, PanelTop } from './Bits';
 
 const RISK_INK: Record<Risk, string> = { stable: GREEN, flashy: GOLD, dodgy: CORAL };
@@ -46,9 +46,37 @@ function slotRows(tier: Tier, groundBuilt: boolean, kit: boolean, world2: boolea
   ];
 }
 
+type Signed = NonNullable<Club['save']['sponsors']>[number];
+/** An offer as a letter to sign (board 19, m19-ledger): brand, the sum a season, the slot, risk and length in words. */
+export function OfferLetter({ o, i, onSign }: { o: Offer; i: number; onSign?: () => void }) {
+  return (
+    <div className="of19-l" style={{ '--r': `${i % 2 ? 1 : -1.2}deg`, '--d': `${0.4 + i * 0.2}s` } as CSSProperties}>
+      <b>{o.brand}</b><em>{m(o.perSeason)}<span>a season</span></em>
+      <small>{SLOT_NAME[o.slot]} · {RISK[o.risk]} · {o.seasons} {o.seasons === 1 ? 'season' : 'seasons'}</small>
+      <p>{o.line} {RISK_WHY[o.risk]}</p>
+      <button type="button" onClick={onSign}>Sign {o.brand}</button>
+    </div>
+  );
+}
+/** The sponsors signed now: what each brings a season, the slot, how long, and the risk in its colour and in words. */
+export function SponsorList({ sponsors, scale }: { sponsors: Signed[]; scale: number }) {
+  return (
+    <div className="sl19">
+      {sponsors.map((x, i) => (
+        <div key={`${x.slot}-${x.brand}`} style={{ '--d': `${0.8 + i * 0.08}s`, '--rk': RISK_INK[x.risk] } as CSSProperties}>
+          <b>{x.brand}</b><em>{m(x.perSeason * scale)}</em>
+          <small>{SLOT_NAME[x.slot]} · {x.seasons} {x.seasons === 1 ? 'season' : 'seasons'}</small><span className="rk">{RISK[x.risk]}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+const COINS = Array.from({ length: 10 }, (_, k) => <i key={k} style={{ '--x': `${(k * 37 + 8) % 92}%`, '--d': `${((k * 0.45) % 5).toFixed(2)}s` } as CSSProperties} />);
+
 export function MoneyView({ c, groundBuilt = false, onAccept, onOwn }: { c: Club; groundBuilt?: boolean; onAccept?: (o: Offer) => void; onOwn?: (name: string, slot: Slot) => void }) {
   const s = c.save;
   const signed = s.sponsors ?? [];
+  const live = signed.filter((x) => x.since <= s.season && s.season - x.since < x.seasons);
   const [name, setName] = useState(s.ownSponsor?.name ?? '');
   const [slot, setSlot] = useState<Slot>((s.ownSponsor?.slot as Slot) ?? 'sleeve');
   // In world 2 the kit maker's slot opens with the tree's Kit sponsor (ledger O40); a kit deal signed before stays.
@@ -56,8 +84,15 @@ export function MoneyView({ c, groundBuilt = false, onAccept, onOwn }: { c: Club
   return (
     <div className="k-page">
       {s.signed && <SigningView save={s} />}
-      <Hero value={<MoneyFigure value={s.budget} format={m} id="club:bank" />} ink={GOLD} label="in the bank now" />
+      <div className="coins19" aria-hidden="true">{COINS}</div>
+      <div className="mh19"><b><MoneyFigure value={s.budget} format={m} id="club:bank" /></b><small>in the bank now, to spend on transfers and building</small></div>
       <SeasonEnd c={c} />
+      <Sect>{(s.offers ?? []).length ? `${(s.offers ?? []).length} ${(s.offers ?? []).length === 1 ? 'offer' : 'offers'} to sign` : 'Offers'}</Sect>
+      {(s.offers ?? []).length === 0 && <Note>None now. New offers arrive between seasons for any open slot. Real brands come from Division Three up.</Note>}
+      {(s.offers ?? []).length > 0 && <Note>Sign one now: a quarter of its first season is paid on the day, the rest at the season’s end.</Note>}
+      <div className="of19">
+        {oneBrandEach(s.offers ?? [], signed).map((o, i) => <OfferLetter key={`${o.slot}-${o.brand}-${i}`} o={o} i={i} onSign={() => onAccept?.(o)} />)}
+      </div>
       {s.income ? (
         <Panel ink={GOLD}>
           <PanelTop name={`Income, season ${s.income.season}`} c={GOLD} />
@@ -71,6 +106,7 @@ export function MoneyView({ c, groundBuilt = false, onAccept, onOwn }: { c: Club
         </Panel>
       ) : <Note>Income lands at the end of each season: TV, the gate, prize money and the sponsors. It grows with promotion.</Note>}
       <WagesCard />
+      {live.length > 0 && <><Sect>Your sponsors</Sect><SponsorList sponsors={live} scale={seasonMoneyScale(s)} /></>}
       <Sect>Sponsor slots</Sect>
       <Panel ink={BLUE}>
         {slotRows(c.stage ?? c.tier, groundBuilt, kit, s.world === 2).map((r) => {
@@ -85,19 +121,6 @@ export function MoneyView({ c, groundBuilt = false, onAccept, onOwn }: { c: Club
           );
         })}
       </Panel>
-      <Sect>Offers</Sect>
-      {(s.offers ?? []).length === 0 && <Note>None now. New offers arrive between seasons for any open slot. Real brands come from Division Three up.</Note>}
-      {(s.offers ?? []).length > 0 && <Note>Sign one now: a quarter of its first season is paid on the day, the rest at the season’s end.</Note>}
-      <div className="kb-rows">
-        {oneBrandEach(s.offers ?? [], signed).map((o, i) => (
-          <Panel key={`${o.slot}-${o.brand}-${i}`} ink={RISK_INK[o.risk]}>
-            <PanelTop name={o.brand} c={RISK_INK[o.risk]} right={RISK[o.risk]} />
-            <span className="k-q">{SLOT_NAME[o.slot]} · {m(o.perSeason)} a season · {o.seasons} {o.seasons === 1 ? 'season' : 'seasons'}</span>
-            <span>{o.line} {RISK_WHY[o.risk]}</span>
-            <Action onClick={() => onAccept?.(o)}>Sign {o.brand}</Action>
-          </Panel>
-        ))}
-      </div>
       <Note>One habit clause at a time, at most. No betting or alcohol, ever.</Note>
       <form className="k-panel" style={{ ['--ink' as string]: LAV }} aria-label="Your own sponsor" onSubmit={(e) => { e.preventDefault(); onOwn?.(name, slot); }}>
         <PanelTop name="Add your own sponsor" c={LAV} />
