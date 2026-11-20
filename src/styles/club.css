@@ -271,3 +271,4 @@ html.contrast .t22sl li { background: #111; }
 .t23-free { padding: 14px; border-radius: 18px; border: 1.5px dashed rgba(194, 178, 255, .55); font: 500 15px var(--sans); color: rgba(243, 238, 230, .85); }
 html.contrast .t23pl { background: #111; outline: 1px solid #fff; }
 html.contrast .t23pl .tg { outline: 1px solid #000; }
+.t23pl .rg .rg-n { font: 700 17px var(--fb-cond); fill: #fff; }

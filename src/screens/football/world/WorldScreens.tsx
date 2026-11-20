@@ -273,6 +273,36 @@ export function TiePage({ id }: { id: string }) {
 }
 
 /** The academy (round seven): sessions from the habit, growth from kept bedtimes, under the moon. */
+/** A ring that fills to `frac`, the number written in its middle (board 23, c23-academy). */
+function Ring({ frac, c, mid }: { frac: number; c: string; mid: string }) {
+  const L = 2 * Math.PI * 26;
+  return (
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,.14)" strokeWidth="7" />
+      {frac > 0 && <circle className="f" cx="32" cy="32" r="26" fill="none" stroke={c} strokeWidth="7" strokeLinecap="round" transform="rotate(-90 32 32)" style={{ '--l': `${(L * Math.min(1, frac)).toFixed(1)}` } as CSSProperties} />}
+      <text x="32" y="38" textAnchor="middle" className="rg-n">{mid}</text>
+    </svg>
+  );
+}
+/** A youngster at the academy: their card, then sessions and growth as rings, the numbers also as words. */
+export function AcademyCard({ y, need, tonight, lead }: { y: FbSquadRow; need: number; tonight: number; lead?: boolean }) {
+  const n = y.sessions?.length ?? 0, g = y.growth ?? 0;
+  return (
+    <YouthCard y={y}>
+      <span className="ln">{y.axis}{y.link ? '' : ' · not tied to a habit: nothing counts'}{tonight ? ` · +${tonight} last night` : ''}</span>
+      <div className="rg">
+        <div><Ring frac={n / need} c={UNIT_COLOUR[y.axis as Unit]} mid={`${n}/${need}`} /><span>{n} of {need} sessions</span></div>
+        <div><Ring frac={g / PROMOTE_GROWTH} c="#ffe27a" mid={String(g)} /><span>{g} of {PROMOTE_GROWTH} growth</span></div>
+      </div>
+      {!y.link && <Action quiet={!lead} onClick={() => go('/football/club', { view: 'deals' })}>Tie to a habit</Action>}
+    </YouthCard>
+  );
+}
+/** The academy's empty places, each named as free. */
+export function FreePlaces({ n }: { n: number }) {
+  return <>{Array.from({ length: Math.max(0, n) }, (_, i) => <div key={i} className="t23-free">{i === 0 ? 'A free place. Tie a trialist to a habit and they start here.' : 'A free place.'}</div>)}</>;
+}
+
 export function AcademyPage() {
   const w = useWorld();
   if (!w) return null;
@@ -288,24 +318,12 @@ export function AcademyPage() {
           <Action wide onClick={() => go('/football/trials')}>Trials</Action>
         </Empty>
       )}
-      <div className="kb-rows">
-        {w.academy.map((y) => {
-          const n = y.sessions?.length ?? 0, g = y.growth ?? 0;
-          const tonight = y.lastGrow && y.lastGrow.on === w.save.lastPlayed ? y.lastGrow.n : 0;
-          const c = UNIT_COLOUR[y.axis as Unit];
-          return (
-            <Panel key={y.id} ink={c} className="kw-young">
-              <PanelTop name={y.name} c={c} right={STARS(y.potential)} />
-              <span className="k-q">{y.axis}{y.link ? '' : ' · not tied to a habit: nothing counts'}</span>
-              <Bar pct={(n / need) * 100} c={c} label={`${n} of ${need} sessions`} />
-              <Bar pct={(g / PROMOTE_GROWTH) * 100} c="#ffe27a" label={`${g} of ${PROMOTE_GROWTH} growth`} />
-              <span className="k-q">{n} of {need} sessions · {g} of {PROMOTE_GROWTH} growth{tonight ? ` · +${tonight} last night` : ''}</span>
-              {!y.link && <Action quiet={y.id !== w.academy.find((x) => !x.link)?.id} onClick={() => go('/football/club', { view: 'deals' })}>Tie to a habit</Action>}
-            </Panel>
-          );
-        })}
+      <div className="t23-list">
+        {w.academy.map((y) => (
+          <AcademyCard key={y.id} y={y} need={need} tonight={y.lastGrow && y.lastGrow.on === w.save.lastPlayed ? y.lastGrow.n : 0} lead={y.id === w.academy.find((x) => !x.link)?.id} />
+        ))}
+        {w.academy.length > 0 && <FreePlaces n={w.rules.academy - w.academy.filter((y) => y.link).length} />}
       </div>
-      {w.academy.length > 0 && <p className="kw-key"><span><i style={{ background: '#8fdcb6' }} />Sessions (the habit, in the unit's colour)</span><span><i style={{ background: '#ffe27a' }} />Growth (sleep)</span></p>}
       <Note>They grow overnight on nights you keep your bedtime. Rest days double it. Growth pauses, never goes back. A loan in the same unit makes them grow half as fast again. Only youngsters tied to a habit take a place.</Note>
       {w.academy.length > 0 && <Action quiet onClick={() => go('/football/trials')}>Trials</Action>}
     </div>
