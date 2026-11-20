@@ -107,7 +107,7 @@ function momentOf(t: TonightData): ReactNode {
   const opening = t.save.openings?.[0];
   const bornId = t.save.rivalMoments?.[0];
   const born = bornId ? t.save.rivals.find((r) => r.clubId === bornId) : undefined;
-  if (t.change) return <SeasonChangeView c={t.change} onDone={() => void markSeasonSeen(t.change!.season)} />;
+  if (t.change) return <SeasonChangeView c={t.change} crest={crestSvg(t.save.crest.step, t.save.crest.opt, 44)} onDone={() => void markSeasonSeen(t.change!.season)} />;
   if (t.save.crestPending) return <LevelUpView from={t.save.crest} step={t.save.crestPending} onPick={(o) => void levelUpCrest(o)} />;
   if (opening) return <OpeningNightView id={opening} onDone={() => void markOpened(opening)} />;
   if (born) return <RivalBornView r={born} onDone={() => void markRivalSeen(born.clubId)} />;
