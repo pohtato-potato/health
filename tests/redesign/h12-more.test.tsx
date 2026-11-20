@@ -16,9 +16,9 @@ describe('The + sheet (h12-more)', () => {
     for (const k of ['drk', 'nit', 'fre', 'wst', 'chk', 'sta']) expect(css).toMatch(new RegExp(`\\.mr-${k} \\{[^}]*(--bd|box-shadow)`));
   });
 
-  it('keeps every row at least 44 px and stops the loops under reduced motion', () => {
+  it('keeps every row at least 44 px, with no reduced-motion variant', () => {
     expect(css).toMatch(/\.mr-row \{[^}]*min-height: 68px/);
-    expect(css).toMatch(/prefers-reduced-motion: reduce\) \{ \.mr-drk::before, \.mr-bub i, \.mr-nit, \.mr-fre, \.mr-sta \.mr-ic svg \{ animation: none/);
+    expect(css).not.toContain('prefers-reduced-motion'); // no reduced-motion variants (PRODUCT.md)
   });
 
   it('renders with no data: each row still has words when nothing is logged', () => {

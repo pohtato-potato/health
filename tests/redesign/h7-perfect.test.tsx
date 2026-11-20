@@ -32,10 +32,10 @@ describe('A perfect day, without gold (h7-perfect)', () => {
     expect(renderToStaticMarkup(<DrawerHandle closeLabel="Close the day · Plated" gold onCloseDay={noop} />)).toContain('Close the day · Plated');
   });
 
-  it('breathes as decoration only; reduced motion holds the glow still', () => {
+  it('breathes as decoration only; no reduced-motion variant', () => {
     const css = readFileSync('src/styles/today.css', 'utf8');
     expect(css).toMatch(/\.td-perfect \.td-ringfig \{ animation: td-breathe [^}]*infinite/);
-    expect(css).toMatch(/prefers-reduced-motion: reduce\) \{ \.td-perfect \.td-ringfig \{ animation: none/);
+    expect(css).not.toContain('prefers-reduced-motion'); // no reduced-motion variants (PRODUCT.md)
   });
 
   it('renders with no data: no glow on an ordinary day', () => {

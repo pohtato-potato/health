@@ -40,11 +40,11 @@ describe('Close, reveal A (c6-a)', () => {
     expect(css).toMatch(/\.dc-acts > \* \{[^}]*min-height: (4[4-9]|[5-9][0-9])px/);
   });
 
-  it('flips the card in once and draws the rings once; reduced motion shows it landed', () => {
+  it('flips the card in once and draws the rings once; no reduced-motion variant', () => {
     const css = readFileSync('src/styles/food.css', 'utf8');
     const rule = css.slice(css.indexOf('.dc.reveal {'));
     expect(rule.slice(0, rule.indexOf('}'))).not.toMatch(/infinite/);
-    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{[^}]*\.dc\.reveal/);
+    expect(css).not.toContain('prefers-reduced-motion'); // no reduced-motion variants (PRODUCT.md)
   });
 
   it('renders with no data: a closed day with no rings closed is still a card, with dashes', () => {

@@ -41,11 +41,11 @@ describe('A record night (s8-record)', () => {
     expect(html).toMatch(/class="td-rec-bar" aria-hidden="true"/);
   });
 
-  it('lands the rows once; reduced motion shows them landed', () => {
+  it('lands the rows once; no reduced-motion variant', () => {
     const css = readFileSync('src/styles/today.css', 'utf8');
     const rule = css.slice(css.indexOf('.td-rec {'));
     expect(rule.slice(0, rule.indexOf('}'))).not.toMatch(/infinite/);
-    expect(css).toMatch(/prefers-reduced-motion: reduce\) \{ \.td-rec, \.td-rec-bar > i \{ animation: none/);
+    expect(css).not.toContain('prefers-reduced-motion'); // no reduced-motion variants (PRODUCT.md)
   });
 
   it('renders with no data: a first-ever set has no best before', () => {

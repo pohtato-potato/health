@@ -22,7 +22,7 @@ describe('Night out, all neon (h11-night)', () => {
     const sign = css.slice(css.indexOf('.no-sign b {'));
     expect(sign.slice(0, sign.indexOf('}'))).not.toMatch(/animation/);
     expect(css).toMatch(/@keyframes no-tube \{[^}]*box-shadow/);
-    expect(css).toMatch(/prefers-reduced-motion: reduce\) \{ \.no-bokeh i, \.no-sign \{ animation: none/);
+    expect(css).not.toContain('prefers-reduced-motion'); // no reduced-motion variants (PRODUCT.md)
   });
 
   it('keeps every line at 14 px or more', () => {

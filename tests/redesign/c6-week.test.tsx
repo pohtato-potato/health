@@ -33,7 +33,7 @@ describe('Close, Sunday (c6-week)', () => {
   it('deals the seven days with a button', () => {
     expect(card(6)).toMatch(/<button type="button" class="k-act quiet cw-deal">Deal the seven days<\/button>/);
     const css = readFileSync('src/styles/food.css', 'utf8');
-    expect(css).toMatch(/prefers-reduced-motion: reduce\) \{ \.cw-dealt > \* \{ animation: none/);
+    expect(css).not.toContain('prefers-reduced-motion'); // no reduced-motion variants (PRODUCT.md)
   });
 
   it('writes a range across two months', () => {

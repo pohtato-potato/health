@@ -44,13 +44,13 @@ describe('Logging, each bucket its own fill (h12-log)', () => {
     expect(log(full)).toMatch(/class="td-more"><span>More: drinks, night out, free meal, waist, status, check-in<\/span>/);
   });
 
-  it('plays the pictures once; reduced motion shows them still', () => {
+  it('plays the pictures once; no reduced-motion variant', () => {
     const css = readFileSync('src/styles/today.css', 'utf8');
     for (const r of ['.td-bk .sun {', '.td-bk .box i {', '.td-bk .feet i {', '.td-bk .bar i {']) {
       const rule = css.slice(css.indexOf(r));
       expect(rule.slice(0, rule.indexOf('}'))).not.toMatch(/infinite/);
     }
-    expect(css).toMatch(/prefers-reduced-motion: reduce\) \{ \.td-ml-lq, [^{]*\.td-bk \.rings \.on \{ animation: none/);
+    expect(css).not.toContain('prefers-reduced-motion'); // no reduced-motion variants (PRODUCT.md)
   });
 
   it('shows the meals panel with the day’s totals in its chip', () => {

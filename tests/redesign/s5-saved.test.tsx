@@ -20,9 +20,9 @@ describe('After you save the morning (s5-saved)', () => {
     expect(html).toContain('--i:3');
   });
 
-  it('shows every tick at once with reduced motion', () => {
+  it('has no reduced-motion variant', () => {
     const css = readFileSync('src/styles/food.css', 'utf8');
-    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{[^}]*\.mlg-list li[^}]*animation: none/);
+    expect(css).not.toContain('prefers-reduced-motion'); // no reduced-motion variants (PRODUCT.md)
   });
 
   it('fills the sleep ring with words beside it', () => {

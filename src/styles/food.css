@@ -113,7 +113,6 @@ html.contrast .fd-cal .ok { background: transparent; border-width: 3px; }
 .nd-nudge button { min-width: 52px; min-height: 44px; border-radius: 12px; border: 1.5px solid rgba(237, 230, 218, 0.5); background: transparent; color: var(--k-cream); font: 700 15px var(--sans); cursor: pointer; }
 @keyframes nd-draw { from { stroke-dashoffset: var(--len); } }
 @keyframes nd-pop { from { transform: scale(0); } }
-@media (prefers-reduced-motion: reduce) { .nd-arc, .nd-woke { animation: none; } }
 html.contrast .nd-arc { filter: none; }
 html.contrast .nd-track { stroke: rgba(237, 230, 218, 0.25); }
 .ml-same { align-self: flex-start; align-items: center; }
@@ -164,7 +163,6 @@ html.contrast .nd-track { stroke: rgba(237, 230, 218, 0.25); }
 .ml-stepsring.met .sr-fill { filter: drop-shadow(0 0 5px var(--steps)); }
 @keyframes ml-pick { 0% { transform: scale(1); box-shadow: 0 0 0 0 var(--c); } 35% { transform: scale(0.94); } 100% { transform: scale(1); box-shadow: 0 0 18px -4px var(--c), 0 0 0 10px transparent; } }
 @keyframes ml-tickpop { from { transform: scale(0); } }
-@media (prefers-reduced-motion: reduce) { .ml-pl.on, .ml-also .status-row .chip.on, .ml-tick svg { animation: none; } }
 html.contrast .ml-pl.on, html.contrast .ml-also .status-row .chip.on, html.contrast .ml-stepsring.met .sr-fill { box-shadow: none; filter: none; }
 .ml-save { position: sticky; bottom: 0; z-index: 2; margin: 4px -4px 0; padding: 12px 4px calc(6px + var(--safe-bottom)); background: linear-gradient(rgba(20, 18, 44, 0), #16142e 38%); }
 .ml-sheet .chip.on { color: #16142e; }
@@ -214,7 +212,6 @@ button.cd-row { cursor: pointer; }
 .mlg-fill { fill: none; stroke: var(--sleep); stroke-width: 5; stroke-linecap: round; filter: drop-shadow(0 0 5px var(--sleep)); animation: mlg-fill 800ms calc(var(--i, 4) * 160ms + 400ms) cubic-bezier(.2, .8, .2, 1) both; }
 @keyframes mlg-in { from { opacity: 0; transform: scale(0.6); } }
 @keyframes mlg-fill { from { stroke-dashoffset: var(--p); } }
-@media (prefers-reduced-motion: reduce) { .mlg-list li, .mlg-ring, .mlg-fill { animation: none; } }
 html.contrast .mlg-fill { filter: none; }
 
 /* The closed day's card (board 6 c6-a, from round three; tiers c6-tiers). Each tier is a colour and a name. The card
@@ -248,7 +245,6 @@ html.contrast .mlg-fill { filter: none; }
 @keyframes dc-flip { from { transform: perspective(700px) rotateY(180deg) scale(0.7); opacity: 0.3; } }
 @keyframes dc-draw { from { stroke-dashoffset: var(--v); } }
 @keyframes dc-shine { 0%, 45% { background-position: 120% 0; } 65%, 100% { background-position: -60% 0; } }
-@media (prefers-reduced-motion: reduce) { .dc.reveal, .dc.reveal .dc-rf, .dc-shine { animation: none; } }
 html.contrast .dc { box-shadow: none; background: #120d1c; }
 html.contrast .dc-shine { display: none; }
 
@@ -288,4 +284,3 @@ html.contrast .mb-card { background: #120d1c; }
 .cw-dealt > :nth-child(2) { animation-delay: 60ms; } .cw-dealt > :nth-child(3) { animation-delay: 120ms; } .cw-dealt > :nth-child(4) { animation-delay: 180ms; }
 .cw-dealt > :nth-child(5) { animation-delay: 240ms; } .cw-dealt > :nth-child(6) { animation-delay: 300ms; } .cw-dealt > :nth-child(7) { animation-delay: 360ms; }
 @keyframes cw-deal { from { opacity: 0; transform: translateY(-40px) rotate(-6deg); } }
-@media (prefers-reduced-motion: reduce) { .cw-dealt > * { animation: none; } }
