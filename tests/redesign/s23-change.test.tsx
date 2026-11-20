@@ -10,7 +10,7 @@ describe('Season change (s23-change)', () => {
   it('the step count and the target division are text', () => {
     expect(changeTitle(up3)).toEqual(['Up three', `On to ${tierName(3)}`]);
     expect(changeTitle({ ...up3, to: 5 })[0]).toBe('Promoted');
-    expect(changeTitle({ ...up3, move: 'down', to: 7 })[0]).toBe('Relegated');
+    expect(changeTitle({ ...up3, from: 5, move: 'down', to: 6 })[0]).toBe('Relegated');
     expect(changeTitle({ ...up3, move: 'stay', to: 6 })).toEqual(['Another season', `in ${tierName(6)}`]);
     const out = renderToStaticMarkup(<SeasonChange c={up3} crest="<svg></svg>" onDone={() => {}} />);
     expect(out).toContain(`Up three<br/><span>On to ${tierName(3)}</span>`);
