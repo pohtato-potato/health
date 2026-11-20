@@ -17,7 +17,7 @@
 - **This repo is public:** no names, places, foods, medicines, body numbers or plans in code, tests or comments. Test values are invented; never copy a sample from a board.
 - "Nothing that carries meaning is under 14 px." "Every target is at least 44 px." "Never colour alone."
 - No marquee or moving text for anything essential.
-- One-shot animations follow O44: "Every animation here plays once and ends still." Pinned loops keep looping (owner, 19 Nov); only decoration loops, never text or numbers. Under `prefers-reduced-motion: reduce`, and under the app's own reduce-motion setting where one exists, the end frame shows at once.
+- One-shot animations follow O44: "Every animation here plays once and ends still." Pinned loops keep looping (owner, 19 Nov); only decoration loops, never text or numbers. No reduced-motion variants (PRODUCT.md: the owner does not want them).
 - Design bans: no eyebrows or kickers, no gradient text, no emoji icons, no glass decoration, no coloured left border wider than 1 px.
 - Colours come from CSS tokens, so `html.contrast` reaches them.
 - A component that imports the router (`window.location`) can't be rendered with `renderToStaticMarkup`. Keep pure view parts in files that don't import the router, and pass actions in as props.
@@ -28,8 +28,8 @@
 ## Review Focus
 
 1. **Empty and first-day states.** A new save, a day with nothing logged, a club with no matches played: no crash, no 0 standing in for "not logged" (show "—"), no empty card. Each screen task's test file includes one `renders with no data` case.
-2. **Long names at 340 px.** Club, exercise, route and food names at their longest real length truncate with an ellipsis or wrap. They never push a number off the screen. Each screen task's width check covers it; the test case `keeps the number when the name is long` goes in every task whose screen has a name beside a number (tables, rows, cards).
-3. **Reduced motion.** Every animated screen has a reduced-motion end frame that carries the same information. Each animated screen's test asserts the end-frame copy is in the markup without animation running.
+2. **Long names at 340 × 700.** Club, exercise, route and food names at their longest real length truncate with an ellipsis or wrap. They never push a number off the screen. Each screen task's width check covers it; the test case `keeps the number when the name is long` goes in every task whose screen has a name beside a number (tables, rows, cards).
+3. **The real screen, 360 × 745.** A moment that fits a 660-tall board phone can still leave a band of page colour below it, or push its button under the edge, on the owner's phone. Every full-screen moment fills 745 with its main button ≥ 16 px above the bottom; every tab page shows its point above the 669 fold. Checked in Step 8 against board 24.
 4. **The centred ring.** The ring-and-rays moment's centre piece sits in the exact centre at every size (owner's board 23 note). Pinned in Task 2.15 and reused by 2.16–2.19.
 5. **Contrast mode.** `html.contrast` must still reach every new colour. Each task's width check is repeated once with `html.contrast` set.
 
@@ -44,9 +44,9 @@ Every screen task below follows these steps; one part is one tab and one PR. A r
 - [ ] **Step 3: Read the mock.** Open the screen on its board, and find its builder string by id in `Review shared/mockups/` (`grep -n "'<screen-id>'" build_*.py`). List what the screen shows. Mark anything the app does not store; that part is left out (Global Constraints, last line).
 - [ ] **Step 4: Write the failing test** in `tests/redesign/<screen-id>.test.tsx`: render the view with invented props through `renderToStaticMarkup` and assert the row's "Test pins", plus `renders with no data` (Review Focus 1).
 - [ ] **Step 5: Run it and see it fail.** `npx vitest run tests/redesign/<screen-id>.test.tsx`. Expected: FAIL on the new pins.
-- [ ] **Step 6: Build the screen.** Change the component to the mock's structure. Port its CSS into the area's stylesheet with the app's prefixes and tokens. Keep pinned loops looping; add the reduced-motion end frame.
+- [ ] **Step 6: Build the screen.** Change the component to the mock's structure. Port its CSS into the area's stylesheet with the app's prefixes and tokens. Keep pinned loops looping.
 - [ ] **Step 7: Run the tests.** `npx vitest run` then `npm run typecheck`. Expected: all pass, no type errors.
-- [ ] **Step 8: Check it by eye.** Start the dev server, open the screen with dev seed data, and check at 1400, 420 and 340 px wide, once with `html.contrast`. In the browser console, the overflow scan (no element past the phone's right edge outside a clipping parent) and the small-text scan (no text node under 14 px) both return empty. Freeze animations at the end (`document.getAnimations().forEach(a => a.finish())`) and compare with the mock side by side.
+- [ ] **Step 8: Check it by eye.** Start the dev server, open the screen with dev seed data, and check at **360 × 745 and 340 × 700** (the owner's phone; tab pages have 669 above the tab bar), once with `html.contrast`. Moments fill the screen with the main button ≥ 16 px clear of the bottom; nothing fixed to the bottom covers content; compare with the screen on board 24. In the browser console, the overflow scan (no element past the phone's right edge outside a clipping parent) and the small-text scan (no text node under 14 px) both return empty. Freeze animations at the end (`document.getAnimations().forEach(a => a.finish())`) and compare with the mock side by side.
 - [ ] **Step 9: Commit and push.** `git add` the test, the component and the stylesheet. Commit as `redesign(<tab>): <screen title>` and push. After the part's first screen, open the tab's PR as a draft titled `Redesign: <Tab> tab`, with the board links. Each later screen adds a line to the PR description: its id, a screenshot at 340 px, and its "Left out" list (Step 3).
 - [ ] **Step 10 (last screen of a part only): Ship the tab.** Run `npx vitest run`, `npm run typecheck` and `npm run build` on the branch, mark the PR ready, and merge once CI passes, before the next part starts.
 
@@ -62,7 +62,7 @@ Every screen task below follows these steps; one part is one tab and one PR. A r
 | 1.4 | `f4-half` The half stack, Quick kcal | 4 | `src/sheets/LogSheet.tsx`, `src/sheets/QuickSheets.tsx` | order: search, Same as yesterday, saved meals, Quick kcal |
 | 1.5 | `s5-a` Sleep, the night dial | 5 | `src/sheets/MorningLog.tsx` | both handles are buttons with labels and the times as text |
 | 1.6 | `m6-full` + `m6-also` Good morning, whole page | 6 | `src/sheets/MorningLog.tsx` | dial, rested, weigh-in, soreness, then "Also this morning"; each place chip has a label |
-| 1.7 | `s5-saved` After you save the morning | 5 | `src/sheets/MorningLog.tsx` | "Morning logged" lists each saved part; reduced motion shows all ticks |
+| 1.7 | `s5-saved` After you save the morning | 5 | `src/sheets/MorningLog.tsx` | "Morning logged" lists each saved part |
 | 1.8 | `k7-live` + `k7-frames` Checklist, hold to tick | 7 | `src/screens/today/DueCard.tsx` | each item has a button alternative to the hold; the ring loops as drawn |
 | 1.9 | `k7-all` The last tick of the day | 7 | `src/screens/today/DueCard.tsx` | all done: the done chip text shows; gold only on this state |
 | 1.10 | `c6-a` Close, reveal A | 6 | `src/screens/CloseDay.tsx` | the two buttons on one row, each ≥ 44 px |
@@ -116,11 +116,11 @@ Every screen task below follows these steps; one part is one tab and one PR. A r
 | 2.29 | `b21-nadia` A bond | 21 | `src/screens/football/club/Bits.tsx` | the rank-up shows old and new rank as text |
 | 2.30 | `m19-ledger` Money, the ledger | 19 | `src/screens/football/club/Money.tsx` | the balance rolls once, then rests; offers as letters |
 | 2.31 | `d20-board` The board | 20 | `src/screens/football/desk/Desk.tsx` | the season's asks and how you stand on each |
-| 2.32 | `d20-packs` Packs and the album | 20 | `src/screens/football/tree/PackScreens.tsx` | album cards fan out; reduced motion shows them laid flat |
+| 2.32 | `d20-packs` Packs and the album | 20 | `src/screens/football/tree/PackScreens.tsx` | album cards fan out |
 | 2.33 | `c23-congress` Congress, the tactics board | 23 | `src/screens/football/desk/Congress.tsx` | per motion: for, against and abstain counts as numbers; Passing or Falling as words |
 | 2.34 | `l19-home` League, current page | 19 | `src/screens/football/league/LeagueHome.tsx` | your crest beside your position; the ladder of crests in table order |
 | 2.35 | `l19-full` League, the full table | 19 | `src/screens/football/league/Table.tsx` | every club with crest, form, GD, points; long names truncate, numbers stay |
-| 2.36 | `s23-final` The final table | 23 | `src/screens/football/league/Table.tsx` | the season-end variant: champions row, top eight, "All N clubs"; P hidden under 420 px |
+| 2.36 | `s23-final` The final table | 23 | `src/screens/football/league/Table.tsx` | the season-end variant: champions row, top eight, "All N clubs"; P hidden at 340 px |
 | 2.37 | `c21-cal` Calendar | 21 | `src/screens/football/league/Calendar.tsx` | tonight leads; the season's days in order |
 | 2.38 | `n21-news` The news | 21 | `src/screens/football/league/News.tsx` | filters per kind; the feed by day |
 | 2.39 | `u23-big` The Big Cup | 23 | `src/screens/football/league/Cups.tsx` | tonight's tie, the road of rounds with the current one marked by text |
@@ -168,7 +168,7 @@ Every screen task below follows these steps; one part is one tab and one PR. A r
 | 4.3 | `p5-stop` A small stop | W5 | `src/screens/walk/StopView.tsx` | the scene `aria-hidden`; the place facts as text |
 | 4.4 | `p6-stretch` A stretch | W6 | `src/screens/walk/StretchView.tsx` | the stretch name on the board as text |
 | 4.5 | `w8-choose-a` + `w22-routes-b` Choose a walk | W8 / 22 | `src/screens/walk/RouteCards.tsx` | the departures-board list; each route's ticket view |
-| 4.6 | `w8-join-a` Joining, the route poster | W8 | `src/screens/walk/JoinPage.tsx` | the route draws once; reduced motion shows it whole |
+| 4.6 | `w8-join-a` Joining, the route poster | W8 | `src/screens/walk/JoinPage.tsx` | the route draws once; the join button stays in reach at 745 |
 | 4.7 | `w8-arrive` Arriving | W8 | `src/screens/walk/ArrivalPage.tsx` | one map only, behind the seal |
 | 4.8 | `w9-dep` Departures | W9 | `src/screens/walk/RoadPages.tsx` | every milestone ahead: when, where, status in words |
 | 4.9 | `w9-postcard` A postcard | W9 | `src/screens/Postcard.tsx` | one per town reached |

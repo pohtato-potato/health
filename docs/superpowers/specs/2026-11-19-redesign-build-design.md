@@ -13,6 +13,7 @@ Twenty-three redesign rounds (Home/Train boards 3–23, Walk/You boards 1–9) s
 | Board | Link | What it holds |
 |---|---|---|
 | Picked | https://claude.ai/artifact/VpTPskgBJtnqQFQXjHH3bh | Every picked screen, newest version of each, grouped by tab (108) |
+| 24 | https://claude.ai/artifact/U9kZe7e7kZUDvZ9QcH1rtu | Every screen above in a scrollable 360 × 745 phone with the real tab bar: the size reference (139) |
 | 23 | https://claude.ai/artifact/Q2FjAQkbAPNtoogAzXuLtp | The final sweep: the board 22 fixes, cups, season end, other clubs, the rest of Football, pages outside Football (39) |
 
 Mockup sources (outside the repo): `Review shared/mockups/build_picked.py` and `build_home_train_board<N>.py` / `build_walk_you_board<N>.py`. Each pinned screen is a Python string of HTML; its CSS is the builder's `CSS` (it accumulates down the chain, so board 23's sheet styles every screen). The mock is the visual reference and the source of CSS to port. Its numbers and names are samples.
@@ -51,10 +52,11 @@ The hat-trick (`t17-bloom`) stays as it is. Deals, kits, the tree, the desk, the
 - **Real data only.** Each screen reads what the app already stores. Where the mock shows something the app does not store, the PR does not invent it: it is either left out with a line in the PR description, or the screen moves to the last round.
 - **Port the look, not the markup.** CSS comes over from the builder into the area's stylesheet under `src/styles/`, renamed to the app's prefixes and tokens. Colours go through CSS tokens so `html.contrast` reaches them.
 - **Accessibility floor** (the owner has about 40% vision loss): nothing that carries meaning under 14 px, every target at least 44 px, never colour alone, no marquee or moving text for anything essential, the magnifier's standard text size.
-- **Motion.** One-shot animations follow the O44 rule in `src/styles/motion.css`: they play once and end still. A mock that loops (the hold-to-tick ring, the plates swap, the goal scenes) keeps looping, as drawn: the owner's ruling of 19 Nov. Nothing essential moves: text and numbers stay still while decoration loops around them. Reduced motion shows the end frame straight away.
+- **Motion.** One-shot animations follow the O44 rule in `src/styles/motion.css`: they play once and end still. A mock that loops (the hold-to-tick ring, the plates swap, the goal scenes) keeps looping, as drawn: the owner's ruling of 19 Nov. Nothing essential moves: text and numbers stay still while decoration loops around them. No reduced-motion or battery-saver variants: the owner does not want them (PRODUCT.md, 25 Oct).
 - **The ring-and-rays moment is centred.** One shared component draws it. Its centre piece sits in the ring's exact centre at every size, checked by a test on the markup and by eye at 340 px.
 - **Design bans:** no eyebrows or kickers, no gradient text, no emoji icons, no glass decoration, no coloured left border wider than 1 px.
-- **Checked like the boards:** at 1400, 420 and 340 px wide, with no horizontal page scroll, no text under 14 px, nothing clipped, and the reduced-motion end frame.
+- **The owner's real screen.** The installed app has 360 × 745 px after the status bar (measured 10 and 13 Nov). Tab pages lose the 76 px tab bar, so their first screen is 360 × 669. Every screen is checked at **360 × 745 and 340 × 700**, with no horizontal page scroll, no text under 14 px, nothing clipped.
+- **Fit rules at that size.** A moment, takeover or story slide fills the whole 745 (no band of page colour below it) and fits without scrolling, with its main button at least 16 px above the bottom edge. A tab page puts its point above the 669 fold; the rest may scroll. Nothing fixed to the bottom may cover content: a sticky button is allowed only when the page can scroll its last line clear of it.
 
 ## 6. The last design round
 
