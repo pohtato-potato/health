@@ -709,3 +709,11 @@ html.contrast .mo-page { background: #000; }
 html.contrast .mo-lead, html.contrast .mo-row small { color: #fff; }
 html.contrast .mo-row { background: #000; border: 1.5px solid var(--c); }
 html.contrast .orb-ring { filter: none; }
+.mo-opt { width: 100%; max-width: 420px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.mo-opt button { min-height: 44px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px; border: 0; border-radius: 18px; background: rgba(255, 255, 255, .06); font: 700 15px var(--sans); color: #fff; cursor: pointer; }
+.mo-opt button.on { background: color-mix(in srgb, var(--c) 25%, #0b1022); box-shadow: inset 0 0 0 2px var(--c); }
+.mo-pick { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.mo-pick button { width: 52px; height: 52px; display: grid; place-items: center; border: 0; border-radius: 14px; background: rgba(255, 255, 255, .06); cursor: pointer; }
+.mo-pick button.on { box-shadow: inset 0 0 0 2px var(--c); background: color-mix(in srgb, var(--c) 18%, #0b1022); }
+.mo-opt button:focus-visible, .mo-pick button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+html.contrast .mo-opt button, html.contrast .mo-pick button { border: 1.5px solid #fff; }
