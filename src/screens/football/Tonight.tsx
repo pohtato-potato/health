@@ -19,7 +19,6 @@ import { OpeningNightView } from './moments/OpeningNight';
 import { LevelUpView } from './moments/LevelUp';
 import { AwakeningView } from './moments/Awakening';
 import { FullTime } from './FullTime';
-import { Radar } from './Radar';
 import { AXES, type Axis } from '../../football/types';
 import { PlanPanel } from './match/MatchBits';
 import { WaitingMatch } from './match/Waiting';
@@ -28,7 +27,12 @@ import { readOf, TEMPO_NAME, WIDTH_NAME } from '../../football/matchday';
 import { MorningCards } from './world/WorldScreens';
 import { TacticPicker } from './players/Rotation';
 import { breakBeforeFor, matchdayList, paceNight, paceOn } from '../../football/pace';
-import { ChanceBar, lateFor, oppDrawing, useChances } from './Chance';
+import { ChanceBar, lateFor, lossInkOf, shownChance, useChances } from './Chance';
+import { chancePercents } from '../../football/chance';
+import { heroLook, TonightHero } from './TonightHero';
+import { BRABO_INK } from '../../ui/inks';
+import { tablesFor } from '../../football/store/league';
+import type { Result } from '../../football/types';
 import type { NightChance } from '../../football/store/chance';
 import { paceSum, PaceSumView } from './PaceSum';
 import type { Fixture } from '../../football/store/tonight';
@@ -111,6 +115,23 @@ function momentOf(t: TonightData): ReactNode {
   return null;
 }
 
+/**
+ * Both clubs' places when they share a league table (from the stored season), and whether tonight is a big night:
+ * both in the top four. "Top" is first against second.
+ */
+function useRanks(t: TonightData, oppId: string | undefined) {
+  const season = useLiveQuery(() => db.fbSeasons.get(t.save.season), [t.save.season]);
+  if (!season || !oppId) return undefined;
+  const table = Object.values(tablesFor(season)).find((rows) => rows.some((r) => r.id === OWN));
+  if (!table || !table.some((r) => r.p > 0)) return undefined;
+  const at = (id: string) => {
+    const i = table.findIndex((r) => r.id === id);
+    return i < 0 ? undefined : { pos: i + 1, form: table[i].form as Result[] };
+  };
+  const us = at(OWN), them = at(oppId);
+  return { us, them, big: Boolean(us && them && us.pos <= 4 && them.pos <= 4), top: Boolean(us && them && us.pos + them.pos === 3) };
+}
+
 export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: string) => void }) {
   const [plan, setPlan] = useState(false);
   const chances = useChances(t.date);
@@ -118,6 +139,7 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
   const xp = useLiveQuery(() => loadExpected(t.date), [t.date]);
   const shine = useWinShine(t.date);
   useMarkMatchNight(t.date, Boolean(t.fixture) && !t.played.length);
+  const ranks = useRanks(t, (t.fixture ?? t.next)?.opp || undefined);
   const watch = onWatch ?? ((id: string) => go('/football/match', { id }));
   const moment = momentOf(t);
   if (moment) return <div className="lt-moment">{moment}</div>;
@@ -133,9 +155,7 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
   if (t.played.length) return <div className="k-page lt-page">{waiting}{t.played.map((m) => <FullTime key={m.id} m={m} save={t.save} onWatch={() => watch(m.id)} />)}</div>;
 
   const f = t.fixture;
-  const own = crestSvg(t.save.crest.step, t.save.crest.opt, 54);
-  const oppName = t.opp ? (t.opp.short && t.opp.name.length > 12 ? t.opp.name.split(' ')[0] : t.opp.name) : '';
-  const oppVals = oppDrawing(t.oppTonight, t.liveValues, chance, lateFor(t.date));
+  const own = crestSvg(t.save.crest.step, t.save.crest.opt, 96);
   const many = t.fixtures.length > 1;
   const pace = f ? paceSum(t) : undefined;
   const unlogged = AXES.filter((a) => t.flags[a] === 'not-logged');
@@ -158,21 +178,22 @@ export function TonightView({ t, onWatch }: { t: TonightData; onWatch?: (id: str
     <div className="k-page lt-page">
       {!f && t.next && !t.morning.intl && <NoMatchTonight t={t} next={t.next} />}
       {t.morning.intl && <Panel ink="#93c3dc"><b className="k-lb">No game tonight</b><span className="k-q">The season waits for the break. Next up, once it’s over:</span></Panel>}
-      <header className="lt-lead" aria-label={hf && hopp ? `${where}: Brabo v ${hopp.name}` : where}>
-        <Art svg={own} className={`lt-crest${shine ? ' mo-shine' : ''}`} />
-        <span className="lt-vs">
-          <span className="k-q">{where}</span>
-          <b className="lt-opp">{t.opp ? `v ${oppName}` : hopp ? `v ${hopp.name}` : f ? 'Drawn on the night' : 'Tonight'}</b>
-        </span>
-        {hopp ? <Art svg={clubCrest(hopp, 54)} className="lt-crest mo-flip-in" /> : <span className="lt-crest lt-unknown" aria-hidden="true" />}
-      </header>
+      {hf ? (
+        <TonightHero
+          look={heroLook({ comp: hf.comp, rival: Boolean(hopp && t.save.rivals.some((r) => r.clubId === hopp.id)), big: Boolean(ranks?.big) })}
+          us={{ name: 'Brabo', crest: own, ink: BRABO_INK, pos: ranks?.us?.pos, form: ranks?.us?.form }}
+          them={hopp ? { name: hopp.name, crest: clubCrest(hopp, 96), ink: lossInkOf(hopp.id), pos: ranks?.them?.pos, form: ranks?.them?.form } : undefined}
+          where={where}
+          tag={ranks?.top ? 'Top-of-the-table clash' : undefined}
+          chance={!many && chance && t.opp && !t.morning.intl ? (() => { const s = shownChance(chance, lateFor(t.date)); return { p: chancePercents(s.c), usual: s.usual }; })() : undefined}
+          shine={shine}
+        />
+      ) : (
+        <header className="lt-lead lt-quiet"><span className="lt-vs"><b className="lt-opp">{where}</b></span></header>
+      )}
       {many && <NightList t={t} chances={chances ?? []} />}
-      <div className="lt-radar">
-        <Radar values={t.liveValues} flags={t.flags} fog={AXES.filter((a) => t.flags[a])} captain={t.save.slots.includes('armband') ? t.save.captain : undefined} opp={oppVals} oppInk="#93c3dc" oppName={t.opp?.name} inked size={300} label="Tonight’s shape so far" motionId={`tonight-radar:${t.date}`} />
-      </div>
       {pace && <PaceSumView p={pace} />}
-      {!many && chance && t.opp && !t.morning.intl && <div className="lt-stake"><ChanceBar c={chance} oppName={oppName} oppId={t.opp.id} date={t.date} values={t.liveValues} /></div>}
-      {xp && t.opp && !t.morning.intl && <p className="k-q lt-ctr">The head of data: <b>{xpWords(xp.xp, xp.usual).replace(/^E/, 'e')}</b>.</p>}
+            {xp && t.opp && !t.morning.intl && <p className="k-q lt-ctr">The head of data: <b>{xpWords(xp.xp, xp.usual).replace(/^E/, 'e')}</b>.</p>}
       {unlogged.map((a) => (
         <Panel key={a} ink={AXIS_INK[a]}><span><b style={{ color: AXIS_INK[a] }}>{a} isn’t logged yet.</b> It plays low and wild until {LOG_FOR[a]}.</span></Panel>
       ))}
