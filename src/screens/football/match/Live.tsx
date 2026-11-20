@@ -1,6 +1,9 @@
 // Matchday depth (spec 2026-11-12 §3): watching the waiting league match. Before kick-off (lg-pre), live on the
 // radar-as-stadium (r3-live), a call (r3-call), a goal (lg-goal), half-time (lg-half), then full time. Every number
 // here comes from the same rebuilt input the store finishes with, so what you watch is what is stored.
+import { bugShort, MoveScene, ScoreBug, type BugSide } from './Broadcast';
+import { BRABO_INK } from '../../../ui/inks';
+import { lossInkOf } from '../Chance';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { db } from '../../../db/db';
@@ -104,6 +107,15 @@ type Phase = 'enter' | 'shot' | 'retry' | 'shot2' | 'result';
 const MS = { enter: 1800, retry: 1800, result: 1400, lineResult: 2600, goal: 1000, lineGoal: 1800 };
 
 /** The score with both crests and names, the numbers as flip tiles, and the clock under it: what leads every match screen. */
+/** The score bug (m15-pitch): home club first, with the fixture's words beside the clock. */
+function LiveBug({ p, save, score, minute }: { p: PausedMatch; save: FbSave; score: [number, number]; minute: number }) {
+  const opp = clubById(p.prep.oppId);
+  const own: BugSide = { name: 'Brabo', short: 'BRA', crest: crestSvg(save.crest.step, save.crest.opt, 34), n: score[0], ours: true };
+  const them: BugSide = { name: clubName(opp.id), short: bugShort(clubName(opp.id)), crest: clubCrest(opp, 34), n: score[1], ours: false };
+  const where = [TIER_NAMES[String(p.prep.braboTier)], p.prep.matchday ? `Matchday ${p.prep.matchday}` : undefined, p.prep.braboHome ? 'home' : 'away'].filter(Boolean).join(' · ');
+  return <ScoreBug sides={p.prep.braboHome ? [own, them] : [them, own]} minute={minute} where={where} />;
+}
+
 function Scoreboard({ p, save, score, minute, label, from }: { p: PausedMatch; save: FbSave; score: [number, number]; minute?: number; label?: ReactNode; from?: [number, number] }) {
   const own: BoardSide = { id: OWN, crest: crestSvg(save.crest.step, save.crest.opt, 40), n: score[0], from: from?.[0] };
   const them: BoardSide = { id: p.prep.oppId, crest: clubCrest(clubById(p.prep.oppId), 40), n: score[1], from: from?.[1] };
@@ -190,15 +202,21 @@ function LivePlay({ p, save, onEnd }: { p: PausedMatch; save: FbSave; onEnd: () 
   const rolling = phase === 'shot' || phase === 'shot2';
   return (
     <Fit className={`md-live lt-live ms-live ${c.side}`} label="The match, live">
-      <Scoreboard p={p} save={save} score={score} minute={minute} />
+      <LiveBug p={p} save={save} score={score} minute={minute} />
       <div className="ms-tagrow" key={`t${k}`}><SideTag c={c} /><RollWord inShape={rolling ? word : null} /></div>
       <div className="md-stadium lt-stadium ms-stadium">
-        <i className="lt-flood" aria-hidden="true" />
-        <Pitch
-          s={{ chance: c, ball: phase === 'enter' || !shot ? undefined : shot.land, flying: rolling, zoom: !!shot?.close, save: phase === 'result' && c.side === 'def' && c.ok, resultKey: k, roll: shot ? { seed: shot.seed, ok: shot.ok } : undefined }}
-          dots={st.chances.slice(0, k)}
-          onWord={setWord}
-        />
+        {phase === 'enter' && !c.kept ? (
+          <MoveScene key={`m${k}`} c={c} chain={chain} inks={{ us: BRABO_INK, them: lossInkOf(p.prep.oppId) }} />
+        ) : (
+          <>
+          <i className="lt-flood" aria-hidden="true" />
+          <Pitch
+            s={{ chance: c, ball: phase === 'enter' || !shot ? undefined : shot.land, flying: rolling, zoom: !!shot?.close, save: phase === 'result' && c.side === 'def' && c.ok, resultKey: k, roll: shot ? { seed: shot.seed, ok: shot.ok } : undefined }}
+            dots={st.chances.slice(0, k)}
+            onWord={setWord}
+          />
+          </>
+        )}
       </div>
       <div className="lt-now ms-now" key={k}>
         <div className={`ms-chance${verdict ? ' done' : ''}`}>
