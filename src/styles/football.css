@@ -724,3 +724,5 @@ html.contrast .mo-opt button, html.contrast .mo-pick button { border: 1.5px soli
 .mo-rows { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 8px; }
 .mo-rows .mo-row:nth-child(2) { animation-delay: .75s; } .mo-rows .mo-row:nth-child(3) { animation-delay: .9s; } .mo-rows .mo-row:nth-child(4) { animation-delay: 1.05s; }
 .mo-name { margin: 0; font: 700 26px/1.1 var(--fb-cond); text-transform: uppercase; color: var(--c); }
+.mo-card { display: block; width: min(90px, 13vh); }
+.mo-big { font: 700 64px/1 var(--fb-cond); color: var(--c); }
