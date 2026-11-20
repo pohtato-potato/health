@@ -148,3 +148,34 @@ html.contrast .mb-vig { display: none; }
 .mb-cball { animation: mb-run 1.4s cubic-bezier(.45, 0, .2, 1) .2s both; }
 .mb-cam .mb-names { transform-origin: 50% 36%; animation: mb-push 1.8s cubic-bezier(.65, 0, .35, 1) both; }
 html.contrast .mb-cam::after { display: none; }
+
+/* Wonder save (m17-save + t17-save): a takeover in cool Rest blue over the whole screen, tab bar included. */
+.ws-page { --ws-ink: #93c3dc; --ws-gold: #ffd36b; position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; gap: 6px; overflow: hidden; text-align: center; color: #fff; font-family: var(--sans);
+  padding: calc(var(--safe-top, 0px) + 16px) 16px calc(var(--safe-bottom, 0px) + 20px); background: radial-gradient(70% 45% at 50% 32%, #2c5a7a, #0a1a2a 70%) #0a1a2a; }
+.ws-min { font: 700 20px var(--fb-cond); padding: 4px 14px; border-radius: 999px; background: var(--ws-ink); color: #0a1a2a; }
+.ws-shield { position: relative; width: min(230px, 28vh); aspect-ratio: 1; flex: none; margin: 0; }
+.ws-shield > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.ws-shape { fill: rgba(147, 195, 220, 0.22); stroke: var(--ws-ink); stroke-width: 5; stroke-linejoin: round; animation: ws-hold .5s ease-out both .9s; transform-origin: 125px 125px; }
+.ws-crack path { fill: none; stroke: #e6f6ff; stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 120; stroke-dashoffset: 120; animation: ws-seam .5s ease-out forwards; }
+.ws-card { position: absolute; left: 50%; top: 50%; width: 32%; transform: translate(-50%, -50%); }
+.ws-ball { position: absolute; width: 40px; height: 40px; margin: -20px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff 0 30%, #d9d6e6 70%, #8a86a0);
+  box-shadow: 0 0 0 2px #0a1a2a, 0 0 24px var(--ws-ink); animation: ws-stop 1s cubic-bezier(.2, 1.6, .4, 1) both .2s; }
+.ws-word { font: 700 64px/.86 var(--fb-cond); text-transform: uppercase; letter-spacing: .02em; color: var(--ws-gold); text-shadow: 0 0 24px rgba(255, 211, 107, .6); animation: ws-word .8s cubic-bezier(.34, 1.56, .64, 1) both 1s; }
+.ws-odds { margin: 0; display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; gap: 4px 8px; }
+.ws-odds b { font: 700 44px/1 var(--fb-cond); color: var(--ws-ink); }
+.ws-odds span { font: 700 15px var(--sans); }
+.ws-score { margin: 0; display: flex; align-items: center; gap: 10px; font: 700 34px/1 var(--fb-cond); }
+.ws-score b { min-width: 46px; padding: 4px 8px; border-radius: 10px; background: #0f2a40; border: 1.5px solid var(--ws-ink); }
+.ws-line { margin: 0; font: 400 16px/1.45 var(--sans); max-width: 300px; }
+.ws-facts { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.ws-facts li { min-height: 32px; display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 999px; font: 700 14px var(--sans); background: rgba(147, 195, 220, .18); }
+.ws-go { width: 100%; max-width: 420px; min-height: 56px; margin-top: auto; flex: none; border: 0; border-radius: 18px; background: var(--ws-ink); color: #0a1a2a; font: 700 17px var(--sans); cursor: pointer; }
+.ws-go:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+@keyframes ws-stop { 0% { transform: translate(140px, -160px) scale(.4); } 70% { transform: translate(-6px, 4px) scale(1.15); } 100% { transform: none; } }
+@keyframes ws-seam { to { stroke-dashoffset: 0; } }
+@keyframes ws-hold { 40% { transform: scale(1.04); } }
+@keyframes ws-word { 0% { opacity: 0; transform: scale(.6); } }
+@media (max-height: 720px) { .ws-word { font-size: 56px; } .ws-odds b { font-size: 38px; } .ws-score { font-size: 30px; } .ws-line { font-size: 15px; } }
+html.contrast .ws-page { background: #000; }
+html.contrast .ws-facts li { background: #0a1a2a; border: 1.5px solid var(--ws-ink); }
+html.contrast .ws-word { text-shadow: none; }

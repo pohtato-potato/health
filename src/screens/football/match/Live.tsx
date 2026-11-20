@@ -34,7 +34,10 @@ import { Action, Chip, HelpButton, Panel } from '../../../ui/kit/Kit';
 import { CALL_HOW, MATCH_HOW } from '../howDaily';
 import { Gremlin, Pundit } from '../Studio';
 import '../../../styles/look-tonight.css';
-import { CallPitch, Pitch, RollWord, ShapeKey } from './Pitch';
+import { CallPitch, onPitch, Pitch, RollWord, ShapeKey } from './Pitch';
+import { WonderSave } from './Save';
+import { polygon, radii } from '../../../football/radar';
+import type { Credit } from '../../../football/players/types';
 import { firstLandingOk } from './Replay';
 import { roll, rollSeed } from './roll';
 
@@ -169,7 +172,7 @@ function LivePlay({ p, save, onEnd }: { p: PausedMatch; save: FbSave; onEnd: () 
       else if (phase === 'shot') { if (rolls?.second) setPhase('retry'); else toResult(); }
       else if (phase === 'retry') setPhase('shot2');
       else if (phase === 'shot2') toResult();
-      else if (isGoal(c)) setGoal(k);
+      else if (isGoal(c) || c.tag === 'WONDER SAVE') setGoal(k);
       else next();
     }, wait);
     return () => clearTimeout(t);
@@ -178,6 +181,7 @@ function LivePlay({ p, save, onEnd }: { p: PausedMatch; save: FbSave; onEnd: () 
   const score: [number, number] = [upTo.filter((x) => x.side === 'atk' && x.ok && !x.kept).length, upTo.filter((x) => x.side === 'def' && !x.ok).length];
   const minute = c ? c.minute : st.stop?.kind === 'half' ? 45 : st.stop?.kind === 'call' ? st.stop.offer.minute : 90;
 
+  if (goal !== null && st.chances[goal].tag === 'WONDER SAVE') return <WonderSaveView c={st.chances[goal]} p={p} score={score} credit={credits.find((x) => x.i === goal)} onOn={() => { setGoal(null); setK(goal + 1); setPhase('enter'); }} />;
   if (goal !== null) return <GoalView c={st.chances[goal]} p={p} save={save} score={score} credit={credits.find((x) => x.i === goal)} onOn={() => { setGoal(null); setK(goal + 1); setPhase('enter'); }} />;
   if (!c) {
     if (st.stop?.kind === 'call') return <CallView offer={st.stop.offer} p={p} save={save} chances={st.chances} onPick={(pick) => once(() => recordLive({ pick }))} />;
@@ -282,6 +286,21 @@ export function CallView({ offer, p, save, onPick }: { offer: CallOffer; p: Paus
 }
 
 /** A goal (lg-goal): the page takes the scoring club's colours; Brabo's goals show the scorer's card. */
+/** A wonder save (t17-save): the saver's card in your cracked shape, the odds and the score that held. */
+function WonderSaveView({ c, p, score, credit, onOn }: { c: ChanceEvent; p: PausedMatch; score: [number, number]; credit?: Credit; onOn: () => void }) {
+  const player = useLiveQuery(async () => (credit ? (await db.fbPlayers.get(credit.player)) ?? null : null), [credit?.player]);
+  const opp = clubName(p.prep.oppId);
+  const [home, away] = p.prep.braboHome ? ['Brabo', opp] : [opp, 'Brabo'];
+  const n: [number, number] = p.prep.braboHome ? score : [score[1], score[0]];
+  const state = score[0] > score[1] ? 'Lead kept' : score[0] === score[1] ? 'Still level' : 'Kept it close';
+  return (
+    <WonderSave minute={c.minute} fixture={`${home} v ${away}`} shape={polygon(radii(c.values, 'def'))} land={onPitch(c.retake?.land ?? c.land)} pct={c.pct} saver={credit?.name}
+        score={{ home, away, n }} line={credit?.line} facts={[c.type, credit ? `${credit.unit} unit` : undefined, state].filter((x): x is string => Boolean(x))} onOn={onOn}>
+        {player && <PlayerCard card={player.card} art={player.art} seed={player.id} player={player} />}
+    </WonderSave>
+  );
+}
+
 function GoalView({ c, p, save, score, credit, onOn }: { c: ChanceEvent; p: PausedMatch; save: FbSave; score: [number, number]; credit?: { player: string; name: string; unit: string }; onOn: () => void }) {
   const ours = c.side === 'atk';
   const opp = clubById(p.prep.oppId);
