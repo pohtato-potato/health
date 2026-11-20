@@ -13,10 +13,10 @@ import { go } from '../../../router';
 import { Action, Door, FamilyDoors, Panel, Sect } from '../../../ui/kit/Kit';
 import { atlasOf } from '../world/Atlas';
 import { BackPageCard } from './News';
-import { Table } from './Table';
+import { FinalTable, Table } from './Table';
 import { CongressDoor } from '../desk/Congress';
 import { crestSvg } from '../../../football/art/crest';
-import { CrestLadder, LeagueHead } from './LeagueHome';
+import { CrestLadder, endedOn, LeagueHead } from './LeagueHome';
 
 const S2 = shapeOf({ world: 2 });
 const set = (p: Record<string, string | undefined>) => go('/football/league', p, { replace: true });
@@ -32,12 +32,16 @@ export function LeagueHome2({ l, n }: { l: League; n?: { news: FbNews[]; matches
   const cupRound = cupWords(l);
   return (
     <>
-      <LeagueHead crest={crestSvg(l.save.crest.step, l.save.crest.opt, 76)} pos={pos} division={S2.name(mine)} line={`of ${rows.length} · ${dayLine(l)} · ${played} of ${leagueMatchdays(2)} played`} />
-      <CrestLadder rows={rows} own={crestSvg(l.save.crest.step, l.save.crest.opt, 30)} up={mine > 1 ? 2 : 0} down={3} division={S2.name(mine)} />
-      <Panel ink={`var(--fb-t${mine})`} onClick={() => set({ view: 'full' })} label={`${S2.name(mine)}: the full table of ${rows.length}`} className="fb-top4">
-        <Table tier={mine} rows={rows} world={2} limit={4} waiting={Boolean(l.save.paused)} own={crestSvg(l.save.crest.step, l.save.crest.opt, 30)} />
-        <span className="fb-s fb-seeall-line">See all {rows.length}</span>
-      </Panel>
+      {l.season.final ? <FinalTable tier={mine} rows={l.season.final.tables[mine] ?? []} division={S2.name(mine)} own={crestSvg(l.save.crest.step, l.save.crest.opt, 72)} ended={endedOn(l)} /> : (
+        <>
+          <LeagueHead crest={crestSvg(l.save.crest.step, l.save.crest.opt, 76)} pos={pos} division={S2.name(mine)} line={`of ${rows.length} · ${dayLine(l)} · ${played} of ${leagueMatchdays(2)} played`} />
+          <CrestLadder rows={rows} own={crestSvg(l.save.crest.step, l.save.crest.opt, 30)} up={mine > 1 ? 2 : 0} down={3} division={S2.name(mine)} />
+          <Panel ink={`var(--fb-t${mine})`} onClick={() => set({ view: 'full' })} label={`${S2.name(mine)}: the full table of ${rows.length}`} className="fb-top4">
+            <Table tier={mine} rows={rows} world={2} limit={4} waiting={Boolean(l.save.paused)} own={crestSvg(l.save.crest.step, l.save.crest.opt, 30)} />
+            <span className="fb-s fb-seeall-line">See all {rows.length}</span>
+          </Panel>
+        </>
+      )}
       {n && <BackPageCard news={n.news} matches={n.matches} today={n.today} more />}
       <Sect>Around the league</Sect>
       <FamilyDoors two label="Around the league" groups={{ world: [

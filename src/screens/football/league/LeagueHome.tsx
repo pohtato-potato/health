@@ -16,7 +16,7 @@ import { ContinentalView, Cup } from './Cups';
 import { Events, eventRows } from './Events';
 import { BackPageCard, NewsView, useNews } from './News';
 import { Pyramid } from './Pyramid';
-import { Table } from './Table';
+import { FinalTable, Table } from './Table';
 import { atlasOf } from '../world/Atlas';
 import { Door, FamilyDoors, Sect } from '../../../ui/kit/Kit';
 import { Icon } from '../../../ui/Icon';
@@ -24,6 +24,9 @@ import { worldOf } from '../../../football/pyramid/shape';
 import { PAIRCUP_ID } from '../../../football/pyramid/cups';
 import { EveryDivision, FullTable2, LeagueHome2 } from './League2';
 import { CongressDoor } from '../desk/Congress';
+
+/** The day the league finished this season, as "15 Nov". */
+export const endedOn = (l: League) => { const d = l.season.leagueEnded?.date ?? l.season.dates[Math.max(0, ...Object.keys(l.season.dates).map(Number))]; return d ? new Date(`${d}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'this season'; };
 
 export const LEAGUE_VIEWS = [
   { id: 'table', label: 'Table' },
@@ -49,7 +52,8 @@ export function LeagueView({ l, view, tier, extra, n }: { l: League; view: Leagu
       {view === 'news' && n && <NewsView news={n.news} matches={n.matches} today={n.today} />}
       {view === 'table' && (
         <>
-          {!tier && (() => {
+          {!tier && l.season.final && <FinalTable tier={mine} rows={l.season.final.tables[mine] ?? []} division={tierName(mine)} own={crestSvg(l.save.crest.step, l.save.crest.opt, 72)} ended={endedOn(l)} />}
+          {!tier && !l.season.final && (() => {
             const rows = l.tables[mine] ?? [];
             const me = rows.find((r) => r.id === OWN);
             return (
@@ -65,7 +69,7 @@ export function LeagueView({ l, view, tier, extra, n }: { l: League; view: Leagu
             <span className="fb-s">{t === mine ? 'Your division' : `${Math.abs(t - mine)} ${Math.abs(t - mine) === 1 ? 'tier' : 'tiers'} ${t < mine ? 'above' : 'below'} you`}</span>
             <button type="button" className="fb-btn sm" disabled={t === 6} aria-label={t < 6 ? `Down to ${tierName((t + 1) as Tier)}` : 'Bottom tier'} onClick={() => set({ tier: String(t + 1) })}><Icon name="down" size={22} stroke={2} /></button>
           </div>
-          <Table tier={t} rows={l.tables[t]} form={l.form} waiting={Boolean(l.save.paused)} day={l.save.phase === 'season' ? `Day ${l.save.day} of 42` : 'Between seasons'} own={t === mine ? crestSvg(l.save.crest.step, l.save.crest.opt, 30) : undefined} />
+          {(tier || !l.season.final) && <Table tier={t} rows={l.tables[t]} form={l.form} waiting={Boolean(l.save.paused)} day={l.save.phase === 'season' ? `Day ${l.save.day} of 42` : 'Between seasons'} own={t === mine ? crestSvg(l.save.crest.step, l.save.crest.opt, 30) : undefined} />}
         </>
       )}
       {view === 'table' && !tier && (

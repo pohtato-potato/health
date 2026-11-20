@@ -845,3 +845,32 @@ html.contrast .fb-tgd, html.contrast .fb-tpos { color: #fff; }
 .fb-thead span:nth-child(2) { min-width: 24px; text-align: right; }
 .fb-thead span:last-child { text-align: right; }
 .fb-trows .fb-tpts { min-width: 46px; justify-content: flex-end; }
+
+/* The final table (board 23, s23-final): champions in their own row, the top eight, then all of them. */
+.ft23 { display: flex; flex-direction: column; gap: 12px; }
+.ft23-ch { display: flex; align-items: center; gap: 12px; }
+.ft23-ch .fb-art { flex: none; filter: drop-shadow(0 0 18px rgba(255, 211, 107, .55)); animation: lh19-land .8s .2s cubic-bezier(.34, 1.56, .64, 1) both; }
+.ft23-ch b { display: block; font: 700 44px/.9 var(--fb-cond); text-transform: uppercase; color: #ffd36b; overflow-wrap: anywhere; }
+.ft23-ch small { display: block; font: 700 15px/1.35 var(--sans); color: #e6dcff; }
+.ft23-t { display: flex; flex-direction: column; }
+.ft23-h, .ft23-r { display: grid; grid-template-columns: 24px 28px minmax(0, 1fr) 26px 40px 34px; gap: 8px; align-items: center; min-height: 44px; font: 700 15px var(--sans); color: #fff; }
+.ft23-h { min-height: 32px; font-size: 14px; color: rgba(230, 220, 255, .75); }
+.ft23-r { border-top: 1px solid rgba(255, 255, 255, .07); animation: ft23-rise .45s var(--d) cubic-bezier(.16, 1, .3, 1) both; }
+@keyframes ft23-rise { from { opacity: 0; transform: translateY(10px); } }
+.ft23-r.ch { margin: 0 -10px; padding: 0 10px; border-radius: 14px; border: 0; background: linear-gradient(90deg, #ff7a1a, #ffb347); color: #1a0c02; }
+.ft23-r.me:not(.ch) { margin: 0 -10px; padding: 0 10px; border-radius: 14px; box-shadow: inset 0 0 0 2px rgba(255, 122, 26, .7); }
+.ft23-r .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ft23-r .nm i { font-style: normal; }
+.ft23-h em, .ft23-r em { font-style: normal; text-align: right; }
+.ft23-h b, .ft23-r b { text-align: right; font: 700 18px var(--fb-cond); }
+.ft23-h b { font: 700 14px var(--sans); }
+.ft23-r .cr svg { width: 26px; height: 26px; }
+.ft23-more { min-height: 44px; border: 0; background: none; font: 700 15px var(--sans); color: #c2b2ff; cursor: pointer; }
+@media (max-width: 420px) {
+  .ft23-h, .ft23-r { grid-template-columns: 20px 24px minmax(0, 1fr) 34px 30px; gap: 6px; }
+  .ft23-h .p, .ft23-r .p { display: none; }
+  .ft23-ch b { font-size: 34px; }
+  .ft23-ch svg { width: 56px; height: 56px; }
+}
+html.contrast .ft23-h, html.contrast .ft23-ch small { color: #fff; }
+html.contrast .ft23-r.ch { background: #ffd36b; }

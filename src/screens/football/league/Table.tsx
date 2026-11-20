@@ -9,7 +9,8 @@ import type { Row } from '../../../football/table';
 import type { Result, Tier } from '../../../football/types';
 import { clubCrest } from '../../../football/art/crest';
 import { Art } from '../world/Fog';
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { ordinal } from '../../../football/habitLines';
 import { useSeenBefore } from '../../../ui/motion/motion';
 import { Roll } from '../../../ui/motion/Roll';
 
@@ -120,5 +121,44 @@ function Notes1({ tier, rows, form }: { tier: Tier; rows: Row[]; form?: number }
       {tier === 6 && <p className="fb-s">No relegation from here. The bottom club may fold, and a new one is founded.</p>}
       {tier === 1 && <p className="fb-s">The top of the pyramid: no promotion, only the title.</p>}
     </>
+  );
+}
+
+/** The final table (board 23, s23-final): the champions in their own row, the top eight with crests, then "All N
+ *  clubs" opens the rest. P drops out under 420 px; GD and points always stay. */
+export function FinalTable({ tier, rows, division, own, ended }: { tier: Tier; rows: Row[]; division: string; own: string; ended: string }) {
+  const [all, setAll] = useState(false);
+  const champ = rows[0];
+  const mine = rows.findIndex((r) => r.id === OWN);
+  const me = rows[mine];
+  const nm = (id: string) => (id === OWN ? 'Brabo United' : clubById(id).name);
+  const crest = (id: string, n: number) => (id === OWN ? own : clubCrest(clubById(id), n));
+  const shown = all ? rows : rows.slice(0, 8);
+  return (
+    <section className="ft23" aria-label={`${division}, the final table`} style={{ '--t': `var(--fb-t${tier})` } as React.CSSProperties}>
+      {champ && (
+        <div className="ft23-ch">
+          <Art svg={crest(champ.id, 72)} />
+          <span>
+            <b>{champ.id === OWN ? 'Champions' : `${nm(champ.id)} champions`}</b>
+            <small>{champ.id === OWN ? `${division} · ${champ.p} played, ${champ.w} won · ended ${ended}` : `${division} · ended ${ended}${me ? ` · You finished ${ordinal(mine + 1)}` : ''}`}</small>
+          </span>
+        </div>
+      )}
+      <div className="ft23-t" role="table" aria-label={`${division}, final positions`}>
+        <div className="ft23-h" role="row"><span role="columnheader">#</span><span aria-hidden="true" /><span role="columnheader">Club</span><em className="p" role="columnheader">P</em><em role="columnheader">GD</em><b role="columnheader">Pts</b></div>
+        {shown.map((r, i) => (
+          <div key={r.id} role="row" className={`ft23-r${i === 0 ? ' ch' : ''}${r.id === OWN ? ' me' : ''}`} style={{ '--d': `${Math.min(i, 10) * 0.05}s` } as React.CSSProperties}>
+            <span role="cell">{i + 1}</span>
+            <span className="cr" aria-hidden="true"><Art svg={crest(r.id, 26)} /></span>
+            <span role="cell" className="nm">{nm(r.id)}{r.id === OWN && <i> · You</i>}</span>
+            <em role="cell" className="p">{r.p}</em>
+            <em role="cell">{gd(r)}</em>
+            <b role="cell">{r.pts}</b>
+          </div>
+        ))}
+      </div>
+      {rows.length > 8 && <button type="button" className="ft23-more" aria-expanded={all} onClick={() => setAll(!all)}>{all ? 'The top eight' : `All ${rows.length} clubs`}</button>}
+    </section>
   );
 }
