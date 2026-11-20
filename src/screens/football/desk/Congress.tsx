@@ -7,7 +7,7 @@ import { LOBBY_DAYS, LOBBY_RISK, lobbyOpen, motionById, type Vote } from '../../
 import { seasonLength } from '../../../football/calendar';
 import { worldOf } from '../../../football/pyramid/shape';
 import { askDef, askOpen, asksOf, castById, MAX_RANK, perksAt, RANK_AT } from '../../../football/cast/bonds';
-import type { CastId } from '../../../football/content/desk/types';
+import type { CastId, CastMember } from '../../../football/content/desk/types';
 import { castVote, hallOf, lastCongress } from '../../../football/store/congress';
 import { bondsOfSave, scenesWaiting, seeScene } from '../../../football/store/cast';
 import { loadDesk } from '../../../football/store/desk';
@@ -199,42 +199,58 @@ const Pips = ({ rank, ink = PINK }: { rank: number; ink?: string }) => (
 
 type MemberRow = NonNullable<Awaited<ReturnType<typeof loadDesk>>>['view']['cast'] extends infer V ? V extends { members: (infer M)[] } ? M : never : never;
 
-/** One person: their rank leading, who they are, what they care about, what stays changed, and their scenes. */
-function Member({ save, date, member: x }: { save: FbSave; date: string; member: MemberRow }) {
-  const c = castById(x.id)!;
-  const perks = perksAt(x.id, x.rank);
-  const ask = asksOf(save.desk).find((a) => a.member === x.id && askOpen(a, save.bonds, date));
-  const seen = save.castSeen?.[x.id] ?? 0;
+const ARROW = <svg className="ar" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6" /></svg>;
+
+/** One bond (board 21, b21-nadia): their card flips in beside the name, this rank and the next as text, an open ask,
+ * then all ten ranks: scenes you have seen by title, a reached one waiting, locked ones hidden, every perk shown. */
+export function BondPage({ c, x, seen, ask }: { c: CastMember; x: MemberRow; seen: number; ask?: string }) {
+  const whole = x.rank >= MAX_RANK;
   return (
-    <Page title={c.name} back="Cast" to="/football/cast" help={CAST_HOW} section="club">
-      <div className="cg-lead">
-        <i className="cg-sil big" aria-hidden="true" style={{ '--ink': PINK } as CSSProperties} />
-        <Hero value={x.rank} ink={PINK} label={`Rank of ${MAX_RANK}`} under={x.rank >= MAX_RANK ? 'The bond is whole' : `${x.toNext} to rank ${x.rank + 1}`} />
+    <>
+      <div className="nh21">
+        <span className="bc21" aria-hidden="true"><span className="cg-sil big" /></span>
+        <span><strong>{c.name}</strong><small>{c.role}</small></span>
       </div>
-      <Pips rank={x.rank} />
-      <Panel ink={PINK}>
-        <b className="k-lb">{c.role}</b>
-        <span>{c.who}</span>
-      </Panel>
+      <div className="ru21" role="img" aria-label={whole ? `Rank ${MAX_RANK}: the bond is whole` : `Rank ${x.rank} now; rank ${x.rank + 1} next, ${x.toNext} to go`}>
+        <b>{x.rank}</b>{!whole && <>{ARROW}<b className="nx21b">{x.rank + 1}</b></>}<em>{whole ? 'the bond is whole' : `${x.toNext} to the next rank`}</em>
+      </div>
+      <p className="nd21-who">{c.who}</p>
+      {ask && <div className="as21"><i aria-hidden="true">!</i><span><b>{c.name.split(' ')[0]} has asked you something</b>{ask}</span></div>}
       <Panel ink={GREEN}>
         <b className="k-lb">Cares about</b>
         <span>{c.cares.text}</span>
         <span className="k-q">{x.tone === 'warm' ? 'Warm with you lately.' : 'A little cool lately. It costs nothing.'}</span>
       </Panel>
-      {ask && (
-        <Panel ink={GOLD}>
-          <b className="k-lb">An ask is open</b>
-          <span>{askDef(ask)?.text}</span>
-        </Panel>
-      )}
-      {perks.length > 0 && <Sect>Changed for good</Sect>}
-      {perks.map((p, i) => <Panel key={`${p.key}-${i}`} ink={BLUE} flat><span>{p.text}</span></Panel>)}
-      {seen > 0 && <Sect>Scenes</Sect>}
-      {c.ranks.filter((r) => r.rank <= seen).map((r) => (
-        <Panel key={r.rank} ink={LAV} onClick={() => go('/football/cast', { scene: `${x.id}:${r.rank}`, from: x.id })} label={`Rank ${r.rank}: ${r.title}`}>
-          <span className="k-row" style={{ justifyContent: 'flex-start' }}><b className="cg-rank sm">{r.rank}</b><b>{r.title}</b></span>
-        </Panel>
-      ))}
+      <Sect>The ranks</Sect>
+      <ol className="ld21">
+        {c.ranks.map((r, i) => {
+          const open = r.rank <= seen, waiting = !open && r.rank <= x.rank;
+          const body = (
+            <>
+              <b>{ROMAN[r.rank] ?? r.rank}</b>
+              <span>{open ? r.title : waiting ? 'A new scene is waiting' : 'Not yet'}{r.perk && <small>Perk: {r.perk.text}</small>}</span>
+            </>
+          );
+          return (
+            <li key={r.rank} className={`${open || waiting ? 'op' : 'lk'}${r.perk ? ' pk' : ''}`} style={{ '--d': `${0.3 + i * 0.05}s` } as CSSProperties}>
+              {open || waiting
+                ? <button type="button" onClick={() => go('/football/cast', { scene: `${x.id}:${r.rank}`, from: x.id })} aria-label={`Rank ${r.rank}: ${open ? r.title : 'a new scene is waiting'}`}>{body}</button>
+                : <div>{body}</div>}
+            </li>
+          );
+        })}
+      </ol>
+    </>
+  );
+}
+
+/** One person's page: the bond page and a die to spend with them. */
+function Member({ save, date, member: x }: { save: FbSave; date: string; member: MemberRow }) {
+  const c = castById(x.id)!;
+  const ask = asksOf(save.desk).find((a) => a.member === x.id && askOpen(a, save.bonds, date));
+  return (
+    <Page title={c.name} back="Cast" to="/football/cast" help={CAST_HOW} section="club">
+      <BondPage c={c} x={x} seen={save.castSeen?.[x.id] ?? 0} ask={ask ? askDef(ask)?.text : undefined} />
       <Action wide onClick={() => go('/football/desk/job', { id: 'cast', target: x.id })}>Time with {c.name} · one die</Action>
     </Page>
   );

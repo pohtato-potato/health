@@ -130,3 +130,34 @@
 .bo21-p .tg { align-self: flex-start; margin-top: 4px; padding: 2px 8px; background: #ff3d5a; color: #fff; font: 700 14px var(--sans); font-style: normal; transform: skewX(-8deg); animation: bo21-blink 1.4s steps(1) infinite; }
 @keyframes bo21-blink { 50% { background: #fff; color: #c41a34; } }
 html.contrast .bo21-p { background: #111; outline: 1px solid #fff; clip-path: none; }
+
+/* One bond (board 21, b21-nadia): the card flips in, the rank strip, the ask, and all ten ranks. */
+.k-page:has(.nh21) { background: linear-gradient(180deg, rgba(255, 154, 118, .16), transparent 260px); }
+.nh21 { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: center; }
+.nh21 .bc21 { width: 92px; height: 128px; display: grid; place-items: center; background: #ff9a76; transform: rotate(-6deg); box-shadow: 6px 6px 0 #fff; animation: nh21-flip .9s .2s cubic-bezier(.2, 1.2, .4, 1) both; }
+.nh21 .bc21 .cg-sil.big { width: 64px; height: 64px; box-shadow: none; background-color: rgba(20, 6, 8, .55); }
+@keyframes nh21-flip { from { transform: rotate(-6deg) rotateY(180deg); } }
+.nh21 strong { display: block; font: 700 36px/.9 var(--fb-cond); text-transform: uppercase; color: #fff; overflow-wrap: anywhere; }
+.nh21 small { font: 700 15px var(--sans); color: #ff9a76; }
+.ru21 { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 14px; background: #140608; color: #fff; transform: skewX(-6deg); box-shadow: inset 0 0 0 1.5px rgba(255, 154, 118, .5); }
+.ru21 b { font: 700 64px/.8 var(--fb-cond); }
+.ru21 b.nx21b { color: #ff9a76; animation: ru21-up .6s 1s cubic-bezier(.2, 1.6, .4, 1) both; }
+@keyframes ru21-up { from { transform: translateY(30px) scale(.4); opacity: 0; } }
+.ru21 em { font: 700 15px var(--sans); font-style: normal; }
+.ru21 .ar { width: 30px; height: 30px; color: #ff9a76; }
+.nd21-who { margin: 0; font: 400 15px/1.45 var(--sans); color: rgba(243, 238, 230, .88); }
+.as21 { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: center; padding: 12px 14px; background: #fff; color: #140608; transform: skewX(-4deg); box-shadow: 5px 5px 0 #ff3d5a; }
+.as21 b { display: block; font: 700 20px/1 var(--fb-cond); text-transform: uppercase; }
+.as21 span { font: 400 15px/1.35 var(--sans); }
+.as21 i { width: 44px; height: 44px; display: grid; place-items: center; background: #ff3d5a; color: #fff; font: 700 30px/1 var(--fb-cond); font-style: normal; }
+.ld21 { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ld21 li { animation: bo21-in .4s var(--d) ease-out both; }
+.ld21 li > button, .ld21 li > div { width: 100%; display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; gap: 10px; min-height: 52px; padding: 6px 10px; border: 0; background: #1f0c10; color: inherit; text-align: left; clip-path: polygon(0 0, 100% 0, 98% 100%, 0 100%); }
+.ld21 li > button { cursor: pointer; }
+.ld21 b { font: 700 26px/1 var(--fb-cond); color: #ff9a76; text-align: center; }
+.ld21 span { font: 700 15px/1.3 var(--sans); color: #fff; }
+.ld21 small { display: block; font: 400 14px/1.35 var(--sans); color: #ffd6c8; }
+.ld21 li.lk b { color: rgba(255, 255, 255, .45); }
+.ld21 li.lk span { color: rgba(255, 255, 255, .7); }
+.ld21 li.pk > button, .ld21 li.pk > div { background: #3a1418; }
+html.contrast .ld21 li > button, html.contrast .ld21 li > div, html.contrast .ru21 { background: #111; outline: 1px solid #fff; clip-path: none; }
