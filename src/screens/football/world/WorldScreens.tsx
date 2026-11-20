@@ -1,7 +1,7 @@
 // Football engine 2, layer 4: the world (spec §9.3–9.5, §10, §16; rounds seven to nine as pinned).
 // Loans from packs, sleep-style trials and the academy, international duty, and the morning on Tonight.
 // The aurora look with glowing outlines; words in Atkinson Hyperlegible Next, numbers and titles in Fraunces.
-import { useEffect, type CSSProperties } from 'react';
+import { useEffect, type CSSProperties, type ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { go } from '../../../router';
 import { loadHealth } from '../../../football/store/gather';
@@ -14,6 +14,8 @@ import { BREAK_DAYS, DUTY_ATTR, DUTY_NEEDS } from '../../../football/globe/duty'
 import { fromName, nationName } from '../../../football/globe/nations';
 import { UNIT_HABIT } from '../../../football/globe/scout';
 import { UNIT_COLOUR } from '../../../football/players/eleven';
+import { artForExercise, artForHabit } from '../../../football/players/art';
+import { PlayerCard } from '../players/Card';
 import type { LoanDef, Unit } from '../../../football/content/types';
 import type { FbSquadRow } from '../../../football/store/tables';
 import type { LoanStay } from '../../../football/globe/types';
@@ -170,34 +172,52 @@ export function TrialsPage() {
   if (!w) return null;
   const s = STYLE_WORDS[w.week.style];
   const hrs = Math.floor(w.week.hours), mins = Math.round((w.week.hours - hrs) * 60);
+  // Everyone the last trial day brought, still waiting first, then what became of the rest.
+  const lastCame = (last?.came ?? []).map((id) => w.squad.find((y) => y.id === id)).filter((y): y is FbSquadRow => !!y && y.status !== 'trial');
+  const came = [...w.trials, ...lastCame];
   return (
     <div className="k-page">
       <div className="kb-lead kw-night">
         <Moon />
-        <Hero value={w.trials.length} ink="#ffe27a" label={w.trials.length === 1 ? 'came to the trials' : 'came to the trials'} />
-        <span className="k-r k-q">{last ? `${new Date(`${last.on}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'long' })} morning` : 'Sunday mornings'}</span>
+        <Hero value={w.trials.length} ink="#ffe27a" label={w.trials.length === 1 ? 'on trial now' : 'on trial now'} />
+        <span className="k-r k-q">{last ? `came on ${new Date(`${last.on}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}` : 'Sunday mornings'}</span>
       </div>
       <Panel ink="#93c3dc">
         <PanelTop name={`Your week's sleep: ${s.name}`} c="#93c3dc" />
         <span>{w.week.nights >= 3 ? `${w.week.kept} of ${w.week.nights} bedtimes kept · ${hrs} h ${String(mins).padStart(2, '0')} average` : 'Fewer than three nights logged this week: anyone might come.'}</span>
       </Panel>
       {w.trials.length === 0 && <Note>Nobody waiting. The next trial day brings {w.rules.trials.size === 1 ? 'one' : w.rules.trials.size} new {w.rules.trials.size === 1 ? 'face' : 'faces'}, drawn by this week's sleep.</Note>}
-      <div className="kb-rows">
-        {w.trials.map((y, i) => <Trialist key={y.id} y={y} lead={i === 0} />)}
+      <div className="t23-list">
+        {came.map((y) => <TrialCard key={y.id} y={y} lead={y.id === w.trials[0]?.id} />)}
       </div>
       <Note>Trials are held on Sunday mornings{w.rules.trials.extraDay ? ' and Wednesdays' : ''}. Early, regular sleep draws steady defenders. Long nights draw prospects. Short but rested nights draw quick wingers.</Note>
       <Note>A trialist waits {w.rules.trials.hold} days to be tied to a habit; then they go home, no harm done. The academy holds {w.rules.academy}.</Note>
     </div>
   );
 }
-function Trialist({ y, lead }: { y: FbSquadRow; lead: boolean }) {
-  const c = UNIT_COLOUR[y.axis as Unit];
+const youthArt = (y: FbSquadRow) => (y.exercise ? artForExercise(y.what, y.what) : artForHabit(y.what));
+/** A youngster as their card (board 23, c23-trials/c23-academy): a bronze card with no step yet, tilted and floating,
+ * beside the name, stars and what comes next. */
+function YouthCard({ y, gone, children }: { y: FbSquadRow; gone?: boolean; children: ReactNode }) {
   return (
-    <Panel ink={c}>
-      <PanelTop name={y.name} c={c} right={STARS(y.potential)} />
-      <span className="k-q">{y.axis} · {y.what}{y.nation ? ` · from ${nationName(y.nation)}` : ''}{y.trialUntil ? ` · waits until ${fmtDate(y.trialUntil)}` : ''}</span>
-      <Action quiet={!lead} onClick={() => go('/football/tie', { id: y.id })}>Tie to a habit</Action>
-    </Panel>
+    <div className={`t23pl${gone ? ' gone' : ''}`} style={{ '--c': UNIT_COLOUR[y.axis as Unit] } as CSSProperties}>
+      <span className="cw"><PlayerCard card={{ tier: 'bronze', step: 0 }} art={youthArt(y)} seed={y.id} label={`${y.name}, a youngster's card`} noView /></span>
+      <span className="bd"><b className="nm">{y.name}</b>{STARS(y.potential)}{children}</span>
+    </div>
+  );
+}
+/** One trialist from the last trial day, and what became of them. */
+export function TrialCard({ y, lead }: { y: FbSquadRow; lead?: boolean }) {
+  const tag = y.status === 'trial' ? (y.trialUntil ? `Waits until ${fmtDate(y.trialUntil)}` : 'Waiting')
+    : y.status === 'growing' ? 'Tied to a habit · at the academy'
+      : y.status === 'promoted' ? 'Joined the squad'
+        : `Went home${y.leftOn ? ` ${fmtDate(y.leftOn)}` : ''}`;
+  return (
+    <YouthCard y={y} gone={y.status === 'left'}>
+      <span className="ln">{y.axis} · {y.what}{y.nation ? ` · from ${nationName(y.nation)}` : ''}</span>
+      <span className={`tg ${y.status}`}>{tag}</span>
+      {y.status === 'trial' && <Action quiet={!lead} onClick={() => go('/football/tie', { id: y.id })}>Tie to a habit</Action>}
+    </YouthCard>
   );
 }
 

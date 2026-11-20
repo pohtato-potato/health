@@ -244,3 +244,30 @@ html.contrast .pc19::before { display: none; }
 .bd19 .more { grid-column: 1 / -1; min-height: 44px; display: grid; place-items: center; border-radius: 12px; border: 1.5px dashed color-mix(in srgb, var(--c) 60%, transparent); background: none; font: 700 14px var(--sans); color: var(--c); cursor: pointer; }
 html.contrast .bd19 .gr { background: #111; box-shadow: inset 0 0 0 1px #fff; }
 html.contrast .t22sl li { background: #111; }
+
+/* Trials and the academy (board 23, c23-trials / c23-academy): each youngster as their card, tilted and floating. */
+.t23-list { display: flex; flex-direction: column; gap: 10px; }
+.t23pl { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 14px; align-items: center; padding: 12px; border-radius: 22px; background: color-mix(in srgb, var(--c) 16%, #0a1024); animation: t23-rise .6s cubic-bezier(.16, 1, .3, 1) both; }
+.t23pl .cw { display: block; transform: rotate(-4deg); animation: t23-float 4s ease-in-out infinite; }
+.t23pl .cw .k6 { width: 88px; }
+.t23pl .bd { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+.t23pl .nm { font: 700 20px/1.1 var(--sans); color: #fff; overflow-wrap: anywhere; }
+.t23pl .kb-stars { color: #ffe27a; font-size: 16px; letter-spacing: .1em; }
+.t23pl .ln { font: 400 15px/1.35 var(--sans); color: #dfe6ff; }
+.t23pl .tg { margin-top: 6px; padding: 3px 10px; border-radius: 12px; font: 700 14px var(--sans); background: #ffe27a; color: #0a1024; }
+.t23pl .tg.left { background: rgba(255, 255, 255, .55); }
+.t23pl .tg.growing, .t23pl .tg.promoted { background: #8fdcb6; }
+.t23pl .k-action, .t23pl button { margin-top: 8px; }
+.t23pl.gone { background: rgba(255, 255, 255, .05); }
+.t23pl.gone .cw { filter: grayscale(.8); }
+.t23pl .rg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 10px; align-self: stretch; }
+.t23pl .rg > div { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.t23pl .rg svg { width: 64px; height: 64px; }
+.t23pl .rg circle.f { stroke-dasharray: var(--l) 200; animation: t23-ring 1.2s .4s cubic-bezier(.16, 1, .3, 1) both; }
+.t23pl .rg span { font: 700 14px var(--sans); color: #dfe6ff; text-align: center; }
+@keyframes t23-rise { from { transform: translateY(16px); opacity: 0; } }
+@keyframes t23-float { 50% { transform: rotate(-2deg) translateY(-4px); } }
+@keyframes t23-ring { from { stroke-dasharray: 0 200; } }
+.t23-free { padding: 14px; border-radius: 18px; border: 1.5px dashed rgba(194, 178, 255, .55); font: 500 15px var(--sans); color: rgba(243, 238, 230, .85); }
+html.contrast .t23pl { background: #111; outline: 1px solid #fff; }
+html.contrast .t23pl .tg { outline: 1px solid #000; }
