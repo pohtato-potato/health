@@ -1,32 +1,36 @@
-// Opening night: a new stand or building drawn in light for the first time.
+// Opening night (board 23, m23-open): the new ground or building in a warm orb, its icon dead centre, then what it does.
 import { bundleById } from '../../../football/ground';
 import { projectById } from '../../../football/content/projects';
-import { Aurora } from '../FootballHome';
 import { MomentLayer } from './Layer';
+import { MomentPage, Orb } from './Orb';
 
-export function OpeningNightView({ id, onDone }: { id: string; onDone: () => void }) {
-  const b = id === 'moving-day' ? { name: 'Kaai 42', effect: 'Moving day. The first match at Kaai 42 is a big night, and the groundshare ends.' } : bundleById(id) ?? openingOf(id);
+const WARM = '#ffb347';
+const BUILDING = <svg viewBox="0 0 24 24" width="72" height="72" fill="none" stroke={WARM} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 21h18M5 21V10l7-5 7 5v11M9 21v-6h6v6" /></svg>;
+
+/** What opened: the move to Kaai 42, a shipped bundle, or a layer 3 stage by its name and reward. */
+export function openingOf(id: string): { name: string; effect: string } {
+  if (id === 'moving-day') return { name: 'Kaai 42', effect: 'Moving day. The first match at Kaai 42 is a big night, and the groundshare ends.' };
+  const b = bundleById(id);
+  if (b) return { name: b.name, effect: b.effect };
+  const p = projectById(id);
+  return { name: p?.name ?? 'A new building', effect: p?.reward ?? 'Built.' };
+}
+
+/** The page itself, without the layer it sits in. */
+export function OpeningNight({ id, onDone }: { id: string; onDone: () => void }) {
+  const b = openingOf(id);
   return (
-    <MomentLayer role="dialog" aria-modal="true" aria-labelledby="fb-open-t">
-      <Aurora a="#ff7a1a" c="#7fe0a8">
-        <main className="fb-page">
-          <span className="fb-lb">Opening night</span>
-          <svg className="fb-opening" viewBox="0 0 300 150" aria-hidden="true">
-            <path d="M20 120 H280" className="base" />
-            <path d="M40 120 V60 Q150 30 260 60 V120" className="trace" pathLength={100} />
-            <path d="M60 120 V78 H240 V120" className="trace late" pathLength={100} />
-          </svg>
-          <h2 id="fb-open-t" className="fb-momtitle">{b.name}</h2>
-          <p className="fb-s">{b.effect}</p>
-          <div className="fb-btns"><button type="button" className="fb-btn pri" onClick={onDone}>Lights on</button></div>
-        </main>
-      </Aurora>
-    </MomentLayer>
+    <MomentPage colour={WARM} titleId="fb-open-t" title="Opening" sub="night" action="Lights on" onAction={onDone} hero={<Orb colour={WARM} rays={18}>{BUILDING}</Orb>}>
+      <p className="mo-name">{b.name}</p>
+      <p className="mo-lead">{b.effect}</p>
+    </MomentPage>
   );
 }
 
-/** A new layer 3 stage isn't a shipped bundle: its name and reward stand in. */
-function openingOf(id: string) {
-  const p = projectById(id);
-  return { name: p?.name ?? 'A new building', effect: p?.reward ?? 'Built.' };
+export function OpeningNightView({ id, onDone }: { id: string; onDone: () => void }) {
+  return (
+    <MomentLayer role="dialog" aria-modal="true" aria-labelledby="fb-open-t">
+      <OpeningNight id={id} onDone={onDone} />
+    </MomentLayer>
+  );
 }

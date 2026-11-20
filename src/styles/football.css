@@ -688,9 +688,9 @@ button.md-chip { min-height: 44px; cursor: pointer; }
 .mo-lead { margin: 0; max-width: 340px; font: 400 16px/1.45 var(--sans); color: rgba(243, 238, 230, .92); }
 .mo-go { width: 100%; max-width: 420px; min-height: 56px; margin-top: auto; flex: none; border: 0; border-radius: 18px; background: var(--c); color: #0b1022; font: 700 17px var(--sans); cursor: pointer; }
 .mo-go:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
-.orb { position: relative; flex: none; width: min(170px, 26vh); aspect-ratio: 1; display: grid; place-items: center; margin: 6px 0; }
+.orb { position: relative; isolation: isolate; flex: none; width: min(170px, 26vh); aspect-ratio: 1; display: grid; place-items: center; margin: 6px 0; }
 .orb-ring { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from var(--orb-r), var(--c), transparent 30%, var(--c) 50%, transparent 80%, var(--c)); filter: blur(6px); opacity: .8; animation: orb-spin 6s linear infinite; }
-.orb-ring::after { content: ''; position: absolute; inset: 14px; border-radius: 50%; background: #0b1022; }
+.orb::after { content: ''; position: absolute; inset: 8%; border-radius: 50%; background: #0b1022; z-index: 0; }
 .orb-rays { position: absolute; inset: 0; pointer-events: none; }
 .orb-rays i { position: absolute; left: 50%; top: 50%; width: 3px; height: 65%; margin-left: -1.5px; transform-origin: 50% 0; transform: rotate(var(--a)); background: linear-gradient(var(--c), transparent); opacity: .6; animation: orb-breathe 3s ease-in-out infinite; }
 .orb-core { position: relative; z-index: 1; display: grid; place-items: center; animation: orb-in .7s cubic-bezier(.34, 1.56, .64, 1) both .1s; }
@@ -723,3 +723,4 @@ html.contrast .mo-opt button, html.contrast .mo-pick button { border: 1.5px soli
 @keyframes mo-stamp { 0% { scale: 2.4; opacity: 0; } }
 .mo-rows { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 8px; }
 .mo-rows .mo-row:nth-child(2) { animation-delay: .75s; } .mo-rows .mo-row:nth-child(3) { animation-delay: .9s; } .mo-rows .mo-row:nth-child(4) { animation-delay: 1.05s; }
+.mo-name { margin: 0; font: 700 26px/1.1 var(--fb-cond); text-transform: uppercase; color: var(--c); }

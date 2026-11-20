@@ -17,7 +17,7 @@ describe('The shared orb (m23-*, Task 2.15)', () => {
     expect(rule('.orb-ring')).toMatch(/position: absolute; inset: 0/);
     expect(rule('.orb-rays')).toMatch(/position: absolute; inset: 0/);
     const out = renderToStaticMarkup(<Orb colour="#e30613"><b>X</b></Orb>);
-    expect(out).toMatch(/<span class="orb-ring" aria-hidden="true"><\/span><span class="orb-rays" aria-hidden="true">(<i [^>]*><\/i>){12}<\/span><span class="orb-core"><b>X<\/b><\/span>/);
+    expect(out).toMatch(/<span class="orb-rays" aria-hidden="true">(<i [^>]*><\/i>){12}<\/span><span class="orb-ring" aria-hidden="true"><\/span><span class="orb-core"><b>X<\/b><\/span>/);
   });
 });
 

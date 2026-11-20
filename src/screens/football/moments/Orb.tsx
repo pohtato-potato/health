@@ -8,8 +8,8 @@ const ink = (colour: string) => ({ ['--c' as string]: colour }) as CSSProperties
 export function Orb({ colour, rays = 12, children }: { colour: string; rays?: number; children: ReactNode }) {
   return (
     <div className="orb" style={ink(colour)}>
-      <span className="orb-ring" aria-hidden="true" />
       <span className="orb-rays" aria-hidden="true">{Array.from({ length: rays }, (_, k) => <i key={k} style={{ ['--a' as string]: `${Math.round((k * 360) / rays)}deg`, animationDelay: `${(k * 0.2).toFixed(1)}s` } as CSSProperties} />)}</span>
+      <span className="orb-ring" aria-hidden="true" />
       <span className="orb-core">{children}</span>
     </div>
   );
