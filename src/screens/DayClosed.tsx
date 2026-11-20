@@ -140,13 +140,6 @@ export function DayClosed({ date, summary: s, onDone, opp }: { date: string; sum
       <h1 className="dc-h1">{dayName}’s card</h1>
       <DayCard reveal tier={dayTier(rings.closed, rings.of)} dateLabel={`${parseDay(date).getDate()} ${month.slice(0, 3)}`} title={`${dayName} ${where}`} rings={ringList} stats={stats} ribbon={brk} foot={brk ? brk.foot : opp ? `Shape sealed for ${opp}` : tierLine({ kcal: rings.kcal.closed, protein: rings.protein.closed, steps: rings.steps.closed, sleep: rings.sleep.closed }, rings.of, { kcal: rings.kcal.state, proteinG: targets.proteinG - s.protein, steps: s.stepsLeft ?? targets.steps, sleepMin: targets.sleepMin - rings.sleep.value })} />
       {rings.perfect && <p className="k-q dc-perfect">A perfect day. Its star is in {month}’s sky.</p>}
-      {weekKeys.length > 0 && (
-        <WeekCard days={weekKeys.map(cellOf)} week={weekNumber(date)} today={now} onOpen={(k) => setOpenDay(k === date ? null : k)} stats={[
-          { name: 'Calories', value: fmtInt(weekTot.kcal), ink: 'var(--kcal)' },
-          { name: 'Protein', value: `${fmtInt(weekTot.protein)} g`, ink: 'var(--protein)' },
-          { name: 'Steps', value: fmtInt(weekTot.steps), ink: 'var(--steps)' },
-        ]} />
-      )}
       <div className="dc-acts">
         <button type="button" className="k-act quiet" onClick={() => go('/reports/week', { w: storyWeek(date) })}>
           The week
@@ -155,6 +148,14 @@ export function DayClosed({ date, summary: s, onDone, opp }: { date: string; sum
           Good night
         </button>
       </div>
+      {/* Under the buttons, so they stay on the first screen of the owner's phone on a Sunday too (360 × 745). */}
+      {weekKeys.length > 0 && (
+        <WeekCard days={weekKeys.map(cellOf)} week={weekNumber(date)} today={now} onOpen={(k) => setOpenDay(k === date ? null : k)} stats={[
+          { name: 'Calories', value: fmtInt(weekTot.kcal), ink: 'var(--kcal)' },
+          { name: 'Protein', value: `${fmtInt(weekTot.protein)} g`, ink: 'var(--protein)' },
+          { name: 'Steps', value: fmtInt(weekTot.steps), ink: 'var(--steps)' },
+        ]} />
+      )}
       {picked && openDay && (
         <div className="mb-open">
           <DayCard tier={picked.tier} dateLabel={`${parseDay(openDay).getDate()} ${month.slice(0, 3)}`} title={`${WEEKDAYS[parseDay(openDay).getDay()]} ${picked.place.kind === 'home' ? 'at home' : picked.place.kind === 'office' ? 'at the office' : `at ${picked.place.name}`}`} rings={picked.rings} ribbon={picked.ribbon} foot={picked.ribbon?.foot} stats={[

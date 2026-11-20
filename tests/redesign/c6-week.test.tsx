@@ -45,4 +45,9 @@ describe('Close, Sunday (c6-week)', () => {
     expect(html).toContain('0 of 7');
     expect(html).not.toContain('dc-rib');
   });
+
+  it('keeps The week and Good night on the first screen on a Sunday: the week card sits under them', () => {
+    const src = readFileSync('src/screens/DayClosed.tsx', 'utf8');
+    expect(src.indexOf('className="dc-acts"')).toBeLessThan(src.indexOf('<WeekCard'));
+  });
 });
