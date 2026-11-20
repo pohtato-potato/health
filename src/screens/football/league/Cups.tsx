@@ -9,6 +9,7 @@ import { CONT, CONT2, CONT_NAME, phaseTable, type Continental } from '../../../f
 import { ordinal } from '../../../football/habitLines';
 import { clubCrest, crestSvg } from '../../../football/art/crest';
 import { Art } from '../world/Fog';
+import { PAIRCUP_ID } from '../../../football/pyramid/cups';
 
 const short = (id: string) => (id === OWN ? 'BRA' : clubById(id).short);
 const nm = (id: string) => (id === OWN ? 'Brabo United' : clubById(id).name);
@@ -91,8 +92,8 @@ const TROPHY: Record<'cup' | 'pair', string> = {
   cup: 'M50 20h50v28c0 22-12 36-25 36S50 70 50 48zM50 30H34c0 16 8 22 18 22M100 30h16c0 16-8 22-18 22M68 84h14v18H68zM54 102h42v12H54z',
   pair: 'M36 26h32v22c0 16-7 26-16 26s-16-10-16-26zM82 26h32v22c0 16-7 26-16 26s-16-10-16-26zM46 74h12v22H46zM92 74h12v22H92zM38 96h74v12H38z',
 };
-/** Each cup's own colour and silverware. */
-export const cupLook = (_id: string): { ink: string; shape: 'cup' | 'pair' } => ({ ink: '#ffd36b', shape: 'cup' });
+/** Each cup's own colour and silverware: the Pair Cup blue with its two cups, every other cup gold. */
+export const cupLook = (id: string): { ink: string; shape: 'cup' | 'pair' } => (id === PAIRCUP_ID ? { ink: '#8fd8ff', shape: 'pair' } : { ink: '#ffd36b', shape: 'cup' });
 
 /** One cup (board 23, u23-big and u23-pair): the trophy turning in its glow, tonight's tie, then the road of rounds
  *  with the one you are on marked in words, the bracket and the giant-killings. */
