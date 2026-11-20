@@ -345,3 +345,25 @@ html.contrast .gr21-rf { display: none; }
 html.contrast .coins19 { display: none; }
 html.contrast .sl19 div { background: #111; outline: 1px solid #fff; }
 .of19-l em span { display: block; font: 700 14px var(--sans); color: #4a3a20; }
+
+/* The board (board 20, d20-board): the minutes slide in on paper, "On track" stamps on, then the season's boon. */
+.bo20-page { padding-top: 22px; }
+.mn20 { position: relative; display: flex; flex-direction: column; gap: 12px; padding: 18px 16px 16px; border-radius: 4px; background: #fbf7ee; color: #1a1208; box-shadow: 0 14px 30px rgba(0, 0, 0, .5); transform: rotate(-1deg); animation: mn20-slide .7s .2s cubic-bezier(.2, 1.2, .4, 1) both; }
+@keyframes mn20-slide { from { transform: translateY(60px) rotate(-6deg); opacity: 0; } }
+.mn20 h2 { margin: 0; font: 700 28px/1 var(--fb-cond); text-transform: uppercase; border-bottom: 2px solid #1a1208; padding-bottom: 8px; }
+.mn20 h2 small { display: block; font: 700 14px var(--sans); text-transform: none; color: #6a5030; margin-top: 4px; }
+.mn20 .it { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; }
+.mn20 .it > b { grid-row: 1 / 4; font: 700 28px/1 var(--fb-cond); color: #a8341a; }
+.mn20 .it strong { font: 700 17px/1.25 var(--sans); }
+.mn20 .it .pr { display: flex; align-items: center; gap: 6px; font: 700 14px/1.3 var(--sans); color: #1a3a8a; }
+.mn20 .it.ok .pr { color: #0b5a2a; }
+.mn20 .it p { margin: 0; font: 400 15px/1.4 var(--sans); color: #4a3a20; font-style: italic; }
+.mn20 .ft { margin: 0; font: 700 14px var(--sans); color: #6a5030; }
+.mn20 .stp { position: absolute; right: 10px; top: -16px; background: #fbf7ee; padding: 4px 10px; border: 3px solid #0b5a2a; border-radius: 8px; color: #0b5a2a; font: 700 18px var(--fb-cond); text-transform: uppercase; transform: rotate(8deg); animation: mn20-stamp .5s 1.4s cubic-bezier(.34, 1.56, .64, 1) both; }
+@keyframes mn20-stamp { from { transform: rotate(8deg) scale(2.4); opacity: 0; } }
+.bn20 { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: center; padding: 14px; border-radius: 18px; background: linear-gradient(135deg, #2a5a3a, #14301e); border: 1.5px solid #8fdcb6; color: inherit; text-align: left; cursor: pointer; }
+.bn20 .ic { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: #8fdcb6; color: #14301e; }
+.bn20 .ic svg { width: 30px; height: 30px; }
+.bn20 b { display: block; font: 700 22px/1 var(--fb-cond); text-transform: uppercase; color: #fff; }
+.bn20 > span:last-child { font: 500 15px/1.35 var(--sans); color: #d6f5e4; }
+html.contrast .mn20 { background: #fff; color: #000; }

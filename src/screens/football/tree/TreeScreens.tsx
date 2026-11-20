@@ -7,14 +7,14 @@ import { countedLine, countsLine, etaWords, leftLine } from '../../../football/t
 import { seasonMoneyScale } from '../../../football/pyramid/shape';
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { ERAS, TECHS } from '../../../football/content/tree';
-import { BOARD } from '../../../football/content/season';
+import { BOARD, BOONS } from '../../../football/content/season';
 import { PROJECTS } from '../../../football/content/projects';
 import { WAGE_UNIT, wage } from '../../../football/content/money';
 import type { EraId, TechDef } from '../../../football/content/types';
 import { euros } from '../../../football/money';
 import { clearTarget, researchTech, seeEra, seeEureka } from '../../../football/store/treeActions';
 import { techState } from '../../../football/tree/research';
-import { objectiveLine } from '../../../football/tree/season';
+import { boonsThisSeason, objectiveLine } from '../../../football/tree/season';
 import { fmtCount, METRIC_WORDS, ROMAN, WHY_WORDS } from '../../../football/tree/words';
 import { go } from '../../../router';
 import { useHeaded } from '../FootballHome';
@@ -561,35 +561,60 @@ export function WagesCard() {
   );
 }
 
-/** The board (no drawing; on the kit): the two goals as panels, green when on track, then the chairman's note. */
+type BoardGoal = { id: string; o: (typeof BOARD)[number]; line: string; ok: boolean };
+/** The board's minutes (board 20, d20-board): a paper sheet slides in with the season's asks, how you stand on each in
+ * words, and what the board will say if it is met. "On track" stamps on when every ask is (or "Met" once settled). */
+export function BoardMinutes({ season, goals, settled }: { season: number; goals: BoardGoal[]; settled?: boolean }) {
+  const all = goals.length > 0 && goals.every((g) => g.ok);
+  return (
+    <div className="mn20">
+      {all && <span className="stp">{settled ? 'Met' : 'On track'}</span>}
+      <h2>Minutes · season {season}<small>The board’s {goals.length === 1 ? 'ask' : `${goals.length} asks`} for the season</small></h2>
+      {goals.map((g, i) => (
+        <div key={g.id} className={`it${g.ok ? ' ok' : ''}`}>
+          <b>{i + 1}</b><strong>{g.o.text}</strong>
+          <span className="pr"><Icon name={g.ok ? 'check' : 'clock'} size={16} stroke={2.6} />{g.line}</span>
+          <p>If met: {g.o.met}</p>
+        </div>
+      ))}
+      <p className="ft">Each one met brings 10 research.</p>
+    </div>
+  );
+}
+
+/** The board: the minutes, then the chairman's last word and this season's boons. */
 export function BoardPage() {
   const m = useModel();
   if (!m) return null;
   const set = m.eng.board.find((b) => b.season === m.t.save.season);
   const last = [...m.eng.board].reverse().find((b) => b.verdicts);
   const facts = m.t.facts;
-  const goals = set?.ids.map((id) => {
+  const goals: BoardGoal[] = set?.ids.map((id) => {
     const o = BOARD.find((x) => x.id === id)!;
     const v = set.verdicts?.find((x) => x.id === id);
     const line = v ? (v.met ? 'Met · 10 research' : 'Missed') : facts ? objectiveLine(o, facts) : '';
     const ok = v ? v.met : line.includes('on track') || line === 'Done' || line.startsWith('Above');
     return { id, o, line, ok };
   }) ?? [];
+  const boons = boonsThisSeason(m.user, m.t.save.season).map((id) => BOONS.find((b) => b.id === id)).filter((b): b is NonNullable<typeof b> => !!b);
   return (
-    <div className="k-page">
-      <div className="kb-lead"><Hero value={goals.filter((g) => g.ok).length} ink="#8fdcb6" label={`of ${goals.length || 2} goals`} under="on track or met" /></div>
-      {!set && <Note>The board sets its goals on the season's first day.</Note>}
-      <div className="kb-rows">
-        {goals.map((g) => (
-          <Panel key={g.id} ink={g.ok ? '#8fdcb6' : '#ff9a76'}>
-            <MarkRow icon={g.ok ? 'check' : 'clock'} c={g.ok ? '#8fdcb6' : '#ff9a76'} name={g.o.text} line={g.line} />
-          </Panel>
-        ))}
-      </div>
+    <div className="k-page bo20-page">
+      {set ? <BoardMinutes season={m.t.save.season} goals={goals} settled={Boolean(set.verdicts)} /> : <Note>The board sets its asks on the season's first day.</Note>}
       {last?.verdicts && (
         <>
           <Sect>From the chairman</Sect>
           <Panel ink="#93c3dc">{last.verdicts.map((v) => { const o = BOARD.find((x) => x.id === v.id)!; return <b key={v.id} className="kd-q" style={{ margin: 0 }}>{v.met ? o.met : o.missed}</b>; })}</Panel>
+        </>
+      )}
+      {boons.length > 0 && (
+        <>
+          <Sect>The season’s {boons.length === 1 ? 'boon' : 'boons'}</Sect>
+          {boons.map((b) => (
+            <button key={b.id} type="button" className="bn20" onClick={() => go('/football/boon')}>
+              <span className="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v5c0 4-3 7-7 9-4-2-7-5-7-9V7z" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinejoin="round" /></svg></span>
+              <span><b>{b.name}</b>{b.text}</span>
+            </button>
+          ))}
         </>
       )}
     </div>
