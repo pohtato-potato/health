@@ -1,5 +1,5 @@
-// The signing moment (O41 #4, letter A): full screen, the shirt with the brand on it, the logo as an outline, what it
-// pays, what came today, when the rest comes, and any clause. Seen once, then gone.
+// A sponsor signs (board 23, m23-sign; O41 #4): SIGNED stamps down over the brand, then four rows: what it is, what
+// was paid today, the clause and the risk. Every sum is the stored deal's. Seen once, then gone.
 import { kitSvg } from '../../../football/art/kit';
 import { sponsorLogoSvg } from '../../../football/art/sponsorMark';
 import { kitEntry } from '../../../football/kits';
@@ -8,48 +8,51 @@ import { seasonLength } from '../../../football/calendar';
 import { worldOf } from '../../../football/pyramid/shape';
 import { markSigningSeen } from '../../../football/store/save';
 import type { FbSave } from '../../../football/store/tables';
-import { Aurora } from '../FootballHome';
 import { Art } from '../Tonight';
 import { MomentLayer } from './Layer';
+import { MomentPage, MomentRow } from './Orb';
 
 const WHERE = { shirt: 'On the shirt', kit: 'Making the kit', sleeve: 'On the sleeve', ground: 'On the ground', partner: 'A club partner' } as const;
 const N = ['', 'one season', 'two seasons', 'three seasons'];
 
-export function SigningView({ save }: { save: FbSave }) {
+const GREEN = '#5fe3a1';
+const SHIRT = <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#0b1022" strokeWidth="2" strokeLinejoin="round"><path d="M6 4l6 3 6-3 3 6-3 2v8H6v-8l-3-2z" /></svg>;
+
+/** The page itself, without the layer it sits in. */
+export function Signing({ save, onKeep }: { save: FbSave; onKeep: () => void }) {
   const d = save.signed;
   if (!d) return null;
   const home = save.kits?.filter((k) => k.slot === 'home').sort((a, b) => b.season - a.season)[0];
   const kit = (home && kitEntry(home.id)?.kit) ?? kitEntry('H1')!.kit;
   const onShirt = d.slot === 'shirt' || d.slot === 'sleeve';
   const days = seasonLength(worldOf(save));
-  const clause = d.risk === 'flashy' ? 'A habit clause: one habit to keep while it runs.' : d.risk === 'dodgy' ? 'It may fold: 1 season in 4.' : 'None.';
+  const [first, ...rest] = d.brand.split(' ');
+  const hero = (
+    <div className="mo-sign-hero">
+      <div className="mo-sign-art">
+        {onShirt ? <Art svg={kitSvg({ ...kit, sp: save.sponsorStyle ?? 'A' }, 'front', 120, { sponsor: d.slot === 'shirt' ? d.brand : undefined, label: `The home shirt with ${d.brand}` })} />
+          : <Art svg={sponsorLogoSvg(d.brand, 120, '#fff6d6')} />}
+      </div>
+      <span className="mo-stamp" aria-hidden="true">SIGNED</span>
+    </div>
+  );
+  return (
+    <MomentPage colour={GREEN} titleId="fb-sign-t" title={rest.length ? first : 'Signed'} sub={rest.length ? rest.join(' ') : d.brand} action="Keep it" onAction={onKeep} hero={hero}>
+      <div className="mo-rows">
+        <MomentRow colour={GREEN} mark={SHIRT} title={d.brand} line={`${WHERE[d.slot]} · ${N[d.seasons] ?? `${d.seasons} seasons`} · from season ${d.since}`} end={`${euros(d.perSeason)} a season`} />
+        <MomentRow colour="#ffd36b" mark="1" title="Paid today" line={`${euros(d.advance)}, a quarter. The rest at the season’s end, day ${days}.`} />
+        <MomentRow colour="#c2b2ff" mark="!" title={d.risk === 'flashy' ? 'A habit clause' : 'No clause'} line={d.risk === 'flashy' ? 'One habit to keep while it runs.' : 'Nothing to keep up while it runs.'} />
+        <MomentRow colour="#ff8a9a" mark="?" title={d.risk === 'dodgy' ? 'It may fold' : 'It will see the deal out'} line={d.risk === 'dodgy' ? '1 season in 4.' : 'A steady brand.'} />
+      </div>
+    </MomentPage>
+  );
+}
+
+export function SigningView({ save }: { save: FbSave }) {
+  if (!save.signed) return null;
   return (
     <MomentLayer role="dialog" aria-modal="true" aria-labelledby="fb-sign-t">
-      <Aurora c="#f2c46d">
-        <main className="fb-page fb-sign">
-          <span className="fb-lb">Signed · Season {d.since}</span>
-          <div className="fb-sign-art">
-            {onShirt && <Art svg={kitSvg({ ...kit, sp: save.sponsorStyle ?? 'A' }, 'front', 150, { sponsor: d.slot === 'shirt' ? d.brand : undefined, label: `The home shirt with ${d.brand}` })} />}
-            <Art svg={sponsorLogoSvg(d.brand, onShirt ? 110 : 160, '#fff6d6')} />
-          </div>
-          {/* O44: the pen line draws itself, then the stamp lands (once, as the moment opens). */}
-          <svg className="mo-sign" viewBox="0 0 200 70" aria-hidden="true">
-            <path className="pen" pathLength={1} d="M10 50 C30 6 45 80 62 42 S90 14 104 48 S130 62 150 34 L190 40" />
-            <g className="stamp">
-              <rect x="118" y="4" width="70" height="34" rx="6" fill="rgba(18,16,28,.7)" stroke="#ff9a76" strokeWidth="4" />
-              <text x="153" y="27" textAnchor="middle" fill="#ff9a76" fontSize="16" fontWeight="700">SIGNED</text>
-            </g>
-          </svg>
-          <h2 id="fb-sign-t" className="fb-momtitle">{d.brand}: {WHERE[d.slot].toLowerCase()} for {N[d.seasons] ?? `${d.seasons} seasons`}</h2>
-          <div className="fb-sign-rows">
-            <p><span>Pays</span><b>{euros(d.perSeason)} a season</b></p>
-            <p><span>Paid today</span><b>{euros(d.advance)}, a quarter</b></p>
-            <p><span>The rest</span><b>at the season’s end, day {days}</b></p>
-            <p><span>Clause</span><b>{clause}</b></p>
-          </div>
-          <div className="fb-btns"><button type="button" className="fb-btn pri" onClick={() => void markSigningSeen()}>Keep it</button></div>
-        </main>
-      </Aurora>
+      <Signing save={save} onKeep={() => void markSigningSeen()} />
     </MomentLayer>
   );
 }
