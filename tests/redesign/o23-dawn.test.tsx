@@ -34,14 +34,14 @@ describe('The morning reveal (o23-dawn)', () => {
     expect(html).not.toContain('Tap to go on');
   });
 
-  it('keeps the sun and the dots as decoration; the sun rises once, and reduced motion shows it risen', () => {
+  it('keeps the sun and the dots as decoration; the sun rises once, with no reduced-motion variant', () => {
     const html = view(0);
     expect(html).toMatch(/<div class="dawn-sky" aria-hidden="true"><span class="dawn-sun"><\/span><\/div>/);
     expect(html).toMatch(/<span class="dawn-pips" aria-hidden="true">/);
     const css = readFileSync('src/styles/creatures.css', 'utf8');
     const rule = css.slice(css.indexOf('.dawn-sun {'));
     expect(rule.slice(0, rule.indexOf('}'))).not.toMatch(/infinite/);
-    expect(css).toMatch(/prefers-reduced-motion: reduce\) \{ \.dawn-sun, \.dawn-panel \{ animation: none/);
+    expect(css).not.toContain('prefers-reduced-motion'); // no reduced-motion variants (PRODUCT.md)
   });
 
   it('says how the night went in words', () => {

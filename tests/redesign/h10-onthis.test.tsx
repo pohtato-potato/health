@@ -43,11 +43,11 @@ describe('On this day (h10-onthis)', () => {
     expect(css).toMatch(/\.otd-more \{[^}]*min-height: 44px/);
   });
 
-  it('drops in once; reduced motion shows it landed', () => {
+  it('drops in once; no reduced-motion variant', () => {
     const css = readFileSync('src/styles/today.css', 'utf8');
     const rule = css.slice(css.indexOf('.otd-snap {'));
     expect(rule.slice(0, rule.indexOf('}'))).not.toMatch(/infinite/);
-    expect(css).toMatch(/prefers-reduced-motion: reduce\) \{ \.otd-snap \{ animation: none/);
+    expect(css).not.toContain('prefers-reduced-motion'); // no reduced-motion variants (PRODUCT.md)
   });
 
   it('renders only on a memory date: the card returns nothing otherwise, and shows on Home', () => {

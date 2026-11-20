@@ -1353,7 +1353,6 @@
 .mr-sta-pick { grid-column: 1 / -1; }
 html.contrast .mr-row { background: #0b0c1a padding-box, var(--bd) border-box; }
 html.contrast .mr-tx > span, html.contrast .mr-go { color: #f3ecdd; }
-@media (prefers-reduced-motion: reduce) { .mr-drk::before, .mr-bub i, .mr-nit, .mr-fre, .mr-sta .mr-ic svg { animation: none; } .mr-bub { display: none; } }
 
 /* Night out (board 11 h11-night): the whole sheet in the sign's world. Only the sign's tube and the street's dots move;
    no text sits under them and no text moves. */
@@ -1381,4 +1380,3 @@ html.contrast .mr-tx > span, html.contrast .mr-go { color: #f3ecdd; }
 .no-neon .no-save:disabled { background: #3a2140; border-color: #3a2140; color: #e6cfe8; box-shadow: none; }
 html.contrast .sheet.no-neon { background: #000; }
 html.contrast .no-bokeh { display: none; }
-@media (prefers-reduced-motion: reduce) { .no-bokeh i, .no-sign { animation: none; } }

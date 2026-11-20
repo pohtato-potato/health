@@ -33,7 +33,7 @@ describe('Close, Sunday (c6-week)', () => {
   it('deals the seven days with a button', () => {
     expect(card(6)).toMatch(/<button type="button" class="k-act quiet cw-deal">Deal the seven days<\/button>/);
     const css = readFileSync('src/styles/food.css', 'utf8');
-    expect(css).toMatch(/prefers-reduced-motion: reduce\) \{ \.cw-dealt > \* \{ animation: none/);
+    expect(css).not.toContain('prefers-reduced-motion'); // no reduced-motion variants (PRODUCT.md)
   });
 
   it('writes a range across two months', () => {
@@ -44,5 +44,10 @@ describe('Close, Sunday (c6-week)', () => {
     const html = card(0);
     expect(html).toContain('0 of 7');
     expect(html).not.toContain('dc-rib');
+  });
+
+  it('keeps The week and Good night on the first screen on a Sunday: the week card sits under them', () => {
+    const src = readFileSync('src/screens/DayClosed.tsx', 'utf8');
+    expect(src.indexOf('className="dc-acts"')).toBeLessThan(src.indexOf('<WeekCard'));
   });
 });

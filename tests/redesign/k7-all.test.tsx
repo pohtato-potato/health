@@ -24,11 +24,11 @@ describe('Checklist, the last tick of the day (k7-all)', () => {
     expect(allWord(14)).toBe('All 14');
   });
 
-  it('sends the gold light down the list once, never on a loop, and not with reduced motion', () => {
+  it('sends the gold light down the list once, never on a loop', () => {
     const css = readFileSync('src/styles/today.css', 'utf8');
     const rule = css.slice(css.indexOf('.td-ck-all.sweep'));
     expect(rule.slice(0, rule.indexOf('}'))).not.toMatch(/infinite/);
-    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{[^}]*\.td-ck-all\.sweep/);
+    expect(css).not.toContain('prefers-reduced-motion'); // no reduced-motion variants (PRODUCT.md)
   });
 
   it('renders with no data: nothing', () => {

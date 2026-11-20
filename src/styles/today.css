@@ -471,7 +471,8 @@ html.contrast .td-panel-bar { background: #1a1b2e; }
 @keyframes td-bar { from { transform: scaleX(0); } }
 .td-panel .td-rings-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); align-items: center; }
 .td-panel .td-ringfig { display: grid; place-items: center; min-width: 0; }
-.td-panel .td-ringfig svg { width: 100%; max-width: 200px; height: auto; }
+.td-panel .td-ringfig > .lr, .td-panel .td-ringfig .lr-spin { display: block; width: 100%; max-width: 200px; }
+.td-panel .td-ringfig svg { display: block; width: 100%; max-width: 200px; height: auto; }
 .td-panel .td-num-top { flex-wrap: nowrap; }
 .td-panel .td-num-name { flex: 1 1 auto; min-width: 0; }
 .td-panel .td-num b, .td-panel .td-num .td-num-unit { white-space: nowrap; }
@@ -480,9 +481,6 @@ html.contrast .td-panel-bar { background: #1a1b2e; }
 /* Next: the lit panel and training share one body; the strip loses its own hairlines inside it. */
 .td-panel .td-next { border: 0; padding: 0; }
 
-@media (prefers-reduced-motion: reduce) {
-  .td-aur, .td-bar i { animation: none; }
-}
 
 /* Checklist, hold to tick (board 7 k7-live, k7-frames). Press: the row dips and its ring starts. Hold: the ring runs
    round and the colour pours along the row. Let go early: it drains back. Done: the disc pops, the tick draws, eight
@@ -514,9 +512,6 @@ html.contrast .td-panel-bar { background: #1a1b2e; }
 @keyframes td-ck-spark { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-6px); } }
 @keyframes td-ck-hint { 0%, 100% { stroke-dashoffset: 100; } 50% { stroke-dashoffset: 72; } }
 @keyframes td-ck-settle { from { opacity: 0; transform: translateY(4px); } }
-@media (prefers-reduced-motion: reduce) {
-  .td-hold.just .td-ck-disc, .td-hold.just .td-ck-tick, .td-hold.just .td-ck-sparks line, .td-ck-ring.hint .td-ck-run, .td-hold.just .td-ck-when { animation: none; }
-}
 
 /* The last tick of the day (board 7 k7-all): the edge turns gold, the chip says "All six", and the last tick sends a
    gold light down the list once. Gold is kept for this state only. */
@@ -525,7 +520,6 @@ html.contrast .td-panel-bar { background: #1a1b2e; }
 .td-ck-all .td-panel-body { position: relative; }
 .td-ck-all.sweep .td-panel-body::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--k-gold) 32%, transparent) 50%, transparent 100%); background-size: 100% 60%; background-repeat: no-repeat; animation: td-ck-sweep 1.2s ease-in-out both; }
 @keyframes td-ck-sweep { from { background-position: 0 -120%; } to { background-position: 0 220%; } }
-@media (prefers-reduced-motion: reduce) { .td-ck-all.sweep .td-panel-body::after { animation: none; display: none; } }
 html.contrast .td-panel.td-ck-all { box-shadow: none; border-width: 3px; }
 
 /* A record night (board 8 s8-record): each lift's new best in gold, the old best, the gain, and a bar from old to new. */
@@ -546,7 +540,6 @@ html.contrast .td-panel.td-ck-all { box-shadow: none; border-width: 3px; }
 .td-records .td-finale { min-height: 44px; }
 @keyframes td-rec-in { from { opacity: 0; transform: translateY(8px); } }
 @keyframes td-rec-grow { from { transform: scaleX(var(--from)); } }
-@media (prefers-reduced-motion: reduce) { .td-rec, .td-rec-bar > i { animation: none; } }
 html.contrast .td-rec-was, html.contrast .td-rec-note { color: #f3ecdd; }
 
 /* A perfect day (board 7 h7-perfect): the day panel's rings breathe a gold glow with a few twinkles; no text turns gold. */
@@ -560,7 +553,6 @@ html.contrast .td-rec-was, html.contrast .td-rec-note { color: #f3ecdd; }
 .td-twinkles i:nth-child(4) { left: 4%; top: 64%; } .td-twinkles i:nth-child(5) { left: 40%; top: 42%; }
 @keyframes td-twinkle { 0%, 100% { opacity: 0; transform: scale(0.4); } 50% { opacity: 1; transform: scale(1); } }
 .td-moment.gold .td-moment-title { color: var(--k-cream, #f3ece0); }
-@media (prefers-reduced-motion: reduce) { .td-perfect .td-ringfig { animation: none; filter: drop-shadow(0 0 10px rgb(255 210 87 / 0.6)); } .td-twinkles i { animation: none; opacity: 0.8; } }
 
 /* The morning after (board 8 s8-win): last night's result, between Next and the meals. */
 .k-panel.tm-res { --ink: #ff9a4d; display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 0; overflow: hidden; cursor: default; }
@@ -652,7 +644,6 @@ html.contrast .tm-res-vs, html.contrast .tm-res-next { color: #f3ecdd; }
 .td-more svg { flex: none; }
 html.contrast .td-bk, html.contrast .td-ml-row { background: #0b0c1a; border-color: var(--k-cream, #f3ece0); }
 html.contrast .td-bk b small, html.contrast .td-ml-v { color: #f3ecdd; }
-@media (prefers-reduced-motion: reduce) { .td-ml-lq, .td-ml-lq i, .td-bk-fill, .td-bk-fill::before, .td-bk .sun, .td-bk .box i, .td-bk .feet i, .td-bk .bar i, .td-bk .rings .on { animation: none !important; } }
 
 /* Status, for an occasion (board 10 h10-status): lanterns sway at the top; the dates are tiles; a warm Turn it on. */
 .td-statusset { position: relative; overflow: hidden; padding-top: 58px; border: 1.5px solid rgba(255, 176, 58, 0.45); background: linear-gradient(180deg, rgba(255, 176, 58, 0.16), #120d1c 70%); }
@@ -666,7 +657,6 @@ html.contrast .td-bk b small, html.contrast .td-ml-v { color: #f3ecdd; }
 .td-dates label { padding: 6px 6px; border-radius: 14px; border: 1.5px solid rgba(255, 176, 58, 0.4); background: rgba(18, 13, 28, 0.6); color: #e8dcc8; }
 .td-st-on { background: #ffb03a; border-color: #ffb03a; color: #2a1600; box-shadow: 0 10px 24px -10px #ffb03a; min-height: 48px; }
 html.contrast .td-statusset { background: #0b0c1a; border-color: var(--k-cream, #f3ece0); }
-@media (prefers-reduced-motion: reduce) { .td-lanterns i { animation: none; } }
 .td-statusset .td-dates input { padding: 0 2px; font-size: 14px; width: 100%; }
 
 /* On this day (h10-onthis), in Home's panel: a taped snapshot drops in once, then that day's numbers against today's. */
@@ -686,7 +676,6 @@ html.contrast .td-statusset { background: #0b0c1a; border-color: var(--k-cream, 
 .otd-close:hover { background: color-mix(in srgb, var(--k-cream, var(--text)) 10%, transparent); }
 .otd-x { margin: 0; font-size: 14px; color: var(--k-quiet, var(--quiet)); overflow-wrap: anywhere; }
 @keyframes otd-drop { from { opacity: 0; transform: translateY(-20px) rotate(-6deg); } }
-@media (prefers-reduced-motion: reduce) { .otd-snap { animation: none; } }
 html.contrast .otd-snap { border-color: var(--k-cream, var(--text)); }
 
 /* Tonight's match on Home (h6-c): one panel, the chance as three numbers, then the shape so far. */

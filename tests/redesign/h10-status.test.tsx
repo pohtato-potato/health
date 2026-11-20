@@ -13,9 +13,9 @@ describe('Status, for an occasion (h10-status)', () => {
     expect(CHIP_STATUSES.map((s) => s.label)).toEqual(['Travelling', 'Sick', 'Injured', 'Break']);
   });
 
-  it('hangs the lanterns as decoration only, and stills them under reduced motion', () => {
+  it('hangs the lanterns as decoration only, with no reduced-motion variant', () => {
     expect(src).toContain('<span className="td-lanterns" aria-hidden="true">');
-    expect(css).toMatch(/prefers-reduced-motion: reduce\) \{ \.td-lanterns i \{ animation: none/);
+    expect(css).not.toContain('prefers-reduced-motion'); // no reduced-motion variants (PRODUCT.md)
   });
 
   it('asks what is going on, and says what turning it on does', () => {
