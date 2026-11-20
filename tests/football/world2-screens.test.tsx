@@ -61,7 +61,7 @@ describe('world 2 screens', { timeout: 300_000 }, () => {
 
   it('League home: your place of 12 in gold, the top four, See all 12, and four doors', () => {
     const out = html(<LeagueHome2 l={l} />);
-    expect(out).toMatch(/k-hero[^>]*>\d+(st|nd|rd|th)</);
+    expect(out).toMatch(/class="lh19".*\d+<sup>(st|nd|rd|th)<\/sup>/s);
     expect(out).toContain('Division Six');
     expect(out).toContain('of 12');
     expect(out).toContain('Day ');
