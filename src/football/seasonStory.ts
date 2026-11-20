@@ -24,11 +24,15 @@ export function upsets(matches: StoredMatch[], seasons: FbSeason[]): Upset[] {
   return out;
 }
 /** The best axis: the highest season average. */
-export function bestAxisOf(matches: StoredMatch[]): { axis: Axis; avg: number } {
+/** Each axis's average over the season's played matches, to one decimal. */
+export function axisAverages(matches: StoredMatch[]): Record<Axis, number> {
   const played = matches.filter((m) => !m.rotation);
-  const avg = (a: Axis) => (played.length ? played.reduce((t, m) => t + m.values[a], 0) / played.length : 0);
-  const axis = AXES.reduce((b, a) => (avg(a) > avg(b) ? a : b), AXES[0]);
-  return { axis, avg: Math.round(avg(axis) * 10) / 10 };
+  return Object.fromEntries(AXES.map((a) => [a, played.length ? Math.round((played.reduce((t, m) => t + m.values[a], 0) / played.length) * 10) / 10 : 0])) as Record<Axis, number>;
+}
+export function bestAxisOf(matches: StoredMatch[]): { axis: Axis; avg: number } {
+  const avgs = axisAverages(matches);
+  const axis = AXES.reduce((b, a) => (avgs[a] > avgs[b] ? a : b), AXES[0]);
+  return { axis, avg: avgs[axis] };
 }
 /** How far Brabo went in a bracket: winners, the round they went out in, or not entered. */
 export function cupRun(b: Bracket | undefined): string | undefined {
@@ -43,7 +47,7 @@ export function cupRun(b: Bracket | undefined): string | undefined {
   return undefined;
 }
 
-export interface SeasonSummary { season: number; tier: Tier; pos?: number; move?: 'up' | 'down'; cups: string[]; best: { axis: Axis; avg: number }; record: { W: number; D: number; L: number }; moments: string[]; upsets: Upset[]; verdict: string; next: string }
+export interface SeasonSummary { season: number; tier: Tier; pos?: number; move?: 'up' | 'down'; cups: string[]; best: { axis: Axis; avg: number }; avgs: Record<Axis, number>; record: { W: number; D: number; L: number }; moments: string[]; upsets: Upset[]; verdict: string; next: string }
 export function summarise(s: FbSeason, matches: StoredMatch[], all: FbSeason[]): SeasonSummary {
   const tier = s.tierOf[OWN];
   const ms = matches.filter((m) => m.season === s.id);
@@ -64,5 +68,5 @@ export function summarise(s: FbSeason, matches: StoredMatch[], all: FbSeason[]):
         : pos && pos <= 6 ? 'So close I can taste it. Next year.' : 'Mid-table. The wilderness. We were better than that, mostly.';
   const nextTier = (s.final?.level?.id === OWN ? s.final.level.to : s.final?.double?.id === OWN ? tier - 2 : move === 'up' ? tier - 1 : move === 'down' ? tier + 1 : tier) as Tier;
   const next = s.final ? `Season ${s.id + 1} in ${tierName(nextTier)}.` : `${seasonLength(worldOf(s)) - Math.max(0, ...ms.map((m) => m.day))} days left this season.`;
-  return { season: s.id, tier, pos, move, cups, best: bestAxisOf(ms), record, moments, upsets: upsets(ms, all), verdict, next };
+  return { season: s.id, tier, pos, move, cups, best: bestAxisOf(ms), avgs: axisAverages(ms), record, moments, upsets: upsets(ms, all), verdict, next };
 }
