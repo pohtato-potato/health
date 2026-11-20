@@ -294,3 +294,26 @@ html.contrast .t23pl .tg { outline: 1px solid #000; }
 @keyframes ur19-up { from { transform: translateY(10px); opacity: 0; } }
 html.contrast .ur19-r { background: #111; box-shadow: inset 0 0 0 1px #fff; }
 html.contrast .ur19-r.xi { box-shadow: inset 0 0 0 3px #ffd36b; }
+
+/* The ground at night (board 21, g21-ground): what is left on the stand, the built part rising inside its dashed
+   outline, the share as text beside it, the water's reflection and the built list numbered. */
+.gh21 { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; align-items: center; }
+.gh21 > b { grid-row: 1 / 3; font: 700 84px/.85 var(--fb-cond); color: #ffd9a8; text-shadow: 0 0 26px rgba(255, 122, 26, .55); }
+.gh21 strong { font: 700 24px/1 var(--fb-cond); text-transform: uppercase; color: #fff; }
+.gh21 span { font: 500 15px/1.35 var(--sans); color: #ffe9d2; }
+.gr21-cap { margin: 0 0 -6px; display: flex; justify-content: space-between; gap: 10px; font: 700 16px var(--fb-cond); color: #ffd9a8; }
+.gr21 .kc-rise { transform-box: fill-box; transform-origin: 50% 100%; transform: scaleY(var(--share)); animation: gr21-rise 1.6s .3s cubic-bezier(.3, 1, .4, 1) both; }
+@keyframes gr21-rise { from { transform: scaleY(0); } }
+.gr21 .kc-win { animation: gr21-win 4s steps(1) infinite; }
+@keyframes gr21-win { 50% { opacity: .35; } }
+.gr21 .kc-dash { animation: gr21-ants 2.4s linear infinite; }
+@keyframes gr21-ants { to { stroke-dashoffset: -26; } }
+.gr21-rf { height: 40px; margin-top: -14px; overflow: hidden; transform: scaleY(-1); opacity: .28; filter: blur(1.2px); -webkit-mask: linear-gradient(to top, #000, transparent); mask: linear-gradient(to top, #000, transparent); }
+.gr21-rf svg { display: block; margin-top: -70px; }
+.bl21 { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.bl21 li { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; align-items: start; padding: 10px 12px; border-radius: 16px; background: rgba(255, 217, 168, .06); animation: hs19-up .4s var(--d) ease-out both; }
+.bl21 li > b { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: #0b1022; box-shadow: inset 0 0 0 2px #ffd9a8; font: 700 15px var(--sans); color: #fff; }
+.bl21 li span { display: flex; flex-direction: column; gap: 2px; font: 400 15px/1.35 var(--sans); color: rgba(243, 238, 230, .85); }
+.bl21 li strong { font-weight: 700; color: #fff; }
+html.contrast .bl21 li { background: #111; outline: 1px solid #fff; }
+html.contrast .gr21-rf { display: none; }
