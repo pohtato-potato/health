@@ -36,6 +36,9 @@ import { Gremlin, Pundit } from '../Studio';
 import '../../../styles/look-tonight.css';
 import { CallPitch, onPitch, Pitch, RollWord, ShapeKey } from './Pitch';
 import { WonderSave } from './Save';
+import { GoalScene, goalKind } from './Takeover';
+
+const NTH: Record<number, string> = { 2: 'Second', 3: 'Third', 4: 'Fourth', 5: 'Fifth' };
 import { polygon, radii } from '../../../football/radar';
 import type { Credit } from '../../../football/players/types';
 import { firstLandingOk } from './Replay';
@@ -182,7 +185,7 @@ function LivePlay({ p, save, onEnd }: { p: PausedMatch; save: FbSave; onEnd: () 
   const minute = c ? c.minute : st.stop?.kind === 'half' ? 45 : st.stop?.kind === 'call' ? st.stop.offer.minute : 90;
 
   if (goal !== null && st.chances[goal].tag === 'WONDER SAVE') return <WonderSaveView c={st.chances[goal]} p={p} score={score} credit={credits.find((x) => x.i === goal)} onOn={() => { setGoal(null); setK(goal + 1); setPhase('enter'); }} />;
-  if (goal !== null) return <GoalView c={st.chances[goal]} p={p} save={save} score={score} credit={credits.find((x) => x.i === goal)} onOn={() => { setGoal(null); setK(goal + 1); setPhase('enter'); }} />;
+  if (goal !== null) return <GoalView c={st.chances[goal]} p={p} save={save} score={score} credit={credits.find((x) => x.i === goal)} mine={credits.filter((x) => x.kind === 'goal' && x.i <= goal && x.player === credits.find((y) => y.i === goal)?.player).map((x) => st.chances[x.i].minute)} onOn={() => { setGoal(null); setK(goal + 1); setPhase('enter'); }} />;
   if (!c) {
     if (st.stop?.kind === 'call') return <CallView offer={st.stop.offer} p={p} save={save} chances={st.chances} onPick={(pick) => once(() => recordLive({ pick }))} />;
     if (st.stop?.kind === 'half') return <HalfView p={p} save={save} chances={st.chances} score={score} onGo={(half2) => once(() => recordLive({ halfSeen: true, half2 }))} />;
@@ -301,10 +304,23 @@ function WonderSaveView({ c, p, score, credit, onOn }: { c: ChanceEvent; p: Paus
   );
 }
 
-function GoalView({ c, p, save, score, credit, onOn }: { c: ChanceEvent; p: PausedMatch; save: FbSave; score: [number, number]; credit?: { player: string; name: string; unit: string }; onOn: () => void }) {
+function GoalView({ c, p, save, score, credit, mine, onOn }: { c: ChanceEvent; p: PausedMatch; save: FbSave; score: [number, number]; credit?: Credit; mine: number[]; onOn: () => void }) {
   const ours = c.side === 'atk';
   const opp = clubById(p.prep.oppId);
   const player = useLiveQuery(async () => (ours && credit ? (await db.fbPlayers.get(credit.player)) ?? null : null), [credit?.player]);
+  if (ours) {
+    const opp = clubName(p.prep.oppId);
+    const [home, away] = p.prep.braboHome ? ['Brabo', opp] : [opp, 'Brabo'];
+    const n: [number, number] = p.prep.braboHome ? score : [score[1], score[0]];
+    const nth = mine.length || 1;
+    const state = score[0] - score[1] === 1 ? 'In front' : score[0] > score[1] ? 'Lead stretched' : score[0] === score[1] ? 'Level' : 'One back';
+    const facts = [c.type, credit && `${credit.unit} unit`, nth > 1 && `${NTH[nth] ?? `${nth}th`} goal tonight`, state].filter((x): x is string => Boolean(x));
+    return (
+      <GoalScene kind={goalKind(c, nth)} minute={c.minute} fixture={`${home} v ${away}`} pct={c.pct} scorer={credit?.name} minutes={mine} score={{ home, away, n }} line={credit?.line} facts={facts} onOn={onOn}>
+        {player && <PlayerCard card={player.card} art={player.art} seed={player.id} player={player} />}
+      </GoalScene>
+    );
+  }
   const screamer = ours && c.type === 'Long shot' && c.pct < 20;
   const colours = ours ? ['#ff8a3d', '#c2b2ff'] : [opp.colours[0] ?? '#7fb8ff', opp.colours[1] ?? '#141414'];
   return (
