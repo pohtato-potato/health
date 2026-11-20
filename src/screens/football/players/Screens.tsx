@@ -10,7 +10,7 @@ import { AXES } from '../../../football/types';
 import { daysBetween, dayOfLogging } from '../../../domain/dates';
 import { go } from '../../../router';
 import { PlayerCard, playerCardView, TiltCard } from './Card';
-import { Action, Hero, Panel, Sect } from '../../../ui/kit/Kit';
+import { Action, Panel, Sect } from '../../../ui/kit/Kit';
 import { Bar, Note, PanelTop } from '../club/Bits';
 import { Icon } from '../../../ui/Icon';
 import { openCard } from '../../../ui/CardViewer';
@@ -112,16 +112,38 @@ export function ElevenView({ xi, players, formation = '4-3-3' }: { xi: XiPlace[]
   );
 }
 
-function Row({ p, starts }: { p: FbPlayer; starts?: boolean }) {
-  const r = p.status === 'squad' ? matchRating(p) : p.overall;
+/** One unit (board 19, u19-power): how many, how many start and the best rating tonight, then tonight's starters lit
+ * at the top and everyone else best first, each as a small card, its words, freshness and rating. */
+export function UnitView({ u, rows, starters }: { u: Unit; rows: { p: FbPlayer; r: number }[]; starters: Set<string> }) {
+  const squad = rows.filter((x) => x.p.status === 'squad');
+  const best = squad.length ? Math.max(...squad.map((x) => x.r)) : 0;
+  const rank = (x: { p: FbPlayer }) => (x.p.status === 'left' ? 2 : starters.has(x.p.id) ? 0 : 1);
+  const list = [...rows].sort((a, b) => rank(a) - rank(b) || b.r - a.r);
+  const n = squad.filter((x) => starters.has(x.p.id)).length;
   return (
-    <Panel ink={UNIT_COLOUR[p.unit]} onClick={() => openPlayer(p.id)} label={`${p.name}, ${rowWords(p, Boolean(starts))}, rated ${r}`}>
-      <span className={`ku-row${starts ? ' st' : ''}`}>
-        <PlayerCard card={p.card} art={p.art} seed={p.id} player={p} noView />
-        <span className="k-col"><b className="nm">{p.name}</b><span className="k-q">{rowWords(p, Boolean(starts))} · {stepName(p.card)}</span>{p.kind === 'exercise' && p.status === 'squad' && <Bar pct={p.fresh ?? 100} c="#8fdcb6" label={`Freshness ${p.fresh ?? 100}%`} />}</span>
-        <b className="k-num">{r}</b>
-      </span>
-    </Panel>
+    <>
+      <div className="uh19">
+        <div><b className="tn">{squad.length}</b><span>{squad.length === 1 ? 'player' : 'players'} · plays in {UNIT_WHERE[u]}<br />{n} starts tonight</span></div>
+        <div className="bt"><b className="tn">{best || '–'}</b><span>best tonight</span></div>
+      </div>
+      {list.length ? (
+        <ol className="ur19">
+          {list.map(({ p, r }, i) => {
+            const st = starters.has(p.id);
+            return (
+              <li key={p.id} style={{ '--d': `${0.1 + i * 0.05}s` } as CSSProperties}>
+                <button type="button" className={`ur19-r${st ? ' xi' : ''}`} onClick={() => openPlayer(p.id)} aria-label={`${p.name}, ${rowWords(p, st)}, rated ${r}`}>
+                  <PlayerCard card={p.card} art={p.art} seed={p.id} noView />
+                  <span className="nm"><b>{p.name}</b><small>{stepName(p.card)} · {rowWords(p, st)}{p.goals ? ` · ${p.goals} ${p.goals === 1 ? 'goal' : 'goals'}` : ''}</small>
+                    {p.kind === 'exercise' && p.status === 'squad' && <span className="fr"><i style={{ width: `${p.fresh ?? 100}%` }} /></span>}</span>
+                  <em className="tn">{r}</em>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      ) : <p className="k-q">No players yet.</p>}
+    </>
   );
 }
 
@@ -134,18 +156,10 @@ export function UnitRoute({ unit }: { unit: string }) {
   if (!u) return <p className="k-q">No such unit.</p>;
   const xiList = sheet?.xi ?? elevenOf(membersOf(new Map(players.map((p) => [p.id, p]))));
   const xi = new Set(xiList.map((x) => x.player));
-  const list = players.filter((p) => p.unit === u).sort((a, b) => (a.status === 'left' ? 1 : 0) - (b.status === 'left' ? 1 : 0) || b.overall - a.overall);
-  const squad = list.filter((p) => p.status === 'squad');
-  const best = squad.length ? Math.max(...squad.map((p) => matchRating(p))) : 0;
-  const c = UNIT_COLOUR[u];
+  const rows = players.filter((p) => p.unit === u).map((p) => ({ p, r: p.status === 'squad' ? matchRating(p) : p.overall }));
   return (
-    <div className="k-page" style={uc(u)}>
-      <div className="kb-lead">
-        <Hero value={squad.length} ink={c} label={squad.length === 1 ? 'player' : 'players'} under={`plays in ${UNIT_WHERE[u]}`} />
-        <span className="k-r"><b className="k-num" style={{ color: c }}>{best || '–'}</b><span className="k-q">best tonight</span></span>
-      </div>
-      <Note>{xiList.filter((x) => x.unit === u).length} start tonight. The number is tonight’s match rating; the bar is freshness.</Note>
-      <div className="kb-rows">{list.length ? list.map((p) => <Row key={p.id} p={p} starts={xi.has(p.id)} />) : <p className="k-q">No players yet.</p>}</div>
+    <div className="k-page ur19-page" style={uc(u)}>
+      <UnitView u={u} rows={rows} starters={xi} />
       <Action wide onClick={() => go('/football/sheet')}>Pick who starts</Action>
     </div>
   );
