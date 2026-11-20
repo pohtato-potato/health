@@ -46,6 +46,8 @@ function useRearrange(key: string, order: string[]) {
   return list;
 }
 
+/** Goal difference, signed: +2, 0, -1. */
+const gd = (r: Row) => { const n = r.gf - r.ga; return n > 0 ? `+${n}` : String(n); };
 const WORD: Record<Result, string> = { W: 'won', D: 'drew', L: 'lost' };
 export function ResultMark({ r, shape = 'c' }: { r: Result; shape?: 'c' | 'd' | 's' }) {
   return <span className={`fb-res ${shape} r-${r}`} title={WORD[r]}><b>{r}</b></span>;
@@ -58,7 +60,7 @@ function Cut({ kind, text }: { kind: 'up' | 'po' | 'down'; text: string }) {
 /** `form` is Brabo's 28-day form rating, for the double-promotion line (Division Three and below). */
 /** Every club shows its crest (O41 3, O42: badges are always shown). */
 /** `world`: the old six tiers of 18 (absent or 1), or world 2's eight divisions of 12 (LG-4). */
-export function Table({ tier, rows, day, form, waiting = false, world = 1, limit, onAll }: { tier: Tier; rows: Row[]; day?: string; form?: number; waiting?: boolean; world?: WorldVersion; limit?: number; onAll?: () => void }) {
+export function Table({ tier, rows, day, form, waiting = false, world = 1, limit, onAll, own }: { tier: Tier; rows: Row[]; day?: string; form?: number; waiting?: boolean; world?: WorldVersion; limit?: number; onAll?: () => void; /** Your crest; without it your row keeps the ring. */ own?: string }) {
   const shape = shapeOf({ world });
   const last = shape.divisions.length;
   const name = (t: number) => (world === 2 ? shape.name(t) : tierName(t as Tier));
@@ -74,14 +76,15 @@ export function Table({ tier, rows, day, form, waiting = false, world = 1, limit
     const club = me ? 'Brabo United' : clubById(r.id).name;
     out.push(
       <li key={r.id} className={`fb-trow${me ? ' me' : ''}`} data-id={r.id} style={{ '--k': clubColour(r.id) } as React.CSSProperties}>
-        <Row href={limit ? undefined : `#/football/club-page?id=${encodeURIComponent(r.id)}`} label={`${pos}, ${club}, ${r.pts} points${r.form.length ? `, form ${r.form.map((x) => WORD[x]).join(' ')}` : ''}`}>
+        <Row href={limit ? undefined : `#/football/club-page?id=${encodeURIComponent(r.id)}`} label={`${pos}, ${club}, ${r.pts} points, goal difference ${gd(r)}${r.form.length ? `, form ${r.form.map((x) => WORD[x]).join(' ')}` : ''}`}>
           <span className="fb-tpos">{pos}</span>
-          {me ? <span className="fb-tring" aria-hidden="true" /> : <span className="fb-tcrest"><Art svg={clubCrest(clubById(r.id), 24)} /></span>}
+          {me && !own ? <span className="fb-tring" aria-hidden="true" /> : <span className="fb-tcrest"><Art svg={me ? own! : clubCrest(clubById(r.id), 30)} /></span>}
           <span className="fb-tname">
-            <b>{club}{me && <em>You</em>}</b>
+            <b><span className="fb-tnm">{club}</span>{me && <em>You</em>}</b>
             {me && waiting && <span className="fb-s md-tbp">Last night: to be played</span>}
             <span className="fb-form" aria-hidden="true">{r.form.length ? r.form.map((x, k) => <ResultMark key={k} r={x} />) : <span className="fb-s">No games yet</span>}</span>
           </span>
+          <span className="fb-tgd" aria-hidden="true">{gd(r)}</span>
           <span className="fb-tpts">{me ? <Roll value={r.pts} id={`table-pts:${world}:${tier}:${limit ?? 'all'}`} /> : r.pts}<small>pts</small></span>
         </Row>
       </li>,
@@ -90,7 +93,7 @@ export function Table({ tier, rows, day, form, waiting = false, world = 1, limit
   return (
     <section className="fb-table" style={{ '--t': `var(--fb-t${tier})` } as React.CSSProperties} aria-label={`${name(tier)} table`}>
       {!limit && <div className="fb-row"><span className="fb-t fb-tiername">{name(tier)}</span>{day && <span className="fb-s">{day}</span>}</div>}
-      <ol ref={list} className="fb-trows">{out}</ol>
+      <ol ref={list} className="fb-trows">{!limit && <li className="fb-thead" aria-hidden="true"><span>Club</span><span>GD</span><span>Pts</span></li>}{out}</ol>
       {onAll && limit && rows.length > limit && <button type="button" className="fb-btn sm fb-seeall" onClick={onAll}>See all {rows.length}</button>}
       {!limit && world === 1 && <Notes1 tier={tier} rows={rows} form={form} />}
       {!limit && world === 2 && (

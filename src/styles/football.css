@@ -824,3 +824,24 @@ html.contrast .wr-back { border-color: #fff; }
 .ld19 li.me i { color: #ffa25c; }
 .ld19 li::after { content: ''; width: 100%; height: 4px; border-radius: 2px; background: var(--zc); }
 html.contrast .ld19 li i, html.contrast .lh19 span { color: #fff; }
+
+/* League, the full table (board 19, l19-full): crest, name, form, goal difference and points on every row; long
+   names truncate, the numbers never do. Your row is lit orange. */
+.fb-trow a, .fb-trow-in { grid-template-columns: 22px 30px minmax(0, 1fr) auto auto; gap: 8px; }
+.fb-tpos { font: 700 18px var(--fb-cond); color: rgba(243, 238, 230, .75); text-align: right; }
+.fb-tcrest { width: 30px; height: 30px; }
+.fb-tcrest svg { width: 30px; height: 30px; }
+.fb-tname b { display: flex; align-items: center; min-width: 0; font: 700 15px/1.15 var(--sans); }
+.fb-tnm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fb-tname em { flex: none; }
+.fb-tname .fb-res { width: 22px; height: 22px; }
+.fb-tgd { font: 700 14px var(--sans); color: rgba(243, 238, 230, .75); text-align: right; min-width: 24px; font-variant-numeric: tabular-nums; }
+.fb-tpts { font: 700 22px var(--fb-cond); color: #fff; }
+.fb-trow.me a, .fb-trow.me .fb-trow-in { background: rgba(255, 122, 26, .18); border-color: rgba(255, 122, 26, .6); box-shadow: inset 0 0 0 1.5px rgba(255, 122, 26, .6); }
+.fb-trow.me .fb-tpos, .fb-trow.me .fb-tpts { color: #ffa25c; }
+.fb-trow.me .fb-tcrest { filter: drop-shadow(0 0 6px #ff7a1a); }
+html.contrast .fb-tgd, html.contrast .fb-tpos { color: #fff; }
+.fb-thead { display: grid; grid-template-columns: minmax(0, 1fr) auto 46px; gap: 8px; padding: 4px 8px 2px 68px; font: 700 14px var(--sans); color: rgba(243, 238, 230, .75); }
+.fb-thead span:nth-child(2) { min-width: 24px; text-align: right; }
+.fb-thead span:last-child { text-align: right; }
+.fb-trows .fb-tpts { min-width: 46px; justify-content: flex-end; }

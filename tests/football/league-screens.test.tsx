@@ -51,7 +51,7 @@ describe('League table', () => {
   it('Brabo’s row is marked “You”', async () => {
     const l = (await loadLeague())!;
     const out = html(<Table tier={6} rows={l.tables[6]} />);
-    expect(out).toMatch(/fb-trow me[\s\S]*Brabo United<em>You<\/em>/);
+    expect(out).toMatch(/fb-trow me[\s\S]*Brabo United<\/span><em>You<\/em>/);
   });
 });
 

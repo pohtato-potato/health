@@ -65,7 +65,7 @@ export function LeagueView({ l, view, tier, extra, n }: { l: League; view: Leagu
             <span className="fb-s">{t === mine ? 'Your division' : `${Math.abs(t - mine)} ${Math.abs(t - mine) === 1 ? 'tier' : 'tiers'} ${t < mine ? 'above' : 'below'} you`}</span>
             <button type="button" className="fb-btn sm" disabled={t === 6} aria-label={t < 6 ? `Down to ${tierName((t + 1) as Tier)}` : 'Bottom tier'} onClick={() => set({ tier: String(t + 1) })}><Icon name="down" size={22} stroke={2} /></button>
           </div>
-          <Table tier={t} rows={l.tables[t]} form={l.form} waiting={Boolean(l.save.paused)} day={l.save.phase === 'season' ? `Day ${l.save.day} of 42` : 'Between seasons'} />
+          <Table tier={t} rows={l.tables[t]} form={l.form} waiting={Boolean(l.save.paused)} day={l.save.phase === 'season' ? `Day ${l.save.day} of 42` : 'Between seasons'} own={t === mine ? crestSvg(l.save.crest.step, l.save.crest.opt, 30) : undefined} />
         </>
       )}
       {view === 'table' && !tier && (
