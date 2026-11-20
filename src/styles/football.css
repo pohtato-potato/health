@@ -874,3 +874,16 @@ html.contrast .fb-tgd, html.contrast .fb-tpos { color: #fff; }
 }
 html.contrast .ft23-h, html.contrast .ft23-ch small { color: #fff; }
 html.contrast .ft23-r.ch { background: #ffd36b; }
+
+/* Calendar (board 21, c21-cal): tonight leads in red, then the season's days in order. */
+.tn21 { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: center; padding: 14px; border-radius: 20px; background: linear-gradient(135deg, #7a0f1e, #2a0a14); border: 2px solid #ff5a6a; box-shadow: 0 0 28px rgba(255, 90, 106, .35); margin-bottom: 14px; animation: tn21-in .6s cubic-bezier(.16, 1, .3, 1) both; }
+@keyframes tn21-in { from { opacity: 0; transform: translateY(12px) scale(.97); } }
+.tn21 .vs { display: flex; align-items: center; gap: 6px; }
+.tn21 .vs i { font: 700 18px var(--fb-cond); font-style: normal; color: #ffd6dc; }
+.tn21 > span:last-child { font: 700 14px/1.35 var(--sans); color: #ffd6dc; min-width: 0; }
+.tn21 b { display: block; font: 700 30px/1 var(--fb-cond); text-transform: uppercase; color: #fff; overflow-wrap: anywhere; }
+@media (max-width: 380px) { .tn21 { grid-template-columns: 1fr; } .tn21 b { font-size: 26px; } }
+.fb-calday.now .fb-res { animation: tn21-pulse 1.6s ease-in-out infinite; }
+@keyframes tn21-pulse { 50% { box-shadow: 0 0 0 5px rgba(255, 90, 106, .35); } }
+html.contrast .tn21 { background: #000; border-color: #fff; }
+html.contrast .tn21 > span:last-child { color: #fff; }

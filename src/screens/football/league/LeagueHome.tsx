@@ -11,7 +11,8 @@ import { OWN } from '../../../football/store/season';
 import type { Tier } from '../../../football/types';
 import { go, useRoute } from '../../../router';
 import { TIER_CUP } from '../../../football/cups';
-import { Calendar } from './Calendar';
+import { Calendar, TonightLead } from './Calendar';
+import { fixtureFor } from '../../../football/store/tonight';
 import { ContinentalView, Cup } from './Cups';
 import { Events, eventRows } from './Events';
 import { BackPageCard, NewsView, useNews } from './News';
@@ -93,6 +94,13 @@ export function LeagueView({ l, view, tier, extra, n }: { l: League; view: Leagu
           cont={Boolean(l.season.continental?.field.includes(OWN))}
           matches={l.matches}
           events={eventRows(l.matches).map((r, i) => ({ day: i + 1, label: `${r.label}: ${r.text}`, result: r.result }))}
+          lead={(() => {
+            const f = fixtureFor(l.save, l.season);
+            if (!f) return null;
+            const us = crestSvg(l.save.crest.step, l.save.crest.opt, 44);
+            const name = f.opp ? clubById(f.opp).name : f.round ?? f.label;
+            return <TonightLead us={us} them={f.opp ? clubCrest(clubById(f.opp), 44) : undefined} name={name} line={[f.label, f.opp ? f.round : undefined, f.opp ? (f.braboHome ? 'at home' : 'away') : undefined].filter(Boolean).join(' · ')} />;
+          })()}
         />
       )}
       {view === 'cups' && (

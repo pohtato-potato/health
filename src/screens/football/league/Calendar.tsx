@@ -4,6 +4,7 @@ import { daysOf, leagueMatchdays, type DayPlan } from '../../../football/calenda
 import { seasonName } from '../../../football/pyramid/redraw';
 import type { StoredMatch } from '../../../football/store/tables';
 import type { Result } from '../../../football/types';
+import { Art } from '../world/Fog';
 
 export type Shape = 'c' | 'd' | 's' | 'h';
 export const shapeOf = (p: Pick<DayPlan, 'kind'>): Shape => (p.kind === 'bigcup' ? 'd' : p.kind === 'tiercup' ? 's' : p.kind === 'event' ? 'h' : 'c');
@@ -17,7 +18,17 @@ export function resultsByDay(matches: StoredMatch[], season: number): Map<number
   return out;
 }
 
-export function Calendar({ season, today, matches, events = [], cont = false, world = 1 }: { season: number; today: number; matches: StoredMatch[]; events?: { day: number; label: string; result?: Result }[]; cont?: boolean; world?: 1 | 2 }) {
+/** Tonight leads the calendar (board 21, c21-cal): both crests, who it is, and the day and round in words. */
+export function TonightLead({ us, them, name, line }: { us: string; them?: string; name: string; line: string }) {
+  return (
+    <div className="tn21">
+      <span className="vs" aria-hidden="true"><Art svg={us} />{them && <><i>v</i><Art svg={them} /></>}</span>
+      <span><b>{name}, tonight</b>{line}</span>
+    </div>
+  );
+}
+
+export function Calendar({ season, today, matches, events = [], cont = false, world = 1, lead }: { season: number; today: number; matches: StoredMatch[]; events?: { day: number; label: string; result?: Result }[]; cont?: boolean; world?: 1 | 2; lead?: React.ReactNode }) {
   const kind = (k: DayPlan['kind']) => (world === 2 && k === 'tiercup' ? 'Pair Cup' : KIND[k]);
   const days = daysOf(world);
   const res = resultsByDay(matches, season);
@@ -26,6 +37,7 @@ export function Calendar({ season, today, matches, events = [], cont = false, wo
   for (const m of matches) if (m.season === season && m.comp === 'league') counts[m.result]++;
   return (
     <section className="fb-cal" aria-label={`${seasonName(season)} calendar`}>
+      {lead}
       <div className="fb-row"><span className="fb-t">{seasonName(season)}</span><span className="fb-s">League {counts.W} W · {counts.D} D · {counts.L} L</span></div>
       {world === 2 && <p className="fb-s">{days.length} days · {leagueMatchdays(2)} league matchdays</p>}
       <ol className="fb-calgrid">
