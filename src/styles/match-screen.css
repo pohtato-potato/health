@@ -143,9 +143,8 @@ html.contrast .mb-vig { display: none; }
 .mb-cw { animation: mb-pulse 1.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
 .mb-tok { animation: mb-up .45s cubic-bezier(.34, 1.56, .64, 1) both; }
 @keyframes mb-up { 0% { opacity: 0; transform: translateY(14px); } }
-.mb-comet { filter: drop-shadow(0 0 6px #ffd36b); stroke-dashoffset: var(--len); animation: mb-tail 1.4s cubic-bezier(.45, 0, .2, 1) .2s forwards; }
+.mb-comet { filter: drop-shadow(0 0 6px var(--tail, #ffd36b)); stroke-dashoffset: var(--len); animation: mb-tail 1.4s cubic-bezier(.45, 0, .2, 1) .2s forwards; }
 @keyframes mb-tail { to { stroke-dashoffset: 0; } }
 .mb-cball { animation: mb-run 1.4s cubic-bezier(.45, 0, .2, 1) .2s both; }
-.mb-no { fill: #0b1022; text-anchor: middle; font-family: var(--fb-cond); font-weight: 700; }
 .mb-cam .mb-names { transform-origin: 50% 36%; animation: mb-push 1.8s cubic-bezier(.65, 0, .35, 1) both; }
 html.contrast .mb-cam::after { display: none; }

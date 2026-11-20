@@ -24,10 +24,9 @@ describe('Broadcast camera (m16-cam)', () => {
     expect(bug).toContain('<b>30′</b>');
   });
 
-  it('renders with no data: no move names, no numbers on their players', () => {
+  it('renders with no data: no move names', () => {
     const h = renderToStaticMarkup(<CameraScene chain={[]} inks={inks} />);
     expect(h).not.toContain('mb-names');
-    expect(h).not.toContain('class="mb-no"');
     expect((h.match(/class="mb-tok"/g) ?? []).length).toBe(1);
   });
 });

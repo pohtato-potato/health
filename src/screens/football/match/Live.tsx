@@ -1,7 +1,7 @@
 // Matchday depth (spec 2026-11-12 §3): watching the waiting league match. Before kick-off (lg-pre), live on the
 // radar-as-stadium (r3-live), a call (r3-call), a goal (lg-goal), half-time (lg-half), then full time. Every number
 // here comes from the same rebuilt input the store finishes with, so what you watch is what is stored.
-import { bugShort, CameraScene, MoveScene, ScoreBug, type BugSide } from './Broadcast';
+import { bugShort, CAM_LINE, CameraScene, eventCamera, MoveScene, ScoreBug, type BugSide } from './Broadcast';
 import { BRABO_INK } from '../../../ui/inks';
 import { lossInkOf } from '../Chance';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -194,7 +194,9 @@ function LivePlay({ p, save, onEnd }: { p: PausedMatch; save: FbSave; onEnd: () 
       </Fit>
     );
   }
-  const chain = moveChain(c, k, p.prep.xi, credits.find((x) => x.i === k)?.name);
+  const credit = credits.find((x) => x.i === k);
+  const chain = moveChain(c, k, p.prep.xi, credit?.name);
+  const cam = eventCamera(c);
   const opp = clubById(p.prep.oppId);
   // What moved the odds, with the other club named in full rather than by its initials.
   const chips = oddsChips(c.mods, c.type).map((x) => ({ ...x, text: opp.short && x.text.startsWith(`${opp.short} `) ? x.text.replace(opp.short, clubName(opp.id)) : x.text }));
@@ -206,8 +208,8 @@ function LivePlay({ p, save, onEnd }: { p: PausedMatch; save: FbSave; onEnd: () 
       <div className="ms-tagrow" key={`t${k}`}><SideTag c={c} /><RollWord inShape={rolling ? word : null} /></div>
       <div className="md-stadium lt-stadium ms-stadium">
         {phase === 'enter' && !c.kept ? (
-          c.side === 'atk'
-            ? <CameraScene key={`m${k}`} chain={chain} inks={{ us: BRABO_INK, them: lossInkOf(p.prep.oppId) }} />
+          cam
+            ? <CameraScene key={`m${k}`} kind={cam} chain={cam === 'corner' ? [] : chain} inks={{ us: BRABO_INK, them: lossInkOf(p.prep.oppId) }} />
             : <MoveScene key={`m${k}`} c={c} chain={chain} inks={{ us: BRABO_INK, them: lossInkOf(p.prep.oppId) }} />
         ) : (
           <>
@@ -224,10 +226,11 @@ function LivePlay({ p, save, onEnd }: { p: PausedMatch; save: FbSave; onEnd: () 
         <div className={`ms-chance${verdict ? ' done' : ''}`}>
           <span className="ms-say">
             <span className="lt-cap">{c.minute}′ · {verdict ? `${c.pct}% ${c.side === 'atk' ? 'to score' : 'to stop it'}` : c.retake && (phase === 'retry' || phase === 'shot2') ? `${c.retake.why}! Chance 2 of 2` : c.side === 'atk' ? 'your chance' : 'their chance'}</span>
-            {verdict ? <b className={`ms-verdict ${isGoal(c) ? (c.side === 'atk' ? 'g' : 'x') : ''}`} role="status">{verdict}</b> : <span className="ms-wait">{rolling ? 'The ball is live…' : 'The move is on…'}</span>}
+            {verdict ? <b className={`ms-verdict ${isGoal(c) ? (c.side === 'atk' ? 'g' : 'x') : ''}`} role="status">{verdict}</b> : <span className="ms-wait">{rolling ? 'The ball is live…' : cam ? CAM_LINE[cam] : 'The move is on…'}</span>}
           </span>
           {!verdict && <span className="lt-pct"><b className="fb-num" style={pctInk(c.pct)}>{c.pct}%</b><span className="k-q">{c.side === 'atk' ? 'to score' : 'to stop it'}</span></span>}
         </div>
+        {verdict && credit && <p className="ms-line ms-said">{credit.line}</p>}
         {chain.length > 0 && <p className="ms-line"><b>The move</b> {chain.map((n, i) => <span key={n} className={i === chain.length - 1 ? 'last' : undefined}>{i > 0 && ' → '}{n}</span>)}</p>}
         {chips.length > 0 && <p className="ms-line"><b>Moved the odds</b> {chips.map((x, i) => <span key={x.text} style={{ color: AXIS_INK[x.axis] }}>{i > 0 && ' · '}{x.text}</span>)}</p>}
       </div>
