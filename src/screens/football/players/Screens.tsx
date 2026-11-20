@@ -11,7 +11,7 @@ import { daysBetween, dayOfLogging } from '../../../domain/dates';
 import { go } from '../../../router';
 import { PlayerCard, playerCardView, TiltCard } from './Card';
 import { Action, Hero, Panel, Sect } from '../../../ui/kit/Kit';
-import { Bar, Note, PanelTop, Stat } from '../club/Bits';
+import { Bar, Note, PanelTop } from '../club/Bits';
 import { Icon } from '../../../ui/Icon';
 import { openCard } from '../../../ui/CardViewer';
 import { VALUE_INK, valueTier } from '../../../ui/inks';
@@ -182,6 +182,36 @@ function moved(p: FbPlayer): number | null {
 const nextTier = (o: number): CardTier | undefined => CARD_TIERS.find((t) => TIER_FLOOR[t] > o);
 
 /** One player (board two, "A player"): the card and the rating lead; then the next tier, what it is made of, its season. */
+type HistoryOf = Pick<FbPlayer, 'id' | 'name' | 'art' | 'versions' | 'overall' | 'best' | 'kind'>;
+/** The big overall, the card's step and unit, and since when it has held that card (board 21, f21-card). */
+export function PlayerHead({ p }: { p: Pick<FbPlayer, 'overall' | 'card' | 'unit' | 'versions' | 'signed'> }) {
+  const since = p.versions[p.versions.length - 1]?.on ?? p.signed;
+  return (
+    <div className="pr19">
+      <b className="tn" style={{ color: VALUE_INK[valueTier(p.overall, 100)] }}>{p.overall}</b>
+      <span>{stepName(p.card)} · {p.unit}<em>{stepName(p.card)} since {fmtDate(since)}</em></span>
+    </div>
+  );
+}
+/** Every card this player has held, oldest first, each small with its step crowns in a row; the newest is lit. */
+export function CardHistory({ p }: { p: HistoryOf }) {
+  if (!p.versions.length) return null;
+  const n = p.versions.length;
+  return (
+    <section className="tr19" aria-labelledby={`hs-${p.id}`}>
+      <div className="h"><b id={`hs-${p.id}`}>Card history</b><span>{n} {n === 1 ? 'card' : 'cards'} since {fmtDate(p.versions[0].on)}</span></div>
+      <div className="hs19">
+        {p.versions.map((v, i) => (
+          <div key={`${v.on}${i}`} className={`hs19-v${i === n - 1 ? ' now' : ''}`} style={{ '--d': `${0.1 + i * 0.07}s` } as CSSProperties}>
+            <PlayerCard card={v} art={p.art} seed={p.id} player={p} label={`${p.name}, ${stepName(v)} card`} />
+            <b className="tn">{v.overall}</b><span>{stepName(v)}</span><span>{fmtDate(v.on)}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function PlayerPage({ id }: { id: string }) {
   const p = usePlayer(id);
   const r = usePlayerRating(id);
@@ -196,14 +226,11 @@ export function PlayerPage({ id }: { id: string }) {
   const cardProps = { card: p.card, art: p.art, seed: p.id, player: p, label: `${p.name}, ${stepName(p.card)} card` };
   return (
     <div className="k-page" style={uc(p.unit)}>
-      <div className="kp-top">
-        <div className={`kp-card${p.card.tier === 'legend' ? ' pl-hero lg' : ''}`}><TiltCard {...cardProps} /></div>
-        <div className="kp-info">
-          <span className="k-q">{p.unit} · {UNIT_WHERE[p.unit]}</span>
-          <span className="k-hero" style={{ color: VALUE_INK[valueTier(p.overall, 100)] }}>{p.overall}</span>
-          {mv != null && mv !== 0 && <span className="kp-up" style={{ color: mv > 0 ? '#8fc9b0' : '#ff9a76' }}><Icon name={mv > 0 ? 'up' : 'down'} size={16} stroke={2.6} />{Math.abs(mv)} in four weeks</span>}
-          <span className={`k-q${p.card.tier === 'legend' ? ' pl-legendtext' : ''}`}>{stepName(p.card)} · {p.apps} {p.apps === 1 ? 'appearance' : 'appearances'}</span>
-        </div>
+      <div className="pc19"><div className={p.card.tier === 'legend' ? 'pl-hero lg' : undefined}><TiltCard {...cardProps} /></div></div>
+      <PlayerHead p={p} />
+      <div className="pr19-sub">
+        {mv != null && mv !== 0 && <span className="kp-up" style={{ color: mv > 0 ? '#8fc9b0' : '#ff9a76' }}><Icon name={mv > 0 ? 'up' : 'down'} size={16} stroke={2.6} />{Math.abs(mv)} in four weeks</span>}
+        <span className="k-q">{p.unit} · {UNIT_WHERE[p.unit]} · {p.apps} {p.apps === 1 ? 'appearance' : 'appearances'}</span>
       </div>
       {nt ? (
         <Panel ink="#f2c46d">
@@ -222,25 +249,17 @@ export function PlayerPage({ id }: { id: string }) {
         </div>
       )) : <Note>Nothing in the last 28 days. It keeps its last number until it is logged again.</Note>}
       <Sect>This season</Sect>
-      <div className="kb-g3">
-        <Stat label="Goals" value={p.goals} c={c} />
-        <Stat label="Saves" value={p.saves} c={c} />
-        <Stat label={p.kind === 'exercise' ? 'Freshness' : 'Best'} value={p.kind === 'exercise' ? p.fresh ?? 100 : p.best} c="#8fdcb6" />
+      <div className="st19">
+        <span><b className="tn">{p.goals}</b>goals</span>
+        <span><b className="tn">{p.saves}</b>saves</span>
+        <span><b className="tn">{p.kind === 'exercise' ? p.fresh ?? 100 : p.best}</b>{p.kind === 'exercise' ? 'freshness' : 'best'}</span>
       </div>
       <Panel ink="#f2c46d">
         <PanelTop name="Club legend" c="#f2c46d" right={`best ${p.best} on ${fmtDate(p.bestOn)}`} />
         <span className="k-q">{legendProgress(p)}{p.status === 'academy' ? ' Waiting in the academy for its youngster.' : p.status === 'left' ? ' No longer logged.' : ''}</span>
       </Panel>
       <PlayerRotation p={p} />
-      <Sect>Card history</Sect>
-      <div className="kp-vs">
-        {p.versions.map((v, i) => (
-          <div key={`${v.on}${i}`} className={i === p.versions.length - 1 ? 'now' : undefined}>
-            <PlayerCard card={v} art={p.art} seed={p.id} player={p} />
-            <b>{stepName(v)}</b><span className="k-q">{fmtDate(v.on)}</span><span className="k-q">{stepRange(v)}</span>
-          </div>
-        ))}
-      </div>
+      <CardHistory p={p} />
       <Action quiet wide onClick={() => openCard(playerCardView(cardProps))}>See the card full screen</Action>
     </div>
   );
