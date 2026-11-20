@@ -1,7 +1,7 @@
 // Matchday depth (spec 2026-11-12 §3): watching the waiting league match. Before kick-off (lg-pre), live on the
 // radar-as-stadium (r3-live), a call (r3-call), a goal (lg-goal), half-time (lg-half), then full time. Every number
 // here comes from the same rebuilt input the store finishes with, so what you watch is what is stored.
-import { bugShort, MoveScene, ScoreBug, type BugSide } from './Broadcast';
+import { bugShort, CameraScene, MoveScene, ScoreBug, type BugSide } from './Broadcast';
 import { BRABO_INK } from '../../../ui/inks';
 import { lossInkOf } from '../Chance';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -206,7 +206,9 @@ function LivePlay({ p, save, onEnd }: { p: PausedMatch; save: FbSave; onEnd: () 
       <div className="ms-tagrow" key={`t${k}`}><SideTag c={c} /><RollWord inShape={rolling ? word : null} /></div>
       <div className="md-stadium lt-stadium ms-stadium">
         {phase === 'enter' && !c.kept ? (
-          <MoveScene key={`m${k}`} c={c} chain={chain} inks={{ us: BRABO_INK, them: lossInkOf(p.prep.oppId) }} />
+          c.side === 'atk'
+            ? <CameraScene key={`m${k}`} chain={chain} inks={{ us: BRABO_INK, them: lossInkOf(p.prep.oppId) }} />
+            : <MoveScene key={`m${k}`} c={c} chain={chain} inks={{ us: BRABO_INK, them: lossInkOf(p.prep.oppId) }} />
         ) : (
           <>
           <i className="lt-flood" aria-hidden="true" />

@@ -135,3 +135,17 @@
 html.contrast .mb-bug { background: #0b0c1a; border-color: var(--k-cream); }
 html.contrast .mb-bugwrap { --mb-quiet: #f3eee6; }
 html.contrast .mb-vig { display: none; }
+/* The broadcast camera (board 16, m16-cam): behind your attack, the box pushed in on as the shot goes. */
+.mb-cam { position: relative; width: 100%; aspect-ratio: 360 / 330; max-height: 100%; align-self: center; overflow: hidden; border-radius: 18px; }
+.mb-camsvg { position: absolute; inset: 0; width: 100%; height: 100%; transform-origin: 50% 36%; animation: mb-push 1.8s cubic-bezier(.65, 0, .35, 1) both; }
+@keyframes mb-push { 0%, 55% { transform: none; } 100% { transform: scale(1.12); } }
+.mb-cam::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(80% 70% at 50% 45%, transparent 60%, rgba(7, 11, 26, 0.8)); }
+.mb-cw { animation: mb-pulse 1.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.mb-tok { animation: mb-up .45s cubic-bezier(.34, 1.56, .64, 1) both; }
+@keyframes mb-up { 0% { opacity: 0; transform: translateY(14px); } }
+.mb-comet { filter: drop-shadow(0 0 6px #ffd36b); stroke-dashoffset: var(--len); animation: mb-tail 1.4s cubic-bezier(.45, 0, .2, 1) .2s forwards; }
+@keyframes mb-tail { to { stroke-dashoffset: 0; } }
+.mb-cball { animation: mb-run 1.4s cubic-bezier(.45, 0, .2, 1) .2s both; }
+.mb-no { fill: #0b1022; text-anchor: middle; font-family: var(--fb-cond); font-weight: 700; }
+.mb-cam .mb-names { transform-origin: 50% 36%; animation: mb-push 1.8s cubic-bezier(.65, 0, .35, 1) both; }
+html.contrast .mb-cam::after { display: none; }
