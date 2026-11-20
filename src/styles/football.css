@@ -917,3 +917,35 @@ html.contrast .tn21 > span:last-child { color: #fff; }
 .ns21 .nl21::before { content: ''; width: 10px; height: 10px; margin-top: 6px; border-radius: 50%; background: var(--k); box-shadow: 0 0 8px var(--k); }
 html.contrast .nd21, html.contrast .ns21 .sd > small { color: #fff; }
 html.contrast .ns21 .pr, html.contrast .ns21 .sd, html.contrast .ns21 .nl21 { background: #000; box-shadow: inset 0 0 0 1.5px #fff; }
+
+/* One cup (board 23, u23-big / u23-pair): the trophy in its glow, tonight's tie, the road of rounds. */
+.cup23 { display: flex; flex-direction: column; gap: 12px; }
+.tro-23 { position: relative; width: 170px; height: 150px; margin: 0 auto; animation: tro23-float 5s ease-in-out infinite; }
+.tro-23 svg { position: relative; width: 100%; height: 100%; overflow: visible; }
+.gl-23 { position: absolute; inset: -20px; border-radius: 50%; background: conic-gradient(from 0deg, transparent, color-mix(in srgb, var(--c) 70%, transparent), transparent 40%); animation: tro23-spin 8s linear infinite; filter: blur(14px); opacity: .7; }
+@keyframes tro23-float { 50% { transform: translateY(-6px) rotate(-2deg); } }
+@keyframes tro23-spin { to { transform: rotate(360deg); } }
+.cn-23 { margin: 0; text-align: center; font: 700 34px/1 var(--fb-cond); text-transform: uppercase; color: #fff; }
+.sub-23 { text-align: center; font: 700 15px var(--sans); color: rgba(243, 238, 230, .85); }
+.tie-23 { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 10px; align-items: center; padding: 14px; border-radius: 22px; background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 2px var(--c); animation: tn21-in .6s .2s cubic-bezier(.16, 1, .3, 1) both; }
+.tie-23 > span { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; font: 700 15px var(--sans); color: #fff; overflow-wrap: anywhere; min-width: 0; }
+.tie-23 .v { font: 700 30px var(--fb-cond); color: var(--c); }
+.lead23 { margin: 0; font: 700 15px/1.4 var(--sans); color: #fff; }
+.hd23 { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.hd23 b { font: 700 22px var(--fb-cond); text-transform: uppercase; color: #fff; }
+.hd23 span { font: 700 14px var(--sans); color: rgba(243, 238, 230, .75); }
+.rd-23 { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.rd-r { position: relative; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; align-items: center; min-height: 58px; padding-left: 2px; }
+.rd-r::before { content: ''; position: absolute; left: 15px; top: 0; bottom: 0; width: 2px; background: rgba(255, 255, 255, .14); }
+.rd-r:first-child::before { top: 50%; }
+.rd-r:last-child::before { bottom: 50%; }
+.rd-r i { position: relative; z-index: 1; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: #1a2140; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .25); font: 700 14px var(--sans); font-style: normal; color: #fff; }
+.rd-r.w i { background: #5fe3a1; color: #0b1022; box-shadow: none; }
+.rd-r.now i { background: var(--c); color: #0b1022; box-shadow: 0 0 0 6px color-mix(in srgb, var(--c) 30%, transparent); animation: rd23-breathe 2.4s ease-in-out infinite; }
+@keyframes rd23-breathe { 50% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--c) 15%, transparent); } }
+.rd-r.x { opacity: .7; }
+.rd-r b { display: block; font: 700 17px var(--sans); color: #fff; }
+.rd-r b em { font-style: normal; color: var(--c); }
+.rd-r small { display: block; font: 400 14px var(--sans); color: rgba(243, 238, 230, .8); }
+html.contrast .sub-23, html.contrast .rd-r small, html.contrast .hd23 span { color: #fff; }
+html.contrast .rd-r.x { opacity: 1; }

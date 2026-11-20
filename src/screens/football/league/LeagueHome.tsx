@@ -107,10 +107,10 @@ export function LeagueView({ l, view, tier, extra, n }: { l: League; view: Leagu
         <>
           <Events event={l.save.phase === 'event' ? l.save.event : undefined} matches={l.matches} />
           {l.season.continental && (l.season.continental.field.includes(OWN) || mine === 1) && <ContinentalView c={l.season.continental} tierOf={l.season.tierOf} world={world} />}
-          <Cup b={l.season.bigcup} tierOf={l.season.tierOf} />
+          <Cup b={l.season.bigcup} tierOf={l.season.tierOf} own={crestSvg(l.save.crest.step, l.save.crest.opt, 56)} />
           {world === 2
-            ? l.season.tiercups[PAIRCUP_ID] && <Cup b={l.season.tiercups[PAIRCUP_ID]} tierOf={l.season.tierOf} />
-            : l.season.tiercups[TIER_CUP[mine].id] && <Cup b={l.season.tiercups[TIER_CUP[mine].id]} tierOf={l.season.tierOf} />}
+            ? l.season.tiercups[PAIRCUP_ID] && <Cup b={l.season.tiercups[PAIRCUP_ID]} tierOf={l.season.tierOf} own={crestSvg(l.save.crest.step, l.save.crest.opt, 56)} />
+            : l.season.tiercups[TIER_CUP[mine].id] && <Cup b={l.season.tiercups[TIER_CUP[mine].id]} tierOf={l.season.tierOf} own={crestSvg(l.save.crest.step, l.save.crest.opt, 56)} />}
         </>
       )}
       {extra?.[view] ?? null}

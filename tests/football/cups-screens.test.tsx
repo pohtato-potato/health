@@ -77,7 +77,7 @@ describe('Cups', () => {
     const b = playUntil(l.season.bigcup, 'Quarter-final');
     const out = html(<Cup b={b} tierOf={l.season.tierOf} />);
     expect(out).toContain('The Big Cup');
-    expect(out.match(/class="fb-rd/g)).toHaveLength(b.rounds.length);
+    expect(out.match(/class="rd-r/g)).toHaveLength(b.rounds.length);
     const gk = giantKillings(b, l.season.tierOf);
     for (const g of gk) expect(g.wTier - g.lTier).toBeGreaterThanOrEqual(2);
     if (gk.length) expect(out).toContain('Giant-killings so far');

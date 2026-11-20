@@ -7,9 +7,13 @@ import { OWN } from '../../../football/store/season';
 import type { Tier } from '../../../football/types';
 import { CONT, CONT2, CONT_NAME, phaseTable, type Continental } from '../../../football/continental';
 import { ordinal } from '../../../football/habitLines';
+import { clubCrest, crestSvg } from '../../../football/art/crest';
+import { Art } from '../world/Fog';
 
 const short = (id: string) => (id === OWN ? 'BRA' : clubById(id).short);
 const nm = (id: string) => (id === OWN ? 'Brabo United' : clubById(id).name);
+// Your crest where the save is not to hand: the founding step, as on the first night.
+const crestOf = (id: string, n: number) => (id === OWN ? crestSvg(1, 'a', n) : clubCrest(clubById(id), n));
 
 function Slot({ id, tie }: { id: string | null; tie?: Tie }) {
   if (!id) return <span className="fb-slot unknown" aria-label="Not decided yet"><b>?</b></span>;
@@ -83,23 +87,50 @@ export function giantKillings(b: Bracket, tierOf: Record<string, Tier>): GiantKi
   return out;
 }
 
-export function Cup({ b, tierOf }: { b: Bracket; tierOf: Record<string, Tier> }) {
+const TROPHY: Record<'cup' | 'pair', string> = {
+  cup: 'M50 20h50v28c0 22-12 36-25 36S50 70 50 48zM50 30H34c0 16 8 22 18 22M100 30h16c0 16-8 22-18 22M68 84h14v18H68zM54 102h42v12H54z',
+  pair: 'M36 26h32v22c0 16-7 26-16 26s-16-10-16-26zM82 26h32v22c0 16-7 26-16 26s-16-10-16-26zM46 74h12v22H46zM92 74h12v22H92zM38 96h74v12H38z',
+};
+/** Each cup's own colour and silverware. */
+export const cupLook = (_id: string): { ink: string; shape: 'cup' | 'pair' } => ({ ink: '#ffd36b', shape: 'cup' });
+
+/** One cup (board 23, u23-big and u23-pair): the trophy turning in its glow, tonight's tie, then the road of rounds
+ *  with the one you are on marked in words, the bracket and the giant-killings. */
+export function Cup({ b, tierOf, own }: { b: Bracket; tierOf: Record<string, Tier>; /** Your crest. */ own?: string }) {
   let out = false;
   const left = new Set<string>();
   const last = b.rounds.findLast((r) => r.ties.length);
   for (const t of last?.ties ?? []) { if (t.winner) left.add(t.winner); else { left.add(t.home); if (t.away) left.add(t.away); } }
   const gk = giantKillings(b, tierOf);
+  const look = cupLook(b.id);
+  const live = b.rounds.find((r) => { const t = myTie(r); return t && t.away && !t.winner; });
+  const tie = live && myTie(live);
   return (
-    <section className="fb-cup" aria-label={b.name}>
-      <div className="fb-row"><span className="fb-t">{b.name}</span><span className="fb-s">{b.winner ? 'Finished' : `${left.size} still in`}</span></div>
-      <ol className="fb-rounds">
-        {b.rounds.map((r) => {
+    <section className="fb-cup cup23" aria-label={b.name} style={{ '--c': look.ink } as React.CSSProperties}>
+      <div className="tro-23" aria-hidden="true"><span className="gl-23" /><svg viewBox="0 0 150 130"><path d={TROPHY[look.shape]} fill={`color-mix(in srgb, ${look.ink} 70%, #fff)`} stroke="#140f22" strokeWidth="3" strokeLinejoin="round" /></svg></div>
+      <h2 className="cn-23">{b.name}</h2>
+      <span className="sub-23">{b.winner ? `Finished · won by ${nm(b.winner)}` : `${left.size} still in`}</span>
+      {tie && live && (
+        <>
+          <div className="tie-23">
+            <span><Art svg={tie.home === OWN && own ? own : crestOf(tie.home, 56)} />{nm(tie.home)}</span>
+            <span className="v" aria-hidden="true">v</span>
+            <span><Art svg={tie.away === OWN && own ? own : crestOf(tie.away!, 56)} />{nm(tie.away!)}</span>
+          </div>
+          <p className="lead23">{live.name}, {tie.home === OWN ? 'at home' : 'away'} · day {live.day}.</p>
+        </>
+      )}
+      <div className="hd23"><b>The road</b><span>{b.rounds.length} rounds</span></div>
+      <ol className="rd-23">
+        {b.rounds.map((r, k) => {
           const l = roundLine(r, out);
           if (l.cls === 'l') out = true;
+          const now = r === live;
+          const cls = now ? 'now' : l.cls === 'w' ? 'w' : l.cls === 'l' ? 'x' : '';
           return (
-            <li key={r.name} className={`fb-rd ${l.cls}`}>
-              <i aria-hidden="true" />
-              <span className="fb-col"><b>{r.name}</b><span className="fb-s">{l.text || `Day ${r.day}`}</span></span>
+            <li key={r.name} className={`rd-r${cls ? ` ${cls}` : ''}`} aria-current={now ? 'step' : undefined}>
+              <i aria-hidden="true">{r.name === 'Final' ? 'F' : k + 1}</i>
+              <span><b>{r.name}{now && <em> · This round</em>}</b><small>{l.text || `Day ${r.day}`}</small></span>
             </li>
           );
         })}
