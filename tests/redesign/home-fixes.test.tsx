@@ -23,7 +23,9 @@ describe('Home after the owner’s review (h6-c)', () => {
   it('lets the rings fill their half of The day', () => {
     const css = readFileSync('src/styles/today.css', 'utf8');
     expect(css).toMatch(/\.td-panel \.td-rings-row \{ display: grid; grid-template-columns: minmax\(0, 1fr\)/);
-    expect(css).toMatch(/\.td-panel \.td-ringfig svg \{ width: 100%/);
+    expect(css).toMatch(/\.td-panel \.td-ringfig svg \{ display: block; width: 100%/);
+    // The ring button shrinks with its column at 340–360 px, so the drawing never runs under the bars.
+    expect(css).toMatch(/\.td-panel \.td-ringfig > \.lr, \.td-panel \.td-ringfig \.lr-spin \{ display: block; width: 100%/);
   });
 
   it('puts tonight’s match in one panel: opponent and kick-off, the win chip, three numbers, the shape', () => {

@@ -471,7 +471,8 @@ html.contrast .td-panel-bar { background: #1a1b2e; }
 @keyframes td-bar { from { transform: scaleX(0); } }
 .td-panel .td-rings-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); align-items: center; }
 .td-panel .td-ringfig { display: grid; place-items: center; min-width: 0; }
-.td-panel .td-ringfig svg { width: 100%; max-width: 200px; height: auto; }
+.td-panel .td-ringfig > .lr, .td-panel .td-ringfig .lr-spin { display: block; width: 100%; max-width: 200px; }
+.td-panel .td-ringfig svg { display: block; width: 100%; max-width: 200px; height: auto; }
 .td-panel .td-num-top { flex-wrap: nowrap; }
 .td-panel .td-num-name { flex: 1 1 auto; min-width: 0; }
 .td-panel .td-num b, .td-panel .td-num .td-num-unit { white-space: nowrap; }
