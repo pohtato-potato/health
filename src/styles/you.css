@@ -576,3 +576,23 @@ html.contrast .ck-m, html.contrast .ck-line, html.contrast .ci-k.ck-page .card {
 /* Settings (board W9): kept plain; each row's icon sits in a square of its colour and its value takes that colour. */
 .k-set-ic { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--c); }
 .k-set-row .k-set-v { font-weight: 600; }
+
+/* Reports (board W5): the month living as a calendar; days light up one after another, records ringed white, the story button pulses. */
+@keyframes lm-lit { from { opacity: .15; transform: scale(.6); } to { opacity: 1; transform: none; } }
+@keyframes lm-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 201, 77, .55); } 50% { box-shadow: 0 0 0 10px rgba(255, 201, 77, 0); } }
+.lm { display: flex; flex-direction: column; gap: 12px; padding: 16px 14px; border-radius: 24px; background: linear-gradient(165deg, #2a1d52, #151030 70%); border: 1px solid rgba(185, 160, 255, .3); }
+.lm-hd { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.lm-hd h2 { margin: 0; font: 600 28px/1.1 var(--serif); color: #fff; }
+.lm-hd > span > span { font: 600 15px var(--sans); color: #d9ccff; }
+.lm-play { flex: none; width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: #ffc94d; animation: lm-pulse 2.2s ease-out infinite; }
+.lm-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+.lm-wd { text-align: center; font: 700 14px var(--sans); color: #b8acd6; }
+.lm-d { aspect-ratio: 1; border-radius: 10px; display: grid; place-items: center; font: 700 14px var(--sans); font-style: normal; color: #140f22; background: var(--c); animation: lm-lit .45s calc(var(--i) * 70ms) both; }
+.lm-d.rec { box-shadow: 0 0 0 3px #fff; }
+.lm-d.blank { background: rgba(255,255,255,.08); color: #cfc6e6; }
+.lm-d.later { background: transparent; color: #a99fc4; border: 1px dashed rgba(255,255,255,.18); animation: none; }
+.lm-key { display: flex; flex-wrap: wrap; gap: 6px 12px; font: 600 14px var(--sans); color: #e6dcef; }
+.lm-fr { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 -14px; padding: 2px 14px; }
+.lm-fr span { flex: none; padding: 8px 12px; border-radius: 12px; background: rgba(255,255,255,.08); font: 500 14px var(--sans); color: #fff; }
+.lm-fr b { color: #ffc94d; font-weight: 700; }
+.lm-key span { display: inline-flex; align-items: center; gap: 6px; } .lm-key i { width: 14px; height: 14px; border-radius: 4px; }

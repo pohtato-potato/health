@@ -16,7 +16,7 @@ export function FilmPoster({ today, days, sessions, sets }: { today: string; day
   return (
     <button type="button" className="k-poster sm" onClick={() => go('/film', { m: month })}>
       <span>{film.month} is finished</span>
-      <b className="k-poster-t">Your {film.month} film</b>
+      <b className="k-poster-t">Your {film.month} story</b>
       <span className="k-row"><span>{posterLine(km.big, done.big, records.big)}</span><span className="k-play"><Icon name="play" size={18} stroke={2.2} />Play</span></span>
     </button>
   );

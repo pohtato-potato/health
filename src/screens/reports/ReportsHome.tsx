@@ -1,33 +1,31 @@
-import type { CSSProperties } from 'react';
 import { useAllDays, useAllEntries, useAllSets, useSessions, useSettings, useToday } from '../../db/hooks';
 import { spokenLine } from '../../domain/voice';
 import { fmtDayMonth, fmtInt } from '../../domain/format';
 import { addDays } from '../../domain/dates';
 import { monthLabel } from '../../domain/goTo';
 import { monthsWithData } from '../../domain/monthReport';
-import { storySlides } from '../../domain/monthStory';
+import { monthCells, storySlides } from '../../domain/monthStory';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../../db/db';
+import { LivingMonth } from './LivingMonth';
 import { useMonthInput } from './useMonthInput';
 import { headline, weekNumber, weekStats } from '../../domain/weekly';
 import { weeksWithData } from '../../domain/weeklyStory';
 import { kmFromSteps, setStride } from '../../domain/walk';
 import { back, go } from '../../router';
-import { Icon } from '../../ui/Icon';
 import { Door, Empty, FamilyDoors, PageHead, type HowThisWorks } from '../../ui/kit/Kit';
-import { FAMILIES } from '../../ui/kit/families';
-
-const BACK = FAMILIES.back.ink;
 
 const HOW: HowThisWorks = {
   title: 'Reports',
   steps: [
     { icon: 'sheet', ink: '#ff9a76', head: 'The week, as a story', line: 'Ready on Sunday: cards you tap through, the road, the tally and one thing for next week.' },
     { icon: 'calendar', ink: '#c2b2ff', head: 'The month on a page', line: 'Each finished month, graded, with its best days.' },
-    { icon: 'play', ink: '#f2c46d', head: 'The film', line: 'The month told in a few screens, to play in the first week after.' },
+    { icon: 'play', ink: '#f2c46d', head: 'The story', line: 'The month told in a few slides, so far or once it is done.' },
     { icon: 'edit', ink: '#ede6da', head: 'Corrections', line: 'Anything changed after a report was read is noted on it.' },
   ],
 };
 
-/** Reports (board three): the week's story as a poster you tap into, the month and its film, then older ones. */
+/** Reports (board W5): the week's story as a poster you tap into, this month living as a calendar, then older ones. */
 export function ReportsHome() {
   const settings = useSettings();
   const today = useToday();
@@ -36,6 +34,7 @@ export function ReportsHome() {
   const entries = useAllEntries();
   const sets = useAllSets();
   const input = useMonthInput();
+  const moments = useLiveQuery(() => db.moments.toArray(), []);
   if (!days || !sessions || !entries || !sets || !settings) return <div className="page bare k-page k-light you" />;
   setStride(settings.strideM);
   const week = weeksWithData(days, sessions, today)[0];
@@ -48,6 +47,7 @@ export function ReportsHome() {
   const monthKm = month ? Math.round(kmFromSteps(days.filter((d) => d.date.startsWith(month)).reduce((n, d) => n + (d.steps ?? 0), 0))) : 0;
   const screens = month && input ? storySlides(month, input).length : 0;
   const mName = month ? monthLabel(month).replace(/ \d{4}$/, '') : '';
+  const now = today.slice(0, 7);
   const line = spokenLine(settings, today, 'report', today);
   return (
     <div className="page bare k-page k-light you">
@@ -61,24 +61,21 @@ export function ReportsHome() {
           <span>The week as a story. Tap to read.</span>
         </button>
       )}
-      {month && (
-        <div className="k-doors two">
-          <button type="button" className="k-panel k-tap" style={{ '--ink': BACK } as CSSProperties} onClick={() => go('/reports/month', { m: month })}>
-            <span className="k-lb">{mName}</span>
-            <b className="k-num ink">{fmtInt(monthKm)} km</b>
-            <span className="k-q">The month on a page</span>
-            <Icon name="right" size={18} stroke={2.2} className="k-arrow" />
-          </button>
-          <button type="button" className="k-panel k-tap" style={{ '--ink': BACK } as CSSProperties} onClick={() => go('/film', { m: month })}>
-            <span className="k-lb">{mName}’s film</span>
-            <b className="k-num ink k-row" style={{ justifyContent: 'flex-start', gap: 6 }}><Icon name="play" size={22} stroke={2.4} color={BACK} />Play</b>
-            <span className="k-q">{screens ? `${screens} screens` : 'The month in screens'}</span>
-            <Icon name="right" size={18} stroke={2.2} className="k-arrow" />
-          </button>
-        </div>
+      {input && (
+        <LivingMonth
+          month={now}
+          cal={monthCells(now, input)}
+          records={new Set(input.sets.filter((x) => x.date.startsWith(now) && x.mark === '!!' && !x.skipped).map((x) => x.date))}
+          frames={(moments ?? []).filter((m) => m.date.startsWith(now) && typeof m.payload?.text === 'string').sort((x, y) => x.at - y.at).slice(-6).map((m) => ({ id: m.id, text: m.payload.text as string, date: m.date }))}
+          onPlay={() => go('/film', { m: now })}
+        />
       )}
       <FamilyDoors two label="Older" groups={{
         back: [
+          ...(month ? [
+            <Door key="month" line icon="calendar" name={`${mName} on a page`} value={`${fmtInt(monthKm)} km, graded`} family="back" onClick={() => go('/reports/month', { m: month })} />,
+            <Door key="story" line icon="play" name={`${mName}’s story`} value={screens ? `${screens} slides` : 'The month in slides'} family="back" onClick={() => go('/film', { m: month })} />,
+          ] : []),
           <Door key="archive" line icon="sheet" name="The archive" value="Every past week and month" family="back" onClick={() => go('/reports/archive')} />,
           <Door key="year" line icon="calendar" name="Your year" value="The year so far" family="back" onClick={() => go('/year')} />,
           // Ledger O40: the journey page was reached only from a celebration; this is its door.

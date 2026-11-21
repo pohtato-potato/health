@@ -33,7 +33,8 @@ const plural = (n: number, w: string, ws = `${w}s`) => `${fmtInt(n)} ${n === 1 ?
 const signed = (n: number, unit: string) => `${n > 0 ? '+' : n < 0 ? '−' : ''}${fmtInt(Math.abs(n))}${unit}`;
 const MAX_BESTS = 3;
 
-function cells(month: string, i: MonthInput): DayCell[] {
+/** Each day of the month: its rings closed, not logged (null), or still to come. */
+export function monthCells(month: string, i: MonthInput): DayCell[] {
   const food = new Map<DayKey, MonthInput['entries']>();
   for (const e of i.entries) if (e.date.startsWith(month)) food.set(e.date, [...(food.get(e.date) ?? []), e]);
   const dayBy = new Map(i.days.filter((d) => d.date.startsWith(month)).map((d) => [d.date, d]));
@@ -71,7 +72,7 @@ export function storySlides(month: string, i: MonthInput): StorySlide[] {
   const wasName = monthName(was);
   const days = i.days.filter((d) => d.date.startsWith(month));
   const done = i.sessions.filter((s) => s.date.startsWith(month) && s.status === 'done');
-  const cal = cells(month, i);
+  const cal = monthCells(month, i);
   const logged = cal.filter((c) => c && c !== 'later').length;
   if (!logged && !done.length) return [];
   const out: StorySlide[] = [];
