@@ -1,7 +1,7 @@
 import './helpers/windowStub';
 import { renderToStaticMarkup as html } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { bestAxisOf, summarise, upsets } from '../../src/football/seasonStory';
+import { bestAxisOf, scrapbook, summarise, upsets } from '../../src/football/seasonStory';
 import type { FbSeason, StoredMatch } from '../../src/football/store/tables';
 import { allAxes, type AxisValues } from '../../src/football/types';
 import { MomentsView } from '../../src/screens/football/story/Moments';
@@ -18,10 +18,10 @@ describe('Moments', () => {
     const ms = [m('2026-10-01', 'up2', 'W'), m('2026-10-02', 'down1', 'L'), m('2026-10-03', 'same', 'W'), m('2026-10-04', 'up1', 'L')];
     const u = upsets(ms, [season]);
     expect(u.map((x) => [x.dir, x.gap])).toEqual([['for', 2], ['against', 1]]);
-    const out = html(<MomentsView upsets={u} seasons={[]} />);
-    expect(out).toContain('Upsets for you · 1');
+    const out = html(<MomentsView upsets={u} cards={scrapbook(ms, [season], () => 'Side')} />);
+    expect(out).toContain('Giant beaten');
+    expect(out).toContain('2 tiers above you');
     expect(out).toContain('Upsets against you · 1');
-    expect(out).toContain('Beat a side 2 tiers up');
     expect(out).toContain('Lost to a side 1 tier down');
   });
 });

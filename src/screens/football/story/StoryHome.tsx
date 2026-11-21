@@ -5,7 +5,10 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../../db/db';
 import { loadLeague, type League } from '../../../football/store/league';
 import type { FbSeason, StoredMatch } from '../../../football/store/tables';
-import { summarise, upsets } from '../../../football/seasonStory';
+import { scrapbook, summarise, upsets } from '../../../football/seasonStory';
+import { NATIONS } from '../../../football/events';
+import { clubName } from '../match/MatchBits';
+
 import { kitsBySeason } from '../../../football/store/kitWall';
 import { CREST_LINES, kitEntry } from '../../../football/kits';
 import { MomentsView } from './Moments';
@@ -17,6 +20,9 @@ import { RivalsView } from './Rivals';
 import { RivalryView } from './Rivalry';
 import { SettingsView } from './Settings';
 import { StoryLead } from './StoryLead';
+
+/** A side's name in the story: a nation in the World Cup, a club otherwise. */
+const sideName = (id: string) => NATIONS.find((n) => n.id === id)?.name ?? clubName(id);
 
 export const STORY_VIEWS = [
   { id: 'home', label: 'Story' },
@@ -41,7 +47,7 @@ export function StoryView({ s, view, extra }: { s: Story; view: StoryViewId; ext
       {view === 'home' && <StoryLead s={s} />}
       {view === 'rivals' && <RivalsView rivals={s.l.save.rivals} matches={s.all} />}
       {view === 'seasons' && <SeasonsView list={s.seasons.map((x) => summarise(x, s.all, s.seasons))} kitOf={(n) => kitName(s, n)} crestOf={(n) => crestName(s, n)} />}
-      {view === 'moments' && <MomentsView upsets={upsets(s.all, s.seasons)} seasons={s.seasons.map((x) => summarise(x, s.all, s.seasons))} />}
+      {view === 'moments' && <MomentsView upsets={upsets(s.all, s.seasons)} cards={scrapbook(s.all, s.seasons, sideName)} />}
       {view === 'olds' && <OldSelves clubs={[...s.l.clubs.values()]} tierOf={s.l.season.tierOf} retired={s.l.save.retired} />}
       {view === 'settings' && <div className="lt-set"><SettingsView s={s.l.save} /></div>}
       {extra?.[view] ?? null}

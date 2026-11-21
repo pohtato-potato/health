@@ -23,6 +23,48 @@ export function upsets(matches: StoredMatch[], seasons: FbSeason[]): Upset[] {
   }
   return out;
 }
+/** One card in the scrapbook (board 19, s19-book): a screamer, a wonder save, a giant beaten or a run of wins. */
+export type PageKind = 'scr' | 'sav' | 'giant' | 'run';
+export interface ScrapPage { id: string; kind: PageKind; date: string; season: number; title: string; line: string; sub: string; m?: StoredMatch; gap?: number }
+const RUN_FROM = 5;
+const shortDay = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+/** The score as text, home side first. Score is stored Brabo first. */
+export function scoreLine(m: StoredMatch, name: (id: string) => string): string {
+  const us = name(OWN), them = name(m.opp);
+  const [a, b] = m.score;
+  return m.braboHome ? `${us} ${a}–${b} ${them}` : `${them} ${b}–${a} ${us}`;
+}
+const where = (m: StoredMatch) => m.round ?? (m.comp === 'league' ? 'League' : 'Cup');
+/** Every scrapbook card, newest first: one per match with a screamer or a wonder save, each giant beaten, each run of 5+ wins. */
+export function scrapbook(matches: StoredMatch[], seasons: FbSeason[], name: (id: string) => string): ScrapPage[] {
+  const out: ScrapPage[] = [];
+  const nm = (id: string) => { try { return name(id); } catch { return 'them'; } };
+  for (const m of matches) {
+    const cs = m.events?.chances ?? [];
+    const scr = cs.filter((c) => c.tag === 'SCREAMER');
+    if (scr.length) out.push({ id: `${m.id}-scr`, kind: 'scr', date: m.date, season: m.season, m,
+      title: scr.length === 1 ? `Screamer ${scr[0].pct}%` : `${scr.length === 2 ? 'Two' : scr.length} screamers`, line: scoreLine(m, nm),
+      sub: scr.length === 1 ? `${scr[0].minute}′ · ${shortDay(m.date)}` : scr.map((c) => `${c.pct}% at ${c.minute}′`).join(' · ') });
+    for (const c of cs.filter((x) => x.tag === 'WONDER SAVE'))
+      out.push({ id: `${m.id}-sav-${c.minute}`, kind: 'sav', date: m.date, season: m.season, m, title: `Wonder save ${c.pct}%`, line: scoreLine(m, nm), sub: `${c.minute}′ · ${shortDay(m.date)}` });
+  }
+  for (const u of upsets(matches, seasons).filter((x) => x.dir === 'for')) {
+    const m = matches.find((x) => x.id === u.id)!;
+    out.push({ id: `${m.id}-giant`, kind: 'giant', date: m.date, season: m.season, m, gap: u.gap, title: 'Giant beaten', line: scoreLine(m, nm),
+      sub: `${where(m)} · ${shortDay(m.date)} · ${u.gap} ${u.gap === 1 ? 'tier' : 'tiers'} above you` });
+  }
+  let run: StoredMatch[] = [];
+  const close = () => {
+    if (run.length >= RUN_FROM) {
+      const a = run[0], z = run[run.length - 1];
+      out.push({ id: `${a.id}-run`, kind: 'run', date: z.date, season: z.season, title: `${run.length} wins in a row`, line: `${shortDay(a.date)} to ${shortDay(z.date)}`, sub: `Scored ${run.reduce((s, x) => s + x.score[0], 0)}, let in ${run.reduce((s, x) => s + x.score[1], 0)}` });
+    }
+    run = [];
+  };
+  for (const m of [...matches].sort((a, b) => a.date.localeCompare(b.date))) { if (m.result === 'W') run.push(m); else close(); }
+  close();
+  return out.sort((a, b) => b.date.localeCompare(a.date));
+}
 /** The best axis: the highest season average. */
 /** Each axis's average over the season's played matches, to one decimal. */
 export function axisAverages(matches: StoredMatch[]): Record<Axis, number> {
