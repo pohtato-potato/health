@@ -70,26 +70,23 @@ function Extra({ slide, month, onReport }: { slide: StorySlide; month: string; o
   }
 }
 
-/**
- * One slide of the month's story (board W8, y8-story): progress bars on top, its title, one huge number and one line, its picture,
- * then Back and Next. It fills the screen; the number counts up once and the calendar's days light up once.
- */
-export function StorySlideView({ slide, at, of, month, onNext, onBack, onClose, onReport }: {
-  slide: StorySlide; at: number; of: number; month: string; onNext: () => void; onBack: () => void; onClose: () => void; onReport?: () => void;
+/** One story slide's frame: progress bars on top, a colour wash, one huge number that rises in, its line, then Back and Next. */
+export function StoryFrame({ g, title, at, of, big, say, wordy, road, extra, onNext, onBack, onClose }: {
+  g: string; title: string; at: number; of: number; big: string; say: ReactNode; wordy?: boolean; road?: boolean; extra?: ReactNode; onNext: () => void; onBack: () => void; onClose: () => void;
 }) {
-  const look = LOOK[slide.kind];
   const last = at === of - 1;
   return (
-    <div className="yu-st" style={{ '--g': look.g } as CSSProperties}>
+    <div className="yu-st" style={{ '--g': g } as CSSProperties}>
+      {road && <svg className="yu-st-road" key={`r${at}`} viewBox="0 0 400 220" preserveAspectRatio="none" aria-hidden="true"><path d="M-10 200 C80 120 120 190 200 120 S320 40 410 20" pathLength={1} /></svg>}
       <div className="yu-st-bars" aria-hidden="true">{Array.from({ length: of }, (_, n) => <i key={n} className={n <= at ? 'on' : undefined} />)}</div>
       <div className="yu-st-top">
-        <h1>{look.title(month)}</h1>
+        <h1>{title}</h1>
         <span>{at + 1} of {of}</span>
         <button type="button" className="yu-st-x" onClick={onClose} aria-label="Close the story"><Icon name="close" size={22} stroke={2.4} /></button>
       </div>
       <div className="yu-st-b" key={at} aria-live="polite">
-        <p className="yu-st-n"><b className={slide.kind === 'next' ? 'w' : undefined}><Big text={slide.big} /></b><span className="yu-st-say">{slide.say}</span></p>
-        <Extra slide={slide} month={month} onReport={onReport} />
+        <p className="yu-st-n"><b className={wordy ? 'w' : undefined}><Big text={big} /></b><span className="yu-st-say">{say}</span></p>
+        {extra}
       </div>
       <div className="yu-st-nav">
         {at > 0 ? <button type="button" onClick={onBack}><Icon name="left" size={20} stroke={2.4} />Back</button> : <span />}
@@ -97,4 +94,12 @@ export function StorySlideView({ slide, at, of, month, onNext, onBack, onClose, 
       </div>
     </div>
   );
+}
+
+/** The month's story, one slide at a time. */
+export function StorySlideView({ slide, at, of, month, onNext, onBack, onClose, onReport }: {
+  slide: StorySlide; at: number; of: number; month: string; onNext: () => void; onBack: () => void; onClose: () => void; onReport?: () => void;
+}) {
+  const look = LOOK[slide.kind];
+  return <StoryFrame g={look.g} title={look.title(month)} at={at} of={of} big={slide.big} say={slide.say} wordy={slide.kind === 'next'} extra={<Extra slide={slide} month={month} onReport={onReport} />} onNext={onNext} onBack={onBack} onClose={onClose} />;
 }

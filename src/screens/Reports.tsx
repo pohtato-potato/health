@@ -1,18 +1,17 @@
 import { caughtShare, pledgeOutcome } from '../domain/pledge';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 import { achievementById } from '../domain/achievements';
 import { addDays, type DayKey } from '../domain/dates';
-import { fmt1, fmtDayMonth, fmtDuration, fmtInt, lowerFirst } from '../domain/format';
-import { WEEKDAY_NAMES } from '../domain/insights';
 import { findExercise } from '../domain/plan';
 import { monthName, monthRange, periodStats, type PeriodStats } from '../domain/period';
 import { ROUTE } from '../domain/walk';
 import { db } from '../db/db';
 import { useAllDays, useAllEntries, useAllSets, useMeasurements, useSessions, useSettings, useToday } from '../db/hooks';
 import { back, go, useRoute } from '../router';
-import { Icon } from '../ui/Icon';
 import { journeyStart } from './Journey';
+import { StoryFrame } from './you/StorySlide';
+import { wrappedSlides } from './you/wrappedSlides';
 
 function usePeriod(from: DayKey | undefined, to: DayKey | undefined): PeriodStats | undefined {
   const settings = useSettings();
@@ -68,102 +67,12 @@ function JourneyWrapped() {
   const dayMap = new Map((days ?? []).map((d) => [d.date, d]));
   const settled = (days ?? []).filter((d) => d.date >= s.from && d.date < s.to).map((d) => pledgeOutcome(d, dayMap.get(addDays(d.date, 1)))).filter((o) => o === 'kept' || o === 'missed');
   const kept = { n: settled.length, yes: settled.filter((o) => o === 'kept').length };
-  const cards: { bg: string; ink: string; kicker: string; big: ReactNode; body?: ReactNode }[] = [
-    { bg: 'linear-gradient(160deg,#3b1f5e,#8a2f6b)', ink: '#ffe3f1', kicker: `${title}, wrapped`, big: `${s.logged} days`, body: `logged between ${fmtDayMonth(s.from)} and ${fmtDayMonth(s.to)}.` },
-    {
-      bg: 'linear-gradient(160deg,#12443a,#2f8a63)',
-      ink: '#dcfff0',
-      kicker: 'You walked',
-      big: `${fmtInt(s.km)} km`,
-      body: `${fmtInt(s.steps)} steps${place ? `: about Delhi to ${place.name}` : ''}${laps ? `, or ${fmtInt(laps)} laps of home` : ''}.`,
-    },
-    {
-      bg: 'linear-gradient(160deg,#5e2f12,#c2622f)',
-      ink: '#fff0e3',
-      kicker: 'Your top foods',
-      big: s.topFoods[0]?.name ?? 'Still to come',
-      body: s.topFoods.length ? (
-        <ol style={{ margin: 0, paddingLeft: 20 }}>
-          {s.topFoods.map((f) => (
-            <li key={f.name}>
-              {f.name} <span style={{ opacity: 0.7 }}>· {f.n}×</span>
-            </li>
-          ))}
-        </ol>
-      ) : undefined,
-    },
-    { bg: 'linear-gradient(160deg,#16244f,#3a5bb5)', ink: '#e3ecff', kicker: 'You slept', big: s.sleepAvg ? `${fmtDuration(Math.round(s.sleepAvg))}` : '—', body: s.bestNight ? `a night on average. The longest: ${fmtDuration(s.bestNight.minutes)}, on ${fmtDayMonth(s.bestNight.date)}.` : undefined },
-    ...(caught.answered
-      ? [{ bg: 'linear-gradient(160deg,#0b0f22,#3a5b8a)', ink: '#e3f0ff', kicker: 'Caught the window', big: `${caught.yes} of ${caught.answered}`, body: `mornings you said you went to bed when sleepy.${kept.n ? ` Lights-out pledges kept: ${kept.yes} of ${kept.n}.` : ''}` }]
-      : []),
-    {
-      bg: 'linear-gradient(160deg,#3d3212,#9c7c2a)',
-      ink: '#fff6dc',
-      kicker: 'You trained',
-      big: `${s.sessions} sessions`,
-      body: `${fmtInt(s.kgMoved)} kg moved over ${fmtInt(s.sets)} sets.${s.records.length ? ` Records on ${s.records.map(lowerFirst).join(', ')}.` : ''}`,
-    },
-    {
-      bg: 'linear-gradient(160deg,#2d2150,#6b55b5)',
-      ink: '#efe8ff',
-      kicker: 'Perfect days',
-      big: String(s.perfect),
-      body: `all the rings closed.${s.busiestWeekday !== undefined ? ` ${WEEKDAY_NAMES[s.busiestWeekday]} were your busiest days on foot.` : ''}`,
-    },
-    ...(names.length
-      ? [{ bg: 'linear-gradient(160deg,#1f3a44,#4a8a9c)', ink: '#e3f8ff', kicker: 'Unlocked', big: `${names.length} achievement${names.length === 1 ? '' : 's'}`, body: names.slice(0, 6).join(' · ') + (names.length > 6 ? ` and ${names.length - 6} more` : '') }]
-      : []),
-    ...(s.trendStart !== undefined && s.trendEnd !== undefined
-      ? [{ bg: 'linear-gradient(160deg,#20262f,#4a5566)', ink: '#eef2f6', kicker: 'The trend', big: `${s.trendEnd <= s.trendStart ? '−' : '+'}${fmt1(Math.abs(s.trendEnd - s.trendStart))} kg`, body: s.waistStart !== undefined && s.waistEnd !== undefined ? `and ${fmt1(Math.abs(s.waistEnd - s.waistStart))} in ${s.waistEnd <= s.waistStart ? 'off' : 'on'} the waist.` : undefined }]
-      : []),
-  ];
-
-  const c = cards[Math.min(i, cards.length - 1)];
-  const last = i >= cards.length - 1;
+  const slides = wrappedSlides(s, { title, place: place?.name, laps, names, caught, kept });
+  const at = Math.min(i, slides.length - 1);
+  const c = slides[at];
   return (
-    <div className="film wrapped-story" style={{ background: c.bg, color: c.ink }} onClick={() => (last ? undefined : setI(i + 1))}>
-      <div className="film-bars" aria-hidden="true">
-        {cards.map((_, k) => (
-          <i key={k} className={k <= i ? 'on' : undefined} />
-        ))}
-      </div>
-      <button
-        type="button"
-        className="icon-btn film-close"
-        aria-label="Close"
-        onClick={(e) => {
-          e.stopPropagation();
-          back('/journey');
-        }}
-      >
-        <Icon name="close" size={22} />
-      </button>
-      <div className="film-body" aria-live="polite">
-        <div className="w-k">{c.kicker}</div>
-        <div className="w-big">{c.big}</div>
-        {c.body && <div className="w-body">{c.body}</div>}
-      </div>
-      {last ? (
-        <div className="col gap8 film-foot">
-          <div className="t13 center lh" style={{ opacity: 0.8 }}>
-            {year ? 'Every day since the start, in one place.' : `See you in ${monthName(addDays(mTo0, 1).slice(0, 7))}.`}
-          </div>
-          <button
-            type="button"
-            className="btn ghost block"
-            onClick={(e) => {
-              e.stopPropagation();
-              setI(0);
-            }}
-          >
-            Again
-          </button>
-        </div>
-      ) : (
-        <div className="t12 film-foot center" style={{ opacity: 0.7 }}>
-          Tap for the next one
-        </div>
-      )}
-    </div>
+    <StoryFrame g={c.g} title={c.title} at={at} of={slides.length} big={c.big} say={c.say} wordy={c.wordy} road={c.road}
+      extra={c.chips?.length ? <div className="yu-st-chips">{c.chips.map((x) => <span key={x}>{x}</span>)}</div> : undefined}
+      onNext={() => setI(at + 1)} onBack={() => setI(at - 1)} onClose={() => back('/journey')} />
   );
 }

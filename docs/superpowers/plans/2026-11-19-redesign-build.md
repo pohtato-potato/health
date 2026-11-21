@@ -193,7 +193,7 @@ Every screen task below follows these steps; one part is one tab and one PR. A r
 | 5.10 | `y9-settings` Settings | W9 | `src/screens/Settings.tsx` | grouped lists; each row icon has a label |
 | 5.11 | `p5-reports` Reports, a living month | W5 | `src/screens/reports/ReportsHome.tsx`, `MonthPage.tsx` | the week poster, then the month calendar |
 | 5.12 | `p5-earned` Earned, the case | W5 | `src/screens/Earned.tsx`, `src/screens/earned/TrophyShelf.tsx` | each trophy named |
-| 5.13 | `w7-wrapped` Wrapped | W7 | find with `grep -rln "Wrapped" src/screens --include=*.tsx` (outside football) | progress bars on top; one slide at a time |
+| 5.13 | `w7-wrapped` Wrapped | W7 | `src/screens/Reports.tsx` (`JourneyWrapped`, at `/wrapped?all=1`; `walk/RoadSoFar.tsx` is the Walk page titled Wrapped that links to it) | progress bars on top; one slide at a time |
 | 5.14 | `o23-year` The year | 23 | `src/screens/Year.tsx` | months as tiles; empty months show "·" not 0 |
 | 5.15 | `o23-ach` Achievements wall | 23 | `src/screens/AchievementsPage.tsx` | one cell per achievement; the earned count as text |
 | 5.16 | `o23-check` Checkup | 23 | `src/screens/DataPages.tsx` | all clear: the line says what was checked |

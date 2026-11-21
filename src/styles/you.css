@@ -618,3 +618,8 @@ html.contrast .ck-m, html.contrast .ck-line, html.contrast .ci-k.ck-page .card {
 .cs-m b { font: 700 14px/1.2 var(--sans); color: #fff; overflow-wrap: anywhere; }
 .cs-m span { font: 500 14px var(--sans); color: #c9c1d8; }
 .cs-m.locked b { color: #d2cbe0; }
+
+/* Wrapped (board W7): the road draws itself behind the big number. */
+@keyframes yu-st-draw { from { stroke-dashoffset: 620; } to { stroke-dashoffset: 0; } }
+.yu-st-road { position: absolute; left: 0; right: 0; bottom: 18%; width: 100%; height: 38%; pointer-events: none; }
+.yu-st-road path { fill: none; stroke: rgba(255, 255, 255, .32); stroke-width: 8; stroke-linecap: round; stroke-dasharray: 620; animation: yu-st-draw 1.8s ease-out both; }
