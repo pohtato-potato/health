@@ -91,8 +91,9 @@ describe('Events', () => {
     const ms = [1, 2].map((d) => ({ ...base, id: `wc${d}`, date: `2026-12-1${d}`, comp: 'friendly' as const, round: `World Cup, day ${d} of 7` }));
     const out = html(<Events event={{ id: 'worldcup', days: 7 }} matches={ms} />);
     expect(out).toContain('World Cup');
-    const rows = out.match(/<li class="fb-evrow">.*?<\/li>/g)!;
+    const rows = out.match(/<li class="ev23-n done".*?<\/li>/g)!;
     expect(rows).toHaveLength(2);
-    for (const [i, r] of rows.entries()) expect(r).toMatch(new RegExp(`fb-evlabel">Day ${i + 1} of 7</b><span class="fb-evtext">[^<]+\\d–\\d[^<]+</span><span class="fb-res c r-[WDL]"`));
+    for (const [i, r] of rows.entries()) expect(r).toMatch(new RegExp(`<b>Day ${i + 1} of 7</b><small>[^<]+\\d–\\d[^<]+</small></span><span class="fb-res c r-[WDL]"`));
+    expect(out.match(/class="ev23-n/g)).toHaveLength(7);
   });
 });

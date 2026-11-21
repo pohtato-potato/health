@@ -11,20 +11,28 @@ export function eventRows(matches: StoredMatch[]): { label: string; text: string
     .map((m) => ({ id: m.id, label: (m.round ?? '').replace(/^.*, (day \d+ of \d+)$/, (_, d: string) => d.replace(/^d/, 'D')), text: scoreLine(m), result: m.result }));
 }
 
+/** Event nights (board 23, m23-events): a glowing timeline, one night per day of the event in order. Played nights
+ *  carry what happened and the result; the next one is marked; the rest wait. After the event, its played nights. */
 export function Events({ event, matches }: { event?: { id: EventId; days: number }; matches: StoredMatch[] }) {
   const rows = eventRows(matches);
   if (!event && !rows.length) return null;
   const name = event ? EVENTS[event.id].name : (matches.find((m) => m.round)?.round ?? '').replace(/, day.*$/, '');
+  const days = event ? event.days : rows.length;
   return (
-    <section className="fb-card pu fb-events" aria-label={name || 'Event nights'}>
-      <div className="fb-row"><span className="fb-lb">{name || 'Event nights'}</span>{event && <span className="fb-s">{rows.length} of {event.days} played</span>}</div>
-      {rows.length ? (
-        <ol className="fb-evrows">
-          {rows.map((r) => (
-            <li key={r.id} className="fb-evrow"><b className="fb-evlabel">{r.label}</b><span className="fb-evtext">{r.text}</span><ResultMark r={r.result} /></li>
-          ))}
-        </ol>
-      ) : <p className="fb-s">The first event night is the night after the season’s last day.</p>}
+    <section className="ev23" aria-label={name || 'Event nights'}>
+      <div className="fb-row"><span className="ev23-h">{name || 'Event nights'}</span>{event && <span className="fb-s">{Math.min(rows.length, days)} of {days} played</span>}</div>
+      <ol className="ev23-tl">
+        {Array.from({ length: days }, (_, k) => {
+          const r = rows[k];
+          const st = r ? 'done' : k === rows.length ? 'next' : 'wait';
+          return (
+            <li key={k} className={`ev23-n ${st}`} style={{ '--d': `${k * 0.12}s` } as React.CSSProperties}>
+              <span><b>{r?.label || `Day ${k + 1} of ${days}`}</b><small>{r ? r.text : st === 'next' ? (k === 0 ? 'The night after the season’s last day' : 'Next') : 'To come'}</small></span>
+              {r && <ResultMark r={r.result} />}
+            </li>
+          );
+        })}
+      </ol>
     </section>
   );
 }
