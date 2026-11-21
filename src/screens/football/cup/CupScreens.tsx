@@ -188,10 +188,43 @@ export function CupsPage() {
 }
 const safeName = (id: string) => { try { return clubById(id).name; } catch { return id; } };
 
+/** One won cup (board 23, u23-one): the day it was won, a W tile for every win, the score, the stops cleared, the
+ *  biggest win and the cards played, then the moves that landed as bars, most first. From the best winning run. */
+export function WonRun({ d }: { d: CupDone }) {
+  const st = d.stats;
+  const moves = Object.entries(st.combos).sort((a, b) => b[1] - a[1]);
+  const top = moves[0]?.[1] ?? 1;
+  return (
+    <section className="one23" aria-label="Your winning run">
+      <span className="won23">Won · {dayShort(d.date)}</span>
+      <div className="wl23" role="img" aria-label={`${st.played} played, ${st.won} won`}>
+        {Array.from({ length: st.won }, (_, k) => <i key={k} style={{ '--d': `${0.4 + Math.min(k, 14) * 0.08}s` } as CSSProperties}>W</i>)}
+      </div>
+      <div className="rec-23">
+        <div><b className="fb-num">{st.goalsFor}–{st.goalsAgainst}</b><span>{st.goalsAgainst ? 'for and against' : 'for and against: not one conceded'}</span></div>
+        <div><b className="fb-num">{d.stopsCleared} of {d.stops}</b><span>stops on the map cleared</span></div>
+        {st.biggest && <div><b className="fb-num">{st.biggest.for}–{st.biggest.against}</b><span>biggest: {st.biggest.club}</span></div>}
+        <div><b className="fb-num">{st.cards}</b><span>cards played</span></div>
+      </div>
+      {moves.length > 0 && (
+        <>
+          <h3 className="cup-h3">The moves that landed</h3>
+          <ul className="cmb23">
+            {moves.map(([n, v], k) => (
+              <li key={n}><span className="cmb-n">{n}</span><i aria-hidden="true" style={{ '--w': `${(v / top) * 100}%`, '--d': `${0.3 + k * 0.08}s` } as CSSProperties} /><em>{v}</em></li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
+  );
+}
+
 /** /football/cup?n=…: one cup's page. Its trophy leads; its twist, your record there, and the deck your week deals. */
 export function CupPage({ n }: { n: number }) {
   const run = useLiveQuery(async () => (await loadRun()) ?? null, []);
   const book = useLiveQuery(loadBook, []);
+  const best = useLiveQuery(async () => (await db.cupDone.where('date').above('').toArray()).filter((x) => x.cup === n && x.result === 'won').sort((a, b) => b.stats.goalsFor - b.stats.goalsAgainst - (a.stats.goalsFor - a.stats.goalsAgainst))[0] ?? null, [n]);
   const [deal, setDeal] = useState<Deal | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -215,6 +248,7 @@ export function CupPage({ n }: { n: number }) {
         <Trophy kind={c.silver} colour={c.colour} size={120} label={c.name} />
         <p className="cup-under cup-centre">{c.n} of {CUPS.length} · {twistLine(c.twist, c.n > 1)}</p>
       </div>
+      {best && <WonRun d={best} />}
       {(r || c.note) && (
         <Panel ink={c.colour}>
           {r && <><b className="k-lb">Your record here</b><span>{r}</span></>}

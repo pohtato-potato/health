@@ -394,3 +394,19 @@ html.contrast .cr20 small, html.contrast .cup-h3 { color: #fff; }
 .sl-23.nx small { padding: 1px 8px; border-radius: 6px; background: var(--c); color: #140d08; }
 html.contrast .sl-23.lk .nm, html.contrast .sl-23.lk small { color: #fff; }
 .shelf-23 > li { display: flex; } .shelf-23 .sl-23 { flex: 1; } .sl-23 small { margin-top: auto; }
+
+/* One won cup (board 23, u23-one): W tiles, the record tiles, the moves as bars. */
+.one23 { display: flex; flex-direction: column; gap: 12px; margin: 10px 0; }
+.won23 { align-self: center; padding: 4px 14px; border-radius: 999px; background: var(--cup, #e9a46a); color: #1a0f08; font: 700 15px var(--sans); animation: one23-pop .6s .4s cubic-bezier(.34, 1.56, .64, 1) both; }
+.wl23 { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
+.wl23 i { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: #5fe3a1; color: #0b1022; font: 700 14px var(--sans); font-style: normal; animation: one23-pop .4s var(--d) cubic-bezier(.34, 1.56, .64, 1) both; }
+.rec-23 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.rec-23 > div { padding: 10px 12px; border-radius: 16px; background: rgba(255, 230, 200, .08); }
+.rec-23 b { display: block; font: 700 30px/1 var(--fb-cond); color: #ffb35c; }
+.rec-23 span { font: 700 14px/1.3 var(--sans); color: #f6e7d6; overflow-wrap: anywhere; }
+.cmb23 { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.cmb23 li { display: grid; grid-template-columns: 118px minmax(0, 1fr) 34px; gap: 8px; align-items: center; font: 700 14px var(--sans); color: #f6e7d6; }
+.cmb23 i { height: 14px; border-radius: 7px; background: linear-gradient(90deg, var(--cup, #e9a46a), #ffd9a8); width: var(--w); transform-origin: left; animation: one23-grow .9s var(--d) cubic-bezier(.16, 1, .3, 1) both; }
+.cmb23 em { font-style: normal; text-align: right; color: #ffd9a8; }
+@keyframes one23-pop { from { opacity: 0; transform: scale(.4); } }
+@keyframes one23-grow { from { transform: scaleX(0); } }
