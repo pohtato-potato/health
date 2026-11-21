@@ -419,3 +419,41 @@ html.contrast .yu-st { background: #000; color: #fff; }
 html.contrast .yu-st-x, html.contrast .yu-st-nav button { color: #fff; border-color: #fff; }
 html.contrast .yu-st-nav button.on, html.contrast .yu-st-go, html.contrast .yu-st-chips span { background: #fff; color: #000; }
 html.contrast .yu-st-bars i.on { background: #fff; }
+
+/* y8-body · The monthly check-in (board W8): the green ground and the yellow tape. Only the tape moves, to the number. */
+.rg-ground:has(+ .ck-page) { display: none; }
+.ck-page { --act: #5fe3a1; --act-ink: #0b1614; min-height: 100dvh; background: radial-gradient(80% 40% at 50% 0%, rgba(95,227,161,.28), transparent 70%), #0b1614; }
+.ck-title { flex: 1; margin: 0; text-align: center; font-family: var(--serif); font-weight: 600; font-size: 22px; color: #fff; }
+.ck-st { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.ck-st li { display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 700; color: #9ff0c8; }
+.ck-st li i { height: 6px; border-radius: 3px; background: rgba(159,240,200,.2); }
+.ck-st li.on i { background: #5fe3a1; box-shadow: 0 0 8px #5fe3a1; }
+.ck-st li.now { color: #ffe08a; } .ck-st li.now i { background: #ffc94d; }
+.ck-page .h1 { color: #fff; }
+.ci-k.ck-page .card { background: #13261f; border: 2px solid rgba(95,227,161,.45); box-shadow: none; }
+.ck-page .seg button.on { background: #5fe3a1; color: #0b1614; }
+.ck-m { border-radius: 18px; padding: 12px; background: #13261f; border: 2px solid rgba(95,227,161,.45); display: flex; flex-direction: column; gap: 8px; }
+.ck-m-h { font-size: 15px; font-weight: 700; color: #c9f5df; }
+.ck-m .num input { color: #fff; font-weight: 600 !important; }
+.ck-m .num > span:not(.sr) { font-size: 15px !important; font-weight: 700; color: #9ff0c8 !important; }
+.ck-m .round { border-color: #5fe3a1; color: #fff; }
+.ck-m-lt { font-size: 14px; color: #9ff0c8; }
+.ck-tape { position: relative; height: 40px; border-radius: 10px; background: #f5d76e; overflow: hidden; }
+.ck-tape span { position: absolute; inset: 0 -100px; transform: translateX(var(--x)); transition: transform .5s cubic-bezier(.3,.7,.3,1);
+  background: repeating-linear-gradient(90deg, #3a2a06 0 2px, transparent 2px 10px) 0 0/100% 35% no-repeat, repeating-linear-gradient(90deg, #3a2a06 0 2px, transparent 2px 50px) 0 0/100% 65% no-repeat; }
+.ck-tape::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 3px; background: #ff6f7f; }
+.ck-ratio { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 18px; background: #ffc94d; color: #0b1614; }
+.ck-ratio b { font-family: var(--serif); font-weight: 600; font-size: 40px; line-height: 1; }
+.ck-ratio span { font-size: 15px; font-weight: 700; line-height: 1.35; }
+.ck-tee { display: flex; flex-direction: column; gap: 6px; }
+.ck-tee-h { display: flex; justify-content: space-between; gap: 8px; font-size: 15px; font-weight: 700; color: #fff; }
+.ck-tee-h span { color: #9ff0c8; font-weight: 400; }
+.ck-tee-d { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.ck-tee-d button { min-height: 44px; aspect-ratio: 1; max-width: 52px; width: 100%; justify-self: center; border-radius: 50%; border: 2px solid #5fe3a1; background: none; color: #fff; font: inherit; font-size: 16px; font-weight: 700; }
+.ck-tee-d button[aria-pressed='true'] { background: #5fe3a1; color: #0b1614; box-shadow: 0 0 14px #5fe3a1; }
+.ck-line { border-radius: 18px; padding: 14px; background: linear-gradient(120deg, #2a1a5e, #13261f); border: 2px dashed #ffc94d; display: flex; flex-direction: column; gap: 6px; }
+.ck-line b { font-family: var(--serif); font-weight: 600; font-size: 20px; color: #fff; }
+.ck-line input { min-height: 48px; padding: 0 12px; border-radius: 12px; border: 0; background: rgba(0,0,0,.3); color: #ffe08a; font: inherit; font-size: 16px; }
+.ck-line span { font-size: 14px; color: #d9ccff; }
+html.contrast .ck-page { background: #000; }
+html.contrast .ck-m, html.contrast .ck-line, html.contrast .ci-k.ck-page .card { background: #111; border-color: #fff; }

@@ -184,7 +184,7 @@ Every screen task below follows these steps; one part is one tab and one PR. A r
 | 5.1 | `y6-deck` Today's lift | W6 | `src/screens/you/TodaysLift.tsx` | nine cards; each reachable by a button, not only a swipe |
 | 5.2 | `y7-insights` Insights | W7 | `src/screens/Insights.tsx`, `src/screens/insights/Ask.tsx` | the answer leads with the plain sentence |
 | 5.3 | `y8-story` The month's story | W8 | `src/screens/MonthlyFilm.tsx` | nine slides you tap through |
-| 5.4 | `y8-body` Body check-in | W8 | `src/screens/BodyLog.tsx` | four steps in order |
+| 5.4 | `y8-body` Body check-in | W8 | `src/screens/CheckIn.tsx`, `src/screens/checkin/Parts.tsx` (the plan said `BodyLog.tsx`, which is the aches log) | four steps in order |
 | 5.5 | `y9-char` Character | W9 | `src/screens/Character.tsx` | the worn title as text; each reward works once unlocked (its open note) |
 | 5.6 | `y9-diary` Diary | W9 | find with `grep -rln "Diary" src/screens` | the run strip, then each day |
 | 5.7 | `y9-exp` Experiments | W9 | find with `grep -rln "xperiment" src/screens` | a running experiment in its card |

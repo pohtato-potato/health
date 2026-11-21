@@ -12,15 +12,15 @@ import { patchSettings } from '../db/actions';
 import { db, uid } from '../db/db';
 import { useAllDays, useSettings } from '../db/hooks';
 import { go } from '../router';
-import { Stepper } from '../ui/controls';
 import { Icon } from '../ui/Icon';
 import { useToast } from '../ui/Toasts';
 import { saveFullBackup } from '../db/fullBackup';
 import { askConfirm } from '../ui/Confirm';
 import { flipFor, TORSO_GUIDES } from '../checkin/framing';
+import { CheckSteps, RatioCard, TapeCard, TeeRow, type CheckStep } from './checkin/Parts';
 
 type Shot = { blob: Blob; width: number; height: number };
-type Step = 'photos' | 'tape' | 'tshirt' | 'result';
+type Step = CheckStep;
 const POSES: Pose[] = ['front', 'side', 'back'];
 const POSE_NAME: Record<Pose, string> = { front: 'Front', side: 'Side', back: 'Back', tshirt: 'T-shirt' };
 const QUESTIONS: { id: 'shoulders' | 'arms' | 'stomach'; label: string }[] = [
@@ -65,12 +65,11 @@ export function CheckInScreen() {
   const [saved, setSaved] = useState<CheckIn | null>(null);
   const started = useRef(Date.now());
 
-  if (!settings || !days || !last) return <RegionFrame className="bare ci-k" />;
+  if (!settings || !days || !last) return <RegionFrame className="bare ci-k ck-page" />;
   const std = standing ?? last.lastWaist?.waistStanding ?? 36;
   const rel = relaxed ?? last.lastRelaxed?.waistRelaxed ?? std + 1;
   const sl = slouched ?? last.lastSlouch?.waistSlouched ?? std + 1.5;
   const sh = shoulders ?? last.lastShoulders?.shoulders ?? 46;
-  const stepNo = { photos: 1, tape: 2, tshirt: 3, result: 5 }[step];
 
   const save = async () => {
     const id = uid();
@@ -102,18 +101,17 @@ export function CheckInScreen() {
       >
         <Icon name="close" size={20} stroke={1.8} />
       </button>
-      <div className="lbl">
-        Check-in · {step === 'tshirt' ? '3 and 4' : stepNo} of 5
-      </div>
+      <h1 className="ck-title">Body check-in</h1>
       <div style={{ width: 44 }} />
     </div>
   );
+  const top = <>{header}<CheckSteps at={step} /></>;
 
   if (step === 'photos') {
     const done = POSES.filter((p) => shots[p]).length;
     return (
-      <RegionFrame className="bare ci-k" style={{ gap: 14, paddingTop: 'calc(12px + var(--safe-top))' }}>
-        {header}
+      <RegionFrame className="bare ci-k ck-page" style={{ gap: 14, paddingTop: 'calc(12px + var(--safe-top))' }}>
+        {top}
         <h1 className="h1">Photos</h1>
         <div className="seg" role="tablist">
           {POSES.map((p) => (
@@ -150,8 +148,8 @@ export function CheckInScreen() {
 
   if (step === 'tape') {
     return (
-      <RegionFrame className="bare ci-k" style={{ gap: 16, paddingTop: 'calc(12px + var(--safe-top))' }}>
-        {header}
+      <RegionFrame className="bare ci-k ck-page" style={{ gap: 16, paddingTop: 'calc(12px + var(--safe-top))' }}>
+        {top}
         <h1 className="h1">Tape measure</h1>
         <div className="card" style={{ gap: 6 }}>
           <div className="t14 lh">
@@ -161,16 +159,11 @@ export function CheckInScreen() {
             <b style={{ fontWeight: 500 }}>Shoulders:</b> <span className="q">around the widest point, arms relaxed.</span>
           </div>
         </div>
-        <Measure label="Waist, relaxed" hint={last.lastRelaxed ? `Last time ${last.lastRelaxed.waistRelaxed} · stand normally, breathe out, don't pull in` : "Stand normally, breathe out, don't pull in"} value={rel} onChange={setRelaxed} />
-        <Measure label="Waist, stomach tucked" hint={last.lastWaist ? `Last time ${last.lastWaist.waistStanding}` : 'First reading'} value={std} onChange={setStanding} />
-        <Measure label="Waist, slouched" hint={last.lastSlouch ? `Last time ${last.lastSlouch.waistSlouched} · the gap tracks posture` : 'The gap from standing tracks posture'} value={sl} onChange={setSlouched} />
-        <Measure label="Shoulders" hint={last.lastShoulders ? `Last time ${last.lastShoulders.shoulders}` : 'First reading'} value={sh} onChange={setShoulders} />
-        <div className="row card" style={{ flexDirection: 'row' }}>
-          <span className="t15">Shoulder-to-waist</span>
-          <span className="num" style={{ fontSize: 26 }}>
-            {(sh / std).toFixed(2)}
-          </span>
-        </div>
+        <TapeCard label="Waist, relaxed" hint={last.lastRelaxed ? `Last time ${last.lastRelaxed.waistRelaxed} · stand normally, breathe out, don't pull in` : "Stand normally, breathe out, don't pull in"} value={rel} onChange={setRelaxed} />
+        <TapeCard label="Waist, stomach tucked" hint={last.lastWaist ? `Last time ${last.lastWaist.waistStanding}` : 'First reading'} value={std} onChange={setStanding} />
+        <TapeCard label="Waist, slouched" hint={last.lastSlouch ? `Last time ${last.lastSlouch.waistSlouched} · the gap tracks posture` : 'The gap from standing tracks posture'} value={sl} onChange={setSlouched} />
+        <TapeCard label="Shoulders" hint={last.lastShoulders ? `Last time ${last.lastShoulders.shoulders}` : 'First reading'} value={sh} onChange={setShoulders} />
+        <RatioCard ratio={sh / std} was={last.lastShoulders && last.lastWaist ? last.lastShoulders.shoulders! / last.lastWaist.waistStanding! : undefined} />
         <button type="button" className="btn lg block" onClick={() => setStep('tshirt')}>
           Next: t-shirt test
         </button>
@@ -181,8 +174,8 @@ export function CheckInScreen() {
   if (step === 'tshirt') {
     const lastTee = last.last?.tshirt;
     return (
-      <RegionFrame className="bare ci-k" style={{ gap: 16, paddingTop: 'calc(12px + var(--safe-top))' }}>
-        {header}
+      <RegionFrame className="bare ci-k ck-page" style={{ gap: 16, paddingTop: 'calc(12px + var(--safe-top))' }}>
+        {top}
         <h1 className="h1">T-shirt test and your line</h1>
         <Capture
           pose="tshirt"
@@ -194,28 +187,14 @@ export function CheckInScreen() {
           onRetake={() => setShots((x) => ({ ...x, tshirt: undefined }))}
         />
         <div className="t13 q lh">The same fitted t-shirt every month, so the only thing that changes is you.</div>
-        {QUESTIONS.map((q) => (
-          <div key={q.id} className="col gap8">
-            <div className="row base">
-              <span className="t15">{q.label}</span>
-              {lastTee && <span className="t12 q">last time {lastTee[q.id]}</span>}
-            </div>
-            <div className="row">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <button key={n} type="button" className={`round${tee[q.id] === n ? ' on' : ''}`} onClick={() => setTee((t) => ({ ...t, [q.id]: n }))}>
-                  {n}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-        <label className="flabel">
-          <span className="lbl">One line for reveal day</span>
-          <input className="field" value={line} onChange={(e) => setLine(e.target.value)} placeholder="How does this month feel?" />
-          <span className="t12 q">Sealed until {settings.goalDate ? fmtDayMonth(settings.goalDate) : 'reveal day'}, then read back in order.</span>
+        {QUESTIONS.map((q) => <TeeRow key={q.id} label={q.label} last={lastTee?.[q.id]} value={tee[q.id]} onPick={(n) => setTee((t) => ({ ...t, [q.id]: n }))} />)}
+        <label className="ck-line">
+          <b>One line for reveal day</b>
+          <input value={line} onChange={(e) => setLine(e.target.value)} placeholder="How does this month feel?" />
+          <span>Sealed until {settings.goalDate ? fmtDayMonth(settings.goalDate) : 'reveal day'}, then read back in order.</span>
         </label>
         <button type="button" className="btn lg block" onClick={save}>
-          See this month's results
+          Seal this month
         </button>
       </RegionFrame>
     );
@@ -241,8 +220,8 @@ export function CheckInScreen() {
   const next = addDays(dayKey(), 30);
 
   return (
-    <RegionFrame className="bare ci-k" style={{ gap: 16, paddingTop: 'calc(12px + var(--safe-top))' }}>
-      {header}
+    <RegionFrame className="bare ci-k ck-page" style={{ gap: 16, paddingTop: 'calc(12px + var(--safe-top))' }}>
+      {top}
       <div className="col gap6">
         <h1 className="h1" style={{ fontSize: 32 }}>
           Check-in complete
@@ -312,18 +291,6 @@ export function CheckInScreen() {
 
 function fmtRatio(d: number): string {
   return `${d > 0 ? '+' : d < 0 ? '−' : '±'}${Math.abs(d).toFixed(2)}`;
-}
-
-function Measure({ label, hint, value, onChange }: { label: string; hint: string; value: number; onChange: (v: number) => void }) {
-  return (
-    <div className="col gap8">
-      <div className="row base">
-        <span className="lbl pearl">{label}</span>
-        <span className="t12 q">{hint}</span>
-      </div>
-      <Stepper value={value} onChange={onChange} step={0.1} min={20} max={70} decimals={1} unit="in" size={34} label={label} />
-    </div>
-  );
 }
 
 export function Thumb({ id, label }: { id: string; label?: string }) {
