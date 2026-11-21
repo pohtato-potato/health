@@ -119,6 +119,29 @@ export function CupsWon({ done }: { done: CupDone[] }) {
   );
 }
 
+/** The cabinet (board 23, u23-cab): the twelve cups on a wooden shelf. Won ones glow; the one you are on is tagged
+ *  Next; the rest are dimmed and say Locked. Open cups open their page. */
+export function Cabinet({ book, open, onPick }: { book: CupBook; open: number; onPick: (n: number) => void }) {
+  return (
+    <ol className="shelf-23" aria-label="The twelve cups">
+      {CUPS.map((c, k) => {
+        const won = (book.cups[c.n]?.won ?? 0) > 0;
+        const st = won ? 'won' : c.n === open ? 'nx' : c.n < open ? 'op' : 'lk';
+        const word = won ? `Won ${book.cups[c.n]!.won}×` : st === 'nx' ? 'Next' : st === 'op' ? 'Open' : 'Locked';
+        const inner = <><Trophy kind={c.silver} colour={c.colour} size={52} /><span className="nm">{c.name}</span><small>{word}</small></>;
+        const style = { '--c': c.colour, '--d': `${k * 0.05}s` } as CSSProperties;
+        return (
+          <li key={c.n}>
+            {st === 'lk'
+              ? <div className={`sl-23 ${st}`} style={style}>{inner}</div>
+              : <button type="button" className={`sl-23 ${st}`} style={style} onClick={() => onPick(c.n)} aria-label={`${c.name}: ${word}`}>{inner}</button>}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 /** /football/cup: the cabinet. The cup you are on leads; then the twelve cups, then the record book. */
 export function CupsPage() {
   const run = useLiveQuery(async () => (await loadRun()) ?? null, []);
@@ -145,27 +168,7 @@ export function CupsPage() {
       {done && <CupsWon done={done} />}
 
       <Sect>The twelve cups</Sect>
-      <ol className="cup-ladder">
-        {CUPS.map((c) => {
-          const isOpen = c.n <= open;
-          const r = recLine(c, book);
-          const inner = (
-            <span className="cup-opt-l">
-              <Trophy kind={c.silver} colour={c.colour} size={36} />
-              <span className="cup-grow">
-                <b className="k-lb">{c.name}</b><br />
-                <span className="k-q">{isOpen ? (r || (c.n === open ? 'Playing now' : 'Open')) : 'Locked: win the cup before it'}</span>
-              </span>
-            </span>
-          );
-          return (
-            <li key={c.n}>
-              {isOpen ? <Panel ink={c.colour} onClick={() => go('/football/cup', { n: String(c.n) })} label={`${c.name}: ${r || 'open'}`}>{inner}</Panel>
-                : <Panel ink={c.colour} className="cup-shut">{inner}</Panel>}
-            </li>
-          );
-        })}
-      </ol>
+      <Cabinet book={book} open={open} onPick={(n) => go('/football/cup', { n: String(n) })} />
 
       <Sect>The record book</Sect>
       {book.runs === 0 ? <p className="cup-q">Every run counts here, paid or not.</p> : (

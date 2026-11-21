@@ -381,3 +381,16 @@
 .cr20 em { font-style: normal; grid-column: 3; grid-row: 1 / 3; font: 700 26px var(--fb-cond); color: var(--c); text-align: right; }
 .cr20 small { grid-column: 2; grid-row: 2; font: 700 14px/1.3 var(--sans); color: rgba(243, 238, 230, .85); }
 html.contrast .cr20 small, html.contrast .cup-h3 { color: #fff; }
+
+/* The cabinet (board 23, u23-cab): twelve cups on a wooden shelf. */
+.shelf-23 { list-style: none; margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 8px; padding: 12px 10px; border-radius: 20px; background: linear-gradient(180deg, #3a2414, #24160c); box-shadow: inset 0 -6px 0 #5a3820; }
+.sl-23 { position: relative; width: 100%; min-height: 44px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px 2px 8px; border: 0; border-bottom: 6px solid #6a4428; background: none; text-align: center; font: inherit; cursor: pointer; animation: tn21-in .5s var(--d) cubic-bezier(.16, 1, .3, 1) both; }
+.sl-23 .nm { font: 700 14px/1.15 var(--sans); color: #f6e7d6; overflow-wrap: anywhere; }
+.sl-23 small { font: 700 14px var(--sans); color: var(--c); }
+.sl-23.lk { cursor: default; }
+.sl-23.lk .cup-trophy { opacity: .3; filter: grayscale(1) !important; }
+.sl-23.lk .nm, .sl-23.lk small { color: rgba(246, 231, 214, .75); }
+.sl-23.won .cup-trophy { animation: tro23-float 4s ease-in-out infinite; }
+.sl-23.nx small { padding: 1px 8px; border-radius: 6px; background: var(--c); color: #140d08; }
+html.contrast .sl-23.lk .nm, html.contrast .sl-23.lk small { color: #fff; }
+.shelf-23 > li { display: flex; } .shelf-23 .sl-23 { flex: 1; } .sl-23 small { margin-top: auto; }
