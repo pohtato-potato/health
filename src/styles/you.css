@@ -572,3 +572,7 @@ html.contrast .ck-m, html.contrast .ck-line, html.contrast .ci-k.ck-page .card {
 .rv-in b { font: 600 26px/1.05 var(--serif); color: #fff; overflow-wrap: anywhere; }
 .rv-in span { font: 700 14px/1.2 var(--sans); color: var(--c); }
 .rv-sub { margin: 0; text-align: center; font: 500 15px/1.4 var(--sans); color: #d9ccff; }
+
+/* Settings (board W9): kept plain; each row's icon sits in a square of its colour and its value takes that colour. */
+.k-set-ic { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--c); }
+.k-set-row .k-set-v { font-weight: 600; }
