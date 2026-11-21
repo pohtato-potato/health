@@ -651,3 +651,12 @@ html.contrast .ck-m, html.contrast .ck-line, html.contrast .ci-k.ck-page .card {
 .aw-c.s, .aw-k i.s { background: conic-gradient(#ff6fa8, #ffd36b, #5fe3a1, #8fd8ff, #ff6fa8); }
 .aw-k { display: flex; flex-wrap: wrap; gap: 6px 14px; font: 700 14px var(--sans); color: #e6dcef; }
 .aw-k i { display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin-right: 6px; vertical-align: -1px; }
+/* 5.16–5.18 o23-check, o23-hist, o23-snap: the data pages */
+@keyframes dt-draw { to { stroke-dashoffset: 0; } }
+.dc-ok { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px; border-radius: 24px; background: rgba(95,227,161,.12); text-align: center; }
+.dc-ck { width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; background: #5fe3a1; animation: yr-pop .6s cubic-bezier(.34, 1.56, .64, 1) .2s both; }
+.dc-ck svg { width: 44px; height: 44px; }
+.dc-tick { stroke-dasharray: 40; stroke-dashoffset: 40; animation: dt-draw .5s ease-out .7s forwards; }
+.dc-ok b { font: 600 26px/1.1 var(--serif); color: #fff; }
+.dc-ok span { font: 400 15px/1.4 var(--sans); color: #dff7ea; }
+.dc-sub { margin: 0; font: 500 15px/1.4 var(--sans); color: #e6dcef; }

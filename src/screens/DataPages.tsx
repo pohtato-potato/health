@@ -13,6 +13,7 @@ import { back } from '../router';
 import { askConfirm } from '../ui/Confirm';
 import { Icon } from '../ui/Icon';
 import { useToast } from '../ui/Toasts';
+import { AllClear } from './settings/DataParts';
 
 const Frame = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div className="page bare yu-page yu-stack">
@@ -43,7 +44,8 @@ export function Checkup() {
   };
   return (
     <Frame title="Data check-up">
-      {list.length === 0 && <div className="yu-card"><b>Nothing looks off.</b><span className="yu-q">Empty days, double entries, odd weights and steps, open sessions and doses ticked twice all come up clear.</span></div>}
+      <p className="dc-sub">Things in your data that look like slips, each with a fix you can undo.</p>
+      {list.length === 0 && <AllClear />}
       {list.map((f) => (
         <div key={f.id} className="yu-card">
           <span>{f.text}</span>
