@@ -229,3 +229,13 @@ Part 2 left these for the last round. Each needs a design or a data decision bef
 - **Scrapbook pages for screamers, saves and runs (2.49).** Only Giant beaten has a drawn page; the other cards don't open yet. Screamer cards also lack the scorer, which is not stored per chance.
 - **Ratings on Giant beaten (2.50).** The board's "68 to your 34" needs both sides' ratings stored with the match.
 - **Goals on the season pennants (2.51).** Goals scored and let in are not in the season summary; the current pennant shows won–lost so far instead of a live position.
+
+### Added to Task Z from Part 5 (You)
+
+No board pinned these You pages. Each is for triage in Step 1: keep or redesign.
+
+- **The You tab itself (`/you`, `src/screens/You.tsx`).** The doors into every page above; no board drew the hub.
+- **Tracks (`/tracks`, `src/screens/Tracks.tsx`).**
+- **A finished month "on a page" (`/reports/month`, `src/screens/reports/MonthPage.tsx`).** 5.11 rebuilt Reports home and moved this door into Older; the page itself still has its old look.
+- **The muscle page** (`o23-mus` against `t3-body`) stays here, as before.
+- **Diary and Experiments** were dropped, not deferred (5.6 by the owner, 5.7 by ruling); they need nothing here unless the owner reverses 5.7.
