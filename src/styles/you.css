@@ -596,3 +596,25 @@ html.contrast .ck-m, html.contrast .ck-line, html.contrast .ci-k.ck-page .card {
 .lm-fr span { flex: none; padding: 8px 12px; border-radius: 12px; background: rgba(255,255,255,.08); font: 500 14px var(--sans); color: #fff; }
 .lm-fr b { color: #ffc94d; font-weight: 700; }
 .lm-key span { display: inline-flex; align-items: center; gap: 6px; } .lm-key i { width: 14px; height: 14px; border-radius: 4px; }
+
+/* Earned as a case (board W5): count and bar, the newest on a stage with turning light, the medals newest first. */
+@keyframes cs-turn { to { transform: rotate(360deg); } }
+@keyframes cs-in { from { opacity: 0; transform: translateY(8px) scale(.9); } to { opacity: 1; transform: none; } }
+.cs-hd { display: flex; flex-direction: column; gap: 8px; }
+.cs-of { font: 600 18px var(--sans); color: #fff; }
+.cs-bar { height: 10px; border-radius: 5px; background: rgba(255,255,255,.1); overflow: hidden; }
+.cs-bar i { display: block; height: 100%; border-radius: 5px; background: linear-gradient(90deg, #ff9a5c, #ffc94d); }
+.cs-spot { position: relative; overflow: hidden; border-radius: 26px; padding: 22px 16px 18px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; background: radial-gradient(60% 55% at 50% 40%, rgba(255, 201, 77, .22), transparent 70%), linear-gradient(170deg, #2a1d52, #120d24); border: 1px solid rgba(255, 201, 77, .4); }
+.cs-rays { position: absolute; left: 50%; top: 92px; width: 420px; height: 420px; margin: -210px 0 0 -210px; background: repeating-conic-gradient(rgba(255, 216, 120, .14) 0 10deg, transparent 10deg 24deg); animation: cs-turn 24s linear infinite; pointer-events: none; -webkit-mask: radial-gradient(circle, #000 20%, transparent 62%); mask: radial-gradient(circle, #000 20%, transparent 62%); }
+.cs-new { position: relative; font: 700 14px var(--sans); color: #140f22; background: #ffc94d; border-radius: 10px; padding: 2px 10px; }
+.cs-spot .cs-svg { position: relative; filter: drop-shadow(0 10px 18px rgba(0,0,0,.45)); }
+.cs-spot b { position: relative; font: 600 26px/1.1 var(--serif); color: #fff; }
+.cs-spot > span:last-child { position: relative; font: 500 15px/1.35 var(--sans); color: #e6dcef; max-width: 30ch; }
+.cs-ic { display: grid; place-items: center; width: 100%; height: 100%; }
+.cs-k { margin: 6px 0 0; font: 700 17px var(--sans); color: #ffc94d; display: flex; gap: 10px; align-items: baseline; }
+.cs-k span { font: 500 14px var(--sans); color: var(--quiet); }
+.cs-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 8px; }
+.cs-m { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; animation: cs-in .4s calc(min(var(--i), 18) * 40ms) both; }
+.cs-m b { font: 700 14px/1.2 var(--sans); color: #fff; overflow-wrap: anywhere; }
+.cs-m span { font: 500 14px var(--sans); color: #c9c1d8; }
+.cs-m.locked b { color: #d2cbe0; }

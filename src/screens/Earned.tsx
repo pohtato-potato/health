@@ -1,22 +1,25 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useState, type CSSProperties } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import { ACHIEVEMENTS, ACTIVE_ACHIEVEMENTS } from '../domain/achievements';
 import { firsts, milestones, odometers, shelves, type Dated } from '../domain/earned';
 import { fmtDayMonth, fmtInt } from '../domain/format';
 import { availableThemes } from '../domain/themes';
-import { TITLE_DEFS, wornTitle } from '../domain/titles';
+import { TITLE_DEFS } from '../domain/titles';
 import { TITLES } from '../domain/rewards';
 import { pickedTrophies, trophyCandidates } from '../domain/trophies';
 import { db } from '../db/db';
 import { useAllSets, useSightings, useToday } from '../db/hooks';
 import { back, go, useRoute } from '../router';
-import { Door, Doors, Hero, PageHead, Sect, type HowThisWorks } from '../ui/kit/Kit';
+import { Door, Doors, PageHead, Sect, type HowThisWorks } from '../ui/kit/Kit';
 import { ThemeSheet } from '../ui/Theme';
 import { useLevel, useTitleStats } from './Character';
 import { Shelves } from './earned/Shelves';
 import { NewTitle } from './earned/TitlesWall';
 import { Moved } from './reports/Moved';
 import { TrophyShelf } from './earned/TrophyShelf';
+import { EarnedCase } from './earned/EarnedCase';
+import { buildStats } from '../domain/achStats';
+import { useAchInput } from '../state/Achievements';
 
 const GOLD = '#f2c46d';
 
@@ -53,8 +56,10 @@ export function Earned() {
   const achieved = useLiveQuery(() => db.achievements.toArray(), []);
   const stats = useTitleStats(lv);
 
-  const ready = lv && sets && sightings && moments && achieved;
-  if (!ready || !stats) return <div className="page bare k-page k-light you" />;
+  const achInput = useAchInput(today);
+  const ach = useMemo(() => (achInput ? buildStats(achInput) : undefined), [achInput]);
+  const ready = lv && sets && sightings && moments && achieved && ach;
+  if (!ready || !stats || !ach) return <div className="page bare k-page k-light you" />;
   const { settings, days, entries, sessions, unlocked, level } = lv;
   const toEarned = () => back('/earned');
 
@@ -84,7 +89,6 @@ export function Earned() {
     );
   }
 
-  const worn = wornTitle(settings, unlocked, level);
   const titlesHad = TITLE_DEFS.filter((t) => t.rule(stats)).length + TITLES.filter((t) => t.unlocked(unlocked, level)).length;
   // O42 slip 30: counted as the Achievements page counts (retired secrets left out).
   const secretsFound = ACTIVE_ACHIEVEMENTS.filter((a) => a.cat === 'secret' && unlocked.has(a.id)).length;
@@ -93,15 +97,10 @@ export function Earned() {
   return (
     <div className="page bare k-page k-light you">
       <PageHead back="You" onBack={() => back('/you')} title="Earned" help={HOW} family="earned" />
-      <div className="k-row end">
-        <Hero value={fmtInt(unlocked.size)} ink={GOLD} label="earned" />
-        <span className="k-col k-r" style={{ flex: 'none', paddingBottom: 4 }}>
-          <span className="k-q">Wearing</span>
-          <b style={{ color: GOLD }}>{worn ?? 'Nothing yet'}</b>
-        </span>
-      </div>
-      <TrophyShelf all={trophies} picks={settings.trophyPicks} shown={pickedTrophies(trophies, settings.trophyPicks, 6)} />
+      <EarnedCase stats={ach} />
       <NewTitle settings={settings} stats={stats} />
+      <Sect>Your records</Sect>
+      <TrophyShelf all={trophies} picks={settings.trophyPicks} shown={pickedTrophies(trophies, settings.trophyPicks, 6)} />
       <Sect>The cabinet</Sect>
       <Doors two label="The cabinet">
         <Door line icon="pack" name="Titles" value={`${fmtInt(titlesHad)} earned`} family="earned" onClick={() => go('/character')} />
