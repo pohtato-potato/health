@@ -376,8 +376,8 @@
 .cup-h3 { margin: 4px 0 0; font: 700 20px var(--fb-cond); text-transform: uppercase; color: rgba(243, 238, 230, .85); }
 .cr20 { display: flex; flex-direction: column; gap: 8px; }
 .cr20 > div { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 2px 12px; align-items: center; padding: 10px 12px; border-radius: 16px; background: color-mix(in srgb, var(--c) 14%, #0e0a20); border: 1.5px solid color-mix(in srgb, var(--c) 55%, transparent); animation: tn21-in .45s var(--d) ease-out both; }
-.cr20 > div svg { grid-row: 1 / 3; }
-.cr20 b { font: 700 16px/1.2 var(--sans); color: #fff; }
-.cr20 em { font-style: normal; grid-row: 1 / 3; font: 700 26px var(--fb-cond); color: var(--c); text-align: right; }
-.cr20 small { grid-column: 2; font: 700 14px/1.3 var(--sans); color: rgba(243, 238, 230, .85); }
+.cr20 > div svg { grid-column: 1; grid-row: 1 / 3; }
+.cr20 b { grid-column: 2; grid-row: 1; font: 700 16px/1.2 var(--sans); color: #fff; overflow-wrap: anywhere; }
+.cr20 em { font-style: normal; grid-column: 3; grid-row: 1 / 3; font: 700 26px var(--fb-cond); color: var(--c); text-align: right; }
+.cr20 small { grid-column: 2; grid-row: 2; font: 700 14px/1.3 var(--sans); color: rgba(243, 238, 230, .85); }
 html.contrast .cr20 small, html.contrast .cup-h3 { color: #fff; }
