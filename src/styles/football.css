@@ -967,3 +967,14 @@ html.contrast .rd-r.x { opacity: 1; }
 .wk23-back { min-height: 48px; margin-top: 6px; border: 0; border-radius: 14px; background: #1a1430; color: #fff; font: 700 15px var(--sans); cursor: pointer; }
 html.contrast .wk23 { background: #fff; color: #000; }
 html.contrast .wk23 .ibox dt, html.contrast .wk23 .mast-23 small { color: #000; }
+
+/* The pyramid (board 23, k23-pyr): stacked narrowest at the top, each level in its colour, yours gold with "You". */
+.fb-tier { animation: tn21-in .5s var(--d) cubic-bezier(.16, 1, .3, 1) both; }
+.fb-tier button { background: color-mix(in srgb, var(--t) 22%, #121834); }
+.fb-tier .fb-col { min-width: 0; }
+.fb-tier .fb-col b, .fb-tier .fb-col .fb-s { overflow-wrap: anywhere; }
+.fb-tier b { font: 700 16px var(--sans); color: #fff; }
+.pyr-n { flex: none; font: 700 22px var(--fb-cond); color: var(--t); }
+.fb-tier.here button { background: #ffd36b; border-color: #ffd36b; box-shadow: 0 0 30px rgba(255, 211, 107, .5); }
+.fb-tier.here b, .fb-tier.here .fb-s, .fb-tier.here .pyr-n, .fb-tier.here .fb-gap, .fb-tier.here .fb-gap * { color: #0b0f22; }
+.pyr-you { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 8px; background: #ff7a1a; color: #fff; font: 700 14px var(--sans); font-style: normal; animation: tro23-float 2.4s ease-in-out infinite; }
