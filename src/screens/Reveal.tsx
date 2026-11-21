@@ -13,6 +13,7 @@ import { back } from '../router';
 import { Seg } from '../ui/controls';
 import { Icon } from '../ui/Icon';
 import { journeyStart } from './Journey';
+import { Sealed } from './you/Sealed';
 import { benchmarkOn, benchmarkProgress } from '../domain/benchmark';
 
 const POSES: { id: Pose; label: string }[] = [
@@ -115,39 +116,17 @@ export function RevealPage() {
     const f = b && goal ? benchmarkOn(b, today, goal) : undefined;
     const start = checkins[0]?.date ?? today;
     const monthly = goal ? Math.max(1, Math.round(daysBetween(start, goal) / 30.4) + 1) : 0;
-    const waiting: [string, string][] = [
-      ['Photo timelapse', `${checkins.length} of ${monthly} check-ins so far`],
-      ['First and last photo', 'side by side'],
-      ['Sealed lines', `${lines.length} sealed · read back in order`],
-      ...(f ? ([['Your benchmark', `forecast ${f.range[0].toFixed(2)}–${f.range[1].toFixed(2)}`]] as [string, string][]) : []),
+    const inside = [
+      { n: fmtInt(checkins.length), what: `check-in${checkins.length === 1 ? '' : 's'} of ${monthly}` },
+      { n: fmtInt(lines.length), what: `line${lines.length === 1 ? '' : 's'} sealed` },
+      ...(f ? [{ n: `${f.range[0].toFixed(2)}–${f.range[1].toFixed(2)}`, what: 'benchmark forecast' }] : []),
     ];
     return (
-      <div className="page bare">
+      <div className="page bare rv-page">
         {backLink}
-        {goal ? (
-          <>
-            <div className="col gap2">
-              <div className="serif tn" style={{ fontSize: 64, lineHeight: 1 }}>
-                {fmtInt(daysBetween(today, goal))}
-              </div>
-              <div className="t15 q">days to reveal day, {fmtDayMonth(goal)}</div>
-            </div>
-            <div className="card" style={{ gap: 0, padding: '4px 16px' }}>
-              {waiting.map(([k, v]) => (
-                <div key={k} className="diary-row" style={{ textAlign: 'left' }}>
-                  <span className="row" style={{ gap: 10 }}>
-                    <Icon name="lock" size={16} color="var(--gold)" />
-                    <span className="t15">{k}</span>
-                  </span>
-                  <span className="t13 q right">{v}</span>
-                </div>
-              ))}
-            </div>
-            <div className="voice">Nothing here opens early. That’s the point.</div>
-          </>
-        ) : (
-          <div className="t15 q lh">Set a goal date in Settings, and everything you seal opens on that day.</div>
-        )}
+        {goal
+          ? <Sealed days={daysBetween(today, goal)} date={goal} inside={inside} locked={prefOn(settings.prefs, 'lockPhotos') && !!settings.photoKey} />
+          : <div className="t15 q lh">Set a goal date in Settings, and everything you seal opens on that day.</div>}
       </div>
     );
   }
