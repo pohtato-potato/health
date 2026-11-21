@@ -673,3 +673,13 @@ html.contrast .ck-m, html.contrast .ck-line, html.contrast .ci-k.ck-page .card {
 .sn-t.gold { --c: #ffd36b; grid-column: 1 / -1; }
 .sn-t b { font: 600 22px/1.1 var(--serif); }
 .sn-t span { font: 700 14px/1.3 var(--sans); color: #e6dcef; }
+/* 5.19 o23-arch: the archive as tiles */
+.ar-sec { display: flex; flex-direction: column; gap: 8px; }
+.ar-hd { display: flex; align-items: baseline; justify-content: space-between; }
+.ar-hd h2.ar-h, .k-light.you.yu-page .ar-sec .ar-hd h2.ar-h { margin: 0; font: 600 22px var(--serif); color: #fff; text-transform: none; letter-spacing: 0; }
+.ar-hd span { font: 700 15px var(--sans); color: #c2b2ff; }
+.ar-g { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.ar-g button { position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; gap: 8px; min-height: 96px; padding: 12px; border: 0; border-radius: 18px; text-align: left; background: var(--c); color: #140f22; cursor: pointer; animation: yr-pop .45s cubic-bezier(.34, 1.56, .64, 1) var(--d) both; }
+.ar-g button::after { content: ""; position: absolute; right: -18px; bottom: -18px; width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,.3); }
+.ar-g b { font: 600 22px/1.05 var(--serif); }
+.ar-g span { position: relative; z-index: 1; font: 700 14px/1.3 var(--sans); }
