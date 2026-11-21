@@ -47,7 +47,7 @@ export function StoryView({ s, view, extra }: { s: Story; view: StoryViewId; ext
       {view === 'home' && <StoryLead s={s} />}
       {view === 'rivals' && <RivalsView rivals={s.l.save.rivals} matches={s.all} />}
       {view === 'seasons' && <SeasonsView list={s.seasons.map((x) => summarise(x, s.all, s.seasons))} kitOf={(n) => kitName(s, n)} crestOf={(n) => crestName(s, n)} />}
-      {view === 'moments' && <MomentsView upsets={upsets(s.all, s.seasons)} cards={scrapbook(s.all, s.seasons, sideName)} />}
+      {view === 'moments' && <MomentsView upsets={upsets(s.all, s.seasons)} cards={scrapbook(s.all, s.seasons, sideName)} own={s.l.save.crest} />}
       {view === 'olds' && <OldSelves clubs={[...s.l.clubs.values()]} tierOf={s.l.season.tierOf} retired={s.l.save.retired} />}
       {view === 'settings' && <div className="lt-set"><SettingsView s={s.l.save} /></div>}
       {extra?.[view] ?? null}
