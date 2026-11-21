@@ -667,3 +667,9 @@ html.contrast .ck-m, html.contrast .ck-line, html.contrast .ci-k.ck-page .card {
 .dh-ed b { display: block; font: 700 15px var(--sans); color: #fff; overflow-wrap: anywhere; }
 .dh-ed small { font: 400 14px var(--sans); color: rgba(243,238,230,.8); }
 .dh-ed button { min-height: 44px; min-width: 64px; padding: 0 12px; border: 0; border-radius: 12px; background: none; font: 700 14px var(--sans); color: #fff; box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.35); cursor: pointer; }
+.sn-g { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.sn-t { --c: #8fd8ff; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 72px; padding: 10px; border: 0; border-radius: 16px; text-align: left; background: color-mix(in srgb, var(--c) 22%, #140f22); box-shadow: inset 0 0 0 1.5px var(--c); color: #fff; cursor: pointer; animation: yu-rise .4s var(--d) both; }
+.sn-t.now { --c: #5fe3a1; }
+.sn-t.gold { --c: #ffd36b; grid-column: 1 / -1; }
+.sn-t b { font: 600 22px/1.1 var(--serif); }
+.sn-t span { font: 700 14px/1.3 var(--sans); color: #e6dcef; }

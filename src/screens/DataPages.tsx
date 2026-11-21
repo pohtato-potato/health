@@ -8,12 +8,12 @@ import { useAllDays, useAllEntries, useSessions, useSettings, useToday } from '.
 import { listSnapshots, restoreSnapshot } from '../db/snapshots';
 import { dataCheckup, type CheckupFinding } from '../domain/checkup';
 import { dayKey } from '../domain/dates';
-import { fmtDayMonth, fmtInt, fmtTime } from '../domain/format';
+import { fmtInt, fmtTime } from '../domain/format';
 import { back } from '../router';
 import { askConfirm } from '../ui/Confirm';
 import { Icon } from '../ui/Icon';
 import { useToast } from '../ui/Toasts';
-import { AllClear, EditDay } from './settings/DataParts';
+import { AllClear, EditDay, SnapTiles } from './settings/DataParts';
 
 const Frame = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div className="page bare yu-page yu-stack">
@@ -96,6 +96,7 @@ export function EditHistory() {
 /** The copies this phone keeps of itself. */
 export function Snapshots() {
   const list = useLiveQuery(listSnapshots, []);
+  const today = useToday();
   const toast = useToast();
   if (!list) return <div className="page bare" />;
   const restore = async (id: string, when: string) => {
@@ -109,21 +110,9 @@ export function Snapshots() {
   };
   return (
     <Frame title="Snapshots">
-      <span className="yu-q">Your numbers, copied each day. Seven are kept, plus one from before the last big change. They live on this phone, so they don't replace a backup. Photos aren't included.</span>
+      <p className="dc-sub">Your numbers, copied each day. Seven are kept, plus one from before the last big change. Tap one to go back to it. They live on this phone, so they don't replace a backup. Photos aren't included.</p>
       {!list.length && <div className="yu-card"><span className="yu-q">The first snapshot is taken today.</span></div>}
-      {list.length > 0 && (
-        <div className="yu-card">
-          {list.map((s) => {
-            const when = fmtDayMonth(s.day);
-            return (
-              <div key={s.id} className="yu-diary-row" style={{ gridTemplateColumns: '1fr auto' }}>
-                <span>{when}<br /><span className="yu-q">{s.reason ?? 'Daily copy'}</span></span>
-                <button type="button" className="btn ghost sm" onClick={() => void restore(s.id, when)}>Go back</button>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {list.length > 0 && <SnapTiles snaps={list} today={today} onPick={(x, when) => void restore(x.id, when)} />}
     </Frame>
   );
 }

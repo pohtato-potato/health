@@ -44,3 +44,24 @@ export function EditDay({ day, rows, onUndo }: { day: DayKey; rows: EditRowData[
     </section>
   );
 }
+
+export interface SnapTile { id: string; day: DayKey; kind: 'daily' | 'before'; reason?: string }
+
+/** The kept copies as tiles (board 23): the daily ones in blue, today's in green, the one before a big change in gold. Tap one to go back to it. */
+export function SnapTiles({ snaps, today, onPick }: { snaps: SnapTile[]; today: DayKey; onPick: (s: SnapTile, when: string) => void }) {
+  return (
+    <div className="sn-g">
+      {snaps.map((s, k) => {
+        const when = fmtDayMonth(s.day);
+        const gold = s.kind === 'before';
+        const isToday = !gold && s.day === today;
+        return (
+          <button key={s.id} type="button" className={`sn-t${gold ? ' gold' : isToday ? ' now' : ''}`} style={{ '--d': `${Math.min(k, 8) * 0.06}s` } as CSSProperties}
+            aria-label={`Go back to ${when}${isToday ? ', today' : ''}${gold ? `, ${s.reason ?? 'before a big change'}` : ''}`} onClick={() => onPick(s, when)}>
+            <b>{when}</b>{gold ? <span>{s.reason ?? 'Before the last big change'}</span> : isToday && <span>today</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
