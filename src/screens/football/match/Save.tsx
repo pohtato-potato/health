@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+import { MomentPage, type MomentScore } from './Takeover';
 // The glove save: the glove sweeps onto the ball where it actually is, then knocks it away.
 export function Save({ x, y }: { x: number; y: number }) {
   const sx = x < 160 ? x + 70 : x - 70;
@@ -10,5 +12,46 @@ export function Save({ x, y }: { x: number; y: number }) {
         {[0, 1, 2, 3].map((k) => <circle key={k} r="2" className="spk" style={{ '--dx': `${Math.cos(k * 1.6) * 24}px`, '--dy': `${Math.sin(k * 1.6) * 24}px` } as React.CSSProperties} />)}
       </g>
     </g>
+  );
+}
+
+/**
+ * A wonder save (boards 17, m17-save + t17-save): a save at 25% or less. Cool Rest blue; the ball stops dead against
+ * your defending shape, which cracks around it, with the saver's card at its centre; then the words, the odds and the
+ * score that didn't change. Pure view: the card comes in as children.
+ */
+export function WonderSave({ minute, fixture, shape, land, pct, saver, score, line, facts, children, onOn }: {
+  minute: number;
+  /** "Brabo v Harbour Town", home first. */
+  fixture: string;
+  /** Your defending shape as six points on a unit radius, and where the ball was stopped. */
+  shape: [number, number][];
+  land: [number, number];
+  pct: number;
+  saver?: string;
+  /** Home first, as it stands (unchanged by the save). */
+  score: MomentScore;
+  line?: string;
+  facts: string[];
+  children?: ReactNode;
+  onOn: () => void;
+}) {
+  const C = 125, R = 110;
+  const pts = shape.map(([x, y]) => `${(C + x * R).toFixed(1)},${(C + y * R).toFixed(1)}`).join(' ');
+  const [bx, by] = [C + land[0] * R, C + land[1] * R];
+  const cracks = [0.3, 1.4, 2.4, 3.3, 4.4, 5.4].map((a) => `M${bx.toFixed(0)} ${by.toFixed(0)} L${(bx + 70 * Math.cos(a)).toFixed(0)} ${(by + 70 * Math.sin(a)).toFixed(0)}`);
+  const scene = (
+    <div className="ws-shield" role="img" aria-label="The ball stopped inside your defending shape">
+      <svg viewBox="0 0 250 250" aria-hidden="true">
+        <polygon points={pts} className="ws-shape" />
+        <g className="ws-crack">{cracks.map((d, k) => <path key={k} d={d} style={{ animationDelay: `${0.9 + k * 0.05}s` }} />)}</g>
+      </svg>
+      {children && <span className="ws-card">{children}</span>}
+      <span className="ws-ball" style={{ left: `${(bx / 250) * 100}%`, top: `${(by / 250) * 100}%` }} aria-hidden="true" />
+    </div>
+  );
+  return (
+    <MomentPage className="ws-save" minute={minute} fixture={fixture} scene={scene} word="Wonder save" still
+      odds={{ pct, words: `chance to stop it.${saver ? ` ${saver} did.` : ''}` }} score={score} line={line} facts={facts} onOn={onOn} />
   );
 }

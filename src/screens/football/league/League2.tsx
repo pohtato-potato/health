@@ -2,7 +2,6 @@
 // answer, the top four one tap from the full table of 12, the back page, then doors to the atlas, the cups, the
 // calendar and every division. Every division is a stepped pyramid of eight with how much of each you have seen;
 // a division's table keeps unmet clubs under the hatching, and the one thing to do is send a scout there.
-import { ordinal } from '../../../football/habitLines';
 import { leagueMatchdays, seasonLength } from '../../../football/calendar';
 import { pairOf } from '../../../football/pyramid/cups';
 import { shapeOf, type Division } from '../../../football/pyramid/shape';
@@ -11,14 +10,15 @@ import { OWN } from '../../../football/store/season';
 import type { FbNews, StoredMatch } from '../../../football/store/tables';
 import type { Tier } from '../../../football/types';
 import { go } from '../../../router';
-import { Action, Door, FamilyDoors, Hero, Panel, Sect } from '../../../ui/kit/Kit';
+import { Action, Door, FamilyDoors, Panel, Sect } from '../../../ui/kit/Kit';
 import { atlasOf } from '../world/Atlas';
 import { BackPageCard } from './News';
-import { Table } from './Table';
+import { FinalTable, Table } from './Table';
 import { CongressDoor } from '../desk/Congress';
+import { crestSvg } from '../../../football/art/crest';
+import { CrestLadder, endedOn, LeagueHead } from './LeagueHome';
 
 const S2 = shapeOf({ world: 2 });
-const GOLD = '#f2c46d';
 const set = (p: Record<string, string | undefined>) => go('/football/league', p, { replace: true });
 
 export const dayLine = (l: League) => (l.save.phase === 'season' ? `Day ${l.save.day} of ${seasonLength(2)}` : 'Between seasons');
@@ -32,11 +32,16 @@ export function LeagueHome2({ l, n }: { l: League; n?: { news: FbNews[]; matches
   const cupRound = cupWords(l);
   return (
     <>
-      <Hero value={pos ? ordinal(pos) : '–'} ink={GOLD} label={`${S2.name(mine)}`} under={`of ${rows.length} · ${dayLine(l)} · ${played} of ${leagueMatchdays(2)} played`} />
-      <Panel ink={`var(--fb-t${mine})`} onClick={() => set({ view: 'full' })} label={`${S2.name(mine)}: the full table of ${rows.length}`} className="fb-top4">
-        <Table tier={mine} rows={rows} world={2} limit={4} waiting={Boolean(l.save.paused)} />
-        <span className="fb-s fb-seeall-line">See all {rows.length}</span>
-      </Panel>
+      {l.season.final ? <FinalTable tier={mine} rows={l.season.final.tables[mine] ?? []} division={S2.name(mine)} own={crestSvg(l.save.crest.step, l.save.crest.opt, 72)} ended={endedOn(l)} /> : (
+        <>
+          <LeagueHead crest={crestSvg(l.save.crest.step, l.save.crest.opt, 76)} pos={pos} division={S2.name(mine)} line={`of ${rows.length} · ${dayLine(l)} · ${played} of ${leagueMatchdays(2)} played`} />
+          <CrestLadder rows={rows} own={crestSvg(l.save.crest.step, l.save.crest.opt, 30)} up={mine > 1 ? 2 : 0} down={3} division={S2.name(mine)} />
+          <Panel ink={`var(--fb-t${mine})`} onClick={() => set({ view: 'full' })} label={`${S2.name(mine)}: the full table of ${rows.length}`} className="fb-top4">
+            <Table tier={mine} rows={rows} world={2} limit={4} waiting={Boolean(l.save.paused)} own={crestSvg(l.save.crest.step, l.save.crest.opt, 30)} />
+            <span className="fb-s fb-seeall-line">See all {rows.length}</span>
+          </Panel>
+        </>
+      )}
       {n && <BackPageCard news={n.news} matches={n.matches} today={n.today} more />}
       <Sect>Around the league</Sect>
       <FamilyDoors two label="Around the league" groups={{ world: [
@@ -64,7 +69,7 @@ export function FullTable2({ l }: { l: League }) {
   const mine = l.season.tierOf[OWN];
   const rows = l.tables[mine] ?? [];
   const played = rows.find((r) => r.id === OWN)?.p ?? 0;
-  return <Table tier={mine} rows={rows} world={2} form={l.form} waiting={Boolean(l.save.paused)} day={`${dayLine(l)} · ${played} played · points`} />;
+  return <Table tier={mine} rows={rows} world={2} form={l.form} waiting={Boolean(l.save.paused)} day={`${dayLine(l)} · ${played} played · points`} own={crestSvg(l.save.crest.step, l.save.crest.opt, 30)} />;
 }
 
 /** Every division: the pyramid of eight, the chosen one's table under the fog, and a scout to send. */

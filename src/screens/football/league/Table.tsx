@@ -9,7 +9,8 @@ import type { Row } from '../../../football/table';
 import type { Result, Tier } from '../../../football/types';
 import { clubCrest } from '../../../football/art/crest';
 import { Art } from '../world/Fog';
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { ordinal } from '../../../football/habitLines';
 import { useSeenBefore } from '../../../ui/motion/motion';
 import { Roll } from '../../../ui/motion/Roll';
 
@@ -46,6 +47,8 @@ function useRearrange(key: string, order: string[]) {
   return list;
 }
 
+/** Goal difference, signed: +2, 0, -1. */
+const gd = (r: Row) => { const n = r.gf - r.ga; return n > 0 ? `+${n}` : String(n); };
 const WORD: Record<Result, string> = { W: 'won', D: 'drew', L: 'lost' };
 export function ResultMark({ r, shape = 'c' }: { r: Result; shape?: 'c' | 'd' | 's' }) {
   return <span className={`fb-res ${shape} r-${r}`} title={WORD[r]}><b>{r}</b></span>;
@@ -58,7 +61,7 @@ function Cut({ kind, text }: { kind: 'up' | 'po' | 'down'; text: string }) {
 /** `form` is Brabo's 28-day form rating, for the double-promotion line (Division Three and below). */
 /** Every club shows its crest (O41 3, O42: badges are always shown). */
 /** `world`: the old six tiers of 18 (absent or 1), or world 2's eight divisions of 12 (LG-4). */
-export function Table({ tier, rows, day, form, waiting = false, world = 1, limit, onAll }: { tier: Tier; rows: Row[]; day?: string; form?: number; waiting?: boolean; world?: WorldVersion; limit?: number; onAll?: () => void }) {
+export function Table({ tier, rows, day, form, waiting = false, world = 1, limit, onAll, own }: { tier: Tier; rows: Row[]; day?: string; form?: number; waiting?: boolean; world?: WorldVersion; limit?: number; onAll?: () => void; /** Your crest; without it your row keeps the ring. */ own?: string }) {
   const shape = shapeOf({ world });
   const last = shape.divisions.length;
   const name = (t: number) => (world === 2 ? shape.name(t) : tierName(t as Tier));
@@ -74,14 +77,15 @@ export function Table({ tier, rows, day, form, waiting = false, world = 1, limit
     const club = me ? 'Brabo United' : clubById(r.id).name;
     out.push(
       <li key={r.id} className={`fb-trow${me ? ' me' : ''}`} data-id={r.id} style={{ '--k': clubColour(r.id) } as React.CSSProperties}>
-        <Row href={limit ? undefined : `#/football/club-page?id=${encodeURIComponent(r.id)}`} label={`${pos}, ${club}, ${r.pts} points${r.form.length ? `, form ${r.form.map((x) => WORD[x]).join(' ')}` : ''}`}>
+        <Row href={limit ? undefined : `#/football/club-page?id=${encodeURIComponent(r.id)}`} label={`${pos}, ${club}, ${r.pts} points, goal difference ${gd(r)}${r.form.length ? `, form ${r.form.map((x) => WORD[x]).join(' ')}` : ''}`}>
           <span className="fb-tpos">{pos}</span>
-          {me ? <span className="fb-tring" aria-hidden="true" /> : <span className="fb-tcrest"><Art svg={clubCrest(clubById(r.id), 24)} /></span>}
+          {me && !own ? <span className="fb-tring" aria-hidden="true" /> : <span className="fb-tcrest"><Art svg={me ? own! : clubCrest(clubById(r.id), 30)} /></span>}
           <span className="fb-tname">
-            <b>{club}{me && <em>You</em>}</b>
+            <b><span className="fb-tnm">{club}</span>{me && <em>You</em>}</b>
             {me && waiting && <span className="fb-s md-tbp">Last night: to be played</span>}
             <span className="fb-form" aria-hidden="true">{r.form.length ? r.form.map((x, k) => <ResultMark key={k} r={x} />) : <span className="fb-s">No games yet</span>}</span>
           </span>
+          <span className="fb-tgd" aria-hidden="true">{gd(r)}</span>
           <span className="fb-tpts">{me ? <Roll value={r.pts} id={`table-pts:${world}:${tier}:${limit ?? 'all'}`} /> : r.pts}<small>pts</small></span>
         </Row>
       </li>,
@@ -90,7 +94,7 @@ export function Table({ tier, rows, day, form, waiting = false, world = 1, limit
   return (
     <section className="fb-table" style={{ '--t': `var(--fb-t${tier})` } as React.CSSProperties} aria-label={`${name(tier)} table`}>
       {!limit && <div className="fb-row"><span className="fb-t fb-tiername">{name(tier)}</span>{day && <span className="fb-s">{day}</span>}</div>}
-      <ol ref={list} className="fb-trows">{out}</ol>
+      <ol ref={list} className="fb-trows">{!limit && <li className="fb-thead" aria-hidden="true"><span>Club</span><span>GD</span><span>Pts</span></li>}{out}</ol>
       {onAll && limit && rows.length > limit && <button type="button" className="fb-btn sm fb-seeall" onClick={onAll}>See all {rows.length}</button>}
       {!limit && world === 1 && <Notes1 tier={tier} rows={rows} form={form} />}
       {!limit && world === 2 && (
@@ -117,5 +121,44 @@ function Notes1({ tier, rows, form }: { tier: Tier; rows: Row[]; form?: number }
       {tier === 6 && <p className="fb-s">No relegation from here. The bottom club may fold, and a new one is founded.</p>}
       {tier === 1 && <p className="fb-s">The top of the pyramid: no promotion, only the title.</p>}
     </>
+  );
+}
+
+/** The final table (board 23, s23-final): the champions in their own row, the top eight with crests, then "All N
+ *  clubs" opens the rest. P drops out under 420 px; GD and points always stay. */
+export function FinalTable({ tier, rows, division, own, ended }: { tier: Tier; rows: Row[]; division: string; own: string; ended: string }) {
+  const [all, setAll] = useState(false);
+  const champ = rows[0];
+  const mine = rows.findIndex((r) => r.id === OWN);
+  const me = rows[mine];
+  const nm = (id: string) => (id === OWN ? 'Brabo United' : clubById(id).name);
+  const crest = (id: string, n: number) => (id === OWN ? own : clubCrest(clubById(id), n));
+  const shown = all ? rows : rows.slice(0, 8);
+  return (
+    <section className="ft23" aria-label={`${division}, the final table`} style={{ '--t': `var(--fb-t${tier})` } as React.CSSProperties}>
+      {champ && (
+        <div className="ft23-ch">
+          <Art svg={crest(champ.id, 72)} />
+          <span>
+            <b>{champ.id === OWN ? 'Champions' : `${nm(champ.id)} champions`}</b>
+            <small>{champ.id === OWN ? `${division} · ${champ.p} played, ${champ.w} won · ended ${ended}` : `${division} · ended ${ended}${me ? ` · You finished ${ordinal(mine + 1)}` : ''}`}</small>
+          </span>
+        </div>
+      )}
+      <div className="ft23-t" role="table" aria-label={`${division}, final positions`}>
+        <div className="ft23-h" role="row"><span role="columnheader">#</span><span aria-hidden="true" /><span role="columnheader">Club</span><em className="p" role="columnheader">P</em><em role="columnheader">GD</em><b role="columnheader">Pts</b></div>
+        {shown.map((r, i) => (
+          <div key={r.id} role="row" className={`ft23-r${i === 0 ? ' ch' : ''}${r.id === OWN ? ' me' : ''}`} style={{ '--d': `${Math.min(i, 10) * 0.05}s` } as React.CSSProperties}>
+            <span role="cell">{i + 1}</span>
+            <span className="cr" aria-hidden="true"><Art svg={crest(r.id, 26)} /></span>
+            <span role="cell" className="nm">{nm(r.id)}{r.id === OWN && <i> · You</i>}</span>
+            <em role="cell" className="p">{r.p}</em>
+            <em role="cell">{gd(r)}</em>
+            <b role="cell">{r.pts}</b>
+          </div>
+        ))}
+      </div>
+      {rows.length > 8 && <button type="button" className="ft23-more" aria-expanded={all} onClick={() => setAll(!all)}>{all ? 'The top eight' : `All ${rows.length} clubs`}</button>}
+    </section>
   );
 }

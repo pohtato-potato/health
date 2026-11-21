@@ -13,28 +13,28 @@ import { DealsView } from './Deals';
 import { MoneyView } from './Money';
 import { go, useRoute } from '../../../router';
 import { PlayerView } from './Player';
-import { SquadView } from './Squad';
+import { AbilitySlots, Binder, SquadView } from './Squad';
 import { Pitch } from '../players/Screens';
 import { TreeHome } from '../tree/TreeScreens';
 import { useWorldDoors } from '../world/WorldScreens';
 import { useModel } from '../tree/model';
 import { Kaai } from './Kaai';
 import { kaaiStory } from '../../../football/ground';
-import { Art } from '../Tonight';
-import { Action, Door, Doors, FamilyDoors, Hero, Panel, Sect, Title, type HowThisWorks } from '../../../ui/kit/Kit';
+import { Action, Door, FamilyDoors, Panel, Sect, type HowThisWorks } from '../../../ui/kit/Kit';
 import { usePlayers, useSheet, useTonight } from '../../../football/store/hooks';
 import { loadLeague } from '../../../football/store/league';
 import { loadDesk } from '../../../football/store/desk';
 import { OWN } from '../../../football/store/season';
 import { clubById } from '../../../football/data/load';
 import { crestSvg } from '../../../football/art/crest';
-import { elevenOf, UNIT_COLOUR } from '../../../football/players/eleven';
+import { elevenOf } from '../../../football/players/eleven';
 import { membersOf } from '../../../football/store/players';
 import { AXES } from '../../../football/types';
 import { euros } from '../../../football/money';
 import { fmtCount } from '../../../football/tree/words';
-import { VALUE_INK, valueTier } from '../../../ui/inks';
 import { CastDoor } from '../desk/Congress';
+import { bugShort } from '../match/Broadcast';
+import { DuskFoot } from './DuskFoot';
 
 export const CLUB_VIEWS = [
   { id: 'squad', label: 'Squad' },
@@ -61,18 +61,20 @@ export function ClubView({ c, view }: { c: Club; view: ClubViewId; extra?: Parti
   );
 }
 
-/** The squad page (a door on Club): the six units, then the habits that make the club. */
+/** The squad page (a door on Club), the binder (board 22): the equipped abilities, every unit as a page of cards, then
+ * the habits that make the club. */
 function SquadPage({ c }: { c: Club }) {
   const players = usePlayers();
+  const sheet = useSheet();
   const squad = players?.filter((p) => p.status === 'squad') ?? [];
+  const xi = players ? sheet?.xi ?? elevenOf(membersOf(new Map(players.map((p) => [p.id, p])))) : [];
   return (
-    <div className="k-page">
+    <div className="k-page bd19-page">
+      <AbilitySlots slots={c.save.slots} />
       {players && (
         <>
-          <Hero value={squad.length} ink="#8fdcb6" label={squad.length === 1 ? 'player in the squad' : 'players in the squad'} />
-          <Doors label="The units">
-            {AXES.map((u) => <Door key={u} icon="people" name={u} ink={UNIT_COLOUR[u]} value={squad.filter((p) => p.unit === u).length} onClick={() => go('/football/unit', { u })} />)}
-          </Doors>
+          <p className="bd19-n"><b className="tn">{squad.length}</b> {squad.length === 1 ? 'player in the squad' : 'players in the squad'}</p>
+          <Binder players={squad} starters={new Set(xi.map((x) => x.player))} />
         </>
       )}
       <SquadView c={c} onCaptain={(a) => void setCaptain(a)} onEquip={(id, i) => void equipAbility(id, i)} />
@@ -118,19 +120,11 @@ function ClubFront({ c }: { c: Club }) {
   const hired = tree?.staff.filter((s) => s.hired).length ?? 0;
   const board = tree?.eng.board.find((b) => b.season === c.save.season);
   const offers = c.save.offers?.length ?? 0;
+  const rival = c.save.rivals.at(-1);
   return (
-    <div className="k-page kc-club">
-      <div className="kc-kaai-wrap"><Kaai tier={c.stage ?? c.tier} done={done} site={!c.save.moved && !done.includes('kaai-stand')} /></div>
-      <p className="k-q kc-story">{kaaiStory(done, Boolean(c.save.moved))}</p>
-      <div className="k-row">
-        <span className="k-row" style={{ justifyContent: 'flex-start' }}>
-          <Art svg={crestSvg(c.save.crest.step, c.save.crest.opt, 44, `${own.name} crest`)} />
-          <Title under={`${tierName(c.tier)}${place ? ` · ${ordinal(place)}` : ''}`}>{own.name}</Title>
-        </span>
-        {rating !== undefined && (
-          <span className="k-col k-r"><span className="k-hero sm" style={{ color: VALUE_INK[valueTier(rating, 100)] }}><Roll value={rating} id="club:rating" /></span><span className="k-q">rating</span></span>
-        )}
-      </div>
+    <div className="k-page kc-club c19">
+      <div className="c19-top"><h2>The eleven</h2><span>{sheet?.save.sheet?.formation ?? '4-3-3'}{sheet?.save.sheet ? ' · your sheet' : ' · picked for you'}</span></div>
+      <div className="c19-frame">{xi.length === 0 ? <p className="k-q">Log a habit and it signs for the club. The eleven fills as players sign.</p> : <Pitch xi={xi} />}</div>
       {lb ? (
         <Panel ink="#f2c46d" flat>
           <span style={{ flex: 1 }}><b>{lb.name} broke its limit</b><br /><span className="k-q">See what changed.</span></span>
@@ -147,8 +141,6 @@ function ClubFront({ c }: { c: Club }) {
           <Action sm onClick={() => go('/football/packs')}>Open it</Action>
         </Panel>
       ) : null}
-      <Sect>The eleven · {sheet?.save.sheet?.formation ?? '4-3-3'}</Sect>
-      {xi.length === 0 ? <p className="k-q">Log a habit and it signs for the club. The eleven fills as players sign.</p> : <Pitch xi={xi} />}
       <Sect>Around the club</Sect>
       <FamilyDoors label="Around the club" groups={{
         people: [
@@ -176,6 +168,10 @@ function ClubFront({ c }: { c: Club }) {
           <Door key="desk" icon="desk" name="The desk" value={desk ? (desk.shut ? 'Shut' : desk.left.length ? count(desk.left.length, 'die', 'dice') : 'Spent') : '–'} family="plans" onClick={() => go('/football/desk')} />,
         ],
       }} />
+      <DuskFoot crest={crestSvg(c.save.crest.step, c.save.crest.opt, 64, `${own.name} crest`)} name={own.name}
+        under={[tierName(c.tier), place ? ordinal(place) : '', `Season ${c.save.season}`, rating !== undefined ? `rated ${rating}` : ''].filter(Boolean).join(' · ')}
+        facts={[[String(squad), 'squad'], [euros(c.save.budget), 'budget'], [String(done.length), 'built'], [rival ? bugShort(clubById(rival.clubId).name) : 'None', 'rival']]}
+        sky={<Kaai tier={c.stage ?? c.tier} done={done} site={!c.save.moved && !done.includes('kaai-stand')} />} story={kaaiStory(done, Boolean(c.save.moved))} />
     </div>
   );
 }

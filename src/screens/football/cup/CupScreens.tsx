@@ -8,9 +8,10 @@ import { cupsOpen, type CupBook } from '../../../football/cup/book';
 import { titleOf } from '../../../football/cup/cards';
 import type { Deal } from '../../../football/cup/deck';
 import { cupByN, CUPS } from '../../../football/cup/ladder';
-import { dealToday, loadBook, loadRun, startCupRun } from '../../../football/cup/store';
+import { dealToday, loadBook, loadRun, startCupRun, type CupDone } from '../../../football/cup/store';
 import type { Card } from '../../../football/cup/types';
 import { clubById } from '../../../football/data/load';
+import { db } from '../../../db/db';
 import { go, useRoute } from '../../../router';
 import { AXIS_INK } from '../../../ui/inks';
 import { Panel, Sect } from '../../../ui/kit/Kit';
@@ -83,10 +84,69 @@ const recLine = (c: CupDef, b: CupBook) => {
   return `${rec.won ? `Won ${rec.won}×` : `Furthest: ${rec.furthest} stops`}${rec.fastest != null ? ` · fastest win ${rec.fastest} cards` : ''} · ${rec.runs} run${rec.runs === 1 ? '' : 's'}`;
 };
 
+const dayShort = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+
+/** The cups won (board 20, c20-cups): their trophies rise, then the record across every winning run, then each run
+ *  won with its wins of played, score, best win and day. Nothing won: nothing shown. */
+export function CupsWon({ done }: { done: CupDone[] }) {
+  const won = done.filter((d) => d.result === 'won');
+  if (!won.length) return null;
+  const cups = [...new Set(won.map((d) => d.cup))].map(cupByN);
+  const sum = (f: (d: CupDone) => number) => won.reduce((a, d) => a + f(d), 0);
+  const beaten = new Set(won.flatMap((d) => d.stats.beaten)).size;
+  return (
+    <section className="cw20" aria-label="Cups won">
+      <div className="tc20" role="img" aria-label={`${cups.length} ${cups.length === 1 ? 'cup' : 'cups'} won: ${cups.map((c) => c.name).join(', ')}`}>
+        {cups.slice(0, 5).map((c, i) => <span key={c.n} className="tc20-t" style={{ '--d': `${0.2 + i * 0.2}s`, color: c.colour } as CSSProperties}><Trophy kind={c.silver} colour={c.colour} size={i === 1 ? 72 : 60} /></span>)}
+      </div>
+      <div className="cu20"><b>{cups.length} {cups.length === 1 ? 'cup' : 'cups'}, {sum((d) => d.stats.won)} from {sum((d) => d.stats.played)}</b><span>{sum((d) => d.stats.goalsFor)} scored, {sum((d) => d.stats.goalsAgainst)} let in, {beaten} {beaten === 1 ? 'club' : 'clubs'} beaten</span></div>
+      <h3 className="cup-h3">Cup runs won</h3>
+      <div className="cr20">
+        {won.map((d, i) => {
+          const c = cupByN(d.cup);
+          const big = d.stats.biggest;
+          return (
+            <div key={`${d.cup}-${d.date}-${i}`} style={{ '--c': c.colour, '--d': `${0.6 + Math.min(i, 8) * 0.12}s` } as CSSProperties}>
+              <Trophy kind={c.silver} colour={c.colour} size={44} />
+              <b>{c.name}</b>
+              <em className="fb-num">{d.stats.won}/{d.stats.played}</em>
+              <small>{d.stats.goalsFor}–{d.stats.goalsAgainst}{big ? ` · best ${big.for}–${big.against} v ${big.club}` : ''} · {dayShort(d.date)}</small>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/** The cabinet (board 23, u23-cab): the twelve cups on a wooden shelf. Won ones glow; the one you are on is tagged
+ *  Next; the rest are dimmed and say Locked. Open cups open their page. */
+export function Cabinet({ book, open, onPick }: { book: CupBook; open: number; onPick: (n: number) => void }) {
+  return (
+    <ol className="shelf-23" aria-label="The twelve cups">
+      {CUPS.map((c, k) => {
+        const won = (book.cups[c.n]?.won ?? 0) > 0;
+        const st = won ? 'won' : c.n === open ? 'nx' : c.n < open ? 'op' : 'lk';
+        const word = won ? `Won ${book.cups[c.n]!.won}×` : st === 'nx' ? 'Next' : st === 'op' ? 'Open' : 'Locked';
+        const inner = <><Trophy kind={c.silver} colour={c.colour} size={52} /><span className="nm">{c.name}</span><small>{word}</small></>;
+        const style = { '--c': c.colour, '--d': `${k * 0.05}s` } as CSSProperties;
+        return (
+          <li key={c.n}>
+            {st === 'lk'
+              ? <div className={`sl-23 ${st}`} style={style}>{inner}</div>
+              : <button type="button" className={`sl-23 ${st}`} style={style} onClick={() => onPick(c.n)} aria-label={`${c.name}: ${word}`}>{inner}</button>}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 /** /football/cup: the cabinet. The cup you are on leads; then the twelve cups, then the record book. */
 export function CupsPage() {
   const run = useLiveQuery(async () => (await loadRun()) ?? null, []);
   const book = useLiveQuery(loadBook, []);
+  const done = useLiveQuery(() => db.cupDone.orderBy('date').toArray(), []);
   if (run === undefined || !book) return null;
   const open = cupsOpen(book);
   const live = run && !run.run.over ? run.run : null;
@@ -105,28 +165,10 @@ export function CupsPage() {
         : run?.run.over ? <CupAct onClick={() => go('/football/cup/run')}>See how it ended</CupAct>
           : <CupAct onClick={() => go('/football/cup', { n: String(open) })}>Start a run</CupAct>}
 
+      {done && <CupsWon done={done} />}
+
       <Sect>The twelve cups</Sect>
-      <ol className="cup-ladder">
-        {CUPS.map((c) => {
-          const isOpen = c.n <= open;
-          const r = recLine(c, book);
-          const inner = (
-            <span className="cup-opt-l">
-              <Trophy kind={c.silver} colour={c.colour} size={36} />
-              <span className="cup-grow">
-                <b className="k-lb">{c.name}</b><br />
-                <span className="k-q">{isOpen ? (r || (c.n === open ? 'Playing now' : 'Open')) : 'Locked: win the cup before it'}</span>
-              </span>
-            </span>
-          );
-          return (
-            <li key={c.n}>
-              {isOpen ? <Panel ink={c.colour} onClick={() => go('/football/cup', { n: String(c.n) })} label={`${c.name}: ${r || 'open'}`}>{inner}</Panel>
-                : <Panel ink={c.colour} className="cup-shut">{inner}</Panel>}
-            </li>
-          );
-        })}
-      </ol>
+      <Cabinet book={book} open={open} onPick={(n) => go('/football/cup', { n: String(n) })} />
 
       <Sect>The record book</Sect>
       {book.runs === 0 ? <p className="cup-q">Every run counts here, paid or not.</p> : (
@@ -146,10 +188,43 @@ export function CupsPage() {
 }
 const safeName = (id: string) => { try { return clubById(id).name; } catch { return id; } };
 
+/** One won cup (board 23, u23-one): the day it was won, a W tile for every win, the score, the stops cleared, the
+ *  biggest win and the cards played, then the moves that landed as bars, most first. From the best winning run. */
+export function WonRun({ d }: { d: CupDone }) {
+  const st = d.stats;
+  const moves = Object.entries(st.combos).sort((a, b) => b[1] - a[1]);
+  const top = moves[0]?.[1] ?? 1;
+  return (
+    <section className="one23" aria-label="Your winning run">
+      <span className="won23">Won · {dayShort(d.date)}</span>
+      <div className="wl23" role="img" aria-label={`${st.played} played, ${st.won} won`}>
+        {Array.from({ length: st.won }, (_, k) => <i key={k} style={{ '--d': `${0.4 + Math.min(k, 14) * 0.08}s` } as CSSProperties}>W</i>)}
+      </div>
+      <div className="rec-23">
+        <div><b className="fb-num">{st.goalsFor}–{st.goalsAgainst}</b><span>{st.goalsAgainst ? 'for and against' : 'for and against: not one conceded'}</span></div>
+        <div><b className="fb-num">{d.stopsCleared} of {d.stops}</b><span>stops on the map cleared</span></div>
+        {st.biggest && <div><b className="fb-num">{st.biggest.for}–{st.biggest.against}</b><span>biggest: {st.biggest.club}</span></div>}
+        <div><b className="fb-num">{st.cards}</b><span>cards played</span></div>
+      </div>
+      {moves.length > 0 && (
+        <>
+          <h3 className="cup-h3">The moves that landed</h3>
+          <ul className="cmb23">
+            {moves.map(([n, v], k) => (
+              <li key={n}><span className="cmb-n">{n}</span><i aria-hidden="true" style={{ '--w': `${(v / top) * 100}%`, '--d': `${0.3 + k * 0.08}s` } as CSSProperties} /><em>{v}</em></li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
+  );
+}
+
 /** /football/cup?n=…: one cup's page. Its trophy leads; its twist, your record there, and the deck your week deals. */
 export function CupPage({ n }: { n: number }) {
   const run = useLiveQuery(async () => (await loadRun()) ?? null, []);
   const book = useLiveQuery(loadBook, []);
+  const best = useLiveQuery(async () => (await db.cupDone.where('date').above('').toArray()).filter((x) => x.cup === n && x.result === 'won').sort((a, b) => b.stats.goalsFor - b.stats.goalsAgainst - (a.stats.goalsFor - a.stats.goalsAgainst))[0] ?? null, [n]);
   const [deal, setDeal] = useState<Deal | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -173,6 +248,7 @@ export function CupPage({ n }: { n: number }) {
         <Trophy kind={c.silver} colour={c.colour} size={120} label={c.name} />
         <p className="cup-under cup-centre">{c.n} of {CUPS.length} · {twistLine(c.twist, c.n > 1)}</p>
       </div>
+      {best && <WonRun d={best} />}
       {(r || c.note) && (
         <Panel ink={c.colour}>
           {r && <><b className="k-lb">Your record here</b><span>{r}</span></>}

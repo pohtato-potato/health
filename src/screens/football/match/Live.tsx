@@ -1,6 +1,9 @@
 // Matchday depth (spec 2026-11-12 §3): watching the waiting league match. Before kick-off (lg-pre), live on the
 // radar-as-stadium (r3-live), a call (r3-call), a goal (lg-goal), half-time (lg-half), then full time. Every number
 // here comes from the same rebuilt input the store finishes with, so what you watch is what is stored.
+import { bugShort, CAM_LINE, CameraScene, eventCamera, MoveScene, ScoreBug, type BugSide } from './Broadcast';
+import { BRABO_INK } from '../../../ui/inks';
+import { lossInkOf } from '../Chance';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { db } from '../../../db/db';
@@ -31,7 +34,13 @@ import { Action, Chip, HelpButton, Panel } from '../../../ui/kit/Kit';
 import { CALL_HOW, MATCH_HOW } from '../howDaily';
 import { Gremlin, Pundit } from '../Studio';
 import '../../../styles/look-tonight.css';
-import { CallPitch, Pitch, RollWord, ShapeKey } from './Pitch';
+import { CallPitch, onPitch, Pitch, RollWord, ShapeKey } from './Pitch';
+import { WonderSave } from './Save';
+import { GoalScene, goalKind } from './Takeover';
+
+const NTH: Record<number, string> = { 2: 'Second', 3: 'Third', 4: 'Fourth', 5: 'Fifth' };
+import { polygon, radii } from '../../../football/radar';
+import type { Credit } from '../../../football/players/types';
 import { firstLandingOk } from './Replay';
 import { roll, rollSeed } from './roll';
 
@@ -104,6 +113,15 @@ type Phase = 'enter' | 'shot' | 'retry' | 'shot2' | 'result';
 const MS = { enter: 1800, retry: 1800, result: 1400, lineResult: 2600, goal: 1000, lineGoal: 1800 };
 
 /** The score with both crests and names, the numbers as flip tiles, and the clock under it: what leads every match screen. */
+/** The score bug (m15-pitch): home club first, with the fixture's words beside the clock. */
+function LiveBug({ p, save, score, minute }: { p: PausedMatch; save: FbSave; score: [number, number]; minute: number }) {
+  const opp = clubById(p.prep.oppId);
+  const own: BugSide = { name: 'Brabo', short: 'BRA', crest: crestSvg(save.crest.step, save.crest.opt, 34), n: score[0], ours: true };
+  const them: BugSide = { name: clubName(opp.id), short: bugShort(clubName(opp.id)), crest: clubCrest(opp, 34), n: score[1], ours: false };
+  const where = [TIER_NAMES[String(p.prep.braboTier)], p.prep.matchday ? `Matchday ${p.prep.matchday}` : undefined, p.prep.braboHome ? 'home' : 'away'].filter(Boolean).join(' · ');
+  return <ScoreBug sides={p.prep.braboHome ? [own, them] : [them, own]} minute={minute} where={where} />;
+}
+
 function Scoreboard({ p, save, score, minute, label, from }: { p: PausedMatch; save: FbSave; score: [number, number]; minute?: number; label?: ReactNode; from?: [number, number] }) {
   const own: BoardSide = { id: OWN, crest: crestSvg(save.crest.step, save.crest.opt, 40), n: score[0], from: from?.[0] };
   const them: BoardSide = { id: p.prep.oppId, crest: clubCrest(clubById(p.prep.oppId), 40), n: score[1], from: from?.[1] };
@@ -157,7 +175,7 @@ function LivePlay({ p, save, onEnd }: { p: PausedMatch; save: FbSave; onEnd: () 
       else if (phase === 'shot') { if (rolls?.second) setPhase('retry'); else toResult(); }
       else if (phase === 'retry') setPhase('shot2');
       else if (phase === 'shot2') toResult();
-      else if (isGoal(c)) setGoal(k);
+      else if (isGoal(c) || c.tag === 'WONDER SAVE') setGoal(k);
       else next();
     }, wait);
     return () => clearTimeout(t);
@@ -166,7 +184,8 @@ function LivePlay({ p, save, onEnd }: { p: PausedMatch; save: FbSave; onEnd: () 
   const score: [number, number] = [upTo.filter((x) => x.side === 'atk' && x.ok && !x.kept).length, upTo.filter((x) => x.side === 'def' && !x.ok).length];
   const minute = c ? c.minute : st.stop?.kind === 'half' ? 45 : st.stop?.kind === 'call' ? st.stop.offer.minute : 90;
 
-  if (goal !== null) return <GoalView c={st.chances[goal]} p={p} save={save} score={score} credit={credits.find((x) => x.i === goal)} onOn={() => { setGoal(null); setK(goal + 1); setPhase('enter'); }} />;
+  if (goal !== null && st.chances[goal].tag === 'WONDER SAVE') return <WonderSaveView c={st.chances[goal]} p={p} score={score} credit={credits.find((x) => x.i === goal)} onOn={() => { setGoal(null); setK(goal + 1); setPhase('enter'); }} />;
+  if (goal !== null) return <GoalView c={st.chances[goal]} p={p} save={save} score={score} credit={credits.find((x) => x.i === goal)} mine={credits.filter((x) => x.kind === 'goal' && x.i <= goal && x.player === credits.find((y) => y.i === goal)?.player).map((x) => st.chances[x.i].minute)} onOn={() => { setGoal(null); setK(goal + 1); setPhase('enter'); }} />;
   if (!c) {
     if (st.stop?.kind === 'call') return <CallView offer={st.stop.offer} p={p} save={save} chances={st.chances} onPick={(pick) => once(() => recordLive({ pick }))} />;
     if (st.stop?.kind === 'half') return <HalfView p={p} save={save} chances={st.chances} score={score} onGo={(half2) => once(() => recordLive({ halfSeen: true, half2 }))} />;
@@ -182,7 +201,9 @@ function LivePlay({ p, save, onEnd }: { p: PausedMatch; save: FbSave; onEnd: () 
       </Fit>
     );
   }
-  const chain = moveChain(c, k, p.prep.xi, credits.find((x) => x.i === k)?.name);
+  const credit = credits.find((x) => x.i === k);
+  const chain = moveChain(c, k, p.prep.xi, credit?.name);
+  const cam = eventCamera(c);
   const opp = clubById(p.prep.oppId);
   // What moved the odds, with the other club named in full rather than by its initials.
   const chips = oddsChips(c.mods, c.type).map((x) => ({ ...x, text: opp.short && x.text.startsWith(`${opp.short} `) ? x.text.replace(opp.short, clubName(opp.id)) : x.text }));
@@ -190,24 +211,33 @@ function LivePlay({ p, save, onEnd }: { p: PausedMatch; save: FbSave; onEnd: () 
   const rolling = phase === 'shot' || phase === 'shot2';
   return (
     <Fit className={`md-live lt-live ms-live ${c.side}`} label="The match, live">
-      <Scoreboard p={p} save={save} score={score} minute={minute} />
+      <LiveBug p={p} save={save} score={score} minute={minute} />
       <div className="ms-tagrow" key={`t${k}`}><SideTag c={c} /><RollWord inShape={rolling ? word : null} /></div>
       <div className="md-stadium lt-stadium ms-stadium">
-        <i className="lt-flood" aria-hidden="true" />
-        <Pitch
-          s={{ chance: c, ball: phase === 'enter' || !shot ? undefined : shot.land, flying: rolling, zoom: !!shot?.close, save: phase === 'result' && c.side === 'def' && c.ok, resultKey: k, roll: shot ? { seed: shot.seed, ok: shot.ok } : undefined }}
-          dots={st.chances.slice(0, k)}
-          onWord={setWord}
-        />
+        {phase === 'enter' && !c.kept ? (
+          cam
+            ? <CameraScene key={`m${k}`} kind={cam} chain={cam === 'corner' ? [] : chain} inks={{ us: BRABO_INK, them: lossInkOf(p.prep.oppId) }} />
+            : <MoveScene key={`m${k}`} c={c} chain={chain} inks={{ us: BRABO_INK, them: lossInkOf(p.prep.oppId) }} />
+        ) : (
+          <>
+          <i className="lt-flood" aria-hidden="true" />
+          <Pitch
+            s={{ chance: c, ball: phase === 'enter' || !shot ? undefined : shot.land, flying: rolling, zoom: !!shot?.close, save: phase === 'result' && c.side === 'def' && c.ok, resultKey: k, roll: shot ? { seed: shot.seed, ok: shot.ok } : undefined }}
+            dots={st.chances.slice(0, k)}
+            onWord={setWord}
+          />
+          </>
+        )}
       </div>
       <div className="lt-now ms-now" key={k}>
         <div className={`ms-chance${verdict ? ' done' : ''}`}>
           <span className="ms-say">
             <span className="lt-cap">{c.minute}′ · {verdict ? `${c.pct}% ${c.side === 'atk' ? 'to score' : 'to stop it'}` : c.retake && (phase === 'retry' || phase === 'shot2') ? `${c.retake.why}! Chance 2 of 2` : c.side === 'atk' ? 'your chance' : 'their chance'}</span>
-            {verdict ? <b className={`ms-verdict ${isGoal(c) ? (c.side === 'atk' ? 'g' : 'x') : ''}`} role="status">{verdict}</b> : <span className="ms-wait">{rolling ? 'The ball is live…' : 'The move is on…'}</span>}
+            {verdict ? <b className={`ms-verdict ${isGoal(c) ? (c.side === 'atk' ? 'g' : 'x') : ''}`} role="status">{verdict}</b> : <span className="ms-wait">{rolling ? 'The ball is live…' : cam ? CAM_LINE[cam] : 'The move is on…'}</span>}
           </span>
           {!verdict && <span className="lt-pct"><b className="fb-num" style={pctInk(c.pct)}>{c.pct}%</b><span className="k-q">{c.side === 'atk' ? 'to score' : 'to stop it'}</span></span>}
         </div>
+        {verdict && credit && <p className="ms-line ms-said">{credit.line}</p>}
         {chain.length > 0 && <p className="ms-line"><b>The move</b> {chain.map((n, i) => <span key={n} className={i === chain.length - 1 ? 'last' : undefined}>{i > 0 && ' → '}{n}</span>)}</p>}
         {chips.length > 0 && <p className="ms-line"><b>Moved the odds</b> {chips.map((x, i) => <span key={x.text} style={{ color: AXIS_INK[x.axis] }}>{i > 0 && ' · '}{x.text}</span>)}</p>}
       </div>
@@ -259,10 +289,38 @@ export function CallView({ offer, p, save, onPick }: { offer: CallOffer; p: Paus
 }
 
 /** A goal (lg-goal): the page takes the scoring club's colours; Brabo's goals show the scorer's card. */
-function GoalView({ c, p, save, score, credit, onOn }: { c: ChanceEvent; p: PausedMatch; save: FbSave; score: [number, number]; credit?: { player: string; name: string; unit: string }; onOn: () => void }) {
+/** A wonder save (t17-save): the saver's card in your cracked shape, the odds and the score that held. */
+function WonderSaveView({ c, p, score, credit, onOn }: { c: ChanceEvent; p: PausedMatch; score: [number, number]; credit?: Credit; onOn: () => void }) {
+  const player = useLiveQuery(async () => (credit ? (await db.fbPlayers.get(credit.player)) ?? null : null), [credit?.player]);
+  const opp = clubName(p.prep.oppId);
+  const [home, away] = p.prep.braboHome ? ['Brabo', opp] : [opp, 'Brabo'];
+  const n: [number, number] = p.prep.braboHome ? score : [score[1], score[0]];
+  const state = score[0] > score[1] ? 'Lead kept' : score[0] === score[1] ? 'Still level' : 'Kept it close';
+  return (
+    <WonderSave minute={c.minute} fixture={`${home} v ${away}`} shape={polygon(radii(c.values, 'def'))} land={onPitch(c.retake?.land ?? c.land)} pct={c.pct} saver={credit?.name}
+        score={{ home, away, n }} line={credit?.line} facts={[c.type, credit ? `${credit.unit} unit` : undefined, state].filter((x): x is string => Boolean(x))} onOn={onOn}>
+        {player && <PlayerCard card={player.card} art={player.art} seed={player.id} player={player} />}
+    </WonderSave>
+  );
+}
+
+function GoalView({ c, p, save, score, credit, mine, onOn }: { c: ChanceEvent; p: PausedMatch; save: FbSave; score: [number, number]; credit?: Credit; mine: number[]; onOn: () => void }) {
   const ours = c.side === 'atk';
   const opp = clubById(p.prep.oppId);
   const player = useLiveQuery(async () => (ours && credit ? (await db.fbPlayers.get(credit.player)) ?? null : null), [credit?.player]);
+  if (ours) {
+    const opp = clubName(p.prep.oppId);
+    const [home, away] = p.prep.braboHome ? ['Brabo', opp] : [opp, 'Brabo'];
+    const n: [number, number] = p.prep.braboHome ? score : [score[1], score[0]];
+    const nth = mine.length || 1;
+    const state = score[0] - score[1] === 1 ? 'In front' : score[0] > score[1] ? 'Lead stretched' : score[0] === score[1] ? 'Level' : 'One back';
+    const facts = [c.type, credit && `${credit.unit} unit`, nth > 1 && `${NTH[nth] ?? `${nth}th`} goal tonight`, state].filter((x): x is string => Boolean(x));
+    return (
+      <GoalScene kind={goalKind(c, nth)} minute={c.minute} fixture={`${home} v ${away}`} pct={c.pct} scorer={credit?.name} minutes={mine} score={{ home, away, n }} line={credit?.line} facts={facts} onOn={onOn}>
+        {player && <PlayerCard card={player.card} art={player.art} seed={player.id} player={player} />}
+      </GoalScene>
+    );
+  }
   const screamer = ours && c.type === 'Long shot' && c.pct < 20;
   const colours = ours ? ['#ff8a3d', '#c2b2ff'] : [opp.colours[0] ?? '#7fb8ff', opp.colours[1] ?? '#141414'];
   return (

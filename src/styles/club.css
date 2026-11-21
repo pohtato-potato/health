@@ -193,3 +193,198 @@
 .kt-wait { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .kt-wait > .k-q { width: 100%; }
 .kt-aim-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+
+/* A player (board 21, f21-card): the card glowing in the middle, the big overall, the history row of small cards
+   with each card's step crowns in a row, and three stat tiles. */
+.pc19 { position: relative; display: grid; place-items: center; padding: 10px 0 4px; isolation: isolate; }
+.pc19::before { content: ''; position: absolute; z-index: -1; width: min(260px, 72vw); aspect-ratio: 1; border-radius: 50%; background: conic-gradient(from 0deg, transparent, rgba(255, 207, 74, .45), transparent 30%, rgba(255, 207, 74, .3), transparent 60%); filter: blur(6px); animation: pc19-ro 8s linear infinite; }
+@keyframes pc19-ro { to { transform: rotate(1turn); } }
+.pc19 .k6 { width: 150px; }
+.pr19 { display: flex; align-items: baseline; gap: 10px; }
+.pr19 > b { font: 700 88px/.85 var(--fb-cond); }
+.pr19 span { font: 700 15px/1.3 var(--sans); color: var(--k-cream); }
+.pr19 em { font-style: normal; display: block; color: #8fdcb6; }
+.pr19-sub { display: flex; flex-direction: column; gap: 2px; margin-top: -6px; }
+.tr19 { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 18px; background: rgba(255, 255, 255, .04); }
+.tr19 .h { display: flex; justify-content: space-between; gap: 8px; font: 700 15px var(--sans); color: var(--k-gold); }
+.tr19 .h span { color: rgba(243, 238, 230, .8); font-size: 14px; font-weight: 500; text-align: right; }
+.hs19 { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 -14px; padding: 12px 14px 8px; }
+.hs19::-webkit-scrollbar { display: none; }
+.hs19-v { flex: none; width: 74px; display: flex; flex-direction: column; align-items: center; gap: 2px; font: 500 14px/1.2 var(--sans); color: rgba(243, 238, 230, .85); text-align: center; animation: hs19-up .4s var(--d) ease-out both; }
+.hs19-v .k6 { width: 74px; margin-bottom: 4px; }
+.hs19-v b { font: 700 20px var(--fb-cond); color: var(--k-cream); }
+.hs19-v.now b { color: var(--k-gold); }
+@keyframes hs19-up { from { transform: translateY(10px); opacity: 0; } }
+.st19 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.st19 span { display: flex; flex-direction: column; align-items: center; padding: 10px 4px; border-radius: 16px; background: rgba(255, 154, 118, .1); font: 700 14px var(--sans); color: rgba(243, 238, 230, .85); }
+.st19 b { font: 700 38px/1 var(--fb-cond); color: var(--k-cream); }
+html.contrast .tr19, html.contrast .st19 span { background: #111; outline: 1px solid #fff; }
+html.contrast .pc19::before { display: none; }
+
+/* Squad, the binder (board 22, c22-binder): the ability slots at the top, then each unit as a page of cards. */
+.t22sl { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.t22sl li { display: flex; flex-direction: column; gap: 2px; padding: 8px; border-radius: 14px; background: color-mix(in srgb, var(--c) 18%, #14102a); box-shadow: inset 0 0 0 1.5px var(--c); font: 700 14px/1.2 var(--sans); color: #fff; min-width: 0; overflow-wrap: anywhere; }
+.t22sl li small { font: 700 14px var(--sans); color: var(--c); }
+.t22sl li.empty { background: transparent; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c) 55%, transparent); color: rgba(243, 238, 230, .75); border: 0; outline: 1.5px dashed color-mix(in srgb, var(--c) 55%, transparent); outline-offset: -1.5px; }
+.bd19-n { margin: 0; font: 700 15px var(--sans); color: rgba(243, 238, 230, .85); }
+.bd19-n b { font: 700 28px var(--fb-cond); color: #c2b2ff; margin-right: 2px; }
+.bd19-lg { display: flex; gap: 14px; flex-wrap: wrap; font: 700 14px var(--sans); color: rgba(243, 238, 230, .85); }
+.bd19-lg i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: #ffd36b; margin-right: 6px; vertical-align: -1px; }
+.bd19 { display: flex; flex-direction: column; gap: 14px; }
+.bd19 section { display: flex; flex-direction: column; gap: 8px; }
+.bd19 h3 { margin: 0; display: flex; align-items: baseline; gap: 8px; font: 700 22px/1 var(--fb-cond); text-transform: uppercase; color: var(--c); }
+.bd19 h3 small { font: 700 14px var(--sans); color: rgba(243, 238, 230, .8); text-transform: none; }
+.bd19 .gr { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px 6px; padding: 12px 8px 10px; border-radius: 16px; background: rgba(255, 255, 255, .035); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 30%, transparent); }
+.bd19-c { display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 44px; padding: 0; border: 0; background: none; color: inherit; cursor: pointer; animation: bd19-pop .35s var(--d) cubic-bezier(.34, 1.56, .64, 1) both; }
+.bd19-c .k6 { width: 100%; max-width: 56px; }
+.bd19-c b { font: 700 18px/1 var(--fb-cond); color: #fff; }
+.bd19-c.xi b { color: #ffd36b; }
+.bd19-c.xi .k6 { box-shadow: 0 0 0 2px #ffd36b; border-radius: 10px; }
+@keyframes bd19-pop { from { transform: scale(.6); opacity: 0; } }
+.bd19 .more { grid-column: 1 / -1; min-height: 44px; display: grid; place-items: center; border-radius: 12px; border: 1.5px dashed color-mix(in srgb, var(--c) 60%, transparent); background: none; font: 700 14px var(--sans); color: var(--c); cursor: pointer; }
+html.contrast .bd19 .gr { background: #111; box-shadow: inset 0 0 0 1px #fff; }
+html.contrast .t22sl li { background: #111; }
+
+/* Trials and the academy (board 23, c23-trials / c23-academy): each youngster as their card, tilted and floating. */
+.t23-list { display: flex; flex-direction: column; gap: 10px; }
+.t23pl { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 14px; align-items: center; padding: 12px; border-radius: 22px; background: color-mix(in srgb, var(--c) 16%, #0a1024); animation: t23-rise .6s cubic-bezier(.16, 1, .3, 1) both; }
+.t23pl .cw { display: block; transform: rotate(-4deg); animation: t23-float 4s ease-in-out infinite; }
+.t23pl .cw .k6 { width: 88px; }
+.t23pl .bd { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+.t23pl .nm { font: 700 20px/1.1 var(--sans); color: #fff; overflow-wrap: anywhere; }
+.t23pl .kb-stars { color: #ffe27a; font-size: 16px; letter-spacing: .1em; }
+.t23pl .ln { font: 400 15px/1.35 var(--sans); color: #dfe6ff; }
+.t23pl .tg { margin-top: 6px; padding: 3px 10px; border-radius: 12px; font: 700 14px var(--sans); background: #ffe27a; color: #0a1024; }
+.t23pl .tg.left { background: rgba(255, 255, 255, .55); }
+.t23pl .tg.growing, .t23pl .tg.promoted { background: #8fdcb6; }
+.t23pl .k-action, .t23pl button { margin-top: 8px; }
+.t23pl.gone { background: rgba(255, 255, 255, .05); }
+.t23pl.gone .cw { filter: grayscale(.8); }
+.t23pl .rg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 10px; align-self: stretch; }
+.t23pl .rg > div { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.t23pl .rg svg { width: 64px; height: 64px; }
+.t23pl .rg circle.f { stroke-dasharray: var(--l) 200; animation: t23-ring 1.2s .4s cubic-bezier(.16, 1, .3, 1) both; }
+.t23pl .rg span { font: 700 14px var(--sans); color: #dfe6ff; text-align: center; }
+@keyframes t23-rise { from { transform: translateY(16px); opacity: 0; } }
+@keyframes t23-float { 50% { transform: rotate(-2deg) translateY(-4px); } }
+@keyframes t23-ring { from { stroke-dasharray: 0 200; } }
+.t23-free { padding: 14px; border-radius: 18px; border: 1.5px dashed rgba(194, 178, 255, .55); font: 500 15px var(--sans); color: rgba(243, 238, 230, .85); }
+html.contrast .t23pl { background: #111; outline: 1px solid #fff; }
+html.contrast .t23pl .tg { outline: 1px solid #000; }
+.t23pl .rg .rg-n { font: 700 17px var(--fb-cond); fill: #fff; }
+
+/* A unit (board 19, u19-power): the count and the best rating big, starters lit at the top, the rest best first. */
+.uh19 { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 10px; }
+.uh19 b { display: block; font: 700 96px/.85 var(--fb-cond); color: var(--uc, #ff9a76); }
+.uh19 span { font: 700 15px/1.3 var(--sans); color: var(--k-cream); }
+.uh19 .bt { text-align: right; }
+.uh19 .bt b { font-size: 54px; color: var(--k-cream); }
+.ur19 { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ur19 li { animation: ur19-up .4s var(--d) ease-out both; }
+.ur19-r { width: 100%; display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: 10px; min-height: 64px; padding: 6px 10px; border: 0; border-radius: 16px; background: color-mix(in srgb, var(--uc, #ff9a76) 9%, transparent); color: inherit; text-align: left; cursor: pointer; }
+.ur19-r .k6 { width: 44px; }
+.ur19-r .nm { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ur19-r .nm b { font: 700 15px/1.2 var(--sans); color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ur19-r .nm small { font: 500 14px/1.3 var(--sans); color: rgba(243, 238, 230, .8); }
+.ur19-r .fr { height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+.ur19-r .fr i { display: block; height: 100%; background: #8fdcb6; }
+.ur19-r em { font: 700 26px var(--fb-cond); font-style: normal; color: #fff; text-align: right; }
+.ur19-r.xi { background: rgba(255, 211, 107, .16); box-shadow: inset 0 0 0 1.5px #ffd36b; }
+.ur19-r.xi em { color: #ffd36b; }
+@keyframes ur19-up { from { transform: translateY(10px); opacity: 0; } }
+html.contrast .ur19-r { background: #111; box-shadow: inset 0 0 0 1px #fff; }
+html.contrast .ur19-r.xi { box-shadow: inset 0 0 0 3px #ffd36b; }
+
+/* The ground at night (board 21, g21-ground): what is left on the stand, the built part rising inside its dashed
+   outline, the share as text beside it, the water's reflection and the built list numbered. */
+.gh21 { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; align-items: center; }
+.gh21 > b { grid-row: 1 / 3; font: 700 84px/.85 var(--fb-cond); color: #ffd9a8; text-shadow: 0 0 26px rgba(255, 122, 26, .55); }
+.gh21 strong { font: 700 24px/1 var(--fb-cond); text-transform: uppercase; color: #fff; }
+.gh21 span { font: 500 15px/1.35 var(--sans); color: #ffe9d2; }
+.gr21-cap { margin: 0 0 -6px; display: flex; justify-content: space-between; gap: 10px; font: 700 16px var(--fb-cond); color: #ffd9a8; }
+.gr21 .kc-rise { transform-box: fill-box; transform-origin: 50% 100%; transform: scaleY(var(--share)); animation: gr21-rise 1.6s .3s cubic-bezier(.3, 1, .4, 1) both; }
+@keyframes gr21-rise { from { transform: scaleY(0); } }
+.gr21 .kc-win { animation: gr21-win 4s steps(1) infinite; }
+@keyframes gr21-win { 50% { opacity: .35; } }
+.gr21 .kc-dash { animation: gr21-ants 2.4s linear infinite; }
+@keyframes gr21-ants { to { stroke-dashoffset: -26; } }
+.gr21-rf { height: 40px; margin-top: -14px; overflow: hidden; transform: scaleY(-1); opacity: .28; filter: blur(1.2px); -webkit-mask: linear-gradient(to top, #000, transparent); mask: linear-gradient(to top, #000, transparent); }
+.gr21-rf svg { display: block; margin-top: -70px; }
+.bl21 { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.bl21 li { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; align-items: start; padding: 10px 12px; border-radius: 16px; background: rgba(255, 217, 168, .06); animation: hs19-up .4s var(--d) ease-out both; }
+.bl21 li > b { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: #0b1022; box-shadow: inset 0 0 0 2px #ffd9a8; font: 700 15px var(--sans); color: #fff; }
+.bl21 li span { display: flex; flex-direction: column; gap: 2px; font: 400 15px/1.35 var(--sans); color: rgba(243, 238, 230, .85); }
+.bl21 li strong { font-weight: 700; color: #fff; }
+html.contrast .bl21 li { background: #111; outline: 1px solid #fff; }
+html.contrast .gr21-rf { display: none; }
+
+/* Money, the ledger (board 19, m19-ledger): the balance big in gold while coins fall, offers as letters to sign,
+   the sponsors with their risk in colour and in words. */
+.k-page:has(> .mh19) { position: relative; isolation: isolate; }
+.coins19 { position: absolute; inset: 0 0 auto; height: 260px; z-index: -1; overflow: hidden; pointer-events: none; }
+.coins19 i { position: absolute; top: -30px; left: var(--x); width: 18px; height: 18px; border-radius: 50%; opacity: .5; background: radial-gradient(circle at 35% 30%, #fff3c2, #f2c46d 50%, #a87a1a); box-shadow: 0 0 8px rgba(242, 196, 109, .6); animation: coins19-fall 5s var(--d) linear infinite; }
+@keyframes coins19-fall { to { transform: translateY(300px) rotate(360deg); } }
+.mh19 { display: flex; flex-direction: column; gap: 2px; }
+.mh19 b { font: 700 min(84px, 22vw)/.9 var(--fb-cond); color: #f2c46d; text-shadow: 0 0 30px rgba(242, 196, 109, .4); white-space: nowrap; }
+.mh19 small { font: 700 15px var(--sans); color: #fff; }
+.of19 { display: flex; flex-direction: column; gap: 12px; }
+.of19-l { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; padding: 30px 14px 14px; border-radius: 6px; background: #f4ecd8; color: #14100a; transform: rotate(var(--r)); animation: of19-stick .55s var(--d) cubic-bezier(.34, 1.56, .64, 1) both; }
+.of19-l::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 24px; background: linear-gradient(170deg, rgba(20, 16, 10, .08) 50%, transparent 50%), linear-gradient(190deg, rgba(20, 16, 10, .08) 50%, transparent 50%); }
+@keyframes of19-stick { from { transform: rotate(var(--r)) translateY(-30px) scale(1.06); opacity: 0; } }
+.of19-l b { font: 700 20px/1.1 var(--fb-cond); text-transform: uppercase; overflow-wrap: anywhere; }
+.of19-l em { font: 700 24px var(--fb-cond); font-style: normal; color: #0b5a2a; text-align: right; }
+.of19-l small { grid-column: 1 / -1; font: 700 14px var(--sans); color: #4a3a20; }
+.of19-l p { grid-column: 1 / -1; margin: 0; font: 400 15px/1.35 var(--sans); }
+.of19-l button { grid-column: 1 / -1; min-height: 48px; margin-top: 6px; border: 0; border-radius: 12px; background: #14100a; color: #f4ecd8; font: 700 15px var(--sans); cursor: pointer; }
+.sl19 { display: flex; flex-direction: column; gap: 8px; }
+.sl19 div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 10px 14px; border-radius: 16px; background: rgba(255, 255, 255, .04); animation: hs19-up .45s var(--d) ease-out both; }
+.sl19 b { font: 700 16px/1.2 var(--sans); color: #fff; }
+.sl19 em { font: 700 24px var(--fb-cond); font-style: normal; color: #f2c46d; text-align: right; }
+.sl19 small { font: 700 14px var(--sans); color: rgba(243, 238, 230, .8); }
+.sl19 .rk { justify-self: end; padding: 2px 8px; border-radius: 8px; background: color-mix(in srgb, var(--rk) 22%, transparent); color: var(--rk); font: 700 14px var(--sans); }
+html.contrast .coins19 { display: none; }
+html.contrast .sl19 div { background: #111; outline: 1px solid #fff; }
+.of19-l em span { display: block; font: 700 14px var(--sans); color: #4a3a20; }
+
+/* The board (board 20, d20-board): the minutes slide in on paper, "On track" stamps on, then the season's boon. */
+.bo20-page { padding-top: 22px; }
+.mn20 { position: relative; display: flex; flex-direction: column; gap: 12px; padding: 18px 16px 16px; border-radius: 4px; background: #fbf7ee; color: #1a1208; box-shadow: 0 14px 30px rgba(0, 0, 0, .5); transform: rotate(-1deg); animation: mn20-slide .7s .2s cubic-bezier(.2, 1.2, .4, 1) both; }
+@keyframes mn20-slide { from { transform: translateY(60px) rotate(-6deg); opacity: 0; } }
+.mn20 h2 { margin: 0; font: 700 28px/1 var(--fb-cond); text-transform: uppercase; border-bottom: 2px solid #1a1208; padding-bottom: 8px; }
+.mn20 h2 small { display: block; font: 700 14px var(--sans); text-transform: none; color: #6a5030; margin-top: 4px; }
+.mn20 .it { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; }
+.mn20 .it > b { grid-row: 1 / 4; font: 700 28px/1 var(--fb-cond); color: #a8341a; }
+.mn20 .it strong { font: 700 17px/1.25 var(--sans); }
+.mn20 .it .pr { display: flex; align-items: center; gap: 6px; font: 700 14px/1.3 var(--sans); color: #1a3a8a; }
+.mn20 .it.ok .pr { color: #0b5a2a; }
+.mn20 .it p { margin: 0; font: 400 15px/1.4 var(--sans); color: #4a3a20; font-style: italic; }
+.mn20 .ft { margin: 0; font: 700 14px var(--sans); color: #6a5030; }
+.mn20 .stp { position: absolute; right: 10px; top: -16px; background: #fbf7ee; padding: 4px 10px; border: 3px solid #0b5a2a; border-radius: 8px; color: #0b5a2a; font: 700 18px var(--fb-cond); text-transform: uppercase; transform: rotate(8deg); animation: mn20-stamp .5s 1.4s cubic-bezier(.34, 1.56, .64, 1) both; }
+@keyframes mn20-stamp { from { transform: rotate(8deg) scale(2.4); opacity: 0; } }
+.bn20 { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: center; padding: 14px; border-radius: 18px; background: linear-gradient(135deg, #2a5a3a, #14301e); border: 1.5px solid #8fdcb6; color: inherit; text-align: left; cursor: pointer; }
+.bn20 .ic { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: #8fdcb6; color: #14301e; }
+.bn20 .ic svg { width: 30px; height: 30px; }
+.bn20 b { display: block; font: 700 22px/1 var(--fb-cond); text-transform: uppercase; color: #fff; }
+.bn20 > span:last-child { font: 500 15px/1.35 var(--sans); color: #d6f5e4; }
+html.contrast .mn20 { background: #fff; color: #000; }
+
+/* Packs and the album (board 20, d20-packs): the album cards fan out, the rarest in front with a sheen. */
+.fn20 { position: relative; width: 300px; max-width: 100%; height: 200px; margin: 6px auto 34px; }
+.fn20-c { position: absolute; left: 50%; bottom: 0; width: 96px; height: 136px; margin-left: -48px; border-radius: 12px; padding: 8px; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; background: linear-gradient(160deg, color-mix(in srgb, var(--c) 70%, #fff), var(--c) 45%, color-mix(in srgb, var(--c) 40%, #160a26)); border: 2.5px solid #fff; color: #160a26; transform-origin: 50% 160%; transform: rotate(var(--a)); animation: fn20-fan .8s var(--d) cubic-bezier(.34, 1.56, .64, 1) both; box-shadow: 0 10px 20px rgba(0, 0, 0, .4); overflow: hidden; }
+@keyframes fn20-fan { from { transform: rotate(0) translateY(40px); opacity: 0; } }
+.fn20-c b { font: 700 14px/1.1 var(--sans); overflow-wrap: anywhere; }
+.fn20-c small { font: 700 14px var(--sans); }
+.fn20-c.top { z-index: 2; box-shadow: 0 0 30px var(--c), 0 10px 20px rgba(0, 0, 0, .4); }
+.fn20-c.top::after { content: ''; position: absolute; inset: 0; border-radius: 10px; background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, .65) 45%, transparent 60%); background-size: 250% 100%; animation: fn20-holo 2.6s linear infinite; }
+@keyframes fn20-holo { from { background-position: 150% 0; } to { background-position: -100% 0; } }
+.pk20 { text-align: center; }
+.pk20 b { display: block; font: 700 46px/1 var(--fb-cond); text-transform: uppercase; color: #ff9ae8; }
+.pk20 span { font: 700 15px var(--sans); color: #fff; }
+.rk20 { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.rk20 span { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 12px; background: rgba(255, 255, 255, .06); font: 700 14px var(--sans); color: #fff; }
+.rk20 i { width: 12px; height: 12px; border-radius: 50%; background: var(--c); }
+.al20 { display: flex; flex-direction: column; gap: 10px; }
+.al20 > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; font: 700 15px var(--sans); color: #fff; }
+.al20 > div > span { color: rgba(243, 238, 230, .8); font-size: 14px; }
+.al20 .kb-bar { grid-column: 1 / -1; }
+html.contrast .fn20-c { border-color: #000; outline: 2px solid #fff; }

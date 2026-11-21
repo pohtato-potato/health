@@ -7,7 +7,7 @@ import { BOOSTS } from '../../../football/content/packs';
 import type { Rarity } from '../../../football/content/types';
 import { openPackNow, seeRunningLow } from '../../../football/store/treeActions';
 import { albumProgress, collected, POOL_WORD, type PoolId } from '../../../football/tree/packs';
-import type { PackEarned, PackItem } from '../../../football/tree/types';
+import type { PackEarned, PackItem, TreeUser } from '../../../football/tree/types';
 import { RUNNING_LOW } from '../../../football/content/words';
 import { go } from '../../../router';
 import { useModel, type Model } from './model';
@@ -43,6 +43,44 @@ export function RunningLow({ pools }: { pools: PoolId[] }) {
 }
 
 const PACK_WORD: Record<PackEarned['size'], string> = { big: 'Big pack', single: 'Album card', normal: 'Pack' };
+
+const RANK: Rarity[] = ['legend', 'icon', 'prism', 'gold', 'silver', 'bronze'];
+/** What the packs have brought (board 20, d20-packs): the last eight new album cards fanned out, the rarest in front,
+ * the haul in words, a count per rarity, then the sets you have started. */
+export function PackHaul({ user }: { user: TreeUser }) {
+  const items = user.opened.flatMap((o) => o.items);
+  const fresh = items.filter((it) => it.kind === 'album' && !it.duplicate).map((it) => ALBUM_CARDS.find((c) => c.id === it.id)).filter((c): c is AlbumCard => !!c);
+  if (!user.opened.length) return null;
+  const fan = fresh.slice(-8).sort((a, b) => RANK.indexOf(b.rarity) - RANK.indexOf(a.rarity));
+  const boosts = items.filter((it) => it.kind === 'boost').length;
+  const first = user.opened.reduce((d, o) => (o.on < d ? o.on : d), user.opened[0].on);
+  const counts = RANK.map((r) => [r, fresh.filter((c) => c.rarity === r).length] as const).filter(([, n]) => n > 0);
+  const sets = albumProgress(user).filter((x) => x.have > 0).sort((a, b) => b.have / b.of - a.have / a.of);
+  // The others spread round the one in front; an odd number lean a half step so none hides straight behind it.
+  const mid = (fan.length - 2) / 2 - ((fan.length - 1) % 2 ? 0.5 : 0);
+  return (
+    <>
+      {fan.length > 0 && (
+        <div className="fn20" role="img" aria-label={`${fan.length} album cards fanned out${fan.length ? `, ${fan[fan.length - 1].title} in front` : ''}`}>
+          {fan.map((c, i) => (
+            <div key={c.id} className={`fn20-c${i === fan.length - 1 ? ' top' : ''}`} style={{ '--c': RARITY_HUE[c.rarity], '--a': `${i === fan.length - 1 ? 0 : (i - mid) * 9}deg`, '--d': `${0.2 + i * 0.1}s` } as CSSProperties}>
+              <b>{c.title}</b><small>{RARITY_NAME[c.rarity]}</small>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="pk20"><b>{user.opened.length} {user.opened.length === 1 ? 'pack' : 'packs'} opened</b><span>{fresh.length} album {fresh.length === 1 ? 'card' : 'cards'} and {boosts} {boosts === 1 ? 'boost' : 'boosts'} since {fmtDate(first)}</span></div>
+      {counts.length > 0 && <div className="rk20">{counts.map(([r, n]) => <span key={r} style={{ '--c': RARITY_HUE[r] } as CSSProperties}><i aria-hidden="true" />{n} {RARITY_NAME[r].toLowerCase()}</span>)}</div>}
+      {sets.length > 0 && (
+        <div className="al20">
+          {sets.slice(0, 4).map((x) => (
+            <div key={x.set.id}><b>{x.set.title}</b><span>{x.have} of {x.of}</span><Bar pct={(x.have / x.of) * 100} c="#ff9ae8" label={`${x.have} of ${x.of}`} /></div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
 
 /** Packs (board two, "Packs"): a pack you can see, and one thing to do. Then the album and the market as doors. */
 export function PacksPage() {
@@ -88,10 +126,11 @@ export function PacksPage() {
               </div>
             </>
           )}
+          {m.user.opened.length > 0 && <><Sect>From your packs</Sect><PackHaul user={m.user} /></>}
         </>
       ) : (
         <>
-          <Empty icon="pack" ink="#f2c46d" title="No packs waiting" line="They come from each week you finish, finals won, promotion, the season track and some bounties." />
+          {m.user.opened.length ? <PackHaul user={m.user} /> : <Empty icon="pack" ink="#f2c46d" title="No packs waiting" line="They come from each week you finish, finals won, promotion, the season track and some bounties." />}
           {doors}
         </>
       )}

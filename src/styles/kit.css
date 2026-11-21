@@ -363,3 +363,36 @@ html.contrast .k-door.locked .lk, html.contrast .k-door.locked .nm { color: var(
 /* Settings and upkeep (ledger O40, the other tabs): a quiet slate that sits close to the body's pearl, so it is told
    apart by its fill too: no family wash, only the page's own dark, with the slate edge, icon and name. */
 .k-door.fam[data-fam='upkeep'] { background: #141730; }
+
+/* Club on the night slate (c19-dusk): the eleven on a lit tactics board, the doors as neon tiles, then the page fades
+   into a dusk sky with the Kaai and its reflection, the crest in an orange ring and four facts on one line. */
+.fb-au:has(.kc-club.c19) { background: radial-gradient(90% 30% at 50% 0%, #1d2150, transparent 70%), #0a0c1c; }
+.fb-au:has(.kc-club.c19) > .fb-field { display: none; }
+.c19-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.c19-top h2 { margin: 0; font: 700 26px/1 var(--fb-cond); text-transform: uppercase; color: #fff; text-shadow: 0 0 12px #ff7a1a; }
+.c19-top span { font: 700 14px var(--sans); color: rgba(243, 238, 230, .78); }
+.c19-frame { position: relative; padding: 10px; border-radius: 16px; background: #1a1c30; box-shadow: inset 0 0 0 3px #2c2f50, 0 0 40px rgba(108, 63, 196, .35); }
+.kc-club.c19 .pl-pitch { background: radial-gradient(120% 80% at 30% 20%, #1a1f3a, #0c0f22 70%); }
+.kc-club.c19 .pl-pitch .pl-lines * { stroke: #9bd5ff; stroke-opacity: .55; filter: drop-shadow(0 0 2px #3fa9ff); }
+.kc-club.c19 .pl-tk b { box-shadow: 0 0 12px var(--uc), 0 0 2px #fff; }
+.kc-club.c19 .pl-tk span { color: #fff; text-shadow: 0 0 8px rgba(155, 213, 255, .8); }
+.kc-club.c19 .k-door { background: #0a0e24; border: 1.5px solid var(--ink); box-shadow: 0 0 10px -2px var(--ink), inset 0 0 10px -4px var(--ink); }
+.c19-foot { position: relative; margin: 10px -16px 0; padding: 0 16px 22px; background: linear-gradient(180deg, transparent 0%, #161a3e 40%, #2a1a4a 100%); }
+.c19-foot::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 240px; background: #2a1a4a; pointer-events: none; }
+.c19-sky { position: relative; }
+.c19-sky::before { content: ''; position: absolute; left: 10%; right: 10%; bottom: 30px; height: 80px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 122, 26, .35), transparent); filter: blur(8px); }
+.c19-refl { height: 40px; overflow: hidden; transform: scaleY(-1); opacity: .32; filter: blur(1px); -webkit-mask: linear-gradient(to top, #000, transparent); mask: linear-gradient(to top, #000, transparent); animation: c19-wave 3s ease-in-out infinite alternate; }
+.c19-refl > * { margin-top: -64px; }
+.c19-id { display: flex; align-items: center; gap: 14px; margin-top: -4px; }
+.c19-md { flex: none; width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; background: #0a0c1c; box-shadow: 0 0 0 3px #ff7a1a, 0 0 34px rgba(255, 122, 26, .6); animation: c19-land .8s cubic-bezier(.34, 1.56, .64, 1) both .3s; }
+.c19-id b { display: block; font: 700 30px/1 var(--fb-cond); text-transform: uppercase; color: #fff; text-shadow: 0 0 18px rgba(255, 122, 26, .5); }
+.c19-id span { font: 700 14px/1.3 var(--sans); color: #ffd9a8; }
+.c19-story { margin: 10px 0 0; font: 400 15px/1.4 var(--sans); color: rgba(243, 238, 230, .82); }
+.c19-ft { list-style: none; margin: 14px 0 0; padding: 12px 0 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; border-top: 1px solid rgba(255, 217, 168, .25); }
+.c19-ft li { display: flex; flex-direction: column; align-items: center; gap: 2px; font: 700 14px var(--sans); color: rgba(243, 238, 230, .78); text-align: center; min-width: 0; }
+.c19-ft b { font: 700 22px/1 var(--fb-cond); color: #fff; white-space: nowrap; }
+@keyframes c19-wave { to { transform: scaleY(-1) skewX(4deg); } }
+@keyframes c19-land { 0% { transform: translateY(-30px) scale(.6); opacity: 0; } }
+html.contrast .fb-au:has(.kc-club.c19) { background: #000; }
+html.contrast .c19-foot, html.contrast .c19-foot::after { background: #000; }
+html.contrast .c19-top span, html.contrast .c19-story, html.contrast .c19-ft li, html.contrast .c19-id span { color: #fff; }

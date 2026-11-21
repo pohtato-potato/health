@@ -7,14 +7,14 @@ import { LOBBY_DAYS, LOBBY_RISK, lobbyOpen, motionById, type Vote } from '../../
 import { seasonLength } from '../../../football/calendar';
 import { worldOf } from '../../../football/pyramid/shape';
 import { askDef, askOpen, asksOf, castById, MAX_RANK, perksAt, RANK_AT } from '../../../football/cast/bonds';
-import type { CastId } from '../../../football/content/desk/types';
-import { castVote, hallOf, lastCongress } from '../../../football/store/congress';
+import type { CastId, CastMember, Motion } from '../../../football/content/desk/types';
+import { castVote, hallOf, lastCongress, type HallMotion } from '../../../football/store/congress';
 import { bondsOfSave, scenesWaiting, seeScene } from '../../../football/store/cast';
 import { loadDesk } from '../../../football/store/desk';
 import { useTonight } from '../../../football/store/hooks';
 import type { FbSave } from '../../../football/store/tables';
 import { go, useRoute } from '../../../router';
-import { Action, Door, Empty, Hero, Panel, Sect, Title, type HowThisWorks } from '../../../ui/kit/Kit';
+import { Action, Door, Empty, Panel, Sect, Title, type HowThisWorks } from '../../../ui/kit/Kit';
 import { BLUE, CORAL, GOLD, GREEN, LAV, PINK } from '../club/Bits';
 import { FootballHome } from '../FootballHome';
 import '../../../styles/desk.css';
@@ -69,35 +69,13 @@ export function CongressRoute() {
   const c = m?.view.congress;
   if (!t || !m || !c) return <NoClub title="The congress" section="league" />;
   const hall = hallOf(c);
-  const passing = hall.filter((h) => h.passing).length;
   const voted = hall.some((h) => h.brabo !== 'abstain');
   const last = lastCongress(t.save);
   const when = c.open ? (c.daysLeft !== undefined ? `${c.daysLeft} ${c.daysLeft === 1 ? 'day' : 'days'} left to lobby` : 'lobbying until the new season') : `lobbying opens ${LOBBY_DAYS} days before the season ends`;
   return (
     <Page title="Congress" back="League" to="/football/league" help={CONGRESS_HOW} section="league">
-      <Hero value={`${passing}/${hall.length}`} ink={GOLD} label="passing as it stands" under={`Before season ${c.season} · ${when}`} />
-      {hall.map((h) => {
-        const def = motionById(h.id)!;
-        const ink = h.passing ? GREEN : CORAL;
-        return (
-          <Panel key={h.id} ink={ink} className="cg-motion">
-            <Title as="h2" under={def.text}>{def.name}</Title>
-            <div className="cg-seats" role="img" aria-label={`${h.for} for, ${h.against} against, ${h.abstain} abstaining`}>
-              <span className="cg-bar for" style={{ flexGrow: h.for }} />
-              <span className="cg-bar abs" style={{ flexGrow: h.abstain }} />
-              <span className="cg-bar ag" style={{ flexGrow: h.against }} />
-            </div>
-            <div className="k-row"><span className="k-q">As it stands</span><b className="cg-count" style={{ color: ink }}>{h.for}–{h.against}{h.abstain ? ` · ${h.abstain} abstain` : ''}</b></div>
-            {h.lobbied > 0 && <div className="k-row"><span className="k-q">Won by lobbying</span><b>{h.lobbied}</b></div>}
-            <span><b className="k-lb">If it passes</b> <span className="k-q">{def.plays}</span></span>
-            <div className="k-pills cg-vote" role="radiogroup" aria-label={`Your vote on ${def.name}`}>
-              {(['for', 'against', 'abstain'] as Vote[]).map((v) => (
-                <button key={v} type="button" role="radio" className="k-pill" aria-checked={h.brabo === v} onClick={() => void castVote(c.season, h.id, v)}>{VOTE_WORD[v]}</button>
-              ))}
-            </div>
-          </Panel>
-        );
-      })}
+      <HallHead seats={hall[0] ? hall[0].for + hall[0].against + hall[0].abstain : c.clubs.length + 1} season={c.season} line={when} />
+      {hall.map((h, i) => <MotionChalk key={h.id} h={h} def={motionById(h.id)!} i={i} n={hall.length} onVote={(v) => void castVote(c.season, h.id, v)} />)}
       {c.open && voted && <Action wide onClick={() => go('/football/desk/job', { id: 'lobby' })}>Lobby a club · one die</Action>}
       {last && (
         <>
@@ -115,6 +93,45 @@ export function CongressRoute() {
         </>
       )}
     </Page>
+  );
+}
+
+/** The hall's head (board 23, c23-congress): how many seats vote, and when lobbying runs. */
+export function HallHead({ seats, season, line }: { seats: number; season: number; line: string }) {
+  return (
+    <div className="cg23-hall">
+      <b className="fb-num">{seats}</b>
+      <span><strong>seats vote before season {season}</strong>Yours is one of them. The count below is as things stand, {line}.</span>
+    </div>
+  );
+}
+
+/** One motion as a chalk card on the tactics board: the seats for and against as numbers, a bar meeting the
+ *  middle line, the abstentions, Passing or Falling in words, and your vote. */
+export function MotionChalk({ h, def, i, n, onVote }: { h: HallMotion; def: Motion; i: number; n: number; onVote: (v: Vote) => void }) {
+  const tot = Math.max(1, h.for + h.against);
+  const d = 0.2 + i * 0.25;
+  return (
+    <section className="cg23" aria-labelledby={`cg-${h.id}`} style={{ '--d': `${d}s` } as CSSProperties}>
+      <span className={`cg23-v ${h.passing ? 'ok' : 'no'}`}>{h.passing ? 'Passing' : 'Falling'}</span>
+      <small>Motion {i + 1} of {n}</small>
+      <h2 id={`cg-${h.id}`}>{def.name}</h2>
+      <p>{def.text}</p>
+      <div className="cg23-cnt">
+        <span><b className="fb-num f">{h.for}</b><small>for</small></span>
+        <div className="cg23-bar" role="img" aria-label={`${h.for} for, ${h.against} against; it needs more for than against`}>
+          <i className="f" style={{ width: `${(h.for / tot) * 100}%` }} /><i className="a" style={{ width: `${(h.against / tot) * 100}%` }} />
+        </div>
+        <span className="rt"><b className="fb-num a">{h.against}</b><small>against</small></span>
+      </div>
+      <p className="cg23-ab">{h.abstain} {h.abstain === 1 ? 'seat abstains' : 'seats abstain'} · it passes on more for than against{h.lobbied > 0 ? ` · ${h.lobbied} won by lobbying` : ''}</p>
+      <p className="cg23-if"><b>If it passes</b> {def.plays}</p>
+      <div className="cg23-vt" role="radiogroup" aria-label={`Your vote on ${def.name}`}>
+        {(['for', 'against', 'abstain'] as Vote[]).map((v) => (
+          <button key={v} type="button" role="radio" aria-checked={h.brabo === v} onClick={() => onVote(v)}>{VOTE_WORD[v]}</button>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -155,28 +172,39 @@ export function CastRoute() {
   const ranks = members.reduce((n, y) => n + y.rank, 0);
   return (
     <Page title="The cast" back="Club" to="/football/club" help={CAST_HOW} section="club">
-      <Hero value={ranks} ink={PINK} label={ranks === 1 ? 'rank between you' : 'ranks between you'} under={`of ${members.length * MAX_RANK} · nothing is ever taken away`} />
+      <div className="bh21"><b className="tn">{members.length}</b><span><strong>{members.length === 1 ? 'bond' : 'bonds'}</strong>{ranks} {ranks === 1 ? 'rank' : 'ranks'} between you of {members.length * MAX_RANK}. Spend a die with someone and the bond grows; nothing is ever taken away.</span></div>
       {waiting[0] && (
         <Panel ink={GOLD} onClick={() => go('/football/cast', { scene: `${waiting[0].member}:${waiting[0].rank}` })} label={`A new scene with ${castById(waiting[0].member)!.name}`}>
           <span className="k-col"><b>Rank {waiting[0].rank} with {castById(waiting[0].member)!.name}</b><span className="k-q">{waiting.length > 1 ? `A new scene, and ${waiting.length - 1} more after it` : 'A new scene is waiting'}</span></span>
         </Panel>
       )}
-      {members.map((y) => (
-        <Panel key={y.id} ink={PINK} onClick={() => go('/football/cast', { member: y.id })} label={`${y.name}, ${y.role}: rank ${y.rank}`} className="cg-member">
-          <span className="cg-mrow">
-            <i className="cg-sil" aria-hidden="true" />
-            <span className="k-col" style={{ flex: 1 }}>
-              <b>{y.name}</b>
-              <span className="k-q">{y.role}</span>
-              <Pips rank={y.rank} />
-              <span className="k-q">{y.rank >= MAX_RANK ? `Rank ${MAX_RANK}` : `${y.toNext} to rank ${y.rank + 1}`}{y.askOpen ? ' · an ask is open' : ''}</span>
-            </span>
-            <span className="cg-rank" aria-hidden="true">{y.rank}</span>
-          </span>
-        </Panel>
-      ))}
+      <BondPlates members={members} />
       <Action wide onClick={() => go('/football/desk/job', { id: 'cast' })}>Time with the cast · one die</Action>
     </Page>
+  );
+}
+
+const BOND_INK = ['#ff9a76', '#5fe3a1', '#c2b2ff', '#ffd36b', '#8fd8ff', '#ff7d9c', '#93c3dc'];
+const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+/** The staff as bonds (board 21, b21-list): one slanted plate per person, a card for them with the rank in its corner,
+ * the rank in diamonds and as a big number, and a flashing tag when they have asked you something. */
+export function BondPlates({ members }: { members: MemberRow[] }) {
+  return (
+    <div className="bo21">
+      {members.map((y, i) => (
+        <button key={y.id} type="button" className={`bo21-p${y.askOpen ? ' ask' : ''}`} style={{ '--c': BOND_INK[i % BOND_INK.length], '--d': `${0.15 + i * 0.08}s` } as CSSProperties}
+          onClick={() => go('/football/cast', { member: y.id })} aria-label={`${y.name}, ${y.role}: rank ${y.rank} of ${MAX_RANK}${y.askOpen ? ', has asked you something' : ''}`}>
+          <span className="bc21" aria-hidden="true"><i>{ROMAN[y.rank] ?? y.rank}</i><span className="cg-sil" /></span>
+          <span className="bn21">
+            <b>{y.name}</b><small>{y.role}</small>
+            <Pips rank={y.rank} ink="var(--c)" />
+            <small className="nx">{y.rank >= MAX_RANK ? 'The bond is whole' : `${y.toNext} to rank ${y.rank + 1}`}</small>
+            {y.askOpen && <em className="tg">Has asked you something</em>}
+          </span>
+          <span className="br21" aria-hidden="true"><b>{y.rank}</b><small>of {MAX_RANK}</small></span>
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -188,42 +216,58 @@ const Pips = ({ rank, ink = PINK }: { rank: number; ink?: string }) => (
 
 type MemberRow = NonNullable<Awaited<ReturnType<typeof loadDesk>>>['view']['cast'] extends infer V ? V extends { members: (infer M)[] } ? M : never : never;
 
-/** One person: their rank leading, who they are, what they care about, what stays changed, and their scenes. */
-function Member({ save, date, member: x }: { save: FbSave; date: string; member: MemberRow }) {
-  const c = castById(x.id)!;
-  const perks = perksAt(x.id, x.rank);
-  const ask = asksOf(save.desk).find((a) => a.member === x.id && askOpen(a, save.bonds, date));
-  const seen = save.castSeen?.[x.id] ?? 0;
+const ARROW = <svg className="ar" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6" /></svg>;
+
+/** One bond (board 21, b21-nadia): their card flips in beside the name, this rank and the next as text, an open ask,
+ * then all ten ranks: scenes you have seen by title, a reached one waiting, locked ones hidden, every perk shown. */
+export function BondPage({ c, x, seen, ask }: { c: CastMember; x: MemberRow; seen: number; ask?: string }) {
+  const whole = x.rank >= MAX_RANK;
   return (
-    <Page title={c.name} back="Cast" to="/football/cast" help={CAST_HOW} section="club">
-      <div className="cg-lead">
-        <i className="cg-sil big" aria-hidden="true" style={{ '--ink': PINK } as CSSProperties} />
-        <Hero value={x.rank} ink={PINK} label={`Rank of ${MAX_RANK}`} under={x.rank >= MAX_RANK ? 'The bond is whole' : `${x.toNext} to rank ${x.rank + 1}`} />
+    <>
+      <div className="nh21">
+        <span className="bc21" aria-hidden="true"><span className="cg-sil big" /></span>
+        <span><strong>{c.name}</strong><small>{c.role}</small></span>
       </div>
-      <Pips rank={x.rank} />
-      <Panel ink={PINK}>
-        <b className="k-lb">{c.role}</b>
-        <span>{c.who}</span>
-      </Panel>
+      <div className="ru21" role="img" aria-label={whole ? `Rank ${MAX_RANK}: the bond is whole` : `Rank ${x.rank} now; rank ${x.rank + 1} next, ${x.toNext} to go`}>
+        <b>{x.rank}</b>{!whole && <>{ARROW}<b className="nx21b">{x.rank + 1}</b></>}<em>{whole ? 'the bond is whole' : `${x.toNext} to the next rank`}</em>
+      </div>
+      <p className="nd21-who">{c.who}</p>
+      {ask && <div className="as21"><i aria-hidden="true">!</i><span><b>{c.name.split(' ')[0]} has asked you something</b>{ask}</span></div>}
       <Panel ink={GREEN}>
         <b className="k-lb">Cares about</b>
         <span>{c.cares.text}</span>
         <span className="k-q">{x.tone === 'warm' ? 'Warm with you lately.' : 'A little cool lately. It costs nothing.'}</span>
       </Panel>
-      {ask && (
-        <Panel ink={GOLD}>
-          <b className="k-lb">An ask is open</b>
-          <span>{askDef(ask)?.text}</span>
-        </Panel>
-      )}
-      {perks.length > 0 && <Sect>Changed for good</Sect>}
-      {perks.map((p, i) => <Panel key={`${p.key}-${i}`} ink={BLUE} flat><span>{p.text}</span></Panel>)}
-      {seen > 0 && <Sect>Scenes</Sect>}
-      {c.ranks.filter((r) => r.rank <= seen).map((r) => (
-        <Panel key={r.rank} ink={LAV} onClick={() => go('/football/cast', { scene: `${x.id}:${r.rank}`, from: x.id })} label={`Rank ${r.rank}: ${r.title}`}>
-          <span className="k-row" style={{ justifyContent: 'flex-start' }}><b className="cg-rank sm">{r.rank}</b><b>{r.title}</b></span>
-        </Panel>
-      ))}
+      <Sect>The ranks</Sect>
+      <ol className="ld21">
+        {c.ranks.map((r, i) => {
+          const open = r.rank <= seen, waiting = !open && r.rank <= x.rank;
+          const body = (
+            <>
+              <b>{ROMAN[r.rank] ?? r.rank}</b>
+              <span>{open ? r.title : waiting ? 'A new scene is waiting' : 'Not yet'}{r.perk && <small>Perk: {r.perk.text}</small>}</span>
+            </>
+          );
+          return (
+            <li key={r.rank} className={`${open || waiting ? 'op' : 'lk'}${r.perk ? ' pk' : ''}`} style={{ '--d': `${0.3 + i * 0.05}s` } as CSSProperties}>
+              {open || waiting
+                ? <button type="button" onClick={() => go('/football/cast', { scene: `${x.id}:${r.rank}`, from: x.id })} aria-label={`Rank ${r.rank}: ${open ? r.title : 'a new scene is waiting'}`}>{body}</button>
+                : <div>{body}</div>}
+            </li>
+          );
+        })}
+      </ol>
+    </>
+  );
+}
+
+/** One person's page: the bond page and a die to spend with them. */
+function Member({ save, date, member: x }: { save: FbSave; date: string; member: MemberRow }) {
+  const c = castById(x.id)!;
+  const ask = asksOf(save.desk).find((a) => a.member === x.id && askOpen(a, save.bonds, date));
+  return (
+    <Page title={c.name} back="Cast" to="/football/cast" help={CAST_HOW} section="club">
+      <BondPage c={c} x={x} seen={save.castSeen?.[x.id] ?? 0} ask={ask ? askDef(ask)?.text : undefined} />
       <Action wide onClick={() => go('/football/desk/job', { id: 'cast', target: x.id })}>Time with {c.name} · one die</Action>
     </Page>
   );

@@ -214,3 +214,18 @@ Not code. It runs once all of Parts 1–5 that do not wait on it are merged, or 
 - [ ] **Step 2: Run `impeccable`** on the redesign list together with items 1–4 of spec section 6: the graduation transition, club pages with that club's opinion of you, the market with named players, and one muscle page. Same rules as the boards. Real numbers come from the backup, read locally only. Hypotheticals are labelled.
 - [ ] **Step 3: Publish the board** and ask the owner, in one numbered list, the open questions: readiness, "km" on departures, plus any the round raises.
 - [ ] **Step 4: Fold the pins into this plan** as new rows, one screen per task, and commit with `docs: final round pins`.
+
+### Added to Task Z from Part 2 (Football)
+
+Part 2 left these for the last round. Each needs a design or a data decision before it can be built.
+
+- **2.44 and the Juventus club page.** Both wait on the club's opinion of you (spec section 6, item 2).
+- **The loan market with named players** (spec section 6, item 3). The market was not rebuilt.
+- **2.6 opponent squad numbers.** Only loan players have shirt numbers; the opponent's eleven has none stored. Decide whether to store them, or drop numbers from the board.
+- **The academy graduation page** (spec section 6, item 1). 2.25 says the free places in words and links nowhere new.
+- **The ground at night with numbered pins (2.27).** The app kept its Kaai drawing with motion added; the board's all-new night drawing is an illustration task.
+- **Role emblems on bond cards (2.28).** The cards use the existing silhouette; the app has no emblem per staff role.
+- **Their goals.** The live match keeps the existing "They score" page; no board drew a conceded-goal scene (2.7).
+- **Scrapbook pages for screamers, saves and runs (2.49).** Only Giant beaten has a drawn page; the other cards don't open yet. Screamer cards also lack the scorer, which is not stored per chance.
+- **Ratings on Giant beaten (2.50).** The board's "68 to your 34" needs both sides' ratings stored with the match.
+- **Goals on the season pennants (2.51).** Goals scored and let in are not in the season summary; the current pennant shows won–lost so far instead of a live position.

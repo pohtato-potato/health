@@ -37,7 +37,7 @@ describe('Full time', () => {
     expect(out).toContain('Clean sheet');
     expect(out).toContain('Came from behind');
     expect(out.split('Night shift').length - 1).toBe(1);
-    expect(out).toContain('Found out');
+    expect(out).toContain('’s hidden ability'); // the f23-ft seal replaced the Found out panel
     const plain = html(<FullTimeView m={{ ...m, events: { ...m.events, revealed: undefined } }} save={save} />);
     expect(plain).not.toContain('Found out');
   });

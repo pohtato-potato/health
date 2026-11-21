@@ -1,4 +1,5 @@
 // The ground, sealed: only what exists, plus the next project's name and a teasing line.
+import type { CSSProperties } from 'react';
 import { neighbourWords } from '../../../football/data/load';
 import { BUNDLES, capacityOf, homeGround, isOpen, isShut, kaaiStory, PLACES, type BundleDef, type Need } from '../../../football/ground';
 import { euros } from '../../../football/money';
@@ -6,7 +7,7 @@ import type { Club } from '../../../football/store/club';
 import type { FbBundle } from '../../../football/store/tables';
 import { useModel } from '../tree/model';
 import { ProjectList } from '../tree/TreeScreens';
-import { Action, Hero, Panel, Sect } from '../../../ui/kit/Kit';
+import { Action, Panel, Sect } from '../../../ui/kit/Kit';
 import { Icon } from '../../../ui/Icon';
 import { Bar, Note, PanelTop } from './Bits';
 import { Kaai, kaaiStage } from './Kaai';
@@ -20,6 +21,39 @@ const STAGE_NAME = ['Works team', 'Town club', 'City club'];
 /** The side buildings a bigger stage is drawn with, for the picture of a stage you have not reached. */
 const SIDES = ['river-end', 'crane-stand', 'dock-end'];
 const STAGE_LINE = ['One stand, two floodlights.', 'A second tier, the café and the club shop either side.', 'A roof, the lit entrance, the quay wall in club purple.'];
+
+const NEED_NAME: Record<Need, string> = { steps: 'Steps', training: 'Training', sleep: 'Sleep', protein: 'Protein', bedtime: 'Bedtime', meds: 'Medicine', kcal: 'Calories', youth: 'Youth', none: '' };
+const needsOf = (b: BundleDef, st?: FbBundle) => b.needs.filter((n) => n.what !== 'none').map((n) => ({ what: n.what, have: Math.min(n.count, st?.progress[n.what] ?? 0), count: n.count }));
+/** How much of a project is done: needs met over needs in all. */
+export function shareOf(b: BundleDef, st?: FbBundle): { met: number; total: number } {
+  const ns = needsOf(b, st);
+  return { met: ns.reduce((t, n) => t + n.have, 0), total: ns.reduce((t, n) => t + n.count, 0) };
+}
+
+/** The ground's head (board 21, g21-ground): while the Kaai Stand is going up, how much is left on it and each need
+ * as words; once it stands, how much is built. The built share sits as text beside the drawing. */
+export function GroundHead({ focus, st, built }: { focus?: BundleDef; st?: FbBundle; built: number }) {
+  if (!focus) return <div className="gh21"><b className="tn">{built}</b><strong>built on the quay</strong><span>Each one is drawn into the Kaai at the top of Club.</span></div>;
+  const { met, total } = shareOf(focus, st);
+  return (
+    <>
+      <div className="gh21">
+        <b className="tn">{total - met}</b><strong>to go on the {focus.name}</strong>
+        <span>{needsOf(focus, st).map((n) => `${NEED_NAME[n.what]} ${n.have} of ${n.count}`).join(' · ')}. {focus.effect.split('. ')[0].replace(/\.?$/, '.')}</span>
+      </div>
+      <p className="gr21-cap"><span>{focus.name} · {met} of {total}</span><span>{built} built</span></p>
+    </>
+  );
+}
+
+/** Everything built, numbered, each with what it does. */
+export function BuiltList({ built, shut }: { built: BundleDef[]; shut: (b: BundleDef) => boolean }) {
+  return (
+    <ol className="bl21">
+      {built.map((b, i) => <li key={b.id} style={{ '--d': `${0.1 + i * 0.05}s` } as CSSProperties}><b>{i + 1}</b><span><strong>{b.name}</strong>{b.effect}{shut(b) ? ' Shut while it’s built.' : ''}</span></li>)}
+    </ol>
+  );
+}
 
 /** The ground (board two, "The ground"; "The Kaai grows with the club"): the Kaai on top, what is being built and what
  * makes each one grow, then how the Kaai grows with the club. */
@@ -36,13 +70,16 @@ export function GroundView({ c, onMove }: { c: Club; onMove?: (on: boolean) => v
   const building = tree ? tree.projectsOpen.filter((p) => !tree.states.get(p.id)?.done).length : open.length;
   const stage = kaaiStage(c.stage ?? c.tier);
   const canMove = !s.moved && done.includes('kaai-stand');
+  const standDef = BUNDLES.find((b) => b.id === 'kaai-stand');
+  const standUp = done.includes('kaai-stand');
+  const sh = standDef ? shareOf(standDef, states.get('kaai-stand')) : { met: 0, total: 0 };
+  const standShare = sh.total ? sh.met / sh.total : 0;
   return (
     <div className="k-page">
-      <div className="kg-kaai"><Kaai tier={c.stage ?? c.tier} done={done} height={110} site={!s.moved && !done.includes('kaai-stand')} /></div>
-      <div className="kb-lead">
-        <Hero value={building} ink="#ff9a76" label="open to build" />
-        <span className="k-r k-q">{s.moved ? `${homeGround(true)} · holds ${capacityOf(true, done).toLocaleString('en-GB')}` : `Tenants at ${homeGround(false)}`}</span>
-      </div>
+      <GroundHead focus={standUp ? undefined : standDef} st={states.get('kaai-stand')} built={built.length} />
+      <div className="kg-kaai gr21"><Kaai tier={c.stage ?? c.tier} done={done} height={110} site={!s.moved && !standUp} share={standShare} /></div>
+      <div className="kg-kaai gr21-rf" aria-hidden="true"><Kaai tier={c.stage ?? c.tier} done={done} height={110} site={!s.moved && !standUp} share={standShare} /></div>
+      <span className="k-q">{s.moved ? `${homeGround(true)} · holds ${capacityOf(true, done).toLocaleString('en-GB')}` : `Tenants at ${homeGround(false)}`} · {building} open to build</span>
       <Note>{kaaiStory(done, Boolean(s.moved))}{s.moved ? '' : ` ${neighbourWords('They keep the good dressing room.')}`}</Note>
       {canMove && (s.moveAtBreak
         ? <Panel ink="#8fdcb6" flat><Icon name="check" size={24} color="#8fdcb6" /><span style={{ flex: 1 }}><b>Moving to Kaai 42 at the next break</b></span><Action quiet sm onClick={() => onMove?.(false)}>Stay</Action></Panel>
@@ -57,15 +94,8 @@ export function GroundView({ c, onMove }: { c: Club; onMove?: (on: boolean) => v
       <Note>A die on the desk’s project job adds to one of these. Day totals only, never when you logged.</Note>
       {built.length > 0 && (
         <>
-          <Sect>Built</Sect>
-          <div className="kb-rows">
-            {built.map((b) => (
-              <Panel key={b.id} ink="#f2c46d">
-                <PanelTop name={b.name} c="#f2c46d" right={isShut(b, states.get(b.id)?.done, c.today ?? '') ? 'shut while it’s built' : undefined} />
-                <span className="k-q">{b.effect}</span>
-              </Panel>
-            ))}
-          </div>
+          <Sect>{built.length} built</Sect>
+          <BuiltList built={built} shut={(b) => isShut(b, states.get(b.id)?.done, c.today ?? '')} />
         </>
       )}
       <h2 className="k-sect kg-big">How the Kaai grows</h2>

@@ -1,4 +1,5 @@
-// The pyramid (board 10): six tiers in their colours, ratings glowing by the gap to yours, the word beside it.
+// The pyramid (board 10; board 23 k23-pyr): the tiers stacked narrowest at the top, each in its colour, ratings glowing
+// by the gap to yours with the word beside it; yours gold with "You" on it.
 import { CLUBS, TIER_BANDS, tierName } from '../../../football/data/load';
 import { gapOf } from '../../../football/store/league';
 import { OWN } from '../../../football/store/season';
@@ -21,16 +22,17 @@ export function Pyramid({ tierOf, rating, onTier }: { tierOf: Record<string, Tie
           const famous = ids.map((id) => clubById(id)).sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)).slice(0, 2).map((c) => c.name);
           const who = t === mine ? [famous[0], 'you'].filter(Boolean) : famous;
           return (
-            <li key={t} className={`fb-tier t${t}${t === mine ? ' here' : ''}`} style={{ '--t': `var(--fb-t${t})`, '--w': `${100 - i * 5}%` } as React.CSSProperties}>
+            <li key={t} className={`fb-tier t${t}${t === mine ? ' here' : ''}`} style={{ '--t': `var(--fb-t${t})`, '--w': `${Math.round(100 - ((TIERS.length - 1 - i) * 36) / Math.max(1, TIERS.length - 1))}%`, '--d': `${i * 0.07}s` } as React.CSSProperties}>
               <button type="button" onClick={() => onTier?.(t)} aria-label={`${tierName(t)}: ratings ${lo} to ${hi}, ${g.word}. ${who.join(', ')}`}>
-                <span className="fb-col"><b>{tierName(t)}</b><span className="fb-s">{who.join(', ')}{t === mine ? '' : '…'}</span></span>
+                <span className="pyr-n" aria-hidden="true">{t}</span>
+                <span className="fb-col"><b>{tierName(t)}{t === mine && <em className="pyr-you">You</em>}</b><span className="fb-s">{who.join(', ')}{t === mine ? '' : '…'}</span></span>
                 <span className={`fb-gap ${g.cls}`}><em>{lo}–{hi}</em><span>{g.word}</span></span>
               </button>
             </li>
           );
         })}
       </ol>
-      <p className="fb-s">{CLUBS.length} clubs in six tiers. Tap a tier for its table.</p>
+      <p className="fb-s">{CLUBS.length} clubs in {TIERS.length} tiers, best at the top. Tap a tier for its table.</p>
     </section>
   );
 }

@@ -1,7 +1,7 @@
 // Football engine 2, layer 4: the world (spec §9.3–9.5, §10, §16; rounds seven to nine as pinned).
 // Loans from packs, sleep-style trials and the academy, international duty, and the morning on Tonight.
 // The aurora look with glowing outlines; words in Atkinson Hyperlegible Next, numbers and titles in Fraunces.
-import { useEffect, type CSSProperties } from 'react';
+import { useEffect, type CSSProperties, type ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { go } from '../../../router';
 import { loadHealth } from '../../../football/store/gather';
@@ -14,6 +14,8 @@ import { BREAK_DAYS, DUTY_ATTR, DUTY_NEEDS } from '../../../football/globe/duty'
 import { fromName, nationName } from '../../../football/globe/nations';
 import { UNIT_HABIT } from '../../../football/globe/scout';
 import { UNIT_COLOUR } from '../../../football/players/eleven';
+import { artForExercise, artForHabit } from '../../../football/players/art';
+import { PlayerCard } from '../players/Card';
 import type { LoanDef, Unit } from '../../../football/content/types';
 import type { FbSquadRow } from '../../../football/store/tables';
 import type { LoanStay } from '../../../football/globe/types';
@@ -170,34 +172,52 @@ export function TrialsPage() {
   if (!w) return null;
   const s = STYLE_WORDS[w.week.style];
   const hrs = Math.floor(w.week.hours), mins = Math.round((w.week.hours - hrs) * 60);
+  // Everyone the last trial day brought, still waiting first, then what became of the rest.
+  const lastCame = (last?.came ?? []).map((id) => w.squad.find((y) => y.id === id)).filter((y): y is FbSquadRow => !!y && y.status !== 'trial');
+  const came = [...w.trials, ...lastCame];
   return (
     <div className="k-page">
       <div className="kb-lead kw-night">
         <Moon />
-        <Hero value={w.trials.length} ink="#ffe27a" label={w.trials.length === 1 ? 'came to the trials' : 'came to the trials'} />
-        <span className="k-r k-q">{last ? `${new Date(`${last.on}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'long' })} morning` : 'Sunday mornings'}</span>
+        <Hero value={w.trials.length} ink="#ffe27a" label={w.trials.length === 1 ? 'on trial now' : 'on trial now'} />
+        <span className="k-r k-q">{last ? `came on ${new Date(`${last.on}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}` : 'Sunday mornings'}</span>
       </div>
       <Panel ink="#93c3dc">
         <PanelTop name={`Your week's sleep: ${s.name}`} c="#93c3dc" />
         <span>{w.week.nights >= 3 ? `${w.week.kept} of ${w.week.nights} bedtimes kept · ${hrs} h ${String(mins).padStart(2, '0')} average` : 'Fewer than three nights logged this week: anyone might come.'}</span>
       </Panel>
       {w.trials.length === 0 && <Note>Nobody waiting. The next trial day brings {w.rules.trials.size === 1 ? 'one' : w.rules.trials.size} new {w.rules.trials.size === 1 ? 'face' : 'faces'}, drawn by this week's sleep.</Note>}
-      <div className="kb-rows">
-        {w.trials.map((y, i) => <Trialist key={y.id} y={y} lead={i === 0} />)}
+      <div className="t23-list">
+        {came.map((y) => <TrialCard key={y.id} y={y} lead={y.id === w.trials[0]?.id} />)}
       </div>
       <Note>Trials are held on Sunday mornings{w.rules.trials.extraDay ? ' and Wednesdays' : ''}. Early, regular sleep draws steady defenders. Long nights draw prospects. Short but rested nights draw quick wingers.</Note>
       <Note>A trialist waits {w.rules.trials.hold} days to be tied to a habit; then they go home, no harm done. The academy holds {w.rules.academy}.</Note>
     </div>
   );
 }
-function Trialist({ y, lead }: { y: FbSquadRow; lead: boolean }) {
-  const c = UNIT_COLOUR[y.axis as Unit];
+const youthArt = (y: FbSquadRow) => (y.exercise ? artForExercise(y.what, y.what) : artForHabit(y.what));
+/** A youngster as their card (board 23, c23-trials/c23-academy): a bronze card with no step yet, tilted and floating,
+ * beside the name, stars and what comes next. */
+function YouthCard({ y, gone, children }: { y: FbSquadRow; gone?: boolean; children: ReactNode }) {
   return (
-    <Panel ink={c}>
-      <PanelTop name={y.name} c={c} right={STARS(y.potential)} />
-      <span className="k-q">{y.axis} · {y.what}{y.nation ? ` · from ${nationName(y.nation)}` : ''}{y.trialUntil ? ` · waits until ${fmtDate(y.trialUntil)}` : ''}</span>
-      <Action quiet={!lead} onClick={() => go('/football/tie', { id: y.id })}>Tie to a habit</Action>
-    </Panel>
+    <div className={`t23pl${gone ? ' gone' : ''}`} style={{ '--c': UNIT_COLOUR[y.axis as Unit] } as CSSProperties}>
+      <span className="cw"><PlayerCard card={{ tier: 'bronze', step: 0 }} art={youthArt(y)} seed={y.id} label={`${y.name}, a youngster's card`} noView /></span>
+      <span className="bd"><b className="nm">{y.name}</b>{STARS(y.potential)}{children}</span>
+    </div>
+  );
+}
+/** One trialist from the last trial day, and what became of them. */
+export function TrialCard({ y, lead }: { y: FbSquadRow; lead?: boolean }) {
+  const tag = y.status === 'trial' ? (y.trialUntil ? `Waits until ${fmtDate(y.trialUntil)}` : 'Waiting')
+    : y.status === 'growing' ? 'Tied to a habit · at the academy'
+      : y.status === 'promoted' ? 'Joined the squad'
+        : `Went home${y.leftOn ? ` ${fmtDate(y.leftOn)}` : ''}`;
+  return (
+    <YouthCard y={y} gone={y.status === 'left'}>
+      <span className="ln">{y.axis} · {y.what}{y.nation ? ` · from ${nationName(y.nation)}` : ''}</span>
+      <span className={`tg ${y.status}`}>{tag}</span>
+      {y.status === 'trial' && <Action quiet={!lead} onClick={() => go('/football/tie', { id: y.id })}>Tie to a habit</Action>}
+    </YouthCard>
   );
 }
 
@@ -253,6 +273,36 @@ export function TiePage({ id }: { id: string }) {
 }
 
 /** The academy (round seven): sessions from the habit, growth from kept bedtimes, under the moon. */
+/** A ring that fills to `frac`, the number written in its middle (board 23, c23-academy). */
+function Ring({ frac, c, mid }: { frac: number; c: string; mid: string }) {
+  const L = 2 * Math.PI * 26;
+  return (
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,.14)" strokeWidth="7" />
+      {frac > 0 && <circle className="f" cx="32" cy="32" r="26" fill="none" stroke={c} strokeWidth="7" strokeLinecap="round" transform="rotate(-90 32 32)" style={{ '--l': `${(L * Math.min(1, frac)).toFixed(1)}` } as CSSProperties} />}
+      <text x="32" y="38" textAnchor="middle" className="rg-n">{mid}</text>
+    </svg>
+  );
+}
+/** A youngster at the academy: their card, then sessions and growth as rings, the numbers also as words. */
+export function AcademyCard({ y, need, tonight, lead }: { y: FbSquadRow; need: number; tonight: number; lead?: boolean }) {
+  const n = y.sessions?.length ?? 0, g = y.growth ?? 0;
+  return (
+    <YouthCard y={y}>
+      <span className="ln">{y.axis}{y.link ? '' : ' · not tied to a habit: nothing counts'}{tonight ? ` · +${tonight} last night` : ''}</span>
+      <div className="rg">
+        <div><Ring frac={n / need} c={UNIT_COLOUR[y.axis as Unit]} mid={`${n}/${need}`} /><span>{n} of {need} sessions</span></div>
+        <div><Ring frac={g / PROMOTE_GROWTH} c="#ffe27a" mid={String(g)} /><span>{g} of {PROMOTE_GROWTH} growth</span></div>
+      </div>
+      {!y.link && <Action quiet={!lead} onClick={() => go('/football/club', { view: 'deals' })}>Tie to a habit</Action>}
+    </YouthCard>
+  );
+}
+/** The academy's empty places, each named as free. */
+export function FreePlaces({ n }: { n: number }) {
+  return <>{Array.from({ length: Math.max(0, n) }, (_, i) => <div key={i} className="t23-free">{i === 0 ? 'A free place. Tie a trialist to a habit and they start here.' : 'A free place.'}</div>)}</>;
+}
+
 export function AcademyPage() {
   const w = useWorld();
   if (!w) return null;
@@ -268,24 +318,12 @@ export function AcademyPage() {
           <Action wide onClick={() => go('/football/trials')}>Trials</Action>
         </Empty>
       )}
-      <div className="kb-rows">
-        {w.academy.map((y) => {
-          const n = y.sessions?.length ?? 0, g = y.growth ?? 0;
-          const tonight = y.lastGrow && y.lastGrow.on === w.save.lastPlayed ? y.lastGrow.n : 0;
-          const c = UNIT_COLOUR[y.axis as Unit];
-          return (
-            <Panel key={y.id} ink={c} className="kw-young">
-              <PanelTop name={y.name} c={c} right={STARS(y.potential)} />
-              <span className="k-q">{y.axis}{y.link ? '' : ' · not tied to a habit: nothing counts'}</span>
-              <Bar pct={(n / need) * 100} c={c} label={`${n} of ${need} sessions`} />
-              <Bar pct={(g / PROMOTE_GROWTH) * 100} c="#ffe27a" label={`${g} of ${PROMOTE_GROWTH} growth`} />
-              <span className="k-q">{n} of {need} sessions · {g} of {PROMOTE_GROWTH} growth{tonight ? ` · +${tonight} last night` : ''}</span>
-              {!y.link && <Action quiet={y.id !== w.academy.find((x) => !x.link)?.id} onClick={() => go('/football/club', { view: 'deals' })}>Tie to a habit</Action>}
-            </Panel>
-          );
-        })}
+      <div className="t23-list">
+        {w.academy.map((y) => (
+          <AcademyCard key={y.id} y={y} need={need} tonight={y.lastGrow && y.lastGrow.on === w.save.lastPlayed ? y.lastGrow.n : 0} lead={y.id === w.academy.find((x) => !x.link)?.id} />
+        ))}
+        {w.academy.length > 0 && <FreePlaces n={w.rules.academy - w.academy.filter((y) => y.link).length} />}
       </div>
-      {w.academy.length > 0 && <p className="kw-key"><span><i style={{ background: '#8fdcb6' }} />Sessions (the habit, in the unit's colour)</span><span><i style={{ background: '#ffe27a' }} />Growth (sleep)</span></p>}
       <Note>They grow overnight on nights you keep your bedtime. Rest days double it. Growth pauses, never goes back. A loan in the same unit makes them grow half as fast again. Only youngsters tied to a habit take a place.</Note>
       {w.academy.length > 0 && <Action quiet onClick={() => go('/football/trials')}>Trials</Action>}
     </div>

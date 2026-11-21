@@ -13,8 +13,7 @@ import { Hero, Panel, Sect, Title } from '../../../ui/kit/Kit';
 import { Icon } from '../../../ui/Icon';
 import { MarkRow, Note } from '../club/Bits';
 
-const col = (c: string) => ({ ['--ink' as string]: c }) as CSSProperties;
-const GOLD = '#f2c46d', GREEN = '#8fdcb6';
+const GOLD = '#f2c46d';
 const BOON_COLOURS = ['#93c3dc', '#8fdcb6', '#c2b2ff', '#ffd56a'];
 const STAR = <svg className="fbt-star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l2.9 6 6.5.8-4.8 4.5 1.2 6.5L12 17.3l-5.8 3.1 1.2-6.5L2.6 9.4l6.5-.8z" /></svg>;
 
@@ -76,7 +75,38 @@ export function TrackPage() {
   );
 }
 
-/** This week's bounties: six offered, pick three. Each lasts the week (look pass L4: filled panels, drawn marks). */
+type BountyDef = (typeof BOUNTIES)[number];
+const POSTER_INK = ['#8fdcb6', '#ffd36b', '#ff9a76', '#c2b2ff', '#93c3dc', '#f4aedb'];
+const POSTER_TILT = [-2, 1.5, -1, 2, -1.5, 1];
+
+/** This week's bounties as wanted posters (board 20, s20-bounty): six offered, pick three, each reward stamped on. */
+export function BountyPosters({ offer, picked, done, have, full, onPick }: {
+  offer: BountyDef[]; picked: string[]; done: string[]; have: (b: BountyDef) => number; full: boolean; onPick: (id: string) => void;
+}) {
+  return (
+    <div className="wp20-wall">
+      <p className="wp20-h"><b className="wp20-n">{picked.length}</b><span>of {BOUNTIES_PICKED} picked this week<small>{full ? 'Each lasts until Sunday. Done ones pay out the morning after.' : `Pick ${BOUNTIES_PICKED - picked.length} more; each lasts until Sunday.`}</small></span></p>
+      <div className="wp20">
+        {offer.map((b, i) => {
+          const on = picked.includes(b.id), dn = done.includes(b.id);
+          const n = Math.min(b.target.count, have(b));
+          return (
+            <button key={b.id} type="button" className={`wp20-p${on ? ' on' : ''}${dn ? ' dn' : ''}`} disabled={on || full} aria-pressed={on} onClick={() => onPick(b.id)}
+              style={{ '--c2': POSTER_INK[i % POSTER_INK.length], '--r': `${POSTER_TILT[i % POSTER_TILT.length]}deg`, '--d': `${0.15 + i * 0.12}s` } as CSSProperties}>
+              <small>{dn ? <><Icon name="check" size={16} stroke={2.8} color="#1f6a3a" /> Done</> : on ? `Picked · ${fmtCount(n)} of ${b.target.count}` : 'Wanted this week'}</small>
+              <b>{b.name}</b>
+              {isTrainingBounty(b) && <span className="wp20-tag">Training</span>}
+              <p>{b.text}</p>
+              {on && !dn && <span className="wp20-bar" role="img" aria-label={`${fmtCount(n)} of ${b.target.count}`}><i style={{ width: `${Math.round((n / b.target.count) * 100)}%` }} /></span>}
+              <em>Reward: {rewardWords(b.reward)}</em>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function BountiesPage() {
   const m = useModel();
   if (!m) return null;
@@ -84,25 +114,11 @@ export function BountiesPage() {
   const offered = bountyOffer(m.week);
   // A pick from before the offer always held a training job stays on the list.
   const offer = [...offered, ...BOUNTIES.filter((b) => picked.includes(b.id) && !offered.some((o) => o.id === b.id))];
-  const full = picked.length >= BOUNTIES_PICKED;
+  const done = offer.filter((b) => m.eng.bountiesDone.includes(`${m.week}:${b.id}`)).map((b) => b.id);
   return (
     <div className="k-page lt-story">
-      <Hero value={picked.length} ink={GREEN} label={`of ${BOUNTIES_PICKED} picked`} under={full ? 'Each lasts until Sunday. Done ones pay out the morning after.' : `Pick ${BOUNTIES_PICKED - picked.length} more; each lasts until Sunday.`} />
-      <div className="kb-rows">
-        {offer.map((b) => {
-          const on = picked.includes(b.id);
-          const done = m.eng.bountiesDone.includes(`${m.week}:${b.id}`);
-          const have = Math.min(b.target.count, bountyProgress(m.eng, b, m.week, m.t.today));
-          return (
-            <button key={b.id} type="button" className={`k-panel lt-bounty${on ? ' on' : ''}${done ? ' dn' : ''}`} style={col(on ? GREEN : '#93c3dc')} disabled={on || full} aria-pressed={on} onClick={() => void pickBounty(b.id)}>
-              <b className="lt-bh">{done ? <Icon name="check" size={18} stroke={2.6} color={GREEN} /> : on ? <i className="lt-on" aria-hidden="true" /> : null}{b.name}{isTrainingBounty(b) && <em className="fbt-tag">Training</em>}</b>
-              <span className="k-q">{b.text}</span>
-              {on && <span className="lt-bar" role="img" aria-label={`${fmtCount(have)} of ${b.target.count}`}><i style={{ width: `${Math.round((have / b.target.count) * 100)}%` }} /></span>}
-              <small>{done ? 'Done · ' : on ? `${fmtCount(have)} of ${b.target.count} · ` : ''}{rewardWords(b.reward)}</small>
-            </button>
-          );
-        })}
-      </div>
+      <BountyPosters offer={offer} picked={picked} done={done} full={picked.length >= BOUNTIES_PICKED}
+        have={(b) => bountyProgress(m.eng, b, m.week, m.t.today)} onPick={(id) => void pickBounty(id)} />
     </div>
   );
 }
