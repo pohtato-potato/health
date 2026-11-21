@@ -1089,3 +1089,25 @@ html.contrast .dt21 .cs21-dot { background: #fff; } html.contrast .dt21 .cs21-do
 .rv20-mod > i { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--c); }
 .rv20-mod b { display: block; font: 700 16px var(--sans); color: #fff; } .rv20-mod small { display: block; font: 400 14px/1.4 var(--sans); color: rgba(243, 238, 230, .9); } .rv20-mod strong { color: #fff; }
 html.contrast .rv20-how, html.contrast .rv20-mod small, html.contrast .sb20-t .k-q, html.contrast .vs20 span { color: #fff; }
+/* s20-bounty: this week's bounties as wanted posters pinned to a plank wall, each reward stamped on. */
+.wp20-wall { margin: -16px -16px 0; padding: 16px 16px 24px; min-height: 100%; background: #3a2412 repeating-linear-gradient(0deg, rgba(0, 0, 0, .18) 0 2px, transparent 2px 26px); display: flex; flex-direction: column; gap: 14px; }
+.wp20-h { margin: 0; display: flex; align-items: center; gap: 12px; color: #fff; }
+.wp20-n { font: 700 64px/.9 var(--fb-cond); color: #ffd36b; }
+.wp20-h > span { font: 700 18px/1.2 var(--sans); } .wp20-h small { display: block; font: 400 14px/1.4 var(--sans); color: #f2e2b8; }
+.wp20 { display: flex; flex-direction: column; gap: 18px; }
+.wp20-p { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 28px 16px 16px; border: 0; background: #f2e2b8; color: #2a1608; text-align: center; font: inherit; cursor: pointer;
+  transform: rotate(var(--r)); animation: wp20-pin .55s cubic-bezier(.34, 1.56, .64, 1) both; animation-delay: var(--d);
+  clip-path: polygon(0 3%, 4% 0, 30% 2%, 60% 0, 96% 2%, 100% 0, 99% 40%, 100% 80%, 98% 100%, 60% 98%, 30% 100%, 2% 98%, 0 70%); }
+@keyframes wp20-pin { from { opacity: 0; transform: rotate(var(--r)) translateY(-30px) scale(1.05); } }
+.wp20-p::before { content: ""; position: absolute; top: 8px; left: 50%; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: #8a1a1a; box-shadow: 0 2px 0 #4a0a0a; }
+.wp20-p:disabled { cursor: default; opacity: 1; } .wp20-p:not(.on):disabled { opacity: .72; }
+.wp20-p:focus-visible { outline: none; box-shadow: inset 0 0 0 5px #b8860b; }
+.wp20-p small { display: flex; align-items: center; gap: 4px; font: 700 14px var(--sans); color: #6a4020; }
+.wp20-p b { font: 700 32px/1 var(--fb-cond); text-transform: uppercase; overflow-wrap: anywhere; }
+.wp20-p p { margin: 0; font: 400 15px/1.4 var(--sans); }
+.wp20-p em { font-style: normal; padding: 4px 12px; border: 3px solid var(--c2); border-radius: 8px; color: #2a1608; background: color-mix(in srgb, var(--c2) 35%, #f2e2b8); font: 700 15px var(--sans); transform: rotate(-3deg); }
+.wp20-tag { padding: 2px 10px; border-radius: 999px; border: 1.5px solid #6a4020; font: 700 14px var(--sans); color: #6a4020; }
+.wp20-bar { width: 80%; height: 10px; border-radius: 5px; background: rgba(42, 22, 8, .18); overflow: hidden; } .wp20-bar i { display: block; height: 100%; background: #2a1608; border-radius: 5px; }
+.wp20-p.on { box-shadow: inset 0 0 0 4px #2a1608; }
+.wp20-p.dn em { border-style: double; border-width: 4px; }
+html.contrast .wp20-h small { color: #fff; } html.contrast .wp20-p small, html.contrast .wp20-tag { color: #2a1608; border-color: #2a1608; }
