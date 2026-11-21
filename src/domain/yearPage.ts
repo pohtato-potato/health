@@ -28,12 +28,17 @@ export function yearOffered(settings: Pick<Settings, 'createdAt'>, today: DayKey
 
 const isLogged = (d: { steps?: number; sleep?: unknown; weightKg?: number }) => d.steps !== undefined || !!d.sleep || d.weightKg !== undefined;
 
+/** The first day anything was logged. */
+export function firstDay(i: MonthInput): DayKey | undefined {
+  return [...i.days.filter(isLogged).map((d) => d.date), ...i.entries.map((e) => e.date), ...i.sessions.map((s) => s.date)].filter((d) => d <= i.today).sort()[0];
+}
+
 function firstMonth(i: MonthInput): string | undefined {
   const all = [...i.days.filter(isLogged).map((d) => d.date), ...i.entries.map((e) => e.date), ...i.sessions.map((s) => s.date)].filter((d) => d <= i.today).sort();
   return all[0]?.slice(0, 7);
 }
 
-export interface AlmanacMonth { month: string; label: string; lines: string[]; empty?: string; km?: number }
+export interface AlmanacMonth { month: string; label: string; lines: string[]; empty?: string; km?: number; days?: number; sessions?: number }
 
 /** Every month from the first to this one. A month with nothing logged says so. */
 export function almanac(i: MonthInput): AlmanacMonth[] {
@@ -60,7 +65,7 @@ export function almanac(i: MonthInput): AlmanacMonth[] {
     if (km) lines.push(`${fmtInt(km)} km walked`);
     if (sessions.length) lines.push(plural(sessions.length, 'session'));
     if (best) lines.push(`Best day: ${fmtInt(best.steps!)} steps on ${fmtDayMonth(best.date)}`);
-    out.push({ month: m, label, lines, km });
+    out.push({ month: m, label, lines, km, days: dates.size, sessions: sessions.length });
   }
   return out;
 }

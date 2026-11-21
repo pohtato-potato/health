@@ -623,3 +623,21 @@ html.contrast .ck-m, html.contrast .ck-line, html.contrast .ci-k.ck-page .card {
 @keyframes yu-st-draw { from { stroke-dashoffset: 620; } to { stroke-dashoffset: 0; } }
 .yu-st-road { position: absolute; left: 0; right: 0; bottom: 18%; width: 100%; height: 38%; pointer-events: none; }
 .yu-st-road path { fill: none; stroke: rgba(255, 255, 255, .32); stroke-width: 8; stroke-linecap: round; stroke-dasharray: 620; animation: yu-st-draw 1.8s ease-out both; }
+
+/* The year (board 23): months as tiles that pop in, day one against today, four big counts. */
+@keyframes yr-pop { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: none; } }
+.yr-sub { margin: 0; font: 500 15px var(--sans); color: #e6dcef; }
+.yr-mo, .yr-ct { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.yr-mo div { aspect-ratio: 1; border-radius: 16px; display: flex; flex-direction: column; justify-content: flex-end; padding: 8px; background: var(--c); color: #0e0b1c; animation: yr-pop .45s cubic-bezier(.34, 1.56, .64, 1) var(--d) both; }
+.yr-mo div.e { background: rgba(255,255,255,.06); color: #cfc6e6; }
+.yr-mo b { font: 600 24px/1 var(--serif); }
+.yr-mo span { font: 700 14px var(--sans); }
+.yr-vs { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; text-align: center; }
+.yr-vs div { padding: 12px 8px; border-radius: 18px; background: rgba(255,255,255,.06); }
+.yr-vs b { display: block; font: 600 28px/1.05 var(--serif); color: var(--c); }
+.yr-vs span { font: 700 14px var(--sans); color: #e6dcef; }
+.yr-vs i { font: 700 18px var(--sans); font-style: normal; color: #c2b2ff; }
+.yr-ct { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.yr-ct div { min-height: 84px; border-radius: 16px; padding: 10px 12px; display: flex; flex-direction: column; justify-content: flex-end; background: var(--c); color: #0e0b1c; }
+.yr-ct b { font: 600 30px/1 var(--serif); }
+.yr-ct span { font: 700 14px var(--sans); }
