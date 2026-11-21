@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultSettings } from '../src/db/actions';
 import { addDays } from '../src/domain/dates';
-import { assessment, filmFrames, monthSpread, monthsWithData, sleepProfile, topFives, tryNext, type MonthInput } from '../src/domain/monthReport';
+import { assessment, monthSpread, monthsWithData, sleepProfile, topFives, tryNext, type MonthInput } from '../src/domain/monthReport';
+import { storySlides } from '../src/domain/monthStory';
 import { correctionsIn, type Correction } from '../src/domain/corrections';
 import type { Day, FoodEntry, SetEntry, Settings, TrainingSession } from '../src/domain/types';
 
@@ -65,36 +66,6 @@ describe('sleepProfile', () => {
   });
 });
 
-describe('filmFrames', () => {
-  const full = input({ days: month(9000), sessions: [session('2026-10-02')], sets: [set('2026-10-02', '!!')] });
-
-  it('ends with credits, then the assessment', () => {
-    const f = filmFrames(MONTH, full);
-    expect(f.slice(-2).map((x) => x.kind)).toEqual(['credits', 'assessment']);
-  });
-
-  it('every number frame has its own colour and a ground', () => {
-    for (const x of filmFrames(MONTH, full)) {
-      expect(x.ground.length).toBeGreaterThan(5);
-      if (x.kind === 'number') expect(x.color).toMatch(/^#/);
-    }
-  });
-
-  it('draws the real trail when there were steps', () => {
-    expect(filmFrames(MONTH, full).some((x) => x.kind === 'trail')).toBe(true);
-    expect(filmFrames(MONTH, input({ sessions: [session('2026-10-02')] })).some((x) => x.kind === 'trail')).toBe(false);
-  });
-
-  it('a frame with nothing to say is left out', () => {
-    const k = filmFrames(MONTH, input({ days: month(9000) })).map((x) => x.kind === 'number' ? x.small : x.kind);
-    expect(k).not.toContain('sessions finished.');
-  });
-
-  it('an empty month has no film', () => {
-    expect(filmFrames(MONTH, input())).toEqual([]);
-  });
-});
-
 describe('monthsWithData', () => {
   it('lists finished months, newest first', () => {
     expect(monthsWithData([{ date: '2026-09-02', steps: 1 }, { date: '2026-10-02', steps: 1 }, { date: '2026-11-02', steps: 1 }] as Day[], TODAY)).toEqual(['2026-10', '2026-09']);
@@ -126,10 +97,10 @@ describe('the drinks grade', () => {
   });
 });
 
-describe('film stars', () => {
-  it('carries the perfect days themselves, so they can be joined', () => {
+describe('story, perfect days', () => {
+  it('counts the perfect days themselves', () => {
     const on = { steps: 12000, sleep: { asleep: 1380, woke: 420 } };
-    const f = filmFrames(MONTH, input({ days: month(12000, on).slice(0, 2), sessions: [session('2026-10-02')], entries: [{ date: '2026-10-01', protein: 200, kcal: 2200 } as FoodEntry] })).find((x) => x.kind === 'stars');
-    if (f?.kind === 'stars') expect(f.dates).toContain('2026-10-01');
+    const s = storySlides(MONTH, input({ days: month(12000, on).slice(0, 2), sessions: [session('2026-10-02')], entries: [{ date: '2026-10-01', protein: 200, kcal: 2200 } as FoodEntry] }));
+    expect(s.find((x) => x.kind === 'perfect')?.big).toBe('1');
   });
 });

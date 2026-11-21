@@ -314,7 +314,6 @@ button.k-rowl { cursor: pointer; }
 .set-k .btn:not(.ghost) { border-radius: 999px; background: var(--act); color: var(--act-ink); border: 0; font-weight: 700; box-shadow: 0 10px 24px -8px var(--act); }
 .set-k .btn.ghost { border-radius: 999px; border: 2px solid var(--k-cream); color: var(--k-cream); background: transparent; font-weight: 700; }
 .k-close { display: inline-flex; align-items: center; gap: 4px; }
-.yu-film-prev { display: inline-flex; align-items: center; gap: 2px; }
 /* Older blocks on You's inner pages (archive, month, year, corrections, achievements), brought onto the kit:
    filled panels, not outlined glass, and nothing under 14 px. */
 .k-light.you .yu-card, .k-light.you .card { border: 0; border-radius: 20px; background: linear-gradient(180deg, color-mix(in srgb, var(--c, #ede6da) 18%, #10122a), color-mix(in srgb, var(--c, #ede6da) 6%, #10122a) 90%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14); }

@@ -1,88 +1,31 @@
 import { useState, type CSSProperties } from 'react';
 import { lastMonth } from '../domain/film';
-import { fmtInt } from '../domain/format';
-import { filmFrames, type FilmFrame } from '../domain/monthReport';
-import { constellationFor, skyStars } from '../domain/nightSky';
+import { storySlides } from '../domain/monthStory';
 import { back, go, useRoute } from '../router';
-import { CountUp } from '../ui/you/CountUp';
-import { Icon } from '../ui/Icon';
-import { GOLD } from '../ui/you/palette';
-import { TrailDrawing } from '../walk/ui/TrailDrawing';
-import { Grades } from './reports/Grades';
+import { StorySlideView } from './you/StorySlide';
 import { useMonthInput } from './reports/useMonthInput';
 
-function BigNumber({ text }: { text: string }) {
-  const m = /^(\D*)([\d,]+)(.*)$/.exec(text);
-  if (!m) return <>{text}</>;
-  const to = Number(m[2].replace(/,/g, ''));
-  return <CountUp to={to} fmt={(n) => `${m[1]}${fmtInt(n)}${m[3]}`} />;
-}
-
-function Stars({ dates }: { dates: string[] }) {
-  const stars = skyStars(dates);
-  const xs = stars.map((s) => s.x);
-  const ys = stars.map((s) => s.y);
-  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
-  const pts = stars.map((s) => [20 + ((s.x - x0) / Math.max(1, x1 - x0)) * 200, 20 + ((s.y - y0) / Math.max(1, y1 - y0)) * 110]);
-  return (
-    <svg className="yu-f-stars" viewBox="0 0 240 150" aria-hidden="true">
-      {pts.length > 1 && <polyline className="yu-draw2" pathLength={1} points={pts.map((p) => p.join(',')).join(' ')} fill="none" stroke={GOLD} strokeOpacity=".6" strokeWidth="1.6" />}
-      {pts.map(([x, y], i) => <circle key={i} className="yu-star" style={{ '--i': i } as CSSProperties} cx={x} cy={y} r="4.5" fill={GOLD} />)}
-    </svg>
-  );
-}
-
-function Frame({ f, month }: { f: FilmFrame; month: string }) {
-  switch (f.kind) {
-    case 'opening':
-      return <><div className="yu-f-big" style={{ fontSize: 46, color: '#ffc0dc' }}>{f.title}</div><div className="yu-f-s">{f.small}</div></>;
-    case 'number':
-      return <><div className="yu-f-big" style={{ color: f.color, fontSize: f.big.length > 6 ? 60 : 80 }}><BigNumber text={f.big} /></div><div className="yu-f-s">{f.small}</div></>;
-    case 'trail':
-      return <><div className="yu-f-trail"><TrailDrawing fromKm={f.fromKm} toKm={f.toKm} label={f.small} /></div><div className="yu-f-s">{f.small}</div></>;
-    case 'stars':
-      return <><div className="yu-f-big" style={{ fontSize: 46, color: GOLD }}>{constellationFor(month).name}</div><Stars dates={f.dates} /><div className="yu-f-s">{f.small}</div></>;
-    case 'credits':
-      return <div className="yu-roll"><div className="yu-rin">{f.lines.map(([a, b]) => <p key={a}><span>{a}</span>{b}</p>)}</div></div>;
-    case 'assessment':
-      return (
-        <>
-          <div className="yu-f-big" style={{ fontSize: 46 }}>The assessment</div>
-          <Grades grades={f.grades} />
-          <button type="button" className="k-act wide" onClick={(e) => { e.stopPropagation(); go('/reports/month', { m: month }); }}>Read the full report</button>
-        </>
-      );
-  }
-}
-
-/** A month as a tap-through film: colour fields, a coloured number on each screen, credits, then the marks. */
+/** The month's story (board W8, y8-story): up to nine slides you tap through, each a colour wash with one huge number. */
 export function MonthlyFilmPage() {
   const { params } = useRoute();
   const input = useMonthInput();
   const [i, setI] = useState(0);
   if (!input) return <div className="page bare" />;
   const month = params.get('m') ?? lastMonth(input.today);
-  const frames = filmFrames(month, input);
-  const close = (e: { stopPropagation: () => void }) => { e.stopPropagation(); back('/you'); };
-  if (!frames.length) {
+  const slides = storySlides(month, input);
+  const close = () => back('/you');
+  if (!slides.length) {
     return (
-      <div className="yu-film" style={{ background: 'linear-gradient(165deg,#3a1f6e,#141a4a 70%)' }}>
-        <button type="button" className="yu-close k-close" onClick={close} aria-label="Close the film"><Icon name="close" size={22} stroke={2.2} /><span>Close</span></button>
-        <div className="yu-film-b"><div className="yu-f-s">Nothing was logged this month, so there's no film yet.</div></div>
+      <div className="yu-st" style={{ '--g': 'linear-gradient(170deg,#c2b2ff,#8fd8ff)' } as CSSProperties}>
+        <div className="yu-st-b"><p className="yu-st-n"><span>Nothing was logged this month, so there's no story yet.</span></p></div>
+        <div className="yu-st-nav"><span /><button type="button" className="on" onClick={close}>Close</button></div>
       </div>
     );
   }
-  const k = Math.min(i, frames.length - 1);
-  const f = frames[k];
+  const k = Math.min(i, slides.length - 1);
   return (
-    <div className="yu-film" style={{ background: f.ground }} onClick={() => setI(Math.min(frames.length - 1, k + 1))}>
-      <div className="yu-film-glow" />
-      <div className="yu-bars" aria-hidden="true">{frames.map((_, n) => <i key={n} className={n <= k ? 'on' : undefined} />)}</div>
-      <button type="button" className="yu-close k-close" onClick={close} aria-label="Close the film"><Icon name="close" size={22} stroke={2.2} /><span>Close</span></button>
-      <div className="yu-film-b" key={k} aria-live="polite"><Frame f={f} month={month} /></div>
-      {k > 0 && <button type="button" className="yu-film-prev" onClick={(e) => { e.stopPropagation(); setI(k - 1); }}><Icon name="left" size={20} stroke={2.2} />Back</button>}
-      {/* O42 slip 31: the screen count Reports' door names. */}
-      <span className="yu-film-hint">{k + 1} of {frames.length} screens{k < frames.length - 1 ? ' · tap to go on' : ''}</span>
-    </div>
+    <StorySlideView slide={slides[k]} at={k} of={slides.length} month={month}
+      onNext={() => setI(Math.min(slides.length - 1, k + 1))} onBack={() => setI(Math.max(0, k - 1))} onClose={close}
+      onReport={() => go('/reports/month', { m: month })} />
   );
 }

@@ -4,7 +4,8 @@ import { spokenLine } from '../../domain/voice';
 import { fmtDayMonth, fmtInt } from '../../domain/format';
 import { addDays } from '../../domain/dates';
 import { monthLabel } from '../../domain/goTo';
-import { filmFrames, monthsWithData } from '../../domain/monthReport';
+import { monthsWithData } from '../../domain/monthReport';
+import { storySlides } from '../../domain/monthStory';
 import { useMonthInput } from './useMonthInput';
 import { headline, weekNumber, weekStats } from '../../domain/weekly';
 import { weeksWithData } from '../../domain/weeklyStory';
@@ -45,7 +46,7 @@ export function ReportsHome() {
     return headline(all[0], all[1], all, perWeek);
   })() : undefined;
   const monthKm = month ? Math.round(kmFromSteps(days.filter((d) => d.date.startsWith(month)).reduce((n, d) => n + (d.steps ?? 0), 0))) : 0;
-  const screens = month && input ? filmFrames(month, input).length : 0;
+  const screens = month && input ? storySlides(month, input).length : 0;
   const mName = month ? monthLabel(month).replace(/ \d{4}$/, '') : '';
   const line = spokenLine(settings, today, 'report', today);
   return (
