@@ -8,6 +8,7 @@ import { Icon } from '../ui/Icon';
 import { PageHead } from '../ui/kit/Kit';
 import { TIER_COLOR, TIER_NAME } from '../ui/Moments';
 import { useAchInput } from '../state/Achievements';
+import { AchWall } from './earned/Wall';
 
 type Filter = 'all' | 'unlocked' | 'near' | 'secret';
 
@@ -88,42 +89,11 @@ export function AchievementsPage() {
     filter === 'all' ? true : filter === 'unlocked' ? !!got(a) : filter === 'secret' ? a.cat === 'secret' : false;
 
   return (
-    <div className="page bare k-page k-light you ach-k">
+    <div className="page bare k-page k-light you yu-page ach-k">
       <PageHead back="Earned" onBack={() => back('/earned')} title="Achievements" family="earned" />
-      <div className="col gap6">
-        <div className="t15">
-          <span className="sf" style={{ fontSize: 22 }}>
-            {unlocked.length}
-          </span>{' '}
-          <span className="q">
-            of {ACHIEVEMENTS.length}
-          </span>
-        </div>
-        <div className="t13 lavender">
-          Secrets {secretsFound} of {secrets.length} · hints unlock as you go
-        </div>
-      </div>
-
-      <div className="card" style={{ padding: 14, gap: 12 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(12px, 1fr))', gap: 4 }} aria-label={`${unlocked.length} of ${ACHIEVEMENTS.length} unlocked`} role="img">
-          {ACHIEVEMENTS.map((a) => {
-            const u = got(a);
-            const color = a.cat === 'secret' ? 'var(--lavender)' : TIER_COLOR[a.tier];
-            return <div key={a.id} style={{ aspectRatio: '1', borderRadius: 2, background: u ? color : 'transparent', border: u ? 0 : '1px solid var(--hairline)' }} />;
-          })}
-        </div>
-        <div className="row t11 q" style={{ flexWrap: 'wrap', gap: '6px 14px', justifyContent: 'flex-start' }}>
-          {(['b', 's', 'g', 'p'] as const).map((t) => (
-            <span key={t} className="row" style={{ gap: 5 }}>
-              <i style={{ width: 9, height: 9, borderRadius: 2, background: TIER_COLOR[t] }} />
-              {TIER_NAME[t]}
-            </span>
-          ))}
-          <span className="row" style={{ gap: 5 }}>
-            <i style={{ width: 9, height: 9, borderRadius: 2, background: 'var(--lavender)' }} />
-            Secret found
-          </span>
-        </div>
+      <AchWall today={today} cells={ACHIEVEMENTS.map((a) => ({ id: a.id, date: got(a)?.date, secret: a.cat === 'secret' }))} />
+      <div className="t14 lavender">
+        Secrets {secretsFound} of {secrets.length} · hints unlock as you go
       </div>
 
       <div className="row" style={{ gap: 8, overflowX: 'auto', justifyContent: 'flex-start' }}>

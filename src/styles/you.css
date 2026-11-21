@@ -641,3 +641,13 @@ html.contrast .ck-m, html.contrast .ck-line, html.contrast .ci-k.ck-page .card {
 .yr-ct div { min-height: 84px; border-radius: 16px; padding: 10px 12px; display: flex; flex-direction: column; justify-content: flex-end; background: var(--c); color: #0e0b1c; }
 .yr-ct b { font: 600 30px/1 var(--serif); }
 .yr-ct span { font: 700 14px var(--sans); }
+/* 5.15 o23-ach: the achievements wall */
+.aw { display: flex; flex-direction: column; gap: 10px; }
+.aw-h { margin: 0; font: 600 34px/1.05 var(--serif); color: #fff; }
+.aw-s { margin: 0; font: 500 15px/1.4 var(--sans); color: #e6dcef; }
+.aw-w { display: grid; grid-template-columns: repeat(auto-fill, minmax(22px, 1fr)); gap: 4px; }
+.aw-c { aspect-ratio: 1; border-radius: 5px; background: var(--c); animation: yr-pop .3s cubic-bezier(.34, 1.56, .64, 1) var(--d) both; }
+.aw-c.n { background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); }
+.aw-c.s, .aw-k i.s { background: conic-gradient(#ff6fa8, #ffd36b, #5fe3a1, #8fd8ff, #ff6fa8); }
+.aw-k { display: flex; flex-wrap: wrap; gap: 6px 14px; font: 700 14px var(--sans); color: #e6dcef; }
+.aw-k i { display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin-right: 6px; vertical-align: -1px; }
