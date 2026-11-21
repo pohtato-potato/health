@@ -8,12 +8,12 @@ import { useAllDays, useAllEntries, useSessions, useSettings, useToday } from '.
 import { listSnapshots, restoreSnapshot } from '../db/snapshots';
 import { dataCheckup, type CheckupFinding } from '../domain/checkup';
 import { dayKey } from '../domain/dates';
-import { fmtDayMonth, fmtTime } from '../domain/format';
+import { fmtDayMonth, fmtInt, fmtTime } from '../domain/format';
 import { back } from '../router';
 import { askConfirm } from '../ui/Confirm';
 import { Icon } from '../ui/Icon';
 import { useToast } from '../ui/Toasts';
-import { AllClear } from './settings/DataParts';
+import { AllClear, EditDay } from './settings/DataParts';
 
 const Frame = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div className="page bare yu-page yu-stack">
@@ -78,23 +78,15 @@ export function EditHistory() {
   }
   return (
     <Frame title="Edit history">
+      {edits.length > 0 && <p className="dc-sub">Every change, by day, each with undo. {edits.length === 1 ? 'One' : fmtInt(edits.length)} so far.</p>}
       {!edits.length && <div className="yu-card"><span className="yu-q">No edits yet. Changes to your logs will list here.</span></div>}
       {[...byDay].map(([day, list]) => (
-        <section key={day} className="yu-sec">
-          <h2>{fmtDayMonth(day)}</h2>
-          <div className="yu-card">
-            {list.map((x) => {
-              const r = (x.after ?? x.before) as { name?: string; exercise?: string; date?: string } | undefined;
-              const verb = x.before === undefined ? 'Added' : x.after === undefined ? 'Deleted' : 'Changed';
-              return (
-                <div key={x.id} className="yu-diary-row" style={{ gridTemplateColumns: '1fr auto' }}>
-                  <span>{verb} {r?.name ?? r?.exercise ?? x.table}<br /><span className="yu-q">{r?.date ? `for ${fmtDayMonth(r.date)}, ` : ''}{fmtTime(x.at)}</span></span>
-                  <button type="button" className="btn ghost sm" onClick={() => x.id !== undefined && void undo(x.id)}>Undo</button>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+        <EditDay key={day} day={day} onUndo={(id) => void undo(id)} rows={list.flatMap((x) => {
+          if (x.id === undefined) return [];
+          const r = (x.after ?? x.before) as { name?: string; exercise?: string; date?: string } | undefined;
+          const verb = x.before === undefined ? 'Added' : x.after === undefined ? 'Deleted' : 'Changed';
+          return [{ id: x.id, table: x.table, verb, what: r?.name ?? r?.exercise ?? (x.table === 'days' ? 'the day' : x.table), when: fmtTime(x.at), for: r?.date && r.date !== day ? r.date : undefined }];
+        })} />
       ))}
       {!all && edits.length > SHOWN_AT_FIRST && <button type="button" className="btn ghost" onClick={() => setAll(true)}>Show all {edits.length}</button>}
     </Frame>
