@@ -70,7 +70,7 @@ export function RivalRoute({ id }: { id: string }) {
   const r = s.l.save.rivals.find((x) => x.clubId === id) ?? (id === legendId() ? { clubId: id, how: 'legend' as const, since: '' } : undefined);
   return (
     <>
-      {r ? <RivalryView r={r} matches={s.all} /> : <p className="fb-s">Not a rival any more.</p>}
+      {r ? <RivalryView r={r} matches={s.all} own={s.l.save.crest} /> : <p className="fb-s">Not a rival any more.</p>}
     </>
   );
 }
