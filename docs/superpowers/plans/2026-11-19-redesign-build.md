@@ -184,16 +184,16 @@ Every screen task below follows these steps; one part is one tab and one PR. A r
 | 5.1 | `y6-deck` Today's lift | W6 | `src/screens/you/TodaysLift.tsx` | nine cards; each reachable by a button, not only a swipe |
 | 5.2 | `y7-insights` Insights | W7 | `src/screens/Insights.tsx`, `src/screens/insights/Ask.tsx` | the answer leads with the plain sentence |
 | 5.3 | `y8-story` The month's story | W8 | `src/screens/MonthlyFilm.tsx` | nine slides you tap through |
-| 5.4 | `y8-body` Body check-in | W8 | `src/screens/BodyLog.tsx` | four steps in order |
+| 5.4 | `y8-body` Body check-in | W8 | `src/screens/CheckIn.tsx`, `src/screens/checkin/Parts.tsx` (the plan said `BodyLog.tsx`, which is the aches log) | four steps in order |
 | 5.5 | `y9-char` Character | W9 | `src/screens/Character.tsx` | the worn title as text; each reward works once unlocked (its open note) |
-| 5.6 | `y9-diary` Diary | W9 | find with `grep -rln "Diary" src/screens` | the run strip, then each day |
-| 5.7 | `y9-exp` Experiments | W9 | find with `grep -rln "xperiment" src/screens` | a running experiment in its card |
+| ~~5.6~~ | ~~`y9-diary` Diary~~ | W9 | — | Dropped: the page stays removed (removed in edd6639; /diary goes to Reports; owner, 21 Nov) |
+| ~~5.7~~ | ~~`y9-exp` Experiments~~ | W9 | — | Dropped: the page stays removed (removed in 45121c1, folded into Compare's natural events; /experiments goes there; ruled with 5.6, 21 Nov) |
 | 5.8 | `y9-meds` Medicines | W9 | `src/screens/Medicines.tsx` | the last seven days per medicine as text, not colour alone |
 | 5.9 | `y9-reveal-s` Reveal, sealed | W9 | `src/screens/Reveal.tsx` | before reveal day: the sealed state and the date |
 | 5.10 | `y9-settings` Settings | W9 | `src/screens/Settings.tsx` | grouped lists; each row icon has a label |
 | 5.11 | `p5-reports` Reports, a living month | W5 | `src/screens/reports/ReportsHome.tsx`, `MonthPage.tsx` | the week poster, then the month calendar |
 | 5.12 | `p5-earned` Earned, the case | W5 | `src/screens/Earned.tsx`, `src/screens/earned/TrophyShelf.tsx` | each trophy named |
-| 5.13 | `w7-wrapped` Wrapped | W7 | find with `grep -rln "Wrapped" src/screens --include=*.tsx` (outside football) | progress bars on top; one slide at a time |
+| 5.13 | `w7-wrapped` Wrapped | W7 | `src/screens/Reports.tsx` (`JourneyWrapped`, at `/wrapped?all=1`; `walk/RoadSoFar.tsx` is the Walk page titled Wrapped that links to it) | progress bars on top; one slide at a time |
 | 5.14 | `o23-year` The year | 23 | `src/screens/Year.tsx` | months as tiles; empty months show "·" not 0 |
 | 5.15 | `o23-ach` Achievements wall | 23 | `src/screens/AchievementsPage.tsx` | one cell per achievement; the earned count as text |
 | 5.16 | `o23-check` Checkup | 23 | `src/screens/DataPages.tsx` | all clear: the line says what was checked |
@@ -229,3 +229,13 @@ Part 2 left these for the last round. Each needs a design or a data decision bef
 - **Scrapbook pages for screamers, saves and runs (2.49).** Only Giant beaten has a drawn page; the other cards don't open yet. Screamer cards also lack the scorer, which is not stored per chance.
 - **Ratings on Giant beaten (2.50).** The board's "68 to your 34" needs both sides' ratings stored with the match.
 - **Goals on the season pennants (2.51).** Goals scored and let in are not in the season summary; the current pennant shows won–lost so far instead of a live position.
+
+### Added to Task Z from Part 5 (You)
+
+No board pinned these You pages. Each is for triage in Step 1: keep or redesign.
+
+- **The You tab itself (`/you`, `src/screens/You.tsx`).** The doors into every page above; no board drew the hub.
+- **Tracks (`/tracks`, `src/screens/Tracks.tsx`).**
+- **A finished month "on a page" (`/reports/month`, `src/screens/reports/MonthPage.tsx`).** 5.11 rebuilt Reports home and moved this door into Older; the page itself still has its old look.
+- **The muscle page** (`o23-mus` against `t3-body`) stays here, as before.
+- **Diary and Experiments** were dropped, not deferred (5.6 by the owner, 5.7 by ruling); they need nothing here unless the owner reverses 5.7.

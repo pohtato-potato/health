@@ -8,11 +8,12 @@ import { useAllDays, useAllEntries, useSessions, useSettings, useToday } from '.
 import { listSnapshots, restoreSnapshot } from '../db/snapshots';
 import { dataCheckup, type CheckupFinding } from '../domain/checkup';
 import { dayKey } from '../domain/dates';
-import { fmtDayMonth, fmtTime } from '../domain/format';
+import { fmtInt, fmtTime } from '../domain/format';
 import { back } from '../router';
 import { askConfirm } from '../ui/Confirm';
 import { Icon } from '../ui/Icon';
 import { useToast } from '../ui/Toasts';
+import { AllClear, EditDay, SnapTiles } from './settings/DataParts';
 
 const Frame = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div className="page bare yu-page yu-stack">
@@ -43,7 +44,8 @@ export function Checkup() {
   };
   return (
     <Frame title="Data check-up">
-      {list.length === 0 && <div className="yu-card"><b>Nothing looks off.</b><span className="yu-q">Empty days, double entries, odd weights and steps, open sessions and doses ticked twice all come up clear.</span></div>}
+      <p className="dc-sub">Things in your data that look like slips, each with a fix you can undo.</p>
+      {list.length === 0 && <AllClear />}
       {list.map((f) => (
         <div key={f.id} className="yu-card">
           <span>{f.text}</span>
@@ -76,23 +78,15 @@ export function EditHistory() {
   }
   return (
     <Frame title="Edit history">
+      {edits.length > 0 && <p className="dc-sub">Every change, by day, each with undo. {edits.length === 1 ? 'One' : fmtInt(edits.length)} so far.</p>}
       {!edits.length && <div className="yu-card"><span className="yu-q">No edits yet. Changes to your logs will list here.</span></div>}
       {[...byDay].map(([day, list]) => (
-        <section key={day} className="yu-sec">
-          <h2>{fmtDayMonth(day)}</h2>
-          <div className="yu-card">
-            {list.map((x) => {
-              const r = (x.after ?? x.before) as { name?: string; exercise?: string; date?: string } | undefined;
-              const verb = x.before === undefined ? 'Added' : x.after === undefined ? 'Deleted' : 'Changed';
-              return (
-                <div key={x.id} className="yu-diary-row" style={{ gridTemplateColumns: '1fr auto' }}>
-                  <span>{verb} {r?.name ?? r?.exercise ?? x.table}<br /><span className="yu-q">{r?.date ? `for ${fmtDayMonth(r.date)}, ` : ''}{fmtTime(x.at)}</span></span>
-                  <button type="button" className="btn ghost sm" onClick={() => x.id !== undefined && void undo(x.id)}>Undo</button>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+        <EditDay key={day} day={day} onUndo={(id) => void undo(id)} rows={list.flatMap((x) => {
+          if (x.id === undefined) return [];
+          const r = (x.after ?? x.before) as { name?: string; exercise?: string; date?: string } | undefined;
+          const verb = x.before === undefined ? 'Added' : x.after === undefined ? 'Deleted' : 'Changed';
+          return [{ id: x.id, table: x.table, verb, what: r?.name ?? r?.exercise ?? (x.table === 'days' ? 'the day' : x.table), when: fmtTime(x.at), for: r?.date && r.date !== day ? r.date : undefined }];
+        })} />
       ))}
       {!all && edits.length > SHOWN_AT_FIRST && <button type="button" className="btn ghost" onClick={() => setAll(true)}>Show all {edits.length}</button>}
     </Frame>
@@ -102,6 +96,7 @@ export function EditHistory() {
 /** The copies this phone keeps of itself. */
 export function Snapshots() {
   const list = useLiveQuery(listSnapshots, []);
+  const today = useToday();
   const toast = useToast();
   if (!list) return <div className="page bare" />;
   const restore = async (id: string, when: string) => {
@@ -115,21 +110,9 @@ export function Snapshots() {
   };
   return (
     <Frame title="Snapshots">
-      <span className="yu-q">Your numbers, copied each day. Seven are kept, plus one from before the last big change. They live on this phone, so they don't replace a backup. Photos aren't included.</span>
+      <p className="dc-sub">Your numbers, copied each day. Seven are kept, plus one from before the last big change. Tap one to go back to it. They live on this phone, so they don't replace a backup. Photos aren't included.</p>
       {!list.length && <div className="yu-card"><span className="yu-q">The first snapshot is taken today.</span></div>}
-      {list.length > 0 && (
-        <div className="yu-card">
-          {list.map((s) => {
-            const when = fmtDayMonth(s.day);
-            return (
-              <div key={s.id} className="yu-diary-row" style={{ gridTemplateColumns: '1fr auto' }}>
-                <span>{when}<br /><span className="yu-q">{s.reason ?? 'Daily copy'}</span></span>
-                <button type="button" className="btn ghost sm" onClick={() => void restore(s.id, when)}>Go back</button>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {list.length > 0 && <SnapTiles snaps={list} today={today} onPick={(x, when) => void restore(x.id, when)} />}
     </Frame>
   );
 }

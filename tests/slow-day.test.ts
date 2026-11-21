@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { comebacks, moodCard, rankOfLastWeek, todaysLift, type SlowInput } from '../src/domain/slowDay';
+import { comebacks, moodCard, rankOfLastWeek, type SlowInput } from '../src/domain/slowDay';
+import { liftDeck } from '../src/domain/liftDeck';
+import type { BrowseInput } from '../src/domain/browse';
 import { addDays } from '../src/domain/dates';
 import { defaultSettings } from '../src/db/actions';
 import type { Day } from '../src/domain/types';
@@ -8,19 +10,25 @@ const TODAY = '2026-11-05';
 const input = (over: Partial<SlowInput> = {}): SlowInput => ({ days: [], sightings: [], settings: defaultSettings(), ...over });
 const run = (from: string, n: number, steps = 9000): Day[] => Array.from({ length: n }, (_, i) => ({ date: addDays(from, i), steps }) as Day);
 
-describe('todaysLift', () => {
-  it('no lift with no data', () => {
-    expect(todaysLift(TODAY, input())).toBeUndefined();
+const browse = (days: Day[]): BrowseInput => ({ today: TODAY, settings: defaultSettings(), days, entries: [], sessions: [], sets: [], measurements: [] });
+const deck = (days: Day[]) => liftDeck(TODAY, browse(days), input({ days }));
+
+describe('liftDeck (Today\'s lift, y6-deck)', () => {
+  it('no cards with no data', () => {
+    expect(deck([])).toEqual([]);
   });
 
   it('holds for a day', () => {
-    const i = input({ days: run('2026-09-01', 60) });
-    expect(todaysLift(TODAY, i)).toEqual(todaysLift(TODAY, input({ days: [...i.days].reverse() })));
+    const days = run('2026-09-01', 60);
+    expect(deck(days)).toEqual(deck([...days].reverse()));
   });
 
-  it('skips kinds with nothing to say', () => {
-    const lift = todaysLift(TODAY, input({ days: run('2026-11-01', 2) }));
-    expect(lift?.kind).toBe('best');
+  it('at most nine cards, kinds taken in turn, the lifts among them', () => {
+    const d = deck(run('2026-09-01', 60));
+    expect(d.length).toBeGreaterThan(0);
+    expect(d.length).toBeLessThanOrEqual(9);
+    expect(d.some((c) => c.kind === 'lift')).toBe(true);
+    expect(d[0].kind).toBe('know');
   });
 });
 

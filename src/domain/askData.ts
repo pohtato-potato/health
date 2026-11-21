@@ -5,7 +5,9 @@ import { sleepMinutes } from './rings';
 import type { Day, FoodEntry, SetEntry, Settings, TrainingSession } from './types';
 
 export interface AskInput { today: DayKey; settings: Settings; days: Day[]; entries: FoodEntry[]; sessions: TrainingSession[]; sets: SetEntry[] }
-export interface Answer { answer: string; days: DayKey[] }
+export interface Point { date: DayKey; v: number }
+/** `points` and `mark` (the day picked out) come with answers that read one number per day, for the answer's chart. */
+export interface Answer { answer: string; days: DayKey[]; points?: Point[]; mark?: DayKey }
 
 const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
 const DEFAULT_DAYS = 30;
@@ -84,13 +86,16 @@ function metricRows(q: string, i: AskInput, p: Period) {
   return undefined;
 }
 
+const byDate = (rows: Point[]) => [...rows].sort((a, b) => a.date.localeCompare(b.date));
+
 function average(q: string, i: AskInput): Answer | undefined {
   const p = periodIn(q, i.today);
   const m = metricRows(q, i, p);
   if (!m) return undefined;
   if (!m.rows.length) return { answer: `No ${m.name} logged ${p.words}.`, days: [] };
   const avg = m.rows.reduce((n, r) => n + r.v, 0) / m.rows.length;
-  return { answer: `About ${m.fmt(avg)} a day ${p.words}, over ${plural(m.rows.length, 'logged day')}.`, days: uniq(m.rows.map((r) => r.date)) };
+  const best = m.rows.reduce((a, b) => (b.v > a.v ? b : a));
+  return { answer: `About ${m.fmt(avg)} a day ${p.words}, over ${plural(m.rows.length, 'logged day')}.`, days: uniq(m.rows.map((r) => r.date)), points: byDate(m.rows), mark: best.date };
 }
 
 function extreme(q: string, i: AskInput): Answer | undefined {
@@ -101,7 +106,7 @@ function extreme(q: string, i: AskInput): Answer | undefined {
   if (!m) return undefined;
   if (!m.rows.length) return { answer: `No ${m.name} logged ${p.words}.`, days: [] };
   const pick = m.rows.reduce((a, b) => ((low ? b.v < a.v : b.v > a.v) ? b : a));
-  return { answer: `${low ? 'Lowest' : 'Highest'} ${p.words}: ${m.fmt(pick.v)} on ${fmtDayMonth(pick.date)}.`, days: [pick.date] };
+  return { answer: `${low ? 'Lowest' : 'Highest'} ${p.words}: ${m.fmt(pick.v)} on ${fmtDayMonth(pick.date)}.`, days: [pick.date], points: byDate(m.rows), mark: pick.date };
 }
 
 /** A small, plain reading of your own data. It says only what the days show, and every answer lists the days it used. */

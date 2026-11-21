@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { autoTrophies } from '../src/domain/trophies';
-import { surprise, type BrowseInput } from '../src/domain/browse';
+import type { BrowseInput } from '../src/domain/browse';
 import { defaultSettings } from '../src/db/actions';
 import type { Day } from '../src/domain/types';
 
@@ -27,16 +27,3 @@ describe('autoTrophies', () => {
     expect(autoTrophies(input({ days })).find((t) => t.id === 'month')?.value).toBe('Oct');
   });
 });
-
-describe('surprise', () => {
-  const i = input({ days: Array.from({ length: 40 }, (_, n) => ({ date: `2026-09-${String((n % 28) + 1).padStart(2, '0')}`, steps: 9000 + n })) as Day[] });
-
-  it('is stable for one seed', () => {
-    expect(surprise('a', i)).toEqual(surprise('a', i));
-  });
-
-  it('returns nothing with no data', () => {
-    expect(surprise('a', input())).toBeUndefined();
-  });
-});
-

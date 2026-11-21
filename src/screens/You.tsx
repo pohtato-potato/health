@@ -1,11 +1,10 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo } from 'react';
-import { dailyFinding } from '../domain/dailyFinding';
 import { dayKey, daysBetween } from '../domain/dates';
 import { dataCheckup } from '../domain/checkup';
 import { dueItems } from '../domain/dueLines';
 import { fmtInt } from '../domain/format';
-import { todaysLift } from '../domain/slowDay';
+import { liftDeck } from '../domain/liftDeck';
 import { seeded } from '../domain/creatures';
 import { statDeck } from '../domain/shakeStats';
 import { wornTitle } from '../domain/titles';
@@ -19,19 +18,17 @@ import { shownTracks } from './Tracks';
 import { lastFullWeek, weekNumber } from '../domain/weekly';
 
 const COUNT_WORDS = ['None', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve'];
-import { DidYouKnow, Surprise } from './you/Browse';
 import { ClockChip } from './you/ClockCard';
-import { Sect, Title } from '../ui/kit/Kit';
+import { Title } from '../ui/kit/Kit';
 import { Doors } from './you/Doors';
 import { DueLines, readStorySeen } from './you/DueLines';
 import { FilmPoster } from './you/FilmPoster';
-import { FindingCard } from './you/FindingCard';
 import { returnedAfterGap } from '../domain/slowDay';
 import { spokenLine } from '../domain/voice';
 import { HowsToday } from './you/HowsToday';
 import { MomentumPanel } from './you/MomentumPanel';
 import { FootballLine } from './you/FootballLine';
-import { TodaysLift } from './you/TodaysLift';
+import { LiftDeck } from './you/TodaysLift';
 import { TrophyCase } from './you/TrophyCase';
 import { autoTrophies } from '../domain/trophies';
 
@@ -55,8 +52,7 @@ export function You() {
   );
   const momentum = useMemo(() => (browse ? { settings: browse.settings, days: browse.days, entries: browse.entries, sessions: browse.sessions } : undefined), [browse]);
   const slow = useMemo(() => (settings && days && sightings ? { settings, days, sightings } : undefined), [settings, days, sightings]);
-  const finding = useMemo(() => (browse ? dailyFinding(today, browse) : undefined), [browse, today]);
-  const lift = useMemo(() => (slow ? todaysLift(today, slow) : undefined), [slow, today]);
+  const deck = useMemo(() => (browse && slow ? liftDeck(today, browse, slow) : []), [browse, slow, today]);
   const trophies = useMemo(() => (browse ? autoTrophies({ ...browse, sightings }) : []), [browse, sightings]);
   const bored = useMemo(() => {
     if (!browse || !days?.length) return undefined;
@@ -105,11 +101,7 @@ export function You() {
       {/* Ledger O40: the family headings (Looking back, Earned, Body) take the place of the one "Look closer" label. */}
       <Doors subs={subs} counts={{ Reports: due.some((d) => d.id === 'story') ? `Week ${weekNumber(lastFullWeek(today))} is in` : undefined }} />
       <FootballLine />
-      <Sect>Today’s lift</Sect>
-      <DidYouKnow input={browse} />
-      <TodaysLift lift={lift} />
-      <FindingCard finding={finding} />
-      <Surprise input={browse} />
+      <LiftDeck cards={deck} />
       <TrophyCase trophies={trophies} />
       <HowsToday today={today} input={slow} stat={bored} />
     </div>

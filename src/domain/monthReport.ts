@@ -1,11 +1,8 @@
 import type { Sighting } from './creatures';
 import { parseDay, type DayKey } from './dates';
-import { lastMonth, strongestWeek, surpriseRecord } from './film';
-import { fmtInt } from './format';
-import { dosesAllowPerfect } from './medicines';
+import { lastMonth } from './film';
 import { sleepMinutes } from './rings';
-import type { Day, FoodEntry, SetEntry, Settings, SongRecord, TrainingSession } from './types';
-import { kmFromSteps, positionAt, setStride } from './walk';
+import type { Day, FoodEntry, Measurement, SetEntry, Settings, SongRecord, TrainingSession } from './types';
 import { dayRings } from '../state/derived';
 
 export interface MonthInput {
@@ -17,19 +14,12 @@ export interface MonthInput {
   sets: SetEntry[];
   sightings: Sighting[];
   songs: SongRecord[];
+  /** The month's story reads these when they are there. */
+  measurements?: Measurement[];
+  results?: { date: DayKey; result: 'W' | 'D' | 'L' }[];
 }
 export type GradeWord = 'Strong' | 'Good' | 'Usual' | 'Easing' | 'Slipped';
 export interface Grade { area: string; word: GradeWord; why: string }
-export type FilmFrame =
-  | { kind: 'number'; ground: string; big: string; color: string; small: string }
-  | { kind: 'opening'; ground: string; title: string; small: string }
-  | { kind: 'trail'; ground: string; fromKm: number; toKm: number; small: string }
-  | { kind: 'stars'; ground: string; dates: DayKey[]; small: string }
-  | { kind: 'credits'; ground: string; lines: [string, string][] }
-  | { kind: 'assessment'; ground: string; grades: Grade[] };
-
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const monthName = (m: string) => MONTHS[Number(m.slice(5)) - 1];
 const inMonth = (m: string) => (x: { date: DayKey }) => x.date.startsWith(m);
 const DONE = (s: TrainingSession) => s.status === 'done';
 const MIN_NIGHTS = 7;
@@ -105,9 +95,13 @@ const RANK: GradeWord[] = ['Slipped', 'Easing', 'Usual', 'Good', 'Strong'];
 
 /** One thing to try, from the month's weakest area. */
 export function tryNext(grades: Grade[]): string | undefined {
-  if (!grades.length) return undefined;
-  const worst = [...grades].sort((a, b) => RANK.indexOf(a.word) - RANK.indexOf(b.word))[0];
-  return NEXT[worst.area];
+  const worst = weakest(grades);
+  return worst && NEXT[worst.area];
+}
+
+/** The month's weakest area: the lowest word, first in the assessment's order on a tie. */
+export function weakest(grades: Grade[]): Grade | undefined {
+  return [...grades].sort((a, b) => RANK.indexOf(a.word) - RANK.indexOf(b.word))[0];
 }
 
 const daysInMonth = (m: string) => new Date(Number(m.slice(0, 4)), Number(m.slice(5)), 0).getDate();
@@ -151,71 +145,6 @@ export function sleepProfile(month: string, i: MonthInput) {
     shortest: sorted[0],
     longest: sorted[sorted.length - 1],
   };
-}
-
-const GROUND = {
-  open: 'linear-gradient(160deg,#0f6b58,#123a63 62%,#3b1f6e)',
-  road: 'linear-gradient(170deg,#0f7a6c,#134e4a 55%,#0b2b3f)',
-  km: 'linear-gradient(150deg,#18a07c,#0f5f6b 60%,#123066)',
-  sessions: 'linear-gradient(155deg,#6b43e0,#3a1f8f 58%,#1e1658)',
-  records: 'linear-gradient(150deg,#c48a1d,#7a4b16 58%,#3a1f24)',
-  best: 'linear-gradient(155deg,#f06a3c,#a12f5a 60%,#47205e)',
-  week: 'linear-gradient(150deg,#d9408f,#6d2aa8 60%,#231a66)',
-  surprise: 'linear-gradient(150deg,#b9851f,#8a3f22 60%,#3d1b3a)',
-  met: 'linear-gradient(165deg,#0b1036,#141046 60%,#22124f)',
-  stars: 'linear-gradient(170deg,#141a4a,#1f1456 60%,#4a1c58)',
-  credits: 'linear-gradient(180deg,#0b0d1e,#1a1040)',
-  grades: 'linear-gradient(165deg,#3a1f6e,#141a4a 70%)',
-};
-
-/** The month's film, frame by frame. A frame with nothing to say is left out. */
-export function filmFrames(month: string, i: MonthInput): FilmFrame[] {
-  setStride(i.settings.strideM);
-  const name = monthName(month);
-  const days = i.days.filter(inMonth(month)).filter((d) => d.steps !== undefined);
-  const done = i.sessions.filter(inMonth(month)).filter(DONE);
-  if (!days.length && !done.length) return [];
-  const before = i.days.filter((d) => d.date < `${month}-01`).reduce((n, d) => n + (d.steps ?? 0), 0);
-  const steps = days.reduce((n, d) => n + d.steps!, 0);
-  const fromKm = kmFromSteps(before);
-  const toKm = kmFromSteps(before + steps);
-  const records = i.sets.filter(inMonth(month)).filter((s) => s.mark === '!!' && !s.skipped).length;
-  const best = Math.max(0, ...days.map((d) => d.steps!));
-  const out: FilmFrame[] = [];
-
-  const plays = new Map<string, number>();
-  for (const s of i.songs) {
-    if (done.some((x) => s.at >= x.startedAt && s.at <= (x.endedAt ?? x.startedAt + 2 * 3_600_000))) plays.set(s.track, (plays.get(s.track) ?? 0) + 1);
-  }
-  const top = [...plays].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
-  out.push(top
-    ? { kind: 'opening', ground: GROUND.open, title: `${name}, scored by ${top[0]}`, small: top[1] === 1 ? "Played once during sessions." : `Played ${top[1]} times during sessions.` }
-    : { kind: 'opening', ground: GROUND.open, title: `Your ${name}`, small: 'The month, frame by frame.' });
-  if (toKm > fromKm) {
-    const [a, b] = [positionAt(fromKm).from.name, positionAt(toKm).from.name];
-    out.push({ kind: 'trail', ground: GROUND.road, fromKm, toKm, small: a === b ? `Around ${b}: the month on the road.` : `From ${a} towards ${b}: the month on the road.` });
-    out.push({ kind: 'number', ground: GROUND.km, big: fmtInt(toKm - fromKm), color: '#ffe27a', small: 'kilometres walked.' });
-  }
-  if (done.length) out.push({ kind: 'number', ground: GROUND.sessions, big: fmtInt(done.length), color: '#7ff0d0', small: 'sessions finished.' });
-  if (records) out.push({ kind: 'number', ground: GROUND.records, big: fmtInt(records), color: '#ffe27a', small: `record${records === 1 ? '' : 's'} set.` });
-  if (best) out.push({ kind: 'number', ground: GROUND.best, big: fmtInt(best), color: '#fff0a6', small: 'steps on your best day.' });
-  const strong = strongestWeek(month, i.sets as Parameters<typeof strongestWeek>[1]);
-  if (strong) out.push({ kind: 'number', ground: GROUND.week, big: `${fmtInt(strong.kg)} kg`, color: '#8ff0ff', small: `moved in your strongest week, from ${Number(strong.from.slice(8))} ${name}.` });
-  const surprise = surpriseRecord(month, i.sets as Parameters<typeof surpriseRecord>[1]);
-  if (surprise) out.push({ kind: 'number', ground: GROUND.surprise, big: `+${surprise.pct}%`, color: '#ffd77a', small: `${surprise.exercise}, ${surprise.from} to ${surprise.to} kg. The record you didn't see coming.` });
-  const food = byDate(i.entries.filter(inMonth(month)));
-  const dayBy = new Map(i.days.map((d) => [d.date, d]));
-  const perfect = i.days.filter(inMonth(month)).filter((d) => d.date < i.today && food.has(d.date) && dayRings(i.settings, d.date, dayBy.get(d.date), food.get(d.date)!).rings.perfect && dosesAllowPerfect(i.settings, d)).map((d) => d.date);
-  if (perfect.length) out.push({ kind: 'stars', ground: GROUND.stars, dates: perfect, small: `${perfect.length} perfect day${perfect.length === 1 ? '' : 's'}, joined into this month's stars.` });
-
-  const lifts = topFives(month, i).lifts;
-  const lines: [string, string][] = [['Starring', 'You']];
-  if (lifts[0]) lines.push(['Stunts', lifts[0].name]);
-  if (top) lines.push(['Original score', top[0]]);
-  if (toKm > fromKm) lines.push(['Filmed on location', positionAt(toKm).from.name]);
-  out.push({ kind: 'credits', ground: GROUND.credits, lines });
-  out.push({ kind: 'assessment', ground: GROUND.grades, grades: assessment(month, i) });
-  return out;
 }
 
 /** Finished months with anything logged, newest first. */

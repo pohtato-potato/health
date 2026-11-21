@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { almanac, dayOneAgainstToday, mostOf, yearReplay, type ReplayFrame } from '../domain/yearPage';
+import { almanac, dayOneAgainstToday, firstDay, mostOf, yearReplay, type ReplayFrame } from '../domain/yearPage';
+import { addDays } from '../domain/dates';
+import { fmtDayMonth } from '../domain/format';
+import { DayOne, MonthTiles, YearCounts } from './you/YearParts';
 import { spokenLine } from '../domain/voice';
 import { back } from '../router';
 import { PageHead } from '../ui/kit/Kit';
@@ -27,6 +30,14 @@ export function YearPage() {
   const lists = mostOf(input);
   const compare = dayOneAgainstToday(input);
   const frames = yearReplay(input);
+  const first = firstDay(input);
+  const logged = months.reduce((n, m) => n + (m.days ?? 0), 0);
+  const km = Math.round(months.reduce((n, m) => n + (m.km ?? 0), 0));
+  const sessions = months.reduce((n, m) => n + (m.sessions ?? 0), 0);
+  const sets = input.sets.filter((x) => !x.skipped && x.date <= input.today).length;
+  const tiles: { month: string; days?: number }[] = months.map((m) => ({ month: m.month, days: m.days ?? 0 }));
+  const until = input.settings.goalDate?.slice(0, 7);
+  for (let m = addDays(`${input.today.slice(0, 7)}-28`, 7).slice(0, 7); until && m <= until && tiles.length < 12; m = addDays(`${m}-28`, 7).slice(0, 7)) tiles.push({ month: m });
   const line = spokenLine(input.settings, input.today, 'milestone', `year${input.today}`);
   if (playing && frames.length) return <Replay frames={frames} onClose={() => setPlaying(false)} />;
   return (
@@ -34,11 +45,20 @@ export function YearPage() {
       <div className="k-page">
         <PageHead back="You" onBack={() => back('/you')} title="Your year" family="back" />
         {line && <div className="voice">{line}</div>}
+        {first && <p className="yr-sub">From {fmtDayMonth(first)}. {logged} day{logged === 1 ? '' : 's'} logged so far.</p>}
         {!months.length && <div className="yu-card"><b>Nothing here yet</b><span className="yu-q">Your year fills in as you log.</span></div>}
+        {months.length > 0 && <MonthTiles tiles={tiles} />}
+        {first && (
+          <section className="yu-sec">
+            <h2>Day one against today</h2>
+            <DayOne first={first} today={input.today} />
+          </section>
+        )}
+        {months.length > 0 && <YearCounts counts={[{ n: logged, what: 'days logged' }, { n: km, what: 'km walked' }, { n: sessions, what: 'sessions' }, { n: sets, what: 'sets' }]} />}
         {frames.length > 0 && <button type="button" className="btn" onClick={() => setPlaying(true)}>Play the replay</button>}
         {months.length > 0 && (
           <section className="yu-sec">
-            <h2>Day one against today</h2>
+            <h2>The first two weeks against the latest</h2>
             <div className="yu-card">
               <div className="yu-thennow">
                 <span /><span className="head">First two weeks</span><span className="head">Latest</span>

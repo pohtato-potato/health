@@ -1,21 +1,15 @@
-import { useState, type CSSProperties } from 'react';
 import { patchSettings } from '../../db/actions';
 import { logMoment } from '../../db/moments';
-import { TITLES } from '../../domain/rewards';
-import { TITLE_DEFS, wornTitle, type TitleStats } from '../../domain/titles';
+import { TITLE_DEFS, type TitleStats } from '../../domain/titles';
 import type { Settings } from '../../domain/types';
 import { Action, Panel } from '../../ui/kit/Kit';
 import { useToast, type ToastInput } from '../../ui/Toasts';
 
-const FAMILIES = [...new Set(TITLE_DEFS.map((t) => t.family))];
-const ALONG = 'Along the way';
 const GOLD = '#f2c46d';
-
-interface Row { id: string; name: string; how: string; has: boolean }
 
 const seenWith = (settings: Settings, id: string) => [...new Set([...(settings.titlesSeen ?? []), id])];
 // Finding 34 (O42): wearing a title says so, in a gold toast, and keeps a moment on the shelf.
-const wear = (settings: Settings, id: string, name: string, toast: (t: ToastInput) => void) => {
+export const wear = (settings: Settings, id: string, name: string, toast: (t: ToastInput) => void) => {
   if (settings.title === id) return;
   void patchSettings({ title: id, titlesSeen: seenWith(settings, id) });
   void logMoment('title', `Wore the title ${name}`);
@@ -41,35 +35,5 @@ export function NewTitle({ settings, stats }: { settings: Settings; stats: Title
         </span>
       </div>
     </Panel>
-  );
-}
-
-/** Every title by family: earned ones in gold, tap one to wear it. */
-export function TitlesWall({ settings, stats, unlocked, level }: { settings: Settings; stats: TitleStats; unlocked: Set<string>; level: number }) {
-  const toast = useToast();
-  const [fam, setFam] = useState<string>(FAMILIES[0]);
-  const worn = wornTitle(settings, unlocked, level);
-  const rows: Row[] = fam === ALONG
-    ? TITLES.map((t) => ({ id: t.id, name: t.name, how: t.how, has: t.unlocked(unlocked, level) }))
-    : TITLE_DEFS.filter((t) => t.family === fam).map((t) => ({ id: t.id, name: t.name, how: t.how, has: t.rule(stats) }));
-  return (
-    <>
-      <NewTitle settings={settings} stats={stats} />
-      <p className="k-line">{worn ? <>Wearing <b style={{ color: GOLD }}>{worn}</b>.</> : 'Wearing nothing yet.'} <span className="k-q">Tap one you have earned to wear it.</span></p>
-      <div className="k-pills" role="group" aria-label="Families">
-        {[...FAMILIES, ALONG].map((f) => <button key={f} type="button" className="k-pill sm" aria-pressed={f === fam} onClick={() => setFam(f)}>{f}</button>)}
-      </div>
-      <div className="k-col" style={{ gap: 8 }} key={fam}>
-        {rows.map((t) => {
-          const on = settings.title === t.id;
-          return (
-            <button key={t.id} type="button" disabled={!t.has} className={`k-panel k-title-row${t.has ? ' k-tap' : ' off'}${on ? ' worn' : ''}`} style={{ '--ink': t.has ? GOLD : '#ede6da' } as CSSProperties} onClick={() => wear(settings, t.id, t.name, toast)} aria-pressed={on}>
-              <b className="k-lb">{t.name}{on ? ' · wearing' : ''}</b>
-              <span className="k-q">{t.how}</span>
-            </button>
-          );
-        })}
-      </div>
-    </>
   );
 }
