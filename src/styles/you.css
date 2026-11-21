@@ -457,3 +457,54 @@ html.contrast .yu-st-bars i.on { background: #fff; }
 .ck-line span { font-size: 14px; color: #d9ccff; }
 html.contrast .ck-page { background: #000; }
 html.contrast .ck-m, html.contrast .ck-line, html.contrast .ci-k.ck-page .card { background: #111; border-color: #fff; }
+
+/* Character (board W9): nameplate with a turning rainbow edge, wardrobe tiles, reward switches, theme swatches. */
+@property --ch-a { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@keyframes ch-turn { to { --ch-a: 360deg; } }
+.ch-page { display: flex; flex-direction: column; gap: 12px; }
+.ch-plate { border-radius: 24px; padding: 6px; text-align: center; background: conic-gradient(from var(--ch-a), #ff6fa8, #ffc94d, #5fe3a1, #4fd2ff, #b9a0ff, #ff6fa8); animation: ch-turn 8s linear infinite; }
+.ch-plate > div { border-radius: 19px; padding: 18px 14px; background: #140f22; display: flex; flex-direction: column; gap: 6px; }
+.ch-plate span { font: 700 15px var(--sans); color: #d9ccff; }
+.ch-plate b { font: 600 36px/1.05 var(--serif); color: #fff; overflow-wrap: anywhere; }
+.ch-plate .ch-lv { color: #ffc94d; }
+.ch-k { margin: 10px 0 0; font: 700 17px var(--sans); color: var(--c, #ffc94d); display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.ch-k span { font: 500 14px var(--sans); color: var(--quiet); }
+.ch-none { margin: 0; font: 500 15px/1.4 var(--sans); color: var(--quiet); }
+.ch-tt { display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: dense; gap: 8px; }
+.ch-t { min-height: 60px; border-radius: 14px; padding: 8px 10px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 2px; text-align: left; background: color-mix(in srgb, var(--c) 22%, #140f22); border: 2px solid var(--c); }
+.ch-t b { font: 600 17px/1.15 var(--serif); color: #fff; overflow-wrap: anywhere; }
+.ch-t.wide { grid-column: 1 / -1; }
+.ch-t span { font: 700 14px/1.2 var(--sans); color: var(--c); }
+.ch-t.on { background: var(--c); }
+.ch-t.on b, .ch-t.on span { color: #140f22; }
+.ch-t.locked { border-style: dashed; background: rgba(255,255,255,.04); }
+.ch-t.locked b { color: #d9d2e6; }
+.ch-t.locked span { color: #b8b0c8; }
+.ch-more { min-height: 44px; align-self: flex-start; padding: 0 4px; font: 700 15px var(--sans); color: #72c2ff; }
+.ch-sw { display: flex; flex-direction: column; gap: 8px; }
+.ch-r { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 16px; background: rgba(255,255,255,.06); text-align: left; min-height: 60px; width: 100%; }
+.ch-r i { flex: none; width: 36px; height: 36px; border-radius: 10px; background: var(--c); display: grid; place-items: center; }
+.ch-rn { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ch-rn b { font: 700 16px var(--sans); color: #fff; }
+.ch-rn span { font: 500 14px/1.3 var(--sans); color: #c9c1d8; }
+.ch-r em { flex: none; width: 52px; height: 32px; border-radius: 16px; background: rgba(255,255,255,.18); position: relative; transition: background .2s; }
+.ch-r em::after { content: ""; position: absolute; left: 3px; top: 3px; width: 26px; height: 26px; border-radius: 50%; background: #fff; transition: left .2s; }
+.ch-r em.on { background: var(--c); }
+.ch-r em.on::after { left: 23px; }
+.ch-r:disabled, .ch-conf button:disabled { opacity: 1; }
+.ch-r.locked i { background: color-mix(in srgb, var(--c) 45%, #3a3346); }
+.ch-r.locked em { background: rgba(255,255,255,.08); }
+.ch-conf { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 16px; background: rgba(255,255,255,.06); }
+.ch-conf > b { font: 700 16px var(--sans); color: #fff; }
+.ch-conf > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.ch-conf button { min-height: 44px; padding: 0 14px; border-radius: 22px; display: inline-flex; align-items: center; gap: 6px; font: 700 15px var(--sans); color: #fff; background: rgba(255,255,255,.08); border: 2px solid transparent; }
+.ch-conf button[aria-pressed="true"] { border-color: #ff6fa8; background: color-mix(in srgb, #ff6fa8 26%, #140f22); }
+.ch-conf button:disabled { color: #b8b0c8; border-style: dashed; border-color: rgba(255,255,255,.2); }
+.ch-conf button span { display: inline-flex; gap: 2px; }
+.ch-conf button span i { width: 7px; height: 7px; border-radius: 4px; }
+.ch-thm { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 10px; }
+.ch-thm button { display: flex; flex-direction: column; gap: 6px; align-items: stretch; text-align: left; min-height: 44px; }
+.ch-thm i { height: 52px; border-radius: 14px; }
+.ch-thm span { font: 700 14px/1.2 var(--sans); color: #e9e4f2; }
+.ch-thm button[aria-pressed="true"] i { box-shadow: 0 0 0 3px #fff; }
+.ch-thm button[aria-pressed="true"] span::after { content: " · wearing"; color: #ffc94d; }

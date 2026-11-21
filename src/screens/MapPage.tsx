@@ -1,3 +1,4 @@
+import { prefOn } from '../domain/types';
 import { useEffect, useRef, useState } from 'react';
 import { hasReward } from '../domain/rewards';
 import { fmtInt } from '../domain/format';
@@ -59,7 +60,7 @@ export function MapPage() {
   const reached = statesReached(km).map((s) => s.name);
   const nextState = ALL_STATES.find((s) => s.km > km && !reached.includes(s.name));
   const stretch = stretchAt(km, STRETCHES);
-  const gold = hasReward(unlocked, 'A gold route on your map');
+  const gold = hasReward(unlocked, 'A gold route on your map') && prefOn(settings.prefs, 'goldRoute');
 
   const stop = () => {
     cancelAnimationFrame(raf.current);

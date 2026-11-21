@@ -147,6 +147,8 @@ export interface Prefs {
   freeMealSaveUp?: boolean;
   /** A reward: closed rings turn gold. */
   goldRings?: boolean;
+  /** A reward: the walked route on the map is drawn in gold. */
+  goldRoute?: boolean;
   /** Water tracking; the owner's starter turns it off. */
   water?: boolean;
   /** Check-in photos shot in a mirror: flip them back so left stays left. */
@@ -174,6 +176,7 @@ const PREF_DEFAULTS: Required<Prefs> = {
   suggestTargets: true,
   freeMealSaveUp: false,
   goldRings: false,
+  goldRoute: true,
   water: false,
   mirrorCheckIn: false,
   moments: true,

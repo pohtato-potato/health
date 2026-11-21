@@ -1,10 +1,10 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { ACHIEVEMENTS, ACTIVE_ACHIEVEMENTS } from '../domain/achievements';
 import { firsts, milestones, odometers, shelves, type Dated } from '../domain/earned';
 import { fmtDayMonth, fmtInt } from '../domain/format';
 import { availableThemes } from '../domain/themes';
-import { TITLE_DEFS, titleStats, wornTitle } from '../domain/titles';
+import { TITLE_DEFS, wornTitle } from '../domain/titles';
 import { TITLES } from '../domain/rewards';
 import { pickedTrophies, trophyCandidates } from '../domain/trophies';
 import { db } from '../db/db';
@@ -12,10 +12,10 @@ import { useAllSets, useSightings, useToday } from '../db/hooks';
 import { back, go, useRoute } from '../router';
 import { Door, Doors, Hero, PageHead, Sect, type HowThisWorks } from '../ui/kit/Kit';
 import { ThemeSheet } from '../ui/Theme';
-import { useLevel } from './Character';
-import { Rewards } from './earned/Rewards';
+import { useLevel, useTitleStats } from './Character';
 import { Shelves } from './earned/Shelves';
-import { NewTitle, TitlesWall } from './earned/TitlesWall';
+import { NewTitle } from './earned/TitlesWall';
+import { Moved } from './reports/Moved';
 import { TrophyShelf } from './earned/TrophyShelf';
 
 const GOLD = '#f2c46d';
@@ -49,36 +49,17 @@ export function Earned() {
   const [themes, setThemes] = useState(false);
   const sets = useAllSets();
   const sightings = useSightings();
-  const forecasts = useLiveQuery(() => db.forecasts.toArray(), []);
-  const usage = useLiveQuery(() => db.usage.where('kind').equals('open').toArray(), []);
-  const edits = useLiveQuery(() => db.edits.count(), []);
   const moments = useLiveQuery(() => db.moments.toArray(), []);
   const achieved = useLiveQuery(() => db.achievements.toArray(), []);
+  const stats = useTitleStats(lv);
 
-  const ready = lv && sets && sightings && forecasts && usage && edits !== undefined && moments && achieved;
-  const stats = useMemo(() => (ready ? titleStats({
-    today, settings: lv.settings, days: lv.days, entries: lv.entries, sessions: lv.sessions, sets, sightings, forecasts, usage, edits,
-  }) : undefined), [ready, today, lv?.settings, lv?.days, lv?.entries, lv?.sessions, sets, sightings, forecasts, usage, edits]); // eslint-disable-line react-hooks/exhaustive-deps
-
+  const ready = lv && sets && sightings && moments && achieved;
   if (!ready || !stats) return <div className="page bare k-page k-light you" />;
   const { settings, days, entries, sessions, unlocked, level } = lv;
   const toEarned = () => back('/earned');
 
-  if (sub === 'titles') {
-    return (
-      <div className="page bare k-page k-light you">
-        <PageHead back="Earned" onBack={toEarned} title="Titles" family="earned" />
-        <TitlesWall settings={settings} stats={stats} unlocked={unlocked} level={level} />
-      </div>
-    );
-  }
-  if (sub === 'rewards') {
-    return (
-      <div className="page bare k-page k-light you">
-        <PageHead back="Earned" onBack={toEarned} title="Rewards" family="earned" />
-        <Rewards settings={settings} unlocked={unlocked} today={today} />
-      </div>
-    );
+  if (sub === 'titles' || sub === 'rewards') {
+    return <Moved to="/character" />;
   }
   if (sub === 'story') {
     const named = new Map(ACHIEVEMENTS.map((a) => [a.id, a.name]));
@@ -123,13 +104,13 @@ export function Earned() {
       <NewTitle settings={settings} stats={stats} />
       <Sect>The cabinet</Sect>
       <Doors two label="The cabinet">
-        <Door line icon="pack" name="Titles" value={`${fmtInt(titlesHad)} earned`} family="earned" onClick={() => go('/earned', { v: 'titles' })} />
+        <Door line icon="pack" name="Titles" value={`${fmtInt(titlesHad)} earned`} family="earned" onClick={() => go('/character')} />
         <Door line icon="ground" name="Records" value="The book" family="earned" onClick={() => go('/records')} />
         <Door line icon="kit" name="Themes" value={`${fmtInt(wearable)} to wear`} family="earned" onClick={() => setThemes(true)} />
         <Door line icon="scope" name="Secrets" value={`${fmtInt(secretsFound)} found`} family="earned" onClick={() => go('/achievements', { f: 'secret' })} />
         <Door line icon="win" name="Achievements" value="Sets and progress" family="earned" onClick={() => go('/achievements')} />
         <Door line icon="calendar" name="So far" value="Shelves, firsts" family="earned" onClick={() => go('/earned', { v: 'story' })} />
-        <Door line icon="bolt" name="Rewards" value="Confetti, gold rings" family="earned" onClick={() => go('/earned', { v: 'rewards' })} />
+        <Door line icon="bolt" name="Rewards" value="Confetti, gold rings" family="earned" onClick={() => go('/character')} />
       </Doors>
       {themes && <ThemeSheet settings={settings} unlocked={unlocked} today={today} onClose={() => setThemes(false)} />}
     </div>
