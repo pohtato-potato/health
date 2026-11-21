@@ -344,3 +344,37 @@
 .story.ws .story-close { position: absolute; top: calc(env(safe-area-inset-top) + 4px); right: 14px; left: auto; bottom: auto; width: 44px; height: 44px; z-index: 3; }
 .story.ws .yu-sec h2 { font-family: var(--serif); font-weight: 400; font-size: 26px; color: var(--text); margin: 0; }
 .k-mom-why { display: flex; gap: 10px; align-items: baseline; font-size: 15px; } .k-mom-why .k-num { min-width: 36px; font-size: 18px; } /* O42 finding 29 */
+
+/* y6-deck · Today's lift as a deck (board W6). The card's shine and picture loop; the words stay still. */
+.yu-dk { display: flex; flex-direction: column; gap: 10px; }
+.yu-dk-h { display: flex; justify-content: space-between; align-items: baseline; }
+.yu-dk-h h2 { font-family: var(--serif); font-size: 22px; color: var(--text); }
+.yu-dk-h span { font-size: 15px; font-weight: 700; color: #e6dcef; }
+.yu-dk-st { position: relative; display: grid; padding: 14px 18px 18px; touch-action: pan-y; overflow-x: clip; }
+.yu-dk-bk { position: absolute; inset: 22px 34px 6px; border-radius: 22px; border: 3px solid var(--c); background: #1a1222; opacity: .7; }
+.yu-dk-bk.b0 { transform: rotate(-6deg) translateX(-14px); }
+.yu-dk-bk.b1 { transform: rotate(5deg) translateX(14px); }
+.yu-dk-c { position: relative; grid-area: 1/1; min-height: 270px; max-width: 280px; width: 100%; justify-self: center; border-radius: 22px; padding: 14px; display: flex; flex-direction: column; gap: 8px; color: #f3ece0; overflow: hidden;
+  border: 3px solid var(--c); background: radial-gradient(70% 50% at 0% 0%, color-mix(in srgb, var(--c) 40%, transparent), transparent 70%), radial-gradient(70% 50% at 100% 100%, color-mix(in srgb, var(--c) 30%, transparent), transparent 70%), #1a1222;
+  box-shadow: 0 0 30px -10px var(--c), 0 18px 30px -16px rgba(0,0,0,.8); }
+.yu-dk-c.next { animation: yu-dk-in-r .45s cubic-bezier(.3,.7,.3,1) both; }
+.yu-dk-c.back { animation: yu-dk-in-l .45s cubic-bezier(.3,.7,.3,1) both; }
+@keyframes yu-dk-in-r { from { transform: translate(40%, 14px) rotate(10deg); opacity: 0; } }
+@keyframes yu-dk-in-l { from { transform: translate(-40%, 14px) rotate(-10deg); opacity: 0; } }
+.yu-dk-sh { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.18) 50%, transparent 65%) 0 0/250% 100%; animation: yu-dk-shine 3.5s ease infinite; pointer-events: none; }
+@keyframes yu-dk-shine { from { background-position: 100% 0; } 60%, to { background-position: -150% 0; } }
+.yu-dk-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.yu-dk-tag { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 10px; background: var(--c); color: #140f22; font-size: 14px; font-weight: 700; }
+.yu-dk-no { font-size: 14px; font-weight: 700; color: var(--c); white-space: nowrap; }
+.yu-dk-art { height: 76px; display: grid; place-items: center; color: var(--c); }
+.yu-dk-art svg { animation: yu-dk-bob 4s ease-in-out infinite; filter: drop-shadow(0 0 10px var(--c)); }
+@keyframes yu-dk-bob { 50% { transform: translateY(-6px); } }
+.yu-dk-c b { font-family: var(--serif); font-weight: 600; font-size: 23px; line-height: 1.15; color: #fff; overflow-wrap: anywhere; }
+.yu-dk-s { font-size: 16px; line-height: 1.4; }
+.yu-dk-nav { display: flex; align-items: center; gap: 6px; }
+.yu-dk-nav > button { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--edge, #ffffff2e); background: none; color: var(--text); }
+.yu-dk-kinds { flex: 1; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.yu-dk-kinds button { min-height: 44px; padding: 0 12px; border-radius: 22px; border: 2px solid var(--c); background: none; color: var(--c); font: inherit; font-size: 14px; font-weight: 700; }
+.yu-dk-kinds button[aria-pressed='true'] { background: var(--c); color: #140f22; }
+html.contrast .yu-dk-c { background: #111; }
+html.contrast .yu-dk-sh, html.contrast .yu-dk-bk { display: none; }

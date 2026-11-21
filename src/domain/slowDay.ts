@@ -1,5 +1,5 @@
 import { spokenLine } from './gremlin';
-import { seeded, type Sighting } from './creatures';
+import type { Sighting } from './creatures';
 import { dayKey, daysBetween, parseDay, weekStart, type DayKey } from './dates';
 import { fmtDayMonth, fmtInt } from './format';
 import type { Stat } from './shakeStats';
@@ -44,7 +44,7 @@ export function rankOfLastWeek(today: DayKey, days: Day[]): { beat: number; of: 
   return beat ? { beat, of: others.length } : undefined;
 }
 
-function liftCandidates(today: DayKey, i: SlowInput): Lift[] {
+export function liftCandidates(today: DayKey, i: SlowInput): Lift[] {
   const out: Lift[] = [];
   const ago = monthAgo(today);
   const then = ago && i.days.find((d) => d.date === ago);
@@ -57,12 +57,6 @@ function liftCandidates(today: DayKey, i: SlowInput): Lift[] {
     out.push({ kind: 'best', value: fmtInt(best.steps!), note: `Your most steps in a day, on ${fmtDayMonth(best.date)}` });
   }
   return out;
-}
-
-/** One small good thing, the same all day. */
-export function todaysLift(today: DayKey, i: SlowInput): Lift | undefined {
-  const all = liftCandidates(today, i);
-  return all.length ? all[Math.floor(seeded(`lift:${today}`)() * all.length)] : undefined;
 }
 
 /** How often you have come back after a stretch away. The days since your last log aren't a return yet. */
