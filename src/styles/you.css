@@ -508,3 +508,45 @@ html.contrast .ck-m, html.contrast .ck-line, html.contrast .ci-k.ck-page .card {
 .ch-thm span { font: 700 14px/1.2 var(--sans); color: #e9e4f2; }
 .ch-thm button[aria-pressed="true"] i { box-shadow: 0 0 0 3px #fff; }
 .ch-thm button[aria-pressed="true"] span::after { content: " · wearing"; color: #ffc94d; }
+
+/* Medicines (board W9): the teal hero with drifting pills, the week as marks per medicine, stock bars, calendar leaves. */
+@keyframes md-float { 0%, 100% { transform: translateY(0) rotate(var(--r)); } 50% { transform: translateY(-10px) rotate(calc(var(--r) + 14deg)); } }
+@keyframes md-pop { from { transform: scale(0); } 70% { transform: scale(1.15); } to { transform: scale(1); } }
+.md-hero { position: relative; overflow: hidden; border-radius: 24px; padding: 18px 16px; display: flex; flex-direction: column; gap: 6px; background: linear-gradient(150deg, #13808a, #0f6a73 55%, #0b4c55); }
+.md-pill { position: absolute; width: 42px; height: 16px; border-radius: 8px; background: rgba(160, 240, 232, .22); --r: calc(var(--i) * 47deg - 30deg); top: calc(12% + var(--i) * 21%); right: calc(4% + var(--i) * 13%); animation: md-float calc(5s + var(--i) * 1.3s) ease-in-out infinite; pointer-events: none; }
+.md-nm { position: relative; font: 700 15px var(--sans); color: #d6f5f0; }
+.md-v { position: relative; font: 600 48px/1 var(--serif); color: #fff; }
+.md-v.sm { font-size: 30px; line-height: 1.1; }
+.md-say { position: relative; font: 500 16px/1.35 var(--sans); color: #e6faf6; max-width: 26ch; }
+.md-grid { display: flex; flex-direction: column; gap: 10px; padding: 14px 12px; border-radius: 20px; background: rgba(8, 30, 34, .62); }
+.md-rw { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; align-items: center; justify-items: center; }
+.md-rn { grid-column: 1 / -1; justify-self: start; font: 700 15px var(--sans); color: #fff; }
+.md-hd span { font: 700 14px var(--sans); color: #a9d8d2; }
+.md-hd span:first-child { display: none; }
+.md-d { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: #0b2a2d; background: rgba(255,255,255,.12); animation: md-pop .4s var(--d, 0s) both; }
+.md-d.on-time { background: #8fe3b0; }
+.md-d.late { background: #ffc94d; }
+.md-d.missed { background: #ff8aa0; }
+.md-d.none { background: transparent; border: 2px dashed rgba(255,255,255,.25); }
+.md-key { display: flex; flex-wrap: wrap; gap: 8px 14px; font: 700 14px var(--sans); color: #d6f5f0; }
+.md-key span { display: inline-flex; align-items: center; gap: 6px; }
+.md-key .md-d { width: 22px; height: 22px; animation: none; }
+.md-card { background: color-mix(in srgb, #0f6a73 30%, #0c0e1d) !important; border: 1px solid rgba(111, 208, 200, .35); }
+.md-name { font: 600 22px/1.1 var(--serif); color: #fff; }
+.md-tms { display: flex; flex-wrap: wrap; gap: 6px; }
+.md-tms span { font: 700 15px var(--sans); color: #0b2a2d; background: #6fd0c8; border-radius: 10px; padding: 4px 10px; }
+.md-tms em { font: 500 15px var(--sans); color: #d6f5f0; font-style: normal; }
+.md-stk { display: flex; flex-direction: column; gap: 6px; font: 600 14px var(--sans); color: #d6f5f0; }
+.md-br { height: 8px; border-radius: 4px; background: rgba(255,255,255,.12); overflow: hidden; }
+.md-br i { display: block; height: 100%; border-radius: 4px; background: #6fd0c8; }
+.md-low { color: #ffc2cd; }
+.md-low .md-br i { background: #ff8aa0; }
+.md-apt { display: flex; align-items: center; gap: 12px; }
+.md-dte { flex: none; width: 56px; border-radius: 12px; overflow: hidden; background: #fff; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
+.md-dte span { display: block; font: 800 14px var(--sans); color: #fff; background: #ff6f7f; padding: 2px 0; }
+.md-dte b { display: block; font: 600 26px/1.3 var(--serif); color: #140f22; }
+.md-at { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.md-at b { font: 700 17px var(--sans); color: #fff; }
+.md-at span { font: 500 14px var(--sans); color: #d6f5f0; }
+.yu-track .kept-pill { font-size: 14px; padding: 4px 10px; color: #c9f2dc; }
+.md-add { flex-wrap: wrap; } .md-add > input:first-child { flex: 1 1 100%; } .md-add > input[type="date"] { flex: 1; min-width: 0; }

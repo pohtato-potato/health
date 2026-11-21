@@ -186,8 +186,8 @@ Every screen task below follows these steps; one part is one tab and one PR. A r
 | 5.3 | `y8-story` The month's story | W8 | `src/screens/MonthlyFilm.tsx` | nine slides you tap through |
 | 5.4 | `y8-body` Body check-in | W8 | `src/screens/CheckIn.tsx`, `src/screens/checkin/Parts.tsx` (the plan said `BodyLog.tsx`, which is the aches log) | four steps in order |
 | 5.5 | `y9-char` Character | W9 | `src/screens/Character.tsx` | the worn title as text; each reward works once unlocked (its open note) |
-| 5.6 | `y9-diary` Diary | W9 | find with `grep -rln "Diary" src/screens` | the run strip, then each day |
-| 5.7 | `y9-exp` Experiments | W9 | find with `grep -rln "xperiment" src/screens` | a running experiment in its card |
+| ~~5.6~~ | ~~`y9-diary` Diary~~ | W9 | — | Dropped: the page stays removed (removed in edd6639; /diary goes to Reports; owner, 21 Nov) |
+| ~~5.7~~ | ~~`y9-exp` Experiments~~ | W9 | — | Dropped: the page stays removed (removed in 45121c1, folded into Compare's natural events; /experiments goes there; ruled with 5.6, 21 Nov) |
 | 5.8 | `y9-meds` Medicines | W9 | `src/screens/Medicines.tsx` | the last seven days per medicine as text, not colour alone |
 | 5.9 | `y9-reveal-s` Reveal, sealed | W9 | `src/screens/Reveal.tsx` | before reveal day: the sealed state and the date |
 | 5.10 | `y9-settings` Settings | W9 | `src/screens/Settings.tsx` | grouped lists; each row icon has a label |

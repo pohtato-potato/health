@@ -1,8 +1,8 @@
 import { useState, type CSSProperties } from 'react';
 import { headlineFor, newMedicine } from '../domain/trackRules';
 import { TRACK_LOOK } from './tracks/look';
-import { Changed, TrackGround } from './tracks/Template';
-import { addDays, dayKey } from '../domain/dates';
+import { TrackGround } from './tracks/Template';
+import { addDays, dayKey, dayRange, daysBetween } from '../domain/dates';
 import { fmtDayShort, fmtTime } from '../domain/format';
 import { courseOn, dayDoses, dayTone, DEFAULT_MED_REWARDS, keptCount, refillBy } from '../domain/medicines';
 import { slotTime } from '../domain/checklist';
@@ -12,6 +12,7 @@ import { useAllDays, useSettings, useToday } from '../db/hooks';
 import { back, openSheet } from '../router';
 import { IntField, SwitchRow, TimeTile } from '../ui/controls';
 import { Icon } from '../ui/Icon';
+import { ApptLeaf, DoseGrid, MedHero, StockBar } from './meds/MedParts';
 
 const REWARD_ROWS: { id: keyof MedRewards; title: string; sub: string }[] = [
   { id: 'keptWeek', title: 'A kept week', sub: 'A moment when every dose of the week was on time' },
@@ -34,26 +35,33 @@ export function MedicinesPage() {
   const meds = settings.checklist.filter((i) => i.active && i.med);
   const rewards = settings.medRewards ?? DEFAULT_MED_REWARDS;
   const week = Array.from({ length: 7 }, (_, i) => addDays(today, i - 7));
-  const weekDays = week.map((date) => ({ date, s: dayDoses(meds, days.find((d) => d.date === date) ?? { date }, settings) }));
-  const sum = weekDays.reduce((a, d) => ({ planned: a.planned + d.s.planned, onTime: a.onTime + d.s.onTime }), { planned: 0, onTime: 0 });
+  const byDate = new Map(days.map((d) => [d.date, d]));
+  const dayOf = (date: string) => byDate.get(date) ?? { date };
+  const month = dayRange(`${today.slice(0, 7)}-01`, today).map((date) => dayDoses(meds, dayOf(date), settings))
+    .reduce((a, x) => ({ planned: a.planned + x.planned, onTime: a.onTime + x.onTime, late: a.late + x.late, missed: a.missed + x.missed }), { planned: 0, onTime: 0, late: 0, missed: 0 });
   const appts = (settings.appointments ?? []).filter((a) => a.date >= today).sort((a, b) => a.date.localeCompare(b.date));
 
   return (
     <>
     <TrackGround track="meds" />
     <div className="page bare yu-page yu-track" style={{ '--c': TRACK_LOOK.meds.accent, '--g': TRACK_LOOK.meds.ground } as CSSProperties}>
-      <button type="button" className="backlink yu-cl" onClick={() => back('/tracks')}>
-        <Icon name="left" size={20} stroke={1.8} />
-        Tracks
-      </button>
       <div className="row base">
-        <div className="yu-track-name">Medicines</div>
+        <button type="button" className="backlink yu-cl" onClick={() => back('/tracks')}>
+          <Icon name="left" size={20} stroke={1.8} />
+          Tracks
+        </button>
         <button type="button" className="chip sm" onClick={() => setAdding(true)}>+ Add</button>
       </div>
 
-      <h1>{head.say}</h1>
-      <Changed head={head} />
-      <div className="t14 q">{sum.planned ? `The last 7 days: ${sum.onTime} of ${sum.planned} on time` : 'Nothing logged in the last 7 days yet'}</div>
+      <MedHero taken={month.onTime} planned={month.planned} late={month.late} missed={month.missed} />
+      {head.next && <div className="t14 q">{head.next}</div>}
+      {meds.length > 0 && (
+        <>
+          <div className="lbl">Last 7 days</div>
+          <DoseGrid days={week} rows={meds.map((m) => ({ name: m.name, tones: week.map((date) => dayTone(dayDoses([m], dayOf(date), settings))) }))} />
+        </>
+      )}
+
       {adding && (
         <div className="yu-card yu-form">
           <label>Name<input autoFocus value={draftName} onChange={(e) => setDraftName(e.target.value)} /></label>
@@ -84,20 +92,6 @@ export function MedicinesPage() {
 
       <OtherItems items={settings.checklist.filter((i) => i.active && !i.med)} />
 
-      <div className="lbl">Last 7 days</div>
-      <div className="med-week" role="list" aria-label="Doses over the last 7 days">
-        {weekDays.map(({ date, s }) => {
-          const tone = dayTone(s);
-          return (
-            <span key={date} role="listitem" className={`med-day ${tone}`} title={fmtDayShort(date)}>
-              <span className="t12">{fmtDayShort(date).slice(0, 2)}</span>
-              <span className="sr">{tone === 'none' ? 'nothing planned' : tone.replace('-', ' ')}</span>
-            </span>
-          );
-        })}
-      </div>
-      <div className="t12 q">Sage on time · gold late · rose missed</div>
-
       <Appointments appts={appts} today={today} />
 
       <div className="lbl">What an on-time dose gives you</div>
@@ -106,7 +100,7 @@ export function MedicinesPage() {
           <SwitchRow key={r.id} title={r.title} sub={r.sub} checked={rewards[r.id]} onChange={(v) => void patchSettings({ medRewards: { ...rewards, [r.id]: v } })} />
         ))}
       </div>
-      <div className="t12 d lh">Reminders stay in the app: the next dose shows on Today two hours ahead. No phone notifications.</div>
+      <div className="t14 d lh">Reminders stay in the app: the next dose shows on Today two hours ahead. No phone notifications.</div>
     </div>
     </>
   );
@@ -118,18 +112,17 @@ function MedCard({ item, today, days, settings, showKept }: { item: ChecklistIte
   const next = (med.courses ?? []).filter((c) => c.from > today).sort((a, b) => a.from.localeCompare(b.from))[0];
   const kept = keptCount(item, days, settings, today);
   const refill = med.stock ? refillBy(med.stock, item, today) : undefined;
-  const soon = refill && refill <= addDays(today, 3);
   const save = (patch: Partial<typeof med>) => patchSettings((s) => ({ checklist: s.checklist.map((i) => (i.id === item.id ? { ...i, med: { ...med, ...patch } } : i)) }));
   const times = (list: string[]) => list.map((x) => minutesLabel(slotTime(x, settings, undefined))).join(', ');
 
   const [edit, setEdit] = useState(false);
   if (edit) return <MedEditor item={item} settings={settings} today={today} onDone={() => setEdit(false)} />;
   return (
-    <div className="card">
+    <div className="card md-card">
       <div className="row top">
         <span className="col gap2">
-          <span className="t16">{item.name}</span>
-          <span className="t13 q">{[med.kind === 'supplement' ? 'Supplement' : 'Medicine', med.form, med.dose].filter(Boolean).join(' · ')}</span>
+          <span className="md-name">{item.name}</span>
+          <span className="t14 q">{[med.kind === 'supplement' ? 'Supplement' : 'Medicine', med.form, med.dose].filter(Boolean).join(' · ')}</span>
         </span>
         {showKept && kept.count > 0 && (
           <span className={`kept-pill${kept.paused ? ' paused' : ''}`} title={kept.paused ? 'Paused by a miss; the next on-time dose starts it again' : undefined}>
@@ -137,17 +130,13 @@ function MedCard({ item, today, days, settings, showKept }: { item: ChecklistIte
           </span>
         )}
       </div>
-      <div className="t14">{slots.length ? times(slots) : 'Course ended'}</div>
+      <div className="md-tms">{slots.length ? slots.map((x) => <span key={x}>{minutesLabel(slotTime(x, settings, undefined))}</span>) : <em>Course ended</em>}</div>
       {next && (
-        <div className="t13 q">
+        <div className="t14 q">
           From {fmtDayShort(next.from)}: {next.slots.length ? times(next.slots) : 'stops'}
         </div>
       )}
-      {med.stock && (
-        <div className={`t13${soon ? '' : ' q'}`} style={soon ? { color: 'var(--gold)' } : undefined}>
-          {med.stock.left} left · refill by {refill === today ? 'today' : fmtDayShort(refill!)}
-        </div>
-      )}
+      {med.stock && refill && <StockBar left={med.stock.left} daysLeft={daysBetween(today, refill)} refill={refill} today={today} />}
       <div className="row" style={{ gap: 8, justifyContent: 'flex-start' }}>
         <StockEditor left={med.stock?.left} onSave={(left) => void save({ stock: left === undefined ? undefined : { left, perDose: med.stock?.perDose ?? 1 } })} />
         <button type="button" className="chip sm" onClick={() => setEdit(true)}>
@@ -194,7 +183,7 @@ function MedEditor({ item, settings, today, onDone }: { item: ChecklistItem; set
           )}
         </div>
       ))}
-      <button type="button" className="link t13" style={{ alignSelf: 'flex-start', minHeight: 36 }} onClick={() => set([...list, '9 pm'])}>
+      <button type="button" className="link t14" style={{ alignSelf: 'flex-start', minHeight: 36 }} onClick={() => set([...list, '9 pm'])}>
         + Add a time
       </button>
     </div>
@@ -250,7 +239,7 @@ function MedEditor({ item, settings, today, onDone }: { item: ChecklistItem; set
             <input className="field" type="date" value={from} min={today} onChange={(e) => setFrom(e.target.value)} />
           </label>
           {times(later, setLater, 'Then')}
-          <button type="button" className="link t13" style={{ alignSelf: 'flex-start', minHeight: 36 }} onClick={() => setLater([])}>
+          <button type="button" className="link t14" style={{ alignSelf: 'flex-start', minHeight: 36 }} onClick={() => setLater([])}>
             It stops on that date
           </button>
         </>
@@ -258,11 +247,11 @@ function MedEditor({ item, settings, today, onDone }: { item: ChecklistItem; set
       <div className="lbl">Stock</div>
       <div className="grid2">
         <label className="flabel">
-          <span className="t12 q">Left</span>
+          <span className="t14 q">Left</span>
           <IntField value={left} onChange={setLeft} placeholder="Not tracked" label="How many are left" />
         </label>
         <label className="flabel">
-          <span className="t12 q">Per dose</span>
+          <span className="t14 q">Per dose</span>
           <IntField value={perDose} onChange={(v) => setPerDose(v ?? 1)} label="Used per dose" />
         </label>
       </div>
@@ -336,13 +325,7 @@ function Appointments({ appts, today }: { appts: Appointment[]; today: string })
       <div className="lbl">Appointments</div>
       {appts.map((a) => (
         <div key={a.id} className="card">
-          <div className="row">
-            <span className="t16">{a.title}</span>
-            <span className="t14 tn">
-              {fmtDayShort(a.date)}
-              {a.time !== undefined ? `, ${minutesLabel(a.time)}` : ''}
-            </span>
-          </div>
+          <ApptLeaf date={a.date} title={a.title} when={`${fmtDayShort(a.date)}${a.time !== undefined ? `, ${minutesLabel(a.time)}` : ''}`} />
           {a.notes.length > 0 && (
             <ul className="t14 q lh" style={{ margin: 0, paddingLeft: 18 }}>
               {a.notes.map((n, i) => (
@@ -369,7 +352,7 @@ function Appointments({ appts, today }: { appts: Appointment[]; today: string })
           </button>
         </div>
       ))}
-      <div className="row" style={{ gap: 8 }}>
+      <div className="row md-add" style={{ gap: 8 }}>
         <input className="field" value={title} placeholder="Eye check" aria-label="Appointment" onChange={(e) => setTitle(e.target.value)} spellCheck autoCapitalize="sentences" />
         <input className="field" type="date" aria-label="Appointment date" value={date} min={dayKey()} onChange={(e) => setDate(e.target.value)} />
         <button
