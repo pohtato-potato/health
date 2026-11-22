@@ -701,3 +701,22 @@ html.contrast .ck-m, html.contrast .ck-line, html.contrast .ci-k.ck-page .card {
 .yu-st-d.none { background: #140f22; }
 .yu-st-up { margin-left: 8px; padding: 2px 8px; border-radius: 8px; background: #140f22; color: #ffd36b; font: 700 14px var(--sans); font-style: normal; vertical-align: 3px; }
 .yu-st-rows b { white-space: nowrap; }
+/* Match pass (boards W5 p5-reports, p5-earned): the You tab's doors as colour-filled tiles, a serif name, a big faint icon. */
+.k-drench .k-door.line[type] { --dc: #c2b2ff; background: var(--dc); border: 0; color: #140f22; overflow: hidden; padding-right: 12px; animation: yr-pop .45s cubic-bezier(.34, 1.56, .64, 1) both; }
+.k-drench .k-doors > .k-door:nth-child(6n+2) { --dc: #ffb27a; }
+.k-drench .k-doors > .k-door:nth-child(6n+3) { --dc: #f4aedb; }
+.k-drench .k-doors > .k-door:nth-child(6n+4) { --dc: #a8dcff; }
+.k-drench .k-doors > .k-door:nth-child(6n+5) { --dc: #8fe3b0; }
+.k-drench .k-doors > .k-door:nth-child(6n+6) { --dc: #ffd36b; }
+.k-drench .k-door.line[type] .nm { color: #140f22; font: 600 clamp(16px, 4.8vw, 18px)/1.15 var(--serif); overflow-wrap: normal; padding-right: 6px; hyphens: manual; max-width: 100%; }
+.k-drench .k-door.line[type] .ln { color: #2a2140; font-weight: 600; position: relative; z-index: 1; }
+.k-drench .k-doors > .k-door[data-fam='earned']:first-child { --dc: #ffd36b; }
+.k-drench .k-doors > .k-door[data-fam='body']:first-child { --dc: #8fe3b0; }
+.k-drench .k-doors > .k-door[data-fam='upkeep']:first-child { --dc: #a8dcff; }
+.k-drench .k-door.line[type] > svg:first-child { position: absolute; right: -6px; bottom: -8px; width: 58px; height: 58px; margin: 0; stroke: #140f22; opacity: .26; }
+.k-drench .k-door.line[type] .k-arrow { display: none; }
+.k-drench .k-door.line[type] .k-count { background: #140f22; color: #fff; }
+html.contrast .k-drench .k-door.line[type] { background: #0b0c1a; color: #fff; box-shadow: inset 0 0 0 2px var(--dc); }
+html.contrast .k-drench .k-door.line[type] .nm { color: var(--dc); }
+html.contrast .k-drench .k-door.line[type] .ln { color: #fff; }
+html.contrast .k-drench .k-door.line[type] > svg:first-child { stroke: var(--dc); }
