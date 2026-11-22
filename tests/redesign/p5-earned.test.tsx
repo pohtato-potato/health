@@ -34,3 +34,18 @@ describe('p5-earned Earned, the case', () => {
     expect(out).toContain('A secret');
   });
 });
+
+describe('p5-earned match pass', () => {
+  it('a medal is line art in its metal: an outline and a dashed inner ring, no filled gradient', async () => {
+    const { Medal } = await import('../../src/screens/earned/Case');
+    const out = html(<Medal item={items[0]} />);
+    expect(out).toContain('stroke="#ffc94d"');
+    expect(out).toMatch(/stroke-dasharray="3 4"/);
+    expect(out).not.toContain('linearGradient');
+  });
+  it('kinds without a round or six-sided medal take a rosette', async () => {
+    const { Medal } = await import('../../src/screens/earned/Case');
+    const out = html(<Medal item={{ id: 'f', name: 'Test food', cat: 'food', tier: 'b', earned: true }} />);
+    expect(out).toContain('data-shape="rosette"');
+  });
+});

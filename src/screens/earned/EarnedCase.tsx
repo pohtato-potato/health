@@ -13,6 +13,8 @@ const TABS: { id: string; name: string; cats?: Category[] }[] = [
   { id: 'secret', name: 'Secrets', cats: ['secret'] },
 ];
 const TO_EARN = 9;
+/** Board W5 shows the newest few; the rest wait behind one button. */
+const EARNED = 9;
 
 /** Earned as an achievement case (board W5): the count and bar, the newest on its stage, tabs by kind, then the medals, newest first. */
 export function EarnedCase({ stats }: { stats: AchStats }) {
@@ -29,7 +31,9 @@ export function EarnedCase({ stats }: { stats: AchStats }) {
   const inTab = (x: CaseItem) => !cats || cats.includes(x.cat);
   const pct = (x: CaseItem) => (x.progress && x.progress[1] ? x.progress[0] / x.progress[1] : -1);
   const toEarn = items.filter((x) => !x.earned && inTab(x)).sort((a, b) => pct(b) - pct(a));
-  const shown = [...got.filter(inTab), ...(all ? toEarn : toEarn.slice(0, TO_EARN))];
+  const gotIn = got.filter(inTab);
+  const shown = all ? [...gotIn, ...toEarn] : [...gotIn.slice(0, EARNED), ...toEarn.slice(0, TO_EARN)];
+  const more = gotIn.length > EARNED || toEarn.length > TO_EARN;
   return (
     <>
       <CaseHead got={got.length} total={items.length} />
@@ -39,7 +43,7 @@ export function EarnedCase({ stats }: { stats: AchStats }) {
       </div>
       <h2 className="cs-k">The case <span>Newest first</span></h2>
       <CaseGrid key={tab} items={shown} />
-      {toEarn.length > TO_EARN && <button type="button" className="ch-more" aria-expanded={all} onClick={() => setAll(!all)}>{all ? 'Show fewer' : `All ${toEarn.length} still to earn`}</button>}
+      {more && <button type="button" className="ch-more" aria-expanded={all} onClick={() => setAll(!all)}>{all ? 'Show fewer' : `Show all ${gotIn.length + toEarn.length}: ${gotIn.length} earned, ${toEarn.length} to earn`}</button>}
     </>
   );
 }
