@@ -8,6 +8,7 @@ import { addDays, dayOfLogging, daysBetween, weekday, type DayKey } from '../../
 import { daysOf, leagueMatchdays, seasonDays, seasonLength, type DayPlan } from '../calendar';
 import { breakBeforeFor, LEAGUE_MATCHDAYS, matchdaysBefore, matchIdFor, PACE_PER_DAY, paceOn, slotKey, titleSafe } from '../pace';
 import { advance, penalties, type Bracket } from '../cups';
+import { contFixture } from './tonight';
 import { clubById, LANDLORDS_2, rememberClubs } from '../data/load';
 import { cards, physio, redCardMod, rotationShape, usesRotation } from '../discipline';
 import { playMatch, typicalFor, type MatchCtx, type MatchInput, type MatchPlan } from '../engine';
@@ -366,9 +367,11 @@ function playDay(w: World, date: DayKey, auto: boolean, last = false, leagueOver
       if (h === OWN || a === OWN) mine.push({ comp: 'league', round: `Matchday ${plan.matchday}`, home: h, away: a });
       else w.season.results[t].push({ home: h, away: a, score: otherResult(w, h, a, date) }); // the slot is in otherResult's seed
     }
-    // Matchday (spec §2.1): the last day played waits to be watched, unless the season or a continental night
-    // needs its result straight away.
-    const wait = last && !plan.cont && !plan.cup && save.day < seasonLength(wv);
+    // Matchday (spec §2.1): the last day played waits to be watched, unless the season or Brabo's own second match
+    // tonight (a continental tie or a Big Cup round) needs its result straight away. A continental or cup night
+    // Brabo has no part in still waits.
+    const second = (plan.cont && contFixture(save, w.season)) || (plan.cup && braboTieOn(w.season.bigcup, plan.day));
+    const wait = last && !second && save.day < seasonLength(wv);
     for (const m of mine) {
       const s = braboMaybe(w, date, plan, m.comp, m.home, m.away, auto, m.round, undefined, false, wait);
       if (s) w.season.results[braboTier].push({ home: m.home, away: m.away, score: s.score });
@@ -388,6 +391,9 @@ function playDay(w: World, date: DayKey, auto: boolean, last = false, leagueOver
   save.day++;
   if (save.day > seasonLength(wv)) endSeason(w, date);
 }
+
+/** Brabo still has a tie to play in this bracket on this season day. */
+const braboTieOn = (b: Bracket, day: number) => b.rounds.some((r) => r.day === day && r.ties.some((t) => (t.home === OWN || t.away === OWN) && t.away && !t.winner));
 
 /** The rounds of these brackets that fall on tonight's season day, in order. Returns Brabo's matches played. */
 function cupRounds(w: World, date: DayKey, plan: DayPlan, auto: boolean, brackets: [Bracket, (b: Bracket) => void, Comp][], before: number): number {

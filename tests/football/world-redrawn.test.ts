@@ -15,7 +15,7 @@ import { TECHS } from '../../src/football/content/tree';
 import { crestStepFor, slotsOpen } from '../../src/football/kits';
 import { eraForStage, FOUNDING_SEASON, giftedBuildings, seasonName, startingBudget } from '../../src/football/pyramid/redraw';
 import { POOL, stageOf } from '../../src/football/pyramid/shape';
-import { playDue } from '../../src/football/store/play';
+import { finishWithAssistant, playDue } from '../../src/football/store/play';
 import { planRedraw, redrawWorld } from '../../src/football/store/redraw';
 import { foundClub } from '../../src/football/store/save';
 import { OWN } from '../../src/football/store/season';
@@ -59,7 +59,8 @@ describe('the world redrawn', { timeout: 600_000 }, () => {
     before = { ...before, scouted: ['ars'], rivals: [...before.rivals, { clubId: 'zur', how: 'derby', since: '2026-11-05' }, { clubId: 'ars', how: 'cup', since: '2026-11-06' }], met: [...before.met, 'ars', 'zur'] };
     await db.fbSave.put(before);
     await db.cupRuns.put({ id: 'current', kind: 'run' } as never);
-    beforeMatches = await db.fbMatches.count();
+    // A match still waiting to be watched belongs to the founding weeks too; the move finishes it.
+    beforeMatches = (await db.fbMatches.count()) + ((await db.fbSave.get('save'))!.paused ? 1 : 0);
     await redrawWorld(noon(MOVE));
     after = (await db.fbSave.get('save'))!;
     moved = await digest();
@@ -152,6 +153,8 @@ describe('the world redrawn', { timeout: 600_000 }, () => {
 
   it('plays two days of Season 1 in the new world', async () => {
     await playDue(noon(addDays(MOVE, 3)));
+    // The second night's match waits to be watched (a continental night Brabo has no part in); Skip stores it.
+    await finishWithAssistant();
     const ms = await db.fbMatches.where('season').equals(1).toArray();
     expect(ms.filter((m) => m.comp === 'league')).toHaveLength(2);
     const s1 = (await db.fbSeasons.get(1))!;

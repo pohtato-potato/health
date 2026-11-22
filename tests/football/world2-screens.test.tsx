@@ -10,7 +10,7 @@ import { clubWorld, setClubWorld } from '../../src/football/data/load';
 import { shapeOf } from '../../src/football/pyramid/shape';
 import { devWorld2 } from '../../src/football/store/dev';
 import { loadLeague, type League } from '../../src/football/store/league';
-import { playDue } from '../../src/football/store/play';
+import { finishWithAssistant, playDue } from '../../src/football/store/play';
 import { planRedraw } from '../../src/football/store/redraw';
 import { foundClub } from '../../src/football/store/save';
 import { OWN } from '../../src/football/store/season';
@@ -136,6 +136,8 @@ describe('world 2 screens', { timeout: 300_000 }, () => {
     expect(save.redrawn!.division).toBe(s1.tierOf[OWN]);
     expect(save.redrawn!.founding.p).toBe(0);
     await playDue(noon('2026-11-12'));
+    // The second night's match waits to be watched (a continental night Brabo has no part in); Skip stores it.
+    await finishWithAssistant();
     const ms = await db.fbMatches.where('season').equals(1).toArray();
     expect(ms.filter((m) => m.comp === 'league')).toHaveLength(2);
     for (const m of ms) expect(s1.tierOf[m.opp]).toBe(save.redrawn!.division);
