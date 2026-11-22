@@ -57,3 +57,23 @@ describe('y8-story The month\'s story', () => {
     expect(storySlides(MONTH, { ...full(), days: [], entries: [], sessions: [], sets: [], measurements: [], results: [] })).toEqual([]);
   });
 });
+
+describe('y8-story match pass', () => {
+  it('a new best says how much it beat the best before this month', () => {
+    const i = full();
+    i.sets = [{ ...best('2026-02-10'), id: 'old', loadKg: 25, mark: undefined } as SetEntry, best('2026-03-05')];
+    const gym = storySlides(MONTH, i).find((s) => s.kind === 'gym');
+    expect(gym && 'bests' in gym && gym.bests[0]).toMatchObject({ name: 'Test press', kg: 30, up: 5 });
+    const out = html(<StorySlideView slide={gym!} month={MONTH} at={0} of={1} onNext={() => {}} onBack={() => {}} onClose={() => {}} />);
+    expect(out).toContain('+5 kg');
+  });
+  it('a first best has nothing before it, so no gain is shown', () => {
+    const gym = storySlides(MONTH, full()).find((s) => s.kind === 'gym');
+    expect(gym && 'bests' in gym && gym.bests[0].up).toBeUndefined();
+  });
+  it('the calendar inks a day by rings: white for every ring, plum for some, dark for none', () => {
+    const days = storySlides(MONTH, full()).find((s) => s.kind === 'days');
+    const out = html(<StorySlideView slide={days!} month={MONTH} at={0} of={1} onNext={() => {}} onBack={() => {}} onClose={() => {}} />);
+    expect(out).toMatch(/yu-st-d (all|some|none)/);
+  });
+});

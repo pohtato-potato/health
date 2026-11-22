@@ -395,7 +395,7 @@ html.contrast .yu-in-chips button { background: #111; }
 .yu-st-n b.w { font-size: 46px; line-height: 1.05; }
 .yu-st-say { font-family: var(--serif); font-weight: 600; font-size: 25px; line-height: 1.2; }
 .yu-st-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-.yu-st-d { aspect-ratio: 1; border-radius: 8px; background: var(--c, #140f22); box-shadow: inset 0 0 0 2px #140f2233; animation: yu-st-d .35s calc(var(--i) * 45ms) cubic-bezier(.34,1.56,.64,1) both; }
+.yu-st-d { aspect-ratio: 1; border-radius: 8px; background: #140f22; animation: yu-st-d .35s calc(var(--i) * 45ms) cubic-bezier(.34,1.56,.64,1) both; }
 .yu-st-d.blank { background: #140f2226; box-shadow: none; }
 .yu-st-d.later { background: #ffffff38; box-shadow: none; animation: none; }
 @keyframes yu-st-d { from { opacity: 0; transform: scale(.3); } }
@@ -622,7 +622,7 @@ html.contrast .ck-m, html.contrast .ck-line, html.contrast .ci-k.ck-page .card {
 /* Wrapped (board W7): the road draws itself behind the big number. */
 @keyframes yu-st-draw { from { stroke-dashoffset: 620; } to { stroke-dashoffset: 0; } }
 .yu-st-road { position: absolute; left: 0; right: 0; bottom: 18%; width: 100%; height: 38%; pointer-events: none; }
-.yu-st-road path { fill: none; stroke: rgba(255, 255, 255, .32); stroke-width: 8; stroke-linecap: round; stroke-dasharray: 620; animation: yu-st-draw 1.8s ease-out both; }
+.yu-st-road path { fill: none; stroke: rgba(20, 15, 34, .5); stroke-width: 5; stroke-linecap: round; stroke-dasharray: 620; animation: yu-st-draw 1.8s ease-out both; }
 
 /* The year (board 23): months as tiles that pop in, day one against today, four big counts. */
 @keyframes yr-pop { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: none; } }
@@ -694,3 +694,10 @@ html.contrast .ck-m, html.contrast .ck-line, html.contrast .ci-k.ck-page .card {
 .cr-row b { display: block; font: 700 15px var(--sans); color: #fff; overflow-wrap: anywhere; }
 .cr-row small { font: 400 14px/1.4 var(--sans); color: rgba(243,238,230,.8); }
 .cr-row button { min-height: 44px; padding: 0 12px; border: 0; border-radius: 12px; background: none; font: 700 14px var(--sans); color: #fff; box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.35); cursor: pointer; }
+
+/* Match pass (board W8): the story calendar on its wash, and a best's gain */
+.yu-st-d.all { background: #fff; }
+.yu-st-d.some { background: #3d2a70; }
+.yu-st-d.none { background: #140f22; }
+.yu-st-up { margin-left: 8px; padding: 2px 8px; border-radius: 8px; background: #140f22; color: #ffd36b; font: 700 14px var(--sans); font-style: normal; vertical-align: 3px; }
+.yu-st-rows b { white-space: nowrap; }

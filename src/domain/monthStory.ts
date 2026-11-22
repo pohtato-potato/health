@@ -13,7 +13,7 @@ export type StorySlide =
   | { kind: 'days'; big: string; say: string; cal: DayCell[] }
   | { kind: 'perfect'; big: string; say: string; chips: string[] }
   | { kind: 'road'; big: string; say: string; chips: string[] }
-  | { kind: 'gym'; big: string; say: string; bests: { name: string; kg: number | null }[] }
+  | { kind: 'gym'; big: string; say: string; bests: { name: string; kg: number | null; up?: number }[] }
   | { kind: 'versus'; big: string; say: string; rows: { area: string; now: string; was: string; up: boolean }[] }
   | { kind: 'shape'; big: string; say: string }
   | { kind: 'club'; big: string; say: string; chips: string[] }
@@ -101,7 +101,11 @@ export function storySlides(month: string, i: MonthInput): StorySlide[] {
     const top = new Map<string, number | null>();
     for (const s of recs) top.set(s.exercise, Math.max(top.get(s.exercise) ?? 0, s.loadKg ?? 0) || null);
     out.push({ kind: 'gym', big: fmtInt(done.length), say: `session${done.length === 1 ? '' : 's'}${recs.length ? `, and ${plural(recs.length, 'new best')}` : ''}.`,
-      bests: [...top].slice(0, MAX_BESTS).map(([n, kg]) => ({ name: n, kg })) });
+      bests: [...top].slice(0, MAX_BESTS).map(([n, kg]) => {
+        // How much it beat the heaviest load before this month; a first best has nothing to beat.
+        const before = Math.max(0, ...i.sets.filter((s) => s.exercise === n && s.date < `${month}-01` && !s.skipped).map((s) => s.loadKg ?? 0));
+        return { name: n, kg, ...(kg !== null && before > 0 && kg > before ? { up: Math.round((kg - before) * 10) / 10 } : {}) };
+      }) });
   }
 
   const [now, then] = [monthSpread(month, i), monthSpread(was, i)];
