@@ -70,6 +70,7 @@ export function ReportsHome() {
           onPlay={() => go('/film', { m: now })}
         />
       )}
+      <div className="k-drench">
       <FamilyDoors two label="Older" groups={{
         back: [
           ...(month ? [
@@ -83,6 +84,7 @@ export function ReportsHome() {
         ],
         upkeep: [<Door key="fix" line icon="edit" name="Corrections" value="Put a past number right" family="upkeep" onClick={() => go('/reports/corrections')} />],
       }} />
+      </div>
     </div>
   );
 }

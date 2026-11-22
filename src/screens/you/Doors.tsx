@@ -10,5 +10,5 @@ const ICON: Record<(typeof DOORS)[number]['label'], IconName> = { Tracks: 'groun
 export function Doors({ subs, counts = {} }: { subs: Record<(typeof DOORS)[number]['label'], string>; counts?: Partial<Record<(typeof DOORS)[number]['label'], string>> }) {
   const groups: Partial<Record<AppFamily, ReactNode[]>> = {};
   for (const d of DOORS) (groups[d.family] ??= []).push(<Door key={d.label} icon={ICON[d.label]} name={d.label} value={subs[d.label]} family={d.family} count={counts[d.label]} onClick={() => go(d.path)} line />);
-  return <div className="k-you-doors"><FamilyDoors groups={groups} two label="Look closer" /></div>;
+  return <div className="k-you-doors k-drench"><FamilyDoors groups={groups} two label="Look closer" /></div>;
 }

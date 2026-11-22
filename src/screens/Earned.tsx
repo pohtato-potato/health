@@ -102,7 +102,7 @@ export function Earned() {
       <Sect>Your records</Sect>
       <TrophyShelf all={trophies} picks={settings.trophyPicks} shown={pickedTrophies(trophies, settings.trophyPicks, 6)} />
       <Sect>The cabinet</Sect>
-      <Doors two label="The cabinet">
+      <div className="k-drench"><Doors two label="The cabinet">
         <Door line icon="pack" name="Titles" value={`${fmtInt(titlesHad)} earned`} family="earned" onClick={() => go('/character')} />
         <Door line icon="ground" name="Records" value="The book" family="earned" onClick={() => go('/records')} />
         <Door line icon="kit" name="Themes" value={`${fmtInt(wearable)} to wear`} family="earned" onClick={() => setThemes(true)} />
@@ -110,7 +110,7 @@ export function Earned() {
         <Door line icon="win" name="Achievements" value="Sets and progress" family="earned" onClick={() => go('/achievements')} />
         <Door line icon="calendar" name="So far" value="Shelves, firsts" family="earned" onClick={() => go('/earned', { v: 'story' })} />
         <Door line icon="bolt" name="Rewards" value="Confetti, gold rings" family="earned" onClick={() => go('/character')} />
-      </Doors>
+      </Doors></div>
       {themes && <ThemeSheet settings={settings} unlocked={unlocked} today={today} onClose={() => setThemes(false)} />}
     </div>
   );

@@ -1,10 +1,9 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { fmtInt } from '../../domain/format';
+import { fmt1, fmtInt } from '../../domain/format';
 import type { DayCell, StorySlide } from '../../domain/monthStory';
 import { CountUp } from '../../ui/you/CountUp';
 import { Icon } from '../../ui/Icon';
 import { Grades } from '../reports/Grades';
-import { dayTier } from '../close/DayCard';
 
 const LOOK: Record<StorySlide['kind'], { g: string; title: (month: string) => string }> = {
   days: { g: 'linear-gradient(170deg,#ffc94d,#ff9a5c)', title: () => 'Your month' },
@@ -40,9 +39,9 @@ function Calendar({ cal }: { cal: DayCell[] }) {
     <>
       <div className="yu-st-cal" aria-hidden="true">
         {cal.map((c, n) => {
-          const cls = c === 'later' ? ' later' : !c ? ' blank' : '';
-          const ink = c && c !== 'later' ? dayTier(c.closed, c.of).ink : undefined;
-          return <i key={n} className={`yu-st-d${cls}`} style={{ '--c': ink, '--i': n } as CSSProperties} />;
+          // Board W8: on the wash, white for every ring, plum for some, dark for none; the chips say the same in words.
+          const cls = c === 'later' ? ' later' : !c ? ' blank' : c.closed >= c.of ? ' all' : c.closed ? ' some' : ' none';
+          return <i key={n} className={`yu-st-d${cls}`} style={{ '--i': n } as CSSProperties} />;
         })}
       </div>
       <div className="yu-st-chips">{words.map(([w, n]) => <span key={w}>{w}: {n}</span>)}</div>
@@ -56,7 +55,7 @@ function Extra({ slide, month, onReport }: { slide: StorySlide; month: string; o
     case 'perfect': case 'road': case 'club':
       return slide.chips.length ? <div className="yu-st-chips">{slide.chips.map((c) => <span key={c}>{c}</span>)}</div> : null;
     case 'gym':
-      return slide.bests.length ? <div className="yu-st-rows">{slide.bests.map((b) => <div key={b.name}><span>{b.name}</span><b>{b.kg === null ? 'New best' : `${fmtInt(b.kg)} kg`}</b></div>)}</div> : null;
+      return slide.bests.length ? <div className="yu-st-rows">{slide.bests.map((b) => <div key={b.name}><span>{b.name}</span><b>{b.kg === null ? 'New best' : `${fmtInt(b.kg)} kg`}{b.up !== undefined && <em className="yu-st-up">+{fmt1(b.up).replace(/\.0$/, '')} kg</em>}</b></div>)}</div> : null;
     case 'versus':
       return <div className="yu-st-rows">{slide.rows.map((r) => <div key={r.area}><span>{r.area}</span><b>{r.now} <em>{r.up ? 'up' : 'down'} from {r.was}</em></b></div>)}</div>;
     case 'next':
