@@ -1,3 +1,6 @@
+import type { CachedBridgeSleepSpan } from '../sources/bridgeSleep';
+import type { CachedBridgeRead, CachedBridgeStepHour } from './bridgeSteps';
+import type { CachedBridgeMeal } from './bridgeMeals';
 import type { Correction } from '../domain/corrections';
 import type { Moment } from '../domain/earned';
 import type { Sighting } from '../domain/creatures';
@@ -41,6 +44,12 @@ import type {
 export class HealthDB extends Dexie {
   settings!: EntityTable<Settings, 'id'>;
   days!: EntityTable<Day, 'date'>;
+  bridgeStepHours!: EntityTable<CachedBridgeStepHour, 'startAt'>;
+  bridgeStepReads!: EntityTable<CachedBridgeRead, 'date'>;
+  bridgeMeals!: EntityTable<CachedBridgeMeal, 'id'>;
+  bridgeMealReads!: EntityTable<CachedBridgeRead, 'date'>;
+  bridgeSleepSpans!: EntityTable<CachedBridgeSleepSpan, 'uuid'>;
+  bridgeSleepReads!: EntityTable<CachedBridgeRead, 'date'>;
   foods!: EntityTable<Food, 'id'>;
   entries!: EntityTable<FoodEntry, 'id'>;
   sessions!: EntityTable<TrainingSession, 'id'>;
@@ -162,6 +171,18 @@ export class HealthDB extends Dexie {
     this.version(14).stores({
       deskQuestions: 'id',
     });
+    this.version(15).stores({
+      bridgeStepHours: 'startAt, day',
+      bridgeStepReads: 'date',
+    });
+    this.version(16).stores({
+      bridgeMeals: 'id, day',
+      bridgeMealReads: 'date',
+    });
+    this.version(17).stores({
+      bridgeSleepSpans: 'uuid, endDay',
+      bridgeSleepReads: 'date',
+    });
   }
 }
 
@@ -169,6 +190,12 @@ export class HealthDB extends Dexie {
 export const TABLES = [
   'settings',
   'days',
+  'bridgeStepHours',
+  'bridgeStepReads',
+  'bridgeMeals',
+  'bridgeMealReads',
+  'bridgeSleepSpans',
+  'bridgeSleepReads',
   'foods',
   'entries',
   'sessions',

@@ -232,6 +232,7 @@ export interface Settings {
   strideM?: number;
   prefs: Prefs;
   backup: { lastQuick?: number; lastFull?: number; lastFullBytes?: number; nudgeDays: number };
+  bridgeDriveSync?: { lastSync: string; importedAt: number; failed: number };
   plan?: PlanDef;
   /** Up to three question ids kept on the You page. */
   youQuestions?: string[];
@@ -323,12 +324,16 @@ export interface Day {
   weighedAt?: number;
   steps?: number;
   stepsAt?: number;
+  /** Apple Health observation. False means the owner took control of the field. */
+  bridgeSteps?: { through: string; importedAt: number } | false;
   /** Set when the next morning's log confirms the final count. */
   stepsFinal?: boolean;
   /** Steps typed as a guess, not read off the phone. Streaks still count them; averages leave them out. */
   stepsEstimated?: boolean;
   waterMl?: number;
   sleep?: Sleep;
+  /** Measured sleep window and stage-derived minutes, independent of the rested answer. */
+  bridgeSleep?: { asleepAt: string; wokeAt: string; asleepMinutes: number; source: string; importedAt: number } | false;
   home?: string;
   morning?: { at: number; seconds?: number };
   /** Morning follow-up answers, keyed by flag id. */
@@ -417,7 +422,7 @@ export interface Food {
   createdAt: number;
 }
 
-export type EntryKind = 'food' | 'quick' | 'free' | 'drink';
+export type EntryKind = 'food' | 'quick' | 'free' | 'drink' | 'bevel';
 
 export interface FoodEntry {
   id: string;
@@ -425,6 +430,7 @@ export interface FoodEntry {
   meal: Meal;
   at: number;
   kind: EntryKind;
+  bridgeMealId?: string;
   foodId?: string;
   name: string;
   amount?: number;

@@ -1,3 +1,4 @@
+import { mealTiming } from './foods';
 import { addDays, dayRange, parseDay, type DayKey } from './dates';
 import { fmtDayMonth, fmtDuration, fmtInt } from './format';
 import { e1rm } from './insights';
@@ -242,11 +243,13 @@ export function socialJetLag(days: Pick<Day, 'date' | 'sleep'>[]): number | unde
 }
 
 /** Where protein lands between 6 am (0) and midnight (100), by kind of day. */
-export function proteinClock(entries: Pick<FoodEntry, 'date' | 'at' | 'eatenAt' | 'protein'>[], kindOf: (d: DayKey) => string, floor = 10) {
+export function proteinClock(entries: Pick<FoodEntry, 'date' | 'at' | 'eatenAt' | 'protein' | 'bridgeMealId'>[], kindOf: (d: DayKey) => string, floor = 10) {
   const out = { office: [] as number[], home: [] as number[] };
   for (const e of entries) {
     if (e.protein < floor) continue;
-    const t = new Date(e.eatenAt ?? e.at);
+    const at = mealTiming(e);
+    if (at === undefined) continue;
+    const t = new Date(at);
     const pos = Math.round((((t.getHours() + t.getMinutes() / 60) - 6) / 18) * 100);
     (kindOf(e.date) === 'office' ? out.office : out.home).push(Math.max(0, Math.min(100, pos)));
   }

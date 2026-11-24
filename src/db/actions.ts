@@ -68,20 +68,29 @@ export async function setTargets(targets: Targets, from: DayKey = dayKey()) {
   });
 }
 
+function patchedDay(cur: Day, patch: Partial<Day> | ((d: Day) => Partial<Day>)): Day {
+  const next = typeof patch === 'function' ? patch(cur) : patch;
+  return {
+    ...cur, ...next, date: cur.date,
+    ...('steps' in next && (cur.bridgeSteps || next.steps === undefined) ? { bridgeSteps: false as const } : {}),
+    ...('sleep' in next && (cur.bridgeSleep || next.sleep === undefined) ? { bridgeSleep: false as const } : {}),
+  };
+}
+
 export async function patchDay(date: DayKey, patch: Partial<Day> | ((d: Day) => Partial<Day>)) {
   await db.transaction('rw', db.days, async () => {
-    const cur = (await db.days.get(date)) ?? { date };
-    const next = typeof patch === 'function' ? patch(cur) : patch;
-    await db.days.put({ ...cur, ...next, date });
+    await db.days.put(patchedDay((await db.days.get(date)) ?? { date }, patch));
   });
 }
 
 /** A day edit the owner makes by hand: kept in the edit history so it can be undone. */
 export async function editDay(date: DayKey, patch: Partial<Day> | ((d: Day) => Partial<Day>)) {
-  const before = await db.days.get(date);
-  await patchDay(date, patch);
-  const after = await db.days.get(date);
-  return recordEdit('days', date, before, after);
+  return db.transaction('rw', db.days, db.edits, async () => {
+    const before = await db.days.get(date);
+    const after = patchedDay(before ?? { date }, patch);
+    await db.days.put(after);
+    return recordEdit('days', date, before, after);
+  });
 }
 
 export async function addWater(date: DayKey, ml: number) {
@@ -111,9 +120,10 @@ export async function bump(id: string, opts: { day?: DayKey; value?: string; by?
  */
 export async function setSteps(date: DayKey, steps: number, final = false, estimated = false, correct = false): Promise<number> {
   void logUsage('log', 'steps');
-  const had = (await db.days.get(date))?.steps;
-  const next = keptSteps(had, steps, correct);
-  const id = await editDay(date, { steps: next, stepsAt: Date.now(), stepsEstimated: (next === had ? undefined : estimated) || undefined, ...(final ? { stepsFinal: true } : {}) });
+  const id = await editDay(date, (day) => {
+    const next = keptSteps(day.steps, steps, correct || !!day.bridgeSteps);
+    return { steps: next, stepsAt: Date.now(), stepsEstimated: (next === day.steps ? undefined : estimated) || undefined, ...(final ? { stepsFinal: true } : {}) };
+  });
   if (date === dayKey() && logMinutes(Date.now()) < 720 && steps > 9000) await bump('steps-9000-by-noon', { day: date });
   return id;
 }
@@ -127,6 +137,7 @@ export function keptSteps(had: number | undefined, typed: number, correct = fals
 export interface MorningInput {
   weightKg?: number;
   sleep?: Sleep;
+  sleepTimesEdited?: boolean;
   yesterdaySteps?: number;
   /** Where the day starts. Also written to the v1 `home` so older readers follow. */
   place?: string;
@@ -148,7 +159,12 @@ export async function saveMorningLog(date: DayKey, input: MorningInput, yesterda
       ...cur,
       date,
       ...(input.weightKg !== undefined ? { weightKg: input.weightKg, weighedAt: now } : {}),
-      ...(input.sleep ? { sleep: input.sleep } : {}),
+      ...(input.sleep ? {
+        sleep: cur.sleep && input.sleepTimesEdited === false ? { ...cur.sleep, rested: input.sleep.rested } : input.sleep,
+        ...(cur.bridgeSleep && (input.sleepTimesEdited === true || (input.sleepTimesEdited === undefined &&
+          (input.sleep.asleep !== cur.sleep?.asleep || input.sleep.woke !== cur.sleep?.woke || input.sleep.carried)))
+          ? { bridgeSleep: false as const } : {}),
+      } : {}),
       ...(input.place ? { place: input.place, home: input.place } : {}),
       ...(input.energy !== undefined ? { energy: input.energy } : {}),
       ...(input.stomach !== undefined ? { stomach: input.stomach } : {}),
@@ -158,7 +174,7 @@ export async function saveMorningLog(date: DayKey, input: MorningInput, yesterda
     });
     if (input.yesterdaySteps !== undefined) {
       const y = (await db.days.get(yesterday)) ?? { date: yesterday };
-      await db.days.put({ ...y, date: yesterday, steps: keptSteps(y.steps, input.yesterdaySteps), stepsFinal: true, stepsAt: now });
+      await db.days.put({ ...y, date: yesterday, steps: keptSteps(y.steps, input.yesterdaySteps, !!y.bridgeSteps), ...(y.bridgeSteps ? { bridgeSteps: false as const } : {}), stepsFinal: true, stepsAt: now });
     }
   });
   return recordEdit('days', date, before, await db.days.get(date));
@@ -213,7 +229,7 @@ async function plannedEatenAt(date: DayKey, meal: FoodEntry['meal'], at: number,
 
 /** Adds an entry. Without an eatenAt, it is worked out from the day's place and the meal. */
 export async function addEntry(e: Omit<FoodEntry, 'id'> & { id?: string }): Promise<FoodEntry> {
-  const eatenAt = e.eatenAt ?? (await plannedEatenAt(e.date, e.meal, e.at, true));
+  const eatenAt = e.bridgeMealId ? e.eatenAt : e.eatenAt ?? (await plannedEatenAt(e.date, e.meal, e.at, true));
   const entry: FoodEntry = { ...e, id: e.id ?? uid(), eatenAt };
   await db.entries.put(entry);
   void logUsage('log', 'food');
@@ -238,16 +254,24 @@ export async function addEntries(batch: (Omit<FoodEntry, 'id'> & { id?: string }
 export async function updateEntry(id: string, patch: Partial<FoodEntry>) {
   const before = await db.entries.get(id);
   const full = { ...patch };
-  if (before && patch.meal && patch.meal !== before.meal && patch.eatenAt === undefined) {
+  if (before && !before.bridgeMealId && patch.meal && patch.meal !== before.meal && patch.eatenAt === undefined) {
     full.eatenAt = await plannedEatenAt(patch.date ?? before.date, patch.meal, before.at, false);
   }
+  if (before?.bridgeMealId && (('kcal' in full && full.kcal !== before.kcal) || ('protein' in full && full.protein !== before.protein) || ('proteinUnknown' in full && !!full.proteinUnknown !== !!before.proteinUnknown))) full.own = true;
   await db.entries.update(id, full);
   if (before) await recordEdit('entries', id, before, { ...before, ...full });
 }
 
 export async function deleteEntry(id: string): Promise<FoodEntry | undefined> {
-  const e = await db.entries.get(id);
-  await db.entries.delete(id);
+  const e = await db.transaction('rw', db.entries, db.bridgeMeals, async () => {
+    const entry = await db.entries.get(id);
+    if (entry?.bridgeMealId) {
+      const source = await db.bridgeMeals.get(entry.bridgeMealId);
+      if (source) await db.bridgeMeals.update(source.id, { details: { ...source.details, decision: 'keep-manual' } });
+    }
+    await db.entries.delete(id);
+    return entry;
+  });
   if (e) await recordEdit('entries', id, e, undefined);
   return e;
 }

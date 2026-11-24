@@ -28,10 +28,10 @@ export function StepsSheet() {
   const [date, setDate] = useLogDate();
   if (!settings || !days) return <Sheet title="Steps">{null}</Sheet>;
   const day = days.find((d) => d.date === date);
-  return <StepsForm key={date} date={date} today={today} initial={day?.steps} at={day?.stepsAt} target={stepsGoal(dayRings(settings, date, day, []).targets, isEased(day, placeFor(day, settings)))} loop={settings.loopSteps} outdoors={!!day?.outdoors} onDate={setDate} />;
+  return <StepsForm key={date} date={date} today={today} initial={day?.steps} imported={!!day?.bridgeSteps} at={day?.stepsAt} target={stepsGoal(dayRings(settings, date, day, []).targets, isEased(day, placeFor(day, settings)))} loop={settings.loopSteps} outdoors={!!day?.outdoors} onDate={setDate} />;
 }
 
-function StepsForm({ date, today, initial, at, target, loop, outdoors: wasOutdoors, onDate }: { date: string; today: string; initial?: number; at?: number; target: number; loop?: number; outdoors: boolean; onDate: (d: string) => void }) {
+function StepsForm({ date, today, initial, imported, at, target, loop, outdoors: wasOutdoors, onDate }: { date: string; today: string; initial?: number; imported?: boolean; at?: number; target: number; loop?: number; outdoors: boolean; onDate: (d: string) => void }) {
   const toast = useToast();
   const [steps, setStepsV] = useState<number | undefined>(initial);
   const [estimate, setEstimate] = useState<boolean | undefined>(undefined);
@@ -41,7 +41,7 @@ function StepsForm({ date, today, initial, at, target, loop, outdoors: wasOutdoo
   const [outdoors, setOutdoors] = useState(wasOutdoors);
   const [correct, setCorrect] = useState(false);
   // A running total: a lower number keeps the earlier count unless it was a mistake (G g-steps).
-  const lower = steps !== undefined && initial !== undefined && steps < initial;
+  const lower = !imported && steps !== undefined && initial !== undefined && steps < initial;
   const save = async () => {
     if (steps === undefined) return;
     const editId = await setSteps(date, steps, date < today, estimated, lower && correct);
@@ -57,7 +57,7 @@ function StepsForm({ date, today, initial, at, target, loop, outdoors: wasOutdoo
     toast(left <= 0 ? { kicker: 'Steps ring closed', text: `${fmtInt(steps)} steps`, tone: 'sage', action: undo } : { text: `Steps changed to ${fmtInt(steps)} · ${fmtInt(left)} to go`, action: undo });
   };
   return (
-    <Sheet title="Steps" sub={date === today ? 'Today, from Samsung Health' : fmtDayMonth(date)}>
+    <Sheet title="Steps" sub={imported ? 'Apple Health · via Health Bridge' : date === today ? 'Today, from Samsung Health' : fmtDayMonth(date)}>
       <DateChip value={date} onChange={onDate} />
       <label className="flabel">
         <span className="lbl sage">{date === today ? 'Steps so far' : 'Final steps'}</span>

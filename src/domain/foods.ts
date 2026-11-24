@@ -161,3 +161,8 @@ export function eatenAtFor(date: DayKey, meal: Meal, place: Place, settings: Pic
 export function entryTime(e: Pick<FoodEntry, 'at' | 'eatenAt'>): number {
   return e.eatenAt ?? e.at;
 }
+
+/** Timing analyses use an entered meal time when Bridge only supplied the log time. */
+export function mealTiming(e: Pick<FoodEntry, 'at' | 'eatenAt' | 'bridgeMealId'>): number | undefined {
+  return e.eatenAt ?? (e.bridgeMealId ? undefined : e.at);
+}

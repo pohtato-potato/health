@@ -1,3 +1,4 @@
+import { mealTiming } from './foods';
 import { addDays, parseDay, type DayKey } from './dates';
 import { bedOrder } from './rings';
 import { cleanOf } from './quality';
@@ -50,10 +51,12 @@ export function bestWeekday(values: Map<DayKey, number>): { weekday: number; avg
 }
 
 /** How much protein came from 9 pm on, and on how many days most of it did. */
-export function lateShare(entries: Pick<FoodEntry, 'date' | 'eatenAt' | 'at' | 'protein'>[], fromMin = 21 * 60) {
+export function lateShare(entries: Pick<FoodEntry, 'date' | 'eatenAt' | 'at' | 'protein' | 'bridgeMealId'>[], fromMin = 21 * 60) {
   const by = new Map<DayKey, { late: number; all: number }>();
   for (const e of entries) {
-    const t = new Date(e.eatenAt ?? e.at);
+    const at = mealTiming(e);
+    if (at === undefined) continue;
+    const t = new Date(at);
     const min = t.getHours() * 60 + t.getMinutes();
     const cur = by.get(e.date) ?? { late: 0, all: 0 };
     cur.all += e.protein;

@@ -1,3 +1,4 @@
+import { syncBridgeWhenVisible } from './db/bridgeSync';
 import { CardViewerHost } from './ui/CardViewer';
 import { TrainProto } from './screens/proto/TrainLiving';
 import { SessionProto } from './screens/proto/SessionLiving';
@@ -242,6 +243,15 @@ export function App() {
     // Days left unclosed play themselves (at 4 am, or on the next open after it). Football's code loads only for this.
     if (hasSettings) void import('./football/store/play').then((m) => m.playDue()).catch((e) => console.error('football catch-up', e));
   }, [hasSettings, today]);
+  useEffect(() => {
+    if (!hasSettings) return;
+    document.addEventListener('visibilitychange', syncBridgeWhenVisible);
+    const id = window.setInterval(syncBridgeWhenVisible, 60_000);
+    return () => {
+      document.removeEventListener('visibilitychange', syncBridgeWhenVisible);
+      window.clearInterval(id);
+    };
+  }, [hasSettings]);
   useThemeClass(settings, today);
 
   // Design prototypes use sample data only, so they open without setup (handy on a fresh phone).

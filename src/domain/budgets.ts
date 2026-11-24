@@ -1,5 +1,5 @@
 import { addDays, dayRange, type DayKey } from './dates';
-import { entryTime } from './foods';
+import { mealTiming } from './foods';
 import { foodDaysFor } from './logged';
 import { MEALS, type Day, type FoodEntry, type Meal, type Targets } from './types';
 
@@ -44,9 +44,13 @@ export function proteinSpread(entries: Pick<FoodEntry, 'meal' | 'protein'>[]): R
 export const LATE_PROTEIN_HOUR = 21;
 
 /** True when more than half the day's protein was eaten after 21:00. */
-export function lateHeavy(entries: Pick<FoodEntry, 'protein' | 'at' | 'eatenAt'>[]): boolean {
-  const total = entries.reduce((n, e) => n + e.protein, 0);
+export function lateHeavy(entries: Pick<FoodEntry, 'protein' | 'at' | 'eatenAt' | 'bridgeMealId'>[]): boolean {
+  const timed = entries.flatMap((e) => {
+    const at = mealTiming(e);
+    return at === undefined ? [] : [{ at, protein: e.protein }];
+  });
+  const total = timed.reduce((n, e) => n + e.protein, 0);
   if (total <= 0) return false;
-  const late = entries.filter((e) => new Date(entryTime(e)).getHours() >= LATE_PROTEIN_HOUR).reduce((n, e) => n + e.protein, 0);
+  const late = timed.filter((e) => new Date(e.at).getHours() >= LATE_PROTEIN_HOUR).reduce((n, e) => n + e.protein, 0);
   return late / total > 0.5;
 }

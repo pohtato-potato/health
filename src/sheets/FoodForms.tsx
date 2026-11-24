@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { barcodeSupported, lookupBarcode, scanBarcode, type ScannedFood } from '../sources/barcode';
-import { fmtInt } from '../domain/format';
+import { fmtInt, fmtTime } from '../domain/format';
+import { atOn, minutesSinceMidnight } from '../domain/dates';
 import { mealForTime, numbersPatch, per100FromTotal, portionFor, stepFor, unitLabel, valuesFor } from '../domain/foods';
 import { impossibleDensity, isWeighedMeat, lightDishWarning, portionWarning, similarFood } from '../domain/foodChecks';
 import { MEAL_NAMES, MEALS, type Food, type FoodEntry, type FoodUnit, type Meal, type Settings } from '../domain/types';
@@ -390,9 +391,16 @@ export function EntrySheet() {
 function EntryInner({ entry, food }: { entry: FoodEntry; food?: Food }) {
   const toast = useToast();
   const [meal, setMeal] = useState<Meal>(entry.meal);
+  const [name, setName] = useState(entry.name);
+  const [eaten, setEaten] = useState(() => {
+    if (entry.eatenAt === undefined) return '';
+    const minutes = minutesSinceMidnight(entry.eatenAt);
+    return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+  });
   const [amount, setAmount] = useState<number>(entry.amount ?? 1);
   const [kcal, setKcal] = useState<number | undefined>(entry.kcal);
   const [protein, setProtein] = useState<number | undefined>(entry.proteinUnknown ? undefined : entry.protein);
+  const [numbersEdited, setNumbersEdited] = useState(false);
   const scalable = !!food && entry.kind === 'food';
   // Own numbers: this entry's kcal and protein typed by hand; the saved food stays as it is.
   const [own, setOwn] = useState(scalable && !!entry.own);
@@ -401,8 +409,12 @@ function EntryInner({ entry, food }: { entry: FoodEntry; food?: Food }) {
   const save = async () => {
     await updateEntry(entry.id, {
       meal,
+      ...(entry.bridgeMealId ? {
+        name: name.trim() || entry.name,
+        eatenAt: eaten ? atOn(entry.date, Number(eaten.slice(0, 2)) * 60 + Number(eaten.slice(3))) : undefined,
+      } : {}),
       ...(scalable ? { amount, portion: portionFor(food!, amount) } : {}),
-      ...(scalable && !own
+      ...(entry.bridgeMealId && !numbersEdited ? {} : scalable && !own
         ? { kcal: v.kcal, protein: v.protein, own: undefined }
         : // A quick add keeps "not sure" until a protein is typed.
           entry.proteinUnknown && protein === undefined
@@ -420,17 +432,25 @@ function EntryInner({ entry, food }: { entry: FoodEntry; food?: Food }) {
     <div className="grid2">
       <label className="flabel">
         <span className="lbl apri">Kcal</span>
-        <DecField value={kcal} onChange={setKcal} />
+        <DecField value={kcal} onChange={(value) => { setKcal(value); setNumbersEdited(true); }} />
       </label>
       <label className="flabel">
         <span className="lbl lav">Protein g</span>
-        <DecField value={protein} onChange={setProtein} placeholder={entry.proteinUnknown ? 'Not sure' : undefined} />
+        <DecField value={protein} onChange={(value) => { setProtein(value); setNumbersEdited(true); }} placeholder={entry.proteinUnknown ? 'Not sure' : undefined} />
       </label>
     </div>
   );
 
   return (
     <Sheet title={entry.name} sub={entry.kind === 'free' ? 'Free meal' : entry.kind === 'drink' ? 'Drink' : entry.portion}>
+      {entry.bridgeMealId && <>
+        <label className="flabel"><span className="lbl">Name</span><input className="field" value={name} onChange={(e) => setName(e.target.value)} /></label>
+        <label className="flabel">
+          <span className="lbl">Eaten time (optional)</span>
+          <input className="field" type="time" value={eaten} onChange={(e) => setEaten(e.target.value)} />
+          <span className="t13 q">Logged in Bevel at {fmtTime(entry.at)}</span>
+        </label>
+      </>}
       <MealPicker meal={meal} onChange={setMeal} />
       {scalable ? (
         <>

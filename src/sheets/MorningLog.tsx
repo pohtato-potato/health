@@ -55,8 +55,10 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
   const [weight, setWeight] = useState<number | undefined>(day?.weightKg);
   const [asleep, setAsleep] = useState<number | undefined>(day?.sleep?.asleep);
   const [woke, setWoke] = useState<number | undefined>(day?.sleep?.woke);
+  const [sleepTimesEdited, setSleepTimesEdited] = useState(false);
   const [carried, setCarried] = useState(day?.sleep?.carried ?? false);
   const [rested, setRested] = useState<number | undefined>(day?.sleep?.rested);
+  const [stepsEdited, setStepsEdited] = useState(false);
   const [steps, setSteps] = useState<number | undefined>(yesterday?.steps);
   const [place, setPlace] = useState<string>(day?.place ?? before.find((d) => d.place)?.place ?? places[0].id);
   const energy = day?.energy;
@@ -94,14 +96,17 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
     setAsleep(lastSleep.asleep);
     setWoke(lastSleep.woke);
     setCarried(true);
+    setSleepTimesEdited(true);
   };
   const editAsleep = (m: number) => {
     setAsleep(m);
     setCarried(false);
+    setSleepTimesEdited(true);
   };
   const editWoke = (m: number) => {
     setWoke(m);
     setCarried(false);
+    setSleepTimesEdited(true);
   };
   const save = async () => {
     setSaving(true);
@@ -110,7 +115,8 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
       {
         weightKg: weight,
         sleep: asleep !== undefined && woke !== undefined ? { asleep, woke, rested, ...(carried ? { carried: true } : {}) } : undefined,
-        yesterdaySteps: settings.prefs.confirmSteps && steps !== undefined && steps !== yesterday?.steps ? steps : undefined,
+        sleepTimesEdited,
+        yesterdaySteps: settings.prefs.confirmSteps && stepsEdited ? steps : undefined,
         place,
         energy,
         stomach,
@@ -140,7 +146,7 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
 
   const pledged = yesterday?.pledge?.at;
   return (
-    <Sheet title="Good morning" sub={fmtDayLong(today)}>
+    <Sheet title="Good morning" sub={day?.bridgeSleep ? `${fmtDayLong(today)} · Sleep via Apple Health` : fmtDayLong(today)}>
       <div className="ml-sheet">
         <DateChip value={today} onChange={onDate} />
         <div className="k-row ml-sleephead">
@@ -262,7 +268,7 @@ function MorningForm({ settings, today, onDate, days, questions }: { settings: S
           <label className="flabel ml-steps">
             <span className="ml-lb">Yesterday's final steps</span>
             <StepsRing steps={steps} goal={stepGoal} />
-            <IntField value={steps} onChange={setSteps} placeholder="From your phone" label="Yesterday's final steps" />
+            <IntField value={steps} onChange={(value) => { setSteps(value); setStepsEdited(true); }} placeholder="From your phone" label="Yesterday's final steps" />
             <span className="k-q lh">
               {yesterday?.steps !== undefined && yesterday.stepsAt ? `You logged ${fmtInt(yesterday.steps)} at ${fmtTime(yesterday.stepsAt)}. The final count is ready by now.` : 'The final count is ready by now.'}
             </span>

@@ -29,7 +29,9 @@ import { saveAuditPack } from '../export/saveAuditPack';
 import { parseFoodFixes, type FoodFix } from '../domain/foodFixes';
 import { FoodFixSheet } from '../sheets/FoodFixSheet';
 
-type Editor = null | 'targets' | 'item' | 'homes' | 'you' | 'theme' | 'review';
+import { BridgeSyncSheet } from '../sheets/BridgeSyncSheet';
+
+type Editor = null | 'targets' | 'item' | 'homes' | 'you' | 'theme' | 'review' | 'bridge';
 
 export function SettingsScreen() {
   const settings = useSettings();
@@ -320,6 +322,7 @@ export function SettingsScreen() {
           <input ref={backupInput} type="file" accept="application/json,.json,application/zip,.zip" hidden onChange={(e) => (pickBackup(e.target.files?.[0]), (e.target.value = ''))} />
         </div>
         <div className="list">
+          <LinkRow title="Health Bridge" sub="Sync from Google Drive or import day files" onClick={() => setEditor('bridge')} />
           <LinkRow title="Data check-up" sub="Slips in your data, each with a fix" onClick={() => go('/checkup')} />
           <LinkRow title="Food fixes from a file" sub="Corrections the coach sends: each offered once" onClick={() => fixesInput.current?.click()} />
           <input ref={fixesInput} type="file" accept="application/json,.json" hidden onChange={(e) => (void pickFixes(e.target.files?.[0]), (e.target.value = ''))} />
@@ -465,6 +468,7 @@ export function SettingsScreen() {
       {editor === 'item' && <ItemEditor item={item} onClose={() => setEditor(null)} />}
       {editor === 'homes' && <HomesEditor settings={settings} onClose={() => setEditor(null)} />}
       {editor === 'you' && <YouEditor settings={settings} onClose={() => setEditor(null)} />}
+      {editor === 'bridge' && <BridgeSyncSheet onClose={() => setEditor(null)} />}
       {editor === 'review' && <ReviewSheet onClose={() => setEditor(null)} />}
       {editor === 'theme' && unlocked && <ThemeSheet settings={settings} unlocked={unlocked} today={today} onClose={() => setEditor(null)} />}
       {pending?.kind === 'backup' && (

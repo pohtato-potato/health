@@ -1,3 +1,4 @@
+import { mealTiming } from './foods';
 import { CREATURES, creatureById } from './creatureRoster';
 import type { Sighting } from './creatures';
 import { notesSoFar } from './creatures';
@@ -237,9 +238,10 @@ export function titleStats(i: TitleInput): TitleStats {
   s.dalDays = i.entries.filter((e) => /\bdal\b/i.test(e.name)).length;
   for (const [d, list] of foodBy) {
     const target = targetsFor(i.settings, d).proteinG;
-    const late = list.filter((e) => new Date(e.eatenAt ?? e.at).getHours() >= LATE_HOUR);
+    const timed = list.filter((e) => mealTiming(e) !== undefined);
+    const late = timed.filter((e) => new Date(mealTiming(e)!).getHours() >= LATE_HOUR);
     if (!late.length) continue;
-    const all = list.reduce((n, e) => n + e.protein, 0);
+    const all = timed.reduce((n, e) => n + e.protein, 0);
     const before = all - late.reduce((n, e) => n + e.protein, 0);
     if (all >= target && before < target) s.lateProteinCloses++;
   }
